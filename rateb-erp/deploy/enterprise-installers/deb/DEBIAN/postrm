@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+rm -f /etc/systemd/system/ratib-branch-web.service /etc/systemd/system/ratib-hybrid-sync.service
+systemctl daemon-reload 2>/dev/null || true
+rm -f /usr/share/applications/ratib-branch.desktop
+
+# Preserve Branch database by default (purge removes with --purge only via dpkg)
+if [ "$1" = "purge" ]; then
+  echo "Purge: keeping /opt/ratib-branch/storage unless RATIB_PURGE_STORAGE=1"
+  if [ "${RATIB_PURGE_STORAGE:-0}" = "1" ]; then
+    rm -rf /opt/ratib-branch
+  else
+    # remove binaries only
+    if [ -d /opt/ratib-branch ]; then
+      find /opt/ratib-branch -mindepth 1 -maxdepth 1 ! -name storage -exec rm -rf {} +
+    fi
+  fi
+fi
+exit 0

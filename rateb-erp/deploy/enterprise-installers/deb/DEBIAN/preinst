@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+# preinst — stop services on upgrade; never delete SQLite
+if [ -d /opt/ratib-branch/storage/branch ]; then
+  if [ -f /opt/ratib-branch/storage/branch/rateb-branch.sqlite ]; then
+    stamp=$(date -u +%Y%m%d%H%M%S)
+    mkdir -p /opt/ratib-branch/storage/branch/backups
+    cp -a /opt/ratib-branch/storage/branch/rateb-branch.sqlite \
+      "/opt/ratib-branch/storage/branch/backups/pre-upgrade-${stamp}.sqlite" || true
+  fi
+fi
+systemctl stop ratib-branch-web.service ratib-hybrid-sync.service 2>/dev/null || true
+exit 0

@@ -1,0 +1,90 @@
+#!/bin/sh
+set -e
+ROOT=/opt/ratib-branch
+UNI="${ROOT}/deploy/enterprise-installers/universal"
+COMMON="${ROOT}/deploy/enterprise-installers/common"
+
+if ! id rateb >/dev/null 2>&1; then
+  useradd --system --home "${ROOT}" --shell /usr/sbin/nologin rateb 2>/dev/null \
+    || useradd --system --home "${ROOT}" --shell /sbin/nologin rateb || true
+fi
+
+mkdir -p \
+  "${ROOT}/storage/branch/logs" \
+  "${ROOT}/storage/branch/backups" \
+  "${ROOT}/storage/branch/tmp" \
+  "${ROOT}/storage/sessions"
+chown -R rateb:rateb "${ROOT}/storage" || true
+
+# Prefer Universal orchestrator when present (Phase D.3)
+if [ -x "${UNI}/install-universal.sh" ]; then
+  # Package already extracted to ROOT — stage is ROOT itself for postinst
+  export RATEB_BRANCH_ROOT="${ROOT}"
+  # Cold-start + services via universal pieces (avoid re-copy)
+  PHP_BIN="$(bash "${UNI}/resolve-php.sh" "${ROOT}")"
+  export RATEB_PHP_BIN="${PHP_BIN}"
+  PORT="$(bash "${UNI}/detect-port.sh")"
+  if [ ! -f "${ROOT}/storage/branch/rateb-branch.sqlite" ]; then
+    cd "${ROOT}"
+    "${PHP_BIN}" -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-install.php || true
+  fi
+  bash "${UNI}/write-appliance-config.sh" "${ROOT}" "${PORT}" "${PHP_BIN}"
+  install -m 0755 "${ROOT}/deploy/enterprise-installers/systemd/ratib-branch-web-start.sh" \
+    "${ROOT}/deploy/enterprise-installers/systemd/ratib-branch-web-start.sh" 2>/dev/null || true
+  cat > /etc/systemd/system/ratib-branch-web.service <<EOF
+[Unit]
+Description=RATIB Branch Web
+After=network-online.target
+[Service]
+Type=simple
+User=rateb
+Group=rateb
+WorkingDirectory=${ROOT}
+Environment=RATEB_BRANCH_ROOT=${ROOT}
+Environment=RATEB_PHP_BIN=${PHP_BIN}
+EnvironmentFile=-${ROOT}/storage/branch/serve.env
+EnvironmentFile=-${ROOT}/storage/branch/appliance.env
+ExecStart=${ROOT}/deploy/enterprise-installers/systemd/ratib-branch-web-start.sh
+Restart=always
+RestartSec=5
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ReadWritePaths=${ROOT}/storage
+[Install]
+WantedBy=multi-user.target
+EOF
+  sed "s|/usr/bin/php|${PHP_BIN}|g; s|/opt/ratib-branch|${ROOT}|g" \
+    "${ROOT}/deploy/enterprise-installers/systemd/ratib-hybrid-sync.service" \
+    > /etc/systemd/system/ratib-hybrid-sync.service
+  bash "${UNI}/configure-firewall.sh" "${PORT}" || true
+  bash "${UNI}/schedule-backups.sh" "${ROOT}" "${PHP_BIN}" || true
+  systemctl daemon-reload
+  systemctl enable ratib-hybrid-sync.service ratib-branch-web.service
+  systemctl restart ratib-hybrid-sync.service ratib-branch-web.service || \
+    systemctl start ratib-hybrid-sync.service ratib-branch-web.service || true
+  URL="http://127.0.0.1:${PORT}/"
+  [ "${PORT}" = "80" ] && URL="http://127.0.0.1/"
+  cat > /usr/share/applications/ratib-branch.desktop <<EOF
+[Desktop Entry]
+Type=Application
+Name=RATIB Branch
+Exec=xdg-open ${URL}
+Terminal=false
+Categories=Office;
+EOF
+  if [ -x "${COMMON}/verify-install.sh" ]; then
+    RATEB_BRANCH_HTTP_PORT="${PORT}" RATEB_PHP_BIN="${PHP_BIN}" bash "${COMMON}/verify-install.sh" "${ROOT}" || true
+  fi
+  exit 0
+fi
+
+# Legacy D.2 fallback
+if [ ! -f "${ROOT}/storage/branch/rateb-branch.sqlite" ]; then
+  cd "${ROOT}"
+  php -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-install.php || true
+fi
+install -m 0644 "${ROOT}/deploy/enterprise-installers/systemd/ratib-hybrid-sync.service" /etc/systemd/system/
+install -m 0644 "${ROOT}/deploy/enterprise-installers/systemd/ratib-branch-web.service" /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable ratib-hybrid-sync.service ratib-branch-web.service
+systemctl restart ratib-hybrid-sync.service ratib-branch-web.service || true
+exit 0

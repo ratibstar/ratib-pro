@@ -1,0 +1,12 @@
+Package: ratib-branch-installer
+Version: 1.0.0
+Section: misc
+Priority: optional
+Architecture: all
+Depends: php-cli (>= 8.2), php-sqlite3, php-gd, php-curl, php-zip, php-mbstring, php-xml, sqlite3, openssl
+Maintainer: RATIB <support@rateb.sa>
+Description: RATIB ERP Enterprise Branch Appliance
+ Official Branch Appliance installer for RATIB ERP.
+ Installs to /opt/ratib-branch, configures SQLite branch runtime,
+ registers systemd Hybrid Sync and Branch Web services.
+ One ERP • One Runtime • One Hybrid Sync Engine.

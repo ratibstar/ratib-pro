@@ -30,6 +30,21 @@ php -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-appliance-ins
 
 Output: `storage/branch/package/`
 
+## Phase D.2 / D.3 — Enterprise installers
+
+Official OS packages (no business-layer changes):
+
+| Artifact | Builder |
+|----------|---------|
+| `RATIB-Branch-Setup.exe` | `deploy/enterprise-installers/windows/build.ps1` |
+| `ratib-branch-installer.run` | `deploy/enterprise-installers/linux-run/build-run.sh` |
+| `ratib-branch-installer.deb` | `deploy/enterprise-installers/deb/build-deb.sh` |
+| `ratib-branch-installer.rpm` | `deploy/enterprise-installers/rpm/build-rpm.sh` |
+
+**D.3 Universal** auto-detects runtime/port/firewall and rolls back on health failure.  
+Docs: `docs/branch-appliance/universal/`. Overview: `deploy/enterprise-installers/README.md`.  
+Verify: `php bin/hybrid-phase-d3-enterprise-verify.php`
+
 ## Next steps after install
 
 1. `php bin/hybrid-branch-register.php` — registration payload for cloud approval

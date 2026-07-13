@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+systemctl stop ratib-branch-web.service ratib-hybrid-sync.service 2>/dev/null || true
+systemctl disable ratib-branch-web.service ratib-hybrid-sync.service 2>/dev/null || true
+exit 0

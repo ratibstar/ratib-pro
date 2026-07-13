@@ -1,0 +1,21 @@
+# Relative paths under rateb-erp/ copied into the Branch Appliance payload.
+# Excludes live storage data, sessions, tests, and local secrets.
+app
+bin
+config
+deploy/enterprise-installers/systemd
+deploy/systemd
+docs
+lib
+migrations
+modules
+offline
+public
+routes
+schema
+scripts
+views
+.htaccess
+index.php
+VERSION
+README.md

@@ -1,0 +1,19 @@
+[Unit]
+Description=RATIB Zero-Touch Status Monitor
+Documentation=file:///opt/ratib-branch/docs/branch-appliance/zero-touch/README.md
+After=network-online.target
+
+[Service]
+Type=simple
+User=rateb
+Group=rateb
+WorkingDirectory=/opt/ratib-branch
+Environment=RATEB_BRANCH_ROOT=/opt/ratib-branch
+EnvironmentFile=-/opt/ratib-branch/storage/branch/serve.env
+EnvironmentFile=-/opt/ratib-branch/storage/branch/appliance.env
+ExecStart=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 /opt/ratib-branch/bin/hybrid-zero-touch-status.php --loop --interval=3
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

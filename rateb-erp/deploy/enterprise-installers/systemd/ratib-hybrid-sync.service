@@ -1,0 +1,32 @@
+[Unit]
+Description=RATIB Hybrid Sync
+Documentation=file:///opt/ratib-branch/docs/install/linux-run.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rateb
+Group=rateb
+WorkingDirectory=/opt/ratib-branch
+Environment=RATEB_RUNTIME=branch
+Environment=RATEB_HYBRID_SYNC_ENABLED=1
+Environment=RATEB_HYBRID_SYNC_SINK=mysql
+EnvironmentFile=-/opt/ratib-branch/storage/branch/serve.env
+ExecStart=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 /opt/ratib-branch/bin/hybrid-sync-service.php
+ExecStop=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 /opt/ratib-branch/bin/hybrid-sync-service.php --stop
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ratib-hybrid-sync
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/ratib-branch/storage/branch
+
+[Install]
+WantedBy=multi-user.target

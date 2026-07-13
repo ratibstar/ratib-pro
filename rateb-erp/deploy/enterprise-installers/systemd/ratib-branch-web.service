@@ -1,0 +1,32 @@
+[Unit]
+Description=RATIB Branch Web
+Documentation=file:///opt/ratib-branch/docs/install/linux-run.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rateb
+Group=rateb
+WorkingDirectory=/opt/ratib-branch
+Environment=RATEB_RUNTIME=branch
+EnvironmentFile=-/opt/ratib-branch/storage/branch/serve.env
+# Port 80 requires CAP_NET_BIND_SERVICE or root; default appliance uses 80 via ambient caps when available.
+ExecStart=/usr/bin/php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd /opt/ratib-branch/bin/hybrid-branch-serve.php --host=127.0.0.1 --port=80
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ratib-branch-web
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/ratib-branch/storage
+
+[Install]
+WantedBy=multi-user.target
