@@ -55,6 +55,7 @@ d4_assert('D4_status_loop_3s', str_contains($statusSrc, '--interval') && str_con
 d4_assert('D4_status_dns_https', str_contains($statusSrc, 'd4_dns') && str_contains($statusSrc, 'd4_probe_https'), 'dns+https');
 d4_assert('D4_status_states', str_contains($statusSrc, 'online') && str_contains($statusSrc, 'offline') && str_contains($statusSrc, 'syncing'), 'states');
 d4_assert('D4_writes_status_json', str_contains($statusSrc, 'status.json'), 'status.json');
+d4_assert('D4_open_url_follows_state', str_contains($statusSrc, 'cloudAdminUrl') && str_contains($statusSrc, "in_array(\$state, ['online', 'syncing']"), 'open_url online→cloud offline→local');
 d4_assert('D4_no_runtime_mutation', !str_contains($statusSrc, 'file_put_contents($serve') && !str_contains($statusSrc, 'RATEB_RUNTIME='), 'does not rewrite serve.env runtime');
 
 $tray = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatibTray.ps1');
@@ -63,7 +64,7 @@ d4_assert('D4_tray_actions', str_contains($tray, 'Backup Now') && str_contains($
 
 $launch = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatibLauncher.ps1');
 d4_assert('D4_launcher_starts_services', str_contains($launch, 'RATIBBranchWeb') && str_contains($launch, 'Start-Process'), 'auto start');
-d4_assert('D4_launcher_opens_browser', str_contains($launch, 'Start-Process $url') || str_contains($launch, 'Start-Process $u'), 'browser');
+d4_assert('D4_launcher_opens_browser', str_contains($launch, 'Start-Process $openUrl') || str_contains($launch, 'Start-Process $url') || str_contains($launch, 'Start-Process $u'), 'browser');
 
 $iss = (string) file_get_contents($root . '/deploy/enterprise-installers/windows/RATIB-Branch-Setup.iss');
 d4_assert('D4_shortcut_name', str_contains($iss, 'RATIB ERP'), 'desktop name RATIB ERP');
@@ -90,7 +91,7 @@ $report = [
     'passed' => $passed,
     'failed' => $failed,
     'checks' => $lines,
-    'architecture_note' => 'Branch desktop UX always uses local SQLite via HybridRuntime branch mode. Online/Offline indicator reflects cloud reachability + Hybrid Sync; no mid-session HybridRuntime mutation (architecture locked).',
+    'architecture_note' => 'Branch desktop open_url follows Online/Offline: green→https://rateb.sa/rateb-erp/public/admin/ , red→http://127.0.0.1:8088/admin. Local SQLite via HybridRuntime is unchanged; no mid-session RATEB_RUNTIME mutation (architecture locked).',
     'customer_flow' => ['Install', 'Open RATIB ERP', 'Login', 'Work'],
 ];
 $out = $root . '/storage/branch/phase-d4-enterprise-verify.json';

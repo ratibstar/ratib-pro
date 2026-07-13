@@ -1,5 +1,5 @@
 # Phase D.4 — RATIB ERP zero-touch launcher (Windows)
-# Always opens LOCAL Branch Appliance (127.0.0.1) — never https://rateb.sa
+# Opens cloud admin when online (green), local admin when offline (red).
 param(
   [string]$InstallRoot = '',
   [switch]$NoBrowser,
@@ -29,24 +29,29 @@ function Test-LocalUp([string]$u) {
 }
 
 $appEnv = Join-Path $InstallRoot 'storage\branch\appliance.env'
-$url = 'http://127.0.0.1:8088/admin'
+$localUrl = 'http://127.0.0.1:8088/admin'
+$cloudAdmin = 'https://rateb.sa/rateb-erp/public/admin/'
 $phpPref = ''
 if (Test-Path $appEnv) {
   Get-Content $appEnv | ForEach-Object {
-    if ($_ -match '^RATEB_BRANCH_HTTP_URL=(.+)$') { $url = $Matches[1].Trim() }
+    if ($_ -match '^RATEB_BRANCH_HTTP_URL=(.+)$') { $localUrl = $Matches[1].Trim() }
+    if ($_ -match '^RATEB_CLOUD_ADMIN_URL=(.+)$') { $cloudAdmin = $Matches[1].Trim() }
     if ($_ -match '^RATEB_PHP_BIN=(.+)$') { $phpPref = $Matches[1].Trim() }
   }
 }
-# Never open cloud portal from this launcher
-if ($url -match 'rateb\.sa' -or $url -match '^https://') {
-  $url = 'http://127.0.0.1:8088/admin'
+# Local branch URL must stay on loopback (never rateb.sa)
+if ($localUrl -match 'rateb\.sa' -or $localUrl -match '^https://') {
+  $localUrl = 'http://127.0.0.1:8088/admin'
 }
-# Always land on ERP admin (same shell as rateb.sa), not marketing home
-if ($url -match '^https?://[^/]+/?$') {
-  $url = $url.TrimEnd('/') + '/admin'
-} elseif ($url -notmatch '/admin') {
-  $url = $url.TrimEnd('/') + '/admin'
+if ($localUrl -match '^https?://[^/]+/?$') {
+  $localUrl = $localUrl.TrimEnd('/') + '/admin'
+} elseif ($localUrl -notmatch '/admin') {
+  $localUrl = $localUrl.TrimEnd('/') + '/admin'
 }
+if ($cloudAdmin -notmatch '/admin') {
+  $cloudAdmin = $cloudAdmin.TrimEnd('/') + '/admin/'
+}
+$cloudAdmin = $cloudAdmin.TrimEnd('/') + '/'
 
 $php = Resolve-Php $InstallRoot $phpPref
 if (-not $php) {
@@ -58,7 +63,8 @@ New-Item -ItemType Directory -Force -Path (Join-Path $InstallRoot 'storage\branc
 $statusPath = Join-Path $InstallRoot 'storage\branch\status.json'
 @{
   phase='D.4'; state='starting'; label='STARTING'; display='STARTING'
-  open_url=$url; updated_at=(Get-Date).ToUniversalTime().ToString('o')
+  open_url=$localUrl; local_url=$localUrl; cloud_admin_url=$cloudAdmin
+  updated_at=(Get-Date).ToUniversalTime().ToString('o')
 } | ConvertTo-Json | Set-Content $statusPath -Encoding UTF8
 
 # Prefer Windows services when present
@@ -72,10 +78,10 @@ foreach ($n in @('RATIBBranchWeb','RATIBHybridSync')) {
 }
 
 # Fallback: start built-in PHP server if local URL is down (no WinSW required)
-if (-not (Test-LocalUp $url)) {
+if (-not (Test-LocalUp $localUrl)) {
   $serve = Join-Path $InstallRoot 'bin\hybrid-branch-serve.php'
   $port = 8088
-  if ($url -match ':(\d+)') { $port = [int]$Matches[1] }
+  if ($localUrl -match ':(\d+)') { $port = [int]$Matches[1] }
   Start-Process -FilePath $php -ArgumentList @(
     '-d','extension=pdo_sqlite','-d','extension=sqlite3','-d','extension=gd',
     "`"$serve`"", "--host=127.0.0.1", "--port=$port"
@@ -84,6 +90,8 @@ if (-not (Test-LocalUp $url)) {
 
 $mon = Join-Path $InstallRoot 'bin\hybrid-zero-touch-status.php'
 if (Test-Path $mon) {
+  # One-shot probe so open_url reflects online/offline before browser opens
+  & $php -d extension=pdo_sqlite -d extension=sqlite3 $mon | Out-Null
   Start-Process -FilePath $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3',"`"$mon`"","--loop","--interval=3") -WorkingDirectory $InstallRoot -WindowStyle Hidden
 }
 
@@ -98,13 +106,20 @@ if (-not $NoTray) {
 
 $deadline = (Get-Date).AddSeconds(20)
 while ((Get-Date) -lt $deadline) {
-  if (Test-LocalUp $url) { break }
+  if (Test-LocalUp $localUrl) { break }
   Start-Sleep -Milliseconds 400
 }
 
-if (-not $NoBrowser) {
-  # Force local URL only
-  Start-Process $url
+$openUrl = $localUrl
+if (Test-Path $statusPath) {
+  try {
+    $st = Get-Content $statusPath -Raw | ConvertFrom-Json
+    if ($st.open_url) { $openUrl = [string]$st.open_url }
+  } catch {}
 }
-Write-Host "RATIB ERP (local) → $url"
+
+if (-not $NoBrowser) {
+  Start-Process $openUrl
+}
+Write-Host "RATIB ERP → $openUrl"
 exit 0

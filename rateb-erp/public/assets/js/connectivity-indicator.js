@@ -1,13 +1,119 @@
 /**
  * RATEB ERP — topbar Online / Offline indicator.
  * Uses navigator.onLine + optional RatebOfflineConnectivity probe events.
+ * Branch / local appliance: auto-switch admin URL with connection state.
+ *   Offline (red)  → http://127.0.0.1:8088/admin
+ *   Online  (green) → https://rateb.sa/rateb-erp/public/admin/
  */
 (function () {
     'use strict';
 
+    var DEFAULT_LOCAL = 'http://127.0.0.1:8088/admin';
+    var DEFAULT_CLOUD = 'https://rateb.sa/rateb-erp/public/admin/';
+    var FLAG = 'rateb-branch-url-switch';
+    var redirectTimer = null;
+    var lastApplied = null;
+
     function el() {
         return document.querySelector('[data-rateb-connection-status]')
             || document.getElementById('rateb-connection-indicator');
+    }
+
+    function isLocalHost(hostname) {
+        var h = hostname || (location && location.hostname) || '';
+        return h === '127.0.0.1' || h === 'localhost' || h === '[::1]';
+    }
+
+    function cfg(name, fallback) {
+        var body = document.body;
+        if (body) {
+            var v = body.getAttribute(name);
+            if (v) {
+                return v;
+            }
+        }
+        var node = el();
+        if (node) {
+            var a = node.getAttribute(name);
+            if (a) {
+                return a;
+            }
+        }
+        return fallback;
+    }
+
+    function urlSwitchEnabled() {
+        if (cfg('data-rateb-url-switch', '') === '1') {
+            return true;
+        }
+        if (isLocalHost()) {
+            return true;
+        }
+        try {
+            return sessionStorage.getItem(FLAG) === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function adminSuffix() {
+        var path = location.pathname || '';
+        var idx = path.indexOf('/admin');
+        if (idx < 0) {
+            return '';
+        }
+        return path.slice(idx + '/admin'.length);
+    }
+
+    function buildTarget(base) {
+        var clean = String(base || '').replace(/\/+$/, '');
+        return clean + adminSuffix() + (location.search || '') + (location.hash || '');
+    }
+
+    function alreadyOnTarget(online) {
+        if (online) {
+            return /rateb\.sa$/i.test(location.hostname || '');
+        }
+        return isLocalHost();
+    }
+
+    function maybeRedirect(online) {
+        if (!urlSwitchEnabled()) {
+            return;
+        }
+        if (alreadyOnTarget(online)) {
+            return;
+        }
+
+        var localBase = cfg('data-rateb-local-admin', DEFAULT_LOCAL);
+        var cloudBase = cfg('data-rateb-cloud-admin', DEFAULT_CLOUD);
+        var target = buildTarget(online ? cloudBase : localBase);
+
+        if (redirectTimer) {
+            clearTimeout(redirectTimer);
+            redirectTimer = null;
+        }
+
+        // Debounce so brief flaps do not bounce the tab.
+        var delay = online ? 1600 : 600;
+        redirectTimer = setTimeout(function () {
+            redirectTimer = null;
+            var still = typeof navigator === 'undefined' || navigator.onLine !== false;
+            var conn = window.RatebOfflineConnectivity;
+            if (conn && typeof conn.isOnline === 'function') {
+                still = !!conn.isOnline();
+            }
+            if (!!still !== !!online) {
+                return;
+            }
+            if (alreadyOnTarget(online)) {
+                return;
+            }
+            try {
+                sessionStorage.setItem(FLAG, '1');
+            } catch (e) { /* ignore */ }
+            location.assign(target);
+        }, delay);
     }
 
     function apply(online) {
@@ -27,6 +133,11 @@
         if (text) {
             text.textContent = label;
         }
+        if (lastApplied === on) {
+            return;
+        }
+        lastApplied = on;
+        maybeRedirect(on);
     }
 
     function fromNavigator() {

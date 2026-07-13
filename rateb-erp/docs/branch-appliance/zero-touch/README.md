@@ -11,17 +11,19 @@ Customer never sees SQLite, MySQL, Hybrid Runtime, or env files.
 
 ## Online / Offline
 
-| Indicator | Meaning |
-|-----------|---------|
-| 🟢 ONLINE | Cloud reachable; Hybrid Sync active |
-| 🔴 OFFLINE | Cloud unreachable; local ERP continues on SQLite |
-| 🟡 SYNCING | Cloud up; outbox draining |
-| 🔵 STARTING | Bootstrapping |
-| ⚪ MAINTENANCE | Recovery / temporary issue |
+| Indicator | Meaning | Browser URL |
+|-----------|---------|-------------|
+| 🟢 ONLINE | Cloud reachable | `https://rateb.sa/rateb-erp/public/admin/` |
+| 🔴 OFFLINE | Cloud unreachable; local ERP continues on SQLite | `http://127.0.0.1:8088/admin` |
+| 🟡 SYNCING | Cloud up; outbox draining | Cloud admin (same as online) |
+| 🔵 STARTING | Bootstrapping | Local admin |
+| ⚪ MAINTENANCE | Recovery / temporary issue | Local admin |
 
 Detection every ~3 seconds (DNS + HTTPS + API health + sync status). Offline within 3–5s.
 
-**Architecture (locked):** Branch desktop always works against local SQLite through existing `HybridRuntime`. Online does **not** rewrite runtime variables mid-session (avoids logout/reload). Hybrid Sync Engine remains the only sync path when the cloud returns.
+The topbar badge and `status.json` `open_url` stay in sync: green → cloud admin, red → local admin. The browser auto-switches when the connection state flips (branch / localhost only).
+
+**Architecture (locked):** Local SQLite runtime via `HybridRuntime` is unchanged mid-session. Hybrid Sync Engine remains the only sync path. Online/Offline only chooses which admin URL to open — it does not rewrite `RATEB_RUNTIME` / `serve.env`.
 
 ## Components
 

@@ -46,6 +46,7 @@ foreach ($argv as $a) {
 
 $appEnv = $root . '/storage/branch/appliance.env';
 $cloudUrl = 'https://rateb.sa';
+$cloudAdminUrl = 'https://rateb.sa/rateb-erp/public/admin/';
 $localUrl = 'http://127.0.0.1:8088/admin';
 if (is_readable($appEnv)) {
     foreach (file($appEnv, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
@@ -62,11 +63,19 @@ if (is_readable($appEnv)) {
         if ($k === 'RATEB_CLOUD_URL' && $v !== '') {
             $cloudUrl = $v;
         }
+        if ($k === 'RATEB_CLOUD_ADMIN_URL' && $v !== '') {
+            $cloudAdminUrl = $v;
+        }
     }
 }
 if (!str_contains($localUrl, '/admin')) {
     $localUrl = rtrim($localUrl, '/') . '/admin';
 }
+if (!str_contains($cloudAdminUrl, '/admin')) {
+    $cloudAdminUrl = rtrim($cloudAdminUrl, '/') . '/admin/';
+}
+// Keep trailing slash on cloud admin for consistent open_url.
+$cloudAdminUrl = rtrim($cloudAdminUrl, '/') . '/';
 
 function d4_probe_https(string $url, int $timeoutSec = 3): array
 {
@@ -126,7 +135,7 @@ function d4_write_status(string $root, array $payload): void
     @rename($tmp, $path);
 }
 
-function d4_snapshot(string $root, string $localUrl, string $cloudUrl): array
+function d4_snapshot(string $root, string $localUrl, string $cloudUrl, string $cloudAdminUrl): array
 {
     $host = parse_url($cloudUrl, PHP_URL_HOST) ?: 'rateb.sa';
     $dnsOk = d4_dns($host);
@@ -155,7 +164,7 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl): array
     }
 
     $cloudReachable = $dnsOk && ($https['ok'] || $api['ok'] || $syncOnline);
-    // Branch appliance always serves local SQLite UX; online = cloud reachable for sync/portal.
+    // Branch appliance: online = cloud reachable; offline = local SQLite UX.
     $state = 'offline';
     $label = 'OFFLINE';
     $emoji = "\u{1F534}"; // red
@@ -173,8 +182,8 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl): array
         $emoji = "\u{1F7E2}"; // green
     }
 
-    // Customer-facing URL: always local launcher URL (seamless offline). Cloud portal separate.
-    $openUrl = $localUrl;
+    // open_url follows indicator: green/syncing → cloud admin; red/starting → local admin.
+    $openUrl = in_array($state, ['online', 'syncing'], true) ? $cloudAdminUrl : $localUrl;
 
     return [
         'phase' => 'D.4',
@@ -185,6 +194,7 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl): array
         'display' => trim($emoji . ' ' . $label),
         'local_url' => $localUrl,
         'cloud_url' => $cloudUrl,
+        'cloud_admin_url' => $cloudAdminUrl,
         'open_url' => $openUrl,
         'cloud_connected' => $cloudReachable,
         'sqlite_connected' => $sqliteOk,
@@ -206,7 +216,7 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl): array
 
 do {
     try {
-        $payload = d4_snapshot($root, $localUrl, $cloudUrl);
+        $payload = d4_snapshot($root, $localUrl, $cloudUrl, $cloudAdminUrl);
         // Enrich with diagnostics health string when cheap
         try {
             $diag = (new BranchDiagnostics())->run();
