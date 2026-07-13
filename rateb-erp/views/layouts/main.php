@@ -522,6 +522,7 @@ if ($ratebOfflineBranchId < 1 && function_exists('rateb_active_branch_filter_id'
 }
 $ratebOfflineUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
 $ratebOfflineAllowlistUrl = rateb_public_url('assets/offline/ops-page-allowlist.json');
+$ratebConnectivityProbeUrl = rateb_public_url('connectivity-probe.json');
 
 if ($ratebOfflineFullClient) {
         $ratebOfflineFlags = $ratebOfflineFlagSvc->snapshot();
@@ -537,7 +538,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'serviceWorker' => $ratebOfflineSw,
     'serviceWorkerScope' => $ratebOfflineSwScope,
     'apiBase' => $ratebOfflineApiBase,
-    'probeUrl' => rtrim($ratebOfflineApiBase, '/') . '/status',
+    'probeUrl' => $ratebConnectivityProbeUrl,
     'allowlistUrl' => $ratebOfflineAllowlistUrl,
     'flags' => $ratebOfflineFlags,
     'startConnectivity' => true,
@@ -588,6 +589,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'serviceWorker' => $ratebOfflineSw,
     'serviceWorkerScope' => $ratebOfflineSwScope,
     'apiBase' => $ratebOfflineApiBase,
+    'probeUrl' => $ratebConnectivityProbeUrl,
     'company_id' => $ratebOfflineCompanyId,
     'tenant_id' => $ratebOfflineCompanyId,
     'branch_id' => $ratebOfflineBranchId,
@@ -688,13 +690,13 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           var m = p.match(/^(.*\/public\/)/i);
           return (m && m[1]) ? m[1] : '/rateb-erp/public/';
         })();
-        fetch(probeBase + 'api/v1/offline/status?_rateb_probe=' + Date.now(), {
+        fetch(probeBase + 'connectivity-probe.json?_rateb_probe=' + Date.now(), {
           method: 'GET',
           credentials: 'same-origin',
           cache: 'no-store',
           headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
         }).then(function (res) {
-          if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) return;
+          if (!res || !res.ok) return;
           var u = new URL(location.href);
           var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
           if (already) {

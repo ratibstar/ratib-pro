@@ -415,9 +415,9 @@
                 try {
                     var p = String(root.location.pathname || '');
                     var m = p.match(/^(.*\/public\/)/i);
-                    probeUrl = (m && m[1] ? m[1] : '/rateb-erp/public/') + 'api/v1/offline/status';
+                    probeUrl = (m && m[1] ? m[1] : '/rateb-erp/public/') + 'connectivity-probe.json';
                 } catch (ePu) {
-                    probeUrl = '/rateb-erp/public/api/v1/offline/status';
+                    probeUrl = '/rateb-erp/public/connectivity-probe.json';
                 }
             }
             var url = probeUrl + (probeUrl.indexOf('?') >= 0 ? '&' : '?') + '_rateb_probe=' + Date.now();
@@ -427,7 +427,7 @@
                 cache: 'no-store',
                 headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
             }).then(function (res) {
-                if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+                if (!res || !res.ok) {
                     return;
                 }
                 doEscapeOfflineShell();

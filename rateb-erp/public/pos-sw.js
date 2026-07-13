@@ -1040,15 +1040,21 @@ function isErpOfflineAsset(url) {
     if (p.indexOf('/assets/offline/') !== -1 || /\/offline-shell\.html$/i.test(p)) {
         return true;
     }
-    // Always manage design assets (not only when navigator.onLine is false) so
-    // offline Admin matches online layout: CSS, Bootstrap, fonts, icons, shell JS.
+    if (/\/manifest\.webmanifest$/i.test(p) || /\/pos-manifest\.webmanifest$/i.test(p)) {
+        return true;
+    }
+    if (/\/assets\/pwa\//i.test(p)) {
+        return true;
+    }
+    // Always manage design assets so offline Admin matches online layout.
     if (/\/assets\/css\/.+\.css$/i.test(p)) {
         return true;
     }
     if (/\/assets\/vendor\/(bootstrap|fontawesome|fonts|chartjs)\//i.test(p)) {
         return true;
     }
-    if (/\/assets\/js\/(theme|app|connectivity-indicator|charts|lang|dashboard-tabs|module-page-stats|table-tools|rateb-modal|rateb-confirm)\.js$/i.test(p)) {
+    // All ERP JS under assets/js — not just a hard-coded list (table-tools etc.).
+    if (/\/assets\/js\/.+\.js$/i.test(p)) {
         return true;
     }
     return false;
@@ -1448,12 +1454,13 @@ self.addEventListener('fetch', function (event) {
 
     // Connectivity probes must hit the network (never Cache API). Let the browser
     // fail the request when offline so the badge stays "غير متصل".
-    try {
-        if (String(event.request.headers.get('X-Rateb-Connectivity') || '') === '1'
-            || /[?&]_rateb_probe=/i.test(url.search)) {
-            return;
-        }
-    } catch (eProbe) { /* ignore */ }
+        try {
+            if (String(event.request.headers.get('X-Rateb-Connectivity') || '') === '1'
+                || /[?&]_rateb_probe=/i.test(url.search)
+                || /\/connectivity-probe\.json$/i.test(url.pathname)) {
+                return;
+            }
+        } catch (eProbe) { /* ignore */ }
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(

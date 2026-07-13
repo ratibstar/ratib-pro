@@ -168,7 +168,7 @@
                 base = m[1];
             }
         } catch (e2) { /* ignore */ }
-        return '<script>(function(){try{if(navigator.onLine===false)return;var m=document.querySelector(".rateb-offline-home,#rateb-offline-shell-main,[data-rateb-offline-ops-banner]");if(!m)return;var base=(location.pathname.match(/^(.*\\/public\\/)/i)||[])[1]||"/rateb-erp/public/";fetch(base+"api/v1/offline/status?_rateb_probe="+Date.now(),{credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json","X-Rateb-Connectivity":"1"}}).then(function(res){if(!res||!(res.ok||res.status===401||res.status===403||res.status===419))return;var u=new URL(location.href);u.searchParams.set("rateb_live",String(Date.now()));location.replace(u.href)}).catch(function(){})}catch(e){}})();</script>\n'
+        return '<script>(function(){try{if(navigator.onLine===false)return;var m=document.querySelector(".rateb-offline-home,#rateb-offline-shell-main,[data-rateb-offline-ops-banner]");if(!m)return;var base=(location.pathname.match(/^(.*\\/public\\/)/i)||[])[1]||"/rateb-erp/public/";fetch(base+"connectivity-probe.json?_rateb_probe="+Date.now(),{credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json","X-Rateb-Connectivity":"1"}}).then(function(res){if(!res||!res.ok)return;var u=new URL(location.href);u.searchParams.set("rateb_live",String(Date.now()));location.replace(u.href)}).catch(function(){})}catch(e){}})();</script>\n'
             + '<script>window.__RATEB_ERP_SHELL_OFFLINE__=' + json
             + ';window.__RATEB_ERP_MASTER_DATA__=window.__RATEB_ERP_SHELL_OFFLINE__;</script>\n'
             + '<script src="' + base + 'assets/offline/rateb-offline.js" defer></script>\n'

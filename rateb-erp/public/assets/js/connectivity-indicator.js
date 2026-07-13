@@ -63,13 +63,13 @@
             var path = String(window.location.pathname || '');
             var m = path.match(/^(.*\/public\/)/i);
             if (m && m[1]) {
-                return m[1] + 'api/v1/offline/status';
+                return m[1] + 'connectivity-probe.json';
             }
             if (/^\/(admin|login|offline-shell\.html|pos)(\/|$)/i.test(path)) {
-                return '/api/v1/offline/status';
+                return '/connectivity-probe.json';
             }
         } catch (e) { /* ignore */ }
-        return '/rateb-erp/public/api/v1/offline/status';
+        return '/rateb-erp/public/connectivity-probe.json';
     }
 
     function networkProbe() {

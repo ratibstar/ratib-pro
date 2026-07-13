@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "generated_at": "2026-07-13T19:29:29+00:00",
+    "generated_at": "2026-07-13T19:59:29+00:00",
     "source": "offline/config/ops-page-allowlist.php + rateb_app_route()",
     "paths": [
         "stock-movements",

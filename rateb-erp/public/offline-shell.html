@@ -66,14 +66,14 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
         if (m && m[1]) return m[1];
         return '/rateb-erp/public/';
       })();
-      var probe = base + 'api/v1/offline/status?_rateb_probe=' + Date.now();
+      var probe = base + 'connectivity-probe.json?_rateb_probe=' + Date.now();
       fetch(probe, {
         method: 'GET',
         credentials: 'same-origin',
         cache: 'no-store',
         headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
       }).then(function (res) {
-        if (!res || !(res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
+        if (!res || !res.ok) {
           return;
         }
         var q = location.search || '';

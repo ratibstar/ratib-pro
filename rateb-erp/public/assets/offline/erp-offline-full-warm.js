@@ -13,8 +13,8 @@
     var CACHE_NAME = 'rateb-erp-ops-pages-v30';
     var COEXIST = 'rateb-erp-coexist-v25';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v3';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v3';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v4';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v4';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
 
