@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v19').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v20').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v19 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v20 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v19');
+                                'offline-shell.html present in rateb-erp-coexist-v20');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -679,13 +679,12 @@
             var conn = root.RatebOfflineConnectivity;
             if (conn && typeof conn.probe === 'function') {
                 conn.probe().then(function (ok) {
-                    // Soft-fail: stay online if browser says online and probe is flaky.
-                    onConnectivityChange(!!ok || !(root.navigator && root.navigator.onLine === false));
+                    onConnectivityChange(!!ok);
                 }).catch(function () {
-                    onConnectivityChange(!(root.navigator && root.navigator.onLine === false));
+                    onConnectivityChange(false);
                 });
             } else {
-                onConnectivityChange(!(root.navigator && root.navigator.onLine === false));
+                onConnectivityChange(false);
             }
         });
         root.addEventListener('offline', function () {

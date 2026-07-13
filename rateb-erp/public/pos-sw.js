@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v19';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v25';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v25';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v20';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v26';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v26';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -756,8 +756,7 @@ function fetchErpAssetNetwork(request, timeoutMs) {
 /**
  * Admin/HTML navigations.
  * Local: pass through to PHP (Wi‑Fi off must still load instantly).
- * Cloud online: long network wait — never abort into offline shell while Wi‑Fi is up.
- * Cloud offline (navigator.onLine=false): cache/shell immediately.
+ * Cloud: race fetch vs timeout — hung fetch with false navigator.onLine caused ERR_FAILED.
  */
 function fetchNavigateNetwork(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
@@ -766,10 +765,18 @@ function fetchNavigateNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
-    // Live cloud must not fall to PIN/offline-shell after 2.5s — that caused false offline UX.
-    var ms = typeof timeoutMs === 'number' ? timeoutMs : 12000;
-    return fetch(request, { credentials: 'same-origin' }).catch(function (err) {
-        return Promise.reject(err || new Error('network'));
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
+    var network = fetch(request, { credentials: 'same-origin', cache: 'no-store' });
+    var timed = new Promise(function (_resolve, reject) {
+        setTimeout(function () {
+            reject(new Error('navigate-timeout'));
+        }, ms);
+    });
+    return Promise.race([network, timed]).then(function (response) {
+        if (!response) {
+            return Promise.reject(new Error('empty-response'));
+        }
+        return response;
     });
 }
 
