@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v21';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v27';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v27';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v22';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v28';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v28';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -369,13 +369,17 @@ function erpAdminOfflineFallback(request, url) {
             try {
                 pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
             } catch (eP) { /* ignore */ }
-            // Only the bare dashboard may use the classic offline shell home.
-            if (/(^|\/)admin$/i.test(pathNorm)) {
-                return matchCachedAdminDashboard(url).then(function (dash) {
-                    return dash || matchOfflineShellOrInline(request);
-                });
-            }
-            return uncachedAdminBrowseResponse(url);
+            // Prefer any warmed Admin page (dashboard/companies) over a dead-end miss page.
+            return matchCachedAdminDashboard(url).then(function (dash) {
+                if (dash) {
+                    return dash;
+                }
+                if (/(^|\/)admin$/i.test(pathNorm)) {
+                    return matchOfflineShellOrInline(request);
+                }
+                // Last resort: offline shell home (still opens the product offline).
+                return matchOfflineShellOrInline(request);
+            });
         });
     }).catch(function () {
         return uncachedAdminBrowseResponse(url);

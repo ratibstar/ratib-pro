@@ -4030,7 +4030,7 @@
 
     var SNAPSHOT_PREFIX = 'erp_shell_chrome';
     var OPS_PAGE_PREFIX = 'erp_ops_page';
-    var OPS_CACHE = 'rateb-erp-ops-pages-v14';
+    var OPS_CACHE = 'rateb-erp-ops-pages-v28';
 
     function flags() {
         if (root.RatebOffline && typeof root.RatebOffline.flags === 'function') {
@@ -4553,22 +4553,6 @@
                     var origin = (root.location && root.location.origin) || '';
                     return putOpsPageCache(origin + path, safe);
                 }).then(function () {
-                    try {
-                        if (root.navigator && root.navigator.serviceWorker
-                            && root.navigator.serviceWorker.controller) {
-                            root.navigator.serviceWorker.controller.postMessage({
-                                type: 'CACHE_ERP_OPS_PAGE',
-                                url: href,
-                                path: path,
-                                html: safe
-                            });
-                            try {
-                                root.navigator.serviceWorker.controller.postMessage({
-                                    type: 'RELOAD_OPS_ALLOWLIST'
-                                });
-                            } catch (eReload) { /* ignore */ }
-                        }
-                    } catch (e) { /* ignore */ }
                     return { ok: true, id: id, bytes: safe.length, path: path };
                 });
             });
@@ -4590,17 +4574,7 @@
         return putOpsPageCache(href, safe).then(function () {
             return putOpsPageCache(originPath, safe);
         }).then(function () {
-            try {
-                if (root.navigator && root.navigator.serviceWorker
-                    && root.navigator.serviceWorker.controller) {
-                    root.navigator.serviceWorker.controller.postMessage({
-                        type: 'CACHE_ERP_OPS_PAGE',
-                        url: href,
-                        path: path,
-                        html: safe
-                    });
-                }
-            } catch (eMsg) { /* ignore */ }
+            // Also mirror into SW-managed keys without posting huge HTML bodies.
             return { ok: true, bytes: safe.length, path: path, url: href };
         });
     }

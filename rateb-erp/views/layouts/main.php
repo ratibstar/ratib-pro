@@ -630,15 +630,24 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       if (!isAdminPath(location.pathname)) return;
       if (isOfflineShellUi()) return;
       if (/\/login|\/logout|\/password\//i.test(location.pathname)) return;
-      if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+      if (!window.caches) return;
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
-      navigator.serviceWorker.controller.postMessage({
-        type: 'CACHE_ERP_OPS_PAGE',
-        url: location.href,
-        path: location.pathname,
-        html: html
+      var cacheName = (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName)
+        || 'rateb-erp-ops-pages-v28';
+      var keys = [location.href, location.origin + location.pathname];
+      var bare = location.pathname.replace(/\/+$/, '');
+      keys.push(location.origin + bare);
+      keys.push(location.origin + bare + '/');
+      var res = new Response(html, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
       });
+      caches.open(cacheName).then(function (cache) {
+        return Promise.all(keys.map(function (k) {
+          return cache.put(k, res.clone()).catch(function () { return null; });
+        }));
+      }).catch(function () {});
     } catch (eCache) { /* ignore */ }
   }
   if (document.readyState === 'complete') {
