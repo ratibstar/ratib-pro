@@ -1461,9 +1461,13 @@ final class ApprovalOversightService
 
     private function ensureAccountingSubmitSchema(): void
     {
+        if (\Rateb\App\Core\SessionManager::get('rateb_acct_submit_schema_ok') === '1') {
+            return;
+        }
         $acct = new AccountingService();
         $acct->ensureApprovalSubmitColumns();
         $acct->ensureAccountingRejectColumns();
+        \Rateb\App\Core\SessionManager::set('rateb_acct_submit_schema_ok', '1');
     }
 
     private function bootstrapCompany(int $companyId): void

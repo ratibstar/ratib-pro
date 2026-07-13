@@ -52,9 +52,21 @@
 
     function applyTheme(mode) {
         var chosen = mode || 'dark';
+        var bs = resolveBsTheme(chosen);
         root.setAttribute('data-theme', chosen);
-        root.setAttribute('data-bs-theme', resolveBsTheme(chosen));
+        root.setAttribute('data-bs-theme', bs);
         localStorage.setItem(storageKey(), chosen);
+        try {
+            var link = document.getElementById('rateb-theme-css');
+            if (link) {
+                var next = bs === 'light'
+                    ? (link.getAttribute('data-light-href') || '')
+                    : (link.getAttribute('data-dark-href') || '');
+                if (next && link.href !== next) {
+                    link.href = next;
+                }
+            }
+        } catch (eThemeCss) { /* ignore */ }
         syncThemeButtons(chosen);
     }
 

@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v12';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v18';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v18';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v13';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v19';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v19';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -405,24 +405,19 @@ function warmErpOfflineShell() {
     }
     var urls = [
         base + ERP_OFFLINE_SHELL,
-        base + 'assets/offline/rateb-offline.js',
+        // One offline bundle only (min) — avoid ~370KB duplicate download on first paint.
         base + 'assets/offline/rateb-offline.min.js',
         base + 'assets/offline/erp-offline-shell-auth.js',
-        base + 'assets/offline/erp-offline-shell-rbac.js',
-        base + 'assets/offline/erp-ops-forms-bootstrap.js',
         base + 'assets/offline/erp-shell-bootstrap.js',
         base + 'assets/offline/ops-page-allowlist.json',
         base + 'assets/css/variables.css',
         base + 'assets/css/main.css',
         base + 'assets/css/components.css',
         base + 'assets/css/dark.css',
-        base + 'assets/css/rtl.css',
-        base + 'assets/css/light.css',
-        base + 'assets/css/dashboard.css',
-        base + 'assets/css/ar-typography.css'
+        base + 'assets/css/rtl.css'
     ];
+    // Do not re-warm admin/ (user is often already there). Stage lean ops after shell assets.
     var leanOps = [
-        'admin/',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/rfq',
@@ -430,63 +425,40 @@ function warmErpOfflineShell() {
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/stock-movements',
-        'admin/ops/product-categories',
         'admin/ops/suppliers',
         'admin/ops/hr/attendance',
-        'admin/ops/hr/leaves',
         'admin/notifications',
         'admin/profile'
     ];
-    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-        return Promise.all(urls.map(function (key) {
-            return fetch(key, {
-                credentials: 'same-origin',
-                cache: 'no-cache',
-                headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
-            }).then(function (res) {
-                if (!res || !res.ok) {
+    function cacheUrlList(cache, list) {
+        return list.reduce(function (chain, key) {
+            return chain.then(function () {
+                return fetch(key, {
+                    credentials: 'same-origin',
+                    cache: 'no-cache',
+                    headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+                }).then(function (res) {
+                    if (!res || !res.ok) {
+                        return null;
+                    }
+                    var pathnameKey = key;
                     try {
-                        console.error('[RATIB OFFLINE]', 'FAIL', 'step=11', 'file=pos-sw.js',
-                            'function=warmErpOfflineShell.fetch',
-                            'reason=fetch not ok status=' + (res ? res.status : 'null') + ' key=' + key);
-                    } catch (e0) { /* ignore */ }
+                        var ku = new URL(key);
+                        pathnameKey = ku.origin + ku.pathname;
+                    } catch (ePath) { /* ignore */ }
+                    return cache.put(key, res.clone()).then(function () {
+                        return cache.put(pathnameKey, res.clone());
+                    });
+                }).catch(function () {
                     return null;
-                }
-                try {
-                    console.log('[RATIB OFFLINE]', 'PASS', 'step=11', 'file=pos-sw.js',
-                        'function=warmErpOfflineShell.fetch', 'reason=fetch ok status=' + res.status + ' key=' + key);
-                } catch (e1) { /* ignore */ }
-                var pathnameKey = key;
-                try {
-                    var ku = new URL(key);
-                    pathnameKey = ku.origin + ku.pathname;
-                } catch (ePath) { /* ignore */ }
-                return cache.put(key, res.clone()).then(function () {
-                    return cache.put(pathnameKey, res.clone());
-                }).then(function () {
-                    try {
-                        console.log('[RATIB OFFLINE]', 'PASS', 'step=12', 'file=pos-sw.js',
-                            'function=warmErpOfflineShell.cache.put',
-                            'reason=cache.put cache=' + ERP_COEXIST_CACHE + ' key=' + key);
-                        if (/offline-shell\.html/i.test(key)) {
-                            console.log('[RATIB OFFLINE]', 'PASS', 'step=13', 'file=pos-sw.js',
-                                'function=warmErpOfflineShell',
-                                'reason=offline-shell.html cached in ' + ERP_COEXIST_CACHE);
-                        }
-                    } catch (e2) { /* ignore */ }
-                    return true;
                 });
-            }).catch(function (err) {
-                try {
-                    console.error('[RATIB OFFLINE]', 'FAIL', 'step=11', 'file=pos-sw.js',
-                        'function=warmErpOfflineShell.fetch',
-                        'reason=fetch threw: ' + String(err && err.message ? err.message : err) + ' key=' + key);
-                } catch (e3) { /* ignore */ }
-                return null;
             });
-        })).then(function () {
-            return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                return Promise.all(leanOps.map(function (rel) {
+        }, Promise.resolve());
+    }
+    function warmLeanOpsPages() {
+        return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+            return leanOps.reduce(function (chain, rel) {
+                return chain.then(function () {
                     var pageUrl = base + rel.replace(/^\//, '');
                     return fetch(pageUrl, {
                         credentials: 'same-origin',
@@ -506,7 +478,17 @@ function warmErpOfflineShell() {
                             opsCache.put(bare, res.clone()).catch(function () { return null; })
                         ]);
                     }).catch(function () { return null; });
-                }));
+                });
+            }, Promise.resolve());
+        });
+    }
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        return cacheUrlList(cache, urls).then(function () {
+            // Stage HTML warm after shell assets so first navigation stays fast.
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    warmLeanOpsPages().then(resolve).catch(function () { resolve(null); });
+                }, 4000);
             });
         });
     }).catch(function () { return null; });

@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v12').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v13').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v12 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v13 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v12');
+                                'offline-shell.html present in rateb-erp-coexist-v13');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -188,13 +188,26 @@
             root.sessionStorage.setItem(warmKey, String(Date.now()));
         } catch (eGate) { /* ignore */ }
         try {
-            if (controller && typeof controller.postMessage === 'function') {
-                controller.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
-                tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
-                    'postMessage WARM_ERP_OFFLINE_SHELL to controller');
+            var sendWarm = function () {
+                try {
+                    if (controller && typeof controller.postMessage === 'function') {
+                        controller.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
+                        tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                            'postMessage WARM_ERP_OFFLINE_SHELL to controller');
+                    } else {
+                        tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                            'no controller postMessage — page Cache API warm only');
+                    }
+                } catch (eSend) {
+                    tFail(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
+                        'postMessage threw: ' + String(eSend && eSend.message ? eSend.message : eSend));
+                }
+            };
+            // Do not compete with first paint / Chart.js.
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(sendWarm, { timeout: 12000 });
             } else {
-                tPass(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',
-                    'no controller postMessage — page Cache API warm only');
+                root.setTimeout(sendWarm, 3500);
             }
         } catch (e) {
             tFail(8, 'erp-shell-bootstrap.js', 'warmErpShellViaPosSw',

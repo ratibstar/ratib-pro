@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260713-no-sw-local');
+define('RATEB_ASSET_BUILD', '20260713-rocket-load');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -104,7 +104,7 @@ if (!function_exists('rateb_tenant_permission_catalog_locked')) {
 }
 
 if (!function_exists('rateb_ensure_erp_branch_schema')) {
-    /** Idempotent branch_id catchup on every ERP request (main platform + agency hosts). */
+    /** Idempotent branch_id catchup — once per PHP request, once per session/day. */
     function rateb_ensure_erp_branch_schema(): void
     {
         static $ran = false;
@@ -112,8 +112,13 @@ if (!function_exists('rateb_ensure_erp_branch_schema')) {
             return;
         }
         $ran = true;
+        $day = date('Y-m-d');
+        if (\Rateb\App\Core\SessionManager::get('rateb_branch_schema_ok') === $day) {
+            return;
+        }
         try {
             (new \Rateb\App\Services\MigrationService())->repairBranchOpsSchemaIfNeeded();
+            \Rateb\App\Core\SessionManager::set('rateb_branch_schema_ok', $day);
         } catch (\Throwable $e) {
             error_log('rateb_ensure_erp_branch_schema: ' . $e->getMessage());
         }

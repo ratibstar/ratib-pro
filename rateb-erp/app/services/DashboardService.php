@@ -20,10 +20,12 @@ final class DashboardService
     /** @return array<string, mixed> */
     public function adminBuild(): array
     {
+        $metrics = $this->adminMetrics();
+
         return [
-            'metrics' => $this->adminMetrics(),
+            'metrics' => $metrics,
             'charts' => $this->adminCharts(),
-            'alerts' => $this->adminAlerts(),
+            'alerts' => $this->adminAlerts($metrics),
             'recent_companies' => $this->recentCompanies(),
             'recent_logins' => $this->recentLogins(),
             'top_companies' => $this->topCompaniesByActivity(),
@@ -146,10 +148,13 @@ final class DashboardService
         ];
     }
 
-    /** @return array<int, array{type: string, severity: string, message: string, url: string}> */
-    public function adminAlerts(): array
+    /**
+     * @param array<string, mixed>|null $metrics Reuse metrics from adminBuild() to avoid duplicate COUNT queries.
+     * @return array<int, array{type: string, severity: string, message: string, url: string}>
+     */
+    public function adminAlerts(?array $metrics = null): array
     {
-        $m = $this->adminMetrics();
+        $m = $metrics ?? $this->adminMetrics();
         $alerts = [];
 
         if ((int) ($m['pending_companies'] ?? 0) > 0) {
