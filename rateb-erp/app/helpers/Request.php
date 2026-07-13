@@ -45,8 +45,24 @@ final class Request
         $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
         $scriptBase = rtrim(str_replace('/index.php', '', $scriptName), '/');
 
-        if ($scriptBase !== '' && strpos($uri, $scriptBase) === 0) {
+        // PHP built-in server: empty public/{route} dirs set SCRIPT_NAME=/{route}
+        // which would strip /admin → /. Only strip real front-controller directory prefixes.
+        $isFrontController = str_ends_with($scriptName, '/index.php') || $scriptName === '/index.php'
+            || str_ends_with($scriptName, '.php');
+        if (
+            $isFrontController
+            && $scriptBase !== ''
+            && $scriptBase !== $uri
+            && str_starts_with($uri, $scriptBase . '/')
+        ) {
             $uri = substr($uri, strlen($scriptBase)) ?: '/';
+        } elseif (
+            $isFrontController
+            && $scriptBase !== ''
+            && str_ends_with($scriptName, '/index.php')
+            && $uri === $scriptBase
+        ) {
+            $uri = '/';
         }
 
         if (defined('RATEB_BASE_URL')) {
