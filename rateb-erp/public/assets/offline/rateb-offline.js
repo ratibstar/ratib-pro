@@ -329,18 +329,27 @@
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
         }, timeoutMs);
-        return fetch(probeUrl, {
+        // Bust caches; SW must not treat this as a navigable page hit.
+        var url = String(probeUrl);
+        url += (url.indexOf('?') >= 0 ? '&' : '?') + '_rateb_probe=' + Date.now();
+        return fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
             cache: 'no-store',
             headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (res) {
+            // Reject SW/cache synthetic hits: connectivity header echo is network-only.
+            if (res && res.headers && String(res.headers.get('X-Rateb-Connectivity-Echo') || '') === '1') {
+                setOnline(true);
+                return true;
+            }
             if (res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
                 setOnline(true);
                 return true;
             }
-            return online;
+            setOnline(false);
+            return false;
         }).catch(function () {
             setOnline(false);
             return false;
@@ -402,12 +411,9 @@
         },
         start: function () {
             if (typeof window !== 'undefined') {
-                // Probe immediately on browser online — do not wait for the 12–20s interval.
+                // Do NOT optimistic-flip to online: Chrome + Service Worker often fires
+                // "online" after cache navigation while Wi‑Fi is still off.
                 window.addEventListener('online', function () {
-                    if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-                        // Optimistic flip so UI can recover; probe confirms within timeoutMs.
-                        setOnline(true);
-                    }
                     probe();
                 });
                 window.addEventListener('offline', function () { setOnline(false); });

@@ -982,6 +982,15 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
+    // Connectivity probes must hit the network (never Cache API). Let the browser
+    // fail the request when offline so the badge stays "غير متصل".
+    try {
+        if (String(event.request.headers.get('X-Rateb-Connectivity') || '') === '1'
+            || /[?&]_rateb_probe=/i.test(url.search)) {
+            return;
+        }
+    } catch (eProbe) { /* ignore */ }
+
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(
             fetch(event.request).then(function (response) {
