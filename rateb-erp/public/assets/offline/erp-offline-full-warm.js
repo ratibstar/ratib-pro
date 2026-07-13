@@ -13,11 +13,14 @@
     var CACHE_NAME = 'rateb-erp-ops-pages-v31';
     var COEXIST = 'rateb-erp-coexist-v26';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v6';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v6';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v7';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v7';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v7';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
     var abortWarm = false;
+    var warmAbortCtrl = null;
+    var pendingResume = false;
 
     function isBrowserOffline() {
         try {
@@ -26,6 +29,26 @@
             }
         } catch (e) { /* ignore */ }
         return false;
+    }
+
+    function newWarmSignal() {
+        try {
+            if (typeof AbortController !== 'undefined') {
+                warmAbortCtrl = new AbortController();
+                return warmAbortCtrl.signal;
+            }
+        } catch (e) { /* ignore */ }
+        warmAbortCtrl = null;
+        return undefined;
+    }
+
+    function killInFlightFetches() {
+        abortWarm = true;
+        try {
+            if (warmAbortCtrl) {
+                warmAbortCtrl.abort();
+            }
+        } catch (e) { /* ignore */ }
     }
 
     function publicBase() {
@@ -103,11 +126,12 @@
         if (!isBrowserOffline() && !abortWarm) {
             return false;
         }
-        abortWarm = true;
+        killInFlightFetches();
+        pendingResume = true;
         try {
             var box = root.document.getElementById('rateb-offline-warm-progress');
             if (box) {
-                box.textContent = 'توقف التسخين — وصّل النت لإكمال حفظ الأوفلاين';
+                box.textContent = 'توقف التسخين — وصّل النت ليُكمل تلقائياً';
                 box.style.background = '#7f1d1d';
             }
         } catch (e) { /* ignore */ }
@@ -438,37 +462,64 @@
         }
     }
 
-    function fetchAndCache(href) {
+    function fetchAndCache(href, signal) {
         if (abortWarm || stopWarmBannerIfOffline()) {
             return Promise.resolve(false);
         }
-        return root.fetch(href, {
-            credentials: 'same-origin',
-            cache: 'no-cache',
-            headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
-        }).then(function (res) {
+        // Prefer already-cached copies — avoids network while SW/Browser cache has the file.
+        var matchPromise = root.caches
+            ? root.caches.match(href).catch(function () { return null; })
+            : Promise.resolve(null);
+        return matchPromise.then(function (cached) {
             if (abortWarm || stopWarmBannerIfOffline()) {
                 return false;
             }
-            if (!res || res.status !== 200) {
-                return false;
-            }
-            var ct = String(res.headers.get('Content-Type') || '');
-            if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href) || /\/pos(\/|$)/i.test(href)) {
-                return res.clone().text().then(function (html) {
-                    if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
-                        return false;
-                    }
-                    return putIntoCaches(href, res).then(function (ok) {
-                        if (ok && warmQueueSeen && warmQueueList) {
-                            harvestLinksFromHtml(html, warmQueueSeen, warmQueueList);
-                        }
-                        return ok;
-                    });
+            if (cached && cached.ok) {
+                return putIntoCaches(href, cached).then(function (ok) {
+                    return !!ok;
                 });
             }
-            return putIntoCaches(href, res);
-        }).catch(function () {
+            if (isBrowserOffline()) {
+                stopWarmBannerIfOffline();
+                return false;
+            }
+            var opts = {
+                credentials: 'same-origin',
+                cache: 'force-cache',
+                headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+            };
+            if (signal) {
+                opts.signal = signal;
+            }
+            return root.fetch(href, opts).then(function (res) {
+                if (abortWarm || stopWarmBannerIfOffline()) {
+                    return false;
+                }
+                if (!res || res.status !== 200) {
+                    return false;
+                }
+                var ct = String(res.headers.get('Content-Type') || '');
+                if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href) || /\/pos(\/|$)/i.test(href)) {
+                    return res.clone().text().then(function (html) {
+                        if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
+                            return false;
+                        }
+                        return putIntoCaches(href, res).then(function (ok) {
+                            if (ok && warmQueueSeen && warmQueueList) {
+                                harvestLinksFromHtml(html, warmQueueSeen, warmQueueList);
+                            }
+                            return ok;
+                        });
+                    });
+                }
+                return putIntoCaches(href, res);
+            });
+        }).catch(function (err) {
+            try {
+                if (err && (err.name === 'AbortError' || abortWarm || isBrowserOffline())) {
+                    return false;
+                }
+            } catch (e) { /* ignore */ }
             return false;
         });
     }
@@ -478,7 +529,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v27';
+        var build = '20260713-force-sw-v28';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -489,6 +540,7 @@
             'assets/offline/erp-offline-nav-guard.js',
             'assets/offline/ops-page-allowlist.json',
             'offline-shell.html',
+            'connectivity-probe.json',
             'assets/css/variables.css',
             'assets/css/main.css',
             'assets/css/components.css',
@@ -530,7 +582,7 @@
         try {
             root.document.querySelectorAll('link[rel="stylesheet"][href], script[src]').forEach(function (node) {
                 var href = node.getAttribute('href') || node.getAttribute('src') || '';
-                if (/\/assets\/(css|js|vendor|offline)\//i.test(href) || /\/connectivity-probe\.json/i.test(href)) {
+                if (/\/assets\/(css|js|vendor|offline)\//i.test(href) || /connectivity-probe\.json/i.test(href)) {
                     try {
                         push(new URL(href, root.location.href).href);
                     } catch (eU) { /* ignore */ }
@@ -544,27 +596,39 @@
         return out;
     }
 
-    function runQueue(urls) {
+    function runQueue(urls, opts) {
+        opts = opts || {};
+        var concurrency = opts.concurrency || CONCURRENCY;
+        var gapMs = typeof opts.gapMs === 'number' ? opts.gapMs : GAP_MS;
+        var signal = opts.signal;
         var i = 0;
         var active = 0;
         var finished = 0;
         var ok = 0;
+        var settled = false;
         return new Promise(function (resolve) {
+            function finish(result) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                resolve(result);
+            }
             function pump() {
                 if (abortWarm || stopWarmBannerIfOffline()) {
                     if (active === 0) {
-                        resolve({ total: urls.length, ok: ok, aborted: true });
+                        finish({ total: urls.length, ok: ok, aborted: true });
                     }
                     return;
                 }
                 if (finished >= urls.length && active === 0) {
-                    resolve({ total: urls.length, ok: ok });
+                    finish({ total: urls.length, ok: ok });
                     return;
                 }
-                while (!abortWarm && active < CONCURRENCY && i < urls.length) {
+                while (!abortWarm && active < concurrency && i < urls.length) {
                     (function (href) {
                         active += 1;
-                        fetchAndCache(href).then(function (saved) {
+                        fetchAndCache(href, signal).then(function (saved) {
                             if (saved) {
                                 ok += 1;
                                 progress.ok = ok;
@@ -574,7 +638,7 @@
                             finished += 1;
                             progress.finished = finished;
                             updateProgressUi();
-                            setTimeout(pump, GAP_MS);
+                            setTimeout(pump, gapMs);
                         });
                     })(urls[i++]);
                 }
@@ -595,91 +659,138 @@
             return Promise.resolve({ skipped: true, reason: 'no_cache_api' });
         }
         if (isBrowserOffline()) {
+            pendingResume = true;
             return Promise.resolve({ skipped: true, reason: 'offline' });
         }
         running = true;
         abortWarm = false;
-        var seen = {};
-        var urls = [];
-        // Identity / CSS first — required for offline design + shell unlock.
-        criticalAssetUrls().forEach(function (u) {
-            if (urls.indexOf(u) === -1) {
-                urls.push(u);
+        pendingResume = false;
+        var signal = newWarmSignal();
+        var assetUrls = criticalAssetUrls();
+        ensureProgressUi(Math.max(assetUrls.length, 40));
+        try {
+            var boxA = root.document.getElementById('rateb-offline-warm-progress');
+            if (boxA) {
+                boxA.textContent = 'حفظ التصميم أوفلاين…';
+                boxA.style.background = '#1e3a5f';
             }
-        });
-        // POS register early — dashboard alone must not be the offline shell.
-        var posFirst = [
-            root.location.origin + publicBase() + 'admin/ops/pos/register',
-            root.location.origin + publicBase() + 'pos/register',
-            root.location.origin + publicBase() + 'admin/ops/pos'
-        ];
-        posFirst.forEach(function (u) {
-            pushUrl(seen, urls, u);
-        });
-        seedCoreUrls(seen, urls);
-        collectSidebarUrls(seen, urls);
-        collectActionUrls(seen, urls);
-        return loadAllowlistUrls(seen, urls).then(function (list) {
-            deriveCreateUrls(seen, list);
-            collectActionUrls(seen, list);
-            warmQueueSeen = seen;
-            warmQueueList = list;
-            ensureProgressUi(list.length);
+            console.info('[RATIB OFFLINE] asset warm start', assetUrls.length);
+        } catch (eA) { /* ignore */ }
+
+        // Phase 1: CSS/JS/vendor ONLY — finish before any page warm so design works offline early.
+        return runQueue(assetUrls, { concurrency: 4, gapMs: 40, signal: signal }).then(function (assetStats) {
+            if (assetStats.aborted) {
+                return assetStats;
+            }
             try {
-                console.info('[RATIB OFFLINE] full warm start', list.length, 'urls');
-            } catch (eLog) { /* ignore */ }
-            return runQueue(list).then(function (stats) {
-                warmQueueSeen = null;
-                warmQueueList = null;
-                if (!stats.aborted) {
-                    markWarmed(stats.ok || 0);
-                }
-                try {
-                    if (root.RatebOfflineNavGuard && typeof root.RatebOfflineNavGuard.scan === 'function') {
-                        root.RatebOfflineNavGuard.scan();
-                    }
-                } catch (eNav) { /* ignore */ }
-                try {
-                    var box2 = root.document.getElementById('rateb-offline-warm-progress');
-                    if (box2) {
-                        if (stats.aborted) {
-                            box2.textContent = 'توقف التسخين: ' + (stats.ok || 0) + '/' + (stats.total || 0) + ' — وصّل النت وأعد المحاولة';
-                            box2.style.background = '#7f1d1d';
-                        } else {
-                            box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
-                            box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
-                            setTimeout(function () {
-                                try { box2.remove(); } catch (eR) { /* ignore */ }
-                            }, 8000);
-                        }
-                    }
-                    console.info('[RATIB OFFLINE] full warm done', stats);
-                } catch (e2) { /* ignore */ }
-                return stats;
+                root.localStorage.setItem(ASSETS_KEY, String(assetStats.ok || 0));
+            } catch (eAs) { /* ignore */ }
+            if (abortWarm || isBrowserOffline()) {
+                return { total: assetStats.total, ok: assetStats.ok, aborted: true, phase: 'assets' };
+            }
+            var seen = {};
+            var urls = [];
+            assetUrls.forEach(function (u) { seen[u] = true; });
+            var posFirst = [
+                root.location.origin + publicBase() + 'admin/ops/pos/register',
+                root.location.origin + publicBase() + 'pos/register',
+                root.location.origin + publicBase() + 'admin/ops/pos'
+            ];
+            posFirst.forEach(function (u) {
+                pushUrl(seen, urls, u);
             });
+            seedCoreUrls(seen, urls);
+            collectSidebarUrls(seen, urls);
+            collectActionUrls(seen, urls);
+            return loadAllowlistUrls(seen, urls).then(function (list) {
+                deriveCreateUrls(seen, list);
+                collectActionUrls(seen, list);
+                warmQueueSeen = seen;
+                warmQueueList = list;
+                progress.ok = assetStats.ok || 0;
+                progress.finished = assetStats.ok || 0;
+                ensureProgressUi(list.length + (assetStats.total || 0));
+                try {
+                    console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
+                } catch (eLog) { /* ignore */ }
+                return runQueue(list, { signal: signal }).then(function (pageStats) {
+                    return {
+                        total: (assetStats.total || 0) + (pageStats.total || 0),
+                        ok: (assetStats.ok || 0) + (pageStats.ok || 0),
+                        aborted: !!pageStats.aborted,
+                        assetsOk: assetStats.ok || 0,
+                        pagesOk: pageStats.ok || 0
+                    };
+                });
+            });
+        }).then(function (stats) {
+            warmQueueSeen = null;
+            warmQueueList = null;
+            if (!stats.aborted) {
+                markWarmed(stats.ok || 0);
+            } else {
+                pendingResume = true;
+            }
+            try {
+                if (root.RatebOfflineNavGuard && typeof root.RatebOfflineNavGuard.scan === 'function') {
+                    root.RatebOfflineNavGuard.scan();
+                }
+            } catch (eNav) { /* ignore */ }
+            try {
+                var box2 = root.document.getElementById('rateb-offline-warm-progress');
+                if (box2) {
+                    if (stats.aborted) {
+                        box2.textContent = 'توقف التسخين: ' + (stats.ok || 0) + '/' + (stats.total || 0) + ' — وصّل النت ليُكمل تلقائياً';
+                        box2.style.background = '#7f1d1d';
+                    } else {
+                        box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
+                        box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
+                        setTimeout(function () {
+                            try { box2.remove(); } catch (eR) { /* ignore */ }
+                        }, 8000);
+                    }
+                }
+                console.info('[RATIB OFFLINE] full warm done', stats);
+            } catch (e2) { /* ignore */ }
+            return stats;
         }).finally(function () {
             running = false;
         });
     }
 
     function schedule() {
-        var run = function () {
-            startFullWarm({ force: forceWarmRequested() });
+        var run = function (force) {
+            startFullWarm({ force: !!force || forceWarmRequested() });
         };
         try {
             root.addEventListener('offline', function () {
-                abortWarm = true;
+                killInFlightFetches();
                 stopWarmBannerIfOffline();
+            });
+            root.addEventListener('online', function () {
+                if (!pendingResume && !forceWarmRequested()) {
+                    try {
+                        var ok = parseInt(root.localStorage.getItem(SUCCESS_KEY) || '0', 10) || 0;
+                        var at = parseInt(root.localStorage.getItem(STORAGE_KEY) || '0', 10) || 0;
+                        if (ok >= MIN_OK && at > 0 && (Date.now() - at) < WARM_TTL_MS) {
+                            return;
+                        }
+                    } catch (eT) { /* ignore */ }
+                }
+                pendingResume = false;
+                setTimeout(function () {
+                    run(true);
+                }, 1200);
             });
         } catch (eOff) { /* ignore */ }
         if (root.document && root.document.readyState === 'complete') {
-            setTimeout(run, 600);
+            setTimeout(function () { run(false); }, 600);
         } else if (root.addEventListener) {
             root.addEventListener('load', function () {
-                setTimeout(run, 600);
+                setTimeout(function () { run(false); }, 600);
             }, { once: true });
         } else {
-            setTimeout(run, 1000);
+            setTimeout(function () { run(false); }, 1000);
         }
     }
 
