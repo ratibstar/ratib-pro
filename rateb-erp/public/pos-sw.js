@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v22';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v28';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v28';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v23';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v29';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v29';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -382,7 +382,7 @@ function erpAdminOfflineFallback(request, url) {
             });
         });
     }).catch(function () {
-        return uncachedAdminBrowseResponse(url);
+        return matchOfflineShellOrInline(request);
     });
 }
 

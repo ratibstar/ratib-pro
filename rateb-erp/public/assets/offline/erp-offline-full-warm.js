@@ -12,7 +12,7 @@
     var CONCURRENCY = 3;
     var GAP_MS = 400;
     var MIN_OK = 12;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v28';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v29';
     var running = false;
 
     function publicBase() {
@@ -59,7 +59,9 @@
 
     function forceWarmRequested() {
         try {
-            return /[?&]rateb_warm=1(?:&|$)/.test(String(root.location.search || ''));
+            var q = String(root.location.search || '');
+            return /[?&]rateb_warm=1(?:&|$)/.test(q)
+                || /[?&]rateb_sw_reset=1(?:&|$)/.test(q);
         } catch (e) {
             return false;
         }
@@ -383,14 +385,15 @@
         var run = function () {
             startFullWarm({ force: forceWarmRequested() });
         };
-        if (typeof root.requestIdleCallback === 'function') {
-            root.requestIdleCallback(run, { timeout: 8000 });
-        } else if (root.document && root.document.readyState === 'complete') {
-            setTimeout(run, 2000);
+        // Start quickly after paint — idle delay made warm feel "unchanged".
+        if (root.document && root.document.readyState === 'complete') {
+            setTimeout(run, 800);
         } else if (root.addEventListener) {
             root.addEventListener('load', function () {
-                setTimeout(run, 2000);
+                setTimeout(run, 800);
             }, { once: true });
+        } else {
+            setTimeout(run, 1200);
         }
     }
 
