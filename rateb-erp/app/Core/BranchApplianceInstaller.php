@@ -20,6 +20,7 @@ final class BranchApplianceInstaller
         'pdo_sqlite',
         'sqlite3',
         'json',
+        'gd',
     ];
 
     /** @var list<string> */

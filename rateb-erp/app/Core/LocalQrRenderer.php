@@ -16,6 +16,11 @@ final class LocalQrRenderer
         if ($payload === '' || strlen($payload) > 500) {
             return '';
         }
+        if (!extension_loaded('gd')) {
+            throw new \RuntimeException(
+                'Branch Appliance QR requires PHP GD extension. Start with: php -d extension=gd …'
+            );
+        }
 
         $size = max(120, min(500, $size));
         self::ensureLibrary();

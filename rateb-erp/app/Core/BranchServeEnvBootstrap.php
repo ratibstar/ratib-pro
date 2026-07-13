@@ -19,20 +19,26 @@ final class BranchServeEnvBootstrap
         self::$applied = false;
     }
 
-    public static function apply(string $erpRoot): void
+    /**
+     * @param bool $force Re-apply after config/.env load so appliance keys win over cloud defaults.
+     */
+    public static function apply(string $erpRoot, bool $force = false): void
     {
-        if (self::$applied) {
+        if (self::$applied && !$force) {
             return;
         }
-        self::$applied = true;
 
         if (self::isServerCloudLocked()) {
+            self::$applied = true;
+
             return;
         }
 
         $erpRoot = str_replace('\\', '/', rtrim($erpRoot, '/'));
         $serveEnv = $erpRoot . '/storage/branch/serve.env';
         if (!is_readable($serveEnv)) {
+            self::$applied = true;
+
             return;
         }
 
@@ -47,12 +53,15 @@ final class BranchServeEnvBootstrap
                 continue;
             }
             $value = trim($value);
-            if (self::hasTrustedServerValue($key)) {
+            // On first apply, skip keys already injected by the web server.
+            // On force re-apply (post-config), appliance serve.env always wins.
+            if (!$force && self::hasTrustedServerValue($key)) {
                 continue;
             }
             putenv($key . '=' . $value);
             $_ENV[$key] = $value;
         }
+        self::$applied = true;
     }
 
     private static function isServerCloudLocked(): bool

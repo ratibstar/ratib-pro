@@ -56,6 +56,23 @@ if (!extension_loaded('pdo_sqlite')) {
     fwrite(STDERR, "pdo_sqlite required\n");
     exit(1);
 }
+if (!extension_loaded('gd')) {
+    // Try enable for this process before spawning child.
+    if (function_exists('dl') === false) {
+        // no-op
+    }
+}
+$missing = [];
+foreach (['pdo_sqlite', 'sqlite3', 'gd'] as $ext) {
+    if (!extension_loaded($ext)) {
+        $missing[] = $ext;
+    }
+}
+if ($missing !== []) {
+    fwrite(STDERR, "RATEB Branch Appliance missing PHP extensions: " . implode(', ', $missing) . "\n");
+    fwrite(STDERR, "Start with: php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd bin/hybrid-branch-serve.php\n");
+    exit(1);
+}
 
 $docRoot = $root . '/public';
 $router = $root . '/public/index.php';
@@ -68,6 +85,7 @@ $cmd = [
     PHP_BINARY,
     '-d', 'extension=pdo_sqlite',
     '-d', 'extension=sqlite3',
+    '-d', 'extension=gd',
     '-S', "{$host}:{$port}",
     '-t', $docRoot,
     $router,

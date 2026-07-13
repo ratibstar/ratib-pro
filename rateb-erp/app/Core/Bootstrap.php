@@ -179,6 +179,10 @@ final class Bootstrap
             SessionManager::start();
         }
         self::loadConfig($basePath);
+        // Parent .env / cloud defaults must not override branch serve.env (sync sink, sqlite path).
+        if (is_file($branchServeBootstrap)) {
+            BranchServeEnvBootstrap::apply($basePath, true);
+        }
         if (function_exists('rateb_apply_agency_erp_request_binding')) {
             rateb_apply_agency_erp_request_binding();
         }
@@ -225,6 +229,10 @@ final class Bootstrap
             require_once $entities;
         }
         self::loadConfig($basePath);
+        // Parent .env / cloud defaults must not override branch serve.env (sync sink, sqlite path).
+        if (is_file($branchServeBootstrap)) {
+            BranchServeEnvBootstrap::apply($basePath, true);
+        }
     }
 
     /**
