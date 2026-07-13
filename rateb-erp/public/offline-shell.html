@@ -161,9 +161,11 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
   function loadOfflineScript(relPath) {
     var base = publicBase();
     var plain = base + relPath;
-    var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=oid-20260713-lean';
-    return loadScript(plain, 3500).catch(function () {
-      return loadScript(bust, 3500);
+    var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=20260713-inline-shell-v30';
+    return loadScript(plain, 8000).catch(function () {
+      return loadScript(bust, 8000);
+    }).catch(function () {
+      return loadScript(base + 'assets/offline/rateb-offline.min.js', 8000);
     });
   }
 

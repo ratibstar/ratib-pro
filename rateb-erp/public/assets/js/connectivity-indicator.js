@@ -83,7 +83,8 @@
             headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (res) {
-            return !!(res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419));
+            // Any HTTP response from origin means the network path works (status may 404).
+            return !!res;
         }).catch(function () {
             return false;
         }).finally(function () {

@@ -1,6 +1,6 @@
 /**
- * RATEB ERP — Full Admin offline warm (Cache API, no postMessage HTML).
- * postMessage of large HTML was silently failing → "الصفحة غير محفوظة أوفلاين".
+ * RATEB ERP — Full Admin offline warm (Cache API).
+ * Fixes: logout≠login false skip; live progress; cache identity JS first.
  */
 (function (root) {
     'use strict';
@@ -10,10 +10,12 @@
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
     var MAX_URLS = 200;
     var CONCURRENCY = 3;
-    var GAP_MS = 400;
-    var MIN_OK = 12;
+    var GAP_MS = 350;
+    var MIN_OK = 8;
     var CACHE_NAME = 'rateb-erp-ops-pages-v30';
+    var COEXIST = 'rateb-erp-coexist-v24';
     var running = false;
+    var progress = { finished: 0, ok: 0, total: 0 };
 
     function publicBase() {
         try {
@@ -118,6 +120,18 @@
         }
     }
 
+    function looksLikeLoginHtml(html) {
+        var head = String(html || '').slice(0, 2500);
+        // Do NOT use /login/i — it matches "logout".
+        if (/\/login(\/|"|'|\?|#)/i.test(head) && /name=["']password["']/i.test(head)) {
+            return true;
+        }
+        if (/name=["']password["']/i.test(head) && /name=["'](email|username)["']/i.test(head)) {
+            return true;
+        }
+        return false;
+    }
+
     function pushUrl(seen, out, href) {
         if (out.length >= MAX_URLS) {
             return;
@@ -138,39 +152,20 @@
         var base = publicBase();
         var origin = root.location.origin;
         var core = [
-            'admin',
-            'admin/',
-            'admin/companies',
-            'admin/agency-updates',
-            'admin/executive-dashboard',
-            'admin/notifications',
-            'admin/profile',
-            'admin/ops/branch-dashboard',
-            'admin/ops/branch-dashboard/compare',
+            'admin', 'admin/', 'admin/companies', 'admin/agency-updates',
+            'admin/executive-dashboard', 'admin/notifications', 'admin/profile',
+            'admin/ops/branch-dashboard', 'admin/ops/branch-dashboard/compare',
             'admin/ops/branch-dashboard/reports',
-            'admin/oversight/companies-approvals',
-            'admin/oversight/approvals',
-            'admin/oversight/procurement',
-            'admin/oversight/rfq',
-            'admin/oversight/inventory',
-            'admin/oversight/supplier-evaluations',
+            'admin/oversight/companies-approvals', 'admin/oversight/approvals',
+            'admin/oversight/procurement', 'admin/oversight/rfq',
+            'admin/oversight/inventory', 'admin/oversight/supplier-evaluations',
             'admin/oversight/workflows',
-            'admin/ops/purchase-requests',
-            'admin/ops/purchase-orders',
-            'admin/ops/rfq',
-            'admin/ops/quotations',
-            'admin/ops/inventory',
-            'admin/ops/warehouses',
-            'admin/ops/stock-movements',
-            'admin/ops/product-categories',
-            'admin/ops/suppliers',
-            'admin/ops/hr/attendance',
-            'admin/ops/hr/leaves',
-            'admin/hr/attendance',
-            'admin/hr/leaves',
-            'admin/ops/goods-receipts',
-            'admin/ops/warehouse-transfers',
-            'admin/ops/inventory-audits'
+            'admin/ops/purchase-requests', 'admin/ops/purchase-orders',
+            'admin/ops/rfq', 'admin/ops/quotations', 'admin/ops/inventory',
+            'admin/ops/warehouses', 'admin/ops/stock-movements',
+            'admin/ops/product-categories', 'admin/ops/suppliers',
+            'admin/hr/attendance', 'admin/hr/leaves',
+            'admin/ops/goods-receipts', 'admin/ops/warehouse-transfers'
         ];
         core.forEach(function (rel) {
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
@@ -219,7 +214,38 @@
         });
     }
 
-    function cacheKeysFor(href) {
+    function updateProgressUi() {
+        try {
+            var box = root.document.getElementById('rateb-offline-warm-progress');
+            if (!box) {
+                return;
+            }
+            box.textContent = 'تجهيز الأوفلاين… ' + progress.ok + '/' + progress.total
+                + ' (تمت ' + progress.finished + ')';
+        } catch (e) { /* ignore */ }
+    }
+
+    function ensureProgressUi(total) {
+        progress = { finished: 0, ok: 0, total: total };
+        try {
+            var el = root.document.getElementById('rateb-offline-warm-progress');
+            if (!el) {
+                el = root.document.createElement('div');
+                el.id = 'rateb-offline-warm-progress';
+                el.setAttribute('role', 'status');
+                el.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:99999;padding:8px 12px;'
+                    + 'background:#1e3a5f;color:#e8eaed;font:12px/1.4 system-ui,sans-serif;border-radius:8px;'
+                    + 'opacity:.95;max-width:18rem';
+                root.document.body.appendChild(el);
+            }
+            updateProgressUi();
+        } catch (e) { /* ignore */ }
+    }
+
+    function putIntoCaches(href, response) {
+        if (!root.caches) {
+            return Promise.resolve(false);
+        }
         var keys = [href];
         try {
             var u = new URL(href);
@@ -227,6 +253,9 @@
             var bare = u.pathname.replace(/\/+$/, '');
             keys.push(u.origin + bare);
             keys.push(u.origin + bare + '/');
+            if (u.search) {
+                keys.push(u.origin + u.pathname + u.search);
+            }
         } catch (e) { /* ignore */ }
         var uniq = [];
         keys.forEach(function (k) {
@@ -234,30 +263,18 @@
                 uniq.push(k);
             }
         });
-        return uniq;
-    }
-
-    /** Cache API only — never postMessage large HTML (quota / clone failures). */
-    function putHtml(href, html) {
-        if (!root.caches) {
-            return Promise.resolve(false);
-        }
-        var res = new Response(html, {
-            status: 200,
-            headers: {
-                'Content-Type': 'text/html; charset=utf-8',
-                'X-Rateb-Offline': '1',
-                'X-Rateb-Ops-Page': '1',
-                'Cache-Control': 'no-store'
-            }
-        });
-        var keys = cacheKeysFor(href);
-        return root.caches.open(CACHE_NAME).then(function (cache) {
-            return Promise.all(keys.map(function (k) {
-                return cache.put(k, res.clone()).catch(function () { return null; });
-            })).then(function () {
-                return true;
-            });
+        return Promise.all([
+            root.caches.open(CACHE_NAME),
+            root.caches.open(COEXIST)
+        ]).then(function (pair) {
+            var ops = pair[0];
+            var co = pair[1];
+            return Promise.all(uniq.map(function (k) {
+                return Promise.all([
+                    ops.put(k, response.clone()).catch(function () { return null; }),
+                    co.put(k, response.clone()).catch(function () { return null; })
+                ]);
+            })).then(function () { return true; });
         }).catch(function () {
             return false;
         });
@@ -267,27 +284,50 @@
         return root.fetch(href, {
             credentials: 'same-origin',
             cache: 'no-cache',
-            headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+            headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
         }).then(function (res) {
             if (!res || res.status !== 200) {
                 return false;
             }
-            return res.text().then(function (html) {
-                if (!html || html.length < 400) {
-                    return false;
-                }
-                var head = String(html).slice(0, 1200);
-                if (/page not found/i.test(head) && /\b404\b/.test(head)) {
-                    return false;
-                }
-                if (/name=["']password["']/i.test(head) && /login/i.test(head)) {
-                    return false;
-                }
-                return putHtml(href, html);
-            });
+            var ct = String(res.headers.get('Content-Type') || '');
+            if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href)) {
+                return res.clone().text().then(function (html) {
+                    if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
+                        return false;
+                    }
+                    return putIntoCaches(href, res);
+                });
+            }
+            return putIntoCaches(href, res);
         }).catch(function () {
             return false;
         });
+    }
+
+    function criticalAssetUrls() {
+        var base = root.location.origin + publicBase();
+        var files = [
+            'assets/offline/rateb-offline.js',
+            'assets/offline/rateb-offline.min.js',
+            'assets/offline/erp-offline-shell-auth.js',
+            'assets/offline/erp-offline-shell-rbac.js',
+            'assets/offline/erp-shell-bootstrap.js',
+            'assets/offline/erp-offline-full-warm.js',
+            'assets/offline/ops-page-allowlist.json',
+            'offline-shell.html',
+            'assets/css/variables.css',
+            'assets/css/main.css',
+            'assets/css/components.css',
+            'assets/css/dark.css',
+            'assets/css/rtl.css'
+        ];
+        var out = [];
+        files.forEach(function (f) {
+            out.push(base + f);
+            out.push(base + f + '?v=20260713-inline-shell-v30');
+            out.push(base + f + '?v=oid-20260713-lean');
+        });
+        return out;
     }
 
     function runQueue(urls) {
@@ -307,10 +347,13 @@
                         fetchAndCache(href).then(function (saved) {
                             if (saved) {
                                 ok += 1;
+                                progress.ok = ok;
                             }
                         }).finally(function () {
                             active -= 1;
                             finished += 1;
+                            progress.finished = finished;
+                            updateProgressUi();
                             setTimeout(pump, GAP_MS);
                         });
                     })(urls[i++]);
@@ -334,43 +377,29 @@
         running = true;
         var seen = {};
         var urls = [];
+        // Identity / CSS first — required for offline-shell unlock.
+        criticalAssetUrls().forEach(function (u) {
+            if (urls.indexOf(u) === -1) {
+                urls.push(u);
+            }
+        });
         seedCoreUrls(seen, urls);
         collectSidebarUrls(seen, urls);
         return loadAllowlistUrls(seen, urls).then(function (list) {
+            ensureProgressUi(list.length);
             try {
-                console.info('[RATIB OFFLINE] full warm start', list.length, 'urls cache=' + CACHE_NAME);
+                console.info('[RATIB OFFLINE] full warm start', list.length, 'urls');
             } catch (eLog) { /* ignore */ }
-            // Show tiny progress for the user once.
-            try {
-                if (!root.document.getElementById('rateb-offline-warm-progress')) {
-                    var el = root.document.createElement('div');
-                    el.id = 'rateb-offline-warm-progress';
-                    el.setAttribute('role', 'status');
-                    el.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:99999;padding:8px 12px;'
-                        + 'background:#1e3a5f;color:#e8eaed;font:12px/1.4 system-ui,sans-serif;border-radius:8px;'
-                        + 'opacity:.92;max-width:16rem';
-                    el.textContent = 'تجهيز الأوفلاين… 0/' + list.length;
-                    root.document.body.appendChild(el);
-                }
-            } catch (eUi) { /* ignore */ }
-            var progressTimer = setInterval(function () {
-                try {
-                    var box = root.document.getElementById('rateb-offline-warm-progress');
-                    if (box) {
-                        /* updated after queue via final message */
-                    }
-                } catch (eP) { /* ignore */ }
-            }, 2000);
             return runQueue(list).then(function (stats) {
-                clearInterval(progressTimer);
                 markWarmed(stats.ok || 0);
                 try {
                     var box2 = root.document.getElementById('rateb-offline-warm-progress');
                     if (box2) {
                         box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
+                        box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
                         setTimeout(function () {
                             try { box2.remove(); } catch (eR) { /* ignore */ }
-                        }, 5000);
+                        }, 8000);
                     }
                     console.info('[RATIB OFFLINE] full warm done', stats);
                 } catch (e2) { /* ignore */ }
@@ -385,15 +414,14 @@
         var run = function () {
             startFullWarm({ force: forceWarmRequested() });
         };
-        // Start quickly after paint — idle delay made warm feel "unchanged".
         if (root.document && root.document.readyState === 'complete') {
-            setTimeout(run, 800);
+            setTimeout(run, 600);
         } else if (root.addEventListener) {
             root.addEventListener('load', function () {
-                setTimeout(run, 800);
+                setTimeout(run, 600);
             }, { once: true });
         } else {
-            setTimeout(run, 1200);
+            setTimeout(run, 1000);
         }
     }
 

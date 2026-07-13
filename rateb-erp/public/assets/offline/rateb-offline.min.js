@@ -352,11 +352,7 @@
                 setOnline(true);
                 return true;
             }
-            if (res && (res.ok || res.status === 401 || res.status === 403 || res.status === 419)) {
-                setOnline(true);
-                return true;
-            }
-            // Got an HTTP response → network works; keep prior state if status API is odd.
+            // Any HTTP response (incl. 404 on status) proves the origin is reachable.
             if (res) {
                 setOnline(true);
                 return true;
@@ -364,7 +360,6 @@
             setOnline(false);
             return false;
         }).catch(function () {
-            // Failed fetch = no real internet (do not trust navigator.onLine soft-fail).
             setOnline(false);
             return false;
         }).finally(function () {
