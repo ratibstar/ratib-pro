@@ -295,6 +295,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/js/connectivity-indicator.js",
     "rateb-erp/views/partials/sidebar-ops-nav.php",
     "rateb-erp/views/layouts/main.php",
+    "rateb-erp/config/app.php",
     "rateb-erp/offline/OfflineModule.php",
     "rateb-platform-catalog/.htaccess",
     "rateb-platform-catalog/public/index.php",

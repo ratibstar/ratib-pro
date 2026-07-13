@@ -169,6 +169,61 @@
         } catch (e2) { /* ignore */ }
     }
 
+    function defaultLeanModules() {
+        var base = publicBase();
+        if (base.slice(-1) !== '/') {
+            base += '/';
+        }
+        var admin = base + 'admin/';
+        var ops = admin + 'ops/';
+        return [
+            { href: admin, label: 'لوحة التحكم' },
+            { href: ops + 'purchase-requests', label: 'طلبات الشراء' },
+            { href: ops + 'purchase-orders', label: 'أوامر الشراء' },
+            { href: ops + 'rfq', label: 'طلبات عروض الأسعار' },
+            { href: ops + 'quotations', label: 'عروض الموردين' },
+            { href: ops + 'inventory', label: 'المخزون' },
+            { href: ops + 'warehouses', label: 'المستودعات' },
+            { href: ops + 'stock-movements', label: 'حركات المخزون' },
+            { href: ops + 'suppliers', label: 'الموردون' },
+            { href: ops + 'hr/attendance', label: 'الحضور' },
+            { href: ops + 'hr/leaves', label: 'الإجازات' },
+            { href: admin + 'notifications', label: 'الإشعارات' },
+            { href: admin + 'profile', label: 'إعدادات الملف' }
+        ];
+    }
+
+    function ensureLeanSidebar(items) {
+        var aside = root.document.querySelector('aside.rateb-sidebar, aside.rateb-offline-shell-nav, #rateb-sidebar');
+        if (!aside) {
+            aside = root.document.createElement('aside');
+            aside.className = 'rateb-sidebar rateb-offline-shell-nav';
+            aside.id = 'rateb-sidebar';
+            aside.setAttribute('aria-label', 'Offline nav');
+            var shellRoot = $('shell-root');
+            if (shellRoot && shellRoot.firstChild) {
+                shellRoot.insertBefore(aside, shellRoot.firstChild);
+            } else if (shellRoot) {
+                shellRoot.appendChild(aside);
+            } else {
+                root.document.body.insertBefore(aside, root.document.body.firstChild);
+            }
+        }
+        var existing = aside.querySelectorAll('a[href]');
+        if (existing && existing.length) {
+            return;
+        }
+        var html = '<div class="rateb-sidebar-brand"><span>نظام رتب ERP</span></div><nav>';
+        (items || defaultLeanModules()).forEach(function (it) {
+            html += '<a class="rateb-nav-link rateb-offline-rbac-link" href="'
+                + String(it.href).replace(/"/g, '&quot;') + '">'
+                + String(it.label).replace(/</g, '&lt;') + '</a>';
+        });
+        html += '</nav>';
+        aside.innerHTML = html;
+        aside.classList.add('rateb-sidebar', 'rateb-offline-shell-nav');
+    }
+
     function fillModuleHomeFromNav() {
         var host = root.document.getElementById('rateb-offline-module-links');
         if (!host) {
@@ -194,8 +249,8 @@
             });
         });
         if (!items.length) {
-            host.innerHTML = '<p class="text-muted">لا توجد وحدات محفوظة للتصفح أوفلاين بعد. ادخل أونلاين مرة (مع قائمة النظام ظاهرة) ثم أعد المحاولة أوفلاين.</p>';
-            return;
+            items = defaultLeanModules();
+            ensureLeanSidebar(items);
         }
         var html = '<div class="list-group">';
         items.forEach(function (it) {
