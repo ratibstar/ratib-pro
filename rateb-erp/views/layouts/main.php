@@ -598,6 +598,48 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       window.addEventListener('load', function () { setTimeout(run, 3000); }, { once: true });
     }
   }
+  function isAdminDashboardPath(pathname) {
+    return /(^|\/)admin$/i.test(String(pathname || '').replace(/\/+$/, ''));
+  }
+  function isOfflineShellUi() {
+    return !!(document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]'));
+  }
+  // Offline + already on live لوحة التحكم: do not reload into offline-shell home.
+  document.addEventListener('click', function (ev) {
+    try {
+      if (navigator.onLine !== false) return;
+      if (isOfflineShellUi()) return;
+      if (!isAdminDashboardPath(location.pathname)) return;
+      var a = ev.target && ev.target.closest ? ev.target.closest('a') : null;
+      if (!a || !a.href) return;
+      var u = new URL(a.href, location.href);
+      if (u.origin !== location.origin) return;
+      if (!isAdminDashboardPath(u.pathname)) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      try { window.scrollTo(0, 0); } catch (eScroll) {}
+    } catch (eClick) { /* ignore */ }
+  }, true);
+  // Cache live dashboard HTML so offline "لوحة التحكم" keeps the same page.
+  function cacheLiveDashboard() {
+    try {
+      if (!isAdminDashboardPath(location.pathname)) return;
+      if (isOfflineShellUi()) return;
+      if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+      var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CACHE_ERP_OPS_PAGE',
+        url: location.href,
+        path: location.pathname,
+        html: html
+      });
+    } catch (eCache) { /* ignore */ }
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(cacheLiveDashboard, 1500);
+  } else {
+    window.addEventListener('load', function () { setTimeout(cacheLiveDashboard, 1500); }, { once: true });
+  }
   // Escape hatch: stale SW offline shell while Wi‑Fi is up.
   try {
     if (navigator.onLine !== false

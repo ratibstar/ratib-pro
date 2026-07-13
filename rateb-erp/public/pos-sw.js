@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v16';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v22';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v22';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v17';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v23';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v23';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -202,12 +202,16 @@ function erpInlineShellResponse() {
 
 function matchErpOpsPath(pathname) {
     var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+    // Exact Admin dashboard (/…/admin) — not /admin/ops/…
+    if (/(^|\/)admin$/.test(p)) {
+        return 'admin';
+    }
     var sorted = ERP_OPS_PATHS.slice().sort(function (a, b) {
         return String(b).length - String(a).length;
     });
     for (var i = 0; i < sorted.length; i++) {
         var a = String(sorted[i] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-        if (!a) {
+        if (!a || a === 'admin') {
             continue;
         }
         var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
@@ -371,6 +375,61 @@ function erpAdminOfflineFallback(request, url) {
         if (opsHit) {
             return opsHit;
         }
+        // Dashboard (/admin): prefer any cached admin HTML over generic offline-shell home.
+        var pathNorm = '';
+        try {
+            pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
+        } catch (eP) { /* ignore */ }
+        if (/(^|\/)admin$/i.test(pathNorm)) {
+            return matchCachedAdminDashboard(url).then(function (dash) {
+                if (dash) {
+                    return dash;
+                }
+                return matchOfflineShellOrInline(request);
+            });
+        }
+        return matchOfflineShellOrInline(request);
+    }).catch(function () {
+        return erpInlineShellResponse();
+    });
+}
+
+function matchCachedAdminDashboard(url) {
+    var keys = [];
+    try {
+        if (url) {
+            keys.push(url.origin + url.pathname.replace(/\/+$/, ''));
+            keys.push(url.origin + url.pathname.replace(/\/+$/, '') + '/');
+            keys.push(url.origin + '/rateb-erp/public/admin');
+            keys.push(url.origin + '/rateb-erp/public/admin/');
+        }
+    } catch (e) { /* ignore */ }
+    try {
+        keys.push(new URL('admin/', self.registration.scope).href);
+        keys.push(new URL('admin', self.registration.scope).href);
+    } catch (e2) { /* ignore */ }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        var chain = Promise.resolve(null);
+        keys.forEach(function (key) {
+            if (!key) {
+                return;
+            }
+            chain = chain.then(function (found) {
+                return found || cache.match(key);
+            });
+        });
+        return chain.then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            return cache.match(keys[0] || '', { ignoreSearch: true }).catch(function () { return null; });
+        });
+    }).catch(function () {
+        return null;
+    });
+}
+
+function matchOfflineShellOrInline(request) {
         var key = erpOfflineShellUrl();
         return caches.match(key).then(function (hit) {
             if (hit) {
@@ -403,9 +462,6 @@ function erpAdminOfflineFallback(request, url) {
                 });
             });
         });
-    }).catch(function () {
-        return erpInlineShellResponse();
-    });
 }
 
 function warmErpOfflineShell() {
@@ -431,8 +487,10 @@ function warmErpOfflineShell() {
         base + 'assets/css/dark.css',
         base + 'assets/css/rtl.css'
     ];
-    // Do not re-warm admin/ (user is often already there). Stage lean ops after shell assets.
+    // Stage lean ops + Admin dashboard (لوحة التحكم) so offline nav keeps the same UI.
     var leanOps = [
+        'admin',
+        'admin/',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/rfq',

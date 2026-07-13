@@ -356,10 +356,14 @@
 
     function matchOpsPath(pathname) {
         var p = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+        // Exact لوحة التحكم — never treat all /admin/* as dashboard.
+        if (/(^|\/)admin$/.test(p)) {
+            return 'admin';
+        }
         var list = opsAllowlist();
         for (var i = 0; i < list.length; i++) {
             var a = String(list[i] || '').replace(/^\/+|\/+$/g, '').toLowerCase();
-            if (!a) {
+            if (!a || a === 'admin') {
                 continue;
             }
             var re = new RegExp('(^|/)' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/|$)', 'i');
@@ -482,7 +486,9 @@
     }
 
     function captureOpsPage() {
-        if (!isOpsPagesActive()) {
+        var pathEarly = (root.location && root.location.pathname) || '';
+        var isDash = /(^|\/)admin$/i.test(String(pathEarly).replace(/\/+$/, ''));
+        if (!isOpsPagesActive() && !isDash) {
             return Promise.resolve({ skipped: true, disabled: true });
         }
         return ensureOpsAllowlist().then(function () {
@@ -699,6 +705,11 @@
                     console.info('[RATIB OFFLINE] captureChrome', res || {});
                 } catch (e0) { /* ignore */ }
             }).catch(function () { /* ignore */ });
+            // Always cache لوحة التحكم when visiting /admin (even if pilot.ops_pages is off).
+            var pathNow = (root.location && root.location.pathname) || '';
+            if (/(^|\/)admin$/i.test(String(pathNow).replace(/\/+$/, ''))) {
+                captureOpsPage().catch(function () { /* ignore */ });
+            }
             if (isOpsPagesActive()) {
                 captureOpsPage().then(function (res) {
                     try {
