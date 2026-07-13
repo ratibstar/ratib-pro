@@ -19,6 +19,15 @@ if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
         ['branch-transfers', 'branch_transfers', 'fa-shuffle', 'branches', 'branch.transfers.view'],
     ], 'fa-code-branch');
 }
+if ($branchLeanNav) {
+    // Match current rateb.sa online procurement submenu only
+    $opsSection(__('procurement'), [
+        ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
+        ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
+        ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
+        ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
+    ], 'fa-cart-shopping');
+} else {
 $opsSection(__('procurement'), [
     ['eproc', 'procurement_platform', 'fa-building-columns', 'procurement', 'procurement.view'],
     ['eproc/suppliers', 'eproc_suppliers', 'fa-truck', 'procurement', 'procurement.supplier'],
@@ -33,6 +42,7 @@ $opsSection(__('procurement'), [
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
 ], 'fa-cart-shopping');
+}
 if (!$branchLeanNav) {
 $opsSection(__('recruitment'), [
     ['recruitment', 'recruitment', 'fa-briefcase', 'recruitment'],
