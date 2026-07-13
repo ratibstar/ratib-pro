@@ -15,15 +15,17 @@ $desktop = [Environment]::GetFolderPath('Desktop')
 $programs = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs\RATIB'
 New-Item -ItemType Directory -Force -Path $programs | Out-Null
 
+# Desktop + Start Menu shortcut — distinct from Chrome PWA "RATEB ERP" (rateb.sa)
 foreach ($linkPath in @(
-  (Join-Path $desktop 'RATIB ERP.lnk'),
-  (Join-Path $programs 'RATIB ERP.lnk')
+  (Join-Path $desktop 'RATIB ERP - محلي.lnk'),
+  (Join-Path $desktop 'RATIB ERP Local.lnk'),
+  (Join-Path $programs 'RATIB ERP Local.lnk')
 )) {
   $sc = $ws.CreateShortcut($linkPath)
   $sc.TargetPath = 'powershell.exe'
   $sc.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcher`" -InstallRoot `"$InstallRoot`""
   $sc.WorkingDirectory = $InstallRoot
-  $sc.Description = 'RATIB ERP'
+  $sc.Description = 'RATIB ERP Branch (local offline) — not rateb.sa'
   $sc.Save()
 }
 
