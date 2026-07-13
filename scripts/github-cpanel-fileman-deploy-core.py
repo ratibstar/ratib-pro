@@ -290,6 +290,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/offline/erp-offline-shell-auth.js",
     "rateb-erp/public/assets/offline/erp-offline-shell-rbac.js",
     "rateb-erp/public/assets/offline/erp-shell-bootstrap.js",
+    "rateb-erp/public/assets/offline/erp-offline-full-warm.js",
     "rateb-erp/public/assets/offline/ops-page-allowlist.json",
     "rateb-erp/public/assets/offline/erp-pwa-install.js",
     "rateb-erp/public/assets/css/variables.css",

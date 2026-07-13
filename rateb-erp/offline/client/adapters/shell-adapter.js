@@ -584,12 +584,19 @@
     }
 
     function prefetchAllowlistedLinks() {
-        if (!isOpsPagesActive() || !root.document || !root.fetch) {
+        if (!root.document || !root.fetch) {
             return;
         }
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             return;
         }
+        // Prefer the dedicated full-warm engine when present.
+        try {
+            if (root.RatebOfflineFullWarm && typeof root.RatebOfflineFullWarm.start === 'function') {
+                root.RatebOfflineFullWarm.start({ force: false });
+                return;
+            }
+        } catch (eFull) { /* fall through */ }
         // Once per browser tab/session — never re-warm 40 ERP pages on every navigation
         // (that saturates PHP/MySQL and makes the whole product feel extremely slow).
         try {
@@ -617,7 +624,7 @@
         });
 
         Object.keys(map || {}).forEach(function (logical) {
-            if (urls.length >= 8) {
+            if (urls.length >= 120) {
                 return;
             }
             var href = canonicalUrlForLogical(logical);
@@ -633,7 +640,7 @@
             'aside.rateb-sidebar a[href], #rateb-sidebar a[href], .rateb-offline-rbac-link[href]'
         );
         Array.prototype.forEach.call(links, function (a) {
-            if (urls.length >= 8) {
+            if (urls.length >= 120) {
                 return;
             }
             var href = (a.getAttribute('href') || '').trim();
@@ -717,11 +724,13 @@
             }
             if (isOpsPagesActive()) {
                 prefetchAllowlistedLinks();
-            } else {
-                try {
-                    console.info('[RATIB OFFLINE] ops prefetch skipped (pilot.ops_pages off)');
-                } catch (e2) { /* ignore */ }
             }
+            // Full-program warm: every sidebar + allowlist route (no visit required).
+            try {
+                if (root.RatebOfflineFullWarm && typeof root.RatebOfflineFullWarm.start === 'function') {
+                    root.RatebOfflineFullWarm.start({ force: false });
+                }
+            } catch (eWarm) { /* ignore */ }
         };
         if (root.document && root.document.readyState === 'complete') {
             setTimeout(run, 800);
