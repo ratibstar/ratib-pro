@@ -13,17 +13,17 @@ Customer never sees SQLite, MySQL, Hybrid Runtime, or env files.
 
 | Indicator | Meaning | Browser URL |
 |-----------|---------|-------------|
-| 🟢 ONLINE | Cloud reachable; Hybrid Sync active | Stay on local `http://127.0.0.1:8088/admin` |
-| 🔴 OFFLINE | Cloud unreachable; local ERP continues on SQLite | Local admin |
-| 🟡 SYNCING | Cloud up; outbox draining | Local admin |
-| 🔵 STARTING | Bootstrapping | Local admin |
-| ⚪ MAINTENANCE | Recovery / temporary issue | Local admin |
+| 🟢 ONLINE | Cloud reachable | `https://rateb.sa/rateb-erp/public/admin/` |
+| 🔴 OFFLINE | Cloud unreachable; PWA offline shell on same origin | **same** cloud admin URL |
+| 🟡 SYNCING | Outbox draining | same |
+| 🔵 STARTING | Bootstrapping | same |
+| ⚪ MAINTENANCE | Recovery | same |
 
-Detection every ~3 seconds (DNS + HTTPS + API health + sync status). Offline within 3–5s.
+Detection every ~3 seconds. The browser address does **not** switch to `127.0.0.1` — agencies/branches stay on [rateb.sa admin](https://rateb.sa/rateb-erp/public/admin/).
 
-Product nav is **unified lean** (same online and offline): procurement = purchase requests / orders / RFQ / quotations only — no eproc enterprise pack in the sidebar.
+Product nav is **unified lean** (procurement = PR / PO / RFQ / quotations).
 
-**Architecture (locked):** Local SQLite via `HybridRuntime` is unchanged mid-session. Hybrid Sync Engine remains the only sync path. Online/Offline reflects cloud reachability for sync — it does not rewrite `RATEB_RUNTIME` / `serve.env`.
+**Architecture (locked):** Offline on the cloud origin is PWA / service-worker. Local Hybrid Sync services may still run for appliance sync, but customer UX is always the cloud admin URL.
 
 ## Components
 

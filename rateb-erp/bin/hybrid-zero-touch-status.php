@@ -182,8 +182,8 @@ function d4_snapshot(string $root, string $localUrl, string $cloudUrl, string $c
         $emoji = "\u{1F7E2}"; // green
     }
 
-    // open_url: always local appliance — sync runs in background when cloud is up.
-    $openUrl = $localUrl;
+    // Customer browser URL: always cloud admin (same online and offline via PWA).
+    $openUrl = $cloudAdminUrl;
 
     return [
         'phase' => 'D.4',
@@ -239,7 +239,7 @@ do {
             'emoji' => "\u{26AA}",
             'display' => "\u{26AA} MAINTENANCE",
             'error' => $e->getMessage(),
-            'open_url' => $localUrl,
+            'open_url' => $cloudAdminUrl,
         ]);
         if (!$loop) {
             fwrite(STDERR, $e->getMessage() . PHP_EOL);

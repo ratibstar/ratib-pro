@@ -5,10 +5,12 @@
 3. Double-click **RATIB ERP** on the desktop.  
 4. Sign in and work.
 
-The green / red light shows whether the cloud is available for sync.
+Always open **RATEB ERP** at:
 
-You always work on this computer (`http://127.0.0.1:8088/admin`). When the light is green, data syncs to the cloud in the background. When it is red, keep working offline — changes sync when the connection returns.
+https://rateb.sa/rateb-erp/public/admin/
 
-The menu matches the same lean product set online and offline (purchase requests, orders, quotes — without the old enterprise procurement extras).
+The green / red light shows whether you are connected. The address in the browser stays the same when you go offline — the app continues from the saved (offline) copy on that same site.
+
+Do not use `http://127.0.0.1:8088` in the browser for day-to-day work; that local copy is a different database and will look out of sync.
 
 You never need to install PHP, edit settings files, or start services manually.

@@ -55,7 +55,7 @@ d4_assert('D4_status_loop_3s', str_contains($statusSrc, '--interval') && str_con
 d4_assert('D4_status_dns_https', str_contains($statusSrc, 'd4_dns') && str_contains($statusSrc, 'd4_probe_https'), 'dns+https');
 d4_assert('D4_status_states', str_contains($statusSrc, 'online') && str_contains($statusSrc, 'offline') && str_contains($statusSrc, 'syncing'), 'states');
 d4_assert('D4_writes_status_json', str_contains($statusSrc, 'status.json'), 'status.json');
-d4_assert('D4_open_url_local_appliance', str_contains($statusSrc, 'cloudAdminUrl') && str_contains($statusSrc, '$openUrl = $localUrl'), 'open_url stays local; sync in background');
+d4_assert('D4_open_url_cloud_admin', str_contains($statusSrc, 'cloudAdminUrl') && str_contains($statusSrc, '$openUrl = $cloudAdminUrl'), 'open_url always cloud admin');
 d4_assert('D4_no_runtime_mutation', !str_contains($statusSrc, 'file_put_contents($serve') && !str_contains($statusSrc, 'RATEB_RUNTIME='), 'does not rewrite serve.env runtime');
 
 $tray = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatibTray.ps1');
@@ -91,7 +91,7 @@ $report = [
     'passed' => $passed,
     'failed' => $failed,
     'checks' => $lines,
-    'architecture_note' => 'Branch desktop open_url stays on local admin (http://127.0.0.1:8088/admin). Online/Offline reflects cloud reachability for Hybrid Sync only. Product nav is unified lean (no eproc extras). No mid-session RATEB_RUNTIME mutation (architecture locked).',
+    'architecture_note' => 'Customer browser always opens https://rateb.sa/rateb-erp/public/admin/ (same URL online and offline via PWA). Online/Offline badge reflects connectivity; no redirect to 127.0.0.1. Product nav is unified lean. Local HybridRuntime remains for sync appliance only.',
     'customer_flow' => ['Install', 'Open RATIB ERP', 'Login', 'Work'],
 ];
 $out = $root . '/storage/branch/phase-d4-enterprise-verify.json';

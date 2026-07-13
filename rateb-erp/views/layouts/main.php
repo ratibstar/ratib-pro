@@ -102,11 +102,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <?php } ?>
 </head>
 <?php
-    $ratebHttpHost = (string) ($_SERVER['HTTP_HOST'] ?? '');
-    $ratebUrlSwitch = (class_exists(\Rateb\App\Core\HybridRuntime::class) && \Rateb\App\Core\HybridRuntime::isBranchMode())
-        || (bool) preg_match('/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i', $ratebHttpHost);
-    $ratebLocalAdmin = 'http://127.0.0.1:8088/admin';
-    $ratebCloudAdmin = 'https://rateb.sa/rateb-erp/public/admin/';
 ?>
 <body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>"
     data-rateb-media-json="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/json')); ?>"
@@ -119,12 +114,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     data-rateb-date-hint-datetime="<?php echo Rateb\App\Core\View::escape(__('datetime_format_hint')); ?>"
     data-rateb-date-hint-time="<?php echo Rateb\App\Core\View::escape(__('time_format_hint')); ?>"
     data-rateb-date-hint-month="<?php echo Rateb\App\Core\View::escape(__('month_format_hint')); ?>"
-    data-rateb-date-hint-week="<?php echo Rateb\App\Core\View::escape(__('week_format_hint')); ?>"
-    <?php if ($ratebUrlSwitch) { ?>
-    data-rateb-url-switch="1"
-    data-rateb-local-admin="<?php echo Rateb\App\Core\View::escape($ratebLocalAdmin); ?>"
-    data-rateb-cloud-admin="<?php echo Rateb\App\Core\View::escape($ratebCloudAdmin); ?>"
-    <?php } ?>>
+    data-rateb-date-hint-week="<?php echo Rateb\App\Core\View::escape(__('week_format_hint')); ?>">
 <div class="rateb-wrapper">
     <aside class="rateb-sidebar" id="rateb-sidebar">
         <div class="rateb-sidebar-brand">

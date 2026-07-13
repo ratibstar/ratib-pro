@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Phase D.4 — RATIB ERP zero-touch launcher (Linux)
-# Opens cloud admin when online (green), local admin when offline (red).
+# Browser always opens cloud admin: https://rateb.sa/rateb-erp/public/admin/
+# (same URL online and offline via PWA). Local services still start for Hybrid Sync.
 set -euo pipefail
 ROOT="${RATEB_BRANCH_ROOT:-/opt/ratib-branch}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -16,7 +17,6 @@ if [[ -f "${APP_ENV}" ]]; then
   CLOUD_ADMIN="${RATEB_CLOUD_ADMIN_URL:-${CLOUD_ADMIN}}"
   PHP_BIN="${RATEB_PHP_BIN:-${PHP_BIN}}"
 fi
-# Local branch URL must stay on loopback
 case "${LOCAL_URL}" in
   *rateb.sa*|https://*) LOCAL_URL="http://127.0.0.1:8088/admin" ;;
 esac
@@ -30,18 +30,16 @@ CLOUD_ADMIN="${CLOUD_ADMIN%/}/"
 
 mkdir -p "${ROOT}/storage/branch"
 cat > "${ROOT}/storage/branch/status.json" <<EOF
-{"phase":"D.4","state":"starting","label":"STARTING","display":"🔵 STARTING","open_url":"${LOCAL_URL}","local_url":"${LOCAL_URL}","cloud_admin_url":"${CLOUD_ADMIN}","updated_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+{"phase":"D.4","state":"starting","label":"STARTING","display":"🔵 STARTING","open_url":"${CLOUD_ADMIN}","local_url":"${LOCAL_URL}","cloud_admin_url":"${CLOUD_ADMIN}","updated_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 EOF
 
 systemctl start ratib-branch-web.service ratib-hybrid-sync.service 2>/dev/null || true
 systemctl start ratib-zero-touch-status.service 2>/dev/null || true
 
-# One-shot status so open_url matches online/offline
 if [[ -n "${PHP_BIN}" && -f "${ROOT}/bin/hybrid-zero-touch-status.php" ]]; then
   "${PHP_BIN}" -d extension=pdo_sqlite -d extension=sqlite3 "${ROOT}/bin/hybrid-zero-touch-status.php" >/dev/null 2>&1 || true
 fi
 
-# Tray (best-effort)
 if [[ "${RATIB_NO_TRAY:-0}" != "1" ]]; then
   if command -v python3 >/dev/null 2>&1; then
     if ! pgrep -f 'ratib-tray.py' >/dev/null 2>&1; then
@@ -50,7 +48,7 @@ if [[ "${RATIB_NO_TRAY:-0}" != "1" ]]; then
   fi
 fi
 
-# Wait for local HTTP (offline fallback always available)
+# Local HTTP still useful for Hybrid Sync / diagnostics (not the customer browser URL)
 for _ in $(seq 1 30); do
   if curl -fsS --max-time 1 "${LOCAL_URL}" >/dev/null 2>&1; then
     break
@@ -58,9 +56,9 @@ for _ in $(seq 1 30); do
   sleep 0.5
 done
 
-OPEN_URL="${LOCAL_URL}"
+OPEN_URL="${CLOUD_ADMIN}"
 if [[ -f "${ROOT}/storage/branch/status.json" ]] && command -v python3 >/dev/null 2>&1; then
-  OPEN_URL="$(python3 -c "import json; print(json.load(open('${ROOT}/storage/branch/status.json')).get('open_url','${LOCAL_URL}'))" 2>/dev/null || echo "${LOCAL_URL}")"
+  OPEN_URL="$(python3 -c "import json; d=json.load(open('${ROOT}/storage/branch/status.json')); print(d.get('open_url') or d.get('cloud_admin_url') or '${CLOUD_ADMIN}')" 2>/dev/null || echo "${CLOUD_ADMIN}")"
 fi
 
 if [[ "${RATIB_NO_BROWSER:-0}" != "1" ]]; then

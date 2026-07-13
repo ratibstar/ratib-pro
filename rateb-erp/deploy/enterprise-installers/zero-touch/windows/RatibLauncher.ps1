@@ -1,5 +1,6 @@
 # Phase D.4 — RATIB ERP zero-touch launcher (Windows)
-# Opens cloud admin when online (green), local admin when offline (red).
+# Browser always opens cloud admin: https://rateb.sa/rateb-erp/public/admin/
+# (same URL online and offline via PWA). Local services still start for Hybrid Sync.
 param(
   [string]$InstallRoot = '',
   [switch]$NoBrowser,
@@ -63,7 +64,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $InstallRoot 'storage\branc
 $statusPath = Join-Path $InstallRoot 'storage\branch\status.json'
 @{
   phase='D.4'; state='starting'; label='STARTING'; display='STARTING'
-  open_url=$localUrl; local_url=$localUrl; cloud_admin_url=$cloudAdmin
+  open_url=$cloudAdmin; local_url=$localUrl; cloud_admin_url=$cloudAdmin
   updated_at=(Get-Date).ToUniversalTime().ToString('o')
 } | ConvertTo-Json | Set-Content $statusPath -Encoding UTF8
 
@@ -110,11 +111,12 @@ while ((Get-Date) -lt $deadline) {
   Start-Sleep -Milliseconds 400
 }
 
-$openUrl = $localUrl
+$openUrl = $cloudAdmin
 if (Test-Path $statusPath) {
   try {
     $st = Get-Content $statusPath -Raw | ConvertFrom-Json
-    if ($st.open_url) { $openUrl = [string]$st.open_url }
+    if ($st.open_url -and ([string]$st.open_url -match 'rateb\.sa')) { $openUrl = [string]$st.open_url }
+    elseif ($st.cloud_admin_url) { $openUrl = [string]$st.cloud_admin_url }
   } catch {}
 }
 
