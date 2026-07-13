@@ -135,7 +135,7 @@ final class ErpOfflinePhase131FixTest
         $ok = str_contains($boot, 'if (posReg)')
             && str_contains($boot, 'WARM_ERP_OFFLINE_SHELL')
             && str_contains($pos, 'erpAdminOfflineFallback')
-            && str_contains($pos, 'rateb-erp-coexist-v8')
+            && str_contains($pos, 'rateb-erp-coexist-v9')
             && str_contains($pos, 'Smart coexist');
         $this->record('ERP SW does not displace POS SW (smart coexist)', $ok, $ok ? 'ok' : 'fail');
     }

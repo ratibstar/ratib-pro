@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v8';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v14';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v14';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v9';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v15';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v15';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -415,7 +415,23 @@ function warmErpOfflineShell() {
         base + 'assets/css/dark.css',
         base + 'assets/css/rtl.css',
         base + 'assets/css/light.css',
-        base + 'assets/css/dashboard.css'
+        base + 'assets/css/dashboard.css',
+        base + 'assets/css/ar-typography.css'
+    ];
+    var leanOps = [
+        'admin/',
+        'admin/ops/purchase-requests',
+        'admin/ops/purchase-orders',
+        'admin/ops/rfq',
+        'admin/ops/quotations',
+        'admin/ops/inventory',
+        'admin/ops/warehouses',
+        'admin/ops/stock-movements',
+        'admin/ops/suppliers',
+        'admin/ops/hr/attendance',
+        'admin/ops/hr/leaves',
+        'admin/notifications',
+        'admin/profile'
     ];
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
         return Promise.all(urls.map(function (key) {
@@ -464,7 +480,31 @@ function warmErpOfflineShell() {
                 } catch (e3) { /* ignore */ }
                 return null;
             });
-        }));
+        })).then(function () {
+            return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                return Promise.all(leanOps.map(function (rel) {
+                    var pageUrl = base + rel.replace(/^\//, '');
+                    return fetch(pageUrl, {
+                        credentials: 'same-origin',
+                        cache: 'no-cache',
+                        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+                    }).then(function (res) {
+                        if (!res || !res.ok) {
+                            return null;
+                        }
+                        var bare = pageUrl;
+                        try {
+                            var u = new URL(pageUrl);
+                            bare = u.origin + u.pathname;
+                        } catch (e5) { /* ignore */ }
+                        return Promise.all([
+                            opsCache.put(pageUrl, res.clone()).catch(function () { return null; }),
+                            opsCache.put(bare, res.clone()).catch(function () { return null; })
+                        ]);
+                    }).catch(function () { return null; });
+                }));
+            });
+        });
     }).catch(function () { return null; });
 }
 
@@ -584,11 +624,15 @@ function migrateErpCoexistCaches(keys) {
 
 function isErpOfflineAsset(url) {
     var p = String(url.pathname || '');
-    // Only offline SDK / shell assets. Do NOT intercept live ERP CSS —
-    // network-first CSS with a multi-second race made every admin (and login)
-    // page spin for several seconds before paint.
-    return p.indexOf('/assets/offline/') !== -1
-        || /\/offline-shell\.html$/i.test(p);
+    if (p.indexOf('/assets/offline/') !== -1 || /\/offline-shell\.html$/i.test(p)) {
+        return true;
+    }
+    // Offline only: serve warmed ERP CSS from coexist cache (avoid online paint delay).
+    var offline = self.navigator && self.navigator.onLine === false;
+    if (offline && /\/assets\/css\/.+\.css$/i.test(p)) {
+        return true;
+    }
+    return false;
 }
 
 function offlineHtmlResponse() {
