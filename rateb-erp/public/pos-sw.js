@@ -594,34 +594,39 @@ function fetchErpAssetNetwork(request, timeoutMs) {
 }
 
 /**
- * Admin/POS navigations: never hang the tab spinner on a dead network.
- * Hard offline → cache/shell immediately. Soft (Chrome lies about onLine) → abort ~1.2s.
+ * Admin/HTML navigations: fail fast when offline or after a short network race.
+ * Avoids 20–75s Chrome spinner while TCP times out before SW cache fallback.
  */
-function fetchNavigateWithOfflineFallback(request, fallbackFn) {
-    var hardOffline = self.navigator && self.navigator.onLine === false;
-    if (hardOffline) {
-        return Promise.resolve().then(function () {
-            return fallbackFn();
-        });
+function fetchNavigateNetwork(request, timeoutMs) {
+    var offline = self.navigator && self.navigator.onLine === false;
+    if (offline) {
+        return Promise.reject(new Error('offline'));
     }
-    var ms = 1200;
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 2500;
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timer = setTimeout(function () {
-        if (ctrl) {
-            try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
-        }
-    }, ms);
-    var opts = { credentials: 'same-origin' };
+    var timer = null;
     if (ctrl) {
-        opts.signal = ctrl.signal;
+        timer = setTimeout(function () {
+            try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
+        }, ms);
     }
-    return fetch(request, opts).then(function (response) {
-        clearTimeout(timer);
-        return response;
-    }).catch(function () {
-        clearTimeout(timer);
-        return fallbackFn();
+    var network = fetch(request, {
+        credentials: 'same-origin',
+        signal: ctrl ? ctrl.signal : undefined
+    }).finally(function () {
+        if (timer) {
+            clearTimeout(timer);
+        }
     });
+    if (ctrl) {
+        return network;
+    }
+    return Promise.race([
+        network,
+        new Promise(function (_, reject) {
+            setTimeout(function () { reject(new Error('timeout')); }, ms);
+        })
+    ]);
 }
 
 function migrateErpCoexistCaches(keys) {
@@ -1024,25 +1029,18 @@ self.addEventListener('fetch', function (event) {
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(
-            fetchNavigateWithOfflineFallback(event.request, function () {
+            fetchNavigateNetwork(event.request, 2500).then(function (response) {
+                // Do not pin biometric gate HTML as the offline shell — register + lock is the offline entry.
+                if (!isBiometricGatePath(url.pathname)) {
+                    event.waitUntil(putShell(event.request, response.clone()));
+                }
+                return response;
+            }).catch(function () {
                 if (isBiometricGatePath(url.pathname)) {
                     var regUrl = registerPathFromBiometric(url);
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
                 }
                 return shellFallback(event.request);
-            }).then(function (response) {
-                if (response && response.ok && !isBiometricGatePath(url.pathname)
-                    && !(self.navigator && self.navigator.onLine === false)) {
-                    // Only pin live network HTML as shell when we actually got a network response.
-                    // Heuristic: responses from our offline fallback already set X-Rateb-Offline / shell.
-                    try {
-                        if (!response.headers.get('X-Rateb-Offline')
-                            && String(response.url || '').indexOf('offline-shell') === -1) {
-                            event.waitUntil(putShell(event.request, response.clone()));
-                        }
-                    } catch (ePut) { /* ignore */ }
-                }
-                return response;
             })
         );
         return;
@@ -1051,7 +1049,7 @@ self.addEventListener('fetch', function (event) {
     // Logout offline: never let Chrome show "لا يتوفر اتصال" interstitial.
     if (event.request.mode === 'navigate' && isLogoutPath(url.pathname)) {
         event.respondWith(
-            fetchNavigateWithOfflineFallback(event.request, function () {
+            fetchNavigateNetwork(event.request, 2000).catch(function () {
                 var adminUrl;
                 try {
                     adminUrl = new URL('admin/', self.registration.scope);
@@ -1064,15 +1062,14 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: non-POS admin HTML → network; on network failure → ERP offline shell.
-    // Do not gate on navigator.onLine alone: Chrome can leave the page uncontrolled or
-    // report onLine=true while fetch fails, which previously showed the native offline page.
+    // Smart coexist: non-POS admin HTML → short network race; on failure → ERP offline shell.
+    // Do not wait for full TCP timeout (causes long tab spinner when Wi‑Fi is off).
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
-            fetchNavigateWithOfflineFallback(event.request, function () {
+            fetchNavigateNetwork(event.request, 2500).catch(function () {
                 return erpAdminOfflineFallback(event.request, url);
             })
         );
@@ -1082,18 +1079,11 @@ self.addEventListener('fetch', function (event) {
     if (isRegisterShellPath(url.pathname)
         && (event.request.headers.get('accept') || '').indexOf('text/html') !== -1) {
         event.respondWith(
-            fetchNavigateWithOfflineFallback(event.request, function () {
-                return shellFallback(event.request);
-            }).then(function (response) {
-                if (response && response.ok
-                    && !(self.navigator && self.navigator.onLine === false)) {
-                    try {
-                        if (!response.headers.get('X-Rateb-Offline')) {
-                            event.waitUntil(putShell(event.request, response.clone()));
-                        }
-                    } catch (eReg) { /* ignore */ }
-                }
+            fetch(event.request).then(function (response) {
+                event.waitUntil(putShell(event.request, response.clone()));
                 return response;
+            }).catch(function () {
+                return shellFallback(event.request);
             })
         );
         return;

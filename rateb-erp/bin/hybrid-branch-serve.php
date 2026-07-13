@@ -63,7 +63,7 @@ if (!extension_loaded('gd')) {
     }
 }
 $missing = [];
-foreach (['pdo_sqlite', 'sqlite3', 'gd', 'mbstring'] as $ext) {
+foreach (['pdo_sqlite', 'sqlite3', 'gd'] as $ext) {
     if (!extension_loaded($ext)) {
         $missing[] = $ext;
     }
@@ -72,6 +72,9 @@ if ($missing !== []) {
     fwrite(STDERR, "RATEB Branch Appliance missing PHP extensions: " . implode(', ', $missing) . "\n");
     fwrite(STDERR, "Start with: php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring bin/hybrid-branch-serve.php\n");
     exit(1);
+}
+if (!extension_loaded('mbstring')) {
+    fwrite(STDERR, "NOTE: mbstring not loaded in parent; child will try -d extension=mbstring (polyfill otherwise).\n");
 }
 
 $docRoot = $root . '/public';

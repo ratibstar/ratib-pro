@@ -293,7 +293,17 @@
                     device_id: deviceId,
                     branch_id: branchId,
                     items: queue
-                })
+                }),
+                signal: (function () {
+                    if (typeof AbortController === 'undefined') {
+                        return undefined;
+                    }
+                    var ctrl = new AbortController();
+                    setTimeout(function () {
+                        try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
+                    }, 8000);
+                    return ctrl.signal;
+                })()
             }).then(function (res) {
                 return res.json().then(function (payload) {
                     var result = (payload && payload.result) ? payload.result : {};

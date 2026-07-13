@@ -283,7 +283,7 @@
     var probing = false;
     var probeUrl = null;
     var intervals = { online: 12000, offline: 20000 };
-    var timeoutMs = 1500;
+    var timeoutMs = 3500;
 
     function emit() {
         listeners.forEach(function (fn) {
@@ -720,7 +720,17 @@
                     device_id: deviceId,
                     branch_id: branchId,
                     items: queue
-                })
+                }),
+                signal: (function () {
+                    if (typeof AbortController === 'undefined') {
+                        return undefined;
+                    }
+                    var ctrl = new AbortController();
+                    setTimeout(function () {
+                        try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
+                    }, 8000);
+                    return ctrl.signal;
+                })()
             }).then(function (res) {
                 return res.json().then(function (payload) {
                     var result = (payload && payload.result) ? payload.result : {};

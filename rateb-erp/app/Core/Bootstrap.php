@@ -37,6 +37,11 @@ final class Bootstrap
 
         date_default_timezone_set('Asia/Riyadh');
 
+        $mbPolyfill = $basePath . '/app/helpers/mbstring-polyfill.php';
+        if (is_file($mbPolyfill)) {
+            require_once $mbPolyfill;
+        }
+
         self::registerAutoloader($basePath);
         self::registerSiteAppAutoloader();
         $requestHelper = $basePath . '/app/helpers/Request.php';

@@ -92,8 +92,8 @@ if (-not (Test-LocalUp $localUrl)) {
 $mon = Join-Path $InstallRoot 'bin\hybrid-zero-touch-status.php'
 if (Test-Path $mon) {
   # One-shot probe so open_url reflects online/offline before browser opens
-  & $php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=mbstring $mon | Out-Null
-  Start-Process -FilePath $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3','-d','extension=mbstring',"`"$mon`"","--loop","--interval=3") -WorkingDirectory $InstallRoot -WindowStyle Hidden
+  & $php -d extension=pdo_sqlite -d extension=sqlite3 $mon | Out-Null
+  Start-Process -FilePath $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3',"`"$mon`"","--loop","--interval=3") -WorkingDirectory $InstallRoot -WindowStyle Hidden
 }
 
 if (-not $NoTray) {

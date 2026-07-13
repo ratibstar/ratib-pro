@@ -549,12 +549,18 @@
             var conn = root.RatebOfflineConnectivity;
             if (conn && typeof conn.probe === 'function') {
                 conn.probe().then(function (ok) {
-                    onConnectivityChange(ok !== false && connectivitySaysOnline());
+                    onConnectivityChange(!!ok);
                 }).catch(function () {
-                    onConnectivityChange(true);
+                    onConnectivityChange(false);
                 });
             } else {
-                onConnectivityChange(true);
+                // Do not trust the browser event alone — wait for a real probe elsewhere.
+                onConnectivityChange(false);
+                try {
+                    if (conn && typeof conn.probe === 'function') {
+                        conn.probe();
+                    }
+                } catch (eOnline) { /* ignore */ }
             }
         });
         root.addEventListener('offline', function () {

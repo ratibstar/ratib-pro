@@ -65,7 +65,7 @@
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-        }, 1500);
+        }, 3500);
         return fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
