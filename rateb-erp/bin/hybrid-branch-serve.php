@@ -63,14 +63,14 @@ if (!extension_loaded('gd')) {
     }
 }
 $missing = [];
-foreach (['pdo_sqlite', 'sqlite3', 'gd'] as $ext) {
+foreach (['pdo_sqlite', 'sqlite3', 'gd', 'mbstring'] as $ext) {
     if (!extension_loaded($ext)) {
         $missing[] = $ext;
     }
 }
 if ($missing !== []) {
     fwrite(STDERR, "RATEB Branch Appliance missing PHP extensions: " . implode(', ', $missing) . "\n");
-    fwrite(STDERR, "Start with: php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd bin/hybrid-branch-serve.php\n");
+    fwrite(STDERR, "Start with: php -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring bin/hybrid-branch-serve.php\n");
     exit(1);
 }
 
@@ -86,6 +86,7 @@ $cmd = [
     '-d', 'extension=pdo_sqlite',
     '-d', 'extension=sqlite3',
     '-d', 'extension=gd',
+    '-d', 'extension=mbstring',
     '-S', "{$host}:{$port}",
     '-t', $docRoot,
     $router,

@@ -24,7 +24,7 @@ $genXml = Join-Path (Split-Path $winsw) 'RATIBBranchWeb.xml'
   <name>RATIB Branch Web</name>
   <description>RATIB ERP Branch Appliance local PHP web server</description>
   <executable>$PhpPath</executable>
-  <arguments>-d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd `"$servePhp`" --host=127.0.0.1 --port=$Port</arguments>
+  <arguments>-d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring `"$servePhp`" --host=127.0.0.1 --port=$Port</arguments>
   <workingdirectory>$InstallRoot</workingdirectory>
   <logmode>roll</logmode>
   <logpath>$logDir</logpath>

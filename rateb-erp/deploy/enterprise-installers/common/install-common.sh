@@ -9,7 +9,7 @@ SERVICE_GROUP="${RATEB_BRANCH_GROUP:-rateb}"
 PHP_BIN="${RATEB_PHP_BIN:-$(command -v php)}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-php_flags=(-d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd)
+php_flags=(-d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring)
 
 ensure_user() {
   if ! id "${SERVICE_USER}" >/dev/null 2>&1; then

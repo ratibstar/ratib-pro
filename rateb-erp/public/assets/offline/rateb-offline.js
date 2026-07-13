@@ -283,7 +283,7 @@
     var probing = false;
     var probeUrl = null;
     var intervals = { online: 12000, offline: 20000 };
-    var timeoutMs = 3500;
+    var timeoutMs = 1500;
 
     function emit() {
         listeners.forEach(function (fn) {

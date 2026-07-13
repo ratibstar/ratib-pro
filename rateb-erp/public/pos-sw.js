@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v10';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v16';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v16';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v11';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v17';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v17';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -593,6 +593,37 @@ function fetchErpAssetNetwork(request, timeoutMs) {
     return Promise.race([network, timed]);
 }
 
+/**
+ * Admin/POS navigations: never hang the tab spinner on a dead network.
+ * Hard offline → cache/shell immediately. Soft (Chrome lies about onLine) → abort ~1.2s.
+ */
+function fetchNavigateWithOfflineFallback(request, fallbackFn) {
+    var hardOffline = self.navigator && self.navigator.onLine === false;
+    if (hardOffline) {
+        return Promise.resolve().then(function () {
+            return fallbackFn();
+        });
+    }
+    var ms = 1200;
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        if (ctrl) {
+            try { ctrl.abort(); } catch (eAbort) { /* ignore */ }
+        }
+    }, ms);
+    var opts = { credentials: 'same-origin' };
+    if (ctrl) {
+        opts.signal = ctrl.signal;
+    }
+    return fetch(request, opts).then(function (response) {
+        clearTimeout(timer);
+        return response;
+    }).catch(function () {
+        clearTimeout(timer);
+        return fallbackFn();
+    });
+}
+
 function migrateErpCoexistCaches(keys) {
     var oldCaches = (keys || []).filter(function (k) {
         return String(k).indexOf('rateb-erp-coexist-') === 0 && String(k) !== ERP_COEXIST_CACHE;
@@ -993,18 +1024,25 @@ self.addEventListener('fetch', function (event) {
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(
-            fetch(event.request).then(function (response) {
-                // Do not pin biometric gate HTML as the offline shell — register + lock is the offline entry.
-                if (!isBiometricGatePath(url.pathname)) {
-                    event.waitUntil(putShell(event.request, response.clone()));
-                }
-                return response;
-            }).catch(function () {
+            fetchNavigateWithOfflineFallback(event.request, function () {
                 if (isBiometricGatePath(url.pathname)) {
                     var regUrl = registerPathFromBiometric(url);
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
                 }
                 return shellFallback(event.request);
+            }).then(function (response) {
+                if (response && response.ok && !isBiometricGatePath(url.pathname)
+                    && !(self.navigator && self.navigator.onLine === false)) {
+                    // Only pin live network HTML as shell when we actually got a network response.
+                    // Heuristic: responses from our offline fallback already set X-Rateb-Offline / shell.
+                    try {
+                        if (!response.headers.get('X-Rateb-Offline')
+                            && String(response.url || '').indexOf('offline-shell') === -1) {
+                            event.waitUntil(putShell(event.request, response.clone()));
+                        }
+                    } catch (ePut) { /* ignore */ }
+                }
+                return response;
             })
         );
         return;
@@ -1013,7 +1051,7 @@ self.addEventListener('fetch', function (event) {
     // Logout offline: never let Chrome show "لا يتوفر اتصال" interstitial.
     if (event.request.mode === 'navigate' && isLogoutPath(url.pathname)) {
         event.respondWith(
-            fetch(event.request).catch(function () {
+            fetchNavigateWithOfflineFallback(event.request, function () {
                 var adminUrl;
                 try {
                     adminUrl = new URL('admin/', self.registration.scope);
@@ -1034,7 +1072,7 @@ self.addEventListener('fetch', function (event) {
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
-            fetch(event.request).catch(function () {
+            fetchNavigateWithOfflineFallback(event.request, function () {
                 return erpAdminOfflineFallback(event.request, url);
             })
         );
@@ -1044,11 +1082,18 @@ self.addEventListener('fetch', function (event) {
     if (isRegisterShellPath(url.pathname)
         && (event.request.headers.get('accept') || '').indexOf('text/html') !== -1) {
         event.respondWith(
-            fetch(event.request).then(function (response) {
-                event.waitUntil(putShell(event.request, response.clone()));
-                return response;
-            }).catch(function () {
+            fetchNavigateWithOfflineFallback(event.request, function () {
                 return shellFallback(event.request);
+            }).then(function (response) {
+                if (response && response.ok
+                    && !(self.navigator && self.navigator.onLine === false)) {
+                    try {
+                        if (!response.headers.get('X-Rateb-Offline')) {
+                            event.waitUntil(putShell(event.request, response.clone()));
+                        }
+                    } catch (eReg) { /* ignore */ }
+                }
+                return response;
             })
         );
         return;

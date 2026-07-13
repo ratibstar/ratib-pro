@@ -11,5 +11,5 @@ if [[ -f "${APP_ENV}" ]]; then
   PORT="${RATEB_BRANCH_HTTP_PORT:-${PORT}}"
   PHP_BIN="${RATEB_PHP_BIN:-${PHP_BIN}}"
 fi
-exec "${PHP_BIN}" -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd \
+exec "${PHP_BIN}" -d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring \
   "${ROOT}/bin/hybrid-branch-serve.php" --host=127.0.0.1 --port="${PORT}"
