@@ -3,9 +3,9 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v14';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v20';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v20';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v15';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v21';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v21';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1057,13 +1057,31 @@ self.addEventListener('fetch', function (event) {
     }
 
     // Smart coexist: non-POS admin HTML → network while online; offline → ERP shell.
+    // Never trap an online browser in offline-shell/PIN when Wi‑Fi is up.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
             fetchNavigateNetwork(event.request, 12000).catch(function () {
-                return erpAdminOfflineFallback(event.request, url);
+                if (self.navigator && self.navigator.onLine === false) {
+                    return erpAdminOfflineFallback(event.request, url);
+                }
+                // Browser still reports online — retry once; do not serve offline shell.
+                return fetch(event.request, { credentials: 'same-origin', cache: 'no-store' }).catch(function () {
+                    if (self.navigator && self.navigator.onLine === false) {
+                        return erpAdminOfflineFallback(event.request, url);
+                    }
+                    return new Response(
+                        '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                        + '<meta http-equiv="refresh" content="2;url=' + String(url.href).replace(/"/g, '') + '">'
+                        + '<title>RATEB ERP</title></head><body style="font-family:system-ui;padding:2rem;text-align:center">'
+                        + '<p>تعذر التحميل مؤقتاً — جاري إعادة المحاولة…</p>'
+                        + '<p><a href="' + String(url.pathname + url.search).replace(/"/g, '') + '">تحديث</a></p>'
+                        + '</body></html>',
+                        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+                    );
+                });
             })
         );
         return;

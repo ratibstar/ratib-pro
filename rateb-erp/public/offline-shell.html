@@ -55,6 +55,20 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     });
   }
 
+  // If Wi‑Fi is up, never stay on offline-shell — jump to live Admin.
+  try {
+    if (navigator.onLine !== false) {
+      var base = (function () {
+        var p = String(location.pathname || '');
+        var m = p.match(/^(.*\/public\/)/i);
+        if (m && m[1]) return m[1];
+        return '/rateb-erp/public/';
+      })();
+      location.replace(location.origin + base + 'admin/?rateb_live=' + Date.now());
+      return;
+    }
+  } catch (eOnline) { /* continue offline unlock */ }
+
   function publicBase() {
     try {
       var p = String(location.pathname || '');

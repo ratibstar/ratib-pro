@@ -111,7 +111,7 @@
             return Promise.resolve(null);
         }
         tPass(11, 'erp-shell-bootstrap.js', 'warmErpShellUrls.fetch', 'fetch start url=' + shellUrl);
-        return root.caches.open('rateb-erp-coexist-v14').then(function (cache) {
+        return root.caches.open('rateb-erp-coexist-v15').then(function (cache) {
             return root.fetch(shellUrl, {
                 credentials: 'same-origin',
                 cache: 'no-cache',
@@ -131,11 +131,11 @@
                         return null;
                     }
                     tPass(12, 'erp-shell-bootstrap.js', 'warmErpShellUrls.cache.put',
-                        'cache.put cache=rateb-erp-coexist-v14 key=' + shellUrl);
+                        'cache.put cache=rateb-erp-coexist-v15 key=' + shellUrl);
                     return cache.match(shellUrl).then(function (hit) {
                         if (hit) {
                             tPass(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
-                                'offline-shell.html present in rateb-erp-coexist-v14');
+                                'offline-shell.html present in rateb-erp-coexist-v15');
                         } else {
                             tFail(13, 'erp-shell-bootstrap.js', 'warmErpShellUrls.verify',
                                 'cache.match miss after put key=' + shellUrl);
@@ -381,6 +381,33 @@
 
     var LIVE_RELOAD_KEY = 'rateb_erp_live_reload_at';
     var lastConnectivityOnline = null;
+
+    /** If offline shell is painted while Wi‑Fi is up, escape to live Admin immediately. */
+    function escapeOfflineShellIfOnline() {
+        try {
+            if (root.navigator && root.navigator.onLine === false) {
+                return false;
+            }
+            if (!isOfflineShellDocument()) {
+                return false;
+            }
+            var path = String(root.location.pathname || '');
+            // Already on offline-shell.html → go to admin; else bust cache on same URL.
+            var target;
+            if (/offline-shell\.html$/i.test(path)) {
+                var base = path.replace(/offline-shell\.html$/i, '');
+                target = root.location.origin + base + 'admin/?rateb_live=' + Date.now();
+            } else {
+                var u = new URL(root.location.href);
+                u.searchParams.set('rateb_live', String(Date.now()));
+                target = u.href;
+            }
+            root.location.replace(target);
+            return true;
+        } catch (eEsc) {
+            return false;
+        }
+    }
 
     function isOfflineShellDocument() {
         var doc = root.document;
@@ -719,6 +746,9 @@
 
     function boot() {
         if (tStopped()) {
+            return;
+        }
+        if (escapeOfflineShellIfOnline()) {
             return;
         }
         tPass(4, 'erp-shell-bootstrap.js', 'boot', 'boot() entered');

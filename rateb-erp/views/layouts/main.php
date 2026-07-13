@@ -598,6 +598,18 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       window.addEventListener('load', function () { setTimeout(run, 3000); }, { once: true });
     }
   }
+  // Escape hatch: stale SW offline shell while Wi‑Fi is up.
+  try {
+    if (navigator.onLine !== false
+        && document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status')) {
+      var u = new URL(location.href);
+      if (!u.searchParams.get('rateb_live')) {
+        u.searchParams.set('rateb_live', String(Date.now()));
+        location.replace(u.href);
+        return;
+      }
+    }
+  } catch (eEsc) {}
   navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined)
     .then(function (reg) {
       scheduleWarm(reg);
