@@ -406,32 +406,32 @@ $ratebOfflineFullClient = $ratebOfflineReadCache && (
         $erpRoute
     ))
 );
-if ($ratebOfflineReadCache) {
-    $ratebOfflineSw = rateb_public_url('pos-sw.js');
-    $ratebOfflineSwScope = function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix')
-        ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
-        : '';
-    $ratebOfflineApiBase = rateb_url('api/v1/offline');
-    $ratebOfflineCompanyId = 0;
-    if (function_exists('rateb_resolve_erp_shell_company_id')) {
-        $ratebOfflineCompanyId = (int) rateb_resolve_erp_shell_company_id();
-    } else {
-        $ratebOfflineCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
-        if ($ratebOfflineCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-            $ratebOfflineCompanyId = (int) rateb_resolve_ops_company_id();
-        }
+// Always register pos-sw so https://rateb.sa/.../admin works offline (same URL).
+$ratebOfflineSw = rateb_public_url('pos-sw.js');
+$ratebOfflineSwScope = function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix')
+    ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
+    : '';
+$ratebOfflineApiBase = rateb_url('api/v1/offline');
+$ratebOfflineCompanyId = 0;
+if (function_exists('rateb_resolve_erp_shell_company_id')) {
+    $ratebOfflineCompanyId = (int) rateb_resolve_erp_shell_company_id();
+} else {
+    $ratebOfflineCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+    if ($ratebOfflineCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+        $ratebOfflineCompanyId = (int) rateb_resolve_ops_company_id();
     }
-    $ratebOfflineBranchId = 0;
-    if (function_exists('rateb_portal_branch_id')) {
-        $ratebOfflineBranchId = (int) rateb_portal_branch_id();
-    }
-    if ($ratebOfflineBranchId < 1 && function_exists('rateb_active_branch_filter_id')) {
-        $ratebOfflineBranchId = (int) rateb_active_branch_filter_id();
-    }
-    $ratebOfflineUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
-    $ratebOfflineAllowlistUrl = rateb_public_url('assets/offline/ops-page-allowlist.json');
+}
+$ratebOfflineBranchId = 0;
+if (function_exists('rateb_portal_branch_id')) {
+    $ratebOfflineBranchId = (int) rateb_portal_branch_id();
+}
+if ($ratebOfflineBranchId < 1 && function_exists('rateb_active_branch_filter_id')) {
+    $ratebOfflineBranchId = (int) rateb_active_branch_filter_id();
+}
+$ratebOfflineUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
+$ratebOfflineAllowlistUrl = rateb_public_url('assets/offline/ops-page-allowlist.json');
 
-    if ($ratebOfflineFullClient) {
+if ($ratebOfflineFullClient) {
         $ratebOfflineFlags = $ratebOfflineFlagSvc->snapshot();
         $ratebOfflineSyncPolicy = class_exists(\Rateb\App\Offline\OfflineModule::class)
             ? \Rateb\App\Offline\OfflineModule::syncPolicy()
@@ -461,7 +461,6 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         ? (new \Rateb\App\Offline\Services\ErpOfflineIdentitySessionPolicy())->snapshot()
         : [],
     'client_queue_max' => (int) ($ratebOfflineSyncPolicy['client_queue_max'] ?? 500),
-    // Paths/routes loaded lazily from allowlistUrl — keep HTML lean (~10KB saved per page).
     'ops_page_paths' => [],
     'ops_page_routes' => (object) [],
     'ops_form_hooks' => array_values($ratebOfflineOpsAllowlist['form_hooks'] ?? []),
@@ -488,8 +487,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
 <script src="<?php echo rateb_asset('offline/erp-ops-forms-bootstrap.js'); ?>" defer></script>
 <?php
         }
-    } else {
-        // Keep SW alive without parsing the 370KB SDK on every admin navigation.
+} else {
+        // Always-on lite SW: same rateb.sa URL works offline after one online visit.
         ?>
 <script>
 window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
@@ -511,17 +510,21 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   if (!('serviceWorker' in navigator) || !cfg.serviceWorker) return;
   var swUrl = String(cfg.serviceWorker);
   var scope = cfg.serviceWorkerScope ? String(cfg.serviceWorkerScope) : undefined;
-  navigator.serviceWorker.getRegistrations().then(function (regs) {
-    var has = (regs || []).some(function (r) {
-      return r && r.active && String(r.active.scriptURL || '').indexOf('pos-sw.js') !== -1;
-    });
-    if (has) return null;
-    return navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined);
-  }).catch(function () {});
+  function warm(reg) {
+    try {
+      var w = reg && (reg.active || reg.waiting || reg.installing);
+      if (w) w.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
+    } catch (e) {}
+  }
+  navigator.serviceWorker.register(swUrl, scope ? { scope: scope } : undefined)
+    .then(function (reg) {
+      warm(reg);
+      return navigator.serviceWorker.ready.then(function (ready) { warm(ready); });
+    })
+    .catch(function () {});
 })();
 </script>
 <?php
-    }
 }
 $ratebOfflineMasterData = $ratebOfflineFullClient
     && $ratebOfflineFlagSvc
@@ -538,11 +541,8 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <script src="<?php echo rateb_asset('offline/erp-master-data-bootstrap.js'); ?>" defer></script>
 <?php
 }
-if (!empty($ratebOfflineReadCache)) {
-    ?>
-<script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
-<?php
-}
 ?>
+<script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
+
 </body>
 </html>
