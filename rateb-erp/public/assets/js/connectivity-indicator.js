@@ -3,9 +3,10 @@
  * Browser stays on https://rateb.sa/rateb-erp/public/admin/ (same URL online and offline).
  * Offline UX is the PWA / service-worker shell on that origin — no redirect to 127.0.0.1.
  *
- * Do not trust the browser "online" event alone: with a Service Worker, Chrome often fires
- * "online" (and may flip navigator.onLine) after cache hits while Wi‑Fi is still off.
- * "متصل" is shown only after a real network probe succeeds.
+ * Do not trust the browser "online" event alone on cloud: with a Service Worker, Chrome often
+ * fires "online" after cache hits while Wi‑Fi is still off. "متصل" requires a real probe.
+ *
+ * Local Branch Appliance (127.0.0.1): badge follows navigator.onLine (internet), not local PHP.
  */
 (function () {
     'use strict';
@@ -16,6 +17,15 @@
     function el() {
         return document.querySelector('[data-rateb-connection-status]')
             || document.getElementById('rateb-connection-indicator');
+    }
+
+    function isLocalAppliance() {
+        try {
+            var h = String(window.location.hostname || '');
+            return h === '127.0.0.1' || h === 'localhost' || h === '[::1]';
+        } catch (e) {
+            return false;
+        }
     }
 
     function apply(online) {
@@ -115,8 +125,28 @@
         }, delayMs || 0);
     }
 
-    function boot() {
-        // First paint: trust only hard offline; otherwise wait for probe.
+    function bootLocalAppliance() {
+        // Local PHP works without internet; badge = Wi‑Fi / internet only.
+        function syncNav() {
+            apply(typeof navigator === 'undefined' || navigator.onLine !== false);
+        }
+        syncNav();
+        window.addEventListener('online', syncNav);
+        window.addEventListener('offline', function () { apply(false); });
+        document.addEventListener('rateb-offline-connectivity', function (ev) {
+            var detail = ev && ev.detail ? ev.detail : null;
+            // Prefer real navigator when offline — ignore false "online" from local probe.
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                apply(false);
+                return;
+            }
+            if (detail && typeof detail.online === 'boolean') {
+                apply(detail.online && navigator.onLine !== false);
+            }
+        });
+    }
+
+    function bootCloud() {
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             apply(false);
         } else {
@@ -124,7 +154,6 @@
             scheduleVerify(0);
         }
 
-        // Never flip to "متصل" from the browser event alone — verify first.
         window.addEventListener('online', function () {
             scheduleVerify(50);
         });
@@ -150,7 +179,6 @@
             apply(conn.isOnline());
         }
 
-        // If Chrome reports offline, keep the badge honest even after UI clicks.
         document.addEventListener('click', function () {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                 apply(false);
@@ -160,6 +188,14 @@
                 }
             }
         }, true);
+    }
+
+    function boot() {
+        if (isLocalAppliance()) {
+            bootLocalAppliance();
+            return;
+        }
+        bootCloud();
     }
 
     if (document.readyState === 'loading') {

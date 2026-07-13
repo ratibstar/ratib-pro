@@ -407,11 +407,37 @@ $ratebOfflineFullClient = $ratebOfflineReadCache && (
     ))
 );
 // Always register pos-sw so https://rateb.sa/.../admin works offline (same URL).
-$ratebOfflineSw = rateb_public_url('pos-sw.js');
-$ratebOfflineSwScope = function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix')
+// Local Branch Appliance (127.0.0.1): never register SW — PHP serves the app; SW caused
+// blank/spinning pages when Wi‑Fi was off (treated local as "dead network").
+$ratebLocalAppliance = function_exists('rateb_is_local_appliance_host') && rateb_is_local_appliance_host();
+$ratebOfflineSw = $ratebLocalAppliance ? '' : rateb_public_url('pos-sw.js');
+$ratebOfflineSwScope = (!$ratebLocalAppliance && function_exists('rateb_site_origin') && function_exists('rateb_erp_app_prefix'))
     ? (rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/')
     : '';
-$ratebOfflineApiBase = rateb_url('api/v1/offline');
+if ($ratebLocalAppliance) {
+    ?>
+<script>
+(function () {
+  /* Tear down any leftover SW from earlier builds so local PHP is never intercepted. */
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    (regs || []).forEach(function (reg) {
+      try { reg.unregister(); } catch (e) { /* ignore */ }
+    });
+  }).catch(function () { /* ignore */ });
+  if (window.caches && typeof caches.keys === 'function') {
+    caches.keys().then(function (keys) {
+      (keys || []).forEach(function (k) {
+        if (/^rateb-/i.test(String(k || ''))) {
+          caches.delete(k);
+        }
+      });
+    }).catch(function () { /* ignore */ });
+  }
+})();
+</script>
+<?php
+}$ratebOfflineApiBase = rateb_url('api/v1/offline');
 $ratebOfflineCompanyId = 0;
 if (function_exists('rateb_resolve_erp_shell_company_id')) {
     $ratebOfflineCompanyId = (int) rateb_resolve_erp_shell_company_id();

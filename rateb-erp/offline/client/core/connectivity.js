@@ -66,7 +66,15 @@
             headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (res) {
-            // Reject SW/cache synthetic hits: connectivity header echo is network-only.
+            // Local PHP status must not mark "cloud online" when Wi‑Fi is off.
+            try {
+                var h = String((self.location && self.location.hostname) || '');
+                if ((h === '127.0.0.1' || h === 'localhost' || h === '[::1]')
+                    && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    setOnline(false);
+                    return false;
+                }
+            } catch (eLocal) { /* ignore */ }
             if (res && res.headers && String(res.headers.get('X-Rateb-Connectivity-Echo') || '') === '1') {
                 setOnline(true);
                 return true;
