@@ -10,11 +10,11 @@
     var GAP_MS = 400;
     var MIN_OK = 8;
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v30';
-    var COEXIST = 'rateb-erp-coexist-v25';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v31';
+    var COEXIST = 'rateb-erp-coexist-v26';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v4';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v4';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v5';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v5';
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
 

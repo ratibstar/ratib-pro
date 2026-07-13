@@ -3,9 +3,10 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v25';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v30';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v30';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
+var SW_BUILD_ID = '20260713-force-sw-v26';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -952,30 +953,52 @@ function navigateFetchInput(request) {
 }
 
 /** Strip redirected bit so respondWith / Cache.put never throws ERR_FAILED. */
+/** Strip redirected bit / materialize a fresh body so Cache.put never sees a used stream. */
 function asNonRedirectedResponse(response) {
     if (!response) {
         return Promise.resolve(null);
     }
+    var status = 200;
+    var statusText = '';
+    var headers = new Headers();
     try {
-        if (!response.redirected) {
-            return Promise.resolve(response);
-        }
-    } catch (eR) { /* rebuild anyway */ }
-    return response.blob().then(function (blob) {
-        var headers = new Headers();
-        try {
-            response.headers.forEach(function (v, k) {
-                headers.set(k, v);
-            });
-        } catch (eH) { /* ignore */ }
-        return new Response(blob, {
-            status: response.status || 200,
-            statusText: response.statusText || '',
+        status = response.status || 200;
+        statusText = response.statusText || '';
+        response.headers.forEach(function (v, k) {
+            headers.set(k, v);
+        });
+    } catch (eH) { /* ignore */ }
+    // Always copy bytes — never return the same Response object for caching/respondWith.
+    var src;
+    try {
+        src = response.clone();
+    } catch (eClone) {
+        src = response;
+    }
+    return src.arrayBuffer().then(function (buf) {
+        return new Response(buf, {
+            status: status,
+            statusText: statusText,
             headers: headers
         });
     }).catch(function () {
         return null;
     });
+}
+
+/** Safe Cache.put of one response into several keys without consuming the page Response. */
+function putResponseKeys(cache, response, keys) {
+    return asNonRedirectedResponse(response).then(function (clean) {
+        if (!clean) {
+            return null;
+        }
+        return Promise.all((keys || []).map(function (key) {
+            if (!key) {
+                return null;
+            }
+            return cache.put(key, clean.clone()).catch(function () { return null; });
+        }));
+    }).catch(function () { return null; });
 }
 
 function fetchNavigateNetwork(request, timeoutMs) {
@@ -1583,18 +1606,9 @@ self.addEventListener('fetch', function (event) {
         event.respondWith((function () {
             var offline = isCloudBrowserOffline();
             function putBoth(cache, responseForCache) {
-                // responseForCache must be a dedicated clone — never the Response returned to the page.
-                return asNonRedirectedResponse(responseForCache).then(function (clean) {
-                    if (!clean) {
-                        return null;
-                    }
-                    var bare = url.origin + url.pathname;
-                    var withQ = url.origin + url.pathname + (url.search || '');
-                    return Promise.all([
-                        cache.put(bare, clean.clone()).catch(function () { return null; }),
-                        cache.put(withQ, clean.clone()).catch(function () { return null; })
-                    ]);
-                }).catch(function () { return null; });
+                var bare = url.origin + url.pathname;
+                var withQ = url.origin + url.pathname + (url.search || '');
+                return putResponseKeys(cache, responseForCache, [bare, withQ]);
             }
             if (!offline) {
                 // Prefer cache hit for instant paint; refresh in background.

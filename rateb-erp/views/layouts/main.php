@@ -443,17 +443,47 @@ if (!$ratebLocalAppliance) {
     ?>
 <script>
 (function () {
-  /* Soft upgrade: re-register versioned SW. Do NOT wipe caches (that caused empty offline). */
+  /* Force Service Worker rebuild when RATEB_ASSET_BUILD changes.
+     Stale SW (e.g. warm_create_edit) kept throwing Response.clone errors → ERR_FAILED offline. */
   var NEED = <?php echo json_encode(defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1'); ?>;
   var KEY = 'rateb_sw_build';
+  var prev = null;
   try {
-    if (localStorage.getItem(KEY) === NEED) return;
+    prev = localStorage.getItem(KEY);
+  } catch (e0) {}
+  if (prev === NEED) {
+    return;
+  }
+  try {
+    localStorage.setItem(KEY, NEED);
+    localStorage.removeItem('rateb_erp_full_warm_at');
+    localStorage.removeItem('rateb_erp_full_warm_ok');
+    localStorage.removeItem('rateb_erp_full_warm_at_v3');
+    localStorage.removeItem('rateb_erp_full_warm_ok_v3');
+    localStorage.removeItem('rateb_erp_full_warm_at_v4');
+    localStorage.removeItem('rateb_erp_full_warm_ok_v4');
+    sessionStorage.removeItem('rateb_sw_reloaded');
+  } catch (e1) {}
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    return Promise.all((regs || []).map(function (r) {
+      return r.unregister().catch(function () { return false; });
+    }));
+  }).then(function () {
     try {
-      localStorage.setItem(KEY, NEED);
-      localStorage.removeItem('rateb_erp_full_warm_at');
-      localStorage.removeItem('rateb_erp_full_warm_ok');
-    } catch (e1) {}
-  } catch (e) {}
+      if (sessionStorage.getItem('rateb_sw_force_' + NEED) === '1') {
+        return;
+      }
+      sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
+    } catch (e2) {}
+    try {
+      if (navigator.onLine !== false) {
+        location.reload();
+      }
+    } catch (e3) {}
+  }).catch(function () { /* ignore */ });
 })();
 </script>
 <?php
