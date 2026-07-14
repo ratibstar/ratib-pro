@@ -921,6 +921,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
+<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>"></script>
 <?php
         $ratebOfflineLazyScripts = [];
         if (!empty($_GET['rateb_offline_debug'])) {
@@ -1025,6 +1026,9 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         'offline.read_cache' => true,
     ],
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+</script>
+<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>"></script>
+<script>
 (function () {
   var cfg = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
   if (!('serviceWorker' in navigator) || !cfg.serviceWorker) return;

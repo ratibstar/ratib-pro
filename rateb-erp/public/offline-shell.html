@@ -178,8 +178,15 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     }
   }, 1200);
 
-  /* Phase OA: bootstrap → auth/rbac modules → shell hosts (same globals as monolith). */
-  loadOfflineScript('assets/offline/offline-bootstrap.js')
+  /* Phase OE: restore tenant identity BEFORE OA/modules/unlock hosts. */
+  loadOfflineScript('assets/offline/erp-offline-tenant-context.js')
+    .then(function () {
+      if (window.RatebOfflineTenantContext && typeof window.RatebOfflineTenantContext.restore === 'function') {
+        window.RatebOfflineTenantContext.restore();
+      }
+      /* Phase OA: bootstrap → auth/rbac modules → shell hosts (same globals as monolith). */
+      return loadOfflineScript('assets/offline/offline-bootstrap.js');
+    })
     .then(function () {
       if (!(window.RatebOffline && typeof window.RatebOffline.ensure === 'function')) {
         return Promise.reject(new Error('oa_bootstrap_missing'));

@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-od-v57';
+var SW_BUILD_ID = '20260714-phase-oe-v58';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -25,6 +25,7 @@ var LAST_PROTECTED_CACHE_RESULT = null;
  */
 var PROTECTED_OFFLINE_RELS = [
     'offline-shell.html',
+    'assets/offline/erp-offline-tenant-context.js',
     'assets/offline/offline-bootstrap.js',
     'assets/offline/rateb-offline.js',
     'assets/offline/rateb-offline.min.js',

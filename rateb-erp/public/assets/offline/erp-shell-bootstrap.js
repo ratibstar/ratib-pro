@@ -891,6 +891,27 @@
             tFail(4, 'erp-shell-bootstrap.js', 'boot', 'POS location — boot aborted');
             return;
         }
+        // Phase OE — restore persisted tenant identity before gate (no server round-trip).
+        try {
+            if (root.RatebOfflineTenantContext && typeof root.RatebOfflineTenantContext.restore === 'function') {
+                root.RatebOfflineTenantContext.restore();
+                cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || cfg;
+            } else {
+                var rawScope = root.localStorage.getItem('rateb_erp_offline_scope')
+                    || root.localStorage.getItem('rateb_erp_offline_identity');
+                if (rawScope) {
+                    var saved = JSON.parse(rawScope);
+                    if ((parseInt(saved.company_id, 10) || 0) > 0 && (parseInt(saved.user_id, 10) || 0) > 0) {
+                        root.__RATEB_ERP_SHELL_OFFLINE__ = root.__RATEB_ERP_SHELL_OFFLINE__ || cfg;
+                        root.__RATEB_ERP_SHELL_OFFLINE__.company_id = parseInt(saved.company_id, 10) || 0;
+                        root.__RATEB_ERP_SHELL_OFFLINE__.tenant_id = parseInt(saved.tenant_id || saved.company_id, 10) || 0;
+                        root.__RATEB_ERP_SHELL_OFFLINE__.branch_id = parseInt(saved.branch_id, 10) || 0;
+                        root.__RATEB_ERP_SHELL_OFFLINE__.user_id = parseInt(saved.user_id, 10) || 0;
+                        cfg = root.__RATEB_ERP_SHELL_OFFLINE__;
+                    }
+                }
+            }
+        } catch (eScope) { /* ignore */ }
         var gateCompany = parseInt(cfg.company_id, 10) || 0;
         var gateUser = parseInt(cfg.user_id, 10) || 0;
         if (!(gateCompany > 0 && gateUser > 0)) {
@@ -900,6 +921,11 @@
             return;
         }
         persistOfflineScope(flags);
+        try {
+            if (root.RatebOfflineTenantContext && typeof root.RatebOfflineTenantContext.persist === 'function') {
+                root.RatebOfflineTenantContext.persist();
+            }
+        } catch (ePersist) { /* ignore */ }
         if (root.RatebOffline && typeof root.RatebOffline.init === 'function') {
             var max = parseInt(cfg.client_queue_max, 10);
             root.RatebOffline.init({
