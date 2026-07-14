@@ -1,0 +1,42 @@
+{
+  "phase": "OK.1",
+  "enterprise": "PASS",
+  "sw_build": "20260715-phase-ok1-v61",
+  "files_changed": [
+    "rateb-erp/public/pos-sw.js",
+    "rateb-erp/public/ratib-erp-build.txt"
+  ],
+  "root_cause": {
+    "id": "sw_online_early_return_lets_document_fetch_hang",
+    "summary": "Cloud online early-return skipped Document navigations when navigator.onLine===true, so Soft-Offline left Chrome waiting on a hanging network Document fetch and ignored Cache Storage snapshots."
+  },
+  "fix": {
+    "summary": "Intercept GET navigate on cloud 'online' path: serve certified ops/coexist snapshot immediately when present; otherwise network with 8s timeout then neverFailNavigate / shellFallback. Assets/XHR still pass through online.",
+    "functions": [
+      "matchErpNavSnapshot",
+      "navigateErpCloudWithCacheSafety",
+      "matchCertifiedPosShellSnapshot",
+      "navigatePosCloudWithCacheSafety"
+    ]
+  },
+  "before_after": {
+    "soft_online_high_latency_cached": {
+      "before": { "load_ms": null, "fcp_ms": 43976, "document_pending_ms": 52808 },
+      "after": { "load_ms": 134, "fcp_ms": 120, "document_pending_ms": 0, "wall_ms": 332 }
+    },
+    "hard_offline": {
+      "before": { "load_ms": 321, "fcp_ms": 112 },
+      "after": { "load_ms": 431, "fcp_ms": 356 }
+    },
+    "online_happy": {
+      "after": { "load_ms": 292, "fcp_ms": 212, "hung": false }
+    }
+  },
+  "evidence": "phase-ok1-validate-1784071306582.json",
+  "checks": {
+    "soft_online_cached_spinner_stops": true,
+    "hard_offline_still_fast": true,
+    "online_happy_completes": true,
+    "no_snapshot_does_not_hang_forever": true
+  }
+}

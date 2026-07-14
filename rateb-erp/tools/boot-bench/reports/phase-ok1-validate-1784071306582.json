@@ -1,0 +1,280 @@
+{
+  "phase": "OK.1",
+  "mode": "VALIDATE_SOFT_OFFLINE_NAV",
+  "expect_sw_build": "phase-ok1",
+  "before_reference": {
+    "soft_online_high_latency": {
+      "load_ms": null,
+      "fcp_ms": 43976,
+      "document_pending_ms": 52808,
+      "source": "phase-ok-soft-online-latency-1784070708165.json"
+    },
+    "hard_offline": {
+      "load_ms": 321,
+      "fcp_ms": 112,
+      "source": "phase-ok-verdict.json"
+    }
+  },
+  "cases": {
+    "soft_online_cached": {
+      "hung": false,
+      "loadMs": 133.90000000596046,
+      "fcpMs": 120,
+      "wall": 332,
+      "sample_final": {
+        "wall": 332,
+        "onLine": true,
+        "ready": "complete",
+        "bodyLen": 1067,
+        "title": "الحضور والانصراف | نظام رتب ERP",
+        "responseEnd": 11.200000017881393,
+        "dcl": 130.5,
+        "load": 133.90000000596046,
+        "ttfb": 7.800000011920929,
+        "fcp": 120,
+        "controller": true,
+        "softHdr": null,
+        "still_n": 2,
+        "doc_pending_n": 0,
+        "still_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr%2Fattendance",
+            "type": "Fetch",
+            "waited": 196
+          },
+          {
+            "url": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784071345458",
+            "type": "Fetch",
+            "waited": 180
+          }
+        ],
+        "doc_top": []
+      },
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr%2Fattendance",
+          "type": "Fetch",
+          "waited": 196
+        },
+        {
+          "url": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784071345458",
+          "type": "Fetch",
+          "waited": 180
+        }
+      ],
+      "doc_pending": [],
+      "failed_top": [],
+      "sw_build_header": {
+        "transferSize": 0,
+        "encodedBodySize": 82752,
+        "responseStart": 7.800000011920929,
+        "softNavMarker": null
+      }
+    },
+    "soft_online_no_snapshot": {
+      "hung": false,
+      "loadMs": 153.19999998807907,
+      "fcpMs": null,
+      "wall": 186,
+      "sample_final": {
+        "wall": 186,
+        "onLine": true,
+        "ready": "complete",
+        "bodyLen": 1067,
+        "title": "الحضور والانصراف | نظام رتب ERP",
+        "responseEnd": 12.900000005960464,
+        "dcl": 150.2999999821186,
+        "load": 153.19999998807907,
+        "ttfb": 10.099999994039536,
+        "controller": true,
+        "softHdr": null,
+        "still_n": 1,
+        "doc_pending_n": 0,
+        "still_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr%2Fattendance",
+            "type": "Fetch",
+            "waited": 16
+          }
+        ],
+        "doc_top": []
+      },
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr%2Fattendance",
+          "type": "Fetch",
+          "waited": 16
+        }
+      ],
+      "doc_pending": [],
+      "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?ok1_uncached=1784071345640"
+    },
+    "hard_offline": {
+      "hung": false,
+      "loadMs": 431,
+      "fcpMs": 356,
+      "wall": 623,
+      "sample_final": {
+        "wall": 623,
+        "onLine": false,
+        "ready": "complete",
+        "bodyLen": 944,
+        "title": "المخزون | نظام رتب ERP",
+        "responseEnd": 17.30000001192093,
+        "dcl": 421,
+        "load": 431,
+        "ttfb": 13.700000017881393,
+        "fcp": 356,
+        "controller": true,
+        "softHdr": null,
+        "still_n": 2,
+        "doc_pending_n": 0,
+        "still_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "type": "Other",
+            "waited": 47
+          },
+          {
+            "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52",
+            "type": "Script",
+            "waited": 41
+          }
+        ],
+        "doc_top": []
+      },
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/assets/pwa/erp-icon-192.png",
+          "type": "Other",
+          "waited": 47
+        },
+        {
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52",
+          "type": "Script",
+          "waited": 41
+        }
+      ],
+      "doc_pending": []
+    },
+    "online_happy": {
+      "hung": false,
+      "loadMs": 291.90000000596046,
+      "fcpMs": 212,
+      "wall": 370,
+      "sample_final": {
+        "wall": 370,
+        "onLine": true,
+        "ready": "complete",
+        "bodyLen": 852,
+        "title": "لوحة التحكم | نظام رتب ERP",
+        "responseEnd": 14.099999994039536,
+        "dcl": 289.30000001192093,
+        "load": 291.90000000596046,
+        "ttfb": 8.099999994039536,
+        "fcp": 212,
+        "controller": true,
+        "softHdr": null,
+        "still_n": 3,
+        "doc_pending_n": 0,
+        "still_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/api/dashboard-charts",
+            "type": "Fetch",
+            "waited": 149
+          },
+          {
+            "url": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784071346779",
+            "type": "Fetch",
+            "waited": 65
+          },
+          {
+            "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52",
+            "type": "Script",
+            "waited": 0
+          }
+        ],
+        "doc_top": []
+      },
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/api/dashboard-charts",
+          "type": "Fetch",
+          "waited": 149
+        },
+        {
+          "url": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784071346779",
+          "type": "Fetch",
+          "waited": 65
+        },
+        {
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52",
+          "type": "Script",
+          "waited": 0
+        }
+      ],
+      "doc_pending": []
+    }
+  },
+  "sw": {
+    "controlled": true,
+    "build": null,
+    "scope": "https://rateb.sa/rateb-erp/public/"
+  },
+  "cache_probe_before_soft": {
+    "names": [
+      "rateb-erp-coexist-v30",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34",
+      "rateb-pos-shell-v8",
+      "rateb-ops-pages-v1"
+    ],
+    "hits": [
+      {
+        "cache": "rateb-erp-coexist-v30",
+        "status": 200,
+        "soft": null
+      },
+      {
+        "cache": "rateb-erp-ops-pages-v34",
+        "status": 200,
+        "soft": null
+      }
+    ]
+  },
+  "navigator_onLine": true,
+  "after": {
+    "soft_online_cached": {
+      "load_ms": 133.90000000596046,
+      "fcp_ms": 120,
+      "wall_ms": 332,
+      "doc_pending": 0,
+      "hung": false
+    },
+    "soft_online_no_snapshot": {
+      "load_ms": 153.19999998807907,
+      "fcp_ms": null,
+      "wall_ms": 186,
+      "hung": false
+    },
+    "hard_offline": {
+      "load_ms": 431,
+      "fcp_ms": 356,
+      "wall_ms": 623,
+      "hung": false
+    },
+    "online_happy": {
+      "load_ms": 291.90000000596046,
+      "fcp_ms": 212,
+      "wall_ms": 370,
+      "hung": false
+    }
+  },
+  "checks": {
+    "soft_online_cached_spinner_stops": true,
+    "hard_offline_still_fast": true,
+    "online_happy_completes": true,
+    "no_snapshot_does_not_hang_forever": true
+  },
+  "enterprise": "PASS"
+}
