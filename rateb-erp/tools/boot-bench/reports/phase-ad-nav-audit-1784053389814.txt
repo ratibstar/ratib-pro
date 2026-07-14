@@ -1,0 +1,79 @@
+PHASE AD — REPEATED NAVIGATION AUDIT
+=====================================
+
+[dashboard] /rateb-erp/public/admin/
+  usable=1951ms dns_doc=0ms dns_again=false
+  ttfb=354.8 html_dl=2.2 dcl=416.8 load=446.6
+  fp=448 fcp=448 lcp=null
+  js_res=228ms css_res=209ms ajax=418ms (n=24)
+  transferSize=16317 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[hr] /rateb-erp/public/admin/hr?company_id=22
+  usable=2568ms dns_doc=0ms dns_again=false
+  ttfb=904.8 html_dl=4.8 dcl=1068 load=1069.2
+  fp=996 fcp=996 lcp=null
+  js_res=727ms css_res=234ms ajax=442ms (n=22)
+  transferSize=15998 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[crm] /rateb-erp/public/admin/crm?company_id=22
+  usable=nullms dns_doc=0ms dns_again=false
+  ttfb=633.5 html_dl=1 dcl=660.5 load=785.5
+  fp=804 fcp=804 lcp=null
+  js_res=0ms css_res=106ms ajax=0ms (n=0)
+  transferSize=1095 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[inventory] /rateb-erp/public/admin/ops/inventory?company_id=22
+  usable=2886ms dns_doc=0ms dns_again=false
+  ttfb=893.9 html_dl=3.9 dcl=1352.5 load=1361.6
+  fp=1304 fcp=1304 lcp=null
+  js_res=2192ms css_res=1181ms ajax=588ms (n=22)
+  transferSize=19744 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[accounting] /rateb-erp/public/admin/ops/accounting?company_id=22
+  usable=2662ms dns_doc=0ms dns_again=false
+  ttfb=1056.3 html_dl=1 dcl=1129.5 load=1132.4
+  fp=1136 fcp=1136 lcp=null
+  js_res=307ms css_res=302ms ajax=362ms (n=23)
+  transferSize=17622 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[procurement] /rateb-erp/public/admin/ops/purchase-requests?company_id=22
+  usable=2561ms dns_doc=0ms dns_again=false
+  ttfb=969.8 html_dl=2 dcl=1051.4 load=1054.5
+  fp=1052 fcp=1052 lcp=null
+  js_res=293ms css_res=246ms ajax=499ms (n=22)
+  transferSize=17480 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+[dashboard_return] /rateb-erp/public/admin/
+  usable=2142ms dns_doc=0ms dns_again=false
+  ttfb=517.2 html_dl=2.1 dcl=589.5 load=591.5
+  fp=600 fcp=600 lcp=null
+  js_res=226ms css_res=227ms ajax=454ms (n=24)
+  transferSize=16317 protocol=h2 sw=https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52
+
+ANALYSIS (repeated navigations after first dashboard)
+{
+  "nav_count": 7,
+  "repeated_count": 6,
+  "avg_usable_ms_all": 2110,
+  "avg_usable_ms_repeated": 2137,
+  "avg_dns_document_ms_repeated": 0,
+  "avg_ttfb_ms_repeated": 829.3,
+  "avg_dcl_ms_repeated": 975.2,
+  "avg_load_ms_repeated": 999.1,
+  "avg_fcp_ms_repeated": 982,
+  "avg_lcp_ms_repeated": 0,
+  "avg_js_script_duration_ms_repeated": 624,
+  "avg_css_duration_ms_repeated": 383,
+  "avg_ajax_duration_ms_repeated": 391,
+  "dns_performed_again_on_any_repeated": false,
+  "dns_on_resources_repeated": false
+}
+
+BOTTLENECK RANKING
+  829.3ms  Server_TTFB_excl_dns
+  624ms  JS_resources
+  391ms  AJAX
+  383ms  CSS_resources
+  150.3ms  Render_after_response
+  2.5ms  HTML_download
+  0ms  DNS

@@ -1,0 +1,127 @@
+{
+  "phase": "AD",
+  "title": "Repeated ERP navigation audit",
+  "measured_at": "2026-07-14T18:23:15Z",
+  "mode": "evidence_only_no_optimization",
+  "source": "tools/boot-bench/reports/phase-ad-nav-audit-latest.json",
+  "dns_again": {
+    "any_document_dns_on_repeated_nav": false,
+    "any_resource_dns_on_repeated_nav": false,
+    "avg_dns_document_ms_repeated": 0,
+    "verdict": "DNS was NOT performed again after the session was established"
+  },
+  "per_page": [
+    {
+      "id": "dashboard",
+      "href": "/admin/",
+      "usable_ms": 1951,
+      "dns_ms": 0,
+      "ttfb_ms": 354.8,
+      "html_download_ms": 2.2,
+      "dom_content_loaded_ms": 416.8,
+      "load_ms": 446.6,
+      "fp_ms": 448,
+      "fcp_ms": 448,
+      "js_ms": 228,
+      "css_ms": 209,
+      "ajax_ms": 418,
+      "ajax_n": 24
+    },
+    {
+      "id": "hr",
+      "href": "/admin/hr?company_id=22",
+      "usable_ms": 2568,
+      "dns_ms": 0,
+      "ttfb_ms": 904.8,
+      "html_download_ms": 4.8,
+      "dom_content_loaded_ms": 1068,
+      "load_ms": 1069.2,
+      "fp_ms": 996,
+      "fcp_ms": 996,
+      "js_ms": 727,
+      "css_ms": 234,
+      "ajax_ms": 442,
+      "ajax_n": 22
+    },
+    {
+      "id": "crm",
+      "href": "/admin/crm?company_id=22",
+      "note": "Error page title (تعذّر إكمال العملية) — still measured",
+      "usable_ms": null,
+      "dns_ms": 0,
+      "ttfb_ms": 633.5,
+      "fcp_ms": 804
+    },
+    {
+      "id": "inventory",
+      "href": "/admin/ops/inventory?company_id=22",
+      "usable_ms": 2886,
+      "dns_ms": 0,
+      "ttfb_ms": 893.9,
+      "dom_content_loaded_ms": 1352.5,
+      "fcp_ms": 1304,
+      "js_ms": 2192,
+      "css_ms": 1181,
+      "ajax_ms": 588
+    },
+    {
+      "id": "accounting",
+      "href": "/admin/ops/accounting?company_id=22",
+      "usable_ms": 2662,
+      "dns_ms": 0,
+      "ttfb_ms": 1056.3,
+      "fcp_ms": 1136,
+      "js_ms": 307,
+      "css_ms": 302,
+      "ajax_ms": 362
+    },
+    {
+      "id": "procurement",
+      "href": "/admin/ops/purchase-requests?company_id=22",
+      "usable_ms": 2561,
+      "dns_ms": 0,
+      "ttfb_ms": 969.8,
+      "fcp_ms": 1052,
+      "js_ms": 293,
+      "css_ms": 246,
+      "ajax_ms": 499
+    },
+    {
+      "id": "dashboard_return",
+      "href": "/admin/",
+      "usable_ms": 2142,
+      "dns_ms": 0,
+      "ttfb_ms": 517.2,
+      "fcp_ms": 600,
+      "js_ms": 226,
+      "css_ms": 227,
+      "ajax_ms": 454
+    }
+  ],
+  "repeated_navigation_averages": {
+    "usable_ms": 2137,
+    "dns_ms": 0,
+    "ttfb_ms": 829.3,
+    "dcl_ms": 975.2,
+    "load_ms": 999.1,
+    "fcp_ms": 982,
+    "js_resource_ms": 624,
+    "css_resource_ms": 383,
+    "ajax_ms": 391,
+    "html_download_ms": 2.5
+  },
+  "bottleneck_ranking_avg_ms": [
+    { "component": "Server_TTFB_excl_dns", "avg_ms": 829.3 },
+    { "component": "JS_resources", "avg_ms": 624 },
+    { "component": "AJAX", "avg_ms": 391 },
+    { "component": "CSS_resources", "avg_ms": 383 },
+    { "component": "Render_after_response", "avg_ms": 150.3 },
+    { "component": "HTML_download", "avg_ms": 2.5 },
+    { "component": "DNS", "avg_ms": 0 }
+  ],
+  "answer": {
+    "is_dns": false,
+    "primary": "Server / PHP (document TTFB)",
+    "evidence": "On every repeated navigation dns_ms=0. Average document TTFB=829.3ms while HTML download averages only 2.5ms and FCP arrives only ~150ms after first byte — wait is almost entirely before first byte (Apache→FPM→PHP), not DNS, not HTML transfer, not primarily browser paint."
+  }
+}
