@@ -1,0 +1,371 @@
+{
+  "phase": "OH",
+  "generatedAt": "2026-07-14T22:34:46.852Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "modules": [
+    {
+      "id": "dashboard",
+      "url": "https://rateb.sa/rateb-erp/public/admin/",
+      "size": 81278,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "لوحة التحكم | نظام رتب ERP",
+        "html_len": 972765,
+        "body_len": 890,
+        "decodedBodySize": 81278,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالوصول الإشعارات إعدادات"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/",
+        "cache_hit": true,
+        "cached_html_len": 78021,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "لوحة التحكم | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "hr",
+      "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "size": 80958,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "الحضور والانصراف | نظام رتب ERP",
+        "html_len": 919862,
+        "body_len": 1015,
+        "decodedBodySize": 80958,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية نظرة عامة قائمة الموظفين الأقسام المسميات الوظيفية العطلات ال"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/hr/attendance",
+        "cache_hit": true,
+        "cached_html_len": 77878,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "الحضور والانصراف | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "inventory",
+      "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "size": 95113,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "المخزون | نظام رتب ERP",
+        "html_len": 933811,
+        "body_len": 944,
+        "decodedBodySize": 95113,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون المخزون دفعات المخزون جرد المخزون والعد الدوري المستودعات تحويلات المستودعات توقعات المخزون حركات"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/ops/inventory",
+        "cache_hit": true,
+        "cached_html_len": 91720,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "المخزون | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "accounting",
+      "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+      "size": 88674,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP",
+        "html_len": 979719,
+        "body_len": 1802,
+        "decodedBodySize": 88674,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالوصول الإشعارات إعدادات"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/accounting",
+        "cache_hit": true,
+        "cached_html_len": 84775,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "procurement",
+      "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+      "size": 87368,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "طلبات الشراء | نظام رتب ERP",
+        "html_len": 925990,
+        "body_len": 983,
+        "decodedBodySize": 87368,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 طلبات الشراء 1 أوامر الشراء طلبات عروض الأسعار عروض الموردين المخزون نقطة البيع الموردون الموارد البشرية "
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/ops/purchase-requests",
+        "cache_hit": true,
+        "cached_html_len": 84172,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "طلبات الشراء | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "warehouse",
+      "url": "https://rateb.sa/rateb-erp/public/admin/ops/warehouses",
+      "size": 86640,
+      "min": 50000,
+      "pass": true,
+      "offline": {
+        "title": "المستودعات | نظام رتب ERP",
+        "html_len": 925250,
+        "body_len": 990,
+        "decodedBodySize": 86640,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون المخزون دفعات المخزون جرد المخزون والعد الدوري المستودعات تحويلات المستودعات توقعات المخزون حركات"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/warehouses",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": null,
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/ops/warehouses",
+        "cache_hit": true,
+        "cached_html_len": 83425,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "المستودعات | نظام رتب ERP"
+      }
+    },
+    {
+      "id": "pos",
+      "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register",
+      "size": 2739,
+      "min": 4000,
+      "pass": false,
+      "offline": {
+        "title": "POS Offline",
+        "html_len": 2694,
+        "body_len": 164,
+        "decodedBodySize": 2739,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": true,
+        "snippet": "نقطة البيع غير متصلة افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال. شاشة البيع · شاشة البيع /register"
+      },
+      "sw": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null
+        }
+      },
+      "inventory": {
+        "rel": "/admin/ops/pos/register",
+        "cache_hit": true,
+        "cached_html_len": 6045,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": false,
+        "title": "التحقق البيومتري"
+      }
+    }
+  ],
+  "inventory": {
+    "names": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34",
+      "rateb-pos-shell-v8"
+    ],
+    "hits": [
+      {
+        "rel": "/admin/",
+        "cache_hit": true,
+        "cached_html_len": 78021,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "لوحة التحكم | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/hr/attendance",
+        "cache_hit": true,
+        "cached_html_len": 77878,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "الحضور والانصراف | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/inventory",
+        "cache_hit": true,
+        "cached_html_len": 91720,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "المخزون | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/accounting",
+        "cache_hit": true,
+        "cached_html_len": 84775,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/accounting",
+        "cache_hit": true,
+        "cached_html_len": 84775,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/purchase-requests",
+        "cache_hit": true,
+        "cached_html_len": 84172,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "طلبات الشراء | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/warehouses",
+        "cache_hit": true,
+        "cached_html_len": 83425,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": true,
+        "title": "المستودعات | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/pos/register",
+        "cache_hit": true,
+        "cached_html_len": 6045,
+        "cache": "rateb-erp-coexist-v30",
+        "placeholder": false,
+        "title": "التحقق البيومتري"
+      },
+      {
+        "rel": "/admin/crm",
+        "cache_hit": false,
+        "cached_html_len": 0,
+        "cache": null,
+        "placeholder": false,
+        "title": ""
+      }
+    ]
+  },
+  "not_cacheable": [
+    {
+      "module": "pos",
+      "path": "/admin/ops/pos/register",
+      "reason": "POS offline snapshot below certified threshold or stub served",
+      "size": 2739,
+      "detail": {
+        "title": "POS Offline",
+        "html_len": 2694,
+        "body_len": 164,
+        "decodedBodySize": 2739,
+        "transferSize": 0,
+        "has_uncached": false,
+        "placeholder_text": true,
+        "snippet": "نقطة البيع غير متصلة افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال. شاشة البيع · شاشة البيع /register"
+      }
+    },
+    {
+      "module": "crm",
+      "path": "/admin/crm",
+      "reason": "Online ERP page returns HTTP 500 / thin error HTML — not offline-capable; refused to fake-cache"
+    }
+  ],
+  "warmStats": {
+    "skipped": true,
+    "reason": "running"
+  },
+  "enterprise": "PASS",
+  "ok": true,
+  "summary": {
+    "required_pass": true,
+    "pos_pass": false,
+    "inventory_hits": [
+      "/admin/",
+      "/admin/hr/attendance",
+      "/admin/ops/inventory",
+      "/admin/accounting",
+      "/admin/ops/accounting",
+      "/admin/ops/purchase-requests",
+      "/admin/ops/warehouses",
+      "/admin/ops/pos/register"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "phase": "OH",
+  "enterprise": "PASS",
+  "evidence": "phase-oh-html-snapshot-1784068486849.json",
+  "root_cause_fixed": "missing_offline_snapshot — warm only seeded /admin/; certified module HTML now idle+leanOps warmed into ops/coexist caches",
+  "files_modified": [
+    "rateb-erp/public/assets/offline/erp-offline-full-warm.js",
+    "rateb-erp/public/pos-sw.js",
+    "rateb-erp/views/layouts/main.php",
+    "rateb-erp/public/assets/offline/erp-offline-nav-guard.js"
+  ],
+  "not_cacheable": [
+    {
+      "module": "POS /admin/ops/pos/register",
+      "reason": "Online warm stores biometric gate HTML (~6KB, title التحقق البيومتري) without data-pos-register shell; offline SW serves POS Offline stub (~2739B). Not faked."
+    },
+    {
+      "module": "CRM /admin/crm",
+      "reason": "Online returns HTTP 500 / thin error — refused to cache."
+    }
+  ]
+}
