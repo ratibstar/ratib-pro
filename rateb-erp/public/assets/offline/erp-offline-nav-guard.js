@@ -11,7 +11,7 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-save-fast-v50';
+    var GUARD_BUILD = '20260714-online-pass-v51';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v29'];
     var flushing = false;
 
@@ -996,35 +996,22 @@
         root.document.addEventListener('rateb-connection-badge', function (ev) {
             clearStaleMarks();
             ensureCss();
-            var online = false;
-            try {
-                online = !!(ev && ev.detail && ev.detail.online);
-            } catch (eD) { /* ignore */ }
-            if (online && browserHasNetwork()) {
-                flushDeferredForms({ force: true });
-            }
             updateSyncBanner();
         });
         root.document.addEventListener('rateb-offline-connectivity', function (ev) {
-            try {
-                if (ev && ev.detail && ev.detail.online && browserHasNetwork()) {
-                    flushDeferredForms({ force: true });
-                }
-            } catch (eC) { /* ignore */ }
             updateSyncBanner();
         });
         setInterval(function () {
             clearStaleMarks();
             updateSyncBanner();
-            if (browserHasNetwork() && readDeferred().length) {
+            // Rare background flush only — frequent flush starved online page loads.
+            if (browserHasNetwork() && readDeferred().length && document.visibilityState === 'visible') {
                 flushDeferredForms();
             }
-        }, 8000);
+        }, 90000);
         setTimeout(function () {
             pullDeferredFromCaches().then(function () {
-                if (browserHasNetwork()) {
-                    flushDeferredForms({ force: true });
-                }
+                // Do not auto-flush on every page open — blocks PHP while browsing online.
             });
             try {
                 var q = String(root.location.search || '');

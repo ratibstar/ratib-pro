@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v50';
+var SW_BUILD_ID = '20260714-force-sw-v51';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1857,8 +1857,14 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
+    // ONLINE cloud: never intercept anything — interception caused endless spin on inventory/admin.
+    // Offline-only handling below (forms + cached pages).
+    if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
+        return;
+    }
+
     // Offline POST (form Save / XHR): never let Chrome paint «لا يتوفر اتصال».
-    if (event.request.method === 'POST' && isCloudBrowserOffline()) {
+    if (event.request.method === 'POST') {
         if (/\/admin(\/|$)/i.test(url.pathname) || /\/api\//i.test(url.pathname)) {
             event.respondWith(handleOfflineAdminPost(event.request, url));
             return;
@@ -1879,23 +1885,6 @@ self.addEventListener('fetch', function (event) {
                 return;
             }
         } catch (eProbe) { /* ignore */ }
-
-    // ONLINE cloud: never hijack Admin pages/assets — every respondWith added seconds.
-    // Offline-only intercept keeps PWA save/browse; live browsing stays as fast as no-SW.
-    if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
-        if (event.request.mode === 'navigate' && !isPosNavigation(url)) {
-            return;
-        }
-        if (isErpOfflineAsset(url)) {
-            return;
-        }
-        // Warm header: still bypass SW race for page-seed fetches.
-        try {
-            if (String(event.request.headers.get('X-Rateb-Shell-Warm') || '') === '1') {
-                return;
-            }
-        } catch (eWarmH) { /* ignore */ }
-    }
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(
@@ -1937,19 +1926,13 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist: try network first; on ANY failure serve cached Admin (never Chrome interstitial).
-    // When browser reports offline → cache/shell immediately (no hung fetch).
+    // Smart coexist OFFLINE only (online returns earlier in this fetch handler).
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
         event.respondWith(
-            (isCloudBrowserOffline()
-                ? neverFailNavigate(event.request, url)
-                : fetchNavigateNetwork(event.request, 20000).catch(function () {
-                    return neverFailNavigate(event.request, url);
-                })
-            ).catch(function () {
+            neverFailNavigate(event.request, url).catch(function () {
                 try {
                     return erpInlineShellResponse();
                 } catch (eFinal) {
