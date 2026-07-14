@@ -1,0 +1,389 @@
+{
+  "ok": true,
+  "generatedAt": "2026-07-14T20:42:00.757Z",
+  "mode": "OFFLINE_ONLY_AUDIT",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "pbkdfBench": {
+    "iterations": 120000,
+    "ms": 19.1
+  },
+  "sdkScriptCostOnline": {
+    "bytes": 386202,
+    "fetchCachedMs": 537.8,
+    "functionCompileMs": 2,
+    "resourceEntries": []
+  },
+  "onlineSnap": {
+    "href": "https://rateb.sa/rateb-erp/public/login?err=credentials",
+    "boot": null,
+    "offlineCfg": null,
+    "hasSdk": false,
+    "swController": null,
+    "regs": [],
+    "caches": []
+  },
+  "offlineShellReady": {
+    "href": "chrome-error://chromewebdata/",
+    "hasSdk": false,
+    "hasLock": false,
+    "hasRbac": false,
+    "pinVisible": false,
+    "shellMain": false,
+    "status": "",
+    "title": "",
+    "scripts": [],
+    "idbOpens": 0,
+    "idbOpenTimes": [],
+    "pbkdf2Calls": 0,
+    "pbkdf2Times": [],
+    "longTasks": [],
+    "longTaskTotalMs": 0,
+    "longTaskCount": 0,
+    "topResources": [],
+    "allResources": [],
+    "nav": {
+      "responseStart": 1,
+      "domContentLoadedEventEnd": 54,
+      "loadEventEnd": 58,
+      "transferSize": 0,
+      "encodedBodySize": 184659
+    },
+    "paints": {
+      "first-paint": 72,
+      "first-contentful-paint": 72
+    },
+    "onLine": true,
+    "swController": null
+  },
+  "unlockTiming": null,
+  "final": {
+    "href": "chrome-error://chromewebdata/",
+    "title": "rateb.sa",
+    "onLine": true,
+    "hasSdk": false,
+    "sdkBooted": false,
+    "hasLock": false,
+    "hasRbac": false,
+    "hasQueue": false,
+    "hasReplay": false,
+    "hasConnectivity": false,
+    "shellMain": false,
+    "sidebar": false,
+    "status": "",
+    "titleEl": "",
+    "idbOpens": 0,
+    "idbOpenTimes": [],
+    "idbDatabases": [],
+    "pbkdf2Calls": 0,
+    "pbkdf2Times": [],
+    "queueDepth": null,
+    "longTasksTop20": [],
+    "longTaskTotalMs": 0,
+    "longTaskCount": 0,
+    "offlineScripts": [],
+    "topResources": [],
+    "nav": {
+      "responseStart": 2,
+      "domInteractive": 27,
+      "domContentLoadedEventEnd": 30,
+      "loadEventEnd": 32,
+      "transferSize": 0,
+      "encodedBodySize": 184659,
+      "decodedBodySize": 184659
+    },
+    "paints": {
+      "first-paint": 48,
+      "first-contentful-paint": 48
+    },
+    "sdkMeta": {
+      "bytes": 386202,
+      "sections": 35,
+      "note": "compile measured in online phase; offline fetch skipped to avoid nav races"
+    },
+    "swController": null,
+    "scriptTags": []
+  },
+  "adminOffline": {
+    "href": "chrome-error://chromewebdata/",
+    "title": "rateb.sa",
+    "boot": null,
+    "hasSdk": false,
+    "sdkBooted": false,
+    "bodyLen": 173,
+    "offlineUi": false,
+    "idbOpens": 0,
+    "idbOpenTimes": [],
+    "pbkdf2Calls": 0,
+    "pbkdf2Times": [],
+    "longTasks": [],
+    "longTaskTotalMs": 0,
+    "topResources": [],
+    "swController": null
+  },
+  "events": [
+    {
+      "t": 2,
+      "type": "marker",
+      "name": "ONLINE_LOGIN_START"
+    },
+    {
+      "t": 1486,
+      "type": "marker",
+      "name": "ONLINE_AFTER_LOGIN",
+      "url": "https://rateb.sa/rateb-erp/public/login?err=credentials"
+    },
+    {
+      "t": 27202,
+      "type": "marker",
+      "name": "ONLINE_WARM_STATE",
+      "onlineSnap": {
+        "href": "https://rateb.sa/rateb-erp/public/login?err=credentials",
+        "boot": null,
+        "offlineCfg": null,
+        "hasSdk": false,
+        "swController": null,
+        "regs": [],
+        "caches": []
+      }
+    },
+    {
+      "t": 27224,
+      "type": "marker",
+      "name": "PBKDF2_MICROBENCH",
+      "pbkdfBench": {
+        "iterations": 120000,
+        "ms": 19.1
+      }
+    },
+    {
+      "t": 27767,
+      "type": "marker",
+      "name": "SDK_SCRIPT_COST_ONLINE",
+      "sdkScriptCostOnline": {
+        "bytes": 386202,
+        "fetchCachedMs": 537.8,
+        "functionCompileMs": 2,
+        "resourceEntries": []
+      }
+    },
+    {
+      "t": 27771,
+      "type": "marker",
+      "name": "NETWORK_OFFLINE_SET"
+    },
+    {
+      "t": 27772,
+      "type": "marker",
+      "name": "NAVIGATOR_ONLINE_FLAG",
+      "offlineFlag": false
+    },
+    {
+      "t": 0,
+      "type": "marker",
+      "name": "OFFLINE_SHELL_NAV_START"
+    },
+    {
+      "t": 11,
+      "type": "marker",
+      "name": "OFFLINE_SHELL_DCL",
+      "navErr": "page.goto: net::ERR_INTERNET_DISCONNECTED at https://rateb.sa/rateb-erp/public/offline-shell.html\nCall log:\n  - navigating to \"https://rateb.sa/rateb-erp/public/offline-shell.html\", waiting until \"domcontentloaded\"\n",
+      "url": "https://rateb.sa/rateb-erp/public/login?err=credentials"
+    },
+    {
+      "t": 834,
+      "type": "poll",
+      "i": 0,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 942,
+      "type": "poll",
+      "i": 1,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1053,
+      "type": "poll",
+      "i": 2,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1169,
+      "type": "poll",
+      "i": 3,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1279,
+      "type": "poll",
+      "i": 4,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1388,
+      "type": "poll",
+      "i": 5,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1496,
+      "type": "poll",
+      "i": 6,
+      "href": "chrome-error://chromewebdata/",
+      "hasSdk": false,
+      "hasLock": false,
+      "pinVisible": false,
+      "shellMain": false,
+      "idbOpens": 0,
+      "longTaskCount": 0,
+      "title": ""
+    },
+    {
+      "t": 1499,
+      "type": "marker",
+      "name": "RENAV_OFFLINE_SHELL",
+      "from": "chrome-error://chromewebdata/"
+    },
+    {
+      "t": 1521,
+      "type": "marker",
+      "name": "RENAV_FAIL",
+      "err": "page.goto: net::ERR_INTERNET_DISCONNECTED at https://rateb.sa/rateb-erp/public/offline-shell.html\nCall log:\n  - navigating to \"https://rateb.sa/rateb-erp/public/offline-shell.html\", waiting until \"dom"
+    },
+    {
+      "t": 1529,
+      "type": "marker",
+      "name": "FINAL_EVAL_RETRY",
+      "attempt": 0,
+      "err": "page.evaluate: Execution context was destroyed, most likely because of a navigation",
+      "url": "chrome-error://chromewebdata/"
+    },
+    {
+      "t": 1854,
+      "type": "marker",
+      "name": "OFFLINE_FINAL",
+      "final": {
+        "href": "chrome-error://chromewebdata/",
+        "title": "rateb.sa",
+        "onLine": true,
+        "hasSdk": false,
+        "sdkBooted": false,
+        "hasLock": false,
+        "hasRbac": false,
+        "hasQueue": false,
+        "hasReplay": false,
+        "hasConnectivity": false,
+        "shellMain": false,
+        "sidebar": false,
+        "status": "",
+        "titleEl": "",
+        "idbOpens": 0,
+        "idbOpenTimes": [],
+        "idbDatabases": [],
+        "pbkdf2Calls": 0,
+        "pbkdf2Times": [],
+        "queueDepth": null,
+        "longTasksTop20": [],
+        "longTaskTotalMs": 0,
+        "longTaskCount": 0,
+        "offlineScripts": [],
+        "topResources": [],
+        "nav": {
+          "responseStart": 2,
+          "domInteractive": 27,
+          "domContentLoadedEventEnd": 30,
+          "loadEventEnd": 32,
+          "transferSize": 0,
+          "encodedBodySize": 184659,
+          "decodedBodySize": 184659
+        },
+        "paints": {
+          "first-paint": 48,
+          "first-contentful-paint": 48
+        },
+        "sdkMeta": {
+          "bytes": 386202,
+          "sections": 35,
+          "note": "compile measured in online phase; offline fetch skipped to avoid nav races"
+        },
+        "swController": null,
+        "scriptTags": []
+      }
+    },
+    {
+      "t": 0,
+      "type": "marker",
+      "name": "OFFLINE_ADMIN_RELOAD_START"
+    },
+    {
+      "t": 24,
+      "type": "marker",
+      "name": "OFFLINE_ADMIN_NAV_ERR",
+      "err": "page.goto: net::ERR_INTERNET_DISCONNECTED at https://rateb.sa/rateb-erp/public/admin/\nCall log:\n  - navigating to \"https://rateb.sa/rateb-erp/public/admin/\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "t": 3043,
+      "type": "marker",
+      "name": "OFFLINE_ADMIN_FINAL",
+      "adminOffline": {
+        "href": "chrome-error://chromewebdata/",
+        "title": "rateb.sa",
+        "boot": null,
+        "hasSdk": false,
+        "sdkBooted": false,
+        "bodyLen": 173,
+        "offlineUi": false,
+        "idbOpens": 0,
+        "idbOpenTimes": [],
+        "pbkdf2Calls": 0,
+        "pbkdf2Times": [],
+        "longTasks": [],
+        "longTaskTotalMs": 0,
+        "topResources": [],
+        "swController": null
+      }
+    }
+  ]
+}

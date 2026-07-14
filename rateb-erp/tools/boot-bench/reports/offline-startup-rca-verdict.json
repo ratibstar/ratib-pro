@@ -1,0 +1,54 @@
+{
+  "phase": "OFFLINE_STARTUP_RCA",
+  "mode": "READ_ONLY",
+  "measured_at": "2026-07-14T20:45:00Z",
+  "scope": "OFFLINE client path only — no online PHP/SQL/controllers",
+  "single_biggest_bottleneck": {
+    "component": "public/assets/offline/rateb-offline.js (monolithic Offline SDK)",
+    "bytes": 387051,
+    "note": "rateb-offline.min.js is identical size — not actually minified",
+    "sections": 35,
+    "domain_adapters": 25,
+    "measured_cold_load_parse_exec_ms": 34.2,
+    "measured_warm_load_parse_exec_ms": 18.6,
+    "percent_of_shell_critical_path": 26.6,
+    "percent_of_post_load_offline_js_bytes": 70.7,
+    "why": [
+      "Largest offline asset; on critical path before auth/RBAC/queue/dashboard",
+      "Every startup executes all 25 domain adapters even when flags default OFF",
+      "Serial injection after window.load on admin path (main.php afterInteractive)",
+      "landAfterUnlock can force a second full document load that re-runs the chain"
+    ],
+    "evidence_files": [
+      "tools/boot-bench/reports/offline-local-bench-1784061848322.json",
+      "public/assets/offline/rateb-offline.js",
+      "views/layouts/main.php (Lazy Offline SDK + warm/nav-guard chains)",
+      "public/offline-shell.html (serial SDK→auth→rbac)",
+      "public/assets/offline/rateb-offline.js landAfterUnlock / PBKDF2_ITERATIONS"
+    ]
+  },
+  "second": {
+    "component": "window.load gate before Offline SDK injection (cached admin path)",
+    "evidence": "main.php afterInteractive: waits for document complete/load even when navigator.onLine===false, then setTimeout(0) startSdk"
+  },
+  "third": {
+    "component": "landAfterUnlock hard navigation (offline-shell → last admin URL)",
+    "evidence": "RatebOfflineAuthLock.landAfterUnlock sets location.href to rateb_erp_offline_last_url — doubles document+SDK boot"
+  },
+  "measured_shell_critical_path_ms": {
+    "sdk_chain": 72.9,
+    "sdk_init": 0.1,
+    "idb_first_open": 19.5,
+    "pbkdf2_120k": 36.1,
+    "total_excl_user_think": 128.6,
+    "harness_with_extras": 274.4
+  },
+  "ruled_out_as_number_one": {
+    "pbkdf2": "36.1 ms measured — real but smaller than monolith path cost",
+    "queue_sync_replay": "startConnectivity/startScheduler false at layout boot",
+    "full_warm": "shouldSkipWarm when offline",
+    "sw_install_claim": "non-blocking precache after install"
+  },
+  "production_note": "Production login with default/temp passwords failed this session; timings from local harness on real offline assets + code-path inspection.",
+  "verdict": "PASS_IDENTIFIED — monolithic rateb-offline.js is the single largest offline startup bottleneck."
+}

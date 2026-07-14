@@ -1,0 +1,585 @@
+{
+  "generatedAt": "2026-07-14T20:44:39.673Z",
+  "runs": [
+    {
+      "label": "cold",
+      "result": {
+        "scriptTimings": [
+          {
+            "src": "/assets/offline/rateb-offline.js",
+            "wallMs": 34.2,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-shell-auth.js",
+            "wallMs": 7.7,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-shell-rbac.js",
+            "wallMs": 27.9,
+            "ok": true
+          }
+        ],
+        "extraTimings": [
+          {
+            "src": "/assets/offline/erp-shell-bootstrap.js",
+            "wallMs": 5.7,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-nav-guard.js",
+            "wallMs": 7.3,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-full-warm.js",
+            "wallMs": 5.5,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-auth-bootstrap.js",
+            "wallMs": 28.6,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-rbac-bootstrap.js",
+            "wallMs": 16.5,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-ops-forms-bootstrap.js",
+            "wallMs": 4.7,
+            "ok": true
+          }
+        ],
+        "marks": [
+          {
+            "n": "chain_start",
+            "t": 2.6
+          },
+          {
+            "n": "script",
+            "t": 37.1,
+            "src": "/assets/offline/rateb-offline.js",
+            "wallMs": 34.2,
+            "ok": true
+          },
+          {
+            "n": "script",
+            "t": 44.9,
+            "src": "/assets/offline/erp-offline-shell-auth.js",
+            "wallMs": 7.7,
+            "ok": true
+          },
+          {
+            "n": "script",
+            "t": 72.9,
+            "src": "/assets/offline/erp-offline-shell-rbac.js",
+            "wallMs": 27.9,
+            "ok": true
+          },
+          {
+            "n": "chain_done",
+            "t": 72.9
+          },
+          {
+            "n": "sdk_init",
+            "t": 73.1,
+            "ms": 0.1
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 19.4
+          },
+          {
+            "n": "idb_first",
+            "t": 92.6,
+            "ms": 19.5
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.4
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.4
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.7
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.8
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.6
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.6
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.5
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.5
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.5
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.4
+          },
+          {
+            "n": "idb_10",
+            "t": 98.7,
+            "ms": 6
+          },
+          {
+            "n": "pbkdf2",
+            "t": 135.3,
+            "ms": 36.1
+          },
+          {
+            "n": "pbkdf2_2",
+            "t": 171.8,
+            "ms": 36.5
+          },
+          {
+            "n": "extras_done",
+            "t": 240.3
+          },
+          {
+            "n": "sdk_blob_reexec",
+            "t": 269.1,
+            "ms": 13.5,
+            "bytes": 386202
+          },
+          {
+            "n": "sdk_function_compile",
+            "t": 274,
+            "ms": 4.9
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.4
+          }
+        ],
+        "longTasks": [],
+        "longTaskTotalMs": 0,
+        "idbOpens": 11,
+        "resources": [
+          {
+            "name": "/assets/offline/erp-auth-bootstrap.js",
+            "duration": 25.8,
+            "decodedBodySize": 17272,
+            "transferSize": 17572,
+            "startTime": 212.4,
+            "responseEnd": 238.2
+          },
+          {
+            "name": "/assets/offline/rateb-offline.js",
+            "duration": 19.1,
+            "decodedBodySize": 387051,
+            "transferSize": 387351,
+            "startTime": 25.9,
+            "responseEnd": 45
+          },
+          {
+            "name": "/assets/offline/erp-rbac-bootstrap.js",
+            "duration": 15.3,
+            "decodedBodySize": 5356,
+            "transferSize": 5656,
+            "startTime": 240.9,
+            "responseEnd": 256.2
+          },
+          {
+            "name": "/assets/offline/rateb-offline.js",
+            "duration": 5.2,
+            "decodedBodySize": 387051,
+            "transferSize": 387351,
+            "startTime": 262.4,
+            "responseEnd": 267.6
+          },
+          {
+            "name": "/assets/offline/erp-offline-shell-auth.js",
+            "duration": 3.8,
+            "decodedBodySize": 23568,
+            "transferSize": 23868,
+            "startTime": 59,
+            "responseEnd": 62.8
+          },
+          {
+            "name": "/favicon.ico",
+            "duration": 3.2,
+            "decodedBodySize": 2,
+            "transferSize": 302,
+            "startTime": 108.4,
+            "responseEnd": 111.6
+          },
+          {
+            "name": "/assets/offline/erp-shell-bootstrap.js",
+            "duration": 3,
+            "decodedBodySize": 44966,
+            "transferSize": 45266,
+            "startTime": 193.7,
+            "responseEnd": 196.7
+          },
+          {
+            "name": "/assets/offline/erp-offline-full-warm.js",
+            "duration": 2.9,
+            "decodedBodySize": 36820,
+            "transferSize": 37120,
+            "startTime": 206.9,
+            "responseEnd": 209.8
+          },
+          {
+            "name": "/assets/offline/erp-offline-nav-guard.js",
+            "duration": 2.8,
+            "decodedBodySize": 46260,
+            "transferSize": 46560,
+            "startTime": 199.5,
+            "responseEnd": 202.3
+          },
+          {
+            "name": "/assets/offline/erp-ops-forms-bootstrap.js",
+            "duration": 2.7,
+            "decodedBodySize": 6447,
+            "transferSize": 6747,
+            "startTime": 257.4,
+            "responseEnd": 260.1
+          },
+          {
+            "name": "/assets/offline/erp-offline-shell-rbac.js",
+            "duration": 2.6,
+            "decodedBodySize": 4149,
+            "transferSize": 4449,
+            "startTime": 66.7,
+            "responseEnd": 69.3
+          }
+        ],
+        "globals": {
+          "sdk": true,
+          "booted": false,
+          "lock": true,
+          "rbac": true,
+          "queue": true
+        },
+        "totalWallMs": 274.4,
+        "logs": [
+          "chain start",
+          "loaded {\"src\":\"/assets/offline/rateb-offline.js\",\"wallMs\":34.2,\"ok\":true}",
+          "loaded {\"src\":\"/assets/offline/erp-offline-shell-auth.js\",\"wallMs\":7.7,\"ok\":true}",
+          "loaded {\"src\":\"/assets/offline/erp-offline-shell-rbac.js\",\"wallMs\":27.9,\"ok\":true}",
+          "DONE 274.4"
+        ]
+      },
+      "body": ""
+    },
+    {
+      "label": "warm",
+      "result": {
+        "scriptTimings": [
+          {
+            "src": "/assets/offline/rateb-offline.js",
+            "wallMs": 18.6,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-shell-auth.js",
+            "wallMs": 7.9,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-shell-rbac.js",
+            "wallMs": 4.4,
+            "ok": true
+          }
+        ],
+        "extraTimings": [
+          {
+            "src": "/assets/offline/erp-shell-bootstrap.js",
+            "wallMs": 3.4,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-nav-guard.js",
+            "wallMs": 3.4,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-offline-full-warm.js",
+            "wallMs": 3.3,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-auth-bootstrap.js",
+            "wallMs": 4.8,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-rbac-bootstrap.js",
+            "wallMs": 3.4,
+            "ok": true
+          },
+          {
+            "src": "/assets/offline/erp-ops-forms-bootstrap.js",
+            "wallMs": 2.8,
+            "ok": true
+          }
+        ],
+        "marks": [
+          {
+            "n": "chain_start",
+            "t": 1.1
+          },
+          {
+            "n": "script",
+            "t": 19.9,
+            "src": "/assets/offline/rateb-offline.js",
+            "wallMs": 18.6,
+            "ok": true
+          },
+          {
+            "n": "script",
+            "t": 27.8,
+            "src": "/assets/offline/erp-offline-shell-auth.js",
+            "wallMs": 7.9,
+            "ok": true
+          },
+          {
+            "n": "script",
+            "t": 32.3,
+            "src": "/assets/offline/erp-offline-shell-rbac.js",
+            "wallMs": 4.4,
+            "ok": true
+          },
+          {
+            "n": "chain_done",
+            "t": 32.3
+          },
+          {
+            "n": "sdk_init",
+            "t": 32.4,
+            "ms": 0.1
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 4.2
+          },
+          {
+            "n": "idb_first",
+            "t": 36.7,
+            "ms": 4.3
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.3
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.3
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.3
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.3
+          },
+          {
+            "n": "idb_10",
+            "t": 39.7,
+            "ms": 3
+          },
+          {
+            "n": "pbkdf2",
+            "t": 61.1,
+            "ms": 21
+          },
+          {
+            "n": "pbkdf2_2",
+            "t": 80.9,
+            "ms": 19.7
+          },
+          {
+            "n": "extras_done",
+            "t": 102.2
+          },
+          {
+            "n": "idb_open",
+            "name": "rateb_erp_offline",
+            "ms": 0.5
+          },
+          {
+            "n": "sdk_blob_reexec",
+            "t": 117.3,
+            "ms": 8.9,
+            "bytes": 386202
+          },
+          {
+            "n": "sdk_function_compile",
+            "t": 121.6,
+            "ms": 4.3
+          }
+        ],
+        "longTasks": [],
+        "longTaskTotalMs": 0,
+        "idbOpens": 12,
+        "resources": [
+          {
+            "name": "/assets/offline/rateb-offline.js",
+            "duration": 8.3,
+            "decodedBodySize": 387051,
+            "transferSize": 387351,
+            "startTime": 13.8,
+            "responseEnd": 22.1
+          },
+          {
+            "name": "/assets/offline/erp-offline-shell-auth.js",
+            "duration": 4.2,
+            "decodedBodySize": 23568,
+            "transferSize": 23868,
+            "startTime": 31.7,
+            "responseEnd": 35.9
+          },
+          {
+            "name": "/assets/offline/erp-offline-shell-rbac.js",
+            "duration": 2.5,
+            "decodedBodySize": 4149,
+            "transferSize": 4449,
+            "startTime": 39.8,
+            "responseEnd": 42.3
+          },
+          {
+            "name": "/assets/offline/erp-rbac-bootstrap.js",
+            "duration": 2.2,
+            "decodedBodySize": 5356,
+            "transferSize": 5656,
+            "startTime": 107.9,
+            "responseEnd": 110.1
+          },
+          {
+            "name": "/assets/offline/rateb-offline.js",
+            "duration": 2.2,
+            "decodedBodySize": 387051,
+            "transferSize": 387351,
+            "startTime": 114,
+            "responseEnd": 116.2
+          },
+          {
+            "name": "/assets/offline/erp-offline-full-warm.js",
+            "duration": 1.9,
+            "decodedBodySize": 36820,
+            "transferSize": 37120,
+            "startTime": 99.6,
+            "responseEnd": 101.5
+          },
+          {
+            "name": "/assets/offline/erp-auth-bootstrap.js",
+            "duration": 1.8,
+            "decodedBodySize": 17272,
+            "transferSize": 17572,
+            "startTime": 103,
+            "responseEnd": 104.8
+          },
+          {
+            "name": "/assets/offline/erp-shell-bootstrap.js",
+            "duration": 1.7,
+            "decodedBodySize": 44966,
+            "transferSize": 45266,
+            "startTime": 92.9,
+            "responseEnd": 94.6
+          },
+          {
+            "name": "/assets/offline/erp-ops-forms-bootstrap.js",
+            "duration": 1.6,
+            "decodedBodySize": 6447,
+            "transferSize": 6747,
+            "startTime": 111.2,
+            "responseEnd": 112.8
+          },
+          {
+            "name": "/assets/offline/erp-offline-nav-guard.js",
+            "duration": 1.5,
+            "decodedBodySize": 46260,
+            "transferSize": 46560,
+            "startTime": 96.2,
+            "responseEnd": 97.7
+          }
+        ],
+        "globals": {
+          "sdk": true,
+          "booted": false,
+          "lock": true,
+          "rbac": true,
+          "queue": true
+        },
+        "totalWallMs": 121.8,
+        "logs": [
+          "chain start",
+          "loaded {\"src\":\"/assets/offline/rateb-offline.js\",\"wallMs\":18.6,\"ok\":true}",
+          "loaded {\"src\":\"/assets/offline/erp-offline-shell-auth.js\",\"wallMs\":7.9,\"ok\":true}",
+          "loaded {\"src\":\"/assets/offline/erp-offline-shell-rbac.js\",\"wallMs\":4.4,\"ok\":true}",
+          "DONE 121.8"
+        ]
+      },
+      "body": "chain start\nloaded {\"src\":\"/assets/offline/rateb-offline.js\",\"wallMs\":18.6,\"ok\":true}\nloaded {\"src\":\"/assets/offline/erp-offline-shell-auth.js\",\"wallMs\":7.9,\"ok\":true}\nloaded {\"src\":\"/assets/offline/erp-offline-shell-rbac.js\",\"wallMs\":4.4,\"ok\":true}\nDONE 121.8"
+    }
+  ]
+}

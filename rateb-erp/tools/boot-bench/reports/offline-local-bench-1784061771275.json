@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-07-14T20:43:19.591Z",
+  "mode": "LOCAL_OFFLINE_CRITICAL_PATH",
+  "base": "http://127.0.0.1:50654",
+  "runs": [
+    {
+      "label": "cold",
+      "wallMs": 13482,
+      "result": null
+    },
+    {
+      "label": "warm",
+      "wallMs": 13994,
+      "result": null
+    }
+  ],
+  "isolatedSdk": {
+    "bytes": 386202,
+    "blobExecMs": 10.7,
+    "functionCompileProxyMs": 4.7
+  }
+}
