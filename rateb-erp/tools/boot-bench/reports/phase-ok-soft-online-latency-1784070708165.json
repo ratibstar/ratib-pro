@@ -1,0 +1,106 @@
+{
+  "phase": "OK",
+  "mode": "SOFT_ONLINE_HIGH_LATENCY",
+  "pages": [],
+  "navigator_onLine": true,
+  "page": {
+    "hung": true,
+    "loadMs": null,
+    "fcpMs": 43976,
+    "wall": 52815,
+    "sample_2s": {
+      "wall": 32277,
+      "onLine": true,
+      "ready": "loading",
+      "bodyLen": 0,
+      "responseEnd": 0,
+      "dcl": 0,
+      "load": 0,
+      "controller": true,
+      "still_n": 1,
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+          "type": "Document",
+          "waited": 32270
+        }
+      ]
+    },
+    "sample_8s": {
+      "wall": 32277,
+      "onLine": true,
+      "ready": "loading",
+      "bodyLen": 0,
+      "responseEnd": 0,
+      "dcl": 0,
+      "load": 0,
+      "controller": true,
+      "still_n": 1,
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+          "type": "Document",
+          "waited": 32270
+        }
+      ]
+    },
+    "sample_final": {
+      "wall": 52315,
+      "onLine": true,
+      "ready": "loading",
+      "bodyLen": 446,
+      "responseEnd": 0,
+      "dcl": 0,
+      "load": 0,
+      "fcp": 43976,
+      "controller": true,
+      "still_n": 1,
+      "still_top": [
+        {
+          "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+          "type": "Document",
+          "waited": 52308
+        }
+      ]
+    },
+    "still_top": [
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "type": "Document",
+        "waited": 52808
+      }
+    ],
+    "failed_top": [
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+        "type": "Fetch",
+        "error": "net::ERR_ABORTED",
+        "waited": 32248
+      }
+    ]
+  },
+  "hard_offline_compare": {
+    "ready": "complete",
+    "load": 320.7999999821186,
+    "onLine": false,
+    "fcp": 112,
+    "wall": 494
+  },
+  "root_cause": {
+    "id": "sw_bypasses_when_navigator_online_leaving_browser_hung_on_network",
+    "summary": "When navigator.onLine===true (soft/degraded network), pos-sw.js intentionally does NOT intercept (cloud online early-return). Chrome then waits on real network for document/subresources. With high latency this keeps the tab spinner alive long after any cached HTML could paint. Hard offline (onLine===false) lets SW cache-first and load ends quickly.",
+    "spinner_waits_for": "document load event blocked by pending network fetches",
+    "one_task": {
+      "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "type": "Document",
+      "waited": 52808
+    },
+    "file": "rateb-erp/public/pos-sw.js",
+    "function": "fetch event early-return when !isCloudBrowserOffline()",
+    "line": "~2494-2496",
+    "code": "if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) { return; }",
+    "related": "isCloudBrowserOffline() ≈ navigator.onLine === false"
+  },
+  "enterprise": "FAIL",
+  "pass_definition": "Enterprise FAIL means the endless/long spinner root cause was identified with evidence (not that product is healthy)."
+}

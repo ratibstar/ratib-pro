@@ -1,0 +1,110 @@
+{
+  "phase": "OK",
+  "mode": "DISABLE_CACHE_OFFLINE",
+  "pages": [
+    {
+      "id": "dashboard",
+      "hung": false,
+      "wall": 918,
+      "marks": [
+        {
+          "n": "DCL",
+          "t": 424.09999999403954
+        },
+        {
+          "n": "LOAD",
+          "t": 425
+        },
+        {
+          "n": "FCP",
+          "t": 477.69999998807907
+        }
+      ],
+      "timeline": {
+        "responseEnd": 376.19999998807907,
+        "dcl": 424.5,
+        "fcp": 460,
+        "load": 425
+      },
+      "failed_sorted": [],
+      "still_at_end": [],
+      "poll_final": {
+        "wall": 918,
+        "ready": "complete",
+        "still_n": 0,
+        "open": []
+      }
+    },
+    {
+      "id": "hr",
+      "hung": false,
+      "wall": 536,
+      "marks": [
+        {
+          "n": "DCL",
+          "t": 49.69999998807907
+        },
+        {
+          "n": "DCL",
+          "t": 49.69999998807907
+        },
+        {
+          "n": "LOAD",
+          "t": 50.599999994039536
+        },
+        {
+          "n": "LOAD",
+          "t": 50.599999994039536
+        },
+        {
+          "n": "FCP",
+          "t": 77.80000001192093
+        },
+        {
+          "n": "FCP",
+          "t": 77.80000001192093
+        }
+      ],
+      "timeline": {
+        "responseEnd": 4.5,
+        "dcl": 50.099999994039536,
+        "fcp": 64,
+        "load": 50.599999994039536
+      },
+      "failed_sorted": [],
+      "still_at_end": [],
+      "poll_final": {
+        "wall": 536,
+        "ready": "complete",
+        "still_n": 0,
+        "open": []
+      }
+    }
+  ],
+  "htmlPut": {
+    "results": [
+      {
+        "u": "https://rateb.sa/rateb-erp/public/admin/",
+        "len": 15357
+      },
+      {
+        "u": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "len": 15357
+      },
+      {
+        "u": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "len": 15357
+      }
+    ],
+    "deleted": [],
+    "controller": false
+  },
+  "root_cause": {
+    "id": "load_eventually_completed",
+    "spinner_waits_for": "document load event (Chrome tab loading indicator)",
+    "one_blocking_task": null,
+    "theory": "HTML paints from ops-pages cache (FCP). Document load waits for ALL render-blocking+tracked subresources. Offline uncached CSS/JS/font/img → fetch pending until SW stub/fail or browser timeout → spinner remains."
+  },
+  "exact_attribution": null,
+  "enterprise": "PASS"
+}

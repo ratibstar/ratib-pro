@@ -1,0 +1,98 @@
+{
+  "phase": "OK",
+  "mode": "COLD_ASSETS_OFFLINE",
+  "generatedAt": "2026-07-14T23:08:59.467Z",
+  "pages": [
+    {
+      "id": "dashboard",
+      "hung": false,
+      "timeline_ms": {
+        "html_responseEnd": 1288.5999999940395,
+        "dcl": 1349.5999999940395,
+        "fcp": 1352,
+        "load": 1353.699999988079,
+        "wall_until_load_or_timeout": 1861
+      },
+      "final": {
+        "readyState": "complete",
+        "bodyLen": 890,
+        "pendingDom": [],
+        "openRes": [],
+        "slowRes": []
+      },
+      "failed": [],
+      "still_pending_cdp": [],
+      "mid_samples": [
+        {
+          "wall": 1350,
+          "readyState": "loading",
+          "bodyLen": 886,
+          "htmlLen": 77791,
+          "responseEnd": 1288.5999999940395,
+          "dcl": 0,
+          "load": 0,
+          "openRes": [],
+          "slowRes": [],
+          "pendingDom": []
+        }
+      ]
+    },
+    {
+      "id": "hr",
+      "hung": false,
+      "timeline_ms": {
+        "html_responseEnd": 6.4000000059604645,
+        "dcl": 66.5,
+        "fcp": 60,
+        "load": 73,
+        "wall_until_load_or_timeout": 574
+      },
+      "final": {
+        "readyState": "complete",
+        "bodyLen": 1015,
+        "pendingDom": [],
+        "openRes": [],
+        "slowRes": []
+      },
+      "failed": [],
+      "still_pending_cdp": [],
+      "mid_samples": [
+        {
+          "wall": 59,
+          "readyState": "loading",
+          "bodyLen": 1011,
+          "htmlLen": 78044,
+          "responseEnd": 6.4000000059604645,
+          "dcl": 0,
+          "load": 0,
+          "openRes": [],
+          "slowRes": [],
+          "pendingDom": []
+        }
+      ]
+    }
+  ],
+  "wiped": {
+    "names": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34"
+    ],
+    "deleted": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8"
+    ]
+  },
+  "root_cause": {
+    "spinner_waits_for": "document load event",
+    "one_task": "Pending document subresource fetch(es) that never complete promptly offline (miss Cache Storage → SW/network hang or delayed fail), so loadEventEnd is delayed or never fires while HTML/FCP already painted.",
+    "evidence_buckets": {},
+    "primary_bucket": null,
+    "longest_failures": [],
+    "still_pending_sample": [],
+    "pending_dom_sample": []
+  },
+  "exact": null,
+  "enterprise": "PASS"
+}

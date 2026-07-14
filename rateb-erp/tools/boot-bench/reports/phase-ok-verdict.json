@@ -1,0 +1,23 @@
+{
+  "phase": "OK",
+  "mode": "EVIDENCE_ONLY",
+  "enterprise": "FAIL",
+  "evidence": [
+    "phase-ok-soft-online-latency-1784070708165.json",
+    "phase-ok-spinner-profile-1784070454776.json",
+    "phase-ok-spinner-cold-assets-1784070539467.json"
+  ],
+  "root_cause": {
+    "id": "sw_online_early_return_lets_document_fetch_hang",
+    "one_liner": "Chrome tab spinner stays alive because document load waits on a hanging network Document fetch while navigator.onLine===true; Service Worker intentionally does not intercept and therefore does not serve the cached ERP HTML.",
+    "file": "rateb-erp/public/pos-sw.js",
+    "function": "fetch event listener — early return when !isCloudBrowserOffline()",
+    "line": "2494-2496",
+    "blocker_task": "Pending Document request for navigated /admin/... URL (network)",
+    "spinner_waits_for": "document load event (readyState complete / loadEventEnd)"
+  },
+  "contrast": {
+    "hard_offline_onLine_false": { "load_ms": 321, "fcp_ms": 112, "wall_ms": 494 },
+    "soft_online_high_latency_onLine_true": { "load_ms": null, "fcp_ms": 43976, "document_pending_ms": 52808 }
+  }
+}
