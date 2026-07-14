@@ -1,0 +1,307 @@
+{
+  "phase": "POST_AG_FINAL_PERFORMANCE_AUDIT",
+  "mode": "read_only_evidence_only",
+  "measured_at": "2026-07-14T19:52:47Z",
+  "baseline_pre_ag": {
+    "avg_document_ttfb_ms": 829.3,
+    "source": "phase-ad-verdict.json"
+  },
+  "browser_navigation": {
+    "source": "tools/boot-bench/reports/phase-post-ag-nav-latest.json",
+    "note_lcp": "LCP entries not recorded in this headless run (null); FCP reported instead",
+    "pages": [
+      {
+        "id": "dashboard",
+        "ttfb_ms": 281.5,
+        "fcp_ms": 364,
+        "lcp_ms": null,
+        "dcl_ms": 342.1,
+        "load_ms": 349.3,
+        "js_resource_ms": 276,
+        "css_resource_ms": 239,
+        "ajax_ms": 461,
+        "ajax_n": 24,
+        "usable_ms": 1870,
+        "title": "لوحة التحكم | نظام رتب ERP"
+      },
+      {
+        "id": "hr",
+        "ttfb_ms": 407,
+        "fcp_ms": 468,
+        "lcp_ms": null,
+        "dcl_ms": 542.2,
+        "load_ms": 543.4,
+        "js_resource_ms": 621,
+        "css_resource_ms": 172,
+        "ajax_ms": 412,
+        "ajax_n": 22,
+        "usable_ms": 2023,
+        "title": "الموارد البشرية | نظام رتب ERP"
+      },
+      {
+        "id": "crm",
+        "ttfb_ms": 184.6,
+        "fcp_ms": 340,
+        "lcp_ms": null,
+        "dcl_ms": 198.2,
+        "load_ms": 296.6,
+        "js_resource_ms": 0,
+        "css_resource_ms": 102,
+        "ajax_ms": 0,
+        "usable_ms": 1257,
+        "title": "تعذّر إكمال العملية",
+        "note": "HTTP error page — missing CrmDashboardController (pre-existing)"
+      },
+      {
+        "id": "inventory",
+        "ttfb_ms": 418,
+        "fcp_ms": 492,
+        "lcp_ms": null,
+        "dcl_ms": 479.5,
+        "load_ms": 484.3,
+        "js_resource_ms": 277,
+        "css_resource_ms": 280,
+        "ajax_ms": 543,
+        "usable_ms": 1995,
+        "title": "المخزون | نظام رتب ERP"
+      },
+      {
+        "id": "accounting",
+        "ttfb_ms": 708.2,
+        "fcp_ms": 820,
+        "lcp_ms": null,
+        "dcl_ms": 805.7,
+        "load_ms": 808.5,
+        "js_resource_ms": 236,
+        "css_resource_ms": 282,
+        "ajax_ms": 318,
+        "usable_ms": 2326,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      },
+      {
+        "id": "procurement",
+        "ttfb_ms": 420.4,
+        "fcp_ms": 536,
+        "lcp_ms": null,
+        "dcl_ms": 489.8,
+        "load_ms": 503.4,
+        "js_resource_ms": 349,
+        "css_resource_ms": 259,
+        "ajax_ms": 492,
+        "usable_ms": 2027,
+        "title": "طلبات الشراء | نظام رتب ERP"
+      },
+      {
+        "id": "pos",
+        "ttfb_ms": 160.2,
+        "fcp_ms": 488,
+        "lcp_ms": null,
+        "dcl_ms": 649.6,
+        "load_ms": 649.9,
+        "js_resource_ms": 3164,
+        "css_resource_ms": 108,
+        "ajax_ms": 0,
+        "usable_ms": 1926,
+        "title": "التحقق البيومتري",
+        "note": "Landed on biometric verification UI; JS resource sum elevated"
+      }
+    ],
+    "averages_all_pages": {
+      "ttfb_ms": 368.6,
+      "fcp_ms": 501.1,
+      "dcl_ms": 501,
+      "load_ms": 519.3,
+      "js_ms": 703,
+      "css_ms": 206,
+      "ajax_ms": 318,
+      "usable_ms": 1918
+    },
+    "averages_ex_crm_error": {
+      "ttfb_ms": 399.2,
+      "note": "excludes CRM error page"
+    },
+    "vs_pre_ag": {
+      "avg_ttfb_before_ms": 829.3,
+      "avg_ttfb_after_ms": 368.6,
+      "delta_ms": -460.7,
+      "delta_pct": -55.6
+    }
+  },
+  "php_fpm_lifecycle": {
+    "source": "phase-post-ag-fpm.jsonl",
+    "opcache": false,
+    "pages": {
+      "/admin": {
+        "total_ms": 255.7,
+        "bootstrap_init_ms": 61.1,
+        "auth_ms": 7.9,
+        "routes_load_ms": 0.5,
+        "middleware_ms": 16.3,
+        "dispatch_ms": 166.9,
+        "dispatch_pct": 65.3
+      },
+      "/admin/hr": {
+        "total_ms": 210.5,
+        "bootstrap_init_ms": 59.5,
+        "auth_ms": 13.9,
+        "routes_load_ms": 11.1,
+        "middleware_ms": 5.7,
+        "dispatch_ms": 115.9,
+        "dispatch_pct": 55.0,
+        "route_count": 1179
+      },
+      "/admin/ops/inventory": {
+        "total_ms": 157.9,
+        "bootstrap_init_ms": 35.8,
+        "routes_load_ms": 4.3,
+        "dispatch_ms": 109.5,
+        "dispatch_pct": 69.4
+      },
+      "/admin/ops/accounting": {
+        "total_ms": 325.4,
+        "bootstrap_init_ms": 35.7,
+        "routes_load_ms": 4.4,
+        "dispatch_ms": 277.0,
+        "dispatch_pct": 85.1
+      },
+      "/admin/ops/purchase-requests": {
+        "total_ms": 194.2,
+        "bootstrap_init_ms": 43.2,
+        "routes_load_ms": 8.9,
+        "dispatch_ms": 124.0,
+        "dispatch_pct": 63.9
+      }
+    },
+    "routes_load_note": "Post-AG routes_load for ops ≈ 4–11 ms (was ≈ 420–455 ms pre-AG)"
+  },
+  "php_cli_ae_accounting": {
+    "source": "phase-ae-admin-ops-accounting.json / phase-post-ag-php-detail.json",
+    "wall_ms": 227.0,
+    "sql_ms": 104.9,
+    "sql_count": 565,
+    "stages": [
+      { "id": "dispatch_controller_view", "wall_ms": 189.1, "pct": 83.31 },
+      { "id": "bootstrap_init", "wall_ms": 24.4, "pct": 10.73 },
+      { "id": "routes_load", "wall_ms": 5.3, "pct": 2.32 },
+      { "id": "auth_bootstrap", "wall_ms": 2.9, "pct": 1.27 }
+    ]
+  },
+  "top_20_slowest_functions_by_sql_aggregation_accounting": [
+    {
+      "rank": 1,
+      "class": "Rateb\\App\\Core\\Database",
+      "function": "liveTableHasColumn",
+      "file": "app/Core/Database.php",
+      "line": "95-111",
+      "caller_file": "app/services/AccountingBranchScope.php",
+      "caller_line": 15,
+      "ms": 32.992,
+      "call_count": 61,
+      "pct_of_cli_wall": 14.5
+    },
+    {
+      "rank": 2,
+      "class": "Rateb\\App\\Services\\AccountingService",
+      "function": "findCoaByCode",
+      "file": "app/services/AccountingService.php",
+      "line": 97,
+      "sql_line_sample": 238,
+      "ms": 16.503,
+      "call_count": 130,
+      "pct_of_cli_wall": 7.3
+    },
+    {
+      "rank": 3,
+      "class": "Rateb\\App\\Services\\AccountingService",
+      "function": "touchCoaRow",
+      "file": "app/services/AccountingService.php",
+      "line": 136,
+      "sql_line_sample": 241,
+      "ms": 12.286,
+      "call_count": 117,
+      "pct_of_cli_wall": 5.4
+    },
+    {
+      "rank": 4,
+      "class": "Rateb\\App\\Core\\Model",
+      "function": "update",
+      "file": "app/Core/Model.php",
+      "via": "AccountingService.php:285",
+      "ms": 11.981,
+      "call_count": 102
+    },
+    {
+      "rank": 5,
+      "class": "Rateb\\App\\Core\\Model",
+      "function": "executePrepared",
+      "file": "app/Core/Model.php",
+      "line": 558,
+      "ms": 7.841,
+      "call_count": 43
+    }
+  ],
+  "top_20_sql_note": "Individual query wall times are sub-ms; cost is query volume (565 on accounting). Hottest pattern: SHOW COLUMNS FROM … LIKE 'branch_id' via liveTableHasColumn (61×).",
+  "top_20_http_endpoints": {
+    "source": "browser document TTFB + ajax ttfb from phase-post-ag-nav-latest.json",
+    "note": "See nav report top_20_http_endpoints; slowest documents: accounting 708ms, procurement 420ms, inventory 418ms, hr 407ms"
+  },
+  "single_largest_remaining_bottleneck": {
+    "what": "Accounting dashboard server work inside Router::dispatch → AccountingDashboardController::index → AccountingService::ensureDefaultAccounts (+ dashboard build / trialBalance), dominated by repeated schema probes and CoA ensure SQL",
+    "file": "app/controllers/Company/AccountingControllers.php",
+    "class": "Rateb\\App\\Controllers\\Company\\AccountingDashboardController",
+    "function": "index",
+    "lines": "22-48 (critical: line 35 ensureDefaultAccounts)",
+    "service_hotspot": {
+      "file": "app/services/AccountingService.php",
+      "function": "ensureDefaultAccounts",
+      "line": 231,
+      "related": [
+        "findCoaByCode @97 (130 SQL calls)",
+        "touchCoaRow @136 (117 SQL calls)"
+      ]
+    },
+    "schema_hotspot": {
+      "file": "app/Core/Database.php",
+      "class": "Rateb\\App\\Core\\Database",
+      "function": "liveTableHasColumn",
+      "lines": "95-111",
+      "called_from": "app/services/AccountingBranchScope.php:15 tableColumnExists",
+      "ms_agg": 32.992,
+      "calls": 61
+    },
+    "fpm_evidence": {
+      "path": "/admin/ops/accounting",
+      "total_ms": 325.4,
+      "dispatch_ms": 277.0,
+      "pct_of_request": 85.1
+    },
+    "browser_evidence": {
+      "document_ttfb_ms": 708.2,
+      "pct_of_post_ag_avg_ttfb": 192
+    },
+    "cli_evidence": {
+      "dispatch_controller_view_ms": 189.1,
+      "pct_of_cli_wall": 83.31,
+      "sql_ms": 104.9,
+      "sql_count": 565
+    }
+  },
+  "enterprise_acceptability": {
+    "verdict": "PARTIALLY ACCEPTABLE",
+    "evidence": "Most ops navigations now document TTFB ≈ 160–420 ms (HR/inventory/procurement/dashboard) vs pre-AG avg 829 ms. Accounting remains ≈ 708 ms browser TTFB / ≈ 325 ms FPM with 565 SQL. Usable time still ≈ 1.9–2.3 s due to AJAX/JS after first byte. OPcache still disabled. CRM still broken (missing controller). Not yet uniform enterprise-grade across all modules.",
+    "acceptable_now": ["dashboard TTFB 282ms", "HR 407ms", "inventory 418ms", "procurement 420ms", "POS document TTFB 160ms"],
+    "not_yet_acceptable": ["accounting TTFB 708ms / FPM dispatch 85%", "usable≈2s (AJAX-bound)", "OPcache off", "CRM error page"]
+  },
+  "next_highest_roi_optimization": {
+    "recommendation": "Stop or cache per-request CoA ensure + liveTableHasColumn SHOW COLUMNS on AccountingDashboardController::index (ensureDefaultAccounts + AccountingBranchScope schema probes). Second: enable OPcache (infra). Third: reduce dashboard AJAX waterfall for usable time.",
+    "not_routes": "routes_load is no longer the bottleneck post-AG (≈4–11 ms ops)"
+  },
+  "ag_induced_regressions": [],
+  "evidence_files": [
+    "tools/boot-bench/reports/phase-post-ag-nav-latest.json",
+    "tools/boot-bench/reports/phase-post-ag-fpm.jsonl",
+    "tools/boot-bench/reports/phase-post-ag-ttfb.txt",
+    "tools/boot-bench/reports/phase-post-ag-php-detail.json",
+    "tools/boot-bench/reports/phase-ae-admin-ops-accounting.json"
+  ]
+}

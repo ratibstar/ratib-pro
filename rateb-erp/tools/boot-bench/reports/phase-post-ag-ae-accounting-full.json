@@ -1,0 +1,1441 @@
+{
+    "phase": "AE",
+    "path": "/admin/ops/accounting",
+    "measured_at": "2026-07-14T19:52:37+00:00",
+    "host": "server-167-233-71-107",
+    "sapi": "cli",
+    "opcache": {
+        "loaded": false,
+        "enabled": null
+    },
+    "totals": {
+        "wall_ms_to_body": 227.018,
+        "sql_ms": 104.894,
+        "sql_count": 565,
+        "include_events": 216,
+        "include_bytes": 4095636,
+        "included_files_total": 109,
+        "memory_peak": 14680064,
+        "html_bytes": 88590,
+        "route_count": 1179,
+        "modules": [
+            "auth",
+            "ops"
+        ]
+    },
+    "includes_by_phase": {
+        "bootstrap_require": {
+            "n": 1,
+            "bytes": 17900
+        },
+        "bootstrap_init": {
+            "n": 54,
+            "bytes": 1261038
+        },
+        "db_trace_install": {
+            "n": 1,
+            "bytes": 13396
+        },
+        "session_auth_mint": {
+            "n": 4,
+            "bytes": 19997
+        },
+        "pos_module": {
+            "n": 2,
+            "bytes": 9282
+        },
+        "offline_module": {
+            "n": 1,
+            "bytes": 4846
+        },
+        "auth_bootstrap": {
+            "n": 3,
+            "bytes": 39002
+        },
+        "route_module_select": {
+            "n": 2,
+            "bytes": 11532
+        },
+        "routes_load": {
+            "n": 5,
+            "bytes": 131705
+        },
+        "dispatch_controller_view": {
+            "n": 35,
+            "bytes": 539120
+        },
+        "request_to_first_byte": {
+            "n": 108,
+            "bytes": 2047818
+        }
+    },
+    "stages": [
+        {
+            "id": "request_to_first_byte",
+            "label": "Complete PHP work until response body start",
+            "wall_ms": 227.018,
+            "self_ms": 0.513,
+            "pct": 100,
+            "sql_count": 565,
+            "includes_delta": 108,
+            "include_bytes": 2047818,
+            "meta": null
+        },
+        {
+            "id": "dispatch_controller_view",
+            "label": "Router::dispatch \u2192 controller \u2192 view",
+            "wall_ms": 189.126,
+            "self_ms": 189.126,
+            "pct": 83.31,
+            "sql_count": 555,
+            "includes_delta": 35,
+            "include_bytes": 539120,
+            "meta": {
+                "html_bytes": 88590,
+                "ob_wall_ms": 189.119
+            }
+        },
+        {
+            "id": "bootstrap_init",
+            "label": "Bootstrap::init (autoload+eager requires+config+session)",
+            "wall_ms": 24.359,
+            "self_ms": 24.359,
+            "pct": 10.73,
+            "sql_count": 0,
+            "includes_delta": 54,
+            "include_bytes": 1261038,
+            "meta": {
+                "includes_after": 56,
+                "includes_delta": 54,
+                "opcache_loaded": false,
+                "realpath_cache_size": 786,
+                "realpath_cache_ttl": 120,
+                "include_path": ".:/usr/local/php83/lib/php"
+            }
+        },
+        {
+            "id": "routes_load",
+            "label": "RouteModuleLoader::loadForPath",
+            "wall_ms": 5.267,
+            "self_ms": 5.267,
+            "pct": 2.32,
+            "sql_count": 0,
+            "includes_delta": 5,
+            "include_bytes": 131705,
+            "meta": {
+                "selected": [
+                    "auth",
+                    "ops"
+                ],
+                "loaded": [
+                    "auth",
+                    "ops"
+                ],
+                "mode": "selective",
+                "route_count": 1179,
+                "files": [
+                    "routes/modules/auth.php",
+                    "routes/modules/ops.php"
+                ],
+                "ops_file": "routes/modules/ops.php"
+            }
+        },
+        {
+            "id": "auth_bootstrap",
+            "label": "Auth::bootstrapFromSession",
+            "wall_ms": 2.877,
+            "self_ms": 2.877,
+            "pct": 1.27,
+            "sql_count": 4,
+            "includes_delta": 3,
+            "include_bytes": 39002,
+            "meta": null
+        },
+        {
+            "id": "session_auth_mint",
+            "label": "Auth::loginUser + adopt company 22 (warm session simulation)",
+            "wall_ms": 1.663,
+            "self_ms": 1.663,
+            "pct": 0.73,
+            "sql_count": 3,
+            "includes_delta": 4,
+            "include_bytes": 19997,
+            "meta": null
+        },
+        {
+            "id": "db_trace_install",
+            "label": "Install tracing PDO",
+            "wall_ms": 1.579,
+            "self_ms": 1.579,
+            "pct": 0.7,
+            "sql_count": 0,
+            "includes_delta": 1,
+            "include_bytes": 13396,
+            "meta": null
+        },
+        {
+            "id": "middleware_erp_auth",
+            "label": "ErpAuthMiddleware::handle",
+            "wall_ms": 0.745,
+            "self_ms": 0.745,
+            "pct": 0.33,
+            "sql_count": 3,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "meta": {
+                "ok": true
+            }
+        },
+        {
+            "id": "route_module_select",
+            "label": "RouteModuleLoader::selectModuleIds",
+            "wall_ms": 0.282,
+            "self_ms": 0.282,
+            "pct": 0.12,
+            "sql_count": 0,
+            "includes_delta": 2,
+            "include_bytes": 11532,
+            "meta": null
+        },
+        {
+            "id": "bootstrap_require",
+            "label": "require Bootstrap.php",
+            "wall_ms": 0.252,
+            "self_ms": 0.252,
+            "pct": 0.11,
+            "sql_count": 0,
+            "includes_delta": 1,
+            "include_bytes": 17900,
+            "meta": null
+        },
+        {
+            "id": "pos_module",
+            "label": "PosModule::init",
+            "wall_ms": 0.228,
+            "self_ms": 0.228,
+            "pct": 0.1,
+            "sql_count": 0,
+            "includes_delta": 2,
+            "include_bytes": 9282,
+            "meta": null
+        },
+        {
+            "id": "offline_module",
+            "label": "OfflineModule::init",
+            "wall_ms": 0.124,
+            "self_ms": 0.124,
+            "pct": 0.05,
+            "sql_count": 0,
+            "includes_delta": 1,
+            "include_bytes": 4846,
+            "meta": null
+        },
+        {
+            "id": "output_buffer_complete",
+            "label": "Response body ready (first byte proxy)",
+            "wall_ms": 0.003,
+            "self_ms": 0.003,
+            "pct": 0,
+            "sql_count": 0,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "meta": null
+        }
+    ],
+    "top30_spans": [
+        {
+            "id": "request_to_first_byte",
+            "parent": null,
+            "label": "Complete PHP work until response body start",
+            "start_ms": 0.009069,
+            "end_ms": 227.02743,
+            "dur_ms": 227.018,
+            "self_ms": 0.513,
+            "mem_start": 2097152,
+            "mem_end": 14680064,
+            "sql_before": 0,
+            "sql_count": 565,
+            "includes_before": 1,
+            "includes_delta": 108,
+            "include_bytes": 2047818,
+            "children": [
+                "bootstrap_require",
+                "bootstrap_init",
+                "db_trace_install",
+                "session_auth_mint",
+                "pos_module",
+                "offline_module",
+                "auth_bootstrap",
+                "route_module_select",
+                "routes_load",
+                "middleware_erp_auth",
+                "dispatch_controller_view",
+                "output_buffer_complete"
+            ]
+        },
+        {
+            "id": "dispatch_controller_view",
+            "parent": "request_to_first_byte",
+            "label": "Router::dispatch \u2192 controller \u2192 view",
+            "start_ms": 37.69345,
+            "end_ms": 226.819741,
+            "dur_ms": 189.126,
+            "self_ms": 189.126,
+            "mem_start": 12582912,
+            "mem_end": 14680064,
+            "sql_before": 10,
+            "sql_count": 555,
+            "includes_before": 74,
+            "includes_delta": 35,
+            "include_bytes": 539120,
+            "children": [],
+            "meta": {
+                "html_bytes": 88590,
+                "ob_wall_ms": 189.119
+            }
+        },
+        {
+            "id": "bootstrap_init",
+            "parent": "request_to_first_byte",
+            "label": "Bootstrap::init (autoload+eager requires+config+session)",
+            "start_ms": 0.274359,
+            "end_ms": 24.633435,
+            "dur_ms": 24.359,
+            "self_ms": 24.359,
+            "mem_start": 2097152,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 2,
+            "includes_delta": 54,
+            "include_bytes": 1261038,
+            "children": [],
+            "meta": {
+                "includes_after": 56,
+                "includes_delta": 54,
+                "opcache_loaded": false,
+                "realpath_cache_size": 786,
+                "realpath_cache_ttl": 120,
+                "include_path": ".:/usr/local/php83/lib/php"
+            }
+        },
+        {
+            "id": "routes_load",
+            "parent": "request_to_first_byte",
+            "label": "RouteModuleLoader::loadForPath",
+            "start_ms": 31.646951,
+            "end_ms": 36.914283,
+            "dur_ms": 5.267,
+            "self_ms": 5.267,
+            "mem_start": 10485760,
+            "mem_end": 12582912,
+            "sql_before": 7,
+            "sql_count": 0,
+            "includes_before": 69,
+            "includes_delta": 5,
+            "include_bytes": 131705,
+            "children": [],
+            "meta": {
+                "selected": [
+                    "auth",
+                    "ops"
+                ],
+                "loaded": [
+                    "auth",
+                    "ops"
+                ],
+                "mode": "selective",
+                "route_count": 1179,
+                "files": [
+                    "routes/modules/auth.php",
+                    "routes/modules/ops.php"
+                ],
+                "ops_file": "routes/modules/ops.php"
+            }
+        },
+        {
+            "id": "auth_bootstrap",
+            "parent": "request_to_first_byte",
+            "label": "Auth::bootstrapFromSession",
+            "start_ms": 28.448692,
+            "end_ms": 31.325892,
+            "dur_ms": 2.877,
+            "self_ms": 2.877,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 4,
+            "includes_before": 64,
+            "includes_delta": 3,
+            "include_bytes": 39002,
+            "children": []
+        },
+        {
+            "id": "session_auth_mint",
+            "parent": "request_to_first_byte",
+            "label": "Auth::loginUser + adopt company 22 (warm session simulation)",
+            "start_ms": 26.397069,
+            "end_ms": 28.060494,
+            "dur_ms": 1.663,
+            "self_ms": 1.663,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 3,
+            "includes_before": 57,
+            "includes_delta": 4,
+            "include_bytes": 19997,
+            "children": []
+        },
+        {
+            "id": "db_trace_install",
+            "parent": "request_to_first_byte",
+            "label": "Install tracing PDO",
+            "start_ms": 24.804884,
+            "end_ms": 26.383689,
+            "dur_ms": 1.579,
+            "self_ms": 1.579,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 56,
+            "includes_delta": 1,
+            "include_bytes": 13396,
+            "children": []
+        },
+        {
+            "id": "middleware_erp_auth",
+            "parent": "request_to_first_byte",
+            "label": "ErpAuthMiddleware::handle",
+            "start_ms": 36.942164,
+            "end_ms": 37.68696,
+            "dur_ms": 0.745,
+            "self_ms": 0.745,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "sql_before": 7,
+            "sql_count": 3,
+            "includes_before": 74,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "children": [],
+            "meta": {
+                "ok": true
+            }
+        },
+        {
+            "id": "route_module_select",
+            "parent": "request_to_first_byte",
+            "label": "RouteModuleLoader::selectModuleIds",
+            "start_ms": 31.353902,
+            "end_ms": 31.635691,
+            "dur_ms": 0.282,
+            "self_ms": 0.282,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 7,
+            "sql_count": 0,
+            "includes_before": 67,
+            "includes_delta": 2,
+            "include_bytes": 11532,
+            "children": []
+        },
+        {
+            "id": "bootstrap_require",
+            "parent": "request_to_first_byte",
+            "label": "require Bootstrap.php",
+            "start_ms": 0.012069,
+            "end_ms": 0.263659,
+            "dur_ms": 0.252,
+            "self_ms": 0.252,
+            "mem_start": 2097152,
+            "mem_end": 2097152,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 1,
+            "includes_delta": 1,
+            "include_bytes": 17900,
+            "children": []
+        },
+        {
+            "id": "pos_module",
+            "parent": "request_to_first_byte",
+            "label": "PosModule::init",
+            "start_ms": 28.080744,
+            "end_ms": 28.309013,
+            "dur_ms": 0.228,
+            "self_ms": 0.228,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 0,
+            "includes_before": 61,
+            "includes_delta": 2,
+            "include_bytes": 9282,
+            "children": []
+        },
+        {
+            "id": "offline_module",
+            "parent": "request_to_first_byte",
+            "label": "OfflineModule::init",
+            "start_ms": 28.318733,
+            "end_ms": 28.443012,
+            "dur_ms": 0.124,
+            "self_ms": 0.124,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 0,
+            "includes_before": 63,
+            "includes_delta": 1,
+            "include_bytes": 4846,
+            "children": []
+        },
+        {
+            "id": "output_buffer_complete",
+            "parent": "request_to_first_byte",
+            "label": "Response body ready (first byte proxy)",
+            "start_ms": 227.02021,
+            "end_ms": 227.02321,
+            "dur_ms": 0.003,
+            "self_ms": 0.003,
+            "mem_start": 14680064,
+            "mem_end": 14680064,
+            "sql_before": 565,
+            "sql_count": 0,
+            "includes_before": 109,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "children": []
+        }
+    ],
+    "top30_leaf_spans": [
+        {
+            "id": "dispatch_controller_view",
+            "parent": "request_to_first_byte",
+            "label": "Router::dispatch \u2192 controller \u2192 view",
+            "start_ms": 37.69345,
+            "end_ms": 226.819741,
+            "dur_ms": 189.126,
+            "self_ms": 189.126,
+            "mem_start": 12582912,
+            "mem_end": 14680064,
+            "sql_before": 10,
+            "sql_count": 555,
+            "includes_before": 74,
+            "includes_delta": 35,
+            "include_bytes": 539120,
+            "children": [],
+            "meta": {
+                "html_bytes": 88590,
+                "ob_wall_ms": 189.119
+            }
+        },
+        {
+            "id": "bootstrap_init",
+            "parent": "request_to_first_byte",
+            "label": "Bootstrap::init (autoload+eager requires+config+session)",
+            "start_ms": 0.274359,
+            "end_ms": 24.633435,
+            "dur_ms": 24.359,
+            "self_ms": 24.359,
+            "mem_start": 2097152,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 2,
+            "includes_delta": 54,
+            "include_bytes": 1261038,
+            "children": [],
+            "meta": {
+                "includes_after": 56,
+                "includes_delta": 54,
+                "opcache_loaded": false,
+                "realpath_cache_size": 786,
+                "realpath_cache_ttl": 120,
+                "include_path": ".:/usr/local/php83/lib/php"
+            }
+        },
+        {
+            "id": "routes_load",
+            "parent": "request_to_first_byte",
+            "label": "RouteModuleLoader::loadForPath",
+            "start_ms": 31.646951,
+            "end_ms": 36.914283,
+            "dur_ms": 5.267,
+            "self_ms": 5.267,
+            "mem_start": 10485760,
+            "mem_end": 12582912,
+            "sql_before": 7,
+            "sql_count": 0,
+            "includes_before": 69,
+            "includes_delta": 5,
+            "include_bytes": 131705,
+            "children": [],
+            "meta": {
+                "selected": [
+                    "auth",
+                    "ops"
+                ],
+                "loaded": [
+                    "auth",
+                    "ops"
+                ],
+                "mode": "selective",
+                "route_count": 1179,
+                "files": [
+                    "routes/modules/auth.php",
+                    "routes/modules/ops.php"
+                ],
+                "ops_file": "routes/modules/ops.php"
+            }
+        },
+        {
+            "id": "auth_bootstrap",
+            "parent": "request_to_first_byte",
+            "label": "Auth::bootstrapFromSession",
+            "start_ms": 28.448692,
+            "end_ms": 31.325892,
+            "dur_ms": 2.877,
+            "self_ms": 2.877,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 4,
+            "includes_before": 64,
+            "includes_delta": 3,
+            "include_bytes": 39002,
+            "children": []
+        },
+        {
+            "id": "session_auth_mint",
+            "parent": "request_to_first_byte",
+            "label": "Auth::loginUser + adopt company 22 (warm session simulation)",
+            "start_ms": 26.397069,
+            "end_ms": 28.060494,
+            "dur_ms": 1.663,
+            "self_ms": 1.663,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 3,
+            "includes_before": 57,
+            "includes_delta": 4,
+            "include_bytes": 19997,
+            "children": []
+        },
+        {
+            "id": "db_trace_install",
+            "parent": "request_to_first_byte",
+            "label": "Install tracing PDO",
+            "start_ms": 24.804884,
+            "end_ms": 26.383689,
+            "dur_ms": 1.579,
+            "self_ms": 1.579,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 56,
+            "includes_delta": 1,
+            "include_bytes": 13396,
+            "children": []
+        },
+        {
+            "id": "middleware_erp_auth",
+            "parent": "request_to_first_byte",
+            "label": "ErpAuthMiddleware::handle",
+            "start_ms": 36.942164,
+            "end_ms": 37.68696,
+            "dur_ms": 0.745,
+            "self_ms": 0.745,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "sql_before": 7,
+            "sql_count": 3,
+            "includes_before": 74,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "children": [],
+            "meta": {
+                "ok": true
+            }
+        },
+        {
+            "id": "route_module_select",
+            "parent": "request_to_first_byte",
+            "label": "RouteModuleLoader::selectModuleIds",
+            "start_ms": 31.353902,
+            "end_ms": 31.635691,
+            "dur_ms": 0.282,
+            "self_ms": 0.282,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 7,
+            "sql_count": 0,
+            "includes_before": 67,
+            "includes_delta": 2,
+            "include_bytes": 11532,
+            "children": []
+        },
+        {
+            "id": "bootstrap_require",
+            "parent": "request_to_first_byte",
+            "label": "require Bootstrap.php",
+            "start_ms": 0.012069,
+            "end_ms": 0.263659,
+            "dur_ms": 0.252,
+            "self_ms": 0.252,
+            "mem_start": 2097152,
+            "mem_end": 2097152,
+            "sql_before": 0,
+            "sql_count": 0,
+            "includes_before": 1,
+            "includes_delta": 1,
+            "include_bytes": 17900,
+            "children": []
+        },
+        {
+            "id": "pos_module",
+            "parent": "request_to_first_byte",
+            "label": "PosModule::init",
+            "start_ms": 28.080744,
+            "end_ms": 28.309013,
+            "dur_ms": 0.228,
+            "self_ms": 0.228,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 0,
+            "includes_before": 61,
+            "includes_delta": 2,
+            "include_bytes": 9282,
+            "children": []
+        },
+        {
+            "id": "offline_module",
+            "parent": "request_to_first_byte",
+            "label": "OfflineModule::init",
+            "start_ms": 28.318733,
+            "end_ms": 28.443012,
+            "dur_ms": 0.124,
+            "self_ms": 0.124,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "sql_before": 3,
+            "sql_count": 0,
+            "includes_before": 63,
+            "includes_delta": 1,
+            "include_bytes": 4846,
+            "children": []
+        },
+        {
+            "id": "output_buffer_complete",
+            "parent": "request_to_first_byte",
+            "label": "Response body ready (first byte proxy)",
+            "start_ms": 227.02021,
+            "end_ms": 227.02321,
+            "dur_ms": 0.003,
+            "self_ms": 0.003,
+            "mem_start": 14680064,
+            "mem_end": 14680064,
+            "sql_before": 565,
+            "sql_count": 0,
+            "includes_before": 109,
+            "includes_delta": 0,
+            "include_bytes": 0,
+            "children": []
+        }
+    ],
+    "top30_includes_by_bytes": [
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/lang/ar.php",
+            "bytes": 190269,
+            "ms": 0,
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/lang/ar.php",
+            "bytes": 190269,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "bytes": 152394,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "bytes": 152394,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AdminControllers.php",
+            "bytes": 130677,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AdminControllers.php",
+            "bytes": 130677,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/CompanyControllers.php",
+            "bytes": 123009,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/CompanyControllers.php",
+            "bytes": 123009,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/routes/modules/ops.php",
+            "bytes": 120382,
+            "ms": 0,
+            "phase": "routes_load"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/routes/modules/ops.php",
+            "bytes": 120382,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "bytes": 109590,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "bytes": 109590,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/AccountingControllers.php",
+            "bytes": 106334,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/AccountingControllers.php",
+            "bytes": 106334,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/BusinessControllers.php",
+            "bytes": 89850,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/BusinessControllers.php",
+            "bytes": 89850,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "bytes": 63677,
+            "ms": 0,
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "bytes": 63677,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "bytes": 62514,
+            "ms": 0,
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "bytes": 62514,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ModulePageStatsService.php",
+            "bytes": 55115,
+            "ms": 0,
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ModulePageStatsService.php",
+            "bytes": 55115,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/CmsControllers.php",
+            "bytes": 45946,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/CmsControllers.php",
+            "bytes": 45946,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/CrudController.php",
+            "bytes": 38116,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/CrudController.php",
+            "bytes": 38116,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/HrControllers.php",
+            "bytes": 32985,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/HrControllers.php",
+            "bytes": 32985,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/MigrationService.php",
+            "bytes": 30046,
+            "ms": 0,
+            "phase": "bootstrap_init"
+        },
+        {
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/MigrationService.php",
+            "bytes": 30046,
+            "ms": 0,
+            "phase": "request_to_first_byte"
+        }
+    ],
+    "top30_sql": [
+        {
+            "dur_ms": 0.175,
+            "sql": "SELECT * FROM rateb_users WHERE email = ? LIMIT 1",
+            "file": "",
+            "line": 0,
+            "class": "",
+            "function": "",
+            "phase": "session_auth_mint"
+        },
+        {
+            "dur_ms": 0.144,
+            "sql": "SELECT * FROM rateb_companies WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "line": 2295,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "find",
+            "phase": "session_auth_mint"
+        },
+        {
+            "dur_ms": 0.109,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "session_auth_mint"
+        },
+        {
+            "dur_ms": 0.104,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 305,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 0.687,
+            "sql": "SHOW TABLES LIKE 'rateb_branches'",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchAccessService.php",
+            "line": 84,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesTableExists",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 0.592,
+            "sql": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchService.php",
+            "line": 140,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesHaveIsMainColumn",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 0.162,
+            "sql": "SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 558,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "executePrepared",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 0.113,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 305,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "middleware_erp_auth"
+        },
+        {
+            "dur_ms": 0.108,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "middleware_erp_auth"
+        },
+        {
+            "dur_ms": 0.121,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "middleware_erp_auth"
+        },
+        {
+            "dur_ms": 0.099,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 305,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.094,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.143,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.105,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.108,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.089,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.122,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.108,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.108,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.088,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.104,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.094,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.113,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.086,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.104,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.094,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.114,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.086,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.104,
+            "sql": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "findCoaByCode",
+            "phase": "dispatch_controller_view"
+        },
+        {
+            "dur_ms": 0.087,
+            "sql": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "touchCoaRow",
+            "phase": "dispatch_controller_view"
+        }
+    ],
+    "top30_sql_by_function": [
+        {
+            "key": "Rateb\\App\\Core\\Database::liveTableHasColumn",
+            "ms": 32.992,
+            "n": 61,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 15,
+            "sample": "SHOW COLUMNS FROM `rateb_journal_entries` LIKE 'branch_id'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::findCoaByCode",
+            "ms": 16.503,
+            "n": 130,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "sample": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::touchCoaRow",
+            "ms": 12.286,
+            "n": 117,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "sample": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::update",
+            "ms": 11.981,
+            "n": 102,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 285,
+            "sample": "UPDATE rateb_chart_of_accounts SET parent_id = :parent_id WHERE id = :id AND company_id = :admin_company_filter"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::executePrepared",
+            "ms": 7.841,
+            "n": 43,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 558,
+            "sample": "SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "ms": 5.977,
+            "n": 24,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 42,
+            "sample": "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = 'paid' AND company_id = 22"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::branchColumnIsSelectable",
+            "ms": 3.016,
+            "n": 16,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 162,
+            "sample": "SELECT `branch_id` FROM `rateb_purchase_requests` LIMIT 0"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Database::fetchOne",
+            "ms": 2.386,
+            "n": 15,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 298,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :st AND e.company_id = :cid"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Database::fetchAll",
+            "ms": 1.65,
+            "n": 6,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 285,
+            "sample": "SELECT i.*, je.id AS journal_id, je.entry_no FROM rateb_invoices i LEFT JOIN rateb_journal_entries je ON je.source_type = 'invoice' AND je.source_id = i.id AND je.status = 'posted' WHERE i.company_id = :cid AND i.status != 'cancelled' AND ("
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::operationalTableSupportsBranchFilter",
+            "ms": 1.503,
+            "n": 8,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 1378,
+            "sample": "SELECT `branch_id` FROM `rateb_purchase_orders` LIMIT 0"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::trends",
+            "ms": 0.954,
+            "n": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 28,
+            "sample": "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='2026-07' AND company_id = 22"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::workflowCounts",
+            "ms": 0.866,
+            "n": 6,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 125,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_journal_entries WHERE company_id = :cid AND status = 'draft'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::charts",
+            "ms": 0.851,
+            "n": 3,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 30,
+            "sample": "SELECT DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') AS month, COALESCE(SUM(amount), 0) AS total FROM rateb_payments WHERE status = 'completed' AND company_id = 22 GROUP BY DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') ORDER BY "
+        },
+        {
+            "key": "Rateb\\App\\Models\\User::find",
+            "ms": 0.748,
+            "n": 7,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "sample": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1"
+        },
+        {
+            "key": "Rateb\\App\\Services\\BranchService::branchesTableExists",
+            "ms": 0.687,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchAccessService.php",
+            "line": 84,
+            "sample": "SHOW TABLES LIKE 'rateb_branches'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::vatReport",
+            "ms": 0.678,
+            "n": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 106,
+            "sample": "SELECT COALESCE(SUM(tax_amount), 0) AS t FROM rateb_invoices WHERE status IN ('paid','sent','overdue') AND company_id = :cid AND issued_at >= :from AND issued_at <= :to"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::topSoldItems",
+            "ms": 0.613,
+            "n": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 34,
+            "sample": "SELECT COALESCE(NULLIF(TRIM(il.description), ''), il.item_name) AS name, COALESCE(SUM(il.line_total), 0) AS total FROM rateb_invoice_lines il JOIN rateb_invoices i ON i.id = il.invoice_id WHERE i.status != 'cancelled' AND i.company_id = 22 "
+        },
+        {
+            "key": "Rateb\\App\\Services\\BranchService::branchesHaveIsMainColumn",
+            "ms": 0.592,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchService.php",
+            "line": 140,
+            "sample": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::invoiceStats",
+            "ms": 0.587,
+            "n": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 124,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_invoices WHERE company_id = :cid AND status IN ('sent','draft','overdue') AND payment_status IN ('unpaid','partial')"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::tableHasCreatedAt",
+            "ms": 0.566,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 457,
+            "sample": "SHOW COLUMNS FROM `rateb_companies` LIKE 'created_at'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::alerts",
+            "ms": 0.415,
+            "n": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 31,
+            "sample": "SELECT invoice_no, due_date, total_amount FROM rateb_invoices WHERE company_id = :cid AND status IN ('sent','overdue') AND payment_status IN ('unpaid','partial') AND due_date IS NOT NULL AND due_date < :today ORDER BY due_date ASC LIMIT 5"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::topCustomers",
+            "ms": 0.319,
+            "n": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 33,
+            "sample": "SELECT c.name, COALESCE(SUM(v.amount), 0) AS total FROM rateb_customers c LEFT JOIN rateb_cash_vouchers v ON v.customer_id = c.id AND v.status = 'posted' WHERE c.company_id = :cid GROUP BY c.id ORDER BY total DESC LIMIT 5"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::newCustomersCount",
+            "ms": 0.269,
+            "n": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 131,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_customers WHERE company_id = :cid AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        },
+        {
+            "key": "",
+            "ms": 0.175,
+            "n": 1,
+            "file": "",
+            "line": 0,
+            "sample": "SELECT * FROM rateb_users WHERE email = ? LIMIT 1"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingDashboardService::revenueGrowth",
+            "ms": 0.167,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 330,
+            "sample": "SELECT DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') AS month, COALESCE(SUM(amount), 0) AS total FROM rateb_payments WHERE company_id = :cid AND status = 'completed' AND DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') IN (:m1, :m2"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::find",
+            "ms": 0.144,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "line": 2295,
+            "sample": "SELECT * FROM rateb_companies WHERE id = :id"
+        },
+        {
+            "key": "Rateb\\App\\Services\\ApprovalOversightService::countWorkflowInstancesByMenu",
+            "ms": 0.128,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "line": 83,
+            "sample": "SELECT entity_type, COUNT(*) AS c FROM rateb_approval_instances i WHERE i.status = 'pending' GROUP BY entity_type"
+        }
+    ],
+    "require_once_count_approx": 109,
+    "single_biggest_stage": {
+        "id": "bootstrap_init",
+        "label": "Bootstrap::init (autoload+eager requires+config+session)",
+        "wall_ms": 24.359,
+        "self_ms": 24.359,
+        "pct": 10.73,
+        "includes_delta": 54,
+        "include_bytes": 1261038,
+        "meta": {
+            "includes_after": 56,
+            "includes_delta": 54,
+            "opcache_loaded": false,
+            "realpath_cache_size": 786,
+            "realpath_cache_ttl": 120,
+            "include_path": ".:/usr/local/php83/lib/php"
+        }
+    }
+}

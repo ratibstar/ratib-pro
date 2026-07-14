@@ -1,0 +1,7 @@
+/admin ttfb=0.014209 total=0.014251 code=301
+/admin/hr ttfb=0.119897 total=0.210882 code=200
+/admin/crm ttfb=0.087807 total=0.087884 code=500
+/admin/ops/inventory ttfb=0.095571 total=0.192073 code=200
+/admin/ops/accounting ttfb=0.306162 total=0.397473 code=200
+/admin/ops/purchase-requests ttfb=0.096337 total=0.186385 code=200
+/admin/ops/pos ttfb=0.106236 total=0.106307 code=302

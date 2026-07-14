@@ -1,0 +1,2166 @@
+{
+  "phase": "POST_AG_PERF_AUDIT",
+  "ok": true,
+  "measured_at": "2026-07-14T19:52:47.871Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "user": "admin@rateb.sa",
+  "navigations": [
+    {
+      "id": "dashboard",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/",
+      "wall_to_usable_ms": 1870,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 16313,
+        "dns_ms": 0,
+        "ttfb_ms": 281.5,
+        "html_download_ms": 4,
+        "dom_content_loaded_ms": 342.1,
+        "load_event_ms": 349.3
+      },
+      "paints": {
+        "first-paint": 364,
+        "first-contentful-paint": 364
+      },
+      "lcp_ms": null,
+      "script_count": 14,
+      "script_total_duration_ms": 276,
+      "css_count": 32,
+      "css_total_duration_ms": 239,
+      "ajax_count": 24,
+      "ajax_total_duration_ms": 461,
+      "ajax_top": [
+        {
+          "name": "/rateb-erp/public/admin/api/dashboard-charts",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/dashboard-charts",
+          "initiatorType": "fetch",
+          "duration": 175,
+          "dns_ms": 0,
+          "ttfb_ms": 172.7
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058754706",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058754706",
+          "initiatorType": "fetch",
+          "duration": 154,
+          "dns_ms": 0,
+          "ttfb_ms": 152.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 2,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/admin/api/dashboard-charts",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/dashboard-charts",
+          "initiatorType": "fetch",
+          "duration": 175,
+          "dns_ms": 0,
+          "ttfb_ms": 172.7
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058754706",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058754706",
+          "initiatorType": "fetch",
+          "duration": 154,
+          "dns_ms": 0,
+          "ttfb_ms": 152.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 31,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 29,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 29,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 28,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 27,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 24,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "hr",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+      "wall_to_usable_ms": 2023,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+      "title": "الموارد البشرية | نظام رتب ERP",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 15994,
+        "dns_ms": 0,
+        "ttfb_ms": 407,
+        "html_download_ms": 1,
+        "dom_content_loaded_ms": 542.2,
+        "load_event_ms": 543.4
+      },
+      "paints": {
+        "first-paint": 468,
+        "first-contentful-paint": 468
+      },
+      "lcp_ms": null,
+      "script_count": 15,
+      "script_total_duration_ms": 621,
+      "css_count": 30,
+      "css_total_duration_ms": 172,
+      "ajax_count": 22,
+      "ajax_total_duration_ms": 412,
+      "ajax_top": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr",
+          "initiatorType": "fetch",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 204.7
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058756700",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058756700",
+          "initiatorType": "fetch",
+          "duration": 100,
+          "dns_ms": 0,
+          "ttfb_ms": 98.5
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 7,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 1,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 2,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr",
+          "initiatorType": "fetch",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 204.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 121,
+          "dns_ms": 0,
+          "ttfb_ms": 100.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 119,
+          "dns_ms": 0,
+          "ttfb_ms": 99.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 119,
+          "dns_ms": 0,
+          "ttfb_ms": 99.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 119,
+          "dns_ms": 0,
+          "ttfb_ms": 99.2
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058756700",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058756700",
+          "initiatorType": "fetch",
+          "duration": 100,
+          "dns_ms": 0,
+          "ttfb_ms": 98.5
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 18,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 17,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 17,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 17,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 14,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "crm",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/crm?company_id=22",
+      "wall_to_usable_ms": 1257,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/crm?company_id=22",
+      "title": "تعذّر إكمال العملية",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 1095,
+        "dns_ms": 0,
+        "ttfb_ms": 184.6,
+        "html_download_ms": 1.4,
+        "dom_content_loaded_ms": 198.2,
+        "load_event_ms": 296.6
+      },
+      "paints": {
+        "first-paint": 340,
+        "first-contentful-paint": 340
+      },
+      "lcp_ms": null,
+      "script_count": 0,
+      "script_total_duration_ms": 0,
+      "css_count": 2,
+      "css_total_duration_ms": 102,
+      "ajax_count": 0,
+      "ajax_total_duration_ms": 0,
+      "ajax_top": [],
+      "top_resources": [
+        {
+          "name": "/favicon.ico",
+          "full": "https://rateb.sa/favicon.ico",
+          "initiatorType": "other",
+          "duration": 103,
+          "dns_ms": 0,
+          "ttfb_ms": 101.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/light.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/light.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 101,
+          "dns_ms": 0,
+          "ttfb_ms": 98.6
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 1,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "inventory",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+      "wall_to_usable_ms": 1995,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+      "title": "المخزون | نظام رتب ERP",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 19738,
+        "dns_ms": 0,
+        "ttfb_ms": 418,
+        "html_download_ms": 1.2,
+        "dom_content_loaded_ms": 479.5,
+        "load_event_ms": 484.3
+      },
+      "paints": {
+        "first-paint": 492,
+        "first-contentful-paint": 492
+      },
+      "lcp_ms": null,
+      "script_count": 16,
+      "script_total_duration_ms": 277,
+      "css_count": 30,
+      "css_total_duration_ms": 280,
+      "ajax_count": 22,
+      "ajax_total_duration_ms": 543,
+      "ajax_top": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Finventory",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Finventory",
+          "initiatorType": "fetch",
+          "duration": 200,
+          "dns_ms": 0,
+          "ttfb_ms": 197.7
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058760021",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058760021",
+          "initiatorType": "fetch",
+          "duration": 100,
+          "dns_ms": 0,
+          "ttfb_ms": 98.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.9
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0.5
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 14,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 7,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Finventory",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Finventory",
+          "initiatorType": "fetch",
+          "duration": 200,
+          "dns_ms": 0,
+          "ttfb_ms": 197.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/entity-documents-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/entity-documents-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 102,
+          "dns_ms": 0,
+          "ttfb_ms": 100.3
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058760021",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058760021",
+          "initiatorType": "fetch",
+          "duration": 100,
+          "dns_ms": 0,
+          "ttfb_ms": 98.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 16,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 15,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 14,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 14,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "accounting",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+      "wall_to_usable_ms": 2326,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+      "title": "لوحة تحكم المحاسبة | نظام رتب ERP",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 17621,
+        "dns_ms": 0,
+        "ttfb_ms": 708.2,
+        "html_download_ms": 2.1,
+        "dom_content_loaded_ms": 805.7,
+        "load_event_ms": 808.5
+      },
+      "paints": {
+        "first-paint": 820,
+        "first-contentful-paint": 820
+      },
+      "lcp_ms": null,
+      "script_count": 17,
+      "script_total_duration_ms": 236,
+      "css_count": 32,
+      "css_total_duration_ms": 282,
+      "ajax_count": 23,
+      "ajax_total_duration_ms": 318,
+      "ajax_top": [
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058762365",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058762365",
+          "initiatorType": "fetch",
+          "duration": 101,
+          "dns_ms": 0,
+          "ttfb_ms": 99
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 2,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 7,
+          "dns_ms": 0,
+          "ttfb_ms": 0.6
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 7,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 6,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058762365",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058762365",
+          "initiatorType": "fetch",
+          "duration": 101,
+          "dns_ms": 0,
+          "ttfb_ms": 99
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 22,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 22,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 22,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 21,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 20,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 20,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 19,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 18,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 14,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 13,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "procurement",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+      "wall_to_usable_ms": 2027,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+      "title": "طلبات الشراء | نظام رتب ERP",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 17476,
+        "dns_ms": 0,
+        "ttfb_ms": 420.4,
+        "html_download_ms": 1.9,
+        "dom_content_loaded_ms": 489.8,
+        "load_event_ms": 503.4
+      },
+      "paints": {
+        "first-paint": 536,
+        "first-contentful-paint": 536
+      },
+      "lcp_ms": null,
+      "script_count": 16,
+      "script_total_duration_ms": 349,
+      "css_count": 30,
+      "css_total_duration_ms": 259,
+      "ajax_count": 22,
+      "ajax_total_duration_ms": 492,
+      "ajax_top": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Fpurchase-requests",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Fpurchase-requests",
+          "initiatorType": "fetch",
+          "duration": 191,
+          "dns_ms": 0,
+          "ttfb_ms": 189
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058764375",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058764375",
+          "initiatorType": "fetch",
+          "duration": 101,
+          "dns_ms": 0,
+          "ttfb_ms": 99.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 5,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 4,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0.6
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.4
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 8,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 11,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 9,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 10,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Fpurchase-requests",
+          "full": "https://rateb.sa/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Fpurchase-requests",
+          "initiatorType": "fetch",
+          "duration": 191,
+          "dns_ms": 0,
+          "ttfb_ms": 189
+        },
+        {
+          "name": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058764375",
+          "full": "https://rateb.sa/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058764375",
+          "initiatorType": "fetch",
+          "duration": 101,
+          "dns_ms": 0,
+          "ttfb_ms": 99.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 31,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 31,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 31,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 31,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 30,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 29,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 20,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 20,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+          "initiatorType": "fetch",
+          "duration": 12,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    },
+    {
+      "id": "pos",
+      "targetUrl": "https://rateb.sa/rateb-erp/public/admin/ops/pos?company_id=22",
+      "wall_to_usable_ms": 1926,
+      "nav_error": null,
+      "dns_document_ms": 0,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/biometric?company_id=22",
+      "title": "التحقق البيومتري",
+      "navTiming": {
+        "protocol": "h2",
+        "transferSize": 2117,
+        "dns_ms": 0,
+        "ttfb_ms": 160.2,
+        "html_download_ms": 2,
+        "dom_content_loaded_ms": 649.6,
+        "load_event_ms": 649.9
+      },
+      "paints": {
+        "first-paint": 488,
+        "first-contentful-paint": 488
+      },
+      "lcp_ms": null,
+      "script_count": 16,
+      "script_total_duration_ms": 3164,
+      "css_count": 1,
+      "css_total_duration_ms": 108,
+      "ajax_count": 0,
+      "ajax_total_duration_ms": 0,
+      "ajax_top": [],
+      "top_resources": [
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 303,
+          "dns_ms": 0,
+          "ttfb_ms": 281.9
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 301,
+          "dns_ms": 0,
+          "ttfb_ms": 283.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 301,
+          "dns_ms": 0,
+          "ttfb_ms": 282.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 300,
+          "dns_ms": 0,
+          "ttfb_ms": 280.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 299,
+          "dns_ms": 0,
+          "ttfb_ms": 279.9
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 187.5
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 187.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 186.2
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 206,
+          "dns_ms": 0,
+          "ttfb_ms": 186.6
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 205,
+          "dns_ms": 0,
+          "ttfb_ms": 187.1
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 204,
+          "dns_ms": 0,
+          "ttfb_ms": 187.8
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 115,
+          "dns_ms": 0,
+          "ttfb_ms": 99.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+          "initiatorType": "link",
+          "duration": 108,
+          "dns_ms": 0,
+          "ttfb_ms": 104.6
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 104,
+          "dns_ms": 0,
+          "ttfb_ms": 101.7
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-offline-bootstrap.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-bootstrap.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 103,
+          "dns_ms": 0,
+          "ttfb_ms": 100
+        },
+        {
+          "name": "/rateb-erp/public/assets/pos/js/pos-register-cashier.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-cashier.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 102,
+          "dns_ms": 0,
+          "ttfb_ms": 99.3
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "initiatorType": "script",
+          "duration": 3,
+          "dns_ms": 0,
+          "ttfb_ms": 0.1
+        },
+        {
+          "name": "/favicon.ico",
+          "full": "https://rateb.sa/favicon.ico",
+          "initiatorType": "other",
+          "duration": 1,
+          "dns_ms": 0,
+          "ttfb_ms": 0
+        }
+      ],
+      "serviceWorker": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+    }
+  ],
+  "averages": {
+    "ttfb_ms": 368.6,
+    "fcp_ms": 501.1,
+    "lcp_ms": 0,
+    "dcl_ms": 501,
+    "load_ms": 519.3,
+    "js_ms": 703,
+    "css_ms": 206,
+    "ajax_ms": 318,
+    "usable_ms": 1918
+  },
+  "top_20_http_endpoints": [
+    {
+      "url": "/rateb-erp/public/admin/ops/accounting?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 708.2,
+      "duration_ms": 808.5,
+      "page": "accounting"
+    },
+    {
+      "url": "/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 420.4,
+      "duration_ms": 503.4,
+      "page": "procurement"
+    },
+    {
+      "url": "/rateb-erp/public/admin/ops/inventory?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 418,
+      "duration_ms": 484.3,
+      "page": "inventory"
+    },
+    {
+      "url": "/rateb-erp/public/admin/hr?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 407,
+      "duration_ms": 543.4,
+      "page": "hr"
+    },
+    {
+      "url": "/rateb-erp/public/admin/",
+      "kind": "document",
+      "ttfb_ms": 281.5,
+      "duration_ms": 349.3,
+      "page": "dashboard"
+    },
+    {
+      "url": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fhr",
+      "kind": "ajax",
+      "ttfb_ms": 204.7,
+      "duration_ms": 206,
+      "page": "hr"
+    },
+    {
+      "url": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Finventory",
+      "kind": "ajax",
+      "ttfb_ms": 197.7,
+      "duration_ms": 200,
+      "page": "inventory"
+    },
+    {
+      "url": "/rateb-erp/public/admin/api/module-metrics?route=admin%2Fops%2Fpurchase-requests",
+      "kind": "ajax",
+      "ttfb_ms": 189,
+      "duration_ms": 191,
+      "page": "procurement"
+    },
+    {
+      "url": "/rateb-erp/public/admin/crm?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 184.6,
+      "duration_ms": 296.6,
+      "page": "crm"
+    },
+    {
+      "url": "/rateb-erp/public/admin/api/dashboard-charts",
+      "kind": "ajax",
+      "ttfb_ms": 172.7,
+      "duration_ms": 175,
+      "page": "dashboard"
+    },
+    {
+      "url": "/rateb-erp/public/admin/ops/pos/biometric?company_id=22",
+      "kind": "document",
+      "ttfb_ms": 160.2,
+      "duration_ms": 649.9,
+      "page": "pos"
+    },
+    {
+      "url": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058754706",
+      "kind": "ajax",
+      "ttfb_ms": 152.8,
+      "duration_ms": 154,
+      "page": "dashboard"
+    },
+    {
+      "url": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058764375",
+      "kind": "ajax",
+      "ttfb_ms": 99.1,
+      "duration_ms": 101,
+      "page": "procurement"
+    },
+    {
+      "url": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058762365",
+      "kind": "ajax",
+      "ttfb_ms": 99,
+      "duration_ms": 101,
+      "page": "accounting"
+    },
+    {
+      "url": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058756700",
+      "kind": "ajax",
+      "ttfb_ms": 98.5,
+      "duration_ms": 100,
+      "page": "hr"
+    },
+    {
+      "url": "/rateb-erp/public/connectivity-probe.json?_rateb_probe=1784058760021",
+      "kind": "ajax",
+      "ttfb_ms": 98.4,
+      "duration_ms": 100,
+      "page": "inventory"
+    },
+    {
+      "url": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+      "kind": "ajax",
+      "ttfb_ms": 0,
+      "duration_ms": 16,
+      "page": "inventory"
+    },
+    {
+      "url": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+      "kind": "ajax",
+      "ttfb_ms": 0,
+      "duration_ms": 15,
+      "page": "inventory"
+    },
+    {
+      "url": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+      "kind": "ajax",
+      "ttfb_ms": 0,
+      "duration_ms": 13,
+      "page": "accounting"
+    },
+    {
+      "url": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+      "kind": "ajax",
+      "ttfb_ms": 0,
+      "duration_ms": 12,
+      "page": "accounting"
+    }
+  ]
+}

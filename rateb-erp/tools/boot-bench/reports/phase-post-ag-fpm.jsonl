@@ -1,0 +1,202 @@
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "path": "/admin",
+    "total_ms": 255.693,
+    "stage_ms": {
+        "after_bootstrap_require": 1.104,
+        "after_bootstrap_init": 61.132,
+        "after_pos_module": 0.577,
+        "after_offline_module": 0.485,
+        "after_auth": 7.917,
+        "after_select": 0.741,
+        "after_routes_load": 0.533,
+        "after_middleware": 16.263,
+        "after_dispatch": 166.938
+    },
+    "marks_abs_ms": {
+        "after_bootstrap_require": 1.104,
+        "after_bootstrap_init": 62.236,
+        "after_pos_module": 62.813,
+        "after_offline_module": 63.298,
+        "after_auth": 71.215,
+        "after_select": 71.956,
+        "after_routes_load": 72.489,
+        "after_middleware": 88.752,
+        "after_dispatch": 255.69
+    },
+    "selected": [
+        "auth",
+        "dashboard"
+    ],
+    "loaded": [
+        "auth",
+        "dashboard"
+    ],
+    "route_count": 29,
+    "middleware_ok": true,
+    "html_bytes": 79966,
+    "opcache": false
+}
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "path": "/admin/hr",
+    "total_ms": 210.535,
+    "stage_ms": {
+        "after_bootstrap_require": 0.917,
+        "after_bootstrap_init": 59.541,
+        "after_pos_module": 1.094,
+        "after_offline_module": 0.775,
+        "after_auth": 13.854,
+        "after_select": 1.611,
+        "after_routes_load": 11.14,
+        "after_middleware": 5.722,
+        "after_dispatch": 115.878
+    },
+    "marks_abs_ms": {
+        "after_bootstrap_require": 0.917,
+        "after_bootstrap_init": 60.458,
+        "after_pos_module": 61.552,
+        "after_offline_module": 62.327,
+        "after_auth": 76.181,
+        "after_select": 77.792,
+        "after_routes_load": 88.932,
+        "after_middleware": 94.654,
+        "after_dispatch": 210.532
+    },
+    "selected": [
+        "auth",
+        "ops"
+    ],
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "route_count": 1179,
+    "middleware_ok": true,
+    "html_bytes": 77535,
+    "opcache": false
+}
+
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "path": "/admin/ops/inventory",
+    "total_ms": 157.87,
+    "stage_ms": {
+        "after_bootstrap_require": 0.34,
+        "after_bootstrap_init": 35.806,
+        "after_pos_module": 0.439,
+        "after_offline_module": 0.225,
+        "after_auth": 5.805,
+        "after_select": 0.614,
+        "after_routes_load": 4.315,
+        "after_middleware": 0.827,
+        "after_dispatch": 109.496
+    },
+    "marks_abs_ms": {
+        "after_bootstrap_require": 0.34,
+        "after_bootstrap_init": 36.146,
+        "after_pos_module": 36.585,
+        "after_offline_module": 36.81,
+        "after_auth": 42.615,
+        "after_select": 43.229,
+        "after_routes_load": 47.544,
+        "after_middleware": 48.371,
+        "after_dispatch": 157.867
+    },
+    "selected": [
+        "auth",
+        "ops"
+    ],
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "route_count": 1179,
+    "middleware_ok": true,
+    "html_bytes": 94144,
+    "opcache": false
+}
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "path": "/admin/ops/accounting",
+    "total_ms": 325.411,
+    "stage_ms": {
+        "after_bootstrap_require": 0.375,
+        "after_bootstrap_init": 35.65,
+        "after_pos_module": 0.403,
+        "after_offline_module": 0.264,
+        "after_auth": 5.799,
+        "after_select": 0.61,
+        "after_routes_load": 4.416,
+        "after_middleware": 0.85,
+        "after_dispatch": 277.041
+    },
+    "marks_abs_ms": {
+        "after_bootstrap_require": 0.375,
+        "after_bootstrap_init": 36.025,
+        "after_pos_module": 36.428,
+        "after_offline_module": 36.692,
+        "after_auth": 42.491,
+        "after_select": 43.101,
+        "after_routes_load": 47.517,
+        "after_middleware": 48.367,
+        "after_dispatch": 325.408
+    },
+    "selected": [
+        "auth",
+        "ops"
+    ],
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "route_count": 1179,
+    "middleware_ok": true,
+    "html_bytes": 88662,
+    "opcache": false
+}
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "path": "/admin/ops/purchase-requests",
+    "total_ms": 194.233,
+    "stage_ms": {
+        "after_bootstrap_require": 0.396,
+        "after_bootstrap_init": 43.241,
+        "after_pos_module": 1.375,
+        "after_offline_module": 0.755,
+        "after_auth": 12.555,
+        "after_select": 1.252,
+        "after_routes_load": 8.881,
+        "after_middleware": 1.751,
+        "after_dispatch": 124.024
+    },
+    "marks_abs_ms": {
+        "after_bootstrap_require": 0.396,
+        "after_bootstrap_init": 43.637,
+        "after_pos_module": 45.012,
+        "after_offline_module": 45.767,
+        "after_auth": 58.322,
+        "after_select": 59.574,
+        "after_routes_load": 68.455,
+        "after_middleware": 70.206,
+        "after_dispatch": 194.23
+    },
+    "selected": [
+        "auth",
+        "ops"
+    ],
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "route_count": 1179,
+    "middleware_ok": true,
+    "html_bytes": 86407,
+    "opcache": false
+}
+
