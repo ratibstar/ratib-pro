@@ -1,0 +1,156 @@
+{
+  "phase": "AE",
+  "title": "Real production TTFB root cause (evidence only)",
+  "measured_at": "2026-07-14T18:45:00Z",
+  "mode": "evidence_only_no_optimization",
+  "question": "What EXACTLY consumes the missing ~829 ms before PHP sends the first byte?",
+  "client_reference": {
+    "source": "phase-ad-verdict.json",
+    "avg_document_ttfb_ms": 829.3,
+    "avg_html_download_ms": 2.5,
+    "dns_ms": 0
+  },
+  "answer": {
+    "primary": {
+      "file": "config/app.php",
+      "class": null,
+      "function": "rateb_app_route",
+      "line": "2580-2588",
+      "mechanism": "When rateb_company_access_routes_enabled() is true (FPM on rateb.sa), every call does static $conflictRoots = array_merge($conflictRoots, [...9 keys...]). The static array grows without bound; in_array() then scans the growing list. Called once per $app(...) during require of routes/modules/ops.php (~1000+ runtime invocations while registering ~1179 routes).",
+      "wall_time_ms_fpm_ops_require": 419.062,
+      "self_time_evidence": {
+        "fpm_rateb_app_route_5000_ms": 2219.391,
+        "cli_rateb_app_route_5000_ms": 6.436,
+        "fpm_ops_require_ms": 554.147,
+        "cli_ops_require_ms": 4.063,
+        "fpm_router_add_1100_bench_ms": 0.203,
+        "fpm_tokenize_ops_ms": 1.427,
+        "fpm_erp_mw_5000_ms": 0.566
+      },
+      "call_count_evidence": {
+        "ops_php_$app_call_sites": 765,
+        "company_access_$app_call_sites": 18,
+        "fpm_route_count_after_ops": 1179,
+        "note": "foreach blocks expand call-sites; wall time scales with invocations not source lines"
+      },
+      "percentage_of_fpm_hr_request": {
+        "routes_load_ms": 455.51,
+        "total_fpm_ms": 717.002,
+        "pct_of_server": 63.5
+      },
+      "percentage_of_client_829ms": {
+        "typical_ops_routes_load_ms": 422,
+        "pct_of_829": 50.9,
+        "note": "Client TTFB also includes TLS/Apache + remaining PHP (bootstrap+dispatch) + WAN; AD mix includes dashboard (low routes_load)"
+      }
+    },
+    "secondary_by_stage_fpm": {
+      "/admin/hr": {
+        "total_ms": 717.002,
+        "stages_ms": {
+          "bootstrap_init": 34.82,
+          "auth_bootstrap": 8.458,
+          "routes_load": 455.51,
+          "middleware": 1.744,
+          "dispatch": 213.761
+        }
+      },
+      "/admin/ops/accounting": {
+        "total_ms": 1016.981,
+        "stages_ms": {
+          "bootstrap_init": 34.74,
+          "routes_load": 450.331,
+          "dispatch": 519.453
+        },
+        "note": "Accounting unique: dispatch/SQL exceeds routes_load"
+      },
+      "/admin (dashboard)": {
+        "total_ms": 304.523,
+        "stages_ms": {
+          "bootstrap_init": 47.891,
+          "routes_load": 0.58,
+          "dispatch": 242.44
+        },
+        "note": "auth+dashboard only (29 routes) — rateb_app_route leak does not dominate"
+      }
+    }
+  },
+  "lifecycle_checklist": {
+    "1_bootstrap": { "ms_fpm": "35-48", "file": "app/Core/Bootstrap.php", "function": "Bootstrap::init", "bottleneck": false },
+    "2_composer_autoload": { "ms": "inside bootstrap", "bottleneck": false },
+    "3_require_once": { "dominant_file": "routes/modules/ops.php", "bytes": 120382, "lines": 1170, "ms_fpm": "412-554", "bottleneck": true, "reason": "execute body calls rateb_app_route repeatedly" },
+    "4_session_start": { "ms": "inside bootstrap/auth ~5-10", "bottleneck": false },
+    "5_session_lock_wait": { "evidence": "no multi-second stalls observed between auth and routes", "bottleneck": false },
+    "6_cookie_decrypt": { "bottleneck": false },
+    "7_auth": { "ms_fpm": "5-9", "function": "Auth::bootstrapFromSession", "bottleneck": false },
+    "8_tenant_resolver": { "bottleneck": false },
+    "9_middleware": { "ms_fpm": "1.5-5.5", "bottleneck": false },
+    "10_controller": { "inside": "dispatch", "ms_fpm": "214-519", "bottleneck": "secondary (accounting primary for that path)" },
+    "11_services": { "inside": "dispatch", "bottleneck": "path-dependent" },
+    "12_models": { "inside": "dispatch", "bottleneck": "path-dependent" },
+    "13_sql": { "inside": "dispatch", "note": "CLI accounting ~555 queries / ~251ms dispatch; FPM accounting dispatch 519ms", "bottleneck": "secondary on accounting" },
+    "14_view_rendering": { "inside": "dispatch", "bottleneck": "not isolated; part of dispatch" },
+    "15_output_buffering": { "ms": "negligible vs stages", "bottleneck": false },
+    "16_fastcgi_flush": { "bottleneck": false },
+    "17_shutdown_handlers": { "bottleneck": false },
+    "18_apcu": { "loaded": false, "bottleneck": false },
+    "19_opcache_lookups": { "opcache_loaded": false, "note": "disabled; tokenize ops ~1.4ms — NOT the 419ms; cost is runtime rateb_app_route", "bottleneck": false },
+    "20_filesystem_stat": { "ops_new_includes": 3, "bottleneck": false },
+    "21_include_path_lookups": { "include_path": ".:/usr/local/php83/lib/php", "bottleneck": false },
+    "22_realpath_cache": { "size": "4096K", "ttl": 120, "bottleneck": false },
+    "23_stream_wrappers": { "bottleneck": false }
+  },
+  "filesystem": {
+    "ops_php_bytes": 120382,
+    "ops_new_includes_on_require": 3,
+    "ops_new_include_bytes": 123996,
+    "top_includes_during_ops_require": [
+      { "file": "routes/modules/ops.php", "bytes": 120382 },
+      { "file": "routes/company-access.php", "bytes": 2939 },
+      { "file": "config/module-permissions.php", "bytes": 675 }
+    ]
+  },
+  "top_wall_times_fpm_ops_nav": [
+    { "rank": 1, "name": "rateb_app_route during ops.php require", "ms": 419, "pct_hr": 58 },
+    { "rank": 2, "name": "Router::dispatch (controller+SQL+view)", "ms": 214, "pct_hr": 30 },
+    { "rank": 3, "name": "Bootstrap::init", "ms": 35, "pct_hr": 5 },
+    { "rank": 4, "name": "Auth::bootstrapFromSession", "ms": 8, "pct_hr": 1 },
+    { "rank": 5, "name": "middleware", "ms": 2, "pct_hr": 0.3 }
+  ],
+  "growth_proof_fpm_rateb_app_route_buckets_ms": {
+    "calls_1": 0.375,
+    "calls_10_incr": 3.213,
+    "calls_50_incr": 13.708,
+    "calls_100_incr": 17.312,
+    "calls_200_incr": 34.619,
+    "calls_500_incr": 104.948,
+    "calls_1000_incr": 176.402,
+    "calls_2000_incr": 363.569,
+    "cli_company_access": false,
+    "fpm_company_access": true,
+    "interpretation": "Cost per call rises as static $conflictRoots grows — classic O(n^2) from unbounded array_merge + in_array"
+  },
+  "why_cli_looked_fast": {
+    "cli_company_access_enabled": false,
+    "fpm_company_access_enabled": true,
+    "reason": "CLI: rateb_is_agency_erp_host short-circuits; platform_host false → merge branch skipped. FPM Host rateb.sa → company_access true → leak active."
+  },
+  "not_the_bottleneck": [
+    "DNS (0 ms repeated nav)",
+    "HTML download (~2.5 ms)",
+    "Router::add storage (0.2 ms / 1100)",
+    "PHP tokenize of ops.php (~1.4 ms)",
+    "rateb_erp_mw (0.57 ms / 5000)",
+    "OPcache (disabled but compile ≠ 419 ms)",
+    "Service Worker"
+  ],
+  "evidence_sources": [
+    "tools/boot-bench/_ae_fpm_probe.php (removed after run)",
+    "tools/boot-bench/_ae_fpm_deep.sh",
+    "tools/boot-bench/_ae_fpm_why.sh",
+    "tools/boot-bench/_ae_fpm_leak.sh",
+    "config/app.php:2563-2591",
+    "app/Core/RouteModuleLoader.php:39-50,100",
+    "routes/modules/ops.php:142 ($app → rateb_app_route)"
+  ]
+}
