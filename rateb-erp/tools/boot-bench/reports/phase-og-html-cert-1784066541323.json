@@ -1,0 +1,707 @@
+{
+  "phase": "OG",
+  "ok": false,
+  "generatedAt": "2026-07-14T22:02:21.326Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "modules": [
+    {
+      "id": "dashboard",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/",
+      "online": {
+        "html_len": 80616,
+        "body_len": 848,
+        "title": "لوحة التحكم | نظام رتب ERP",
+        "has_admin_shell": true
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "title": "لوحة التحكم | نظام رتب ERP",
+        "offline_body_len": 926,
+        "offline_html_len": 527892,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالوصول الإشعارات إعدادات الملف لوحة الإدارة التنفيذية نظام المحت",
+        "transferSize": 0,
+        "decodedBodySize": 83917,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 80632,
+      "cache_hit": true,
+      "cache_entry": {
+        "rel": "/admin/",
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "cache_hit": true,
+        "cache": "rateb-erp-coexist-v30",
+        "cached_html_len": 80632,
+        "is_placeholder_in_cache": true,
+        "title": "لوحة التحكم | نظام رتب ERP"
+      },
+      "expected_html_size": 80616,
+      "actual_html_size": 527892,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": true,
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 80616,
+        "Actual_HTML_size": 527892,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "YES",
+        "Cache_hit": "YES"
+      }
+    },
+    {
+      "id": "hr",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "online": {
+        "html_len": 79061,
+        "body_len": 1063,
+        "title": "الحضور والانصراف | نظام رتب ERP",
+        "has_admin_shell": true
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "title": "الحضور والانصراف | نظام رتب ERP",
+        "offline_body_len": 1141,
+        "offline_html_len": 500649,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية نظرة عامة قائمة الموظفين الأقسام المسميات الوظيفية العطلات الرسمية الحضور أماكن العمل طلبات الاستئذان",
+        "transferSize": 0,
+        "decodedBodySize": 82266,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 79077,
+      "cache_hit": true,
+      "cache_entry": {
+        "rel": "/admin/hr/attendance",
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 79077,
+        "is_placeholder_in_cache": true,
+        "title": "الحضور والانصراف | نظام رتب ERP"
+      },
+      "expected_html_size": 79061,
+      "actual_html_size": 500649,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": true,
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 79061,
+        "Actual_HTML_size": 500649,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "YES",
+        "Cache_hit": "YES"
+      }
+    },
+    {
+      "id": "inventory",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "online": {
+        "html_len": 93165,
+        "body_len": 991,
+        "title": "المخزون | نظام رتب ERP",
+        "has_admin_shell": true
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "title": "المخزون | نظام رتب ERP",
+        "offline_body_len": 1069,
+        "offline_html_len": 514753,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون المخزون دفعات المخزون جرد المخزون والعد الدوري المستودعات تحويلات المستودعات توقعات المخزون حركات المخزون تصنيفات المنتجات نقطة البيع الم",
+        "transferSize": 0,
+        "decodedBodySize": 96656,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 93181,
+      "cache_hit": true,
+      "cache_entry": {
+        "rel": "/admin/ops/inventory",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 93181,
+        "is_placeholder_in_cache": true,
+        "title": "المخزون | نظام رتب ERP"
+      },
+      "expected_html_size": 93165,
+      "actual_html_size": 514753,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": true,
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 93165,
+        "Actual_HTML_size": 514753,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "YES",
+        "Cache_hit": "YES"
+      }
+    },
+    {
+      "id": "accounting",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+      "online": {
+        "html_len": 86433,
+        "body_len": 1760,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP",
+        "has_admin_shell": true
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP",
+        "offline_body_len": 1838,
+        "offline_html_len": 533709,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالوصول الإشعارات إعدادات الملف لوحة الإدارة التنفيذية نظام المحت",
+        "transferSize": 0,
+        "decodedBodySize": 90374,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 86449,
+      "cache_hit": true,
+      "cache_entry": {
+        "rel": "/admin/accounting",
+        "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 86449,
+        "is_placeholder_in_cache": true,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      },
+      "expected_html_size": 86433,
+      "actual_html_size": 533709,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": true,
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 86433,
+        "Actual_HTML_size": 533709,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "YES",
+        "Cache_hit": "YES"
+      }
+    },
+    {
+      "id": "procurement",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+      "online": {
+        "html_len": 84844,
+        "body_len": 1006,
+        "title": "طلبات الشراء | نظام رتب ERP",
+        "has_admin_shell": true
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "title": "طلبات الشراء | نظام رتب ERP",
+        "offline_body_len": 1084,
+        "offline_html_len": 506432,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 طلبات الشراء 1 أوامر الشراء طلبات عروض الأسعار عروض الموردين المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالو",
+        "transferSize": 0,
+        "decodedBodySize": 88141,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 84860,
+      "cache_hit": true,
+      "cache_entry": {
+        "rel": "/admin/ops/purchase-requests",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 84860,
+        "is_placeholder_in_cache": true,
+        "title": "طلبات الشراء | نظام رتب ERP"
+      },
+      "expected_html_size": 84844,
+      "actual_html_size": 506432,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": true,
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 84844,
+        "Actual_HTML_size": 506432,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "YES",
+        "Cache_hit": "YES"
+      }
+    },
+    {
+      "id": "crm",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/crm",
+      "online": {
+        "html_len": 1290,
+        "body_len": 146,
+        "title": "تعذّر إكمال العملية",
+        "has_admin_shell": false
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_body_len": 229,
+        "offline_html_len": 1038,
+        "has_uncached_marker": true,
+        "placeholder_title": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/crm رجوع · العودة للوحة ا",
+        "transferSize": 0,
+        "decodedBodySize": 1234,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/crm",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": "1",
+              "cacheControl": "no-store",
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 0,
+      "cache_hit": false,
+      "cache_entry": {
+        "rel": "/admin/crm",
+        "url": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "cache_hit": false,
+        "cache": null,
+        "cached_html_len": 0,
+        "is_placeholder_in_cache": false,
+        "title": ""
+      },
+      "expected_html_size": 1290,
+      "actual_html_size": 1038,
+      "placeholder_size": 1038,
+      "controller_executed": false,
+      "view_rendered": false,
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse (X-Rateb-Uncached-Page / data-rateb-uncached-page)",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store",
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 1290,
+        "Actual_HTML_size": 1038,
+        "Placeholder_size": 1038,
+        "Controller_reached": "NO",
+        "View_rendered": "NO",
+        "Cache_hit": "NO"
+      }
+    },
+    {
+      "id": "pos",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+      "online": {
+        "html_len": 6483,
+        "body_len": 58,
+        "title": "التحقق البيومتري",
+        "has_admin_shell": false
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "title": "POS Offline",
+        "offline_body_len": 164,
+        "offline_html_len": 2694,
+        "has_uncached_marker": false,
+        "placeholder_title": false,
+        "snippet": "نقطة البيع غير متصلة افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال. شاشة البيع · شاشة البيع /register",
+        "transferSize": 0,
+        "decodedBodySize": 2739,
+        "controller": true,
+        "document_responses": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+            "status": 200,
+            "fromSW": true,
+            "headers": {
+              "xOffline": "1",
+              "xUncached": null,
+              "cacheControl": null,
+              "contentType": "text/html; charset=utf-8"
+            }
+          }
+        ]
+      },
+      "cached_html_size": 0,
+      "cache_hit": false,
+      "cache_entry": {
+        "rel": "/admin/ops/pos",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "cache_hit": false,
+        "cache": null,
+        "cached_html_len": 0,
+        "is_placeholder_in_cache": false,
+        "title": ""
+      },
+      "expected_html_size": 6483,
+      "actual_html_size": 2694,
+      "placeholder_size": null,
+      "controller_executed": false,
+      "view_rendered": false,
+      "placeholder_source": null,
+      "fallback_source": "unknown",
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null,
+          "contentType": "text/html; charset=utf-8"
+        }
+      },
+      "report": {
+        "Expected_HTML_size": 6483,
+        "Actual_HTML_size": 2694,
+        "Placeholder_size": null,
+        "Controller_reached": "NO",
+        "View_rendered": "NO",
+        "Cache_hit": "NO"
+      }
+    }
+  ],
+  "online": [
+    {
+      "id": "dashboard",
+      "path": "/admin/",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "online_body_len": 848,
+      "online_html_len": 80616,
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "has_uncached_marker": false,
+      "has_admin_shell": true
+    },
+    {
+      "id": "hr",
+      "path": "/admin/hr/attendance",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "online_body_len": 1063,
+      "online_html_len": 79061,
+      "title": "الحضور والانصراف | نظام رتب ERP",
+      "has_uncached_marker": false,
+      "has_admin_shell": true
+    },
+    {
+      "id": "inventory",
+      "path": "/admin/ops/inventory",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "online_body_len": 991,
+      "online_html_len": 93165,
+      "title": "المخزون | نظام رتب ERP",
+      "has_uncached_marker": false,
+      "has_admin_shell": true
+    },
+    {
+      "id": "accounting",
+      "path": "/admin/accounting",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+      "online_body_len": 1760,
+      "online_html_len": 86433,
+      "title": "لوحة تحكم المحاسبة | نظام رتب ERP",
+      "has_uncached_marker": false,
+      "has_admin_shell": true
+    },
+    {
+      "id": "procurement",
+      "path": "/admin/ops/purchase-requests",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+      "online_body_len": 1006,
+      "online_html_len": 84844,
+      "title": "طلبات الشراء | نظام رتب ERP",
+      "has_uncached_marker": false,
+      "has_admin_shell": true
+    },
+    {
+      "id": "crm",
+      "path": "/admin/crm",
+      "status": 500,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+      "online_body_len": 146,
+      "online_html_len": 1290,
+      "title": "تعذّر إكمال العملية",
+      "has_uncached_marker": false,
+      "has_admin_shell": false
+    },
+    {
+      "id": "pos",
+      "path": "/admin/ops/pos",
+      "status": 200,
+      "fromSW": false,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/biometric?company_id=22",
+      "online_body_len": 58,
+      "online_html_len": 6483,
+      "title": "التحقق البيومتري",
+      "has_uncached_marker": false,
+      "has_admin_shell": false
+    }
+  ],
+  "cacheInventory": {
+    "cacheNames": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34",
+      "rateb-erp-coexist-v29",
+      "rateb-pos-shell-v8"
+    ],
+    "opsNames": [
+      "rateb-erp-ops-pages-v34"
+    ],
+    "coexistNames": [
+      "rateb-erp-coexist-v30",
+      "rateb-erp-coexist-v29"
+    ],
+    "hits": [
+      {
+        "rel": "/admin/",
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "cache_hit": true,
+        "cache": "rateb-erp-coexist-v30",
+        "cached_html_len": 80632,
+        "is_placeholder_in_cache": true,
+        "title": "لوحة التحكم | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/hr/attendance",
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 79077,
+        "is_placeholder_in_cache": true,
+        "title": "الحضور والانصراف | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/inventory",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 93181,
+        "is_placeholder_in_cache": true,
+        "title": "المخزون | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/accounting",
+        "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 86449,
+        "is_placeholder_in_cache": true,
+        "title": "لوحة تحكم المحاسبة | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/ops/purchase-requests",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "cache_hit": true,
+        "cache": "rateb-erp-ops-pages-v34",
+        "cached_html_len": 84860,
+        "is_placeholder_in_cache": true,
+        "title": "طلبات الشراء | نظام رتب ERP"
+      },
+      {
+        "rel": "/admin/crm",
+        "url": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "cache_hit": false,
+        "cache": null,
+        "cached_html_len": 0,
+        "is_placeholder_in_cache": false,
+        "title": ""
+      },
+      {
+        "rel": "/admin/ops/pos",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "cache_hit": false,
+        "cache": null,
+        "cached_html_len": 0,
+        "is_placeholder_in_cache": false,
+        "title": ""
+      }
+    ]
+  },
+  "root_cause": {
+    "id": "missing_offline_ops_html_snapshot",
+    "summary": "Module navigations miss ERP_OPS_PAGE_CACHE then hit uncachedAdminBrowseResponse() synthetic placeholder (~1–2KB). Controller/view never run offline. Dashboard succeeds because admin/ HTML is present in ops cache (lean warm / prior visit).",
+    "file": "rateb-erp/public/pos-sw.js",
+    "function": "uncachedAdminBrowseResponse",
+    "line": "~1104–1134",
+    "chain": "neverFailNavigate → erpAdminOfflineFallback → erpOpsPageFallback miss → matchAnyCachedAdminPage miss → finishUncached → uncachedAdminBrowseResponse",
+    "why_dashboard_works": "leanOps / matchCachedAdminDashboard caches admin/ HTML (~tens of KB); module routes not in leanOps seed and not present in Cache Storage after online visits in this profile."
+  },
+  "affected_files": [
+    "rateb-erp/public/pos-sw.js (uncachedAdminBrowseResponse, erpAdminOfflineFallback, warmLeanOpsPages leanOps seed)",
+    "rateb-erp/public/assets/offline/erp-offline-nav-guard.js (client put into ops-pages cache on navigate)",
+    "rateb-erp/public/assets/offline/erp-offline-full-warm.js (idle full warm into ops-pages-v34)",
+    "rateb-erp/public/assets/offline/ops-page-allowlist.json (allowlist — present, but cache population incomplete)"
+  ],
+  "certification": {
+    "dashboard_full_html_offline": true,
+    "modules_placeholder_offline": false,
+    "controller_never_offline": true
+  },
+  "verdict": "FAIL",
+  "enterprise": "FAIL",
+  "note": "Enterprise FAIL = offline module HTML not fully present. Root cause identified; no fix in this phase.",
+  "unrelated": [
+    "erp-offline-nav-guard.js CACHE_NAMES still lists rateb-erp-coexist-v29 while SW coexist is v30 — may reduce coexist hits; ops-pages-v34 name matches SW.",
+    "Online SW does not intercept cloud navigations — page must be client-cached via nav-guard/full-warm; visiting alone without those scripts putting ops cache will leave modules uncached."
+  ]
+}

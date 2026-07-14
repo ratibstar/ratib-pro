@@ -1,0 +1,397 @@
+{
+  "phase": "OG",
+  "mode": "COLD_MODULE_NAV_NO_PRIOR_VISIT",
+  "ok": true,
+  "generatedAt": "2026-07-14T22:03:53.631Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "modules": [
+    {
+      "id": "dashboard",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/",
+      "expected_html_size": 77844,
+      "actual_html_size": 83101,
+      "offline_dom_html_len": 527453,
+      "placeholder_size": null,
+      "controller_reached": "NO",
+      "view_rendered": "YES",
+      "cache_hit": "YES",
+      "cached_html_size": 79816,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "title": "لوحة التحكم | نظام رتب ERP",
+        "offline_html_len": 527453,
+        "body_len": 926,
+        "has_uncached_marker": false,
+        "placeholder_text": false,
+        "snippet": "نظام رتب ERP لوحة التحكم كتالوج منتجات المنصة مراقبة الإدارة 2 المشتريات 1 المخزون نقطة البيع الموردون الموارد البشرية قسم الحسابات العقود / الأصول التحكم بالوصول الإشعارات إعدادات الملف لوحة الإدارة التنفيذية نظام المحتوى التسويقي 23 التحك",
+        "decodedBodySize": 83101,
+        "transferSize": 0
+      },
+      "placeholder_source": null,
+      "fallback_source": "ERP_OPS_PAGE_CACHE or coexist cache hit",
+      "cache_entry": {
+        "rel": "/admin/",
+        "cache": "rateb-erp-coexist-v30",
+        "cached_html_len": 79816,
+        "placeholder": true,
+        "cache_hit": true
+      }
+    },
+    {
+      "id": "hr",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "expected_html_size": 77634,
+      "actual_html_size": 1244,
+      "offline_dom_html_len": 1048,
+      "placeholder_size": 1244,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store"
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_html_len": 1048,
+        "body_len": 239,
+        "has_uncached_marker": true,
+        "placeholder_text": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/hr/attendance رجوع · العودة للوحة التحكم",
+        "decodedBodySize": 1244,
+        "transferSize": 0
+      },
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "cache_entry": {
+        "rel": "/admin/hr/attendance",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    },
+    {
+      "id": "inventory",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "expected_html_size": 91476,
+      "actual_html_size": 1244,
+      "offline_dom_html_len": 1048,
+      "placeholder_size": 1244,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store"
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_html_len": 1048,
+        "body_len": 239,
+        "has_uncached_marker": true,
+        "placeholder_text": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/ops/inventory رجوع · العودة للوحة التحكم",
+        "decodedBodySize": 1244,
+        "transferSize": 0
+      },
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "cache_entry": {
+        "rel": "/admin/ops/inventory",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    },
+    {
+      "id": "accounting",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+      "expected_html_size": 84598,
+      "actual_html_size": 1241,
+      "offline_dom_html_len": 1045,
+      "placeholder_size": 1241,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store"
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_html_len": 1045,
+        "body_len": 236,
+        "has_uncached_marker": true,
+        "placeholder_text": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/accounting رجوع · العودة للوحة التحكم",
+        "decodedBodySize": 1241,
+        "transferSize": 0
+      },
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "cache_entry": {
+        "rel": "/admin/accounting",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    },
+    {
+      "id": "procurement",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+      "expected_html_size": 83838,
+      "actual_html_size": 1252,
+      "offline_dom_html_len": 1056,
+      "placeholder_size": 1252,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store"
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_html_len": 1056,
+        "body_len": 247,
+        "has_uncached_marker": true,
+        "placeholder_text": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/ops/purchase-requests رجوع · العودة للوحة الت",
+        "decodedBodySize": 1252,
+        "transferSize": 0
+      },
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "cache_entry": {
+        "rel": "/admin/ops/purchase-requests",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    },
+    {
+      "id": "crm",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/crm",
+      "expected_html_size": 1315,
+      "actual_html_size": 1234,
+      "offline_dom_html_len": 1038,
+      "placeholder_size": 1234,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": "1",
+          "cacheControl": "no-store"
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "title": "RATEB ERP — الصفحة غير محفوظة",
+        "offline_html_len": 1038,
+        "body_len": 229,
+        "has_uncached_marker": true,
+        "placeholder_text": true,
+        "snippet": "الصفحة غير محفوظة أوفلاين الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت متصل ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين». الحفظ/الإرسال لا يعمل بدون إنترنت. /rateb-erp/public/admin/crm رجوع · العودة للوحة التحكم",
+        "decodedBodySize": 1234,
+        "transferSize": 0
+      },
+      "placeholder_source": "pos-sw.js:uncachedAdminBrowseResponse",
+      "fallback_source": "erpAdminOfflineFallback → finishUncached → uncachedAdminBrowseResponse",
+      "cache_entry": {
+        "rel": "/admin/crm",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    },
+    {
+      "id": "pos",
+      "requested_url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+      "expected_html_size": 6045,
+      "actual_html_size": 2739,
+      "offline_dom_html_len": 2694,
+      "placeholder_size": 2739,
+      "controller_reached": "NO",
+      "view_rendered": "NO",
+      "cache_hit": "NO",
+      "cached_html_size": 0,
+      "sw_response": {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "status": 200,
+        "fromSW": true,
+        "headers": {
+          "xOffline": "1",
+          "xUncached": null,
+          "cacheControl": null
+        }
+      },
+      "offline": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "title": "POS Offline",
+        "offline_html_len": 2694,
+        "body_len": 164,
+        "has_uncached_marker": false,
+        "placeholder_text": false,
+        "snippet": "نقطة البيع غير متصلة افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال. شاشة البيع · شاشة البيع /register",
+        "decodedBodySize": 2739,
+        "transferSize": 0
+      },
+      "placeholder_source": "thin SW offline HTML (OFFLINE_HTML / erpInlineShellResponse / POS stub)",
+      "fallback_source": "neverFailNavigate thin fallback (not ops cache hit)",
+      "cache_entry": {
+        "rel": "/admin/ops/pos",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    }
+  ],
+  "cacheInventory_before_offline": {
+    "names": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34",
+      "rateb-erp-coexist-v29",
+      "rateb-pos-shell-v8"
+    ],
+    "hits": [
+      {
+        "rel": "/admin/",
+        "cache": "rateb-erp-coexist-v30",
+        "cached_html_len": 79816,
+        "placeholder": true,
+        "cache_hit": true
+      },
+      {
+        "rel": "/admin/hr/attendance",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      },
+      {
+        "rel": "/admin/ops/inventory",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      },
+      {
+        "rel": "/admin/accounting",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      },
+      {
+        "rel": "/admin/ops/purchase-requests",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      },
+      {
+        "rel": "/admin/crm",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      },
+      {
+        "rel": "/admin/ops/pos",
+        "cache": null,
+        "cached_html_len": 0,
+        "placeholder": false,
+        "cache_hit": false
+      }
+    ]
+  },
+  "root_cause": {
+    "id": "missing_offline_snapshot",
+    "label": "missing offline snapshot (ops-page HTML not in Cache Storage for module URL)",
+    "summary": "When a module URL was never put into rateb-erp-ops-pages-* Cache Storage, offline navigation chain misses ops/coexist matches and returns uncachedAdminBrowseResponse (~1–2KB, X-Rateb-Uncached-Page:1, data-rateb-uncached-page). PHP controller/view never execute offline. Dashboard works because admin/ is leanOps-warmed into ERP_OPS_PAGE_CACHE.",
+    "function": "uncachedAdminBrowseResponse",
+    "file": "rateb-erp/public/pos-sw.js",
+    "chain": "neverFailNavigate → erpAdminOfflineFallback → erpOpsPageFallback MISS → matchAnyCachedAdminPage MISS → finishUncached → uncachedAdminBrowseResponse",
+    "leanOps_seed_only": [
+      "admin",
+      "admin/",
+      "admin/companies",
+      "admin/oversight/approvals",
+      "admin/profile"
+    ]
+  },
+  "affected_files": [
+    "rateb-erp/public/pos-sw.js",
+    "rateb-erp/public/assets/offline/erp-offline-nav-guard.js",
+    "rateb-erp/public/assets/offline/erp-offline-full-warm.js",
+    "rateb-erp/public/assets/offline/ops-page-allowlist.json"
+  ],
+  "certification": {
+    "dashboard_offline_full_html": true,
+    "modules_thin_placeholder": 6,
+    "uncached_marker_count": 5,
+    "note": "Enterprise PASS only if every listed module has View_rendered YES offline without prior URL visit OR after full warm — currently FAIL."
+  },
+  "enterprise": "FAIL",
+  "unrelated": [
+    "CRM /admin/crm online fetch may itself be tiny (routing/redirect) — separate from SW placeholder if online expected size <2KB.",
+    "POS may resolve a different thin offline body (OFFLINE_HTML) without data-rateb-uncached-page.",
+    "Client fetch() online does not guarantee Cache Storage put; nav-guard put depends on full document navigation."
+  ]
+}

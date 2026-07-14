@@ -1,0 +1,22 @@
+{
+  "phase": "OG",
+  "mode": "EVIDENCE_ONLY_NO_FIX",
+  "enterprise": "FAIL",
+  "root_cause": {
+    "id": "missing_offline_snapshot",
+    "one_liner": "Module route HTML is absent from ERP ops Cache Storage; SW serves uncachedAdminBrowseResponse (~1.2KB).",
+    "file": "rateb-erp/public/pos-sw.js",
+    "function": "uncachedAdminBrowseResponse",
+    "chain": "neverFailNavigate → erpAdminOfflineFallback → erpOpsPageFallback MISS → matchAnyCachedAdminPage MISS → finishUncached → uncachedAdminBrowseResponse"
+  },
+  "evidence": {
+    "cold": "phase-og-html-cert-cold-1784066633631.json",
+    "warm_prior_visit": "phase-og-html-cert-1784066541323.json",
+    "of_corroboration": "phase-of-verdict.json"
+  },
+  "unrelated": [
+    "CRM /admin/crm returns HTTP 500 online (~1.3KB) — not an offline-only defect.",
+    "POS offline uses title «POS Offline» (~2739B) SW stub path, not X-Rateb-Uncached-Page.",
+    "Prior document navigation online can populate ops cache (nav-guard) and then modules render offline — proves cache presence, not leanOps seed coverage."
+  ]
+}
