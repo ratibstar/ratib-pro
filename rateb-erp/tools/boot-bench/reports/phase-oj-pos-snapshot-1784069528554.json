@@ -1,0 +1,13 @@
+{
+  "phase": "OJ",
+  "generatedAt": "2026-07-14T22:52:08.556Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "before": {
+    "offline_html": 2739,
+    "note": "POS Offline stub without certified register shell (Phase OI)"
+  },
+  "after": {},
+  "security": {},
+  "enterprise": "FAIL",
+  "error": "page.evaluate: TypeError: Failed to fetch\n    at eval (eval at evaluate (:303:30), <anonymous>:2:25)\n    at UtilityScript.evaluate (<anonymous>:305:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at C:\\Users\\انا\\AppData\\Local\\Temp\\rateb-phase-oj-cert.js:71:31"
+}

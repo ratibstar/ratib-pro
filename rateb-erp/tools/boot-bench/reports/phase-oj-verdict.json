@@ -1,0 +1,12 @@
+{
+  "phase": "OJ",
+  "enterprise": "PASS",
+  "evidence": "phase-oj-pos-snapshot-1784069545084.json",
+  "root_cause": "Warm/cache pinned biometric gate (~6KB) into wrong pipeline; client pin used shell-v7 while SW read v8; register HTML never certified after biometric success.",
+  "files_changed": [
+    "rateb-erp/public/assets/pos/js/pos-offline-bootstrap.js",
+    "rateb-erp/public/pos-sw.js",
+    "rateb-erp/public/assets/offline/erp-offline-full-warm.js",
+    "rateb-erp/tools/boot-bench/remote-auth.php"
+  ]
+}

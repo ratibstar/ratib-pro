@@ -1,0 +1,128 @@
+{
+  "phase": "OJ",
+  "generatedAt": "2026-07-14T22:52:25.085Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "before": {
+    "offline_html": 2739,
+    "note": "POS Offline stub without certified register shell (Phase OI)"
+  },
+  "after": {
+    "cold_no_snapshot": {
+      "title": "POS — يلزم التحقق البيومتري",
+      "size": 1403,
+      "bioRequired": true,
+      "stub": false,
+      "register": false,
+      "gate": false,
+      "ttfb": 634.6999999880791,
+      "fcp": 676,
+      "ms": 1054
+    },
+    "online_register": {
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+      "title": "شاشة البيع",
+      "html_len": 71543,
+      "register": true,
+      "gate": false,
+      "config": true,
+      "status": 200,
+      "gen_ms": 1704
+    },
+    "certify": {
+      "ok": true,
+      "meta": {
+        "version": "oj-v1",
+        "certified": true,
+        "certified_at": 1784069565811,
+        "biometric_completed_online": true,
+        "html_hash": "37bf1562b3dc426151879618f1bfafee44203a99a99f842e41e77e4555d14fb3",
+        "html_len": 66914,
+        "company_id": 22,
+        "tenant_id": 22,
+        "branch_id": 20,
+        "user_id": 26,
+        "cashier": "",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "sw_build_hint": "phase-oj"
+      },
+      "ms": 237
+    },
+    "cache_inventory": {
+      "names": [
+        "rateb-erp-coexist-v30",
+        "rateb-pos-assets-v8",
+        "rateb-erp-ops-allowlist-v34",
+        "rateb-erp-ops-pages-v34",
+        "rateb-pos-shell-v8"
+      ],
+      "shell": {
+        "url": "https://rateb.sa/rateb-erp/public/__rateb_pos_register_shell__",
+        "len": 66914,
+        "register": true,
+        "gate": false,
+        "stub": false
+      },
+      "meta": {
+        "version": "oj-v1",
+        "certified": true,
+        "certified_at": 1784069565811,
+        "biometric_completed_online": true,
+        "html_hash": "37bf1562b3dc426151879618f1bfafee44203a99a99f842e41e77e4555d14fb3",
+        "html_len": 66914,
+        "company_id": 22,
+        "tenant_id": 22,
+        "branch_id": 20,
+        "user_id": 26,
+        "cashier": "",
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "sw_build_hint": "phase-oj"
+      },
+      "gate_in_shell": false
+    },
+    "first_offline": {
+      "title": "شاشة البيع",
+      "size": 71050,
+      "register": true,
+      "gate": false,
+      "bioRequired": false,
+      "stub": false,
+      "transferSize": 0,
+      "ttfb": 127.89999997615814,
+      "fcp": 328,
+      "ms": 755
+    },
+    "second_offline": {
+      "size": 71050,
+      "register": true,
+      "stub": false,
+      "bioRequired": false,
+      "ttfb": 15.200000017881393,
+      "fcp": 148,
+      "ms": 437
+    }
+  },
+  "security": {
+    "mintpos_biometric_marked": true,
+    "no_biometric_bypass": true,
+    "gate_not_in_shell_cache": true,
+    "snapshot_requires_register_marker": true,
+    "meta_certified": true,
+    "meta_biometric_flag": true,
+    "company_bound": true,
+    "user_bound": true,
+    "cold_shows_bio_required_not_stub": true
+  },
+  "enterprise": "PASS",
+  "ok": true,
+  "metrics": {
+    "before_offline_stub_bytes": 2739,
+    "after_offline_register_bytes": 71050,
+    "after_cache_shell_bytes": 66914,
+    "certify_ms": 237,
+    "first_open_ms": 755,
+    "second_open_ms": 437,
+    "first_ttfb": 127.89999997615814,
+    "first_fcp": 328,
+    "online_gen_ms": 1704
+  }
+}
