@@ -350,6 +350,18 @@
         var confirmMsg = confirmMessageForAction(action);
 
         function runPost() {
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    flashToast('الاعتماد يحتاج اتصال بالإنترنت. تصفّح الصفحة متاح أوفلاين.', 'warning');
+                    return;
+                }
+                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+                if (badge && badge.classList.contains('is-offline')) {
+                    flashToast('الاعتماد يحتاج اتصال بالإنترنت. تصفّح الصفحة متاح أوفلاين.', 'warning');
+                    return;
+                }
+            } catch (eOff) { /* continue */ }
+
             var form = new FormData();
             form.append('_csrf', csrf());
             form.append('decision', action);
@@ -375,6 +387,10 @@
             })
                 .then(parseJsonResponse)
                 .then(function (data) {
+                    if (data && data.offline) {
+                        flashToast(data.message || 'الاعتماد يحتاج اتصال بالإنترنت.', 'warning');
+                        return;
+                    }
                     if (action === 'approve' || action === 'reject' || action === 'undo') {
                         syncRowAfterAction(key, data);
                     }
@@ -383,7 +399,11 @@
                     }
                 })
                 .catch(function (err) {
-                    flashToast(err && err.message ? err.message : (labels.error || 'Error'), 'danger');
+                    var msg = err && err.message ? err.message : (labels.error || 'Error');
+                    if (/failed to fetch|networkerror|internet_disconnected|offline/i.test(String(msg))) {
+                        msg = 'الاعتماد يحتاج اتصال بالإنترنت.';
+                    }
+                    flashToast(msg, 'danger');
                 })
                 .finally(function () {
                     setRowBusy(key, false);

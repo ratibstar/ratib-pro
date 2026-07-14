@@ -11,7 +11,7 @@
     var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate|suspend|wipe)(\/|$|\?)/i;
     var ONLINE_ONLY_RE = /(?:post|reverse|close[-_]?period|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|submit-approval|convert-to-po)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v1';
-    var GUARD_BUILD = '20260714-deferred-forms-v40';
+    var GUARD_BUILD = '20260714-deferred-forms-v41';
 
     function isOffline() {
         try {
@@ -215,57 +215,101 @@
             return Promise.resolve({ ok: 0 });
         }
         var list = readDeferred();
-        if (!list.length) {
-            return Promise.resolve({ ok: 0 });
-        }
-        var csrf = currentCsrf();
-        var remain = [];
-        var chain = Promise.resolve({ ok: 0, fail: 0 });
-
-        list.forEach(function (entry) {
-            chain = chain.then(function (stats) {
-                if (!entry || !entry.url || !entry.fields) {
-                    return stats;
-                }
-                var body = new FormData();
-                if (csrf) {
-                    body.append('_csrf', csrf);
-                }
-                Object.keys(entry.fields).forEach(function (k) {
-                    var v = entry.fields[k];
-                    if (Array.isArray(v)) {
-                        v.forEach(function (one) { body.append(k, one); });
-                    } else {
-                        body.append(k, v);
-                    }
+        var pull = Promise.resolve(list);
+        if (root.caches && typeof root.caches.open === 'function') {
+            pull = root.caches.keys().then(function (names) {
+                var erp = (names || []).filter(function (n) {
+                    return String(n).indexOf('rateb-erp-coexist-') === 0;
                 });
-                return root.fetch(entry.url, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    body: body,
-                    redirect: 'follow'
-                }).then(function (res) {
-                    if (res && (res.ok || res.redirected || res.status === 302 || res.status === 303)) {
-                        stats.ok += 1;
-                    } else {
+                return erp.reduce(function (chain, name) {
+                    return chain.then(function (acc) {
+                        return root.caches.open(name).then(function (cache) {
+                            return cache.keys().then(function (reqs) {
+                                var jobs = [];
+                                (reqs || []).forEach(function (req) {
+                                    var href = typeof req === 'string' ? req : (req.url || '');
+                                    if (href.indexOf('__rateb_deferred_posts__/') === -1) {
+                                        return;
+                                    }
+                                    jobs.push(cache.match(req).then(function (res) {
+                                        if (!res) {
+                                            return null;
+                                        }
+                                        return res.json().then(function (entry) {
+                                            if (entry && entry.id) {
+                                                var exists = acc.some(function (x) {
+                                                    return x && x.id === entry.id;
+                                                });
+                                                if (!exists) {
+                                                    acc.push(entry);
+                                                }
+                                            }
+                                            return cache.delete(req).catch(function () { return null; });
+                                        }).catch(function () { return null; });
+                                    }));
+                                });
+                                return Promise.all(jobs).then(function () { return acc; });
+                            });
+                        });
+                    });
+                }, Promise.resolve(list.slice()));
+            }).catch(function () { return list; });
+        }
+        return pull.then(function (merged) {
+            writeDeferred(merged);
+            list = merged;
+            if (!list.length) {
+                return { ok: 0 };
+            }
+            var csrf = currentCsrf();
+            var remain = [];
+            var chain = Promise.resolve({ ok: 0, fail: 0 });
+
+            list.forEach(function (entry) {
+                chain = chain.then(function (stats) {
+                    if (!entry || !entry.url || !entry.fields) {
+                        return stats;
+                    }
+                    var body = new FormData();
+                    if (csrf) {
+                        body.append('_csrf', csrf);
+                    }
+                    Object.keys(entry.fields).forEach(function (k) {
+                        var v = entry.fields[k];
+                        if (Array.isArray(v)) {
+                            v.forEach(function (one) { body.append(k, one); });
+                        } else {
+                            body.append(k, v);
+                        }
+                    });
+                    return root.fetch(entry.url, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: body,
+                        redirect: 'follow'
+                    }).then(function (res) {
+                        if (res && (res.ok || res.redirected || res.status === 302 || res.status === 303)) {
+                            stats.ok += 1;
+                        } else {
+                            remain.push(entry);
+                            stats.fail += 1;
+                        }
+                        return stats;
+                    }).catch(function () {
                         remain.push(entry);
                         stats.fail += 1;
-                    }
-                    return stats;
-                }).catch(function () {
-                    remain.push(entry);
-                    stats.fail += 1;
-                    return stats;
+                        return stats;
+                    });
                 });
             });
-        });
 
-        return chain.then(function (stats) {
-            writeDeferred(remain);
-            if (stats.ok > 0) {
-                toast('تمت مزامنة ' + stats.ok + ' نموذج محفوظ أوفلاين.');
-            }
-            return stats;
+            return chain.then(function (stats) {
+                writeDeferred(remain);
+                if (stats.ok > 0) {
+                    toast('تمت مزامنة ' + stats.ok + ' نموذج محفوظ أوفلاين.');
+                }
+                return stats;
+            });
         });
     }
 
@@ -414,7 +458,44 @@
             if (!isOffline()) {
                 flushDeferredForms();
             }
-        }, 1500);
+            try {
+                var q = String(root.location.search || '');
+                if (/[?&]rateb_offline_saved=1(?:&|$)/.test(q)) {
+                    toast('تم حفظ النموذج أوفلاين — يُرسل تلقائياً عند عودة الاتصال.');
+                    try {
+                        var clean = new URL(root.location.href);
+                        clean.searchParams.delete('rateb_offline_saved');
+                        root.history.replaceState({}, '', clean.href);
+                    } catch (eC) { /* ignore */ }
+                }
+                if (/[?&]rateb_offline_blocked=1(?:&|$)/.test(q)) {
+                    toast('هذا الإجراء يحتاج إنترنت (اعتماد / حذف / دفع).', true);
+                    try {
+                        var clean2 = new URL(root.location.href);
+                        clean2.searchParams.delete('rateb_offline_blocked');
+                        root.history.replaceState({}, '', clean2.href);
+                    } catch (eC2) { /* ignore */ }
+                }
+            } catch (eQ) { /* ignore */ }
+        }, 400);
+
+        try {
+            if (root.navigator && root.navigator.serviceWorker) {
+                root.navigator.serviceWorker.addEventListener('message', function (ev) {
+                    try {
+                        var data = ev.data || {};
+                        if (data.type === 'RATEB_DEFERRED_POST' && data.entry) {
+                            var list = readDeferred();
+                            var exists = list.some(function (x) { return x && x.id === data.entry.id; });
+                            if (!exists) {
+                                list.push(data.entry);
+                                writeDeferred(list);
+                            }
+                        }
+                    } catch (eMsg) { /* ignore */ }
+                });
+            }
+        } catch (eSw) { /* ignore */ }
     }
 
     root.RatebOfflineNavGuard = {

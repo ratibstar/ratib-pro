@@ -10,12 +10,12 @@
     var GAP_MS = 250;
     var MIN_OK = 8;
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v33';
-    var COEXIST = 'rateb-erp-coexist-v28';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v34';
+    var COEXIST = 'rateb-erp-coexist-v29';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v11';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v11';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v11';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v12';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v12';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v12';
     var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
@@ -612,7 +612,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v40';
+        var build = '20260713-force-sw-v41';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',

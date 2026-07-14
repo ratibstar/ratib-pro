@@ -3,13 +3,14 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v28';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v33';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v33';
-var SW_BUILD_ID = '20260713-force-sw-v40';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
+var SW_BUILD_ID = '20260713-force-sw-v41';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
+var ERP_DEFERRED_POSTS_PREFIX = '__rateb_deferred_posts__/';
 
 /**
  * Runtime paths from ops-page-allowlist.json (synced from
@@ -496,6 +497,156 @@ function neverFailNavigate(request, url) {
                 + '<h1>وضع عدم الاتصال</h1><p>أعد فتح Admin وأنت متصل مرة واحدة.</p></body></html>',
                 { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
             );
+        }
+    });
+}
+
+function isOfflinePostDenyPath(pathname) {
+    var p = String(pathname || '');
+    return /\/(delete|destroy|suspend|wipe|export|pdf|excel|csv)(\/|$)/i.test(p)
+        || /\/(final-approve|decide|escalate|pay(?:ment)?|transfer-funds|void-payment)(\/|$)/i.test(p)
+        || /\/journal-entries\/\d+\/(post|void|reject|submit-approval)(\/|$)/i.test(p);
+}
+
+function wantsJsonPostResponse(request) {
+    try {
+        if (String(request.headers.get('X-Requested-With') || '') === 'XMLHttpRequest') {
+            return true;
+        }
+        var accept = String(request.headers.get('Accept') || '');
+        return accept.indexOf('application/json') !== -1;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Offline Save: queue form fields, redirect back to the form page (never Chrome interstitial).
+ * Approvals / money / delete return JSON error — must stay online-only.
+ */
+function handleOfflineAdminPost(request, url) {
+    var referer = '';
+    try {
+        referer = String(request.headers.get('Referer') || '');
+    } catch (eR) { /* ignore */ }
+    if (!referer) {
+        try {
+            referer = new URL('admin/', self.registration.scope).href;
+        } catch (eA) {
+            referer = url.origin + '/rateb-erp/public/admin/';
+        }
+    }
+
+    if (isOfflinePostDenyPath(url.pathname)) {
+        if (wantsJsonPostResponse(request)) {
+            return Promise.resolve(new Response(JSON.stringify({
+                ok: false,
+                offline: true,
+                message: 'هذا الإجراء يحتاج اتصال بالإنترنت (اعتماد / حذف / دفع).'
+            }), {
+                status: 503,
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'X-Rateb-Offline': '1'
+                }
+            }));
+        }
+        try {
+            var denyBack = new URL(referer);
+            denyBack.searchParams.set('rateb_offline_blocked', '1');
+            return Promise.resolve(Response.redirect(denyBack.href, 303));
+        } catch (eD) {
+            return Promise.resolve(Response.redirect(referer, 303));
+        }
+    }
+
+    return request.clone().formData().then(function (fd) {
+        var fields = {};
+        try {
+            fd.forEach(function (value, key) {
+                if (/^_csrf$/i.test(String(key))) {
+                    return;
+                }
+                try {
+                    if (typeof File !== 'undefined' && value instanceof File) {
+                        return;
+                    }
+                } catch (eF) { /* ignore */ }
+                var sval = String(value);
+                if (Object.prototype.hasOwnProperty.call(fields, key)) {
+                    if (!Array.isArray(fields[key])) {
+                        fields[key] = [fields[key]];
+                    }
+                    fields[key].push(sval);
+                } else {
+                    fields[key] = sval;
+                }
+            });
+        } catch (eFields) { /* ignore */ }
+
+        var entry = {
+            id: 'sw-' + Date.now() + '-' + Math.floor(Math.random() * 1e6),
+            url: url.href,
+            path: url.pathname,
+            fields: fields,
+            created_at: Date.now(),
+            via: 'service-worker'
+        };
+
+        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            var key = url.origin + '/' + ERP_DEFERRED_POSTS_PREFIX + entry.id;
+            return cache.put(key, new Response(JSON.stringify(entry), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' }
+            })).then(function () {
+                return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+                    (clients || []).forEach(function (client) {
+                        try {
+                            client.postMessage({ type: 'RATEB_DEFERRED_POST', entry: entry });
+                        } catch (eMsg) { /* ignore */ }
+                    });
+                });
+            });
+        }).catch(function () { /* ignore store errors */ }).then(function () {
+            if (wantsJsonPostResponse(request)) {
+                return new Response(JSON.stringify({
+                    ok: true,
+                    offline: true,
+                    queued: true,
+                    message: 'تم حفظ النموذج أوفلاين — يُرسل تلقائياً عند عودة الاتصال.'
+                }), {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'X-Rateb-Offline': '1'
+                    }
+                });
+            }
+            try {
+                var back = new URL(referer);
+                back.searchParams.set('rateb_offline_saved', '1');
+                return Response.redirect(back.href, 303);
+            } catch (eBack) {
+                return Response.redirect(referer, 303);
+            }
+        });
+    }).catch(function () {
+        if (wantsJsonPostResponse(request)) {
+            return new Response(JSON.stringify({
+                ok: false,
+                offline: true,
+                message: 'تعذر حفظ النموذج أوفلاين. أعد المحاولة وأنت متصل.'
+            }), {
+                status: 503,
+                headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-Rateb-Offline': '1' }
+            });
+        }
+        try {
+            var back2 = new URL(referer);
+            back2.searchParams.set('rateb_offline_saved', '1');
+            return Response.redirect(back2.href, 303);
+        } catch (e2) {
+            return Response.redirect(referer, 303);
         }
     });
 }
@@ -1571,12 +1722,26 @@ self.addEventListener('message', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-    if (event.request.method !== 'GET') {
+    var url;
+    try {
+        url = new URL(event.request.url);
+    } catch (eUrl) {
+        return;
+    }
+    if (url.origin !== self.location.origin) {
         return;
     }
 
-    var url = new URL(event.request.url);
-    if (url.origin !== self.location.origin) {
+    // Offline POST (form Save / XHR): never let Chrome paint «لا يتوفر اتصال».
+    if (event.request.method === 'POST' && isCloudBrowserOffline()) {
+        if (/\/admin(\/|$)/i.test(url.pathname) || /\/api\//i.test(url.pathname)) {
+            event.respondWith(handleOfflineAdminPost(event.request, url));
+            return;
+        }
+        return;
+    }
+
+    if (event.request.method !== 'GET') {
         return;
     }
 

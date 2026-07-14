@@ -823,8 +823,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
       var cacheNames = [
-        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v33',
-        'rateb-erp-coexist-v28'
+        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v34',
+        'rateb-erp-coexist-v29'
       ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');
