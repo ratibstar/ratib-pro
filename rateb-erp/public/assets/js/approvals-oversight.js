@@ -126,7 +126,7 @@
             + '<i class="fas fa-eye"></i><span>' + escapeHtml(labels.view || 'View') + '</span></button>';
 
         if (editUrl) {
-            html += '<a href="' + escapeHtml(editUrl) + '" class="rateb-approval-btn rateb-approval-btn-edit" target="_blank" rel="noopener" title="' + escapeHtml(labels.edit || 'Edit') + '">'
+            html += '<a href="' + escapeHtml(editUrl) + '" class="rateb-approval-btn rateb-approval-btn-edit" data-rateb-edit-link="1" title="' + escapeHtml(labels.edit || 'Edit') + '">'
                 + '<i class="fas fa-edit"></i><span>' + escapeHtml(labels.edit || 'Edit') + '</span></a>';
         }
 

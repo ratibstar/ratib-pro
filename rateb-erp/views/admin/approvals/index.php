@@ -179,7 +179,7 @@ $approvalsConfig = [
                                         <i class="fas fa-eye"></i><span><?php echo __('view'); ?></span>
                                     </button>
                                     <?php if ($editUrl !== '') { ?>
-                                    <a href="<?php echo Rateb\App\Core\View::escape($editUrl); ?>" class="rateb-approval-btn rateb-approval-btn-edit" target="_blank" rel="noopener" title="<?php echo __('edit'); ?>">
+                                    <a href="<?php echo Rateb\App\Core\View::escape($editUrl); ?>" class="rateb-approval-btn rateb-approval-btn-edit" data-rateb-edit-link="1" title="<?php echo __('edit'); ?>">
                                         <i class="fas fa-edit"></i><span><?php echo __('edit'); ?></span>
                                     </a>
                                     <?php } ?>

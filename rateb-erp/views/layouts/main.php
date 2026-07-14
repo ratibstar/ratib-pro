@@ -151,20 +151,53 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       window.__RATEB_RESCUE_STYLES__ = rescueStyles;
       if ('serviceWorker' in navigator) {
         try {
-          try {
-            if (navigator.onLine === false) return;
-          } catch (eOfflineReg) {}
           var swUrl = location.origin + publicBase() + 'pos-sw.js?v=' + encodeURIComponent(build);
           var scope = location.origin + publicBase();
-          navigator.serviceWorker.register(swUrl, { scope: scope, updateViaCache: 'none' }).catch(function () {});
+          function claimExisting() {
+            return navigator.serviceWorker.getRegistration(scope).then(function (reg) {
+              if (!reg) return;
+              try {
+                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+              } catch (eClaim) {}
+            }).catch(function () {});
+          }
+          if (navigator.onLine === false) {
+            claimExisting();
+          } else {
+            navigator.serviceWorker.register(swUrl, { scope: scope, updateViaCache: 'none' })
+              .then(function () { return claimExisting(); })
+              .catch(function () { claimExisting(); });
+          }
         } catch (e3) {}
       }
       document.addEventListener('click', function (ev) {
         try {
-          if (navigator.onLine !== false) return;
-          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
           var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!a) return;
+          var offline = false;
+          try { offline = navigator.onLine === false; } catch (eOff) {}
+          // Offline edit: same-tab list fallback — never open a blank tab that Chrome
+          // paints as «لا يتوفر اتصال بالإنترنت».
+          if (offline && (a.getAttribute('data-rateb-edit-link') === '1'
+              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.getAttribute('href') || ''))) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            try {
+              if (window.history.length > 1) {
+                history.back();
+                return;
+              }
+            } catch (eBack) {}
+            try {
+              location.href = location.origin + publicBase() + 'admin/oversight/companies-approvals';
+            } catch (eGo) {
+              location.href = location.origin + publicBase() + 'admin/';
+            }
+            return;
+          }
+          if (!offline) return;
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
           var u = new URL(a.href, location.href);
           if (u.origin !== location.origin) return;
           if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
@@ -801,8 +834,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
       var cacheNames = [
-        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v32',
-        'rateb-erp-coexist-v27'
+        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v33',
+        'rateb-erp-coexist-v28'
       ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');
@@ -920,9 +953,28 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   } catch (eEsc) {}
   var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
   gate.then(function () {
+    function claimExistingSw() {
+      try {
+        var getReg = scope
+          ? navigator.serviceWorker.getRegistration(scope)
+          : navigator.serviceWorker.getRegistration();
+        return getReg.then(function (reg) {
+          if (!reg) return null;
+          try {
+            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+          } catch (eC) {}
+          return reg;
+        });
+      } catch (eG) {
+        return Promise.resolve(null);
+      }
+    }
     try {
-      // Offline: keep the controlling SW; do not register/update (script fetch fails).
+      // Offline: never register/update (script fetch fails) — claim existing SW so
+      // edit→back / oversight pages never fall to Chrome «لا يتوفر اتصال».
       if (navigator.onLine === false) {
+        claimExistingSw();
         return;
       }
     } catch (eOfflineSw) { /* continue register */ }
@@ -936,6 +988,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
             reg.update();
           }
           if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          if (reg && reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
         } catch (eUp) {}
         // Never force-reload on controllerchange while offline (ERR interstitial).
         try {
@@ -954,7 +1007,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         scheduleWarm(reg);
         return navigator.serviceWorker.ready.then(function (ready) { scheduleWarm(ready); });
       })
-      .catch(function () {});
+      .catch(function () { claimExistingSw(); });
   });
 })();
 </script>

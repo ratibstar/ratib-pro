@@ -10,12 +10,12 @@
     var GAP_MS = 250;
     var MIN_OK = 8;
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v32';
-    var COEXIST = 'rateb-erp-coexist-v27';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v33';
+    var COEXIST = 'rateb-erp-coexist-v28';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v10';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v10';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v10';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v11';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v11';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v11';
     var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
@@ -171,7 +171,11 @@
             if (/\/(delete|destroy|export|pdf|excel|csv|json|tinymce|regenerate)(\/|$)/i.test(p)) {
                 return false;
             }
-            if (/\/\d+(\/|$)/.test(p) && !/\/(edit|create|new)(\/|$)/i.test(p) && !/\/\d+\/edit(\/|$)/i.test(p)) {
+            // /123/edit warm is noisy (404/500) — opened pages are pinned by cacheLiveAdminPage.
+            if (/\/\d+\/(edit|show|view|generate)(\/|$)/i.test(p)) {
+                return false;
+            }
+            if (/\/\d+(\/|$)/.test(p) && !/\/(create|new)(\/|$)/i.test(p)) {
                 return false;
             }
             // Platform accounting child pages often 404/500 when schema/seed incomplete — skip warm noise.
@@ -608,7 +612,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v36';
+        var build = '20260713-force-sw-v37';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -773,7 +777,11 @@
                 root.location.origin + publicBase() + 'admin/ops/accounting/platform',
                 root.location.origin + publicBase() + 'admin/ops/accounting',
                 root.location.origin + publicBase() + 'admin/ops/purchase-requests',
-                root.location.origin + publicBase() + 'admin/hr/employees'
+                root.location.origin + publicBase() + 'admin/ops/suppliers',
+                root.location.origin + publicBase() + 'admin/hr/employees',
+                root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
+                root.location.origin + publicBase() + 'admin/oversight/approvals',
+                root.location.origin + publicBase() + 'admin/companies'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);

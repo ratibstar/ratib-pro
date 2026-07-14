@@ -3,10 +3,10 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v27';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v32';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v32';
-var SW_BUILD_ID = '20260713-force-sw-v36';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v28';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v33';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v33';
+var SW_BUILD_ID = '20260713-force-sw-v37';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -400,6 +400,27 @@ function putErpOpsPageFromMessage(data) {
     }).catch(function () { return false; });
 }
 
+function parentAdminListUrl(url) {
+    try {
+        var u = new URL(url.href || String(url));
+        var path = String(u.pathname || '').replace(/\/+$/, '');
+        var next = path
+            .replace(/\/\d+\/(edit|show|view|generate)(\/|$)/i, '/')
+            .replace(/\/(create|new)(\/|$)/i, '/')
+            .replace(/\/+$/, '');
+        if (!next || next === path) {
+            return null;
+        }
+        if (!/\/admin(\/|$)/i.test(next)) {
+            return null;
+        }
+        u.pathname = next;
+        return u;
+    } catch (e) {
+        return null;
+    }
+}
+
 /**
  * Smart coexist: when this SW owns the shared scope, serve ERP ops page
  * (if allowlisted) then offline-shell for non-POS admin navigations.
@@ -419,17 +440,17 @@ function erpAdminOfflineFallback(request, url) {
             if (any) {
                 return any;
             }
-            var pathNorm = '';
-            try {
-                pathNorm = String((url && url.pathname) || '').replace(/\/+$/, '');
-            } catch (eP) { /* ignore */ }
-            // Dashboard only when the navigation IS the admin home.
-            if (/(^|\/)admin$/i.test(pathNorm)) {
-                return matchCachedAdminDashboard(url).then(function (dash) {
-                    return dash || matchOfflineShellOrInline(request);
+            // Edit/show deep links: prefer the cached list page (companies-approvals, suppliers…).
+            var parent = parentAdminListUrl(url);
+            if (parent) {
+                return matchAnyCachedAdminPage(null, parent).then(function (listHit) {
+                    if (listHit) {
+                        return listHit;
+                    }
+                    return finishUncached(url);
                 });
             }
-            return uncachedAdminBrowseResponse(url);
+            return finishUncached(url);
         });
     }).catch(function () {
         try {
@@ -444,6 +465,19 @@ function erpAdminOfflineFallback(request, url) {
             return erpInlineShellResponse();
         }
     });
+
+    function finishUncached(u) {
+        var pathNorm = '';
+        try {
+            pathNorm = String((u && u.pathname) || '').replace(/\/+$/, '');
+        } catch (eP) { /* ignore */ }
+        if (/(^|\/)admin$/i.test(pathNorm)) {
+            return matchCachedAdminDashboard(u).then(function (dash) {
+                return dash || matchOfflineShellOrInline(request);
+            });
+        }
+        return uncachedAdminBrowseResponse(u);
+    }
 }
 
 /** Last-resort — must never reject (Chrome ERR_FAILED if respondWith promise rejects). */
@@ -576,7 +610,8 @@ function uncachedAdminBrowseResponse(url) {
         + '<p>الإنشاء والتعديل ومعظم الشاشات تحتاج فتح الصفحة مرة وأنت <strong>متصل</strong> ليتم حفظها، أو انتظار اكتمال «تجهيز الأوفلاين».</p>'
         + '<p>الحفظ/الإرسال لا يعمل بدون إنترنت.</p>'
         + '<p dir="ltr" style="opacity:.55;font-size:.8rem;word-break:break-all">' + String(path).replace(/</g, '') + '</p>'
-        + '<p><a href="' + String(adminHref).replace(/"/g, '') + '">العودة للوحة التحكم</a></p>'
+        + '<p><a href="javascript:history.back()">رجوع</a>'
+        + ' · <a href="' + String(adminHref).replace(/"/g, '') + '">العودة للوحة التحكم</a></p>'
         + '</div></body></html>';
     return new Response(body, {
         status: 200,
@@ -723,7 +758,9 @@ function warmErpOfflineShell() {
         'admin/hr/attendance',
         'admin/hr/leaves',
         'admin/notifications',
-        'admin/profile'
+        'admin/profile',
+        'admin/oversight/companies-approvals',
+        'admin/oversight/approvals'
     ];
     function cacheUrlList(cache, list) {
         return list.reduce(function (chain, key) {
@@ -1005,8 +1042,10 @@ function fetchNavigateNetwork(request, timeoutMs) {
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
     var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
-        if (!response) {
-            return Promise.reject(new Error('empty-response'));
+        // Non-OK (404/500) must fall through to cache — never paint server errors over
+        // a good offline snapshot (edit→back to companies-approvals).
+        if (!response || !response.ok) {
+            return Promise.reject(new Error('bad-navigate-status'));
         }
         return response;
     });
@@ -1482,6 +1521,10 @@ self.addEventListener('message', function (event) {
     var data = event.data || {};
     if (data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+        return;
+    }
+    if (data.type === 'CLIENTS_CLAIM') {
+        event.waitUntil(self.clients.claim());
         return;
     }
     if (data.type === 'PIN_REGISTER_SHELL' && data.url) {
