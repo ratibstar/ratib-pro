@@ -1,0 +1,38 @@
+{
+  "phase": "AF",
+  "title": "Prove O(n²) growth of rateb_app_route static $conflictRoots",
+  "measured_at": "2026-07-14T18:50:00Z",
+  "mode": "evidence_only_no_optimization",
+  "instrumentation": "temporary twin of rateb_app_route only; app.php restored after run",
+  "request": {
+    "path": "/admin/hr",
+    "sapi": "fpm-fcgi",
+    "company_access": true,
+    "request_total_ms": 485.093,
+    "routes_load_ms": 433.358,
+    "route_count": 1179,
+    "invocation_count": 1147
+  },
+  "answer": {
+    "does_conflictRoots_grow_on_every_call": true,
+    "initial_size": 45,
+    "size_after_call_1": 53,
+    "final_size": 9221,
+    "growth_per_call": 8,
+    "growth_delta_total": 9176,
+    "growth_factor": 204.9111,
+    "estimated_complexity": "O(N²) total: call k array_merge-copies ~45+8*(k-1) elements; Σ k = O(N²). Dominated by array_merge (416.0 ms / 423.4 ms = 98.3% of function wall), not explode (0.3 ms) or in_array (6.3 ms).",
+    "percentage_of_total_request": 87.28,
+    "percentage_of_routes_load": 97.7,
+    "sum_wall_ms": 423.371
+  },
+  "lookup_trend": {
+    "avg_in_array_first_100_ms": 0.000178,
+    "avg_in_array_last_100_ms": 0.004213,
+    "in_array_slowdown_factor": 23.7,
+    "avg_wall_first_100_ms": 0.451126,
+    "avg_wall_last_100_ms": 0.362267,
+    "note": "Per-call wall stays ~0.35 ms after warmup (merge allocation floor); in_array avg rises ~24× early→late; cumulative cost is quadratic via repeated growing merges."
+  },
+  "source": "tools/boot-bench/reports/phase-af-growth.json"
+}
