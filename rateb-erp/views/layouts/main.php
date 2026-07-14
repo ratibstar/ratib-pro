@@ -712,7 +712,9 @@ if (!$ratebLocalAppliance) {
         'rateb_erp_full_warm_at_v9', 'rateb_erp_full_warm_ok_v9',
         'rateb_erp_full_warm_assets_v9',
         'rateb_erp_full_warm_at_v12', 'rateb_erp_full_warm_ok_v12',
-        'rateb_erp_full_warm_assets_v12'
+        'rateb_erp_full_warm_assets_v12',
+        'rateb_erp_full_warm_at_v13', 'rateb_erp_full_warm_ok_v13',
+        'rateb_erp_full_warm_assets_v13'
       ].forEach(function (k) {
         try { localStorage.removeItem(k); } catch (eR) {}
       });
@@ -1036,13 +1038,12 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   var scope = cfg.serviceWorkerScope ? String(cfg.serviceWorkerScope) : undefined;
   var warmed = false;
   function warm(reg) {
-    // Shell warm disabled during active browsing — use ?rateb_warm=1 to seed offline caches.
-    try {
-      if (!/[?&]rateb_warm=1(?:&|$)/.test(String(location.search || ''))) {
-        return;
-      }
-    } catch (eQ) { return; }
+    // Phase OH — idle shell + leanOps HTML snapshot warm (certified modules).
+    // Still skip when offline; force via ?rateb_warm=1 remains available.
     if (warmed) return;
+    try {
+      if (navigator.onLine === false) return;
+    } catch (eOff) { return; }
     try {
       var w = reg && (reg.active || reg.waiting || reg.installing);
       if (!w) return;
@@ -1096,7 +1097,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       if (html.length < 500 || html.length > 2500000) return;
       var cacheNames = [
         (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v34',
-        'rateb-erp-coexist-v29'
+        'rateb-erp-coexist-v30'
       ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');

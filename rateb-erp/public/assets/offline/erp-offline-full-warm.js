@@ -5,17 +5,41 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 80;
+    var MAX_URLS = 120;
     var CONCURRENCY = 1;
     var GAP_MS = 700;
     var MIN_OK = 8;
+    var MIN_ERP_HTML_BYTES = 20000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v34';
-    var COEXIST = 'rateb-erp-coexist-v29';
+    var COEXIST = 'rateb-erp-coexist-v30';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v12';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v12';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v12';
+    // Phase OH — bump TTL keys so stale "success" without module HTML does not skip.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v13';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v13';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v13';
+    /** Certified offline-capable module HTML snapshots (Phase OH). */
+    var CERTIFIED_MODULE_RELS = [
+        'admin',
+        'admin/',
+        'admin/hr',
+        'admin/hr/attendance',
+        'admin/hr/leaves',
+        'admin/ops',
+        'admin/ops/inventory',
+        'admin/ops/warehouses',
+        'admin/ops/purchase-requests',
+        'admin/ops/purchase-orders',
+        'admin/ops/suppliers',
+        'admin/ops/stock-movements',
+        'admin/accounting',
+        'admin/ops/accounting',
+        'admin/ops/accounting/platform',
+        'admin/ops/pos/register',
+        'admin/companies',
+        'admin/profile',
+        'admin/oversight/approvals'
+    ];
     var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
@@ -212,6 +236,54 @@
         return false;
     }
 
+    /** Phase OH — never put placeholders, stubs, error shells, or thin HTML into ops cache. */
+    function isCacheableErpHtml(html, href) {
+        var body = String(html || '');
+        var head = body.slice(0, 5000);
+        var path = '';
+        try {
+            path = new URL(href, root.location.origin).pathname || '';
+        } catch (eP) { /* ignore */ }
+        if (looksLikeLoginHtml(body)) {
+            return false;
+        }
+        if (/data-rateb-uncached-page/i.test(head) || /X-Rateb-Uncached-Page/i.test(head)) {
+            return false;
+        }
+        if (/الصفحة غير محفوظة|RATEB ERP — الصفحة غير محفوظة/i.test(head)) {
+            return false;
+        }
+        if (/<title>\s*POS Offline\s*<\/title>/i.test(head) || /نقطة البيع غير متصلة/i.test(head)) {
+            return false;
+        }
+        if (/data-rateb-inline-shell|erpInlineShell/i.test(head)) {
+            return false;
+        }
+        if (/<meta[^>]+http-equiv=["']refresh/i.test(head)) {
+            return false;
+        }
+        if (/(Fatal error|Uncaught |HTTP\s*50[0-9]|Server Error|خطأ في الخادم)/i.test(head)
+            && body.length < 40000) {
+            return false;
+        }
+        // POS register shell is smaller than list pages but must carry register markers.
+        if (/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(path.replace(/\/+$/, ''))) {
+            if (body.length < 1500) {
+                return false;
+            }
+            return /data-pos-register|rateb-pos-register-config|pos-register\.css/i.test(body)
+                && !/<title>\s*POS Offline\s*<\/title>/i.test(head);
+        }
+        if (body.length < MIN_ERP_HTML_BYTES) {
+            return false;
+        }
+        // Full ERP layout markers (Arabic admin shell).
+        if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|لوحة التحكم|data-rateb-app/i.test(body)) {
+            return false;
+        }
+        return true;
+    }
+
     function pushUrl(seen, out, href) {
         if (out.length >= MAX_URLS) {
             return;
@@ -231,25 +303,25 @@
     function seedCoreUrls(seen, out) {
         var base = publicBase();
         var origin = root.location.origin;
-        // Lean product set only — never invent bare /pos or enterprise packs.
-        var core = [
-            'admin', 'admin/',
-            'admin/companies', 'admin/companies/create',
+        // Phase OH — certified module HTML first (complete ERP documents).
+        var core = CERTIFIED_MODULE_RELS.slice();
+        [
+            'admin/companies/create',
             'admin/ops/users/create', 'admin/users/create',
             'admin/agency-updates',
             'admin/ops/access-control', 'admin/ops/access-control/matrix',
             'admin/access-control', 'admin/access-control/matrix',
-            'admin/ops/purchase-requests', 'admin/ops/purchase-requests/create',
-            'admin/ops/purchase-orders', 'admin/ops/purchase-orders/create',
+            'admin/ops/purchase-requests/create',
+            'admin/ops/purchase-orders/create',
             'admin/ops/rfq', 'admin/ops/quotations',
-            'admin/ops/inventory', 'admin/ops/warehouses',
-            'admin/ops/stock-movements', 'admin/ops/stock-movements/create',
+            'admin/ops/stock-movements/create',
             'admin/ops/product-categories',
-            'admin/ops/suppliers', 'admin/ops/suppliers/create',
-            'admin/hr/attendance', 'admin/hr/leaves',
-            'admin/ops/pos/register',
-            'admin/ops/accounting'
-        ];
+            'admin/ops/suppliers/create'
+        ].forEach(function (rel) {
+            if (core.indexOf(rel) === -1) {
+                core.push(rel);
+            }
+        });
         core.forEach(function (rel) {
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
         });
@@ -401,7 +473,7 @@
             if (u.search) {
                 keys.push(u.origin + u.pathname + u.search);
             }
-            // Dual-key admin ↔ admin/ops so matrix works under either URL.
+                        // Dual-key admin ↔ admin/ops so matrix / accounting works under either URL.
             if (/\/admin\/ops\//i.test(u.pathname)) {
                 var noOps = u.pathname.replace(/\/admin\/ops\//i, '/admin/');
                 keys.push(u.origin + noOps);
@@ -537,6 +609,7 @@
             return Promise.resolve(false);
         }
         // Prefer already-cached copies — avoids network while SW/Browser cache has the file.
+        // Phase OH — never re-promote placeholders/stubs from Cache Storage.
         var matchPromise = root.caches
             ? root.caches.match(href).catch(function () { return null; })
             : Promise.resolve(null);
@@ -545,18 +618,48 @@
                 return false;
             }
             if (cached && cached.ok) {
+                var cachedCt = String(cached.headers.get('Content-Type') || '');
+                if (/text\/html/i.test(cachedCt) || /\/admin(\/|$)/i.test(href)) {
+                    return cached.clone().text().then(function (html) {
+                        if (!isCacheableErpHtml(html, href)) {
+                            // Fall through to network fetch below.
+                            return null;
+                        }
+                        return putIntoCaches(href, cached).then(function (ok) {
+                            return !!ok;
+                        });
+                    }).then(function (promoted) {
+                        if (promoted === null) {
+                            return fetchFromNetwork();
+                        }
+                        return promoted;
+                    });
+                }
                 return putIntoCaches(href, cached).then(function (ok) {
                     return !!ok;
                 });
             }
+            return fetchFromNetwork();
+        }).catch(function (err) {
+            try {
+                if (err && (err.name === 'AbortError' || abortWarm || isBrowserOffline())) {
+                    return false;
+                }
+            } catch (e) { /* ignore */ }
+            deadWarmUrls[deadKey] = true;
+            return false;
+        });
+
+        function fetchFromNetwork() {
             if (isBrowserOffline()) {
                 stopWarmBannerIfOffline();
-                return false;
+                return Promise.resolve(false);
             }
             var opts = {
                 credentials: 'same-origin',
-                cache: 'force-cache',
-                headers: { Accept: '*/*', 'X-Rateb-Shell-Warm': '1' }
+                cache: 'no-cache',
+                redirect: 'follow',
+                headers: { Accept: 'text/html,*/*;q=0.8', 'X-Rateb-Shell-Warm': '1' }
             };
             if (signal) {
                 opts.signal = signal;
@@ -569,42 +672,54 @@
                     deadWarmUrls[deadKey] = true;
                     return false;
                 }
+                // Do not cache login / error redirects as the requested module.
+                try {
+                    var finalPath = new URL(res.url).pathname || '';
+                    if (/\/(login|logout|password)\b/i.test(finalPath)) {
+                        deadWarmUrls[deadKey] = true;
+                        return false;
+                    }
+                } catch (eFinal) { /* ignore */ }
                 var ct = String(res.headers.get('Content-Type') || '');
                 if (/text\/html/i.test(ct) || /\/admin(\/|$)/i.test(href)) {
                     return res.clone().text().then(function (html) {
-                        if (!html || html.length < 400 || looksLikeLoginHtml(html)) {
+                        if (!isCacheableErpHtml(html, href)) {
                             deadWarmUrls[deadKey] = true;
                             return false;
                         }
                         var assetExtras = harvestAssetLinksFromHtml(html);
-                        return putIntoCaches(href, res).then(function (ok) {
-                            if (!ok || !assetExtras.length || abortWarm || isBrowserOffline()) {
-                                return !!ok;
+                        var sibling = null;
+                        try {
+                            if (res.url && String(res.url) !== String(href)) {
+                                sibling = res.clone();
                             }
-                            // Warm module CSS/JS referenced by this page (e.g. supplier-comms.css).
-                            return runQueue(assetExtras, {
-                                concurrency: 3,
-                                gapMs: 20,
-                                signal: signal
-                            }).then(function () {
-                                return true;
-                            }).catch(function () {
-                                return true;
+                        } catch (eSibling) {
+                            sibling = null;
+                        }
+                        return putIntoCaches(href, res).then(function (ok) {
+                            var extraPuts = sibling
+                                ? putIntoCaches(res.url, sibling).catch(function () { return true; })
+                                : Promise.resolve(true);
+                            return extraPuts.then(function () {
+                                if (!ok || !assetExtras.length || abortWarm || isBrowserOffline()) {
+                                    return !!ok;
+                                }
+                                return runQueue(assetExtras, {
+                                    concurrency: 3,
+                                    gapMs: 20,
+                                    signal: signal
+                                }).then(function () {
+                                    return true;
+                                }).catch(function () {
+                                    return true;
+                                });
                             });
                         });
                     });
                 }
                 return putIntoCaches(href, res);
             });
-        }).catch(function (err) {
-            try {
-                if (err && (err.name === 'AbortError' || abortWarm || isBrowserOffline())) {
-                    return false;
-                }
-            } catch (e) { /* ignore */ }
-            deadWarmUrls[deadKey] = true;
-            return false;
-        });
+        }
     }
 
     var warmQueueSeen = null;
@@ -774,13 +889,19 @@
             var seen = {};
             var urls = [];
             assetUrls.forEach(function (u) { seen[u] = true; });
+            // Phase OH — certified module HTML snapshots first (seed + sidebar).
+            seedCoreUrls(seen, urls);
             var posFirst = [
                 root.location.origin + publicBase() + 'admin/ops/pos/register',
                 root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
                 root.location.origin + publicBase() + 'admin/ops/access-control',
                 root.location.origin + publicBase() + 'admin/ops/accounting/platform',
                 root.location.origin + publicBase() + 'admin/ops/accounting',
+                root.location.origin + publicBase() + 'admin/accounting',
                 root.location.origin + publicBase() + 'admin/ops/purchase-requests',
+                root.location.origin + publicBase() + 'admin/ops/inventory',
+                root.location.origin + publicBase() + 'admin/ops/warehouses',
+                root.location.origin + publicBase() + 'admin/hr/attendance',
                 root.location.origin + publicBase() + 'admin/ops/suppliers',
                 root.location.origin + publicBase() + 'admin/hr/employees',
                 root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
@@ -790,7 +911,6 @@
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
             });
-            // Sidebar only — do not invent URLs from allowlist / seedCore / create derivation.
             collectSidebarUrls(seen, urls);
             collectActionUrls(seen, urls);
             return Promise.resolve(urls).then(function (list) {
@@ -856,43 +976,62 @@
                 killInFlightFetches();
                 stopWarmBannerIfOffline();
             });
-            root.document.addEventListener('click', function (ev) {
-                try {
-                    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
-                    if (!a) {
-                        return;
-                    }
-                    var href = a.getAttribute('href') || '';
-                    if (!href || href.charAt(0) === '#' || /^javascript:/i.test(href)) {
-                        return;
-                    }
-                    if (/\/admin(\/|$)/i.test(href) || /\/admin(\/|$)/i.test(String(root.location.pathname || ''))) {
-                        killInFlightFetches();
-                    }
-                } catch (eClick) { /* ignore */ }
-            }, true);
+            // Phase OH — do NOT abort certified HTML warm on every sidebar click
+            // (that previously left only /admin/ cached). Abort on leave/offline only.
             root.addEventListener('pagehide', function () {
                 killInFlightFetches();
             });
+            root.addEventListener('online', function () {
+                if (pendingResume) {
+                    setTimeout(function () { run(true); }, 1500);
+                }
+            });
         } catch (eOff) { /* ignore */ }
 
-        // Auto warm killed online browsing. Only explicit ?rateb_warm=1 (or API start).
+        // Phase OH — idle auto-warm of certified module HTML while online on Admin.
+        function kickIdle() {
+            try {
+                if (!/\/admin(\/|$)/i.test(String(root.location.pathname || ''))) {
+                    return;
+                }
+                if (isBrowserOffline()) {
+                    return;
+                }
+                run(false);
+            } catch (eKick) { /* ignore */ }
+        }
         if (forceWarmRequested()) {
-            var kick = function () { run(true); };
+            var kickForce = function () { run(true); };
             if (root.document && root.document.readyState === 'complete') {
-                setTimeout(kick, 2000);
+                setTimeout(kickForce, 1500);
             } else if (root.addEventListener) {
-                root.addEventListener('load', function () { setTimeout(kick, 2000); }, { once: true });
+                root.addEventListener('load', function () { setTimeout(kickForce, 1500); }, { once: true });
             } else {
-                setTimeout(kick, 3000);
+                setTimeout(kickForce, 2500);
             }
+            return;
+        }
+        var idleKick = function () {
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(function () { setTimeout(kickIdle, 2500); }, { timeout: 12000 });
+            } else {
+                setTimeout(kickIdle, 6000);
+            }
+        };
+        if (root.document && root.document.readyState === 'complete') {
+            idleKick();
+        } else if (root.addEventListener) {
+            root.addEventListener('load', idleKick, { once: true });
+        } else {
+            setTimeout(idleKick, 8000);
         }
     }
 
     root.RatebOfflineFullWarm = {
         start: startFullWarm,
         schedule: schedule,
-        cacheName: CACHE_NAME
+        cacheName: CACHE_NAME,
+        certifiedModules: CERTIFIED_MODULE_RELS.slice()
     };
 
     schedule();

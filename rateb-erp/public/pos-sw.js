@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-oe-v58';
+var SW_BUILD_ID = '20260714-phase-oh-v59';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1265,13 +1265,24 @@ function warmErpOfflineShell(opts) {
         base + 'assets/js/table-tools.js',
         base + 'assets/offline/erp-offline-nav-guard.js'
     ];
-    // Tiny seed set only — full warm is client-side and idle-throttled (avoid page spin).
+    // Phase OH — certified ERP module HTML snapshots (complete documents, not lean-only admin/).
     var leanOps = [
         'admin',
         'admin/',
         'admin/companies',
         'admin/oversight/approvals',
-        'admin/profile'
+        'admin/profile',
+        'admin/hr',
+        'admin/hr/attendance',
+        'admin/hr/leaves',
+        'admin/ops',
+        'admin/ops/inventory',
+        'admin/ops/warehouses',
+        'admin/ops/purchase-requests',
+        'admin/ops/purchase-orders',
+        'admin/accounting',
+        'admin/ops/accounting',
+        'admin/ops/pos/register'
     ];
     function cacheUrlList(cache, list) {
         return list.reduce(function (chain, key) {
@@ -1299,32 +1310,67 @@ function warmErpOfflineShell(opts) {
         }, Promise.resolve());
     }
     function putOpsHtml(opsCache, pageUrl, res) {
-        var bare = pageUrl;
-        try {
-            var u = new URL(pageUrl);
-            bare = u.origin + u.pathname;
-        } catch (e5) { /* ignore */ }
-        return Promise.all([
-            opsCache.put(pageUrl, res.clone()).catch(function () { return null; }),
-            opsCache.put(bare, res.clone()).catch(function () { return null; })
-        ]);
+        // Phase OH — never put placeholders / login / thin stubs into ops page cache.
+        return res.clone().text().then(function (html) {
+            var body = String(html || '');
+            if (body.length < 20000
+                && !(/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
+                    && body.length >= 1500
+                    && /data-pos-register|rateb-pos-register-config|pos-register\.css/i.test(body))) {
+                return null;
+            }
+            if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>/i.test(body.slice(0, 4000))) {
+                return null;
+            }
+            if (/data-rateb-login|id=["']login-form["']/i.test(body.slice(0, 4000))) {
+                return null;
+            }
+            if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body)) {
+                return null;
+            }
+            var bare = pageUrl;
+            try {
+                var u = new URL(pageUrl);
+                bare = u.origin + u.pathname;
+            } catch (e5) { /* ignore */ }
+            var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
+            try {
+                res.headers.forEach(function (v, k) { headers.set(k, v); });
+            } catch (eH) { /* ignore */ }
+            var materialize = function () {
+                return new Response(body, { status: 200, statusText: 'OK', headers: new Headers(headers) });
+            };
+            return Promise.all([
+                opsCache.put(pageUrl, materialize()).catch(function () { return null; }),
+                opsCache.put(bare, materialize()).catch(function () { return null; })
+            ]);
+        }).catch(function () {
+            return null;
+        });
     }
     function warmLeanOpsPages() {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
             return leanOps.reduce(function (chain, rel) {
                 return chain.then(function () {
                     return new Promise(function (resolve) {
-                        setTimeout(resolve, 900);
+                        setTimeout(resolve, 350);
                     }).then(function () {
                         var pageUrl = base + rel.replace(/^\//, '');
                         return fetch(pageUrl, {
                             credentials: 'same-origin',
                             cache: 'no-cache',
+                            redirect: 'follow',
                             headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
                         }).then(function (res) {
-                            if (!res || !res.ok) {
+                            if (!res || !res.ok || res.status !== 200) {
                                 return null;
                             }
+                            try {
+                                var finalPath = new URL(res.url).pathname || '';
+                                if (/\/(login|logout|password)\b/i.test(finalPath)) {
+                                    return null;
+                                }
+                            } catch (eFin) { /* ignore */ }
                             return putOpsHtml(opsCache, pageUrl, res);
                         }).catch(function () { return null; });
                     });
@@ -1342,7 +1388,7 @@ function warmErpOfflineShell(opts) {
                         warmLeanOpsPages().then(function () {
                             resolve(protectedResult);
                         }).catch(function () { resolve(protectedResult); });
-                    }, 12000);
+                    }, 4000);
                 });
             });
         }).then(function (result) {
