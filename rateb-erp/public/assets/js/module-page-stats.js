@@ -48,6 +48,12 @@
         if (!url) {
             return;
         }
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                container.remove();
+                return;
+            }
+        } catch (eOff) { /* continue */ }
         fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
             .then(function (res) { return res.json(); })
             .then(function (data) {

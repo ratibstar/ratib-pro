@@ -769,37 +769,63 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       try { window.scrollTo(0, 0); } catch (eScroll) {}
     } catch (eClick) { /* ignore */ }
   }, true);
-  // Cache every live Admin page so offline navigation keeps the same UI.
+  // Cache every live Admin page so offline navigation keeps the same UI + rows.
   function cacheLiveAdminPage() {
     try {
+      if (navigator.onLine === false) return;
       if (!isAdminPath(location.pathname)) return;
       if (isOfflineShellUi()) return;
       if (/\/login|\/logout|\/password\//i.test(location.pathname)) return;
       if (!window.caches) return;
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
-      var cacheName = (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName)
-        || 'rateb-erp-ops-pages-v30';
+      var cacheNames = [
+        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v31',
+        'rateb-erp-coexist-v26'
+      ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');
       keys.push(location.origin + bare);
       keys.push(location.origin + bare + '/');
+      if (/\/admin\/ops\//i.test(location.pathname)) {
+        keys.push(location.origin + location.pathname.replace(/\/admin\/ops\//i, '/admin/'));
+      } else if (/\/admin\/(access-control|hr|users)/i.test(location.pathname)) {
+        keys.push(location.origin + location.pathname.replace(/\/admin\//i, '/admin/ops/'));
+      }
       var res = new Response(html, {
         status: 200,
         headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
       });
-      caches.open(cacheName).then(function (cache) {
-        return Promise.all(keys.map(function (k) {
-          return cache.put(k, res.clone()).catch(function () { return null; });
-        }));
-      }).catch(function () {});
+      cacheNames.forEach(function (cacheName) {
+        caches.open(cacheName).then(function (cache) {
+          return Promise.all(keys.map(function (k) {
+            return cache.put(k, res.clone()).catch(function () { return null; });
+          }));
+        }).catch(function () {});
+      });
     } catch (eCache) { /* ignore */ }
   }
   if (document.readyState === 'complete') {
-    setTimeout(cacheLiveAdminPage, 1500);
+    setTimeout(cacheLiveAdminPage, 600);
   } else {
-    window.addEventListener('load', function () { setTimeout(cacheLiveAdminPage, 1500); }, { once: true });
+    window.addEventListener('load', function () { setTimeout(cacheLiveAdminPage, 600); }, { once: true });
   }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      setTimeout(cacheLiveAdminPage, 400);
+    }
+  });
+  // Offline browse notice (data = last online HTML snapshot, not live API).
+  try {
+    if (navigator.onLine === false && isAdminPath(location.pathname) && !isOfflineShellUi()) {
+      var note = document.createElement('div');
+      note.setAttribute('role', 'status');
+      note.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99998;max-width:18rem;padding:8px 12px;'
+        + 'background:#7f1d1d;color:#fee2e2;font:12px/1.4 system-ui,sans-serif;border-radius:8px';
+      note.textContent = 'أوفلاين: تظهر آخر نسخة محفوظة من الصفحة (الجداول من وقت آخر زيارة متصلة).';
+      document.body.appendChild(note);
+    }
+  } catch (eNote) {}
   // Escape hatch: only leave offline UI after a real probe succeeds.
   try {
     if (document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]')) {

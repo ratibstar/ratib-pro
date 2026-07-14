@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v33';
+var SW_BUILD_ID = '20260713-force-sw-v34';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1703,6 +1703,20 @@ self.addEventListener('fetch', function (event) {
     }
 
     if (isApiRequest(url) && isPosNavigation(url)) {
+        return;
+    }
+
+    // Soft-fail Admin API probes offline (module-page-stats etc.) — never Chrome network spam.
+    if (isApiRequest(url) && isCloudBrowserOffline()
+        && (/\/admin(\/|$)/i.test(url.pathname) || /\/rateb-erp\/public\//i.test(url.pathname))) {
+        event.respondWith(new Response(JSON.stringify({ ok: false, offline: true }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Cache-Control': 'no-store',
+                'X-Rateb-Offline': '1'
+            }
+        }));
         return;
     }
 });
