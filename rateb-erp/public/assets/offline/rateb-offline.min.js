@@ -1,4 +1,4 @@
-/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality + 26B Documents + 27B BI; flags default OFF). */
+/*! RATEB Enterprise Offline SDK Phase 14.2.0 (includes Phases 10-14.2 + 15B + 16B + 17B CRM + 18B Projects + 19B Assets + 20B Approval + 21B EPROC + 22B MFG + 24B Payroll + 25B Quality + 26B Documents + 27B BI; flags default OFF; Phase OA modular build). */
 
 /* ---- schema.js ---- */
 /**
@@ -40,9 +40,27 @@
         return 'id';
     }
 
+    /** Phase OA — shared singleton connection (open once; reopen only if closed). */
+    var dbPromise = null;
+    var dbInstance = null;
+
     function openDatabase() {
-        return new Promise(function (resolve, reject) {
+        if (dbInstance) {
+            try {
+                // Detect closed connection (Chrome throws on transaction after close).
+                dbInstance.transaction(STORES.SYNC_META, 'readonly');
+                return Promise.resolve(dbInstance);
+            } catch (eClosed) {
+                dbInstance = null;
+                dbPromise = null;
+            }
+        }
+        if (dbPromise) {
+            return dbPromise;
+        }
+        dbPromise = new Promise(function (resolve, reject) {
             if (!root.indexedDB) {
+                dbPromise = null;
                 reject(new Error('indexeddb_unavailable'));
                 return;
             }
@@ -57,9 +75,22 @@
                     db.createObjectStore(name, { keyPath: keyPathForStore(name) });
                 });
             };
-            req.onsuccess = function () { resolve(req.result); };
-            req.onerror = function () { reject(req.error || new Error('idb_open_failed')); };
+            req.onsuccess = function () {
+                dbInstance = req.result;
+                try {
+                    dbInstance.onclose = function () {
+                        dbInstance = null;
+                        dbPromise = null;
+                    };
+                } catch (eOnClose) { /* ignore */ }
+                resolve(dbInstance);
+            };
+            req.onerror = function () {
+                dbPromise = null;
+                reject(req.error || new Error('idb_open_failed'));
+            };
         });
+        return dbPromise;
     }
 
     function withStore(storeName, mode, fn) {
@@ -4378,7 +4409,7 @@
         return '<script>(function(){try{if(navigator.onLine===false)return;var m=document.querySelector(".rateb-offline-home,#rateb-offline-shell-main,[data-rateb-offline-ops-banner]");if(!m)return;var base=(location.pathname.match(/^(.*\\/public\\/)/i)||[])[1]||"/rateb-erp/public/";fetch(base+"connectivity-probe.json?_rateb_probe="+Date.now(),{credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json","X-Rateb-Connectivity":"1"}}).then(function(res){if(!res||!res.ok)return;var u=new URL(location.href);u.searchParams.set("rateb_live",String(Date.now()));location.replace(u.href)}).catch(function(){})}catch(e){}})();</script>\n'
             + '<script>window.__RATEB_ERP_SHELL_OFFLINE__=' + json
             + ';window.__RATEB_ERP_MASTER_DATA__=window.__RATEB_ERP_SHELL_OFFLINE__;</script>\n'
-            + '<script src="' + base + 'assets/offline/rateb-offline.js" defer></script>\n'
+            + '<script src="' + base + 'assets/offline/offline-bootstrap.js" defer></script>\n'
             + '<script src="' + base + 'assets/offline/erp-shell-bootstrap.js" defer></script>\n'
             + '<script src="' + base + 'assets/offline/erp-ops-forms-bootstrap.js" defer></script>\n';
     }
@@ -8683,7 +8714,8 @@
     'use strict';
 
     var booted = false;
-    var flags = {
+    /** Phase OA — share flag bag with offline-bootstrap when present. */
+    var flags = root.__RATEB_OFFLINE_FLAGS__ || {
         'offline.enabled': false,
         'offline.pos.complete': true,
         'offline.inventory.movements': false,
@@ -8759,6 +8791,7 @@
         'offline.master_data': false,
         'offline.pilot.ops_pages': false
     };
+    root.__RATEB_OFFLINE_FLAGS__ = flags;
 
     function mergeFlags(incoming) {
         if (!incoming || typeof incoming !== 'object') {
@@ -8878,12 +8911,16 @@
             root.RatebOfflineConnectivity.configure({
                 probeUrl: options.probeUrl || (options.apiBase ? String(options.apiBase).replace(/\/$/, '') + '/status' : null)
             });
-            if (enabled && options.startConnectivity !== false) {
+            // Phase OA: when bootstrap owns orchestration, never auto-start heavy peers here.
+            var bootstrapOwns = !!(root.RatebOffline && root.RatebOffline.__oaBootstrap);
+            if (enabled && options.startConnectivity !== false && !bootstrapOwns) {
                 root.RatebOfflineConnectivity.start();
             }
         }
         if (enabled && root.RatebOfflineReplayScheduler && options.startScheduler !== false) {
-            root.RatebOfflineReplayScheduler.start(options.schedulerIntervalMs || 15000);
+            if (!(root.RatebOffline && root.RatebOffline.__oaBootstrap)) {
+                root.RatebOfflineReplayScheduler.start(options.schedulerIntervalMs || 15000);
+            }
         }
         booted = true;
         if (root.RatebOfflineEvents) {
@@ -8892,9 +8929,18 @@
         return statusPayload();
     }
 
-    root.RatebOffline = {
+    /** Low-level configure for OA bootstrap after queue/network modules load. */
+    function sdkConfigure(options) {
+        return init(Object.assign({}, options || {}, {
+            startConnectivity: false,
+            startScheduler: false
+        }));
+    }
+
+    var api = {
         version: '14.2.0',
         init: init,
+        __sdkConfigure: sdkConfigure,
         mergeFlags: mergeFlags,
         isBooted: function () { return booted; },
         isEnabled: function () { return !!flags['offline.enabled']; },
@@ -9250,5 +9296,20 @@
         schema: function () { return root.RatebOfflineSchema || null; },
         deltaPull: function () { return root.RatebOfflineDeltaPull || null; }
     };
+
+    // Phase OA: merge onto bootstrap facade (preserve ensure/init orchestration).
+    if (root.RatebOffline && root.RatebOffline.__oaBootstrap) {
+        Object.keys(api).forEach(function (key) {
+            if (key === 'init' || key === 'ensure' || key === 'loadPhase'
+                || key === 'ensureAuth' || key === 'ensureRbac') {
+                return;
+            }
+            root.RatebOffline[key] = api[key];
+        });
+        root.RatebOffline.__sdkConfigure = sdkConfigure;
+        root.RatebOffline.version = api.version;
+    } else {
+        root.RatebOffline = api;
+    }
 })(typeof window !== 'undefined' ? window : globalThis);
 

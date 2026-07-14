@@ -178,7 +178,14 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     }
   }, 1200);
 
-  loadOfflineScript('assets/offline/rateb-offline.js')
+  /* Phase OA: bootstrap → auth/rbac modules → shell hosts (same globals as monolith). */
+  loadOfflineScript('assets/offline/offline-bootstrap.js')
+    .then(function () {
+      if (!(window.RatebOffline && typeof window.RatebOffline.ensure === 'function')) {
+        return Promise.reject(new Error('oa_bootstrap_missing'));
+      }
+      return window.RatebOffline.ensure(['storage', 'auth', 'rbac']);
+    })
     .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-auth.js'); })
     .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-rbac.js'); })
     .then(function () {

@@ -614,6 +614,10 @@
         var base = root.location.origin + publicBase();
         var build = '20260713-force-sw-v42';
         var files = [
+            'assets/offline/offline-bootstrap.js',
+            'assets/offline/modules/offline-storage.js',
+            'assets/offline/modules/offline-auth.js',
+            'assets/offline/modules/offline-rbac.js',
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
             'assets/offline/erp-offline-shell-auth.js',

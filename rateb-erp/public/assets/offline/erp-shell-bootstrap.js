@@ -101,7 +101,9 @@
         var shellUrl = base + 'offline-shell.html';
         var urls = [
             shellUrl,
-            base + 'assets/offline/rateb-offline.js',
+            base + 'assets/offline/offline-bootstrap.js',
+            base + 'assets/offline/modules/offline-storage.js',
+            base + 'assets/offline/modules/offline-auth.js',
             base + 'assets/offline/erp-offline-shell-auth.js',
             base + 'assets/offline/erp-offline-shell-rbac.js'
         ];
@@ -912,29 +914,38 @@
         }
         bindSyncBadge();
         function startHeavyBackground() {
-            try {
-                if (root.RatebOfflineConnectivity
-                    && typeof root.RatebOfflineConnectivity.start === 'function'
-                    && cfg.startConnectivity !== true) {
-                    root.RatebOfflineConnectivity.start();
-                }
-            } catch (eConn) { /* ignore */ }
-            try {
-                if (root.RatebOfflineReplayScheduler) {
-                    if (typeof root.RatebOfflineReplayScheduler.start === 'function'
-                        && cfg.startScheduler !== true) {
-                        root.RatebOfflineReplayScheduler.start(15000);
+            // Phase OA: ensure idle modules before starting connectivity/replay/capture.
+            var ready = Promise.resolve();
+            if (root.RatebOffline && root.RatebOffline.__oaBootstrap
+                && typeof root.RatebOffline.loadPhase === 'function') {
+                ready = root.RatebOffline.loadPhase('idle').catch(function () { return null; });
+            }
+            ready.then(function () {
+                try {
+                    if (root.RatebOfflineConnectivity
+                        && typeof root.RatebOfflineConnectivity.start === 'function'
+                        && cfg.startConnectivity !== true) {
+                        root.RatebOfflineConnectivity.start();
                     }
-                    if (typeof root.RatebOfflineReplayScheduler.requestBackgroundSync === 'function') {
-                        root.RatebOfflineReplayScheduler.requestBackgroundSync();
+                } catch (eConn) { /* ignore */ }
+                try {
+                    if (root.RatebOfflineReplayScheduler) {
+                        if (typeof root.RatebOfflineReplayScheduler.start === 'function'
+                            && cfg.startScheduler !== true) {
+                            root.RatebOfflineReplayScheduler.start(15000);
+                        }
+                        if (typeof root.RatebOfflineReplayScheduler.requestBackgroundSync === 'function') {
+                            root.RatebOfflineReplayScheduler.requestBackgroundSync();
+                        }
                     }
-                }
-            } catch (eBg) { /* ignore */ }
-            registerServiceWorker().then(function () {
-                if (root.RatebOfflineShellAdapter && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
-                    root.RatebOfflineShellAdapter.startAutoCapture();
-                }
-                return afterWarmDiagnostics();
+                } catch (eBg) { /* ignore */ }
+                return registerServiceWorker().then(function () {
+                    if (root.RatebOfflineShellAdapter
+                        && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
+                        root.RatebOfflineShellAdapter.startAutoCapture();
+                    }
+                    return afterWarmDiagnostics();
+                });
             });
         }
         // Offline: same-URL nav click on any live Admin page must not open offline-shell.

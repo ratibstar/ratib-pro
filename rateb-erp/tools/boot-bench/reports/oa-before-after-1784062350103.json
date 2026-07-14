@@ -1,0 +1,101 @@
+{
+  "generatedAt": "2026-07-14T20:52:35.538Z",
+  "phase": "OA",
+  "files": {
+    "bootstrapBytes": 18040,
+    "monolithBytes": 389493
+  },
+  "before_legacy": {
+    "mode": "legacy",
+    "criticalBytes": 388640,
+    "bootstrapBytes": null,
+    "marks": [
+      {
+        "n": "start",
+        "t": 5.5,
+        "mode": "legacy"
+      },
+      {
+        "n": "legacy_sdk",
+        "t": 108.9,
+        "src": "/assets/offline/rateb-offline.js",
+        "wallMs": 55
+      },
+      {
+        "n": "init_done",
+        "t": 110.1
+      }
+    ],
+    "longTasks": [],
+    "longTaskTotalMs": 0,
+    "idbOpens": 0,
+    "globals": {
+      "RatebOffline": true,
+      "oa": false,
+      "Schema": true,
+      "Queue": true,
+      "Auth": true,
+      "version": "14.2.0"
+    },
+    "totalWallMs": 110.1
+  },
+  "after_oa": {
+    "mode": "oa",
+    "criticalBytes": 18034,
+    "bootstrapBytes": 18034,
+    "marks": [
+      {
+        "n": "start",
+        "t": 1.7,
+        "mode": "oa"
+      },
+      {
+        "n": "bootstrap_loaded",
+        "t": 38.4,
+        "bytes": 18034
+      },
+      {
+        "n": "interactive_ready",
+        "t": 59.8,
+        "ms": 21.4,
+        "criticalBytes": 18034
+      },
+      {
+        "n": "idb_open",
+        "ms": 5.6,
+        "name": "rateb_erp_offline"
+      },
+      {
+        "n": "after_idle",
+        "t": 3559.9,
+        "hasQueue": true,
+        "hasConn": true,
+        "hasReplay": true,
+        "hasSdkHelpers": true,
+        "idbOpens": 1
+      }
+    ],
+    "longTasks": [],
+    "longTaskTotalMs": 0,
+    "idbOpens": 1,
+    "globals": {
+      "RatebOffline": true,
+      "oa": true,
+      "Schema": true,
+      "Queue": true,
+      "Auth": false,
+      "version": "14.2.0"
+    },
+    "totalWallMs": 3560
+  },
+  "targets": {
+    "critical_js_under_40kb": true,
+    "bootstrap_under_20kb": true,
+    "parse_proxy": {
+      "note": "critical path download bytes",
+      "before": 389493,
+      "after": 18040,
+      "reduction_pct": 95.4
+    }
+  }
+}

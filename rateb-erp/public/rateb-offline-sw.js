@@ -371,7 +371,10 @@ self.addEventListener('install', function (event) {
                     base += '/';
                 }
                 var helpers = [
-                    base + 'assets/offline/rateb-offline.js',
+                    base + 'assets/offline/offline-bootstrap.js',
+                    base + 'assets/offline/modules/offline-storage.js',
+                    base + 'assets/offline/modules/offline-auth.js',
+                    base + 'assets/offline/modules/offline-rbac.js',
                     base + 'assets/offline/erp-offline-shell-rbac.js',
                     base + 'assets/offline/erp-offline-shell-auth.js',
                     base + 'assets/offline/ops-page-allowlist.json'

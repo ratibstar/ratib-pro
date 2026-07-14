@@ -1,3 +1,6 @@
+/*! RATEB Offline module offline-shell.js (Phase OA — sourced from offline/client). */
+
+/* ---- shell-adapter.js ---- */
 /**
  * RATEB Offline — ERP shell adapter (Phase 10.1 + Phase 14 ops pages).
  * Tenant-scoped snapshots; strips privileged UI + secrets.
@@ -737,4 +740,5 @@
         stripSensitiveOpsPage: stripSensitiveOpsPage
     };
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

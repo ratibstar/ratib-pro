@@ -1,0 +1,1683 @@
+{
+  "exportedGlobals": [
+    "RatebOfflineSchema",
+    "RatebOfflineStores",
+    "RatebOfflineIdempotency",
+    "RatebOfflineEvents",
+    "RatebOfflineConnectivity",
+    "RatebOfflineQueue",
+    "RatebOfflineReplayScheduler",
+    "RatebOfflineDeltaPull",
+    "RatebOfflineTransport",
+    "RatebOfflinePosAdapter",
+    "RatebOfflineInventoryAdapter",
+    "RatebOfflineWarehouseAdapter",
+    "RatebOfflineHrAdapter",
+    "RatebOfflineProcurementAdapter",
+    "RatebOfflineRecruitmentAdapter",
+    "RatebOfflineAccountingAdapter",
+    "RatebOfflineCrmAdapter",
+    "RatebOfflineProjectsAdapter",
+    "RatebOfflineAssetsAdapter",
+    "RatebOfflineApprovalAdapter",
+    "RatebOfflineProcurementEnterpriseAdapter",
+    "RatebOfflineManufacturingAdapter",
+    "RatebOfflinePayrollAdapter",
+    "RatebOfflineQualityAdapter",
+    "RatebOfflineDocumentsAdapter",
+    "RatebOfflineBiAdapter",
+    "RatebOfflineFormPostAdapter",
+    "RatebOfflineShellAdapter",
+    "RatebOfflineAuthLock",
+    "RatebOfflineLocalSession",
+    "RatebOfflineBootstrapManager",
+    "RatebOfflineRbacCache",
+    "RatebOfflineMasterData",
+    "RatebOfflineOpsForms",
+    "RatebOffline"
+  ],
+  "sectionCount": 35,
+  "sections": [
+    {
+      "file": "schema.js",
+      "exports": [
+        "RatebOfflineSchema"
+      ],
+      "dependsOnGlobals": [],
+      "platform": [
+        "indexedDB"
+      ],
+      "dependsOnModules": []
+    },
+    {
+      "file": "migrations.js",
+      "exports": [
+        "RatebOfflineStores"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineSchema"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "schema.js"
+      ]
+    },
+    {
+      "file": "idempotency.js",
+      "exports": [
+        "RatebOfflineIdempotency"
+      ],
+      "dependsOnGlobals": [],
+      "platform": [],
+      "dependsOnModules": []
+    },
+    {
+      "file": "event-bus.js",
+      "exports": [
+        "RatebOfflineEvents"
+      ],
+      "dependsOnGlobals": [],
+      "platform": [],
+      "dependsOnModules": []
+    },
+    {
+      "file": "connectivity.js",
+      "exports": [
+        "RatebOfflineConnectivity"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineQueue"
+      ],
+      "platform": [
+        "fetch",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "queue-manager.js"
+      ]
+    },
+    {
+      "file": "queue-manager.js",
+      "exports": [
+        "RatebOfflineQueue"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineSchema",
+        "RatebOfflineStores",
+        "RatebOfflineIdempotency",
+        "RatebOfflineEvents",
+        "RatebOfflineConnectivity",
+        "RatebOfflineReplayScheduler",
+        "RatebOfflineAuthLock"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage",
+        "fetch"
+      ],
+      "dependsOnModules": [
+        "schema.js",
+        "migrations.js",
+        "idempotency.js",
+        "event-bus.js",
+        "connectivity.js",
+        "replay-scheduler.js",
+        "auth-lock-adapter.js"
+      ]
+    },
+    {
+      "file": "replay-scheduler.js",
+      "exports": [
+        "RatebOfflineReplayScheduler"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineQueue",
+        "RatebOfflineConnectivity"
+      ],
+      "platform": [
+        "serviceWorker/caches",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "queue-manager.js",
+        "connectivity.js"
+      ]
+    },
+    {
+      "file": "delta-pull.js",
+      "exports": [
+        "RatebOfflineDeltaPull"
+      ],
+      "dependsOnGlobals": [],
+      "platform": [
+        "fetch"
+      ],
+      "dependsOnModules": []
+    },
+    {
+      "file": "transport.js",
+      "exports": [
+        "RatebOfflineTransport"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineConnectivity",
+        "RatebOfflineQueue"
+      ],
+      "platform": [
+        "fetch"
+      ],
+      "dependsOnModules": [
+        "connectivity.js",
+        "queue-manager.js"
+      ]
+    },
+    {
+      "file": "pos-adapter.js",
+      "exports": [
+        "RatebOfflinePosAdapter"
+      ],
+      "dependsOnGlobals": [],
+      "platform": [],
+      "dependsOnModules": []
+    },
+    {
+      "file": "inventory-adapter.js",
+      "exports": [
+        "RatebOfflineInventoryAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineSchema"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "warehouse-adapter.js",
+      "exports": [
+        "RatebOfflineWarehouseAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineInventoryAdapter",
+        "RatebOfflineMasterData"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "inventory-adapter.js",
+        "master-data-adapter.js"
+      ]
+    },
+    {
+      "file": "hr-adapter.js",
+      "exports": [
+        "RatebOfflineHrAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineSchema"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "procurement-adapter.js",
+      "exports": [
+        "RatebOfflineProcurementAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineSchema"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "recruitment-adapter.js",
+      "exports": [
+        "RatebOfflineRecruitmentAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineSchema"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "accounting-adapter.js",
+      "exports": [
+        "RatebOfflineAccountingAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineSchema"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "crm-adapter.js",
+      "exports": [
+        "RatebOfflineCrmAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js"
+      ]
+    },
+    {
+      "file": "projects-adapter.js",
+      "exports": [
+        "RatebOfflineProjectsAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "assets-adapter.js",
+      "exports": [
+        "RatebOfflineAssetsAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "approval-adapter.js",
+      "exports": [
+        "RatebOfflineApprovalAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "procurement-enterprise-adapter.js",
+      "exports": [
+        "RatebOfflineProcurementEnterpriseAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "manufacturing-adapter.js",
+      "exports": [
+        "RatebOfflineManufacturingAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "payroll-adapter.js",
+      "exports": [
+        "RatebOfflinePayrollAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "quality-adapter.js",
+      "exports": [
+        "RatebOfflineQualityAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "documents-adapter.js",
+      "exports": [
+        "RatebOfflineDocumentsAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "bi-adapter.js",
+      "exports": [
+        "RatebOfflineBiAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineQueue",
+        "RatebOfflineDeltaPull",
+        "RatebOfflineTransport"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "sdk.js",
+        "queue-manager.js",
+        "delta-pull.js",
+        "transport.js"
+      ]
+    },
+    {
+      "file": "form-post-adapter.js",
+      "exports": [
+        "RatebOfflineFormPostAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineConnectivity",
+        "RatebOfflineQueue",
+        "RatebOfflineIdempotency",
+        "RatebOfflineNavGuard",
+        "RatebOfflineOpsForms",
+        "RatebOfflineEvents"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "connectivity.js",
+        "queue-manager.js",
+        "idempotency.js",
+        "ops-forms-adapter.js",
+        "event-bus.js"
+      ]
+    },
+    {
+      "file": "shell-adapter.js",
+      "exports": [
+        "RatebOfflineShellAdapter"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineSchema",
+        "RatebOfflineFullWarm"
+      ],
+      "platform": [
+        "serviceWorker/caches",
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage",
+        "fetch",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "schema.js"
+      ]
+    },
+    {
+      "file": "auth-lock-adapter.js",
+      "exports": [
+        "RatebOfflineAuthLock"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineSchema",
+        "RatebOfflineLocalSession",
+        "RatebOfflineRbacCache",
+        "RatebOfflineConnectivity"
+      ],
+      "platform": [
+        "crypto",
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "schema.js",
+        "offline-local-session-adapter.js",
+        "rbac-cache-adapter.js",
+        "connectivity.js"
+      ]
+    },
+    {
+      "file": "offline-local-session-adapter.js",
+      "exports": [
+        "RatebOfflineLocalSession"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineAuthLock"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "auth-lock-adapter.js"
+      ]
+    },
+    {
+      "file": "offline-cold-bootstrap-adapter.js",
+      "exports": [
+        "RatebOfflineBootstrapManager"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineLocalSession",
+        "RatebOfflineAuthLock",
+        "RatebOfflineRbacCache"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "offline-local-session-adapter.js",
+        "auth-lock-adapter.js",
+        "rbac-cache-adapter.js"
+      ]
+    },
+    {
+      "file": "rbac-cache-adapter.js",
+      "exports": [
+        "RatebOfflineRbacCache"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineSchema",
+        "RatebOfflineAuthLock"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "schema.js",
+        "auth-lock-adapter.js"
+      ]
+    },
+    {
+      "file": "master-data-adapter.js",
+      "exports": [
+        "RatebOfflineMasterData"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineSchema",
+        "RatebOfflineAuthLock",
+        "RatebOfflineDeltaPull"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "schema.js",
+        "auth-lock-adapter.js",
+        "delta-pull.js"
+      ]
+    },
+    {
+      "file": "ops-forms-adapter.js",
+      "exports": [
+        "RatebOfflineOpsForms"
+      ],
+      "dependsOnGlobals": [
+        "RatebOffline",
+        "RatebOfflineConnectivity",
+        "RatebOfflineInventoryAdapter",
+        "RatebOfflineHrAdapter",
+        "RatebOfflineProcurementAdapter",
+        "RatebOfflineRecruitmentAdapter",
+        "RatebOfflineAccountingAdapter",
+        "RatebOfflineCrmAdapter",
+        "RatebOfflineProjectsAdapter",
+        "RatebOfflineAssetsAdapter",
+        "RatebOfflineApprovalAdapter",
+        "RatebOfflineProcurementEnterpriseAdapter",
+        "RatebOfflineManufacturingAdapter",
+        "RatebOfflinePayrollAdapter",
+        "RatebOfflineQualityAdapter",
+        "RatebOfflineDocumentsAdapter",
+        "RatebOfflineBiAdapter",
+        "RatebOfflineEvents",
+        "RatebOfflineNavGuard"
+      ],
+      "platform": [
+        "__RATEB_ERP_SHELL_OFFLINE__",
+        "webStorage",
+        "DOM events"
+      ],
+      "dependsOnModules": [
+        "sdk.js",
+        "connectivity.js",
+        "inventory-adapter.js",
+        "hr-adapter.js",
+        "procurement-adapter.js",
+        "recruitment-adapter.js",
+        "accounting-adapter.js",
+        "crm-adapter.js",
+        "projects-adapter.js",
+        "assets-adapter.js",
+        "approval-adapter.js",
+        "procurement-enterprise-adapter.js",
+        "manufacturing-adapter.js",
+        "payroll-adapter.js",
+        "quality-adapter.js",
+        "documents-adapter.js",
+        "bi-adapter.js",
+        "event-bus.js"
+      ]
+    },
+    {
+      "file": "sdk.js",
+      "exports": [
+        "RatebOffline"
+      ],
+      "dependsOnGlobals": [
+        "RatebOfflineEvents",
+        "RatebOfflineQueue",
+        "RatebOfflineTransport",
+        "RatebOfflineConnectivity",
+        "RatebOfflineReplayScheduler",
+        "RatebOfflinePosAdapter",
+        "RatebOfflineInventoryAdapter",
+        "RatebOfflineWarehouseAdapter",
+        "RatebOfflineHrAdapter",
+        "RatebOfflineProcurementAdapter",
+        "RatebOfflineRecruitmentAdapter",
+        "RatebOfflineAccountingAdapter",
+        "RatebOfflineCrmAdapter",
+        "RatebOfflineProjectsAdapter",
+        "RatebOfflineAssetsAdapter",
+        "RatebOfflineApprovalAdapter",
+        "RatebOfflineProcurementEnterpriseAdapter",
+        "RatebOfflineManufacturingAdapter",
+        "RatebOfflinePayrollAdapter",
+        "RatebOfflineQualityAdapter",
+        "RatebOfflineDocumentsAdapter",
+        "RatebOfflineBiAdapter",
+        "RatebOfflineOpsForms",
+        "RatebOfflineShellAdapter",
+        "RatebOfflineAuthLock",
+        "RatebOfflineRbacCache",
+        "RatebOfflineMasterData",
+        "RatebOfflineSchema",
+        "RatebOfflineDeltaPull"
+      ],
+      "platform": [],
+      "dependsOnModules": [
+        "event-bus.js",
+        "queue-manager.js",
+        "transport.js",
+        "connectivity.js",
+        "replay-scheduler.js",
+        "pos-adapter.js",
+        "inventory-adapter.js",
+        "warehouse-adapter.js",
+        "hr-adapter.js",
+        "procurement-adapter.js",
+        "recruitment-adapter.js",
+        "accounting-adapter.js",
+        "crm-adapter.js",
+        "projects-adapter.js",
+        "assets-adapter.js",
+        "approval-adapter.js",
+        "procurement-enterprise-adapter.js",
+        "manufacturing-adapter.js",
+        "payroll-adapter.js",
+        "quality-adapter.js",
+        "documents-adapter.js",
+        "bi-adapter.js",
+        "ops-forms-adapter.js",
+        "shell-adapter.js",
+        "auth-lock-adapter.js",
+        "rbac-cache-adapter.js",
+        "master-data-adapter.js",
+        "schema.js",
+        "delta-pull.js"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "schema.js",
+      "to": "migrations.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "connectivity.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "schema.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "migrations.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineStores"
+    },
+    {
+      "from": "idempotency.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineIdempotency"
+    },
+    {
+      "from": "event-bus.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineEvents"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "replay-scheduler.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineReplayScheduler"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "queue-manager.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "replay-scheduler.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "replay-scheduler.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "transport.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "transport.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "sdk.js",
+      "to": "inventory-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "inventory-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "inventory-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "schema.js",
+      "to": "inventory-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "warehouse-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "inventory-adapter.js",
+      "to": "warehouse-adapter.js",
+      "via": "RatebOfflineInventoryAdapter"
+    },
+    {
+      "from": "master-data-adapter.js",
+      "to": "warehouse-adapter.js",
+      "via": "RatebOfflineMasterData"
+    },
+    {
+      "from": "sdk.js",
+      "to": "hr-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "hr-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "hr-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "schema.js",
+      "to": "hr-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "procurement-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "procurement-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "procurement-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "schema.js",
+      "to": "procurement-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "recruitment-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "recruitment-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "recruitment-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "schema.js",
+      "to": "recruitment-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "accounting-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "accounting-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "accounting-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "schema.js",
+      "to": "accounting-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "crm-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "crm-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "crm-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "sdk.js",
+      "to": "projects-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "projects-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "projects-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "projects-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "assets-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "assets-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "assets-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "assets-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "approval-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "approval-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "approval-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "approval-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "procurement-enterprise-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "procurement-enterprise-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "procurement-enterprise-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "procurement-enterprise-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "manufacturing-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "manufacturing-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "manufacturing-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "manufacturing-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "payroll-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "payroll-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "payroll-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "payroll-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "quality-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "quality-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "quality-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "quality-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "documents-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "documents-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "documents-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "documents-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "bi-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "bi-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "bi-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "transport.js",
+      "to": "bi-adapter.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "sdk.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "idempotency.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOfflineIdempotency"
+    },
+    {
+      "from": "ops-forms-adapter.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOfflineOpsForms"
+    },
+    {
+      "from": "event-bus.js",
+      "to": "form-post-adapter.js",
+      "via": "RatebOfflineEvents"
+    },
+    {
+      "from": "sdk.js",
+      "to": "shell-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "schema.js",
+      "to": "shell-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "sdk.js",
+      "to": "auth-lock-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "schema.js",
+      "to": "auth-lock-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "offline-local-session-adapter.js",
+      "to": "auth-lock-adapter.js",
+      "via": "RatebOfflineLocalSession"
+    },
+    {
+      "from": "rbac-cache-adapter.js",
+      "to": "auth-lock-adapter.js",
+      "via": "RatebOfflineRbacCache"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "auth-lock-adapter.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "sdk.js",
+      "to": "offline-local-session-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "offline-local-session-adapter.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "offline-local-session-adapter.js",
+      "to": "offline-cold-bootstrap-adapter.js",
+      "via": "RatebOfflineLocalSession"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "offline-cold-bootstrap-adapter.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "rbac-cache-adapter.js",
+      "to": "offline-cold-bootstrap-adapter.js",
+      "via": "RatebOfflineRbacCache"
+    },
+    {
+      "from": "sdk.js",
+      "to": "rbac-cache-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "schema.js",
+      "to": "rbac-cache-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "rbac-cache-adapter.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "sdk.js",
+      "to": "master-data-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "schema.js",
+      "to": "master-data-adapter.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "master-data-adapter.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "master-data-adapter.js",
+      "via": "RatebOfflineDeltaPull"
+    },
+    {
+      "from": "sdk.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOffline"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "inventory-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineInventoryAdapter"
+    },
+    {
+      "from": "hr-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineHrAdapter"
+    },
+    {
+      "from": "procurement-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineProcurementAdapter"
+    },
+    {
+      "from": "recruitment-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineRecruitmentAdapter"
+    },
+    {
+      "from": "accounting-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineAccountingAdapter"
+    },
+    {
+      "from": "crm-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineCrmAdapter"
+    },
+    {
+      "from": "projects-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineProjectsAdapter"
+    },
+    {
+      "from": "assets-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineAssetsAdapter"
+    },
+    {
+      "from": "approval-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineApprovalAdapter"
+    },
+    {
+      "from": "procurement-enterprise-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineProcurementEnterpriseAdapter"
+    },
+    {
+      "from": "manufacturing-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineManufacturingAdapter"
+    },
+    {
+      "from": "payroll-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflinePayrollAdapter"
+    },
+    {
+      "from": "quality-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineQualityAdapter"
+    },
+    {
+      "from": "documents-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineDocumentsAdapter"
+    },
+    {
+      "from": "bi-adapter.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineBiAdapter"
+    },
+    {
+      "from": "event-bus.js",
+      "to": "ops-forms-adapter.js",
+      "via": "RatebOfflineEvents"
+    },
+    {
+      "from": "event-bus.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineEvents"
+    },
+    {
+      "from": "queue-manager.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineQueue"
+    },
+    {
+      "from": "transport.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineTransport"
+    },
+    {
+      "from": "connectivity.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineConnectivity"
+    },
+    {
+      "from": "replay-scheduler.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineReplayScheduler"
+    },
+    {
+      "from": "pos-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflinePosAdapter"
+    },
+    {
+      "from": "inventory-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineInventoryAdapter"
+    },
+    {
+      "from": "warehouse-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineWarehouseAdapter"
+    },
+    {
+      "from": "hr-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineHrAdapter"
+    },
+    {
+      "from": "procurement-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineProcurementAdapter"
+    },
+    {
+      "from": "recruitment-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineRecruitmentAdapter"
+    },
+    {
+      "from": "accounting-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineAccountingAdapter"
+    },
+    {
+      "from": "crm-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineCrmAdapter"
+    },
+    {
+      "from": "projects-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineProjectsAdapter"
+    },
+    {
+      "from": "assets-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineAssetsAdapter"
+    },
+    {
+      "from": "approval-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineApprovalAdapter"
+    },
+    {
+      "from": "procurement-enterprise-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineProcurementEnterpriseAdapter"
+    },
+    {
+      "from": "manufacturing-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineManufacturingAdapter"
+    },
+    {
+      "from": "payroll-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflinePayrollAdapter"
+    },
+    {
+      "from": "quality-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineQualityAdapter"
+    },
+    {
+      "from": "documents-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineDocumentsAdapter"
+    },
+    {
+      "from": "bi-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineBiAdapter"
+    },
+    {
+      "from": "ops-forms-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineOpsForms"
+    },
+    {
+      "from": "shell-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineShellAdapter"
+    },
+    {
+      "from": "auth-lock-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineAuthLock"
+    },
+    {
+      "from": "rbac-cache-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineRbacCache"
+    },
+    {
+      "from": "master-data-adapter.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineMasterData"
+    },
+    {
+      "from": "schema.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineSchema"
+    },
+    {
+      "from": "delta-pull.js",
+      "to": "sdk.js",
+      "via": "RatebOfflineDeltaPull"
+    }
+  ],
+  "cyclesFound": [
+    [
+      "queue-manager.js",
+      "connectivity.js",
+      "queue-manager.js"
+    ],
+    [
+      "queue-manager.js",
+      "connectivity.js",
+      "replay-scheduler.js",
+      "queue-manager.js"
+    ],
+    [
+      "sdk.js",
+      "inventory-adapter.js",
+      "warehouse-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "inventory-adapter.js",
+      "ops-forms-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "inventory-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "hr-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "procurement-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "recruitment-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "accounting-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "crm-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "projects-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "assets-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "approval-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "procurement-enterprise-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "manufacturing-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "payroll-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "quality-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "documents-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "bi-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "shell-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "queue-manager.js",
+      "connectivity.js",
+      "replay-scheduler.js",
+      "sdk.js",
+      "auth-lock-adapter.js",
+      "queue-manager.js"
+    ],
+    [
+      "auth-lock-adapter.js",
+      "offline-local-session-adapter.js",
+      "auth-lock-adapter.js"
+    ],
+    [
+      "auth-lock-adapter.js",
+      "rbac-cache-adapter.js",
+      "auth-lock-adapter.js"
+    ],
+    [
+      "sdk.js",
+      "auth-lock-adapter.js",
+      "rbac-cache-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "auth-lock-adapter.js",
+      "master-data-adapter.js",
+      "sdk.js"
+    ],
+    [
+      "sdk.js",
+      "auth-lock-adapter.js",
+      "sdk.js"
+    ]
+  ],
+  "initOrder": [
+    "schema.js",
+    "migrations.js",
+    "idempotency.js",
+    "event-bus.js",
+    "connectivity.js",
+    "queue-manager.js",
+    "replay-scheduler.js",
+    "delta-pull.js",
+    "transport.js",
+    "pos-adapter.js",
+    "inventory-adapter.js",
+    "warehouse-adapter.js",
+    "hr-adapter.js",
+    "procurement-adapter.js",
+    "recruitment-adapter.js",
+    "accounting-adapter.js",
+    "crm-adapter.js",
+    "projects-adapter.js",
+    "assets-adapter.js",
+    "approval-adapter.js",
+    "procurement-enterprise-adapter.js",
+    "manufacturing-adapter.js",
+    "payroll-adapter.js",
+    "quality-adapter.js",
+    "documents-adapter.js",
+    "bi-adapter.js",
+    "form-post-adapter.js",
+    "shell-adapter.js",
+    "auth-lock-adapter.js",
+    "offline-local-session-adapter.js",
+    "offline-cold-bootstrap-adapter.js",
+    "rbac-cache-adapter.js",
+    "master-data-adapter.js",
+    "ops-forms-adapter.js",
+    "sdk.js"
+  ]
+}

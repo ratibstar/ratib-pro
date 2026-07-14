@@ -1,3 +1,6 @@
+/*! RATEB Offline module offline-sdk.js (Phase OA — sourced from offline/client). */
+
+/* ---- sdk.js ---- */
 /**
  * RATEB Offline SDK bootstrap (Phase 14.2 + 15B + 16B + 17B CRM).
  * Flag merge is additive — later bootstraps update flags without a second full boot.
@@ -604,3 +607,4 @@
         root.RatebOffline = api;
     }
 })(typeof window !== 'undefined' ? window : globalThis);
+

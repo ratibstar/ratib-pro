@@ -926,7 +926,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         if (!empty($_GET['rateb_offline_debug'])) {
             $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-offline-debug.js');
         }
-        $ratebOfflineLazyScripts[] = rateb_asset('offline/rateb-offline.js');
+        /* Phase OA — critical path is offline-bootstrap (<20KB); modules load on demand. */
+        $ratebOfflineLazyScripts[] = rateb_asset('offline/offline-bootstrap.js');
         $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-shell-bootstrap.js');
         if (!empty($ratebOfflineAuthUnlock) && $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isAuthUnlockEnabled()) {
             $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-auth-bootstrap.js');

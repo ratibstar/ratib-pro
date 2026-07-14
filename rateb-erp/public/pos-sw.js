@@ -966,8 +966,12 @@ function warmErpOfflineShell(opts) {
     }
     var urls = [
         base + ERP_OFFLINE_SHELL,
-        // One offline bundle only (min) — avoid ~370KB duplicate download on first paint.
-        base + 'assets/offline/rateb-offline.min.js',
+        // Phase OA — critical path: bootstrap + storage/auth (not the 387KB monolith).
+        base + 'assets/offline/offline-bootstrap.js',
+        base + 'assets/offline/modules/offline-storage.js',
+        base + 'assets/offline/modules/offline-auth.js',
+        base + 'assets/offline/modules/offline-rbac.js',
+        base + 'assets/offline/modules/offline-core.js',
         base + 'assets/offline/erp-offline-shell-auth.js',
         base + 'assets/offline/erp-shell-bootstrap.js',
         base + 'assets/offline/ops-page-allowlist.json',
