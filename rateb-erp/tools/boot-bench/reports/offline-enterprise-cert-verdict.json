@@ -1,0 +1,98 @@
+{
+  "phase": "OFFLINE_ENTERPRISE_CERTIFICATION_FINAL",
+  "mode": "READ_ONLY_REAL_BROWSER",
+  "measured_at": "2026-07-14T21:00:00Z",
+  "app": "https://rateb.sa/rateb-erp/public",
+  "method": "Chrome + Playwright + Performance API",
+  "evidence_files": [
+    "tools/boot-bench/reports/offline-enterprise-cert-1784062669363.json",
+    "tools/boot-bench/reports/offline-enterprise-cert-1784062669363.txt"
+  ],
+  "verdict": "NO",
+  "enterprise_ready": false,
+  "oa_solved_real_user_startup_delay": false,
+  "single_remaining_bottleneck": {
+    "component": "pos-sw.js emptyAssetResponse stubs Phase OA critical scripts offline",
+    "measured": {
+      "asset": "/rateb-erp/public/assets/offline/offline-bootstrap.js",
+      "decodedBodySize_bytes": 28,
+      "expected_bytes_on_disk": 17590,
+      "transferSize": 0,
+      "from_cache_sw": true,
+      "stub_body": "/* rateb-pos offline stub */",
+      "shell_error": "Unable to load offline identity scripts (oa_bootstrap_missing)"
+    },
+    "root_cause": "pos-sw.js emptyAssetResponse() protects only /(rateb-offline|erp-offline-shell|erp-shell-bootstrap)/ — not offline-bootstrap.js or modules/*. Offline miss → 28-byte JS stub → RatebOffline never defined → Phase OA never runs.",
+    "code_evidence": "public/pos-sw.js emptyAssetResponse ~L1420-1433",
+    "percentage_of_failure": 100,
+    "note": "SHELL_INTERACTIVE 9147ms is poll wait for auth that never appeared after stubbed bootstrap; FP/FCP were 72ms."
+  },
+  "timeline_ms_from_offline_nav": {
+    "FP": 72,
+    "FCP": 72,
+    "DCL": 34,
+    "bootstrap_stub_responseEnd": 43.4,
+    "shell_error_visible": "immediate after stub",
+    "SHELL_INTERACTIVE_poll_timeout": 9147,
+    "DASHBOARD_READY": 11549,
+    "first_module_avg": 1240.6,
+    "second_module_avg": 638.6
+  },
+  "duplicate_checks": {
+    "indexeddb_opens_observed": 0,
+    "note": "SDK never booted — IDB path not exercised",
+    "sw_registrations_during_offline_measure": 0,
+    "active_sw": "pos-sw.js?v=20260714-force-sw-v52 scope=/rateb-erp/public/",
+    "queue_duplicate": "n/a (not loaded)",
+    "replay_duplicate": "n/a",
+    "auth_duplicate": "n/a",
+    "rbac_duplicate": "n/a",
+    "oa_bootstrap_active": false
+  },
+  "module_opens": {
+    "all_reported_usable_html": true,
+    "oa_active_on_any_module": false,
+    "hr_first_bodyLen": 239,
+    "hr_offlineUi": true,
+    "dashboard_first_ms": 1280,
+    "dashboard_second_ms": 685,
+    "interpretation": "Cached HTML shells navigate; OA SDK/auth/RBAC/queue not executing. Second opens ~2x faster (cache)."
+  },
+  "ranked_remaining_bottlenecks": [
+    {
+      "rank": 1,
+      "severity": "critical",
+      "name": "SW emptyAssetResponse stubs offline-bootstrap.js (28 B) — OA dead offline",
+      "evidence": "decodedBodySize=28 vs disk 17590; shell error oa_bootstrap_missing"
+    },
+    {
+      "rank": 2,
+      "severity": "critical",
+      "name": "SW stub allowlist not updated for Phase OA module paths",
+      "evidence": "regex excludes offline-bootstrap.js and modules/*"
+    },
+    {
+      "rank": 3,
+      "severity": "high",
+      "name": "Online warm never installed RatebOffline / OA before going offline",
+      "evidence": "onlineState.oa=false; bootstrapResource=null; hasSchema=false after 5s warm"
+    },
+    {
+      "rank": 4,
+      "severity": "high",
+      "name": "First module open ~1.2–1.3 s while offline (cache HTML path)",
+      "evidence": "dashboard first=1280ms; avg first=1240.6ms"
+    },
+    {
+      "rank": 5,
+      "severity": "medium",
+      "name": "Many offline JS assets also stubbed at 28 B (nav-guard, charts, theme, …)",
+      "evidence": "stub28 count ≥17 on dashboard offline resource timing"
+    }
+  ],
+  "targets_vs_reality": {
+    "critical_js_under_40kb": "DISK yes (18KB bootstrap) — RUNTIME offline NO (28 B stub)",
+    "oa_interactive_before_heavy": "NOT VERIFIED offline — OA did not boot",
+    "idb_singleton": "NOT EXERCISED offline"
+  }
+}

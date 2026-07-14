@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "verdict": "NO",
+  "reason": "LOGIN_FAILED",
+  "url": "https://rateb.sa/rateb-erp/public/login?err=credentials",
+  "events": [
+    {
+      "t": 1,
+      "type": "marker",
+      "name": "GOTO_LOGIN"
+    },
+    {
+      "t": 1791,
+      "type": "marker",
+      "name": "AFTER_LOGIN",
+      "url": "https://rateb.sa/rateb-erp/public/login?err=credentials"
+    }
+  ]
+}

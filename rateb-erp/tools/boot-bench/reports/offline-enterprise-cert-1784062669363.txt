@@ -1,0 +1,38 @@
+RATIB ERP — OFFLINE ENTERPRISE CERTIFICATION (REAL BROWSER)
+================================================================
+Verdict: NO
+OA bootstrap active: false
+
+TIMELINE (ms from offline navigation)
+  OFFLINE_START          0
+  FP                     72
+  FCP                    72
+  DCL                    34
+  SHELL_INTERACTIVE      9147
+  PIN_UNLOCK             n/a
+  DASHBOARD_READY        11549
+  FIRST_MODULE_AVG       1240.6
+  SECOND_MODULE_AVG      638.6
+
+DUPLICATES
+  idb opens total=0 rateb_erp_offline=0
+  sw registers=0 urls=[]
+
+MODULE FIRST / SECOND (ms)
+  dashboard          first=1280 second=685 usable1=true
+  hr                 first=1232 second=636 usable1=true
+  inventory          first=1234 second=630 usable1=true
+  accounting         first=1248 second=637 usable1=true
+  procurement        first=1232 second=635 usable1=true
+  pos                first=1232 second=630 usable1=true
+  crm                first=1237 second=635 usable1=true
+  recruitment        first=1230 second=621 usable1=true
+  dashboard_return   first=1280 second=673 usable1=true
+
+TOP LONG TASKS
+
+BOTTLENECKS
+  #1 [high] Slow first module open: dashboard
+      1280 ms first open
+
+LARGEST REMAINING: Slow first module open: dashboard
