@@ -2253,6 +2253,33 @@ if (!function_exists('rateb_sync_ops_session_to_company')) {
     }
 }
 
+/** Request-scoped ops-company memo (exists + resolved id). Not a cross-request cache. */
+if (!function_exists('rateb_ops_company_request_state')) {
+    /**
+     * @return array{exists: array<int, bool>, resolved: ?int, resolved_set: bool}
+     */
+    function &rateb_ops_company_request_state(): array
+    {
+        static $state = [
+            'exists' => [],
+            'resolved' => null,
+            'resolved_set' => false,
+        ];
+
+        return $state;
+    }
+}
+
+if (!function_exists('rateb_ops_company_request_state_reset')) {
+    function rateb_ops_company_request_state_reset(): void
+    {
+        $state = &rateb_ops_company_request_state();
+        $state['exists'] = [];
+        $state['resolved'] = null;
+        $state['resolved_set'] = false;
+    }
+}
+
 /** Resolve active company for ops routes (session, then ?company_id=, then ops session). */
 if (!function_exists('rateb_ops_company_exists')) {
     function rateb_ops_company_exists(int $companyId): bool
@@ -2260,12 +2287,19 @@ if (!function_exists('rateb_ops_company_exists')) {
         if ($companyId < 1) {
             return false;
         }
+        $state = &rateb_ops_company_request_state();
+        if (array_key_exists($companyId, $state['exists'])) {
+            return $state['exists'][$companyId];
+        }
         try {
             $row = (new \Rateb\App\Models\Company())->find($companyId);
-            return is_array($row) && (int) ($row['id'] ?? 0) === $companyId;
+            $ok = is_array($row) && (int) ($row['id'] ?? 0) === $companyId;
         } catch (\Throwable $e) {
-            return false;
+            $ok = false;
         }
+        $state['exists'][$companyId] = $ok;
+
+        return $ok;
     }
 }
 
@@ -2278,6 +2312,9 @@ if (!function_exists('rateb_clear_ops_company_session')) {
         }
         \Rateb\App\Core\TenantContext::setCompanyId(null);
         \Rateb\App\Core\BranchContext::reset();
+        if (function_exists('rateb_ops_company_request_state_reset')) {
+            rateb_ops_company_request_state_reset();
+        }
     }
 }
 
@@ -2305,6 +2342,10 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
             }
         }
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        $state = &rateb_ops_company_request_state();
+        $state['resolved'] = $companyId;
+        $state['resolved_set'] = true;
+
         return $companyId;
     }
 }
@@ -2312,6 +2353,11 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
 if (!function_exists('rateb_resolve_ops_company_id')) {
     function rateb_resolve_ops_company_id(): int
     {
+        $state = &rateb_ops_company_request_state();
+        if ($state['resolved_set']) {
+            return (int) ($state['resolved'] ?? 0);
+        }
+
         if (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops()) {
             $primary = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
             if ($primary > 0) {
@@ -2350,6 +2396,10 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
         if ($ctx !== null && $ctx > 0) {
             return rateb_adopt_ops_company_id((int) $ctx);
         }
+
+        $state['resolved'] = 0;
+        $state['resolved_set'] = true;
+
         return 0;
     }
 }

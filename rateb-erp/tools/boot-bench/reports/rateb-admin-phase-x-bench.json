@@ -1,0 +1,135 @@
+{
+    "ok": true,
+    "phase": "X",
+    "target": "GET /admin/",
+    "before": {
+        "cli_html_ms": 251.172,
+        "cli_sql_total": 236,
+        "cli_sql_ms": 110.741,
+        "layout_sql": 154,
+        "company_find_repeats": 99,
+        "show_tables_layout": 27,
+        "information_schema_layout": 18,
+        "http_ttfb_ms": 573.034,
+        "http_ttfb_warm_ms": 547.581
+    },
+    "after": {
+        "cli_sql_total": 27,
+        "cli_sql_ms": 18.139,
+        "cli_html_ms": 55.328,
+        "admin_build_lite_ms": 37.501,
+        "admin_build_lite_sql": 18,
+        "layout_main_ms": 16.647,
+        "layout_sql": 2,
+        "company_find_repeats": 0,
+        "show_tables_total": 1,
+        "information_schema_total": 0,
+        "show_columns_total": 11,
+        "html_bytes": 79909,
+        "http_ttfb_ms": 601.842,
+        "http_ttfb_warm_ms": 571.686,
+        "http": {
+            "first": {
+                "code": 200,
+                "ttfb_ms": 601.842,
+                "total_ms": 813.537,
+                "bytes": 79910
+            },
+            "warm": {
+                "code": 200,
+                "ttfb_ms": 571.686,
+                "total_ms": 793.373,
+                "bytes": 79910
+            }
+        },
+        "auth_ms": 4.866,
+        "routes_ms": 25.069,
+        "memo_helpers_present": true
+    },
+    "delta": {
+        "sql_count_reduction_pct": 88.6,
+        "sql_ms_reduction_pct": 83.6,
+        "html_ms_reduction_pct": 78,
+        "layout_sql_reduction_pct": 98.7,
+        "company_find_reduction_pct": 100,
+        "ttfb_reduction_pct": -5,
+        "success_sql_50pct": true
+    },
+    "slowest_queries": [
+        {
+            "dur_ms": 1.543,
+            "sql": "SHOW TABLES LIKE 'rateb_branches'",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 1.474,
+            "sql": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'",
+            "phase": "auth_bootstrap"
+        },
+        {
+            "dur_ms": 1.362,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'reject_reason'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.239,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'status'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.23,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'reject_reason'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.163,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'status'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.135,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'rejected_at'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.126,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'rejected_at'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.11,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'rejected_by'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.095,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'submitted_for_approval_at'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.093,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'submitted_for_approval_at'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.083,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'rejected_by'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 0.342,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0 AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 0.337,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_companies WHERE status = 'pending'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 0.308,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = 'active' AND ends_at IS NOT NULL AND ends_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)",
+            "phase": "admin_build_lite"
+        }
+    ]
+}

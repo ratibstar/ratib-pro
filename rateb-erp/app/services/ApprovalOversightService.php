@@ -9,6 +9,9 @@ use PDO;
 /** Cross-company pending approvals for admin oversight (مراقبة الإدارة). */
 final class ApprovalOversightService
 {
+    /** @var array<string, bool> Request-scoped table existence memo (not cross-request). */
+    private static array $tableExistsCache = [];
+
     /** Sources where reject is not supported from oversight UI. */
     public static function rejectDisabledSources(): array
     {
@@ -193,20 +196,13 @@ final class ApprovalOversightService
 
     private function tableHasColumn(string $table, string $column): bool
     {
-        if (!$this->tableExists($table)) {
+        $safeTable = str_replace('`', '', $table);
+        $safeCol = str_replace('`', '', $column);
+        if (!$this->tableExists($safeTable)) {
             return false;
         }
-        try {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'SELECT COUNT(*) FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c'
-            );
-            $stmt->execute(['t' => $table, 'c' => $column]);
-            return (int) $stmt->fetchColumn() > 0;
-        } catch (\Throwable $e) {
-            return false;
-        }
+        // Reuse Database::$columnCache — single source of truth for column existence.
+        return Database::tableHasColumn($safeTable, $safeCol);
     }
 
     public static function routeKeyForWorkflowEntity(string $entityType): string
@@ -781,16 +777,34 @@ final class ApprovalOversightService
 
     private function tableExists(string $table): bool
     {
+        $safeTable = str_replace('`', '', $table);
+        if (array_key_exists($safeTable, self::$tableExistsCache)) {
+            return self::$tableExistsCache[$safeTable];
+        }
         try {
             $db = Database::connection();
-            $stmt = $db->query("SHOW TABLES LIKE " . $db->quote($table));
-            if ($stmt === false) {
-                return false;
+            if (Database::isSqlite()) {
+                $stmt = $db->prepare(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :t LIMIT 1"
+                );
+                $stmt->execute(['t' => $safeTable]);
+                $exists = $stmt->fetchColumn() !== false;
+            } else {
+                $stmt = $db->query('SHOW TABLES LIKE ' . $db->quote($safeTable));
+                if ($stmt === false) {
+                    self::$tableExistsCache[$safeTable] = false;
+
+                    return false;
+                }
+                $exists = $stmt->fetch() !== false;
+                $stmt->closeCursor();
             }
-            $exists = $stmt->fetch() !== false;
-            $stmt->closeCursor();
+            self::$tableExistsCache[$safeTable] = $exists;
+
             return $exists;
         } catch (\Throwable $e) {
+            self::$tableExistsCache[$safeTable] = false;
+
             return false;
         }
     }
