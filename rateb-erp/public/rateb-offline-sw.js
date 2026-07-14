@@ -425,6 +425,30 @@ self.addEventListener('activate', function (event) {
     );
 });
 
+var RATEB_SYNC_TAG = 'rateb-offline-flush';
+
+function notifyClientsFlush(reason) {
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+        (clients || []).forEach(function (client) {
+            try {
+                client.postMessage({
+                    type: 'RATEB_OFFLINE_FLUSH',
+                    reason: reason || 'background-sync',
+                    at: Date.now()
+                });
+            } catch (eMsg) { /* ignore */ }
+        });
+        return { notified: (clients || []).length };
+    });
+}
+
+self.addEventListener('sync', function (event) {
+    var tag = String(event.tag || '');
+    if (tag === RATEB_SYNC_TAG || tag === 'rateb-erp-offline-flush') {
+        event.waitUntil(notifyClientsFlush(tag));
+    }
+});
+
 self.addEventListener('message', function (event) {
     var data = event.data || {};
     if (data.type === 'CACHE_ERP_OPS_PAGE') {
@@ -432,6 +456,16 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'RELOAD_OPS_ALLOWLIST') {
         event.waitUntil(loadOpsAllowlist());
+    }
+    if (data.type === 'REGISTER_BACKGROUND_SYNC') {
+        var tag = String(data.tag || RATEB_SYNC_TAG);
+        event.waitUntil(
+            self.registration.sync
+                ? self.registration.sync.register(tag).catch(function () {
+                    return notifyClientsFlush('register-fallback');
+                })
+                : notifyClientsFlush('sync-unsupported')
+        );
     }
 });
 

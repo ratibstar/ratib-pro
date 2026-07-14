@@ -15,6 +15,7 @@ $order = [
     'offline/client/core/transport.js',
     'offline/client/adapters/pos-adapter.js',
     'offline/client/adapters/inventory-adapter.js',
+    'offline/client/adapters/warehouse-adapter.js',
     'offline/client/adapters/hr-adapter.js',
     'offline/client/adapters/procurement-adapter.js',
     'offline/client/adapters/recruitment-adapter.js',

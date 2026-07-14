@@ -6,7 +6,9 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v52';
+var SW_BUILD_ID = '20260714-force-sw-v53-bgsync';
+var RATEB_SYNC_TAG = 'rateb-offline-flush';
+var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1793,6 +1795,51 @@ self.addEventListener('activate', function (event) {
     );
 });
 
+/**
+ * Browser Background Sync — notify open clients to flush IndexedDB queues.
+ * Falls back to broadcast when SyncManager is unsupported.
+ */
+function notifyClientsFlush(reason) {
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+        (clients || []).forEach(function (client) {
+            try {
+                client.postMessage({
+                    type: 'RATEB_OFFLINE_FLUSH',
+                    reason: reason || 'background-sync',
+                    at: Date.now()
+                });
+            } catch (eMsg) { /* ignore */ }
+        });
+        return { notified: (clients || []).length, reason: reason || 'background-sync' };
+    });
+}
+
+function notifyClientsPrint(reason) {
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+        (clients || []).forEach(function (client) {
+            try {
+                client.postMessage({
+                    type: 'RATEB_POS_PRINT_FLUSH',
+                    reason: reason || 'background-sync',
+                    at: Date.now()
+                });
+            } catch (eMsg) { /* ignore */ }
+        });
+        return { notified: (clients || []).length };
+    });
+}
+
+self.addEventListener('sync', function (event) {
+    var tag = String(event.tag || '');
+    if (tag === RATEB_SYNC_TAG || tag === 'rateb-erp-offline-flush') {
+        event.waitUntil(notifyClientsFlush(tag));
+        return;
+    }
+    if (tag === RATEB_PRINT_SYNC_TAG) {
+        event.waitUntil(notifyClientsPrint(tag));
+    }
+});
+
 self.addEventListener('message', function (event) {
     var data = event.data || {};
     if (data.type === 'SKIP_WAITING') {
@@ -1801,6 +1848,24 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'CLIENTS_CLAIM') {
         event.waitUntil(self.clients.claim());
+        return;
+    }
+    if (data.type === 'REGISTER_BACKGROUND_SYNC') {
+        var tag = String(data.tag || RATEB_SYNC_TAG);
+        event.waitUntil(
+            self.registration.sync
+                ? self.registration.sync.register(tag).then(function () {
+                    return { ok: true, tag: tag };
+                }).catch(function () {
+                    if (tag === RATEB_PRINT_SYNC_TAG) {
+                        return notifyClientsPrint('register-fallback');
+                    }
+                    return notifyClientsFlush('register-fallback');
+                })
+                : (tag === RATEB_PRINT_SYNC_TAG
+                    ? notifyClientsPrint('sync-unsupported')
+                    : notifyClientsFlush('sync-unsupported'))
+        );
         return;
     }
     if (data.type === 'PIN_REGISTER_SHELL' && data.url) {

@@ -1146,6 +1146,47 @@ final class OfflineQueueService
         ]);
     }
 
+    /**
+     * Queue recovery — requeue failed items (retry_count reset) for another sync cycle.
+     * Conflicts remain open until resolved via conflict API.
+     *
+     * @return array{recovered: int, company_id: int}
+     */
+    public function recoverFailed(?int $companyId = null, int $limit = 100): array
+    {
+        if (!$this->isAvailable()) {
+            return ['recovered' => 0, 'company_id' => 0, 'migration_required' => true];
+        }
+
+        $companyId = $this->resolveCompanyId($companyId);
+        if ($companyId < 1) {
+            return ['recovered' => 0, 'company_id' => 0];
+        }
+
+        $safeLimit = max(1, min(200, $limit));
+        $ids = $this->model()->query(
+            'SELECT id FROM rateb_offline_sync_queue
+             WHERE company_id = :cid AND status = :st
+             ORDER BY id ASC LIMIT ' . $safeLimit,
+            ['cid' => $companyId, 'st' => 'failed']
+        );
+        $recovered = 0;
+        foreach ($ids as $row) {
+            $qid = (int) ($row['id'] ?? 0);
+            if ($qid < 1) {
+                continue;
+            }
+            $this->model()->update($qid, [
+                'status' => 'pending',
+                'retry_count' => 0,
+                'last_error' => null,
+            ]);
+            $recovered++;
+        }
+
+        return ['recovered' => $recovered, 'company_id' => $companyId];
+    }
+
     private function normalizeHrAction(string $action): string
     {
         $action = trim($action);

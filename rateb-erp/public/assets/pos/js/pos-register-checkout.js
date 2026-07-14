@@ -469,12 +469,26 @@
         if (!area) {
             return;
         }
+        var html = area.innerHTML;
+        var lastReceipt = null;
+        try {
+            lastReceipt = JSON.parse(localStorage.getItem('rateb_pos_last_receipt') || 'null');
+        } catch (eRec) { /* ignore */ }
         var w = window.open('', '_blank', 'width=400,height=600');
         if (!w) {
+            // Popup blocked — durable offline print queue (retry via Background Sync).
+            if (window.RatebPosOfflinePrint && typeof window.RatebPosOfflinePrint.enqueue === 'function') {
+                window.RatebPosOfflinePrint.enqueue({ html: html, receipt: lastReceipt }).then(function () {
+                    notify(t('pos_print_queued', 'Print queued — will retry when allowed'), false);
+                }).catch(function () {
+                    notify(t('pos_print_receipt', 'Print'), true);
+                });
+                return;
+            }
             notify(t('pos_print_receipt', 'Print'), true);
             return;
         }
-        w.document.write('<html><head><title>' + t('pos_receipt', 'Receipt') + '</title><style>body{font-family:monospace;padding:12px} .rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}</style></head><body>' + area.innerHTML + '</body></html>');
+        w.document.write('<html><head><title>' + t('pos_receipt', 'Receipt') + '</title><style>body{font-family:monospace;padding:12px} .rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}</style></head><body>' + html + '</body></html>');
         w.document.close();
         w.focus();
         w.print();

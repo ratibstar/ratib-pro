@@ -869,10 +869,17 @@
                 flags: flags,
                 clientQueueMax: !isNaN(max) && max >= 0 ? max : 500,
                 startConnectivity: cfg.startConnectivity !== false,
-                startScheduler: false
+                startScheduler: cfg.startScheduler !== false
             });
         }
         bindSyncBadge();
+        // Register Background Sync for pending queue after boot.
+        try {
+            if (root.RatebOfflineReplayScheduler
+                && typeof root.RatebOfflineReplayScheduler.requestBackgroundSync === 'function') {
+                root.RatebOfflineReplayScheduler.requestBackgroundSync();
+            }
+        } catch (eBg) { /* ignore */ }
         // Offline: same-URL nav click on any live Admin page must not open offline-shell.
         try {
             if (root.document && !root.document.__ratebDashClickGuard) {

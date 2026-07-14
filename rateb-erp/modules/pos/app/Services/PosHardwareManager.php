@@ -9,6 +9,7 @@ use Rateb\App\Pos\Contracts\PosNfcInterface;
 use Rateb\App\Pos\Contracts\PosPrinterInterface;
 use Rateb\App\Pos\Contracts\PosScaleInterface;
 use Rateb\App\Pos\Contracts\PosScannerInterface;
+use Rateb\App\Pos\Services\Drivers\BufferedPosPrinter;
 use Rateb\App\Pos\Services\Drivers\NullPosCashDrawerHardware;
 use Rateb\App\Pos\Services\Drivers\NullPosCustomerDisplay;
 use Rateb\App\Pos\Services\Drivers\NullPosNfcReader;
@@ -28,12 +29,26 @@ final class PosHardwareManager
 
     public function __construct()
     {
-        $this->printer = new NullPosPrinter();
+        $this->printer = $this->resolvePrinter();
         $this->scanner = new NullPosScanner();
         $this->drawer = new NullPosCashDrawerHardware();
         $this->display = new NullPosCustomerDisplay();
         $this->scale = new NullPosScale();
         $this->nfc = new NullPosNfcReader();
+    }
+
+    private function resolvePrinter(): PosPrinterInterface
+    {
+        $raw = getenv('RATEB_POS_PRINTER');
+        if ($raw === false || $raw === '') {
+            $raw = (string) ($_ENV['RATEB_POS_PRINTER'] ?? '');
+        }
+        $mode = strtolower(trim((string) $raw));
+        if ($mode === 'buffer' || $mode === 'browser') {
+            return new BufferedPosPrinter();
+        }
+
+        return new NullPosPrinter();
     }
 
     public function printer(): PosPrinterInterface

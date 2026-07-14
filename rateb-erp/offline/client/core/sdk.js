@@ -550,6 +550,7 @@
         connectivity: function () { return root.RatebOfflineConnectivity || null; },
         pos: function () { return root.RatebOfflinePosAdapter || null; },
         inventory: function () { return root.RatebOfflineInventoryAdapter || null; },
+        warehouse: function () { return root.RatebOfflineWarehouseAdapter || null; },
         hr: function () { return root.RatebOfflineHrAdapter || null; },
         procurement: function () { return root.RatebOfflineProcurementAdapter || null; },
         recruitment: function () { return root.RatebOfflineRecruitmentAdapter || null; },

@@ -11,6 +11,42 @@ namespace Rateb\App\Offline\Services;
 final class OfflineConflictResolverService
 {
     /**
+     * Shallow draft merge for manual "merge" resolution.
+     * Server wins on protected lifecycle keys; client wins on draft field updates.
+     *
+     * @param array<string, mixed> $client
+     * @param array<string, mixed> $server
+     * @return array<string, mixed>
+     */
+    public function mergeDraftPayloads(array $client, array $server): array
+    {
+        if ($server === []) {
+            return $client;
+        }
+        if ($client === []) {
+            return $server;
+        }
+        $protected = [
+            'id', 'company_id', 'branch_id', 'device_id', 'user_id',
+            'status', 'posted_at', 'locked_at', 'voided_at', 'deleted_at',
+            'workflow_status', 'gl_posted', 'payment_status',
+        ];
+        $merged = $server;
+        foreach ($client as $key => $value) {
+            if (in_array((string) $key, $protected, true)) {
+                continue;
+            }
+            $merged[$key] = $value;
+        }
+        $clientVersion = (int) ($client['version'] ?? 0);
+        $serverVersion = (int) ($server['version'] ?? 0);
+        $merged['version'] = max($clientVersion, $serverVersion) + 1;
+        $merged['_merge'] = 'draft_shallow';
+
+        return $merged;
+    }
+
+    /**
      * @param array<string, mixed> $clientItem
      * @param array<string, mixed>|null $serverItem
      * @return array<string, mixed>

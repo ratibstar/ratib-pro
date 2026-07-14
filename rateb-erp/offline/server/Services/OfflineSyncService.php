@@ -119,7 +119,7 @@ final class OfflineSyncService
     /** @return array<string, mixed> */
     public function processPending(?int $companyId = null, int $limit = 50): array
     {
-        return $this->background()->process($companyId, $limit);
+        return $this->background()->recoverAndProcess($companyId, $limit);
     }
 
     /** @return array<int, array<string, mixed>> */

@@ -73,4 +73,21 @@ final class OfflineBackgroundSync
 
         return $stats;
     }
+
+    /**
+     * Recover failed queue rows then process pending (retry-safe).
+     *
+     * @return array<string, mixed>
+     */
+    public function recoverAndProcess(?int $companyId = null, int $limit = 50): array
+    {
+        if (!$this->flags()->isMasterEnabled()) {
+            return $this->process($companyId, $limit);
+        }
+        $recovery = $this->queue()->recoverFailed($companyId, $limit);
+        $stats = $this->process($companyId, $limit);
+        $stats['recovered'] = (int) ($recovery['recovered'] ?? 0);
+
+        return $stats;
+    }
 }

@@ -42,6 +42,7 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 <script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-module.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-offline-sync.js'); ?>" defer></script>
+<script src="<?php echo rateb_pos_asset('js/pos-offline-print.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-register-tiles.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-keyboard.js'); ?>" defer></script>

@@ -21,12 +21,28 @@
 
     function isActive() {
         var f = flags();
-        return !!(f['offline.enabled'] && (
-            f['offline.pilot.ops_pages']
+        if (!f['offline.enabled']) {
+            return false;
+        }
+        // Any Tier-1 module flag or ops pilot enables generic form-post hooks.
+        return !!(f['offline.pilot.ops_pages']
             || f['offline.inventory.movements']
             || f['offline.hr.attendance']
+            || f['offline.hr']
             || f['offline.procurement']
-        ));
+            || f['offline.procurement.goods_receipt']
+            || f['offline.procurement_enterprise']
+            || f['offline.accounting']
+            || f['offline.crm']
+            || f['offline.projects']
+            || f['offline.assets']
+            || f['offline.approval']
+            || f['offline.recruitment']
+            || f['offline.manufacturing']
+            || f['offline.payroll']
+            || f['offline.quality']
+            || f['offline.documents']
+            || f['offline.bi']);
     }
 
     function isOnline() {

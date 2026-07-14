@@ -129,7 +129,8 @@ final class OfflineConflictService
 
         $status = match ($resolution) {
             'accept_server' => 'resolved_server',
-            'accept_client', 'merge' => 'resolved_client',
+            'accept_client' => 'resolved_client',
+            'merge' => 'merged',
             default => null,
         };
         if ($status === null) {
@@ -151,10 +152,20 @@ final class OfflineConflictService
             ]);
         } else {
             $clientPayload = $this->decodeJson($conflict['client_payload'] ?? null);
+            $serverPayload = $this->decodeJson($conflict['server_payload'] ?? null);
+            if ($resolution === 'merge') {
+                $clientPayload = (new OfflineConflictResolverService())->mergeDraftPayloads(
+                    $clientPayload,
+                    $serverPayload
+                );
+            }
             $this->queue()->update($queueId, [
                 'status' => 'pending',
                 'payload' => json_encode($clientPayload, JSON_UNESCAPED_UNICODE),
-                'version' => max(1, (int) ($clientPayload['version'] ?? ($queueRow['version'] ?? 1))),
+                'version' => max(
+                    1,
+                    (int) ($clientPayload['version'] ?? ($queueRow['version'] ?? 1))
+                ) + ($resolution === 'merge' ? 1 : 0),
                 'last_error' => null,
                 'retry_count' => 0,
             ]);

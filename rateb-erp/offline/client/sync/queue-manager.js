@@ -198,6 +198,11 @@
                         return Object.assign({ queued: true, entry: entry }, result || {});
                     });
                 }
+                // Offline: request Browser Background Sync so flush resumes when net returns.
+                var sched = root.RatebOfflineReplayScheduler;
+                if (sched && typeof sched.requestBackgroundSync === 'function') {
+                    sched.requestBackgroundSync();
+                }
                 return depth().then(function (depthAfter) {
                     return { queued: true, queueDepth: depthAfter, entry: entry };
                 });
