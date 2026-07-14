@@ -1,0 +1,32 @@
+{
+  "phase": "OD",
+  "verdict": "PASS",
+  "enterprise": "PASS",
+  "commit": "d8e997e2",
+  "sw_build": "20260714-phase-od-v57",
+  "cache": "rateb-erp-coexist-v30",
+  "evidence": "phase-od-cache-validate-1784064624373.json",
+  "root_cause": "Protected OA/identity assets were allowlisted (OB) but never verified into Cache Storage before offline. Warm/install silently ignored fetch failures, so offline-shell got decodedBodySize=0 / load_failed.",
+  "files_modified": ["rateb-erp/public/pos-sw.js"],
+  "before_after": {
+    "ensure_protected_cache": { "before": "absent / silent fail", "after": "ensureProtectedOfflineCache + verify (fail closed)" },
+    "offline_bootstrap_decodedBodySize": { "before": 0, "after": 17590 },
+    "transferSize": { "before": 0, "after": 0 },
+    "load_failed": { "before": true, "after": false },
+    "oa_executes_offline": { "before": false, "after": true },
+    "inventory_missing": { "before": "multiple", "after": [] }
+  },
+  "browser_evidence": {
+    "ensure.ok": true,
+    "inventory.ok": true,
+    "bootstrap": { "decodedBodySize": 17590, "transferSize": 0 },
+    "oa": true,
+    "mods_ok": true,
+    "no_load_failed": true,
+    "no_shell_error": true
+  },
+  "unrelated_not_fixed": [
+    "Offline shell shows tenant scope message (company_id + user_id required) after OA loads — registration/session scope, not cache population.",
+    "Non-OA dashboard scripts (charts/theme/lang) may still stub offline — outside OD protected inventory."
+  ]
+}
