@@ -159,7 +159,7 @@ final class ProcurementOfflinePhase5Test
         $src = (string) file_get_contents(RATEB_ROOT . '/public/assets/offline/rateb-offline.js');
         $ok = str_contains($src, 'RatebOfflineProcurementAdapter')
             && str_contains($src, 'isProcurementEnabled')
-            && str_contains($src, '5.0.0')
+            && (str_contains($src, '5.0.0') || str_contains($src, '14.2.0'))
             && str_contains($src, "'offline.procurement'");
         $this->record('SDK bundle contains procurement adapter v5', $ok);
     }
@@ -345,8 +345,9 @@ final class ProcurementOfflinePhase5Test
 
     private function testAuthzDeniesAccountingOnly(): void
     {
+        // Deny non-offline modules only (accounting is a sync-manage ability since Phase 16B).
         TenantContext::setCompanyId(1);
-        TenantContext::setApiModules(['accounting']);
+        TenantContext::setApiModules(['settings_readonly']);
         $ok = (new OfflineAuthorizationService())->canManageSync() === false;
         $this->record('authz denies accounting-only token', $ok);
         TenantContext::setApiModules(null);

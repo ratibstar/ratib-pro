@@ -89,8 +89,14 @@ assert_true('SqliteCompatPdo', $pdo instanceof SqliteCompatPdo);
 assert_true('isSqlite', Database::isSqlite());
 
 $seed = BranchSeedService::seedMinimalTenant($pdo);
-$user = Auth::attempt('admin', BranchSeedService::DEFAULT_PASSWORD);
+$user = Auth::attempt(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD, 'admin');
+if (!is_array($user)) {
+    $user = Auth::attemptAuto(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD);
+}
 assert_true('login', is_array($user));
+if (is_array($user)) {
+    Auth::loginUser($user);
+}
 
 // Former blockers — must execute
 $probes = [
@@ -137,10 +143,14 @@ try {
 
 // Dashboard service (MySQL DATE_FORMAT SQL unchanged in service)
 try {
-    Auth::loginUser($user);
-    $dash = new DashboardService();
-    $metrics = $dash->adminMetrics();
-    assert_true('DashboardService::adminMetrics', is_array($metrics), json_encode(array_keys($metrics)) ?: '');
+    if (!is_array($user)) {
+        assert_true('DashboardService::adminMetrics', false, 'login missing');
+    } else {
+        Auth::loginUser($user);
+        $dash = new DashboardService();
+        $metrics = $dash->adminMetrics();
+        assert_true('DashboardService::adminMetrics', is_array($metrics), json_encode(array_keys($metrics)) ?: '');
+    }
 } catch (Throwable $e) {
     assert_true('DashboardService::adminMetrics', false, $e->getMessage());
 }

@@ -25,16 +25,14 @@ final class ErpOfflineAuthPolicy
 
         $userId = (int) (SessionManager::get('rateb_user_id', 0) ?? 0);
         $isSuper = !empty(SessionManager::get('rateb_is_super_admin'));
-        $companyId = 0;
-        // Prefer shell/ops resolver so company-bound super-admins (dedicated primary) can enroll.
-        if (function_exists('rateb_resolve_erp_shell_company_id')) {
-            $companyId = (int) rateb_resolve_erp_shell_company_id();
-        }
-        if ($companyId < 1) {
-            $companyId = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
-        }
+        // Explicit session company binds first (company-bound SA enroll).
+        // Ops/shell resolver fills gaps for unbound sessions — never overrides a bound company_id.
+        $companyId = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
         if ($companyId < 1) {
             $companyId = (int) (SessionManager::get('rateb_ops_company_id', 0) ?? 0);
+        }
+        if ($companyId < 1 && function_exists('rateb_resolve_erp_shell_company_id')) {
+            $companyId = (int) rateb_resolve_erp_shell_company_id();
         }
 
         // Platform super-admin with no tenant context cannot hold a warm company identity.

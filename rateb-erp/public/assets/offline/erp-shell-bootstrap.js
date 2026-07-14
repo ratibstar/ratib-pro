@@ -3,7 +3,6 @@
  * Passes full cfg.flags into SDK; never freezes later phase flags.
  * Does not overwrite pos-sw.js when it owns the shared scope.
  * Sync badge + clientQueueMax for daily ops pilot.
- * TEMP: RatebOfflineTrace diagnostics (remove with erp-offline-debug.js).
  */
 (function (root) {
     'use strict';
@@ -11,7 +10,7 @@
     var cfg = root.__RATEB_ERP_SHELL_OFFLINE__ || {};
 
     function trace() {
-        return root.RatebOfflineTrace || null;
+        return (root.__RATEB_OFFLINE_DEBUG__ && root.RatebOfflineTrace) ? root.RatebOfflineTrace : null;
     }
 
     function tPass(step, file, fn, reason) {

@@ -1880,25 +1880,8 @@ self.addEventListener('message', function (event) {
         return;
     }
     if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
-        try {
-            console.log('[RATIB OFFLINE]', 'PASS', 'step=9', 'file=pos-sw.js', 'function=message',
-                'reason=received WARM_ERP_OFFLINE_SHELL');
-            console.log('[RATIB OFFLINE]', 'PASS', 'step=10', 'file=pos-sw.js', 'function=warmErpOfflineShell',
-                'reason=warmErpOfflineShell() scheduled');
-        } catch (eLog) { /* ignore */ }
         event.waitUntil(
-            warmErpOfflineShell().then(function () {
-                try {
-                    console.log('[RATIB OFFLINE]', 'PASS', 'step=10', 'file=pos-sw.js',
-                        'function=warmErpOfflineShell', 'reason=warmErpOfflineShell() finished');
-                } catch (e2) { /* ignore */ }
-            }).catch(function (err) {
-                try {
-                    console.error('[RATIB OFFLINE]', 'FAIL', 'step=10', 'file=pos-sw.js',
-                        'function=warmErpOfflineShell',
-                        'reason=' + String(err && err.message ? err.message : err));
-                } catch (e3) { /* ignore */ }
-            })
+            warmErpOfflineShell().catch(function () { /* ignore warm errors */ })
         );
         return;
     }

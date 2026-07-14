@@ -399,8 +399,7 @@ self.addEventListener('install', function (event) {
 });
 
 self.addEventListener('activate', function (event) {
-    // Claim clients so offline /admin navigations are handled by this SW.
-    // Without claim, Chrome shows its native "No internet" page.
+    // Baseline v1.2 + Phase 10: ERP SW must not call clients.claim — pos-sw owns client claiming.
     event.waitUntil(
         loadOpsAllowlist().then(function () {
             return caches.keys().then(function (keys) {
@@ -417,10 +416,8 @@ self.addEventListener('activate', function (event) {
                     return Promise.resolve();
                 }));
             });
-        }).then(function () {
-            return self.clients.claim();
         }).catch(function () {
-            return self.clients.claim();
+            return undefined;
         })
     );
 });

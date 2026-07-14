@@ -435,8 +435,10 @@ final class InventoryOfflinePhase3Test
 
     private function testAuthzDeniesUnrelatedAbility(): void
     {
+        // Accounting/payroll/CRM are sync-manage abilities since Tier-1 offline modules.
+        // Deny modules outside the offline sync allow-list (Foundation pattern).
         TenantContext::setCompanyId(42);
-        TenantContext::setApiModules(['accounting']);
+        TenantContext::setApiModules(['settings_readonly']);
         $ok = (new OfflineAuthorizationService())->canManageSync() === false;
         $this->record('authz denies accounting-only token for sync manage', $ok, $ok ? 'ok' : 'allowed');
         TenantContext::setApiModules(null);

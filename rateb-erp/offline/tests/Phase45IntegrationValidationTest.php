@@ -15,6 +15,7 @@ use Rateb\App\Offline\Services\OfflinePushAckContract;
 use Rateb\App\Offline\Services\OfflineReplayEngine;
 use Rateb\App\Offline\Services\HrOfflineReplayService;
 use Rateb\App\Offline\Services\InventoryOfflineReplayService;
+use Rateb\App\Offline\OfflineModule;
 
 final class Phase45IntegrationValidationTest
 {
@@ -56,15 +57,31 @@ final class Phase45IntegrationValidationTest
 
     private function clearEnv(): void
     {
+        $cfg = OfflineModule::featureFlagsConfig();
+        $envMap = is_array($cfg['env'] ?? null) ? $cfg['env'] : [];
+        foreach ($envMap as $envName) {
+            $k = (string) $envName;
+            if ($k === '') {
+                continue;
+            }
+            putenv($k);
+            unset($_ENV[$k], $_SERVER[$k]);
+        }
+        // Explicit baseline keys (pre-map coverage).
         foreach ([
             'RATEB_OFFLINE_ENABLED',
             'RATEB_OFFLINE_INVENTORY_MOVEMENTS',
             'RATEB_OFFLINE_HR_ATTENDANCE',
             'RATEB_OFFLINE_PROCUREMENT',
+            'RATEB_OFFLINE_READ_CACHE',
+            'RATEB_OFFLINE_AUTH_UNLOCK',
+            'RATEB_OFFLINE_MASTER_DATA',
+            'RATEB_OFFLINE_PILOT_OPS_PAGES',
         ] as $k) {
             putenv($k);
-            unset($_ENV[$k]);
+            unset($_ENV[$k], $_SERVER[$k]);
         }
+        OfflineFeatureFlagService::resetConfigCache();
     }
 
     private function testAllFlagsDefaultSafe(): void

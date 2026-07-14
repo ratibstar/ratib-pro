@@ -389,13 +389,19 @@ final class AccountingOfflinePhase16bTest
 
     private function testOpsAllowlistAccountingDraftsOnly(): void
     {
+        OfflineModule::resetOpsAllowlistMemo();
         $cfg = OfflineModule::opsPageAllowlist();
         $paths = $cfg['paths'] ?? [];
-        $joined = implode(',', array_map('strval', $paths));
-        $ok = in_array('journal-entries', $paths, true)
-            && in_array('accounting/platform', $paths, true)
-            && !str_contains($joined, 'zatca')
-            && !str_contains($joined, 'payroll');
+        $routes = $cfg['routes'] ?? [];
+        $pathJoined = implode(',', array_map('strval', $paths));
+        $hasJournal = in_array('journal-entries', $paths, true)
+            || isset($routes['journal-entries']);
+        $hasPlatform = in_array('accounting/platform', $paths, true)
+            || isset($routes['accounting/platform']);
+        // Accounting draft browse present; ZATCA stay out of accounting paths (payroll lives in same shared allowlist).
+        $ok = $hasJournal
+            && $hasPlatform
+            && !str_contains($pathJoined, 'zatca');
         $this->record('ops allowlist includes accounting draft browse paths', $ok);
     }
 

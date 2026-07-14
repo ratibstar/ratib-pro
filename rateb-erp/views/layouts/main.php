@@ -663,6 +663,7 @@ $ratebOfflineFlagSvc = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFl
     ? new \Rateb\App\Offline\Services\OfflineFeatureFlagService()
     : null;
 $ratebOfflineReadCache = $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isReadCacheEnabled();
+$ratebOfflineAuthUnlock = $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isAuthUnlockEnabled();
 // Full offline SDK on daily-ops + platform companies/oversight (create/save queue).
 $ratebOfflineFullClient = $ratebOfflineReadCache && (
     !empty($_GET['rateb_offline'])
@@ -860,7 +861,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
 <?php } ?>
 <script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
 <script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
-<?php if ($ratebOfflineFlagSvc->isAuthUnlockEnabled()) { ?>
+<?php if (!empty($ratebOfflineAuthUnlock) && $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isAuthUnlockEnabled()) { ?>
 <script src="<?php echo rateb_asset('offline/erp-auth-bootstrap.js'); ?>" defer></script>
 <?php } ?>
 <?php if ($ratebOfflineFlagSvc->isRbacCacheEnabled()) { ?>

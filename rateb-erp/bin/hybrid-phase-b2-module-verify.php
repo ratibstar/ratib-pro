@@ -36,7 +36,16 @@ Database::disconnect();
 
 $pdo = Database::connection();
 $seed = BranchSeedService::seedMinimalTenant($pdo);
-$user = Auth::attempt('admin', BranchSeedService::DEFAULT_PASSWORD);
+// Seed admin is platform super_admin — short login "admin" excludes SA (User::loginCandidates).
+// Authenticate via email + admin portal.
+$user = Auth::attempt(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD, 'admin');
+if (!is_array($user)) {
+    $user = Auth::attemptAuto(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD);
+}
+if (!is_array($user)) {
+    fwrite(STDERR, "FAIL | login | seed admin authenticate returned null\n");
+    exit(1);
+}
 Auth::loginUser($user);
 $cid = (int) $seed['company_id'];
 TenantContext::setCompanyId($cid);
@@ -112,7 +121,10 @@ try {
 }
 
 try {
-    $auth = Auth::attempt('admin', BranchSeedService::DEFAULT_PASSWORD);
+    $auth = Auth::attempt(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD, 'admin');
+    if (!is_array($auth)) {
+        $auth = Auth::attemptAuto(BranchSeedService::DEFAULT_EMAIL, BranchSeedService::DEFAULT_PASSWORD);
+    }
     $ok('Authentication', is_array($auth));
 } catch (Throwable $e) {
     $ok('Authentication', false, $e->getMessage());

@@ -12,6 +12,12 @@ final class OfflineFeatureFlagService
     /** @var array<string, mixed>|null */
     private static ?array $config = null;
 
+    /** Clear memoized config (tests / kill-switch verification). */
+    public static function resetConfigCache(): void
+    {
+        self::$config = null;
+    }
+
     /** @return array<string, mixed> */
     private function config(): array
     {

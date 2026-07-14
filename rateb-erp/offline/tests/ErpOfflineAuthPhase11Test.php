@@ -47,14 +47,9 @@ final class ErpOfflineAuthPhase11Test
             'RATEB_OFFLINE_AUTH_UNLOCK',
         ] as $k) {
             putenv($k);
-            unset($_ENV[$k]);
+            unset($_ENV[$k], $_SERVER[$k]);
         }
-        $ref = new ReflectionClass(OfflineFeatureFlagService::class);
-        if ($ref->hasProperty('config')) {
-            $prop = $ref->getProperty('config');
-            $prop->setAccessible(true);
-            $prop->setValue(null, null);
-        }
+        OfflineFeatureFlagService::resetConfigCache();
     }
 
     private function enable(bool $master, bool $read, bool $auth): void
@@ -72,12 +67,7 @@ final class ErpOfflineAuthPhase11Test
             putenv('RATEB_OFFLINE_AUTH_UNLOCK=1');
             $_ENV['RATEB_OFFLINE_AUTH_UNLOCK'] = '1';
         }
-        $ref = new ReflectionClass(OfflineFeatureFlagService::class);
-        if ($ref->hasProperty('config')) {
-            $prop = $ref->getProperty('config');
-            $prop->setAccessible(true);
-            $prop->setValue(null, null);
-        }
+        OfflineFeatureFlagService::resetConfigCache();
     }
 
     private function testFlagsDefaultOff(): void

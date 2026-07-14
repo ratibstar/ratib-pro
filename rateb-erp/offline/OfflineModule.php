@@ -53,6 +53,12 @@ final class OfflineModule
     /** @var array<string, mixed>|null */
     private static ?array $opsAllowlistMemo = null;
 
+    /** Clear memoized allowlist (tests). */
+    public static function resetOpsAllowlistMemo(): void
+    {
+        self::$opsAllowlistMemo = null;
+    }
+
     /**
      * Prefer prebuilt JSON (routes already resolved). Never re-resolve 140+
      * rateb_app_route() calls on every HTML request — that made admin feel multi-second slow.
