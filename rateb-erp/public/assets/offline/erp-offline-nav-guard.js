@@ -11,7 +11,8 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-offline-actions-v43';
+    var GUARD_BUILD = '20260714-table-save-v44';
+    var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v29'];
     var flushing = false;
 
     function browserHasNetwork() {
@@ -97,6 +98,254 @@
         } catch (e2) { /* ignore */ }
     }
 
+    function showSavedLikeOnline(message) {
+        var msg = message || 'تم الحفظ بنجاح';
+        try {
+            root.document.querySelectorAll('.rateb-flash-offline-local').forEach(function (n) {
+                n.parentNode && n.parentNode.removeChild(n);
+            });
+            var flash = root.document.createElement('div');
+            flash.className = 'alert alert-success rateb-flash alert-dismissible fade show rateb-flash-offline-local';
+            flash.setAttribute('role', 'alert');
+            flash.innerHTML = String(msg).replace(/</g, '&lt;')
+                + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            var host = root.document.querySelector('.rateb-main, main .container-fluid, main, .content-wrapper, .rateb-content')
+                || root.document.body;
+            if (host.firstChild) {
+                host.insertBefore(flash, host.firstChild);
+            } else {
+                host.appendChild(flash);
+            }
+            try {
+                flash.querySelector('.btn-close').addEventListener('click', function () {
+                    if (flash.parentNode) {
+                        flash.parentNode.removeChild(flash);
+                    }
+                });
+            } catch (eBtn) { /* ignore */ }
+        } catch (eF) { /* ignore */ }
+        toast(msg);
+    }
+
+    function optimisticCacheDocument() {
+        try {
+            if (!root.caches || !root.document || !root.document.documentElement) {
+                return;
+            }
+            var html = '<!DOCTYPE html>\n' + root.document.documentElement.outerHTML;
+            if (html.length < 400 || html.length > 2500000) {
+                return;
+            }
+            var keys = [
+                root.location.href,
+                root.location.origin + root.location.pathname,
+                root.location.origin + root.location.pathname.replace(/\/+$/, ''),
+                root.location.origin + root.location.pathname.replace(/\/+$/, '') + '/'
+            ];
+            var res = new Response(html, {
+                status: 200,
+                headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
+            });
+            CACHE_NAMES.forEach(function (name) {
+                root.caches.open(name).then(function (cache) {
+                    return Promise.all(keys.map(function (k) {
+                        return cache.put(k, res.clone()).catch(function () { return null; });
+                    }));
+                }).catch(function () { /* ignore */ });
+            });
+        } catch (eC) { /* ignore */ }
+    }
+
+    function extractRecordId(form) {
+        try {
+            var action = String(form.getAttribute('action') || root.location.pathname || '');
+            var m = action.match(/\/(\d+)(?:\/(?:edit|update|delete|destroy|suspend))?\/?(?:\?|$)/i)
+                || String(root.location.pathname || '').match(/\/(\d+)(?:\/edit)?\/?$/i);
+            return m ? m[1] : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function listUrlFromForm(form) {
+        try {
+            var cancel = form.querySelector('a.btn-outline-secondary[href], a[href*="/admin/"]');
+            if (cancel && cancel.getAttribute('href')) {
+                return new URL(cancel.getAttribute('href'), root.location.href).href;
+            }
+        } catch (e0) { /* ignore */ }
+        try {
+            var u = new URL(form.getAttribute('action') || root.location.href, root.location.href);
+            u.pathname = u.pathname
+                .replace(/\/\d+\/(edit|update|delete|destroy|suspend)\/?$/i, '')
+                .replace(/\/\d+\/?$/i, '')
+                .replace(/\/(create|new)\/?$/i, '');
+            u.search = '';
+            u.hash = '';
+            return u.href;
+        } catch (e1) {
+            return '';
+        }
+    }
+
+    function displayValueForField(form, name, raw) {
+        try {
+            var el = form.elements.namedItem(name);
+            if (!el) {
+                return raw;
+            }
+            if (el.tagName === 'SELECT') {
+                var opt = el.options[el.selectedIndex];
+                return opt ? String(opt.textContent || '').trim() : raw;
+            }
+            if (el.length && el[0] && el[0].type === 'radio') {
+                for (var i = 0; i < el.length; i++) {
+                    if (el[i].checked) {
+                        var lab = root.document.querySelector('label[for="' + el[i].id + '"]');
+                        return lab ? String(lab.textContent || '').trim() : String(el[i].value || raw);
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
+        return raw;
+    }
+
+    function patchIndexHtml(html, recordId, fields, form, isDelete) {
+        if (!html || !recordId) {
+            return null;
+        }
+        try {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var rows = doc.querySelectorAll('table tbody tr, .table tbody tr');
+            var patched = false;
+            Array.prototype.forEach.call(rows, function (tr) {
+                var blob = (tr.getAttribute('data-id') || '') + ' '
+                    + (tr.innerHTML || '');
+                if (blob.indexOf('/' + recordId + '/') === -1
+                    && blob.indexOf('/' + recordId + '"') === -1
+                    && String(tr.getAttribute('data-id') || '') !== String(recordId)) {
+                    return;
+                }
+                patched = true;
+                if (isDelete) {
+                    if (tr.parentNode) {
+                        tr.parentNode.removeChild(tr);
+                    }
+                    return;
+                }
+                Object.keys(fields || {}).forEach(function (name) {
+                    if (name.charAt(0) === '_' || name === 'modules' || name === 'password') {
+                        return;
+                    }
+                    var raw = fields[name];
+                    if (Array.isArray(raw)) {
+                        raw = raw.join(', ');
+                    }
+                    raw = String(raw == null ? '' : raw);
+                    if (!raw) {
+                        return;
+                    }
+                    var shown = displayValueForField(form, name, raw);
+                    var cell = tr.querySelector('[data-field="' + name + '"], [data-col="' + name + '"], td[data-name="' + name + '"]');
+                    if (cell) {
+                        cell.textContent = shown;
+                        return;
+                    }
+                    // Soft match: any short text cell equal to previous unknown — skip; fill empty name-like cells only via class
+                    var named = tr.querySelector('.col-' + name + ', .field-' + name);
+                    if (named) {
+                        named.textContent = shown;
+                    }
+                });
+                // Prefer common label cells: name / title / email / phone first text cells when form has them
+                ['name', 'company_name', 'title', 'email', 'phone', 'status', 'package'].forEach(function (key) {
+                    if (!fields[key]) {
+                        return;
+                    }
+                    var shown = displayValueForField(form, key, String(fields[key]));
+                    var tds = tr.querySelectorAll('td');
+                    Array.prototype.forEach.call(tds, function (td) {
+                        var cls = String(td.className || '');
+                        if (cls.indexOf(key) !== -1 || td.getAttribute('data-label') === key) {
+                            td.textContent = shown;
+                        }
+                    });
+                });
+            });
+            if (!patched) {
+                return null;
+            }
+            return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+        } catch (eP) {
+            return null;
+        }
+    }
+
+    function patchRelatedIndexCaches(form, fields) {
+        if (!root.caches) {
+            return;
+        }
+        var recordId = extractRecordId(form);
+        var listHref = listUrlFromForm(form);
+        if (!listHref) {
+            return;
+        }
+        var isDelete = false;
+        try {
+            var act = String(form.getAttribute('action') || '');
+            isDelete = /\/(delete|destroy)(\/|$)/i.test(act)
+                || form.getAttribute('data-rateb-bulk-form') === 'delete';
+        } catch (eD) { /* ignore */ }
+        var candidates = [listHref];
+        try {
+            var u = new URL(listHref);
+            candidates.push(u.origin + u.pathname);
+            candidates.push(u.origin + u.pathname.replace(/\/+$/, ''));
+            candidates.push(u.origin + u.pathname.replace(/\/+$/, '') + '/');
+        } catch (eU) { /* ignore */ }
+
+        CACHE_NAMES.forEach(function (name) {
+            root.caches.open(name).then(function (cache) {
+                return Promise.all(candidates.map(function (key) {
+                    return cache.match(key).then(function (res) {
+                        if (!res) {
+                            return null;
+                        }
+                        return res.text().then(function (html) {
+                            var next = patchIndexHtml(html, recordId, fields, form, isDelete);
+                            if (!next) {
+                                return null;
+                            }
+                            return cache.put(key, new Response(next, {
+                                status: 200,
+                                headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
+                            }));
+                        });
+                    }).catch(function () { return null; });
+                }));
+            }).catch(function () { /* ignore */ });
+        });
+    }
+
+    function afterDeferredSave(form, fields) {
+        showSavedLikeOnline('تم الحفظ بنجاح');
+        try {
+            var act = String(form.getAttribute('action') || '');
+            var isDelete = /\/(delete|destroy)(\/|$)/i.test(act)
+                || form.getAttribute('data-rateb-bulk-form') === 'delete';
+            if (isDelete) {
+                var row = form.closest('tr');
+                if (row) {
+                    row.style.display = 'none';
+                    row.setAttribute('data-rateb-offline-deleted', '1');
+                }
+            }
+        } catch (eR) { /* ignore */ }
+        optimisticCacheDocument();
+        patchRelatedIndexCaches(form, fields || {});
+        updateSyncBanner();
+    }
+
     function readDeferred() {
         try {
             var raw = root.localStorage.getItem(DEFERRED_KEY);
@@ -143,7 +392,9 @@
             }
             el.hidden = false;
             el.querySelector('span').textContent = 'تعديلات بانتظار المزامنة: ' + n
-                + (browserHasNetwork() ? '' : ' — وصّل النت ثم اضغط مزامنة');
+                + (browserHasNetwork()
+                    ? ' — جاهزة للمزامنة'
+                    : ' — محفوظة محلياً مثل الأونلاين؛ ستُزامَن عند عودة النت');
         } catch (eB) { /* ignore */ }
     }
 
@@ -340,10 +591,13 @@
         if (flushing) {
             return Promise.resolve({ ok: 0, skipped: true });
         }
-        // Flush when the browser has network — do not wait for soft badge.
-        if (!opts.force && !browserHasNetwork()) {
+        // Never attempt server flush without browser network (avoids fake "login" errors).
+        if (!browserHasNetwork()) {
             updateSyncBanner();
-            return Promise.resolve({ ok: 0, offline: true });
+            if (opts.force) {
+                toast('ما زلت بدون اتصال — التعديلات محفوظة محلياً وستُزامَن تلقائياً عند عودة الإنترنت.');
+            }
+            return Promise.resolve({ ok: 0, offline: true, offline: true });
         }
         flushing = true;
         return pullDeferredFromCaches().then(function (merged) {
@@ -355,7 +609,7 @@
             }
             var csrf = currentCsrf();
             var remain = [];
-            var chain = Promise.resolve({ ok: 0, fail: 0 });
+            var chain = Promise.resolve({ ok: 0, fail: 0, netFail: 0 });
 
             list.forEach(function (entry) {
                 chain = chain.then(function (stats) {
@@ -393,7 +647,7 @@
                         });
                     }).catch(function () {
                         remain.push(entry);
-                        stats.fail += 1;
+                        stats.netFail += 1;
                         return stats;
                     });
                 });
@@ -404,7 +658,9 @@
                 if (stats.ok > 0) {
                     toast('تمت مزامنة ' + stats.ok + ' تعديل وحفظه على السيرفر.');
                 }
-                if (stats.fail > 0 && stats.ok === 0) {
+                if (stats.netFail > 0 && stats.ok === 0) {
+                    toast('انقطع الاتصال أثناء المزامنة — التعديلات ما زالت محفوظة محلياً.');
+                } else if (stats.fail > 0 && stats.ok === 0 && browserHasNetwork()) {
                     toast('تعذر مزامنة التعديلات — تأكد من تسجيل الدخول ثم اضغط «مزامنة الآن».', true);
                 }
                 return stats;
@@ -515,9 +771,7 @@
         ev.stopPropagation();
         try {
             var entry = deferHttpForm(form);
-            toast('أُضيف للتعديل لقائمة الانتظار (' + readDeferred().length
-                + ') — بعد الإنترنت اضغط «مزامنة الآن» أو انتظر المزامنة التلقائية.');
-            updateSyncBanner();
+            afterDeferredSave(form, entry.fields || {});
             return entry;
         } catch (eDef) {
             toast('تعذر حفظ التعديل أوفلاين: ' + String(eDef && eDef.message ? eDef.message : eDef), true);
@@ -558,14 +812,14 @@
             try {
                 online = !!(ev && ev.detail && ev.detail.online);
             } catch (eD) { /* ignore */ }
-            if (online || browserHasNetwork()) {
+            if (online && browserHasNetwork()) {
                 flushDeferredForms({ force: true });
             }
             updateSyncBanner();
         });
         root.document.addEventListener('rateb-offline-connectivity', function (ev) {
             try {
-                if (ev && ev.detail && ev.detail.online) {
+                if (ev && ev.detail && ev.detail.online && browserHasNetwork()) {
                     flushDeferredForms({ force: true });
                 }
             } catch (eC) { /* ignore */ }
@@ -587,10 +841,34 @@
             try {
                 var q = String(root.location.search || '');
                 if (/[?&]rateb_offline_saved=1(?:&|$)/.test(q)) {
-                    pullDeferredFromCaches().then(function () {
-                        toast('أُضيف التعديل لقائمة الانتظار (' + readDeferred().length
-                            + ') — عند عودة النت سيُزامَن أو اضغط «مزامنة الآن».');
+                    pullDeferredFromCaches().then(function (list) {
+                        showSavedLikeOnline('تم الحفظ بنجاح');
                         updateSyncBanner();
+                        optimisticCacheDocument();
+                        try {
+                            var last = null;
+                            var rows = list || readDeferred();
+                            for (var i = rows.length - 1; i >= 0; i--) {
+                                if (rows[i] && rows[i].fields) {
+                                    last = rows[i];
+                                    break;
+                                }
+                            }
+                            if (last) {
+                                var stub = {
+                                    getAttribute: function (n) {
+                                        if (n === 'action') {
+                                            return last.url || '';
+                                        }
+                                        return null;
+                                    },
+                                    elements: { namedItem: function () { return null; } },
+                                    querySelector: function () { return null; },
+                                    closest: function () { return null; }
+                                };
+                                patchRelatedIndexCaches(stub, last.fields);
+                            }
+                        } catch (eIdx) { /* ignore */ }
                     });
                     try {
                         var clean = new URL(root.location.href);

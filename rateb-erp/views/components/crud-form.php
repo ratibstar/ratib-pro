@@ -13,6 +13,9 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
         <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) && !$readonly ? ' enctype="multipart/form-data"' : ''; ?><?php
+            if (!$readonly) {
+                echo ' data-rateb-offline-writable="1"';
+            }
             if (str_contains((string) ($routePrefix ?? ''), 'inventory-batches')) {
                 echo ' data-inventory-batch-form';
             }

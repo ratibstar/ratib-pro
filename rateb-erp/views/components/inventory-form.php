@@ -38,7 +38,7 @@ $itemCode = $isEdit ? (string) ($item['item_code'] ?? '') : '';
             <?php } ?>
         </div>
         <?php } ?>
-        <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-inventory-form
+        <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-inventory-form data-rateb-offline-writable="1"
               data-warehouse-items-url="<?php echo Rateb\App\Core\View::escape($warehouseItemsUrl ?? ''); ?>"
               data-is-edit="<?php echo $isEdit ? '1' : '0'; ?>"
               data-current-qty="<?php echo Rateb\App\Core\View::escape((string) $currentQty); ?>">

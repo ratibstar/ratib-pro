@@ -16,7 +16,7 @@ foreach ($formFields as $wf) {
     }
 }
 ?>
-<form method="post" action="<?php echo Rateb\App\Core\View::escape($formAction); ?>" class="row g-3 mb-4"<?php echo $isContractRenewalForm ? ' data-contract-renewal-form="1"' : ''; ?>>
+<form method="post" action="<?php echo Rateb\App\Core\View::escape($formAction); ?>" class="row g-3 mb-4" data-rateb-offline-writable="1"<?php echo $isContractRenewalForm ? ' data-contract-renewal-form="1"' : ''; ?>>
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <?php foreach ($formFields as $field) {
         $value = (string) ($field['default'] ?? '');

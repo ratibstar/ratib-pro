@@ -63,6 +63,7 @@ $subJson = json_encode(array_map(static function (array $sub): array {
         <?php } ?>
         <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data"
               data-invoice-form="1"
+              data-rateb-offline-writable="1"
               data-invoice-id="<?php echo $invoiceId; ?>"
               data-subscriptions="<?php echo Rateb\App\Core\View::escape($subJson ?: '[]'); ?>"
               data-subscription-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/subscription-lookup')); ?>"

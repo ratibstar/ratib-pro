@@ -20,7 +20,7 @@ $invoices = $invoices ?? [];
         <?php if (empty($companies)) { ?>
         <div class="alert alert-warning"><?php echo __('billing_no_companies'); ?></div>
         <?php } ?>
-        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?>>
+        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?> data-rateb-offline-writable="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
                 <?php foreach ($fields as $field) {
