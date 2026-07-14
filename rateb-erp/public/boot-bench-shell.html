@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme-scope="erp" data-theme="dark" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="color-scheme" content="dark light">
+    <meta name="rateb-csrf" content="671e2dab8a8b2285b557e6b744d0f9cf10ed1832257c612c24e33fa3d2d88682">
+    <script>
+    (function () {
+        /* Critical offline Save — runs even if deferred JS fails to load (fixes Save→dashboard). */
+        var KEY = 'rateb_deferred_http_forms_v2';
+        function offlineNow() {
+            /* Queue only when browser has no network — ignore soft offline badge. */
+            try {
+                return navigator.onLine === false;
+            } catch (e) {
+                return false;
+            }
+        }
+        function readList() {
+            try {
+                var list = JSON.parse(localStorage.getItem(KEY) || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (e2) { return []; }
+        }
+        function writeList(list) {
+            try { localStorage.setItem(KEY, JSON.stringify(list || [])); } catch (e3) {}
+        }
+        function serialize(form) {
+            var out = {};
+            if (!form || !form.elements) return out;
+            Array.prototype.forEach.call(form.elements, function (el) {
+                if (!el || !el.name || el.disabled) return;
+                var n = String(el.name);
+                if (/^_csrf$/i.test(n)) return;
+                var t = String(el.type || '').toLowerCase();
+                if (t === 'file' || t === 'submit' || t === 'button' || t === 'password') return;
+                if ((t === 'checkbox' || t === 'radio') && !el.checked) return;
+                if (Object.prototype.hasOwnProperty.call(out, n)) {
+                    if (!Array.isArray(out[n])) out[n] = [out[n]];
+                    out[n].push(el.value);
+                } else out[n] = el.value;
+            });
+            return out;
+        }
+        function toast(msg) {
+            try {
+                var el = document.getElementById('rateb-offline-nav-toast');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'rateb-offline-nav-toast';
+                    el.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;background:#14532d;color:#bbf7d0;padding:.65rem 1rem;border-radius:8px;font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center';
+                    (document.body || document.documentElement).appendChild(el);
+                }
+                el.textContent = msg;
+                el.hidden = false;
+                clearTimeout(el.__h);
+                el.__h = setTimeout(function () { try { el.hidden = true; } catch (e) {} }, 5000);
+            } catch (eT) {}
+        }
+        document.addEventListener('submit', function (ev) {
+            if (!offlineNow()) return;
+            var form = ev.target;
+            if (!form || form.tagName !== 'FORM') return;
+            if (String(form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+            var action = String(form.getAttribute('action') || location.pathname || '');
+            if (/\/(wipe|export|pdf|excel|csv|close[-_]?period|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i.test(action + ' ' + location.pathname)) {
+                ev.preventDefault();
+                toast('هذا الإجراء يحتاج إنترنت.');
+                return;
+            }
+            // If full nav-guard is present it will handle — avoid double queue.
+            if (window.RatebOfflineNavGuard && window.RatebOfflineNavGuard.build) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            try { ev.stopImmediatePropagation(); } catch (eS) {}
+            try {
+                var fields = serialize(form);
+                if (!Object.keys(fields).length) {
+                    toast('تعذر حفظ النموذج أوفلاين.');
+                    return;
+                }
+                var url;
+                try { url = new URL(action || location.href, location.href).href; } catch (eU) { url = location.href; }
+                var list = readList();
+                list.push({
+                    id: 'inl-' + Date.now() + '-' + Math.floor(Math.random() * 1e6),
+                    url: url,
+                    path: location.pathname || '',
+                    fields: fields,
+                    created_at: Date.now(),
+                    via: 'inline-critical'
+                });
+                writeList(list);
+                toast('تم الحفظ بنجاح — بانتظار المزامنة (' + list.length + ')');
+                try {
+                    var flash = document.createElement('div');
+                    flash.className = 'alert alert-success rateb-flash';
+                    flash.setAttribute('role', 'alert');
+                    flash.textContent = 'تم الحفظ بنجاح — بانتظار المزامنة';
+                    var host = document.querySelector('.rateb-main, main, .rateb-content') || document.body;
+                    if (host) host.insertBefore(flash, host.firstChild);
+                } catch (eF) {}
+            } catch (eSave) {
+                toast('تعذر الحفظ أوفلاين.');
+            }
+        }, true);
+    })();
+    </script>
+    <script>
+    (function () {
+        try {
+            var mode = localStorage.getItem('rateb_erp_theme') || localStorage.getItem('rateb_theme') || 'dark';
+            var bs = mode === 'auto'
+                ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : (mode === 'light' ? 'light' : 'dark');
+            document.documentElement.setAttribute('data-theme', mode);
+            document.documentElement.setAttribute('data-bs-theme', bs);
+            window.__RATEB_ERP_THEME_BS__ = bs;
+        } catch (e) {}
+    })();
+    </script>
+        <script>
+    (function () {
+      /* Head-early: keep SW alive + rescue CSS from Cache API when offline / uncontrolled. */
+      var build = "20260714-force-sw-v52";
+      function publicBase() {
+        try {
+          var m = String(location.pathname || '').match(/^(.*\/public\/)/i);
+          if (m && m[1]) return m[1];
+        } catch (e0) {}
+        return '/rateb-erp/public/';
+      }
+      function matchAnyCache(url) {
+        if (!window.caches) return Promise.resolve(null);
+        var keys = [url];
+        try {
+          var u = new URL(url, location.href);
+          keys.push(u.href, u.origin + u.pathname);
+        } catch (e1) {}
+        return caches.keys().then(function (names) {
+          var chain = Promise.resolve(null);
+          (names || []).forEach(function (name) {
+            if (!/^rateb-/i.test(String(name || ''))) return;
+            chain = chain.then(function (hit) {
+              if (hit) return hit;
+              return caches.open(name).then(function (c) {
+                var inner = Promise.resolve(null);
+                keys.forEach(function (k) {
+                  inner = inner.then(function (h) {
+                    return h || c.match(k).then(function (m) {
+                      return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                    });
+                  });
+                });
+                return inner;
+              });
+            });
+          });
+          return chain;
+        }).catch(function () { return null; });
+      }
+      window.__RATEB_MATCH_ANY_CACHE__ = matchAnyCache;
+      function rewriteCssUrls(css, cssHref) {
+        var baseHref = cssHref;
+        try {
+          baseHref = new URL(cssHref, location.href).href;
+        } catch (eB) {}
+        return String(css || '').replace(/url\(\s*(['"]?)([^)'"]+)\1\s*\)/gi, function (all, q, raw) {
+          var path = String(raw || '').trim();
+          if (!path || /^data:/i.test(path) || /^https?:\/\//i.test(path) || path.charAt(0) === '/') {
+            return all;
+          }
+          try {
+            var abs = new URL(path, baseHref).href;
+            return 'url(' + q + abs + q + ')';
+          } catch (eU) {
+            return all;
+          }
+        });
+      }
+      function rescueStyles() {
+        try { if (navigator.onLine !== false) return; } catch (e2) { return; }
+        Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+          if (link.getAttribute('data-rateb-rescue') === '1') return;
+          var href = link.getAttribute('href');
+          if (!href) return;
+          matchAnyCache(href).then(function (res) {
+            if (!res) return null;
+            return res.text().then(function (css) {
+              if (!css || css.length < 40) return;
+              link.setAttribute('data-rateb-rescue', '1');
+              var style = document.createElement('style');
+              style.textContent = rewriteCssUrls(css, href);
+              document.head.appendChild(style);
+            });
+          }).catch(function () {});
+        });
+      }
+      window.__RATEB_RESCUE_STYLES__ = rescueStyles;
+      /* Head: claim only when offline — never register here (single register owns boot). */
+      if ('serviceWorker' in navigator) {
+        try {
+          var scope = location.origin + publicBase();
+          if (navigator.onLine === false) {
+            navigator.serviceWorker.getRegistration(scope).then(function (reg) {
+              if (!reg) return;
+              try {
+                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+              } catch (eClaim) {}
+            }).catch(function () {});
+          }
+        } catch (e3) {}
+      }
+      document.addEventListener('click', function (ev) {
+        try {
+          // Only help when SW is missing — never hijack edit/create (broke table buttons).
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
+          if (navigator.onLine !== false) {
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (!badge || badge.classList.contains('is-online')) return;
+          }
+          var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+          if (!a) return;
+          var u = new URL(a.href, location.href);
+          if (u.origin !== location.origin) return;
+          if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
+          // Create/edit with SW missing: try Cache API snapshot instead of Chrome interstitial.
+          ev.preventDefault();
+          ev.stopPropagation();
+          var keys = [u.href, u.origin + u.pathname, u.origin + u.pathname.replace(/\/+$/, '')];
+          if (/\/admin\/ops\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\/ops\//i, '/admin/'));
+          else if (/\/admin\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\//i, '/admin/ops/'));
+          // For /id/edit prefer parent list cache.
+          if (/\/\d+\/(edit|show|view)(\/|$)/i.test(u.pathname)) {
+            var parent = u.pathname.replace(/\/\d+\/(edit|show|view).*$/i, '').replace(/\/+$/, '');
+            if (parent) keys.unshift(u.origin + parent);
+          }
+          var p = Promise.resolve(null);
+          keys.forEach(function (k) { p = p.then(function (h) { return h || matchAnyCache(k); }); });
+          p.then(function (res) {
+            if (!res) { alert('الصفحة غير محفوظة أوفلاين — وصّل النت وافتحها مرة.'); return; }
+            return res.text().then(function (html) {
+              if (!html || html.length < 400) { alert('الصفحة غير محفوظة أوفلاين.'); return; }
+              document.open(); document.write(html); document.close();
+              setTimeout(rescueStyles, 30);
+            });
+          }).catch(function () { alert('الصفحة غير محفوظة أوفلاين.'); });
+        } catch (e4) {}
+      }, true);
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rescueStyles);
+      else setTimeout(rescueStyles, 0);
+      window.addEventListener('pageshow', rescueStyles);
+      setTimeout(rescueStyles, 800);
+    })();
+    </script>
+        <script src="/assets/js/rateb-console-quiet.js?v=20260714-force-sw-v52" defer></script>
+    <title>Boot Bench | نظام رتب ERP</title>
+    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0f1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RATEB ERP">
+    <link rel="apple-touch-icon" href="/assets/pwa/erp-icon-192.png">
+    <link href="/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52" rel="stylesheet">
+    <link href="/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52" rel="stylesheet">
+    <link href="/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52" rel="stylesheet"></noscript>
+    <link href="/assets/css/variables.css?v=20260714-force-sw-v52" rel="stylesheet">
+    <link href="/assets/css/main.css?v=20260714-force-sw-v52" rel="stylesheet">
+    <link href="/assets/css/components.css?v=20260714-force-sw-v52" rel="stylesheet">
+        <link id="rateb-theme-css" href="/assets/css/dark.css?v=20260714-force-sw-v52" rel="stylesheet"
+          data-dark-href="/assets/css/dark.css?v=20260714-force-sw-v52"
+          data-light-href="/assets/css/light.css?v=20260714-force-sw-v52">
+    <script>
+    (function () {
+        try {
+            var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
+            var link = document.getElementById('rateb-theme-css');
+            if (link && bs === 'light') {
+                link.href = link.getAttribute('data-light-href') || link.href;
+            }
+        } catch (e) {}
+    })();
+    </script>
+    <link href="/assets/css/rtl.css?v=20260714-force-sw-v52" rel="stylesheet">
+            <link href="/assets/css/ar-typography.css?v=20260714-force-sw-v52" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="/assets/css/ar-typography.css?v=20260714-force-sw-v52" rel="stylesheet"></noscript>
+    <style id="rateb-rtl-ar-fix">html[dir="rtl"] .rateb-app,html[dir="rtl"] .rateb-app *,html[dir="rtl"] body.rateb-app *{text-transform:none!important;letter-spacing:normal!important;font-feature-settings:normal!important}</style>
+        <script>
+    /* Boot marks — First Paint / TTI proxies (no network). */
+    window.__RATEB_BOOT__ = { t0: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() };
+    </script>
+</head>
+<body class="rateb-app rateb-rtl"
+    data-rateb-media-json="/admin/cms/media/json"
+    data-rateb-tinymce-upload="/admin/cms/media/tinymce-upload"
+    data-rateb-cms-media="مكتبة الوسائط"
+    data-rateb-cms-no-images="لا توجد صور في مكتبة الوسائط."
+    data-rateb-cms-pick-image="أدخل رقم الصورة:"
+    data-rateb-cms-media-failed="تعذّر تحميل مكتبة الوسائط."
+    data-rateb-date-hint-date="يوم / شهر / سنة"
+    data-rateb-date-hint-datetime="يوم / شهر / سنة  ساعة:دقيقة"
+    data-rateb-date-hint-time="ساعة:دقيقة"
+    data-rateb-date-hint-month="شهر / سنة"
+    data-rateb-date-hint-week="أسبوع / سنة">
+<div class="rateb-wrapper">
+    <aside class="rateb-sidebar" id="rateb-sidebar">
+        <div class="rateb-sidebar-brand">
+            <i class="fas fa-hospital"></i>
+            <span>نظام رتب ERP</span>
+        </div>
+        <nav>
+                                    <a href="/admin" class="rateb-nav-link">
+                <i class="fas fa-chart-line"></i><span>لوحة التحكم</span>
+            </a>
+                                                                    </nav>
+    </aside>
+    <div class="rateb-main">
+        <header class="rateb-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm d-lg-none" id="rateb-sidebar-toggle"><i class="fas fa-bars"></i></button>
+                <h1 class="h5 mb-0">Boot Bench</h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="rateb-connection-indicator is-online"
+                      id="rateb-connection-indicator"
+                      data-rateb-connection-status
+                      data-label-online="متصل"
+                      data-label-offline="غير متصل"
+                      role="status"
+                      aria-live="polite"
+                      title="متصل">
+                    <span class="rateb-connection-indicator__dot" aria-hidden="true"></span>
+                    <span class="rateb-connection-indicator__label">متصل</span>
+                </span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="داكن">
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="فاتح"><i class="fas fa-sun"></i></button>
+                    <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="داكن"><i class="fas fa-moon"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="تلقائي"><i class="fas fa-circle-half-stroke"></i></button>
+                </div>
+                <a href="/admin/logout" class="btn btn-outline-danger btn-sm rateb-topbar-logout" title="تسجيل الخروج">
+                    <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1">تسجيل الخروج</span>
+                </a>
+                <div class="btn-group btn-group-sm" role="group" aria-label="اللغة">
+                    <a href="/locale/en" class="btn btn-outline-secondary" data-locale="en">EN</a>
+                    <a href="/locale/ar" class="btn btn-outline-secondary active" data-locale="ar">عربي</a>
+                </div>
+            </div>
+        </header>
+        <main class="rateb-content">
+                                                <div class="alert alert-secondary py-2 mb-3">
+                                <i class="fas fa-building"></i> كل الفروع (مقر رئيسي)                            </div>
+                                    <div class="container-fluid py-4" id="rateb-boot-bench-root"><h1>RATIB ERP Boot Bench</h1><p>Dashboard shell for startup metrics.</p><button type="button" class="btn btn-primary" id="rateb-bench-btn">OK</button></div>        </main>
+    </div>
+</div>
+<script src="/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/theme.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/lang.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/rateb-modal.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/rateb-confirm.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/table-tools.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/app.js?v=20260714-force-sw-v52" defer></script>
+<script src="/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52" defer></script>
+<script>
+(function () {
+  /* Soft build bump only — NEVER unregister cloud SW (caused unstyled/Chrome interstitial offline). */
+  var NEED = "20260714-force-sw-v52";
+  var KEY = 'rateb_sw_build';
+  var prev = null;
+  try {
+    prev = localStorage.getItem(KEY);
+  } catch (e0) {}
+  if (prev !== NEED) {
+    try {
+      localStorage.setItem(KEY, NEED);
+      [
+        'rateb_erp_full_warm_at', 'rateb_erp_full_warm_ok',
+        'rateb_erp_full_warm_at_v3', 'rateb_erp_full_warm_ok_v3',
+        'rateb_erp_full_warm_at_v4', 'rateb_erp_full_warm_ok_v4',
+        'rateb_erp_full_warm_at_v5', 'rateb_erp_full_warm_ok_v5',
+        'rateb_erp_full_warm_at_v6', 'rateb_erp_full_warm_ok_v6',
+        'rateb_erp_full_warm_at_v7', 'rateb_erp_full_warm_ok_v7',
+        'rateb_erp_full_warm_assets_v7',
+        'rateb_erp_full_warm_at_v8', 'rateb_erp_full_warm_ok_v8',
+        'rateb_erp_full_warm_assets_v8',
+        'rateb_erp_full_warm_at_v9', 'rateb_erp_full_warm_ok_v9',
+        'rateb_erp_full_warm_assets_v9',
+        'rateb_erp_full_warm_at_v12', 'rateb_erp_full_warm_ok_v12',
+        'rateb_erp_full_warm_assets_v12'
+      ].forEach(function (k) {
+        try { localStorage.removeItem(k); } catch (eR) {}
+      });
+      sessionStorage.removeItem('rateb_sw_reloaded');
+      sessionStorage.removeItem('rateb_sw_shell_warm_v46');
+    } catch (e1) {}
+  }
+  window.__RATEB_ASSET_BUILD__ = NEED;
+  // Stale SW: soft update only — never forced reload (startup spin loops).
+  try {
+    if ('serviceWorker' in navigator && navigator.onLine !== false) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        (regs || []).forEach(function (reg) {
+          var script = '';
+          try {
+            script = (reg.active && reg.active.scriptURL) || (reg.waiting && reg.waiting.scriptURL) || '';
+          } catch (eS) { script = ''; }
+          if (script && script.indexOf(NEED) === -1) {
+            try {
+              if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              if (typeof reg.update === 'function') reg.update();
+            } catch (eU) {}
+          }
+        });
+      }).catch(function () {});
+    }
+  } catch (eForce) {}
+  window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
+  /**
+   * Single ERP Service Worker register (layout owns it).
+   * No controllerchange → location.reload.
+   */
+  window.__ratebErpRegisterSwOnce = function (swUrl, scope) {
+    if (window.__RATEB_SW_REGISTER_PROMISE__) {
+      return window.__RATEB_SW_REGISTER_PROMISE__;
+    }
+    if (!('serviceWorker' in navigator) || !swUrl) {
+      window.__RATEB_SW_REGISTERED__ = true;
+      return Promise.resolve(null);
+    }
+    window.__RATEB_SW_REGISTERED__ = true;
+    function claim(reg) {
+      try {
+        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (reg && reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+      } catch (eC) {}
+      return reg;
+    }
+    function doRegister() {
+      try {
+        if (navigator.onLine === false) {
+          var getReg = scope
+            ? navigator.serviceWorker.getRegistration(scope)
+            : navigator.serviceWorker.getRegistration();
+          return getReg.then(claim).catch(function () { return null; });
+        }
+      } catch (eOff) { /* continue */ }
+      return navigator.serviceWorker.register(String(swUrl), scope
+          ? { scope: String(scope), updateViaCache: 'none' }
+          : { updateViaCache: 'none' })
+        .then(function (reg) {
+          try {
+            if (reg && typeof reg.update === 'function' && navigator.onLine !== false) {
+              reg.update();
+            }
+          } catch (eUp) {}
+          return claim(reg);
+        })
+        .catch(function () {
+          try {
+            var getReg2 = scope
+              ? navigator.serviceWorker.getRegistration(scope)
+              : navigator.serviceWorker.getRegistration();
+            return getReg2.then(claim).catch(function () { return null; });
+          } catch (eG) {
+            return null;
+          }
+        });
+    }
+    window.__RATEB_SW_REGISTER_PROMISE__ = doRegister();
+    return window.__RATEB_SW_REGISTER_PROMISE__;
+  };
+  window.__ratebErpScheduleSwRegister = function (swUrl, scope) {
+    var run = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(function () {
+          window.__ratebErpRegisterSwOnce(swUrl, scope);
+        }, { timeout: 3500 });
+      } else {
+        setTimeout(function () {
+          window.__ratebErpRegisterSwOnce(swUrl, scope);
+        }, 800);
+      }
+    };
+    if (document.readyState === 'complete') {
+      run();
+    } else {
+      window.addEventListener('load', run, { once: true });
+    }
+  };
+})();
+</script>
+<script>
+window.__RATEB_ERP_SHELL_OFFLINE__ = {"serviceWorker":"/pos-sw.js?v=20260714-force-sw-v52","serviceWorkerScope":"/","apiBase":"/api/v1/offline","probeUrl":"/connectivity-probe.json","allowlistUrl":"/assets/offline/ops-page-allowlist.json","flags":{"offline.enabled":true,"offline.pos.complete":true,"offline.inventory.movements":true,"offline.hr.attendance":true,"offline.hr":true,"offline.hr.employee":true,"offline.hr.training":true,"offline.hr.performance":true,"offline.hr.workflow":true,"offline.hr.masterdata":true,"offline.procurement":true,"offline.procurement.goods_receipt":true,"offline.recruitment":true,"offline.recruitment.candidates":true,"offline.recruitment.workflow":true,"offline.recruitment.assignment":true,"offline.accounting":true,"offline.accounting.journals":true,"offline.accounting.workflow":true,"offline.accounting.masterdata":true,"offline.crm":true,"offline.crm.leads":true,"offline.crm.workflow":true,"offline.crm.activities":true,"offline.crm.masterdata":true,"offline.projects":true,"offline.projects.tasks":true,"offline.projects.workflow":true,"offline.projects.timesheets":true,"offline.projects.masterdata":true,"offline.assets":true,"offline.assets.maintenance":true,"offline.assets.workflow":true,"offline.assets.inspections":true,"offline.assets.masterdata":true,"offline.approval":true,"offline.approval.requests":true,"offline.approval.workflow":true,"offline.approval.masterdata":true,"offline.procurement_enterprise":true,"offline.procurement_enterprise.suppliers":true,"offline.procurement_enterprise.tenders":true,"offline.procurement_enterprise.contracts":true,"offline.procurement_enterprise.workflow":true,"offline.procurement_enterprise.masterdata":true,"offline.manufacturing":true,"offline.manufacturing.production":true,"offline.manufacturing.workflow":true,"offline.manufacturing.quality":true,"offline.manufacturing.masterdata":true,"offline.payroll":true,"offline.payroll.employee":true,"offline.payroll.batch":true,"offline.payroll.workflow":true,"offline.payroll.masterdata":true,"offline.quality":true,"offline.quality.inspections":true,"offline.quality.audit":true,"offline.quality.workflow":true,"offline.quality.masterdata":true,"offline.documents":true,"offline.documents.repositories":true,"offline.documents.workflow":true,"offline.documents.masterdata":true,"offline.bi":true,"offline.bi.dashboards":true,"offline.bi.reports":true,"offline.bi.workflow":true,"offline.bi.masterdata":true,"offline.monitoring":true,"offline.read_cache":true,"offline.auth.unlock":true,"offline.auth.cold":true,"offline.rbac.cache":true,"offline.master_data":true,"offline.pilot.ops_pages":true},"startConnectivity":false,"startScheduler":false,"lazyBoot":true,"company_id":0,"tenant_id":0,"branch_id":0,"user_id":1,"is_super_admin":false,"logout_vault_policy":"keep_vault","session_policy":{"unlock_ttl_ms":28800000,"idle_timeout_ms":900000,"max_offline_session_ms":259200000,"renew_before_seconds":259200,"clock_skew_seconds":300},"client_queue_max":500,"ops_page_paths":[],"ops_page_routes":{},"ops_form_hooks":[],"pilot_ops_pages":true};
+</script>
+<script>
+(function () {
+  /* Lazy Offline SDK — after first paint / interactive. Offline: still post-paint, ASAP. */
+  var urls = ["/assets/offline/rateb-offline.js?v=20260714-force-sw-v52","/assets/offline/erp-shell-bootstrap.js?v=20260714-force-sw-v52","/assets/offline/erp-auth-bootstrap.js?v=20260714-force-sw-v52","/assets/offline/erp-rbac-bootstrap.js?v=20260714-force-sw-v52","/assets/offline/erp-ops-forms-bootstrap.js?v=20260714-force-sw-v52"];
+  var swUrl = "/pos-sw.js?v=20260714-force-sw-v52";
+  var swScope = "/";
+  function mark(k) {
+    try {
+      var b = window.__RATEB_BOOT__ || (window.__RATEB_BOOT__ = {});
+      b[k] = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    } catch (e) {}
+  }
+  function loadChain(i) {
+    if (i >= urls.length) {
+      mark('sdkReady');
+      try { window.dispatchEvent(new Event('rateb-offline-sdk-ready')); } catch (eE) {}
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.async = false;
+    s.onload = function () { loadChain(i + 1); };
+    s.onerror = function () { loadChain(i + 1); };
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function startSdk() {
+    mark('sdkStart');
+    loadChain(0);
+  }
+  function afterInteractive(fn) {
+    var kick = function () {
+      try {
+        if (navigator.onLine === false) {
+          setTimeout(fn, 0);
+          return;
+        }
+      } catch (e0) {}
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(fn, { timeout: 2200 });
+      } else {
+        setTimeout(fn, 900);
+      }
+    };
+    if (document.readyState === 'complete') {
+      kick();
+    } else {
+      window.addEventListener('load', kick, { once: true });
+    }
+  }
+  afterInteractive(startSdk);
+  if (swUrl && typeof window.__ratebErpScheduleSwRegister === 'function') {
+    window.__ratebErpScheduleSwRegister(swUrl, swScope || undefined);
+  }
+  try {
+    if (document.readyState === 'complete') {
+      mark('fp');
+    } else {
+      window.addEventListener('load', function () { mark('fp'); }, { once: true });
+    }
+    setTimeout(function () { mark('ttiProxy'); }, 0);
+  } catch (eM) {}
+})();
+</script>
+<script>
+window.__RATEB_ERP_MASTER_DATA__ = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
+if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.flags) {
+  window.__RATEB_ERP_MASTER_DATA__.flags = window.__RATEB_ERP_SHELL_OFFLINE__.flags;
+  window.__RATEB_ERP_MASTER_DATA__.apiBase = window.__RATEB_ERP_SHELL_OFFLINE__.apiBase || window.__RATEB_ERP_MASTER_DATA__.apiBase;
+}
+(function () {
+  /* Master-data bootstrap after Offline SDK (lazy chain). */
+  function inject() {
+    var s = document.createElement('script');
+    s.src = "/assets/offline/erp-master-data-bootstrap.js?v=20260714-force-sw-v52";
+    s.async = false;
+    (document.body || document.documentElement).appendChild(s);
+  }
+  if (window.RatebOffline) {
+    inject();
+  } else {
+    window.addEventListener('rateb-offline-sdk-ready', inject, { once: true });
+  }
+})();
+</script>
+<script src="/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52" defer></script>
+<script>
+/* Legacy kill: stale nav-guards used toast+preventDefault on create/edit.
+ * Must NOT stopImmediatePropagation — that blocked the real offline edit→list handler
+ * and left Chrome «لا يتوفر اتصال» on /companies/25/edit. */
+(function () {
+  try {
+    var stale = document.getElementById('rateb-offline-nav-toast');
+    if (stale) stale.remove();
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  /* Defer warm + nav-guard until after interactive (still available offline ASAP). */
+  var urls = [
+    "/assets/offline/erp-offline-full-warm.js?v=20260714-force-sw-v52",
+    "/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52"  ];
+  function chain(i) {
+    if (i >= urls.length) return;
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.async = false;
+    s.onload = s.onerror = function () { chain(i + 1); };
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function kick() {
+    try {
+      if (navigator.onLine === false) {
+        setTimeout(function () { chain(0); }, 0);
+        return;
+      }
+    } catch (e0) {}
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(function () { chain(0); }, { timeout: 4000 });
+    } else {
+      setTimeout(function () { chain(0); }, 1200);
+    }
+  }
+  if (document.readyState === 'complete') kick();
+  else window.addEventListener('load', kick, { once: true });
+})();
+</script>
+
+</body>
+</html>

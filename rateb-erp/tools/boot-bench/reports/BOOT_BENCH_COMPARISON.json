@@ -1,0 +1,168 @@
+{
+  "title": "RATIB ERP Boot Performance — Real Browser Benchmark",
+  "generatedAt": "2026-07-14T12:18:01.889Z",
+  "method": {
+    "browser": "Google Chrome via Playwright + Lighthouse",
+    "throttling": "provided (no simulated throttle)",
+    "formFactor": "desktop",
+    "before": {
+      "commit": "20ebcf58",
+      "url": "http://127.0.0.1:8766/boot-bench-shell.html",
+      "note": "ERP main layout rendered from pre-optimization commit (full offline SDK path enabled for fair compare)"
+    },
+    "after": {
+      "commit": "HEAD (705d7fc5+)",
+      "url": "http://127.0.0.1:8765/boot-bench-shell.html",
+      "note": "ERP main layout with lazy Offline SDK + single deferred SW register"
+    },
+    "lighthouse": {
+      "before": "13.4.0",
+      "after": "13.4.0"
+    },
+    "performanceScore": {
+      "before": 1,
+      "after": 1
+    }
+  },
+  "summaryMs": [
+    {
+      "metric": "Navigation Start",
+      "before": 0,
+      "after": 0,
+      "delta": "0.0 (n/a)",
+      "unit": "ms"
+    },
+    {
+      "metric": "TTFB / responseStart (Playwright)",
+      "before": 3,
+      "after": 3.199999988079071,
+      "delta": "0.2 (6.7%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "First Paint (Playwright paint API)",
+      "before": 248,
+      "after": 316,
+      "delta": "68.0 (27.4%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "First Contentful Paint (Lighthouse)",
+      "before": 139.581,
+      "after": 96.365,
+      "delta": "-43.2 (-31.0%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Largest Contentful Paint (Lighthouse)",
+      "before": 220.228,
+      "after": 227.092,
+      "delta": "6.9 (3.1%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "DOMContentLoaded (Playwright nav timing)",
+      "before": 140.79999999701977,
+      "after": 77.8999999910593,
+      "delta": "-62.9 (-44.7%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Load Event End (Playwright)",
+      "before": 157,
+      "after": 83.79999999701977,
+      "delta": "-73.2 (-46.6%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Time To Interactive (Lighthouse)",
+      "before": 185.518,
+      "after": 109.799,
+      "delta": "-75.7 (-40.8%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Total Blocking Time (Lighthouse)",
+      "before": 0,
+      "after": 0,
+      "delta": "0.0 (n/a)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Speed Index (Lighthouse)",
+      "before": 204,
+      "after": 219,
+      "delta": "15.0 (7.4%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "Cumulative Layout Shift (Lighthouse)",
+      "before": 0.05067334068609828,
+      "after": 0.05067334068609828,
+      "delta": "0.0 (0.0%)",
+      "unit": "score"
+    }
+  ],
+  "lighthouseObservedMs": [
+    {
+      "metric": "observedFirstPaint (LH)",
+      "before": 140,
+      "after": 96,
+      "delta": "-44.0 (-31.4%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedFirstContentfulPaint (LH)",
+      "before": 140,
+      "after": 96,
+      "delta": "-44.0 (-31.4%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedLargestContentfulPaint (LH)",
+      "before": 220,
+      "after": 227,
+      "delta": "7.0 (3.2%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedDomContentLoaded (LH)",
+      "before": 186,
+      "after": 110,
+      "delta": "-76.0 (-40.9%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedLoad (LH)",
+      "before": 233,
+      "after": 113,
+      "delta": "-120.0 (-51.5%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedSpeedIndex (LH)",
+      "before": 204,
+      "after": 219,
+      "delta": "15.0 (7.4%)",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedTotalBlockingTime (LH)",
+      "before": "NOT MEASURED",
+      "after": "NOT MEASURED",
+      "delta": "",
+      "unit": "ms"
+    },
+    {
+      "metric": "observedCumulativeLayoutShift (LH)",
+      "before": 0.05067334068609828,
+      "after": 0.05067334068609828,
+      "delta": "0.0 (0.0%)",
+      "unit": "score"
+    }
+  ],
+  "sourceFiles": {
+    "before": "reports/before-1784031431293.json",
+    "after": "reports/after-1784031462456.json"
+  }
+}
