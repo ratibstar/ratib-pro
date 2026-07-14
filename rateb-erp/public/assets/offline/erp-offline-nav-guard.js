@@ -11,7 +11,7 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-buttons-v48';
+    var GUARD_BUILD = '20260714-save-persist-v49';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v29'];
     var flushing = false;
 
@@ -341,7 +341,10 @@
                 }
             }
         } catch (eR) { /* ignore */ }
+        // Persist current form values into Cache so reopen offline shows the save.
         optimisticCacheDocument();
+        setTimeout(optimisticCacheDocument, 250);
+        setTimeout(optimisticCacheDocument, 800);
         patchRelatedIndexCaches(form, fields || {});
         updateSyncBanner();
     }
@@ -754,21 +757,15 @@
             return;
         }
 
-        try {
-            if (root.RatebOfflineOpsForms && typeof root.RatebOfflineOpsForms.matchHook === 'function') {
-                var path = (form.getAttribute('action') || '') + ' '
-                    + ((root.location && root.location.pathname) || '');
-                var hook = root.RatebOfflineOpsForms.matchHook(path)
-                    || root.RatebOfflineOpsForms.matchHook(root.location && root.location.pathname);
-                if (hook && typeof root.RatebOfflineOpsForms.isModuleEnabled === 'function'
-                    && root.RatebOfflineOpsForms.isModuleEnabled(hook.module, hook.action)) {
-                    return;
-                }
-            }
-        } catch (eOps) { /* fall through */ }
-
+        // Always queue here (do not yield to ops SDK) so Save persists into Cache + deferred
+        // and re-open shows the saved values offline.
         ev.preventDefault();
         ev.stopPropagation();
+        try {
+            if (typeof ev.stopImmediatePropagation === 'function') {
+                ev.stopImmediatePropagation();
+            }
+        } catch (eStop) { /* ignore */ }
         try {
             var entry = deferHttpForm(form);
             afterDeferredSave(form, entry.fields || {});
@@ -776,6 +773,188 @@
         } catch (eDef) {
             toast('تعذر حفظ التعديل أوفلاين: ' + String(eDef && eDef.message ? eDef.message : eDef), true);
         }
+    }
+
+    function applyFieldsToDomForm(form, fields) {
+        if (!form || !fields) {
+            return false;
+        }
+        var applied = false;
+        Object.keys(fields).forEach(function (name) {
+            if (!name || name.charAt(0) === '_') {
+                return;
+            }
+            var val = fields[name];
+            var el = form.elements.namedItem(name);
+            if (!el) {
+                return;
+            }
+            try {
+                if (el.length != null && el[0] && (el[0].type === 'checkbox' || el[0].type === 'radio')) {
+                    var want = Array.isArray(val) ? val.map(String) : [String(val)];
+                    Array.prototype.forEach.call(el, function (one) {
+                        one.checked = want.indexOf(String(one.value)) !== -1;
+                    });
+                    applied = true;
+                    return;
+                }
+                if (el.type === 'checkbox') {
+                    el.checked = !!val && String(val) !== '0';
+                    applied = true;
+                    return;
+                }
+                if (el.tagName === 'SELECT' && Array.isArray(val)) {
+                    Array.prototype.forEach.call(el.options, function (opt) {
+                        opt.selected = val.map(String).indexOf(String(opt.value)) !== -1;
+                    });
+                    applied = true;
+                    return;
+                }
+                if (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+                    el.value = Array.isArray(val) ? String(val[0]) : String(val == null ? '' : val);
+                    applied = true;
+                }
+            } catch (eSet) { /* ignore */ }
+        });
+        return applied;
+    }
+
+    function entryMatchesPath(entry, pathname) {
+        if (!entry) {
+            return false;
+        }
+        var here = String(pathname || '').replace(/\/+$/, '').toLowerCase();
+        var candidates = [];
+        try {
+            if (entry.url) {
+                candidates.push(new URL(entry.url, root.location.href).pathname);
+            }
+        } catch (eU) { /* ignore */ }
+        if (entry.path) {
+            candidates.push(String(entry.path));
+        }
+        for (var i = 0; i < candidates.length; i++) {
+            var there = String(candidates[i] || '').replace(/\/+$/, '').toLowerCase();
+            if (!there) {
+                continue;
+            }
+            if (here === there) {
+                return true;
+            }
+            // /purchase-requests/14/edit ↔ /purchase-requests/14
+            if (here.replace(/\/(edit|update)$/i, '') === there.replace(/\/(edit|update)$/i, '')) {
+                return true;
+            }
+            if (here.indexOf(there + '/') === 0 || there.indexOf(here + '/') === 0) {
+                return true;
+            }
+            var idHere = (here.match(/\/(\d+)(?:\/(?:edit|update))?$/i) || [])[1];
+            var idThere = (there.match(/\/(\d+)(?:\/(?:edit|update))?$/i) || [])[1];
+            if (idHere && idThere && idHere === idThere) {
+                var baseHere = here.replace(/\/\d+(?:\/(?:edit|update))?$/i, '');
+                var baseThere = there.replace(/\/\d+(?:\/(?:edit|update))?$/i, '');
+                if (baseHere === baseThere) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function applyPendingDeferredToPage(opts) {
+        opts = opts || {};
+        var list = readDeferred();
+        if (!list.length) {
+            return false;
+        }
+        var pathname = (root.location && root.location.pathname) || '';
+        var merged = {};
+        var hit = false;
+        list.forEach(function (entry) {
+            if (entry && entry.fields && entryMatchesPath(entry, pathname)) {
+                hit = true;
+                Object.keys(entry.fields).forEach(function (k) {
+                    merged[k] = entry.fields[k];
+                });
+            }
+        });
+        if (!hit) {
+            // Also refresh list table cells from any deferred saves for this list URL.
+            try {
+                applyPendingDeferredToListDom(list, pathname);
+            } catch (eList) { /* ignore */ }
+            return false;
+        }
+        var any = false;
+        try {
+            root.document.querySelectorAll('form[method="post"]').forEach(function (form) {
+                if (formIsOnlineOnly(form)) {
+                    return;
+                }
+                if (applyFieldsToDomForm(form, merged)) {
+                    any = true;
+                }
+            });
+        } catch (eF) { /* ignore */ }
+        try {
+            applyPendingDeferredToListDom(list, pathname);
+        } catch (eL2) { /* ignore */ }
+        if (any) {
+            if (!opts.silent) {
+                showSavedLikeOnline('عرض النسخة المحفوظة محلياً — بانتظار المزامنة');
+            }
+            setTimeout(function () {
+                optimisticCacheDocument();
+            }, 50);
+            setTimeout(function () {
+                optimisticCacheDocument();
+            }, 400);
+        }
+        return any;
+    }
+
+    function applyPendingDeferredToListDom(list, pathname) {
+        var path = String(pathname || '').replace(/\/+$/, '');
+        if (/\/\d+(?:\/(?:edit|update|show))?$/i.test(path)) {
+            return;
+        }
+        (list || []).forEach(function (entry) {
+            if (!entry || !entry.fields) {
+                return;
+            }
+            var id = '';
+            try {
+                id = extractRecordId({
+                    getAttribute: function (n) {
+                        return n === 'action' ? (entry.url || '') : null;
+                    }
+                });
+            } catch (eId) {
+                id = '';
+            }
+            if (!id) {
+                return;
+            }
+            var rows = root.document.querySelectorAll('table tbody tr, .table tbody tr');
+            Array.prototype.forEach.call(rows, function (tr) {
+                var blob = (tr.getAttribute('data-id') || '') + ' ' + (tr.innerHTML || '');
+                if (blob.indexOf('/' + id + '/') === -1
+                    && blob.indexOf('/' + id + '"') === -1
+                    && String(tr.getAttribute('data-id') || '') !== String(id)) {
+                    return;
+                }
+                ['title', 'name', 'company_name', 'email', 'phone', 'status', 'reference', 'department'].forEach(function (key) {
+                    if (entry.fields[key] == null || entry.fields[key] === '') {
+                        return;
+                    }
+                    var shown = String(Array.isArray(entry.fields[key]) ? entry.fields[key][0] : entry.fields[key]);
+                    var cell = tr.querySelector('[data-field="' + key + '"], td[data-label="' + key + '"], .col-' + key);
+                    if (cell) {
+                        cell.textContent = shown;
+                    }
+                });
+            });
+        });
     }
 
     function boot() {
@@ -790,6 +969,15 @@
         updateSyncBanner();
         root.document.addEventListener('click', onClick, true);
         root.document.addEventListener('submit', onSubmit, true);
+        // Restore locally-saved field values when reopening edit/create offline.
+        setTimeout(function () {
+            pullDeferredFromCaches().then(function () {
+                applyPendingDeferredToPage({ silent: false });
+            });
+        }, 200);
+        setTimeout(function () {
+            applyPendingDeferredToPage({ silent: true });
+        }, 900);
         root.addEventListener('online', function () {
             clearStaleMarks();
             setTimeout(function () {
@@ -842,6 +1030,7 @@
                 var q = String(root.location.search || '');
                 if (/[?&]rateb_offline_saved=1(?:&|$)/.test(q)) {
                     pullDeferredFromCaches().then(function (list) {
+                        applyPendingDeferredToPage({ silent: true });
                         showSavedLikeOnline('تم الحفظ بنجاح');
                         updateSyncBanner();
                         optimisticCacheDocument();
@@ -900,6 +1089,7 @@
                                 writeDeferred(list);
                             }
                             updateSyncBanner();
+                            applyPendingDeferredToPage({ silent: true });
                         }
                     } catch (eMsg) { /* ignore */ }
                 });
@@ -910,6 +1100,7 @@
     root.RatebOfflineNavGuard = {
         scan: clearStaleMarks,
         refreshBanner: updateSyncBanner,
+        applyPending: applyPendingDeferredToPage,
         isOffline: isOffline,
         flushDeferred: flushDeferredForms,
         deferredCount: function () { return readDeferred().length; },

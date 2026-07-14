@@ -1223,6 +1223,10 @@
         if (isOnline()) {
             return;
         }
+        // Nav-guard owns durable offline Save (localStorage + reopen form restore).
+        if (root.RatebOfflineNavGuard) {
+            return;
+        }
         var form = ev.target;
         if (!form || form.tagName !== 'FORM') {
             return;

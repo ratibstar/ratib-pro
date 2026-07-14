@@ -3941,6 +3941,9 @@
         if (!isActive() || isOnline()) {
             return;
         }
+        if (root.RatebOfflineNavGuard) {
+            return;
+        }
         var form = ev.target && ev.target.closest ? ev.target.closest('form') : null;
         if (!form) {
             return;
@@ -8421,6 +8424,9 @@
 
     function handleSubmit(ev) {
         if (isOnline()) {
+            return;
+        }
+        if (root.RatebOfflineNavGuard) {
             return;
         }
         var form = ev.target;
