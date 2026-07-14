@@ -224,7 +224,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <input type="checkbox" class="form-check-input rateb-row-check rateb-actions-select" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check title="<?php echo Rateb\App\Core\View::escape(__('select')); ?>">
                         <?php } ?>
                         <?php if ($customsInvoiceActions) { ?>
-                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                         <a href="<?php echo rateb_url(rateb_app_route('purchase-orders') . '/' . (int) ($row['purchase_order_id'] ?? 0)); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('purchase_orders'); ?>"><i class="fas fa-eye"></i></a>
                         <?php } else { ?>
                         <?php if ($viewEnabled) { ?>
@@ -281,7 +281,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             </button>
                         </form>
                         <?php } ?>
-                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>

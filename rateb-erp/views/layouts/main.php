@@ -175,12 +175,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         try {
           var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!a) return;
+          // Offline edit: never navigate to /id/edit without SW — Chrome paints interstitial.
           var offline = false;
           try { offline = navigator.onLine === false; } catch (eOff) {}
-          // Offline edit: same-tab list fallback — never open a blank tab that Chrome
-          // paints as «لا يتوفر اتصال بالإنترنت».
+          try {
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) offline = true;
+          } catch (eB) {}
           if (offline && (a.getAttribute('data-rateb-edit-link') === '1'
-              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.getAttribute('href') || ''))) {
+              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.getAttribute('href') || '')
+              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.href || ''))) {
             ev.preventDefault();
             ev.stopPropagation();
             try {
@@ -190,9 +194,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
               }
             } catch (eBack) {}
             try {
-              location.href = location.origin + publicBase() + 'admin/oversight/companies-approvals';
+              var pu = new URL(a.href, location.href);
+              var listPath = pu.pathname.replace(/\/\d+\/(edit|show|view).*$/i, '').replace(/\/+$/, '');
+              location.href = pu.origin + (listPath || (publicBase() + 'admin/companies'));
             } catch (eGo) {
-              location.href = location.origin + publicBase() + 'admin/';
+              location.href = location.origin + publicBase() + 'admin/companies';
             }
             return;
           }
@@ -1032,33 +1038,14 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
 <?php if (!$ratebLocalAppliance) { ?>
 <script>
-/* Kill stale offline nav-guard that blocked Create/Edit with toast (cached HTML + old ?v=). */
+/* Legacy kill: stale nav-guards used toast+preventDefault on create/edit.
+ * Must NOT stopImmediatePropagation — that blocked the real offline edit→list handler
+ * and left Chrome «لا يتوفر اتصال» on /companies/25/edit. */
 (function () {
-  document.addEventListener('click', function (ev) {
-    try {
-      if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
-        var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-        if (!badge || badge.classList.contains('is-online')) {
-          return;
-        }
-      }
-    } catch (e0) { /* continue offline path */ }
-    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
-    if (!a) {
-      return;
-    }
-    var href = a.getAttribute('href') || '';
-    if (!href || href === '#') {
-      return;
-    }
-    if (/\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i.test(href)) {
-      return;
-    }
-    /* Create / edit / normal browse: do not let legacy guard preventDefault + toast. */
-    if (/\/(create|edit|new)(\/|$|\?)/i.test(href) || /\/admin\//i.test(href) || /\/pos\//i.test(href)) {
-      ev.stopImmediatePropagation();
-    }
-  }, true);
+  try {
+    var stale = document.getElementById('rateb-offline-nav-toast');
+    if (stale) stale.remove();
+  } catch (e) {}
 })();
 </script>
 <script src="<?php echo rateb_asset('offline/erp-offline-full-warm.js'); ?>" defer></script>

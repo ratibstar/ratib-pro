@@ -1,24 +1,31 @@
 /**
  * RATEB ERP — Offline guard (lean).
- * Create/Edit/table links navigate normally offline (SW serves cached pages).
- * Only POST save and delete/export are blocked — those need the server.
+ * POST save/delete/export blocked. Edit deep-links offline return to list
+ * (never uncontrolled navigation → Chrome «لا يتوفر اتصال»).
  */
 (function (root) {
     'use strict';
 
     var STYLE_ID = 'rateb-offline-nav-guard-css';
     var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i;
-    var GUARD_BUILD = '20260713-pass-create';
+    var EDIT_NAV_RE = /\/\d+\/(edit|show|view)(\/|$)/i;
+    var GUARD_BUILD = '20260714-edit-back-v38';
 
     function isOffline() {
+        // Browser offline flag wins — soft "متصل" must not allow dead edit navigations.
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return true;
+            }
+        } catch (e0) { /* ignore */ }
         try {
             var badge = root.document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
             if (badge) {
-                if (badge.classList.contains('is-online')) {
-                    return false;
-                }
                 if (badge.classList.contains('is-offline')) {
                     return true;
+                }
+                if (badge.classList.contains('is-online')) {
+                    return false;
                 }
             }
         } catch (e2) { /* ignore */ }
@@ -28,12 +35,15 @@
                 return conn.isOnline() === false;
             }
         } catch (e1) { /* ignore */ }
-        try {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                return true;
-            }
-        } catch (e0) { /* ignore */ }
         return false;
+    }
+
+    function hasSwController() {
+        try {
+            return !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+        } catch (e) {
+            return false;
+        }
     }
 
     function ensureCss() {
@@ -47,7 +57,6 @@
             + 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
             + 'background:#7f1d1d;color:#fff;padding:.65rem 1rem;border-radius:8px;'
             + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center;}'
-            /* Clear stale marks from older nav-guard builds still in Cache API. */
             + 'a.rateb-offline-missing{opacity:1!important;cursor:pointer!important;pointer-events:auto!important;}'
             + 'a.rateb-nav-link.rateb-offline-missing span::after,'
             + 'a.rateb-offline-rbac-link.rateb-offline-missing span::after{content:none!important;}';
@@ -98,6 +107,95 @@
         }
     }
 
+    function isEditHref(href) {
+        try {
+            return EDIT_NAV_RE.test(new URL(href, root.location.href).pathname);
+        } catch (e) {
+            return EDIT_NAV_RE.test(String(href || ''));
+        }
+    }
+
+    function parentListHref(href) {
+        try {
+            var u = new URL(href, root.location.href);
+            var next = String(u.pathname || '')
+                .replace(/\/\d+\/(edit|show|view|generate)(\/|$)/i, '/')
+                .replace(/\/+$/, '');
+            if (!next || !/\/admin(\/|$)/i.test(next)) {
+                return u.origin + (u.pathname.match(/^(.*\/public\/)/i) || [])[1] + 'admin/companies';
+            }
+            u.pathname = next;
+            return u.href;
+        } catch (e2) {
+            return root.location.origin + '/rateb-erp/public/admin/companies';
+        }
+    }
+
+    function goParentOrBack(href) {
+        var list = parentListHref(href);
+        var keys = [list];
+        try {
+            var u = new URL(list, root.location.href);
+            keys.push(u.origin + u.pathname);
+            keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
+        } catch (eK) { /* ignore */ }
+
+        function useHistory() {
+            try {
+                if (root.history.length > 1) {
+                    root.history.back();
+                    return true;
+                }
+            } catch (eH) { /* ignore */ }
+            return false;
+        }
+
+        if (!root.caches || typeof root.caches.match !== 'function') {
+            if (!useHistory()) {
+                root.location.href = list;
+            }
+            return;
+        }
+
+        var chain = Promise.resolve(null);
+        keys.forEach(function (k) {
+            chain = chain.then(function (hit) {
+                if (hit) {
+                    return hit;
+                }
+                return root.caches.match(k).then(function (exact) {
+                    if (exact) {
+                        return exact;
+                    }
+                    return root.caches.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                }).catch(function () { return null; });
+            });
+        });
+        chain.then(function (res) {
+            if (res && res.ok) {
+                return res.text().then(function (html) {
+                    if (html && html.length > 400) {
+                        root.document.open();
+                        root.document.write(html);
+                        root.document.close();
+                        toast('أوفلاين: رجوع لقائمة السجلات (نموذج التعديل غير محفوظ).');
+                        return;
+                    }
+                    if (!useHistory()) {
+                        root.location.replace(list);
+                    }
+                });
+            }
+            if (!useHistory()) {
+                root.location.replace(list);
+            }
+        }).catch(function () {
+            if (!useHistory()) {
+                root.location.replace(list);
+            }
+        });
+    }
+
     function block(ev, reason) {
         ev.preventDefault();
         ev.stopPropagation();
@@ -105,11 +203,36 @@
     }
 
     function onClick(ev) {
-        if (!isOffline()) {
-            return;
-        }
         var target = ev.target;
         if (!target || !target.closest) {
+            return;
+        }
+
+        var a = target.closest('a[href]');
+        var href = a ? (a.getAttribute('href') || '') : '';
+        var offline = isOffline();
+        var noSw = !hasSwController();
+
+        // Edit without SW while offline → Chrome interstitial. Always handle in-page.
+        if (a && href && isEditHref(href) && (offline || (noSw && offline))) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation();
+            goParentOrBack(href);
+            return;
+        }
+        // No SW + offline: any admin deep link risks Chrome interstitial.
+        if (a && href && offline && noSw && /\/admin(\/|$)/i.test(href)) {
+            if (isEditHref(href) || /\/\d+(\/|$)/i.test(href)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                ev.stopImmediatePropagation();
+                goParentOrBack(href);
+                return;
+            }
+        }
+
+        if (!offline) {
             return;
         }
 
@@ -122,19 +245,15 @@
             }
         }
 
-        var a = target.closest('a[href]');
         if (!a) {
             return;
         }
-        var href = a.getAttribute('href') || '';
         if (!href || href === '#' || /^javascript:/i.test(href)) {
             return;
         }
         if (isMuteHref(href)) {
             block(ev, 'الحذف والتصدير يحتاجان اتصال بالإنترنت.');
-            return;
         }
-        // Create / edit / all other GET links: behave like online — native navigation.
     }
 
     function onSubmit(ev) {
