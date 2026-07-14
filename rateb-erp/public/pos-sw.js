@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v34';
+var SW_BUILD_ID = '20260713-force-sw-v35';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -706,6 +706,8 @@ function warmErpOfflineShell() {
         'admin/ops/access-control',
         'admin/ops/access-control/matrix',
         'admin/ops/pos/register',
+        'admin/ops/accounting',
+        'admin/ops/accounting/platform',
         'admin/ops/branch-dashboard',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
@@ -715,7 +717,9 @@ function warmErpOfflineShell() {
         'admin/ops/warehouses',
         'admin/ops/stock-movements',
         'admin/ops/product-categories',
+        'admin/ops/supplier-classifications',
         'admin/ops/suppliers',
+        'admin/hr/employees',
         'admin/hr/attendance',
         'admin/hr/leaves',
         'admin/notifications',
@@ -1700,6 +1704,59 @@ self.addEventListener('fetch', function (event) {
             });
         })());
         return;
+    }
+
+    // Broken relative FA fonts when CSS was inlined against /admin → /rateb-erp/webfonts/*
+    if (/\/webfonts\/fa-.+\.(woff2|ttf|woff)$/i.test(url.pathname)) {
+        var faMap = {
+            'fa-solid-900.woff2': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2',
+            'fa-solid-900.ttf': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.ttf',
+            'fa-regular-400.woff2': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2',
+            'fa-regular-400.ttf': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.ttf',
+            'fa-brands-400.woff2': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2',
+            'fa-brands-400.ttf': 'assets/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.ttf'
+        };
+        var leaf = String(url.pathname.split('/').pop() || '');
+        var rel = faMap[leaf];
+        if (rel) {
+            var fixed;
+            try {
+                fixed = new URL(rel, self.registration.scope).href;
+            } catch (eFa) {
+                fixed = self.location.origin + '/rateb-erp/public/' + rel;
+            }
+            event.respondWith(
+                caches.match(fixed).then(function (hit) {
+                    return hit || caches.match(fixed, { ignoreSearch: true });
+                }).then(function (hit2) {
+                    if (hit2) {
+                        return hit2;
+                    }
+                    return fetch(fixed, { credentials: 'same-origin' }).then(function (res) {
+                        if (res && res.ok) {
+                            var clone = res.clone();
+                            event.waitUntil(
+                                caches.open(ERP_COEXIST_CACHE).then(function (c) {
+                                    return c.put(fixed, clone);
+                                }).catch(function () { return null; })
+                            );
+                        }
+                        return res;
+                    }).catch(function () {
+                        return new Response('', { status: 404 });
+                    });
+                })
+            );
+            return;
+        }
+    }
+
+    // Soft-fail favicon offline.
+    if (/\/favicon\.(ico|svg|png)$/i.test(url.pathname)) {
+        if (isCloudBrowserOffline()) {
+            event.respondWith(new Response('', { status: 204 }));
+            return;
+        }
     }
 
     if (isApiRequest(url) && isPosNavigation(url)) {

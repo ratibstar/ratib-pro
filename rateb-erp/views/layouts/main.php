@@ -112,6 +112,24 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         }).catch(function () { return null; });
       }
       window.__RATEB_MATCH_ANY_CACHE__ = matchAnyCache;
+      function rewriteCssUrls(css, cssHref) {
+        var baseHref = cssHref;
+        try {
+          baseHref = new URL(cssHref, location.href).href;
+        } catch (eB) {}
+        return String(css || '').replace(/url\(\s*(['"]?)([^)'"]+)\1\s*\)/gi, function (all, q, raw) {
+          var path = String(raw || '').trim();
+          if (!path || /^data:/i.test(path) || /^https?:\/\//i.test(path) || path.charAt(0) === '/') {
+            return all;
+          }
+          try {
+            var abs = new URL(path, baseHref).href;
+            return 'url(' + q + abs + q + ')';
+          } catch (eU) {
+            return all;
+          }
+        });
+      }
       function rescueStyles() {
         try { if (navigator.onLine !== false) return; } catch (e2) { return; }
         Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
@@ -124,7 +142,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
               if (!css || css.length < 40) return;
               link.setAttribute('data-rateb-rescue', '1');
               var style = document.createElement('style');
-              style.textContent = css;
+              style.textContent = rewriteCssUrls(css, href);
               document.head.appendChild(style);
             });
           }).catch(function () {});

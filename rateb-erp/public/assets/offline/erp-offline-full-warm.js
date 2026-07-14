@@ -556,7 +556,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v34';
+        var build = '20260713-force-sw-v35';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -715,7 +715,11 @@
             var posFirst = [
                 root.location.origin + publicBase() + 'admin/ops/pos/register',
                 root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
-                root.location.origin + publicBase() + 'admin/ops/access-control'
+                root.location.origin + publicBase() + 'admin/ops/access-control',
+                root.location.origin + publicBase() + 'admin/ops/accounting/platform',
+                root.location.origin + publicBase() + 'admin/ops/accounting',
+                root.location.origin + publicBase() + 'admin/ops/purchase-requests',
+                root.location.origin + publicBase() + 'admin/hr/employees'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
