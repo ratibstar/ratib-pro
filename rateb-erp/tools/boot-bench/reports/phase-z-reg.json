@@ -1,0 +1,71 @@
+{
+    "sapi": "fpm-fcgi",
+    "total_registered": 1881,
+    "router_inner_add_ms": 1.445,
+    "total_registration_wall_ms": 467.609,
+    "file_timings": {
+        "web": {
+            "ms": 2.153,
+            "routes": 270,
+            "missing": false
+        },
+        "marketing": {
+            "ms": 0.287,
+            "routes": 20,
+            "missing": false
+        },
+        "cms": {
+            "ms": 1.328,
+            "routes": 364,
+            "missing": false
+        },
+        "company": {
+            "ms": 462.891,
+            "routes": 1154,
+            "missing": false
+        },
+        "api": {
+            "ms": 0.557,
+            "routes": 73,
+            "missing": false
+        }
+    },
+    "matched_get_admin": {
+        "method": "GET",
+        "pattern": "/admin",
+        "handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+        "mw_count": 1,
+        "t_ms": 1.682
+    },
+    "match_index": 27,
+    "patterns_checked_before_match": 20,
+    "needed_for_get_admin": 1,
+    "unused_routes": 1880,
+    "unused_pct": 99.95,
+    "unused_registration_time_ms_approx": 465.456,
+    "unused_registration_time_pct": 99.54,
+    "groups": {
+        "auth_login": 10,
+        "admin_dashboard": 1,
+        "admin_oversight": 815,
+        "admin_ops": 582,
+        "admin_hr_crm_projects_etc": 358,
+        "company_legacy": 5,
+        "api": 3,
+        "marketing_cms_other": 107,
+        "closure_handlers": 62
+    },
+    "bench": {
+        "rateb_app_route_1000_ms": 371.346,
+        "rateb_app_route_per_call_ms": 0.3713,
+        "rateb_erp_mw_1000_ms": 0.112,
+        "rateb_erp_mw_per_call_ms": 0.0001,
+        "rateb_app_route_hr_1000_ms": 448.956,
+        "rateb_app_route_200_after_load_ms": 80.741,
+        "company_access_routes_enabled": true,
+        "is_platform_host": true
+    },
+    "closures_total": 62,
+    "framework_route_cache_present": false,
+    "note_route_cache": "Grep of rateb-erp found no RouteCache / compiled routes / serialize routes capability"
+}

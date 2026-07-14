@@ -1,0 +1,48 @@
+{
+    "ok": true,
+    "n": 1000,
+    "bench": {
+        "rateb_erp_deployment_mode": {
+            "total_ms": 82.015,
+            "per_call_ms": 0.08202
+        },
+        "rateb_erp_is_dedicated_deployment": {
+            "total_ms": 81.249,
+            "per_call_ms": 0.08125
+        },
+        "rateb_is_platform_oversight_host": {
+            "total_ms": 94.858,
+            "per_call_ms": 0.09486
+        },
+        "rateb_is_agency_erp_host": {
+            "total_ms": 163.098,
+            "per_call_ms": 0.1631
+        },
+        "rateb_company_access_routes_enabled": {
+            "total_ms": 342.061,
+            "per_call_ms": 0.34206
+        },
+        "rateb_app_route_inventory": {
+            "total_ms": 349.567,
+            "per_call_ms": 0.34957
+        },
+        "rateb_erp_mw": {
+            "total_ms": 0.141,
+            "per_call_ms": 0.00014
+        },
+        "inline_path_only": {
+            "total_ms": 0.189,
+            "per_call_ms": 0.00019
+        }
+    },
+    "app_calls_company_php": 765,
+    "projected_app_route_ms": 267.4,
+    "fraction_of_company_463ms": 0.578,
+    "single_function": {
+        "file": "config/app.php",
+        "class": null,
+        "function": "rateb_app_route",
+        "dominant_callee": "rateb_company_access_routes_enabled",
+        "callee_also_in": "config/app.php"
+    }
+}

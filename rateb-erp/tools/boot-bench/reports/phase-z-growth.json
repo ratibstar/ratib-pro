@@ -1,0 +1,136 @@
+{
+    "company_access_routes_enabled": true,
+    "growth_batches": [
+        {
+            "batch": 0,
+            "calls_so_far": 50,
+            "batch_ms": 17.193,
+            "per_call_ms": 0.3439
+        },
+        {
+            "batch": 1,
+            "calls_so_far": 100,
+            "batch_ms": 17.132,
+            "per_call_ms": 0.3426
+        },
+        {
+            "batch": 2,
+            "calls_so_far": 150,
+            "batch_ms": 17.245,
+            "per_call_ms": 0.3449
+        },
+        {
+            "batch": 3,
+            "calls_so_far": 200,
+            "batch_ms": 17.276,
+            "per_call_ms": 0.3455
+        },
+        {
+            "batch": 4,
+            "calls_so_far": 250,
+            "batch_ms": 17.285,
+            "per_call_ms": 0.3457
+        },
+        {
+            "batch": 5,
+            "calls_so_far": 300,
+            "batch_ms": 17.47,
+            "per_call_ms": 0.3494
+        },
+        {
+            "batch": 6,
+            "calls_so_far": 350,
+            "batch_ms": 17.897,
+            "per_call_ms": 0.3579
+        },
+        {
+            "batch": 7,
+            "calls_so_far": 400,
+            "batch_ms": 17.27,
+            "per_call_ms": 0.3454
+        },
+        {
+            "batch": 8,
+            "calls_so_far": 450,
+            "batch_ms": 17.363,
+            "per_call_ms": 0.3473
+        },
+        {
+            "batch": 9,
+            "calls_so_far": 500,
+            "batch_ms": 17.388,
+            "per_call_ms": 0.3478
+        },
+        {
+            "batch": 10,
+            "calls_so_far": 550,
+            "batch_ms": 17.592,
+            "per_call_ms": 0.3518
+        },
+        {
+            "batch": 11,
+            "calls_so_far": 600,
+            "batch_ms": 17.522,
+            "per_call_ms": 0.3504
+        },
+        {
+            "batch": 12,
+            "calls_so_far": 650,
+            "batch_ms": 17.461,
+            "per_call_ms": 0.3492
+        },
+        {
+            "batch": 13,
+            "calls_so_far": 700,
+            "batch_ms": 17.452,
+            "per_call_ms": 0.349
+        },
+        {
+            "batch": 14,
+            "calls_so_far": 750,
+            "batch_ms": 17.628,
+            "per_call_ms": 0.3526
+        },
+        {
+            "batch": 15,
+            "calls_so_far": 800,
+            "batch_ms": 17.607,
+            "per_call_ms": 0.3521
+        },
+        {
+            "batch": 16,
+            "calls_so_far": 850,
+            "batch_ms": 17.662,
+            "per_call_ms": 0.3532
+        },
+        {
+            "batch": 17,
+            "calls_so_far": 900,
+            "batch_ms": 17.734,
+            "per_call_ms": 0.3547
+        },
+        {
+            "batch": 18,
+            "calls_so_far": 950,
+            "batch_ms": 18.225,
+            "per_call_ms": 0.3645
+        },
+        {
+            "batch": 19,
+            "calls_so_far": 1000,
+            "batch_ms": 17.729,
+            "per_call_ms": 0.3546
+        }
+    ],
+    "rateb_erp_mw_200_ms": 0.025,
+    "router_get_200_ms": 0.063,
+    "first_batch_per_call": 0.3439,
+    "last_batch_per_call": 0.3546,
+    "slowdown_factor": 1.03,
+    "source": {
+        "file": "config/app.php",
+        "function": "rateb_app_route",
+        "lines": "2562-2591",
+        "mechanism": "static $conflictRoots array_merge on every call when rateb_company_access_routes_enabled(); then in_array over growing list"
+    }
+}

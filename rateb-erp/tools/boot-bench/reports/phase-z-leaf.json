@@ -1,0 +1,36 @@
+{
+    "n": 500,
+    "bench": {
+        "rateb_company_access_routes_enabled": {
+            "total_ms": 172.733,
+            "per_call_ms": 0.34547
+        },
+        "rateb_is_agency_erp_host": {
+            "total_ms": 83.647,
+            "per_call_ms": 0.16729
+        },
+        "rateb_erp_is_dedicated_deployment": {
+            "total_ms": 41.543,
+            "per_call_ms": 0.08309
+        },
+        "rateb_is_platform_oversight_host": {
+            "total_ms": 48.444,
+            "per_call_ms": 0.09689
+        },
+        "rateb_app_route": {
+            "total_ms": 176.273,
+            "per_call_ms": 0.35255
+        },
+        "inline_path_only": {
+            "total_ms": 0.089,
+            "per_call_ms": 0.00018
+        },
+        "simulate_app_route_body": {
+            "total_ms": 347.701,
+            "per_call_ms": 0.6954
+        }
+    },
+    "projected_ms_for_app_calls": 0,
+    "app_calls_in_company_php": 0,
+    "leaf_winner": null
+}

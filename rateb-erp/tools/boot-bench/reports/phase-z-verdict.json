@@ -1,0 +1,87 @@
+{
+  "phase": "Z",
+  "title": "Route Registration Analysis",
+  "generated_at": "2026-07-14T16:40:00Z",
+  "mode": "READ_ONLY",
+  "target_request": "GET /admin/",
+  "totals": {
+    "routes_registered_all_files": 1881,
+    "routes_in_company_php_alone": 1154,
+    "routes_matched_for_GET_admin": 1,
+    "match": {
+      "index": 27,
+      "method": "GET",
+      "pattern": "/admin",
+      "handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+      "middleware": ["Rateb\\App\\Core\\Middleware\\ErpAuthMiddleware"],
+      "file": "routes/web.php"
+    },
+    "unused_routes": 1880,
+    "unused_pct": 99.95,
+    "registration_wall_ms": 467.609,
+    "unused_registration_time_ms": 465.456,
+    "unused_registration_time_pct": 99.54
+  },
+  "file_timings_ms": {
+    "web": { "ms": 2.153, "routes": 270 },
+    "marketing": { "ms": 0.287, "routes": 20 },
+    "cms": { "ms": 1.328, "routes": 364 },
+    "company": { "ms": 462.891, "routes": 1154 },
+    "api": { "ms": 0.557, "routes": 73 }
+  },
+  "groups": {
+    "admin_dashboard": 1,
+    "admin_ops": 582,
+    "admin_oversight": 815,
+    "admin_hr_crm_projects_eam_qms_recruitment": 358,
+    "company_legacy": 5,
+    "api": 3,
+    "auth_login_related": 10,
+    "marketing_cms_other": 107,
+    "closure_handlers": 62
+  },
+  "cpu_breakdown_per_call_ms": {
+    "rateb_app_route": 0.34957,
+    "rateb_company_access_routes_enabled": 0.34206,
+    "rateb_is_agency_erp_host": 0.1631,
+    "rateb_is_platform_oversight_host": 0.09486,
+    "rateb_erp_is_dedicated_deployment": 0.08125,
+    "rateb_erp_deployment_mode": 0.08202,
+    "rateb_erp_mw": 0.00014,
+    "Router::get add-only": "~0.0003 (200 gets = 0.063 ms)",
+    "inline_path_builder_without_host_checks": 0.00019
+  },
+  "company_php_static": {
+    "app_prefix_builder_calls": 765,
+    "rateb_erp_mw_calls": 546,
+    "router_get": 437,
+    "router_post": 335,
+    "projected_ms_from_app_route_alone": 267.4,
+    "fraction_of_company_file_time": 0.578
+  },
+  "permission_callbacks_at_registration": "None executed — rateb_erp_mw only builds middleware class arrays; RBAC runs at dispatch",
+  "dynamic_route_creation": "Prefix via $app = fn($sub) => '/' . rateb_app_route($sub); no domain builders",
+  "framework_route_cache": {
+    "exists": false,
+    "evidence": "No RouteCache / compiled routes / serialize-routes API under app/Core or config; Router stores in-memory array only; public/index.php requires all route files every request"
+  },
+  "single_function": {
+    "file": "config/app.php",
+    "class": null,
+    "function": "rateb_app_route",
+    "lines": "2562-2591",
+    "why": "Invoked 765 times from company.php via $app(). Each call costs ~0.35 ms under FPM — 97.8% of that is rateb_company_access_routes_enabled() (also config/app.php) which re-walks agency/dedicated/platform host checks with no request memoization. Path-building alone is 0.00019 ms. Projects to 267 ms of the 463 ms company.php registration wall.",
+    "dominant_callee": {
+      "file": "config/app.php",
+      "function": "rateb_company_access_routes_enabled",
+      "per_call_ms": 0.34206
+    }
+  },
+  "artifacts": [
+    "tools/boot-bench/reports/phase-z-verdict.json",
+    "tools/boot-bench/reports/phase-z-reg.json",
+    "tools/boot-bench/reports/phase-z-deep.json",
+    "tools/boot-bench/reports/phase-z-growth.json",
+    "tools/boot-bench/reports/phase-z-leaf.json"
+  ]
+}
