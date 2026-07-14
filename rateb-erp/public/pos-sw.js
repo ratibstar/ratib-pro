@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-boot-perf-v54';
+var SW_BUILD_ID = '20260714-phase-ob-v55';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1087,10 +1087,22 @@ function warmErpOfflineShell(opts) {
     });
 }
 
+/**
+ * Phase OB — JS under /assets/offline that must NEVER be replaced by the
+ * emptyAssetResponse stub (28-byte "/* rateb-pos offline stub */").
+ * Covers OA bootstrap, modules/*, runtime/*, offline assets/*, shell SDK.
+ */
+function isProtectedOfflineIdentityJs(pathname) {
+    var path = String(pathname || '').toLowerCase();
+    return /\/assets\/offline\/(?:offline-bootstrap\.js|erp-shell-bootstrap\.js|rateb-offline(?:\.min)?\.js|erp-offline-shell[^/]*\.js|(?:modules|runtime|assets)\/)/i
+        .test(path);
+}
+
 /** Prefer cached ERP offline assets; ignore ?v= query so warm keys still hit. */
 function isVersionedOfflineIdentityJs(pathname) {
-    return /\/assets\/offline\/(erp-offline-nav-guard|erp-offline-full-warm|rateb-offline(\.min)?)\.js$/i
-        .test(String(pathname || ''));
+    return /\/assets\/offline\/(offline-bootstrap|erp-offline-nav-guard|erp-offline-full-warm|erp-shell-bootstrap|rateb-offline(\.min)?)\.js$/i
+        .test(String(pathname || ''))
+        || /\/assets\/offline\/modules\//i.test(String(pathname || ''));
 }
 
 function matchErpOfflineCached(request, url) {
@@ -1407,6 +1419,22 @@ function offlineJsonResponse() {
     });
 }
 
+/** Drop cached OA identity JS that is a stub / too small to be a real module. */
+function rejectFakeOfflineIdentityJs(response, pathname) {
+    if (!response || !isProtectedOfflineIdentityJs(pathname)) {
+        return Promise.resolve(response || null);
+    }
+    return response.clone().text().then(function (text) {
+        var t = String(text || '');
+        if (/rateb-pos\s+offline\s+stub/i.test(t) || t.length < 1000) {
+            return null;
+        }
+        return response;
+    }).catch(function () {
+        return response;
+    });
+}
+
 function emptyAssetResponse(request) {
     var url;
     try {
@@ -1418,8 +1446,9 @@ function emptyAssetResponse(request) {
     var body = '';
     var type = 'text/plain; charset=utf-8';
     if (/\.js$/i.test(path)) {
-        // Never fake-load ERP offline identity / SDK — empty stubs break offline-shell unlock.
-        if (/\/assets\/offline\/(rateb-offline|erp-offline-shell|erp-shell-bootstrap)/i.test(path)) {
+        // Phase OB — never stub OA bootstrap / modules / runtime / shell identity JS.
+        // Missing cache must surface as 503, not a 28-byte fake that silently kills OA.
+        if (isProtectedOfflineIdentityJs(path)) {
             return new Response('/* rateb offline identity missing from cache */', {
                 status: 503,
                 headers: {
@@ -1684,6 +1713,14 @@ self.addEventListener('install', function (event) {
                         'assets/js/approvals-oversight.js',
                         'assets/js/entity-documents-modal.js',
                         'assets/js/table-tools.js',
+                        // Phase OB — cache real OA files immediately (not only delayed warm).
+                        'assets/offline/offline-bootstrap.js',
+                        'assets/offline/modules/offline-storage.js',
+                        'assets/offline/modules/offline-auth.js',
+                        'assets/offline/modules/offline-rbac.js',
+                        'assets/offline/modules/offline-core.js',
+                        'assets/offline/erp-offline-shell-auth.js',
+                        'assets/offline/erp-shell-bootstrap.js',
                         'assets/offline/erp-offline-nav-guard.js',
                         'assets/offline/erp-offline-full-warm.js',
                         'manifest.webmanifest',
@@ -2062,46 +2099,50 @@ self.addEventListener('fetch', function (event) {
             if (!offline) {
                 // Prefer cache hit for instant paint; refresh in background.
                 return matchErpOfflineCached(event.request, url).then(function (cached) {
-                    if (cached) {
-                        event.waitUntil(
-                            fetchErpAssetNetwork(event.request, 4000).then(function (fresh) {
-                                if (!fresh) {
-                                    return null;
-                                }
-                                var forCache = fresh.clone();
-                                return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                    return putBoth(cache, forCache);
-                                });
-                            }).catch(function () { return null; })
-                        );
-                        return asNonRedirectedResponse(cached).then(function (c) {
-                            return c || cached;
-                        });
-                    }
-                    // Design CSS/vendor: never substitute empty 503 while online — wait for PHP/CDN.
-                    return fetch(navigateFetchInput(event.request)).then(function (response) {
-                        if (response && response.ok) {
-                            var forCache = response.clone();
+                    return rejectFakeOfflineIdentityJs(cached, url.pathname).then(function (real) {
+                        if (real) {
                             event.waitUntil(
-                                caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                                    return putBoth(cache, forCache);
+                                fetchErpAssetNetwork(event.request, 4000).then(function (fresh) {
+                                    if (!fresh) {
+                                        return null;
+                                    }
+                                    var forCache = fresh.clone();
+                                    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                        return putBoth(cache, forCache);
+                                    });
                                 }).catch(function () { return null; })
                             );
+                            return asNonRedirectedResponse(real).then(function (c) {
+                                return c || real;
+                            });
                         }
-                        return asNonRedirectedResponse(response).then(function (clean) {
-                            return clean || response;
+                        // Design CSS/vendor: never substitute empty 503 while online — wait for PHP/CDN.
+                        return fetch(navigateFetchInput(event.request)).then(function (response) {
+                            if (response && response.ok) {
+                                var forCache = response.clone();
+                                event.waitUntil(
+                                    caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                        return putBoth(cache, forCache);
+                                    }).catch(function () { return null; })
+                                );
+                            }
+                            return asNonRedirectedResponse(response).then(function (clean) {
+                                return clean || response;
+                            });
+                        }).catch(function () {
+                            return emptyAssetResponse(event.request);
                         });
-                    }).catch(function () {
-                        return emptyAssetResponse(event.request);
                     });
                 });
             }
             return matchErpOfflineCached(event.request, url).then(function (cached) {
-                if (!cached) {
-                    return emptyAssetResponse(event.request);
-                }
-                return asNonRedirectedResponse(cached).then(function (clean) {
-                    return clean || cached;
+                return rejectFakeOfflineIdentityJs(cached, url.pathname).then(function (real) {
+                    if (!real) {
+                        return emptyAssetResponse(event.request);
+                    }
+                    return asNonRedirectedResponse(real).then(function (clean) {
+                        return clean || real;
+                    });
                 });
             });
         })());
