@@ -1,0 +1,65 @@
+PHASE OC — OFFLINE STARTUP PROFILE (AFTER OA/OB)
+================================================
+Verdict bottleneck category: Browser
+
+TIMELINE (ms from offline start)
+         0  OFFLINE_NETWORK  blocking=true  async=true
+         0  NAV_OFFLINE_SHELL_START  self=0  blocking=true  async=true
+        43  NAV_OFFLINE_SHELL_DCL  self=43  blocking=true  async=true
+     21294  DASHBOARD_NAV_LAST  self=21251  blocking=true  async=true
+     21300  DASHBOARD_INTERACTIVE  self=6  blocking=true  async=false
+     21309  MODULE_HR_START  self=9  blocking=true  async=true
+     22151  MODULE_HR_READY  self=842  blocking=true  async=true
+     22690  MODULE_HR_SECOND  self=539  blocking=true  async=true
+     22690  MODULE_INVENTORY_START  self=0  blocking=true  async=true
+     23545  MODULE_INVENTORY_READY  self=855  blocking=true  async=true
+     24073  MODULE_INVENTORY_SECOND  self=528  blocking=true  async=true
+
+TOP 20
+  #1  21251ms  99.8%  [stage_gap] NAV_OFFLINE_SHELL_DCL → DASHBOARD_NAV_LAST
+  #2  855ms  4%  [module_nav] open:inventory
+  #3  855ms  4%  [stage_gap] MODULE_INVENTORY_START → MODULE_INVENTORY_READY
+  #4  842ms  4%  [module_nav] open:hr
+  #5  842ms  4%  [stage_gap] MODULE_HR_START → MODULE_HR_READY
+  #6  539ms  2.5%  [stage_gap] MODULE_HR_READY → MODULE_HR_SECOND
+  #7  538ms  2.5%  [module_nav] reopen:hr
+  #8  528ms  2.5%  [stage_gap] MODULE_INVENTORY_READY → MODULE_INVENTORY_SECOND
+  #9  527ms  2.5%  [module_nav] reopen:inventory
+  #10  55ms  0.3%  [resource] /rateb-erp/public/assets/js/charts.js?v=20260714-force-sw-v52
+  #11  54.8ms  0.3%  [resource] /rateb-erp/public/assets/vendor/chartjs/4.4.3/chart.umd.min.js?v=20260714-force-sw-v52
+  #12  52.2ms  0.2%  [resource] /rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52
+  #13  51.2ms  0.2%  [resource] /rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52
+  #14  50.8ms  0.2%  [resource] /rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52
+  #15  43ms  0.2%  [stage_gap] NAV_OFFLINE_SHELL_START → NAV_OFFLINE_SHELL_DCL
+  #16  30.7ms  0.1%  [resource] /rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52
+  #17  29.1ms  0.1%  [resource] /rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52
+  #18  29.1ms  0.1%  [resource] /rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52
+  #19  28.2ms  0.1%  [resource] /rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52
+  #20  27.5ms  0.1%  [resource] /rateb-erp/public/assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2
+
+SINGLE BOTTLENECK
+{
+  "File": "public/pos-sw.js + cached admin HTML/JS",
+  "Class": "ServiceWorker navigation",
+  "Function": "open:inventory",
+  "Line": "n/a",
+  "Wall ms": 855,
+  "%": 4,
+  "Call count": 1,
+  "Reason": "Offline document navigation + parse/apply of module HTML/JS dominates wall time after OA is fixed.",
+  "category": "Browser",
+  "raw": {
+    "kind": "module_nav",
+    "name": "open:inventory",
+    "wall_ms": 855,
+    "blocking": true,
+    "async": true
+  }
+}
+
+HIGHEST ROI
+{
+  "action": "Optimize open:inventory",
+  "expected_impact": "Target largest wall 855ms",
+  "target": "public/pos-sw.js + cached admin HTML/JS"
+}

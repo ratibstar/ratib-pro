@@ -1,0 +1,69 @@
+PHASE OC — OFFLINE STARTUP PROFILE
+Blocked by: JavaScript
+
+TIMELINE
+         1  self=      1  OFFLINE_START  blocking=true async=true
+         1  self=      0  NAV_SHELL_START  blocking=true async=true
+        36  self=     35  NAV_SHELL_DCL  blocking=true async=true
+       265  self=    229  SHELL_ERROR  blocking=true async=true
+       265  self=      0  SHELL_PROFILE_DONE  blocking=true async=true
+       265  self=      0  NAV_DASHBOARD_START  blocking=true async=true
+      1342  self=   1077  DASHBOARD_INTERACTIVE  blocking=true async=true
+      1363  self=     21  MODULE_HR_1_START  blocking=true async=true
+      2062  self=    699  MODULE_HR_1_READY  blocking=true async=true
+      2541  self=    479  MODULE_HR_2_READY  blocking=true async=true
+      2542  self=      1  MODULE_INVENTORY_1_START  blocking=true async=true
+      3232  self=    690  MODULE_INVENTORY_1_READY  blocking=true async=true
+      3723  self=    491  MODULE_INVENTORY_2_READY  blocking=true async=true
+
+TOP 20
+  #1 1077ms 100% [nav] dashboard_goto
+  #2 690ms 64.1% [module_nav] first:hr
+  #3 684ms 63.5% [module_nav] first:inventory
+  #4 491ms 45.6% [module_nav] second:inventory
+  #5 479ms 44.5% [module_nav] second:hr
+  #6 44.4ms 4.1% [resource] /rateb-erp/public/assets/js/charts.js?v=20260714-force-sw-v52
+  #7 43ms 4% [resource] /rateb-erp/public/assets/vendor/chartjs/4.4.3/chart.umd.min.js?v=20260714-force-sw-v52
+  #8 41.6ms 3.9% [resource] /rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52
+  #9 41.1ms 3.8% [resource] /rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52
+  #10 40.8ms 3.8% [resource] /rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52
+  #11 24.5ms 2.3% [resource] /rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52
+  #12 22.4ms 2.1% [resource] /rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52
+  #13 22.3ms 2.1% [resource] /rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52
+  #14 22.3ms 2.1% [resource] /rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52
+  #15 21.8ms 2% [resource] /rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52
+  #16 21.3ms 2% [resource] /rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52
+  #17 21.2ms 2% [resource] /rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52
+  #18 20.9ms 1.9% [resource] /rateb-erp/public/assets/js/rateb-console-quiet.js?v=20260714-force-sw-v52
+  #19 20ms 1.9% [resource] /rateb-erp/public/assets/offline/erp-offline-full-warm.js?v=20260714-force-sw-v52
+  #20 18.5ms 1.7% [resource] /rateb-erp/public/assets/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2
+
+SINGLE BOTTLENECK
+{
+  "File": "public/offline-shell.html",
+  "Class": "loadOfflineScript",
+  "Function": "loadOfflineScript(offline-bootstrap.js)",
+  "Line": "~182",
+  "Wall ms": 265,
+  "%": 100,
+  "Call count": 1,
+  "Reason": "OA bootstrap did not execute offline (missing/failed script). Bootstrap resource={\"name\":\"/rateb-erp/public/assets/offline/offline-bootstrap.js\",\"start\":27.1,\"duration\":10.5,\"transferSize\":0,\"decodedBodySize\":0}"
+}
+
+HIGHEST ROI
+{
+  "action": "SPA-style offline module transition (avoid full document reload) or prerender module HTML in SW",
+  "evidence_ms": 265,
+  "evidence_file": "public/offline-shell.html"
+}
+
+STUBS28 count=9
+  /rateb-erp/public/assets/js/charts.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/vendor/chartjs/4.4.3/chart.umd.min.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/offline/erp-pwa-install.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/js/lang.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/js/rateb-console-quiet.js?v=20260714-force-sw-v52
+  /rateb-erp/public/assets/offline/erp-offline-full-warm.js?v=20260714-force-sw-v52

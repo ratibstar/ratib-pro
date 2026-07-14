@@ -1,0 +1,46 @@
+{
+  "phase": "OC",
+  "mode": "READ_ONLY_PROFILING_ONLY",
+  "no_code_changes": true,
+  "evidence": "phase-oc-offline-profile-1784064339776.json",
+  "blocked_by": "Service Worker cache miss (identity/OA scripts)",
+  "not_blocked_by": ["PBKDF2", "IndexedDB", "RBAC", "Queue", "Replay", "Sync"],
+  "note_not_blocked_why": "ensure/idb/pbkdf2 call counts were 0 — unlock never reached those stages",
+  "single_bottleneck": {
+    "File": "public/pos-sw.js",
+    "Class": "matchErpOfflineCached / emptyAssetResponse",
+    "Function": "offline identity asset resolve (cache miss → fail)",
+    "Line": "isErpOfflineAsset offline branch → emptyAssetResponse (~2091–2145 / ~1438)",
+    "Wall ms": 265,
+    "%": 100,
+    "Call count": 4,
+    "Reason": "Cold offline-shell requests offline-bootstrap.js (+bust), rateb-offline.min.js, rateb-offline.js — all transferSize=0 and decodedBodySize=0 (not the former 28B stub). Shell reports load_failed on rateb-offline.js. OA/auth/RBAC never start. OB stopped stubbing; missing Cache Storage hits now hard-fail unlock."
+  },
+  "largest_completed_wall_after_shell_error": {
+    "File": "public/pos-sw.js",
+    "Class": "fetch navigate",
+    "Function": "offline document navigation to /admin/",
+    "Wall ms": 1077,
+    "note": "Measured after unlock path failed; first module ~690ms, second ~479ms"
+  },
+  "highest_roi_optimization": {
+    "action": "Guarantee SW Cache Storage hits for offline-bootstrap.js + modules/{storage,auth,rbac} + erp-offline-shell-auth/rbac (and monolith fallback used by offline-shell.html) BEFORE offline; verify offline-shell.html is not answered with cached /admin HTML",
+    "why": "Unlock is currently impossible offline on shell path; PBKDF2/IDB optimizations have 0 ROI until scripts execute",
+    "expected_effect": "Restore OA ensure→PIN→dashboard path; then re-profile for true post-OA compute bottleneck"
+  },
+  "timeline_ms_from_offline": [
+    { "stage": "OFFLINE_START", "wall": 1, "self": 1, "blocking": true, "async": true },
+    { "stage": "NAV_SHELL_DCL", "wall": 36, "self": 35, "blocking": true, "async": true },
+    { "stage": "SHELL_ERROR (identity load_failed)", "wall": 265, "self": 229, "blocking": true, "async": true },
+    { "stage": "DASHBOARD_INTERACTIVE (admin fallback)", "wall": 1342, "self": 1077, "blocking": true, "async": true },
+    { "stage": "MODULE_HR first", "wall": 2062, "self": 690, "blocking": true, "async": true },
+    { "stage": "MODULE_HR second", "wall": 2541, "self": 479, "blocking": true, "async": true },
+    { "stage": "MODULE_INVENTORY first", "wall": 3232, "self": 684, "blocking": true, "async": true },
+    { "stage": "MODULE_INVENTORY second", "wall": 3723, "self": 491, "blocking": true, "async": true }
+  ],
+  "unrelated_observations": [
+    "Online goto offline-shell.html returned cached admin dashboard HTML (SW navigation mismatch) — not fixed in OC.",
+    "9 non-OA assets still 28B stubs on admin offline (charts, theme, lang, nav-guard, full-warm, …) — separate from OA protect list.",
+    "Online warm on /admin DID have oa=true auth=true before offline — shell cold path still failed script resolution."
+  ]
+}
