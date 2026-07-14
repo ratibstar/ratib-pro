@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-oj-v60';
+var SW_BUILD_ID = '20260715-phase-ok1-v61';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -838,6 +838,107 @@ function neverFailNavigate(request, url) {
                 { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
             );
         }
+    });
+}
+
+/**
+ * Phase OK.1 — Soft-offline / degraded network navigation safety.
+ * navigator.onLine===true must NOT leave Document fetches hanging on the real network.
+ * Prefer a cached ERP snapshot when present; otherwise network with short timeout, then cache.
+ */
+function matchErpNavSnapshot(request, url) {
+    return erpOpsPageFallback(request, url).then(function (opsHit) {
+        if (opsHit) {
+            return opsHit;
+        }
+        return matchAnyCachedAdminPage(request, url);
+    }).catch(function () {
+        return null;
+    });
+}
+
+function withSoftOfflineCacheHeader(response) {
+    if (!response) {
+        return response;
+    }
+    try {
+        var headers = new Headers(response.headers || {});
+        headers.set('X-Rateb-Soft-Offline-Nav', '1');
+        headers.set('X-Rateb-Offline', headers.get('X-Rateb-Offline') || '1');
+        return response.clone().arrayBuffer().then(function (buf) {
+            return new Response(buf, {
+                status: response.status || 200,
+                statusText: response.statusText || 'OK',
+                headers: headers
+            });
+        }).catch(function () {
+            return response;
+        });
+    } catch (e) {
+        return Promise.resolve(response);
+    }
+}
+
+/** Cloud soft-online ERP admin navigations — never leave respondWith unresolved. */
+function navigateErpCloudWithCacheSafety(request, url) {
+    return matchErpNavSnapshot(request, url).then(function (hit) {
+        if (hit) {
+            return asNonRedirectedResponse(hit).then(function (clean) {
+                var base = clean || hit;
+                return withSoftOfflineCacheHeader(base);
+            });
+        }
+        // No snapshot: network with bounded timeout, then neverFailNavigate (placeholder / parent list).
+        return fetchNavigateNetwork(request, 8000).then(function (response) {
+            if (response && response.ok) {
+                return response;
+            }
+            return neverFailNavigate(request, url);
+        }).catch(function () {
+            return neverFailNavigate(request, url);
+        });
+    }).catch(function () {
+        return neverFailNavigate(request, url);
+    });
+}
+
+/** Certified POS shell only — never treat bio-required placeholder as a snapshot hit. */
+function matchCertifiedPosShellSnapshot(request) {
+    return serveCertifiedShellOrBioRequired(request).then(function (res) {
+        try {
+            if (res && res.headers && String(res.headers.get('X-Rateb-Pos-Cert') || '') === '1') {
+                return withSoftOfflineCacheHeader(res);
+            }
+        } catch (eHdr) { /* ignore */ }
+        return null;
+    }).catch(function () {
+        return null;
+    });
+}
+
+/** Cloud soft-online POS navigations — certified shell first; else network race; else shellFallback. */
+function navigatePosCloudWithCacheSafety(request, url) {
+    var shellReq = request;
+    if (isBiometricGatePath(url.pathname)) {
+        shellReq = shellLookupRequest(registerPathFromBiometric(url).href, request);
+    } else if (/\/pos\/(dashboard|reports|settings|shifts|terminals)(\/|$)/i.test(url.pathname)) {
+        shellReq = shellLookupRequest(posOfflineRegisterUrl(url).href, request);
+    }
+    return matchCertifiedPosShellSnapshot(shellReq).then(function (hit) {
+        if (hit) {
+            return hit;
+        }
+        return fetchNavigateNetwork(request, 8000).then(function (response) {
+            if (!isBiometricGatePath(url.pathname) && response && response.ok) {
+                try {
+                    var forShell = response.clone();
+                    putShell(request, forShell).catch(function () { return null; });
+                } catch (ePin) { /* ignore */ }
+            }
+            return response;
+        }).catch(function () {
+            return shellFallback(shellReq);
+        });
     });
 }
 
@@ -2489,9 +2590,37 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // ONLINE cloud: never intercept anything — interception caused endless spin on inventory/admin.
-    // Offline-only handling below (forms + cached pages).
+    // Phase OK.1 — Soft-offline fix:
+    // Do NOT pass Document navigations to the bare network when navigator.onLine===true.
+    // Cached ERP snapshots must win; otherwise network with timeout → cache/placeholder.
+    // Assets/XHR still pass through online (unchanged cloud behavior).
     if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
+        if (event.request.method === 'GET' && event.request.mode === 'navigate') {
+            if (isAuthPath(url.pathname) || isLogoutPath(url.pathname)) {
+                return;
+            }
+            if (isPosNavigation(url)) {
+                event.respondWith(
+                    navigatePosCloudWithCacheSafety(event.request, url).catch(function () {
+                        return shellFallback(event.request);
+                    })
+                );
+                return;
+            }
+            event.respondWith(
+                navigateErpCloudWithCacheSafety(event.request, url).catch(function () {
+                    try {
+                        return erpInlineShellResponse();
+                    } catch (eFinal) {
+                        return new Response('Offline', {
+                            status: 200,
+                            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                        });
+                    }
+                })
+            );
+            return;
+        }
         return;
     }
 
