@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v49';
+var SW_BUILD_ID = '20260714-force-sw-v50';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -526,6 +526,40 @@ function wantsJsonPostResponse(request) {
 }
 
 /**
+ * Where to return after offline Save. Never bare /admin (that felt like “went to dashboard”).
+ */
+function deriveOfflinePostReturnUrl(request, url, referer) {
+    try {
+        if (referer) {
+            var ru = new URL(referer, url.origin);
+            var rp = String(ru.pathname || '').replace(/\/+$/, '');
+            if (/\/admin(\/|$)/i.test(rp)
+                && !/(^|\/)admin$/i.test(rp)
+                && !/(^|\/)admin\/ops$/i.test(rp)
+                && !/(^|\/)admin\/dashboard$/i.test(rp)) {
+                return ru.origin + ru.pathname + (ru.search || '');
+            }
+        }
+    } catch (eR) { /* ignore */ }
+    var p = String(url.pathname || '').replace(/\/+$/, '');
+    var origin = url.origin;
+    if (/\/\d+$/i.test(p) && !/\/(delete|destroy|suspend|wipe|approve|decide|pay)$/i.test(p)) {
+        return origin + p + '/edit';
+    }
+    if (/\/(create|new)$/i.test(p)) {
+        return origin + p;
+    }
+    if (/\/admin(\/|$)/i.test(p) && !/(^|\/)admin$/i.test(p)) {
+        return origin + p + '/create';
+    }
+    try {
+        return new URL(String(request.url || url.href), url.origin).href;
+    } catch (eU) {
+        return origin + p;
+    }
+}
+
+/**
  * Offline POST: queue form fields (including approve/delete/pay), never Chrome interstitial.
  * Only wipe/export/period-close/GL-post stay hard-blocked.
  */
@@ -534,13 +568,7 @@ function handleOfflineAdminPost(request, url) {
     try {
         referer = String(request.headers.get('Referer') || '');
     } catch (eR) { /* ignore */ }
-    if (!referer) {
-        try {
-            referer = new URL('admin/', self.registration.scope).href;
-        } catch (eA) {
-            referer = url.origin + '/rateb-erp/public/admin/';
-        }
-    }
+    var returnUrl = deriveOfflinePostReturnUrl(request, url, referer);
 
     if (isOfflinePostDenyPath(url.pathname)) {
         if (wantsJsonPostResponse(request)) {
@@ -557,11 +585,11 @@ function handleOfflineAdminPost(request, url) {
             }));
         }
         try {
-            var denyBack = new URL(referer);
+            var denyBack = new URL(returnUrl, url.origin);
             denyBack.searchParams.set('rateb_offline_blocked', '1');
             return Promise.resolve(Response.redirect(denyBack.href, 303));
         } catch (eD) {
-            return Promise.resolve(Response.redirect(referer, 303));
+            return Promise.resolve(Response.redirect(returnUrl, 303));
         }
     }
 
@@ -594,6 +622,7 @@ function handleOfflineAdminPost(request, url) {
             url: url.href,
             path: url.pathname,
             fields: fields,
+            return_url: returnUrl,
             created_at: Date.now(),
             via: 'service-worker'
         };
@@ -632,13 +661,63 @@ function handleOfflineAdminPost(request, url) {
                     }
                 });
             }
+            // Serve the form page from cache (no redirect to dashboard, no second round-trip).
+            var backKeys = [returnUrl];
             try {
-                var back = new URL(referer);
-                back.searchParams.set('rateb_offline_saved', '1');
-                return Response.redirect(back.href, 303);
-            } catch (eBack) {
-                return Response.redirect(referer, 303);
-            }
+                var bu = new URL(returnUrl, url.origin);
+                backKeys.push(bu.origin + bu.pathname);
+                backKeys.push(bu.origin + bu.pathname.replace(/\/+$/, ''));
+                backKeys.push(bu.origin + bu.pathname.replace(/\/+$/, '') + '/');
+            } catch (eBk) { /* ignore */ }
+            return Promise.all([
+                caches.open(ERP_OPS_PAGE_CACHE),
+                caches.open(ERP_COEXIST_CACHE)
+            ]).then(function (pair) {
+                var chain = Promise.resolve(null);
+                [pair[0], pair[1]].forEach(function (cache) {
+                    if (!cache) {
+                        return;
+                    }
+                    backKeys.forEach(function (k) {
+                        chain = chain.then(function (hit) {
+                            if (hit) {
+                                return hit;
+                            }
+                            return cache.match(k).then(function (m) {
+                                return m || cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                            });
+                        });
+                    });
+                });
+                return chain;
+            }).then(function (hit) {
+                if (hit) {
+                    return hit.text().then(function (html) {
+                        var out = String(html || '');
+                        if (out && out.indexOf('rateb-offline-saved-flash') === -1) {
+                            out = out.replace(
+                                /<body([^>]*)>/i,
+                                '<body$1><div class="alert alert-success rateb-flash rateb-offline-saved-flash" role="alert">تم الحفظ بنجاح — بانتظار المزامنة</div>'
+                            );
+                        }
+                        return new Response(out || html, {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'text/html; charset=utf-8',
+                                'X-Rateb-Offline': '1',
+                                'X-Rateb-Offline-Saved': '1'
+                            }
+                        });
+                    });
+                }
+                try {
+                    var back = new URL(returnUrl, url.origin);
+                    back.searchParams.set('rateb_offline_saved', '1');
+                    return Response.redirect(back.href, 303);
+                } catch (eBack) {
+                    return Response.redirect(returnUrl, 303);
+                }
+            });
         });
     }).catch(function () {
         if (wantsJsonPostResponse(request)) {
@@ -652,11 +731,11 @@ function handleOfflineAdminPost(request, url) {
             });
         }
         try {
-            var back2 = new URL(referer);
+            var back2 = new URL(returnUrl, url.origin);
             back2.searchParams.set('rateb_offline_saved', '1');
             return Response.redirect(back2.href, 303);
         } catch (e2) {
-            return Response.redirect(referer, 303);
+            return Response.redirect(returnUrl, 303);
         }
     });
 }
@@ -728,6 +807,10 @@ function matchAnyCachedAdminPage(request, url) {
             return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn).then(function (hit2) {
                 if (hit2) {
                     return hit2;
+                }
+                // Offline: skip scanning every old cache version (was multi-second lag / spin).
+                if (isCloudBrowserOffline()) {
+                    return null;
                 }
                 // Also search previous ops-page cache versions (avoid empty after cache rename).
                 return caches.keys().then(function (names) {

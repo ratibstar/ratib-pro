@@ -59,6 +59,108 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="rateb-csrf" content="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
     <script>
     (function () {
+        /* Critical offline Save — runs even if deferred JS fails to load (fixes Save→dashboard). */
+        var KEY = 'rateb_deferred_http_forms_v2';
+        function offlineNow() {
+            try {
+                if (navigator.onLine === false) return true;
+                var b = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+                if (b && b.classList.contains('is-offline')) return true;
+            } catch (e) {}
+            return false;
+        }
+        function readList() {
+            try {
+                var list = JSON.parse(localStorage.getItem(KEY) || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (e2) { return []; }
+        }
+        function writeList(list) {
+            try { localStorage.setItem(KEY, JSON.stringify(list || [])); } catch (e3) {}
+        }
+        function serialize(form) {
+            var out = {};
+            if (!form || !form.elements) return out;
+            Array.prototype.forEach.call(form.elements, function (el) {
+                if (!el || !el.name || el.disabled) return;
+                var n = String(el.name);
+                if (/^_csrf$/i.test(n)) return;
+                var t = String(el.type || '').toLowerCase();
+                if (t === 'file' || t === 'submit' || t === 'button' || t === 'password') return;
+                if ((t === 'checkbox' || t === 'radio') && !el.checked) return;
+                if (Object.prototype.hasOwnProperty.call(out, n)) {
+                    if (!Array.isArray(out[n])) out[n] = [out[n]];
+                    out[n].push(el.value);
+                } else out[n] = el.value;
+            });
+            return out;
+        }
+        function toast(msg) {
+            try {
+                var el = document.getElementById('rateb-offline-nav-toast');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'rateb-offline-nav-toast';
+                    el.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;background:#14532d;color:#bbf7d0;padding:.65rem 1rem;border-radius:8px;font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center';
+                    (document.body || document.documentElement).appendChild(el);
+                }
+                el.textContent = msg;
+                el.hidden = false;
+                clearTimeout(el.__h);
+                el.__h = setTimeout(function () { try { el.hidden = true; } catch (e) {} }, 5000);
+            } catch (eT) {}
+        }
+        document.addEventListener('submit', function (ev) {
+            if (!offlineNow()) return;
+            var form = ev.target;
+            if (!form || form.tagName !== 'FORM') return;
+            if (String(form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+            var action = String(form.getAttribute('action') || location.pathname || '');
+            if (/\/(wipe|export|pdf|excel|csv|close[-_]?period|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i.test(action + ' ' + location.pathname)) {
+                ev.preventDefault();
+                toast('هذا الإجراء يحتاج إنترنت.');
+                return;
+            }
+            // If full nav-guard is present it will handle — avoid double queue.
+            if (window.RatebOfflineNavGuard && window.RatebOfflineNavGuard.build) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            try { ev.stopImmediatePropagation(); } catch (eS) {}
+            try {
+                var fields = serialize(form);
+                if (!Object.keys(fields).length) {
+                    toast('تعذر حفظ النموذج أوفلاين.');
+                    return;
+                }
+                var url;
+                try { url = new URL(action || location.href, location.href).href; } catch (eU) { url = location.href; }
+                var list = readList();
+                list.push({
+                    id: 'inl-' + Date.now() + '-' + Math.floor(Math.random() * 1e6),
+                    url: url,
+                    path: location.pathname || '',
+                    fields: fields,
+                    created_at: Date.now(),
+                    via: 'inline-critical'
+                });
+                writeList(list);
+                toast('تم الحفظ بنجاح — بانتظار المزامنة (' + list.length + ')');
+                try {
+                    var flash = document.createElement('div');
+                    flash.className = 'alert alert-success rateb-flash';
+                    flash.setAttribute('role', 'alert');
+                    flash.textContent = 'تم الحفظ بنجاح — بانتظار المزامنة';
+                    var host = document.querySelector('.rateb-main, main, .rateb-content') || document.body;
+                    if (host) host.insertBefore(flash, host.firstChild);
+                } catch (eF) {}
+            } catch (eSave) {
+                toast('تعذر الحفظ أوفلاين.');
+            }
+        }, true);
+    })();
+    </script>
+    <script>
+    (function () {
         try {
             var mode = localStorage.getItem('rateb_erp_theme') || localStorage.getItem('rateb_theme') || 'dark';
             var bs = mode === 'auto'
