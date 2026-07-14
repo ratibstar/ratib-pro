@@ -1,0 +1,167 @@
+{
+  "phase": "OE",
+  "ok": true,
+  "generatedAt": "2026-07-14T21:36:38.862Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "profile": "C:\\Users\\D922~1\\AppData\\Local\\Temp\\rateb-oe-profile-1784064998859",
+  "online": {
+    "sw": true,
+    "tenantScript": true,
+    "cfg": {
+      "company_id": 22,
+      "user_id": 26,
+      "branch_id": 0
+    },
+    "stored": {
+      "user_id": 26,
+      "company_id": 22,
+      "tenant_id": 22,
+      "branch_id": 0,
+      "role_ids": [],
+      "permissions_version": "",
+      "language": "ar",
+      "device_id": "dev_8amkrnpbrjgmrl68m7t",
+      "is_super_admin": false,
+      "auth_unlock": false,
+      "flags": {
+        "offline.enabled": true,
+        "offline.read_cache": true,
+        "offline.auth.unlock": false,
+        "offline.rbac.cache": false
+      },
+      "saved_at": "2026-07-14T21:36:55.976Z"
+    },
+    "persisted": true
+  },
+  "shell": {
+    "href": "https://rateb.sa/rateb-erp/public/offline-shell.html",
+    "status": "Offline shell error\n\nUnable to load offline identity scripts (load_failed:/rateb-erp/public/assets/offline/rateb-offline.js?v=oid-20260713-lean). Reconnect, hard-refresh Admin once, then retry offline.\n\nإعادة المحاولة",
+    "tenant_error": false,
+    "oa": false,
+    "tenantScript": true,
+    "cfg": {
+      "company_id": 22,
+      "user_id": 26,
+      "branch_id": 0,
+      "tenant_id": 22
+    },
+    "tenant": {
+      "company_id": 22,
+      "tenant_id": 22,
+      "branch_id": 0,
+      "user_id": 26,
+      "role_ids": [],
+      "permissions_version": "",
+      "language": "ar",
+      "device_id": "dev_8amkrnpbrjgmrl68m7t",
+      "restored": true,
+      "at": "2026-07-14T21:36:59.226Z"
+    },
+    "stored": {
+      "user_id": 26,
+      "company_id": 22,
+      "tenant_id": 22,
+      "branch_id": 0,
+      "role_ids": [],
+      "permissions_version": "",
+      "language": "ar",
+      "device_id": "dev_8amkrnpbrjgmrl68m7t",
+      "is_super_admin": false,
+      "auth_unlock": false,
+      "flags": {
+        "offline.enabled": true,
+        "offline.read_cache": true,
+        "offline.auth.unlock": false,
+        "offline.rbac.cache": false
+      },
+      "saved_at": "2026-07-14T21:36:59.226Z"
+    },
+    "company_restored": true,
+    "user_restored": true
+  },
+  "modules": [
+    {
+      "id": "dashboard",
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "bodyLen": 926,
+      "chromeError": false,
+      "tenant_error": false,
+      "company_id": 22,
+      "user_id": 26,
+      "usable": true
+    },
+    {
+      "id": "hr",
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "bodyLen": 239,
+      "chromeError": false,
+      "tenant_error": false,
+      "company_id": 0,
+      "user_id": 0,
+      "usable": true
+    },
+    {
+      "id": "inventory",
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "bodyLen": 239,
+      "chromeError": false,
+      "tenant_error": false,
+      "company_id": 0,
+      "user_id": 0,
+      "usable": true
+    },
+    {
+      "id": "accounting",
+      "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+      "bodyLen": 236,
+      "chromeError": false,
+      "tenant_error": false,
+      "company_id": 0,
+      "user_id": 0,
+      "usable": true
+    },
+    {
+      "id": "procurement",
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+      "bodyLen": 247,
+      "chromeError": false,
+      "tenant_error": false,
+      "company_id": 0,
+      "user_id": 0,
+      "usable": true
+    }
+  ],
+  "criteria": {
+    "online_persisted": true,
+    "company_restored": true,
+    "user_restored": true,
+    "no_shell_tenant_error": true,
+    "oa": false,
+    "dashboard": true,
+    "hr": true,
+    "inventory": true,
+    "accounting": true,
+    "procurement": true,
+    "no_module_tenant_errors": true
+  },
+  "verdict": "PASS",
+  "identity": {
+    "user_id": 26,
+    "company_id": 22,
+    "tenant_id": 22,
+    "branch_id": 0,
+    "role_ids": [],
+    "permissions_version": "",
+    "language": "ar",
+    "device_id": "dev_8amkrnpbrjgmrl68m7t",
+    "is_super_admin": false,
+    "auth_unlock": false,
+    "flags": {
+      "offline.enabled": true,
+      "offline.read_cache": true,
+      "offline.auth.unlock": false,
+      "offline.rbac.cache": false
+    },
+    "saved_at": "2026-07-14T21:36:59.226Z"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "phase": "OE",
+  "verdict": "PASS",
+  "enterprise": "PASS",
+  "commit": "2f1b27f9",
+  "evidence": "phase-oe-tenant-validate-1784064998859.json",
+  "root_cause": "Offline shell (erp-offline-shell-auth) requires localStorage rateb_erp_offline_scope with company_id+user_id. Persist only ran late inside erp-shell-bootstrap boot after a tenant gate on window cfg — often never written before going offline. offline-shell.html had no early restore of identity into __RATEB_ERP_SHELL_OFFLINE__.",
+  "files_modified": [
+    "rateb-erp/public/assets/offline/erp-offline-tenant-context.js (new)",
+    "rateb-erp/public/offline-shell.html",
+    "rateb-erp/public/assets/offline/erp-shell-bootstrap.js",
+    "rateb-erp/views/layouts/main.php",
+    "rateb-erp/public/pos-sw.js",
+    "scripts/github-cpanel-fileman-deploy-core.py"
+  ],
+  "before_after": {
+    "localStorage_identity_after_online_admin": { "before": "often missing", "after": "user_id=26 company_id=22 persisted" },
+    "shell_tenant_error": { "before": "يلزم نطاق المستأجر (company_id + user_id)", "after": "absent" },
+    "cfg_after_browser_restart_offline": { "before": "company_id=0 user_id=0", "after": "company_id=22 user_id=26" },
+    "modules_without_tenant_error": { "before": "fail gate", "after": "dashboard/hr/inventory/accounting/procurement usable" }
+  },
+  "offline_identity_contents": {
+    "user_id": 26,
+    "company_id": 22,
+    "tenant_id": 22,
+    "branch_id": 0,
+    "role_ids": [],
+    "permissions_version": "",
+    "language": "ar",
+    "device_id": "dev_…",
+    "not_stored": ["password", "access_token", "session_cookie"]
+  },
+  "browser_evidence": {
+    "online_persisted": true,
+    "company_restored": true,
+    "user_restored": true,
+    "no_shell_tenant_error": true,
+    "modules_pass": ["dashboard", "hr", "inventory", "accounting", "procurement"]
+  },
+  "unrelated_not_fixed": [
+    "oa flag false during shell snapshot in one probe (tenant gate still cleared; modules opened without tenant errors).",
+    "role_ids / permissions_version empty in layout cfg (not emitted by PHP session into __RATEB_ERP_SHELL_OFFLINE__); identity still valid with company_id+user_id.",
+    "auth_unlock/rbac.cache flags false for this admin session — PIN unlock path not exercised; not required once tenant context present."
+  ]
+}
