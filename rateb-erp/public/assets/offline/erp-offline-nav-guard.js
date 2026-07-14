@@ -1,17 +1,17 @@
 /**
- * RATEB ERP — Offline guard (lean).
- * - Mute online-only: delete/export/pay/final-approve.
- * - Operational drafts: do NOT block — RatebOfflineOpsForms / FormPost enqueue + sync.
- * - Unhooked forms (e.g. platform companies edit): clear explanation, no false "browse only".
+ * RATEB ERP — Offline nav + deferred form save.
+ * - Table create/edit links: native navigation when SW controls (no history.back hijack).
+ * - POST save offline: queue locally → auto POST when online (companies + ops drafts).
+ * - Deny: delete / export / pay / final-approve / suspend.
  */
 (function (root) {
     'use strict';
 
     var STYLE_ID = 'rateb-offline-nav-guard-css';
-    var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i;
-    var EDIT_NAV_RE = /\/\d+\/(edit|show|view)(\/|$)/i;
-    var ONLINE_ONLY_RE = /(?:post|reverse|close[-_]?period|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|suspend|wipe)/i;
-    var GUARD_BUILD = '20260714-offline-queue-v39';
+    var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate|suspend|wipe)(\/|$|\?)/i;
+    var ONLINE_ONLY_RE = /(?:post|reverse|close[-_]?period|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|submit-approval|convert-to-po)(\/|$|\?)/i;
+    var DEFERRED_KEY = 'rateb_deferred_http_forms_v1';
+    var GUARD_BUILD = '20260714-deferred-forms-v40';
 
     function isOffline() {
         try {
@@ -56,15 +56,14 @@
         css.textContent = ''
             + '#rateb-offline-nav-toast{'
             + 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
-            + 'background:#7f1d1d;color:#fff;padding:.65rem 1rem;border-radius:8px;'
+            + 'background:#14532d;color:#bbf7d0;padding:.65rem 1rem;border-radius:8px;'
             + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center;}'
-            + 'a.rateb-offline-missing{opacity:1!important;cursor:pointer!important;pointer-events:auto!important;}'
-            + 'a.rateb-nav-link.rateb-offline-missing span::after,'
-            + 'a.rateb-offline-rbac-link.rateb-offline-missing span::after{content:none!important;}';
+            + '#rateb-offline-nav-toast.is-err{background:#7f1d1d;color:#fecaca;}'
+            + 'a.rateb-offline-missing{opacity:1!important;cursor:pointer!important;pointer-events:auto!important;}';
         root.document.head.appendChild(css);
     }
 
-    function toast(msg) {
+    function toast(msg, isErr) {
         try {
             var el = root.document.getElementById('rateb-offline-nav-toast');
             if (!el) {
@@ -73,12 +72,13 @@
                 el.setAttribute('role', 'status');
                 root.document.body.appendChild(el);
             }
+            el.className = isErr ? 'is-err' : '';
             el.textContent = msg;
             el.hidden = false;
             clearTimeout(el.__hide);
             el.__hide = setTimeout(function () {
                 try { el.hidden = true; } catch (e) { /* ignore */ }
-            }, 4200);
+            }, 4800);
         } catch (e2) { /* ignore */ }
     }
 
@@ -87,114 +87,17 @@
             root.document.querySelectorAll('a.rateb-offline-missing, a.rateb-offline-cached').forEach(function (a) {
                 a.classList.remove('rateb-offline-missing', 'rateb-offline-cached');
                 a.removeAttribute('aria-disabled');
-                var orig = a.getAttribute('data-rateb-title-orig');
-                if (orig !== null) {
-                    a.title = orig;
-                }
             });
-            var w = root.document.getElementById('rateb-offline-wrong-shell');
-            if (w) {
-                w.remove();
-            }
         } catch (e) { /* ignore */ }
     }
 
     function isMuteHref(href) {
         try {
             var u = new URL(href, root.location.href);
-            return MUTE_NAV_RE.test(u.pathname) || MUTE_NAV_RE.test(u.search);
+            return MUTE_NAV_RE.test(u.pathname + u.search) || ONLINE_ONLY_RE.test(u.pathname + u.search);
         } catch (e) {
             return false;
         }
-    }
-
-    function isEditHref(href) {
-        try {
-            return EDIT_NAV_RE.test(new URL(href, root.location.href).pathname);
-        } catch (e) {
-            return EDIT_NAV_RE.test(String(href || ''));
-        }
-    }
-
-    function parentListHref(href) {
-        try {
-            var u = new URL(href, root.location.href);
-            var next = String(u.pathname || '')
-                .replace(/\/\d+\/(edit|show|view|generate)(\/|$)/i, '/')
-                .replace(/\/+$/, '');
-            if (!next || !/\/admin(\/|$)/i.test(next)) {
-                return u.origin + (u.pathname.match(/^(.*\/public\/)/i) || [])[1] + 'admin/companies';
-            }
-            u.pathname = next;
-            return u.href;
-        } catch (e2) {
-            return root.location.origin + '/rateb-erp/public/admin/companies';
-        }
-    }
-
-    function goParentOrBack(href) {
-        var list = parentListHref(href);
-        var keys = [list];
-        try {
-            var u = new URL(list, root.location.href);
-            keys.push(u.origin + u.pathname);
-            keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
-        } catch (eK) { /* ignore */ }
-
-        function useHistory() {
-            try {
-                if (root.history.length > 1) {
-                    root.history.back();
-                    return true;
-                }
-            } catch (eH) { /* ignore */ }
-            return false;
-        }
-
-        if (!root.caches || typeof root.caches.match !== 'function') {
-            if (!useHistory()) {
-                root.location.href = list;
-            }
-            return;
-        }
-
-        var chain = Promise.resolve(null);
-        keys.forEach(function (k) {
-            chain = chain.then(function (hit) {
-                if (hit) {
-                    return hit;
-                }
-                return root.caches.match(k).then(function (exact) {
-                    if (exact) {
-                        return exact;
-                    }
-                    return root.caches.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                }).catch(function () { return null; });
-            });
-        });
-        chain.then(function (res) {
-            if (res && res.ok) {
-                return res.text().then(function (html) {
-                    if (html && html.length > 400) {
-                        root.document.open();
-                        root.document.write(html);
-                        root.document.close();
-                        toast('أوفلاين: رجوع لقائمة السجلات (نموذج التعديل غير محفوظ محلياً بعد).');
-                        return;
-                    }
-                    if (!useHistory()) {
-                        root.location.replace(list);
-                    }
-                });
-            }
-            if (!useHistory()) {
-                root.location.replace(list);
-            }
-        }).catch(function () {
-            if (!useHistory()) {
-                root.location.replace(list);
-            }
-        });
     }
 
     function formIsOnlineOnly(form) {
@@ -207,109 +110,235 @@
         var blob = [
             form.getAttribute('action') || '',
             form.getAttribute('id') || '',
-            form.className || '',
             (root.location && root.location.pathname) || ''
         ].join(' ');
         return ONLINE_ONLY_RE.test(blob) || MUTE_NAV_RE.test(blob);
     }
 
-    /** True when offline SDK can enqueue this path (ops drafts). */
-    function formCanQueueOffline(form) {
-        if (!form) {
-            return false;
-        }
-        if (form.getAttribute('data-rateb-offline-writable') === '1'
-            || form.getAttribute('data-rateb-form-post') === '1') {
-            return true;
-        }
-        var path = (form.getAttribute('action') || '') + ' '
-            + ((root.location && root.location.pathname) || '');
+    function readDeferred() {
         try {
-            if (root.RatebOfflineOpsForms && typeof root.RatebOfflineOpsForms.matchHook === 'function') {
-                if (root.RatebOfflineOpsForms.matchHook(path)
-                    || root.RatebOfflineOpsForms.matchHook(root.location && root.location.pathname)) {
-                    return true;
-                }
-            }
-        } catch (e0) { /* ignore */ }
+            var raw = root.localStorage.getItem(DEFERRED_KEY);
+            var list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeDeferred(list) {
         try {
-            if (root.RatebOfflineFormPostAdapter
-                && typeof root.RatebOfflineFormPostAdapter.matchHook === 'function') {
-                if (root.RatebOfflineFormPostAdapter.matchHook(path)
-                    || root.RatebOfflineFormPostAdapter.matchHook(root.location && root.location.pathname)) {
-                    return true;
-                }
+            root.localStorage.setItem(DEFERRED_KEY, JSON.stringify(list || []));
+        } catch (e) { /* ignore */ }
+    }
+
+    function serializeFormFields(form) {
+        var out = {};
+        if (!form || !form.elements) {
+            return out;
+        }
+        Array.prototype.forEach.call(form.elements, function (el) {
+            if (!el || !el.name || el.disabled) {
+                return;
             }
-        } catch (e1) { /* ignore */ }
-        return false;
+            var name = String(el.name);
+            if (/^_csrf$/i.test(name)) {
+                return;
+            }
+            var type = String(el.type || '').toLowerCase();
+            if (type === 'file' || type === 'submit' || type === 'button' || type === 'password') {
+                return;
+            }
+            if ((type === 'checkbox' || type === 'radio') && !el.checked) {
+                return;
+            }
+            if (Object.prototype.hasOwnProperty.call(out, name)) {
+                if (!Array.isArray(out[name])) {
+                    out[name] = [out[name]];
+                }
+                out[name].push(el.value);
+            } else {
+                out[name] = el.value;
+            }
+        });
+        return out;
+    }
+
+    function deferHttpForm(form) {
+        var action = form.getAttribute('action') || (root.location && root.location.href) || '';
+        var absolute;
+        try {
+            absolute = new URL(action, root.location.href).href;
+        } catch (eU) {
+            absolute = action;
+        }
+        var entry = {
+            id: 'df-' + Date.now() + '-' + Math.floor(Math.random() * 1e6),
+            url: absolute,
+            path: (root.location && root.location.pathname) || '',
+            fields: serializeFormFields(form),
+            title: (root.document && root.document.title) || '',
+            created_at: Date.now()
+        };
+        var list = readDeferred();
+        list.push(entry);
+        writeDeferred(list);
+
+        // Also mirror into enterprise queue when present (visible in offline queue UIs).
+        try {
+            var q = root.RatebOfflineQueue;
+            if (q && typeof q.enqueue === 'function') {
+                q.enqueue({
+                    module: 'offline_meta',
+                    action: 'offline.http_form',
+                    payload: entry,
+                    idempotency_key: entry.id,
+                    client_uuid: entry.id
+                }).catch(function () { /* localStorage already holds it */ });
+            }
+        } catch (eQ) { /* ignore */ }
+
+        return entry;
+    }
+
+    function currentCsrf() {
+        try {
+            var meta = root.document.querySelector('meta[name="rateb-csrf"]');
+            if (meta && meta.getAttribute('content')) {
+                return String(meta.getAttribute('content'));
+            }
+        } catch (e) { /* ignore */ }
+        return '';
+    }
+
+    function flushDeferredForms() {
+        if (isOffline()) {
+            return Promise.resolve({ ok: 0 });
+        }
+        var list = readDeferred();
+        if (!list.length) {
+            return Promise.resolve({ ok: 0 });
+        }
+        var csrf = currentCsrf();
+        var remain = [];
+        var chain = Promise.resolve({ ok: 0, fail: 0 });
+
+        list.forEach(function (entry) {
+            chain = chain.then(function (stats) {
+                if (!entry || !entry.url || !entry.fields) {
+                    return stats;
+                }
+                var body = new FormData();
+                if (csrf) {
+                    body.append('_csrf', csrf);
+                }
+                Object.keys(entry.fields).forEach(function (k) {
+                    var v = entry.fields[k];
+                    if (Array.isArray(v)) {
+                        v.forEach(function (one) { body.append(k, one); });
+                    } else {
+                        body.append(k, v);
+                    }
+                });
+                return root.fetch(entry.url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: body,
+                    redirect: 'follow'
+                }).then(function (res) {
+                    if (res && (res.ok || res.redirected || res.status === 302 || res.status === 303)) {
+                        stats.ok += 1;
+                    } else {
+                        remain.push(entry);
+                        stats.fail += 1;
+                    }
+                    return stats;
+                }).catch(function () {
+                    remain.push(entry);
+                    stats.fail += 1;
+                    return stats;
+                });
+            });
+        });
+
+        return chain.then(function (stats) {
+            writeDeferred(remain);
+            if (stats.ok > 0) {
+                toast('تمت مزامنة ' + stats.ok + ' نموذج محفوظ أوفلاين.');
+            }
+            return stats;
+        });
     }
 
     function block(ev, reason) {
         ev.preventDefault();
         ev.stopPropagation();
-        toast(reason);
+        toast(reason, true);
     }
 
     function onClick(ev) {
+        if (!isOffline()) {
+            return;
+        }
         var target = ev.target;
         if (!target || !target.closest) {
             return;
         }
 
-        var a = target.closest('a[href]');
-        var href = a ? (a.getAttribute('href') || '') : '';
-        var offline = isOffline();
-        var noSw = !hasSwController();
+        // Never hijack table create/edit when SW can serve pages.
+        // (Previous history.back broke purchase-request / companies table buttons.)
 
-        if (a && href && isEditHref(href) && (offline || (noSw && offline))) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            ev.stopImmediatePropagation();
-            goParentOrBack(href);
-            return;
-        }
-        if (a && href && offline && noSw && /\/admin(\/|$)/i.test(href)) {
-            if (isEditHref(href) || /\/\d+(\/|$)/i.test(href)) {
-                ev.preventDefault();
-                ev.stopPropagation();
-                ev.stopImmediatePropagation();
-                goParentOrBack(href);
+        var a = target.closest('a[href]');
+        if (a) {
+            var href = a.getAttribute('href') || '';
+            if (href && href !== '#' && !/^javascript:/i.test(href) && isMuteHref(href)) {
+                block(ev, 'الحذف / التصدير / التعليق يحتاج اتصال بالإنترنت.');
                 return;
             }
-        }
-
-        if (!offline) {
+            // Uncontrolled tab only: soft-open from Cache API (prevent Chrome interstitial).
+            if (!hasSwController() && href && /\/admin(\/|$)/i.test(href)) {
+                // Let create/edit navigate if SW will load later — only intercept when no SW at all.
+                try {
+                    var u = new URL(a.href, root.location.href);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    var keys = [u.href, u.origin + u.pathname];
+                    var p = Promise.resolve(null);
+                    if (root.caches) {
+                        keys.forEach(function (k) {
+                            p = p.then(function (h) {
+                                return h || root.caches.match(k).catch(function () { return null; });
+                            });
+                        });
+                    }
+                    p.then(function (res) {
+                        if (!res) {
+                            toast('افتح الصفحة وأنت متصل مرة ليُحفظ الشكل أوفلاين.', true);
+                            return;
+                        }
+                        return res.text().then(function (html) {
+                            if (!html || html.length < 400) {
+                                toast('الصفحة غير محفوظة أوفلاين.', true);
+                                return;
+                            }
+                            root.document.open();
+                            root.document.write(html);
+                            root.document.close();
+                        });
+                    });
+                } catch (eNav) { /* ignore */ }
+            }
             return;
         }
 
-        // Save buttons: never blanket-block — let submit handler + ops queue decide.
         var submitBtn = target.closest('button[type="submit"], input[type="submit"], [data-rateb-save], .btn-save');
         if (submitBtn) {
             var form = submitBtn.closest('form');
             if (form && String(form.getAttribute('method') || 'get').toLowerCase() === 'post') {
                 if (formIsOnlineOnly(form)) {
                     block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
-                    return;
                 }
-                if (formCanQueueOffline(form)) {
-                    // Let the form submit reach RatebOfflineOpsForms (queues + syncs).
-                    return;
-                }
-                block(ev,
-                    'هذه الشاشة غير مربوطة بطابور الأوفلاين بعد. المسودات التشغيلية (مشتريات، مخزون، حضور، CRM…) تُحفظ أوفلاين وتُزامن عند الاتصال.'
-                );
-                return;
+                // Otherwise allow click → submit handler queues draft.
             }
-        }
-
-        if (!a) {
-            return;
-        }
-        if (!href || href === '#' || /^javascript:/i.test(href)) {
-            return;
-        }
-        if (isMuteHref(href)) {
-            block(ev, 'الحذف والتصدير يحتاجان اتصال بالإنترنت.');
         }
     }
 
@@ -318,7 +347,7 @@
             return;
         }
         var form = ev.target;
-        if (!form || !form.getAttribute) {
+        if (!form || form.tagName !== 'FORM') {
             return;
         }
         if (String(form.getAttribute('method') || 'get').toLowerCase() !== 'post') {
@@ -328,13 +357,30 @@
             block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
             return;
         }
-        if (formCanQueueOffline(form)) {
-            // Do not block — ops-forms / form-post adapters enqueue into RatebOfflineQueue.
-            return;
+
+        // Prefer dedicated ops adapters when they claim the form.
+        try {
+            if (root.RatebOfflineOpsForms && typeof root.RatebOfflineOpsForms.matchHook === 'function') {
+                var path = (form.getAttribute('action') || '') + ' '
+                    + ((root.location && root.location.pathname) || '');
+                var hook = root.RatebOfflineOpsForms.matchHook(path)
+                    || root.RatebOfflineOpsForms.matchHook(root.location && root.location.pathname);
+                if (hook && typeof root.RatebOfflineOpsForms.isModuleEnabled === 'function'
+                    && root.RatebOfflineOpsForms.isModuleEnabled(hook.module, hook.action)) {
+                    // Let ops-forms-adapter handle enqueue.
+                    return;
+                }
+            }
+        } catch (eOps) { /* fall through to deferred HTTP */ }
+
+        ev.preventDefault();
+        ev.stopPropagation();
+        try {
+            deferHttpForm(form);
+            toast('تم حفظ النموذج أوفلاين — يُرسل تلقائياً عند عودة الاتصال.');
+        } catch (eDef) {
+            toast('تعذر الحفظ أوفلاين: ' + String(eDef && eDef.message ? eDef.message : eDef), true);
         }
-        block(ev,
-            'هذه الشاشة غير مربوطة بطابور الأوفلاين بعد. المسودات التشغيلية تُحفظ أوفلاين وتُزامن عند عودة النت.'
-        );
     }
 
     function boot() {
@@ -348,7 +394,10 @@
         clearStaleMarks();
         root.document.addEventListener('click', onClick, true);
         root.document.addEventListener('submit', onSubmit, true);
-        root.addEventListener('online', clearStaleMarks);
+        root.addEventListener('online', function () {
+            clearStaleMarks();
+            setTimeout(function () { flushDeferredForms(); }, 800);
+        });
         root.addEventListener('offline', function () {
             ensureCss();
             clearStaleMarks();
@@ -356,13 +405,23 @@
         root.document.addEventListener('rateb-connection-badge', function () {
             clearStaleMarks();
             ensureCss();
+            if (!isOffline()) {
+                flushDeferredForms();
+            }
         });
         setInterval(clearStaleMarks, 5000);
+        setTimeout(function () {
+            if (!isOffline()) {
+                flushDeferredForms();
+            }
+        }, 1500);
     }
 
     root.RatebOfflineNavGuard = {
         scan: clearStaleMarks,
         isOffline: isOffline,
+        flushDeferred: flushDeferredForms,
+        deferredCount: function () { return readDeferred().length; },
         build: GUARD_BUILD
     };
     boot();

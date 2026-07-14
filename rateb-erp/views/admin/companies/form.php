@@ -19,7 +19,7 @@ if ($storageLimitVal < 1) {
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo $action; ?>" id="rateb-company-form">
+        <form method="post" action="<?php echo $action; ?>" id="rateb-company-form" data-rateb-offline-writable="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <input type="hidden" name="sync_from_plan" id="rateb-sync-from-plan" value="0">
             <div class="row g-3">

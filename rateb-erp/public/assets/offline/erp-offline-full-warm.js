@@ -612,7 +612,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v39';
+        var build = '20260713-force-sw-v40';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',

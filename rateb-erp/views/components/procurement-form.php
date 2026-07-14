@@ -29,7 +29,7 @@ if ($entityType === 'purchase_request' && $isEdit) {
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-procurement-form>
+        <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-procurement-form data-rateb-offline-writable="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php if ($isEdit && (int) (($item ?? [])['company_id'] ?? 0) > 0) { ?>
             <input type="hidden" name="company_id" value="<?php echo (int) $item['company_id']; ?>">

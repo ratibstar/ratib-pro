@@ -173,45 +173,28 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       }
       document.addEventListener('click', function (ev) {
         try {
+          // Only help when SW is missing — never hijack edit/create (broke table buttons).
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
+          if (navigator.onLine !== false) {
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (!badge || badge.classList.contains('is-online')) return;
+          }
           var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!a) return;
-          // Offline edit: never navigate to /id/edit without SW — Chrome paints interstitial.
-          var offline = false;
-          try { offline = navigator.onLine === false; } catch (eOff) {}
-          try {
-            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-            if (badge && badge.classList.contains('is-offline')) offline = true;
-          } catch (eB) {}
-          if (offline && (a.getAttribute('data-rateb-edit-link') === '1'
-              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.getAttribute('href') || '')
-              || /\/\d+\/(edit|show|view)(\/|$|\?)/i.test(a.href || ''))) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            try {
-              if (window.history.length > 1) {
-                history.back();
-                return;
-              }
-            } catch (eBack) {}
-            try {
-              var pu = new URL(a.href, location.href);
-              var listPath = pu.pathname.replace(/\/\d+\/(edit|show|view).*$/i, '').replace(/\/+$/, '');
-              location.href = pu.origin + (listPath || (publicBase() + 'admin/companies'));
-            } catch (eGo) {
-              location.href = location.origin + publicBase() + 'admin/companies';
-            }
-            return;
-          }
-          if (!offline) return;
-          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
           var u = new URL(a.href, location.href);
           if (u.origin !== location.origin) return;
           if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
+          // Create/edit with SW missing: try Cache API snapshot instead of Chrome interstitial.
           ev.preventDefault();
           ev.stopPropagation();
           var keys = [u.href, u.origin + u.pathname, u.origin + u.pathname.replace(/\/+$/, '')];
           if (/\/admin\/ops\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\/ops\//i, '/admin/'));
           else if (/\/admin\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\//i, '/admin/ops/'));
+          // For /id/edit prefer parent list cache.
+          if (/\/\d+\/(edit|show|view)(\/|$)/i.test(u.pathname)) {
+            var parent = u.pathname.replace(/\/\d+\/(edit|show|view).*$/i, '').replace(/\/+$/, '');
+            if (parent) keys.unshift(u.origin + parent);
+          }
           var p = Promise.resolve(null);
           keys.forEach(function (k) { p = p.then(function (h) { return h || matchAnyCache(k); }); });
           p.then(function (res) {
@@ -578,12 +561,12 @@ $ratebOfflineFlagSvc = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFl
     ? new \Rateb\App\Offline\Services\OfflineFeatureFlagService()
     : null;
 $ratebOfflineReadCache = $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isReadCacheEnabled();
-// Full offline SDK only on daily-ops surfaces — not every admin page (companies, CMS, settings…).
+// Full offline SDK on daily-ops + platform companies/oversight (create/save queue).
 $ratebOfflineFullClient = $ratebOfflineReadCache && (
     !empty($_GET['rateb_offline'])
     || !empty($_GET['rateb_offline_debug'])
     || ($erpRoute !== '' && (bool) preg_match(
-        '#^(admin/ops(?:/|$)|admin/hr(?:/|$)|admin/recruitment(?:/|$)|admin/eproc(?:/|$)|company/(?:ops|hr|procurement|inventory)(?:/|$))#',
+        '#^(admin/ops(?:/|$)|admin/hr(?:/|$)|admin/recruitment(?:/|$)|admin/eproc(?:/|$)|admin/companies(?:/|$)|admin/oversight(?:/|$)|company/(?:ops|hr|procurement|inventory)(?:/|$))#',
         $erpRoute
     ))
 );
