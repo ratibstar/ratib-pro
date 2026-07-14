@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "count": 1179,
+  "sha256": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+  "pre_ag": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+  "sha_match": true,
+  "hr": "admin/hr",
+  "inventory": "admin/ops/inventory",
+  "users": "admin/ops/users",
+  "crm": "admin/crm",
+  "pos": "admin/ops/pos",
+  "legacy_company": true,
+  "legacy_accounting": true,
+  "select_hr": ["auth", "ops"],
+  "select_admin": ["auth", "dashboard"],
+  "select_pos": ["auth", "pos", "pos_v2"]
+}

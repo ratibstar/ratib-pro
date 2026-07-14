@@ -1,0 +1,127 @@
+{
+  "phase": "FINAL_ENTERPRISE_REGRESSION_CERTIFICATION",
+  "title": "Post–Phase AG commit gate",
+  "mode": "read_only_no_code_changes",
+  "measured_at": "2026-07-14T19:50:00Z",
+  "change_under_test": {
+    "file": "rateb-erp/config/app.php",
+    "function": "rateb_app_route",
+    "phase": "AG",
+    "description": "Once-per-process conflictRoots lookup (eliminate O(N²) array_merge growth)"
+  },
+  "verdict": "SAFE TO COMMIT",
+  "verdict_rationale": "No behavioral regression vs pre-AG. Ops route table SHA256 and count are byte-identical to pre-AG. URL/controller/middleware mappings unchanged. EnterpriseTestRunner 53/53. Observed module HTTP failures (CRM/recruitment missing controller classes; POS e2e fixture env; bare /pos 404) are pre-existing and unchanged by AG — CRM already failed in Phase AD with the same Arabic error page.",
+  "ag_parity_vs_pre_ag": {
+    "ops_route_table_sha256_pre": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+    "ops_route_table_sha256_post": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+    "sha_match": true,
+    "ops_route_count_pre": 1179,
+    "ops_route_count_post": 1179,
+    "count_match": true,
+    "rateb_app_route_samples_match": true,
+    "samples": {
+      "hr": "admin/hr",
+      "inventory": "admin/ops/inventory",
+      "users": "admin/ops/users",
+      "crm": "admin/crm",
+      "pos": "admin/ops/pos"
+    },
+    "legacy_aliases": {
+      "/company": true,
+      "/accounting": true
+    },
+    "RouteModuleLoader_select": {
+      "/admin": ["auth", "dashboard"],
+      "/admin/hr": ["auth", "ops"],
+      "/pos": ["auth", "pos", "pos_v2"]
+    }
+  },
+  "performance_vs_pre_ag": {
+    "ops_routes_load_ms_pre": 414.428,
+    "ops_routes_load_ms_post_probe": 5.514,
+    "ttfb_admin_hr_pre_s": 0.509,
+    "ttfb_admin_hr_post_s": 0.151,
+    "note": "Faster only; not a functional regression"
+  },
+  "enterprise_tests": {
+    "EnterpriseTestRunner": {
+      "passed": 53,
+      "failed": 0,
+      "total": 53,
+      "status": "PASS",
+      "suites": ["branch_isolation", "p7_branch_assignment", "financial", "transfers", "api_security", "infrastructure"]
+    },
+    "pos_offline_sync": { "status": "PASS", "detail": "4/4" },
+    "pos_v2_master": {
+      "status": "FAIL_PREEXISTING_ENV",
+      "passed": 10,
+      "failed": 2,
+      "failures": [
+        "integration — database available — set POS_V2_INTEGRATION_SEED=1 or POS_V2_TEST_COMPANY_ID + POS_V2_TEST_INVENTORY_ID",
+        "e2e — database available — integration fixture unavailable"
+      ],
+      "ag_related": false
+    },
+    "domain_run_scripts_on_production": {
+      "status": "SKIP",
+      "detail": "tests/*/run-*-tests.php and most offline/tests/run-*.php wrappers not deployed to production tree; Online tests not executable on host without syncing test harness"
+    }
+  },
+  "http_smoke_authenticated": {
+    "dashboard": { "http": 200, "status": "PASS" },
+    "hr": { "http": 200, "status": "PASS" },
+    "inventory": { "http": 200, "status": "PASS" },
+    "procurement": { "http": 200, "status": "PASS" },
+    "accounting": { "http": 200, "status": "PASS" },
+    "suppliers": { "http": 200, "status": "PASS" },
+    "login_unauth_redirect": { "http": 302, "status": "PASS" },
+    "crm": {
+      "http": 500,
+      "status": "PREEXISTING",
+      "evidence": "Class Rateb\\App\\Controllers\\Company\\CrmDashboardController not found — class file absent from repo and production; Phase AD already recorded CRM error page title تعذّر إكمال العملية",
+      "ag_related": false
+    },
+    "recruitment": {
+      "http": 500,
+      "status": "PREEXISTING",
+      "evidence": "Class Rateb\\App\\Controllers\\Company\\RecruitmentDashboardController not found — class file absent from repo",
+      "ag_related": false
+    },
+    "pos_bare_/pos": {
+      "http": 404,
+      "status": "PREEXISTING_OR_ROUTING",
+      "evidence": "RouteModuleLoader selects pos modules; /admin/ops/pos returns 302; bare /pos 404 at Apache/public layer",
+      "ag_related": false
+    }
+  },
+  "artifacts_present": {
+    "pos-sw.js": true,
+    "offline-shell.html": true,
+    "rateb-offline.js": true,
+    "RouteModuleLoader.php": true,
+    "routes/manifest.php": true,
+    "service_worker_http": 200,
+    "hybrid_zero_touch_status": "PASS (ONLINE)"
+  },
+  "rbac_auth_multi_company": {
+    "AuthorizationService_loads": true,
+    "EnterpriseTestRunner_branch_isolation": "included in 53/53",
+    "EnterpriseTestRunner_api_security": "included in 53/53",
+    "auth_gate_unauthenticated": "302"
+  },
+  "ag_induced_regressions": [],
+  "preexisting_issues_not_blocking_ag_commit": [
+    "CRM dashboard: missing CrmDashboardController class (repo + production)",
+    "Recruitment dashboard: missing RecruitmentDashboardController class (repo + production)",
+    "POS V2 integration/e2e require POS_V2_INTEGRATION_SEED / fixture env vars",
+    "Bare GET /pos returns 404 while /admin/ops/pos redirects (302)",
+    "Most online/offline domain test runners not present on production deploy tree"
+  ],
+  "evidence_files": [
+    "tools/boot-bench/reports/phase-ag-before.json",
+    "tools/boot-bench/reports/phase-ag-verdict.json",
+    "tools/boot-bench/reports/phase-final-route-probe.json",
+    "tools/boot-bench/reports/phase-ad-verdict.json",
+    "tools/boot-bench/reports/phase-final-enterprise-certification.json"
+  ]
+}
