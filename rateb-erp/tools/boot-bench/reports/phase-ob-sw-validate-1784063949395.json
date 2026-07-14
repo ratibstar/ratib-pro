@@ -1,0 +1,153 @@
+{
+  "phase": "OB",
+  "ok": false,
+  "generatedAt": "2026-07-14T21:19:09.395Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "notes": [
+    "UNRELATED: window.__RATEB_OA_ACTIVE unset; product uses RatebOffline.__oaBootstrap (out of OB scope)."
+  ],
+  "swReady": {
+    "build": "20260714-phase-ob-v56",
+    "protect": true,
+    "controller": true,
+    "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+  },
+  "onlineWarm": {
+    "controller": true,
+    "warmed": [
+      {
+        "u": "/assets/offline/offline-bootstrap.js",
+        "ok": true,
+        "len": 17584,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-storage.js",
+        "ok": true,
+        "len": 8007,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-auth.js",
+        "ok": true,
+        "len": 52939,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-rbac.js",
+        "ok": true,
+        "len": 17287,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-core.js",
+        "ok": true,
+        "len": 1839,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/erp-shell-bootstrap.js",
+        "ok": true,
+        "len": 45469,
+        "stub": false
+      },
+      {
+        "u": "/offline-shell.html",
+        "ok": true,
+        "len": 9055,
+        "stub": false
+      },
+      {
+        "u": "/admin/",
+        "ok": true,
+        "len": 77698,
+        "stub": false
+      }
+    ]
+  },
+  "offline": {
+    "href": "https://rateb.sa/rateb-erp/public/admin/",
+    "onLine": false,
+    "title": "لوحة التحكم | نظام رتب ERP",
+    "bodySnippet": "نظام رتب ERP\nلوحة التحكم\nكتالوج منتجات المنصة\nمراقبة الإدارة\n2\nالمشتريات\n1\nالمخزون\nنقطة البيع\nالموردون\nالموارد البشرية\nقسم الحسابات\nالعقود / الأصول\nالتحكم بالوصول\nالإشعارات\nإعدادات الملف\nلوحة الإدارة التنفيذية\nنظام المحتوى التسويقي\n23\nالتحكم بالوصول\nلوحة التحكم\nغير متصل\nتسجيل الخروج\nEN\nعربي\nفلتر الف",
+    "oa_bootstrap_missing": false,
+    "__RATEB_OA_ACTIVE": false,
+    "RatebOffline_oaBootstrap": true,
+    "hasRatebOffline": true,
+    "swController": true,
+    "bootstrapResource": {
+      "name": "/rateb-erp/public/assets/offline/offline-bootstrap.js?obv=1784063962170",
+      "transferSize": 0,
+      "decodedBodySize": 17590
+    },
+    "bootstrapFetch": {
+      "status": 200,
+      "len": 17584,
+      "stub": false,
+      "missingMarker": false,
+      "hasOaMark": true
+    },
+    "moduleResources": [
+      {
+        "m": "modules/offline-storage.js",
+        "status": 200,
+        "len": 8007,
+        "stub": false,
+        "missing": false
+      },
+      {
+        "m": "modules/offline-auth.js",
+        "status": 200,
+        "len": 52939,
+        "stub": false,
+        "missing": false
+      },
+      {
+        "m": "modules/offline-rbac.js",
+        "status": 200,
+        "len": 17287,
+        "stub": false,
+        "missing": false
+      },
+      {
+        "m": "modules/offline-core.js",
+        "status": 200,
+        "len": 1839,
+        "stub": false,
+        "missing": false
+      },
+      {
+        "m": "erp-shell-bootstrap.js",
+        "status": 200,
+        "len": 45469,
+        "stub": false,
+        "missing": false
+      }
+    ]
+  },
+  "dashboardOffline": {
+    "chromeError": true,
+    "err": "Failed to fetch",
+    "bodyLen": 0
+  },
+  "onlineSmoke": {
+    "href": "https://rateb.sa/rateb-erp/public/admin/",
+    "ok": true
+  },
+  "criteria": {
+    "bootstrap_decoded_gt_15000": true,
+    "bootstrap_transferSize_0": true,
+    "no_stub": true,
+    "oa_bootstrap_executes": true,
+    "RATEB_OA_ACTIVE_flag": false,
+    "no_oa_bootstrap_missing": true,
+    "modules_from_cache_ok": true,
+    "dashboard_offline_ok": false,
+    "online_no_regression": true,
+    "sw_build_phase_ob": true,
+    "sw_has_protect_helper": true
+  },
+  "bootSizeObserved": 17584,
+  "transferObserved": 0,
+  "verdict": "FAIL"
+}

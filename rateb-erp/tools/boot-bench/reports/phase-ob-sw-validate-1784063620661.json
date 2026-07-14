@@ -1,0 +1,107 @@
+{
+  "phase": "OB",
+  "ok": false,
+  "generatedAt": "2026-07-14T21:13:40.662Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "notes": [],
+  "swReady": {
+    "build": "20260714-phase-ob-v55",
+    "protect": true,
+    "scriptURL": null,
+    "controller": false,
+    "regErr": "Failed to register a ServiceWorker for scope ('https://rateb.sa/rateb-erp/public/') with script ('https://rateb.sa/rateb-erp/public/pos-sw.js?v=phase-ob-v55'): ServiceWorker script evaluation failed"
+  },
+  "onlineWarm": {
+    "controller": false,
+    "oaBootstrap": false,
+    "warmed": [
+      {
+        "u": "/assets/offline/offline-bootstrap.js",
+        "ok": true,
+        "len": 17584,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-storage.js",
+        "ok": true,
+        "len": 8007,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-auth.js",
+        "ok": true,
+        "len": 52939,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-rbac.js",
+        "ok": true,
+        "len": 17287,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-core.js",
+        "ok": true,
+        "len": 1839,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/erp-shell-bootstrap.js",
+        "ok": true,
+        "len": 45469,
+        "stub": false
+      },
+      {
+        "u": "/offline-shell.html",
+        "ok": true,
+        "len": 9055,
+        "stub": false
+      }
+    ],
+    "cacheBootstrap": null
+  },
+  "reloadOfflineErr": "page.reload: net::ERR_INTERNET_DISCONNECTED\nCall log:\n  - waiting for navigation until \"commit\"\n",
+  "offline": {
+    "href": "chrome-error://chromewebdata/",
+    "onLine": true,
+    "title": "rateb.sa",
+    "bodySnippet": "Tap the dino or press space to play\n\nTry:\n\nChecking the network cables, modem, and router\nReconnecting to Wi-Fi\nRunning Windows Network Diagnostics\nERR_INTERNET_DISCONNECTED",
+    "oa_bootstrap_missing": false,
+    "__RATEB_OA_ACTIVE": false,
+    "RatebOffline_oaBootstrap": false,
+    "hasRatebOffline": false,
+    "swController": false,
+    "bootstrapResource": {
+      "name": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js?obv=1784063638029",
+      "transferSize": 0,
+      "decodedBodySize": 0
+    },
+    "bootstrapFetch": null,
+    "moduleResources": [
+      {
+        "m": "modules/offline-storage.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-auth.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-rbac.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-core.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "erp-shell-bootstrap.js",
+        "err": "Failed to fetch"
+      }
+    ],
+    "bootstrapFetchErr": "Failed to fetch"
+  },
+  "dashboardOfflineNavErr": "page.goto: net::ERR_INTERNET_DISCONNECTED at https://rateb.sa/rateb-erp/public/admin/\nCall log:\n  - navigating to \"https://rateb.sa/rateb-erp/public/admin/\", waiting until \"commit\"\n",
+  "error": "page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at C:\\Users\\انا\\AppData\\Local\\Temp\\rateb-phase-ob-sw-validate.js:218:42",
+  "verdict": "FAIL"
+}

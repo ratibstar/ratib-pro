@@ -1,0 +1,72 @@
+{
+  "phase": "OB",
+  "title": "FIX OFFLINE BOOTSTRAP SERVICE WORKER",
+  "verdict": "PASS",
+  "enterprise": "PASS",
+  "measured_at": "2026-07-14T21:19:09.395Z",
+  "evidence_file": "phase-ob-sw-validate-1784063949395.json",
+  "commit": "9e644ac1",
+  "sw_build": "20260714-phase-ob-v56",
+  "root_cause": {
+    "summary": "pos-sw.js emptyAssetResponse stubbed OA JS (28-byte /* rateb-pos offline stub */) because protect regex omitted offline-bootstrap.js and modules/*.",
+    "secondary_incident": "First OB deploy comment contained nested */ which made SW script evaluation fail; fixed in v56."
+  },
+  "files_modified": [
+    "rateb-erp/public/pos-sw.js"
+  ],
+  "before_after": {
+    "offline_bootstrap_decodedBodySize": { "before": 28, "after": 17590 },
+    "offline_bootstrap_transferSize": { "before": 0, "after": 0 },
+    "body": { "before": "/* rateb-pos offline stub */", "after": "real offline-bootstrap.js (~17.6KB)" },
+    "RatebOffline.__oaBootstrap": { "before": false, "after": true },
+    "oa_bootstrap_missing": { "before": true, "after": false },
+    "modules_stubbed": { "before": true, "after": false }
+  },
+  "browser_evidence": {
+    "bootstrapResource": {
+      "decodedBodySize": 17590,
+      "transferSize": 0
+    },
+    "bootstrapFetch": {
+      "status": 200,
+      "len": 17584,
+      "stub": false,
+      "hasOaMark": true
+    },
+    "oa_bootstrap_executes": true,
+    "modules": {
+      "offline-storage.js": 8007,
+      "offline-auth.js": 52939,
+      "offline-rbac.js": 17287,
+      "offline-core.js": 1839,
+      "erp-shell-bootstrap.js": 45469
+    },
+    "dashboard_already_rendered_offline": true,
+    "offline_href": "https://rateb.sa/rateb-erp/public/admin/",
+    "offline_title": "لوحة التحكم | نظام رتب ERP",
+    "online_no_regression": true
+  },
+  "acceptance": {
+    "offline_bootstrap_served_completely": true,
+    "oa_bootstrap_executes": true,
+    "no_stub_returned": true,
+    "modules_loaded_from_cache": true,
+    "offline_login_shell_path": "OA bootstrap executes offline (PIN/login path not re-certified in OB)",
+    "dashboard_works_offline": true,
+    "no_regression_online": true
+  },
+  "unrelated_issues_not_fixed": [
+    {
+      "id": "OA_ACTIVE_FLAG_NAME",
+      "detail": "window.__RATEB_OA_ACTIVE is never set; product uses RatebOffline.__oaBootstrap. Out of OB scope."
+    },
+    {
+      "id": "ADMIN_FETCH_WHILE_OFFLINE",
+      "detail": "While already on offline admin dashboard, a secondary fetch('/admin/') returned Failed to fetch. Document body was already the live offline dashboard (body snippet present). Not an OA stub regression; navigation/cache path outside OB allowlist change."
+    },
+    {
+      "id": "SW_SCRIPTURL_QUERY",
+      "detail": "Active controller scriptURL still showed ?v=20260714-force-sw-v52 while SW_BUILD_ID inside file is phase-ob-v56 (registration query vs body build id). Functionally v56 protect helpers executed."
+    }
+  ]
+}

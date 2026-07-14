@@ -1,0 +1,113 @@
+{
+  "phase": "OB",
+  "ok": false,
+  "generatedAt": "2026-07-14T21:04:59.211Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "criteria": {
+    "bootstrap_decoded_gt_15000": false,
+    "bootstrap_transferSize_0": true,
+    "no_stub": true,
+    "oa_bootstrap_executes": false,
+    "RATEB_OA_ACTIVE_flag": false,
+    "no_oa_bootstrap_missing": true,
+    "modules_from_cache_ok": false,
+    "online_no_regression": true,
+    "sw_build_phase_ob": true,
+    "sw_has_protect_helper": true
+  },
+  "notes": [],
+  "onlineWarm": {
+    "sw": [],
+    "updated": false,
+    "bootstrapOnline": null,
+    "oa": false,
+    "oaActive": false,
+    "oaBootstrap": false,
+    "swBuild": "20260714-phase-ob-v55",
+    "swHasProtect": true,
+    "warmed": [
+      {
+        "u": "/assets/offline/offline-bootstrap.js",
+        "ok": true,
+        "len": 17584,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-storage.js",
+        "ok": true,
+        "len": 8007,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-auth.js",
+        "ok": true,
+        "len": 52939,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-rbac.js",
+        "ok": true,
+        "len": 17287,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/modules/offline-core.js",
+        "ok": true,
+        "len": 1839,
+        "stub": false
+      },
+      {
+        "u": "/assets/offline/erp-shell-bootstrap.js",
+        "ok": true,
+        "len": 45469,
+        "stub": false
+      }
+    ]
+  },
+  "offline": {
+    "href": "chrome-error://chromewebdata/",
+    "onLine": true,
+    "title": "rateb.sa",
+    "statusText": "Tap the dino or press space to play\n\nTry:\n\nChecking the network cables, modem, and router\nReconnecting to Wi-Fi\nRunning Windows Network Diagnostics\nERR_INTERNET_DISCONNECTED",
+    "oa_bootstrap_missing": false,
+    "__RATEB_OA_ACTIVE": false,
+    "RatebOffline_oaBootstrap": false,
+    "hasRatebOffline": false,
+    "bootstrapResource": {
+      "name": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js?ob=1784063114970",
+      "transferSize": 0,
+      "decodedBodySize": 0,
+      "encodedBodySize": 0
+    },
+    "moduleResources": [
+      {
+        "m": "modules/offline-storage.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-auth.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-rbac.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "modules/offline-core.js",
+        "err": "Failed to fetch"
+      },
+      {
+        "m": "erp-shell-bootstrap.js",
+        "err": "Failed to fetch"
+      }
+    ],
+    "swController": false,
+    "bootstrapFetchErr": "Failed to fetch"
+  },
+  "onlineSmoke": {
+    "href": "https://rateb.sa/rateb-erp/public/admin/",
+    "onLine": true,
+    "ok": true
+  },
+  "verdict": "FAIL"
+}
