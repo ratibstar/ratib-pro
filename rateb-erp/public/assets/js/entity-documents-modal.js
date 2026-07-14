@@ -118,6 +118,17 @@
         activeRoutePrefix = routePrefix;
         activeEntityId = entityId;
         titleEl.textContent = label || titleEl.textContent;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                bodyEl.innerHTML = '<p class="text-warning text-center py-3 mb-0">المرفقات تحتاج اتصال بالإنترنت (معاينة الرفع غير متاحة أوفلاين).</p>';
+                return;
+            }
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) {
+                bodyEl.innerHTML = '<p class="text-warning text-center py-3 mb-0">المرفقات تحتاج اتصال بالإنترنت (معاينة الرفع غير متاحة أوفلاين).</p>';
+                return;
+            }
+        } catch (eOff) { /* continue */ }
         bodyEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
         fetch(panelUrl(routePrefix, entityId), {
             credentials: 'same-origin',
@@ -136,8 +147,16 @@
                     ? (panel.getAttribute('data-docs-route-prefix') || '')
                     : '';
             })
-            .catch(function () {
-                bodyEl.innerHTML = '<p class="text-danger text-center py-3">Error</p>';
+            .catch(function (err) {
+                var msg = 'تعذر تحميل المرفقات.';
+                try {
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                        msg = 'المرفقات تحتاج اتصال بالإنترنت.';
+                    } else if (err && /failed to fetch|network|internet_disconnected/i.test(String(err.message || err))) {
+                        msg = 'المرفقات تحتاج اتصال بالإنترنت.';
+                    }
+                } catch (eM) { /* ignore */ }
+                bodyEl.innerHTML = '<p class="text-warning text-center py-3 mb-0">' + msg + '</p>';
             });
     }
 

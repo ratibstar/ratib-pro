@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v47';
+var SW_BUILD_ID = '20260714-force-sw-v48';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -904,7 +904,13 @@ function warmErpOfflineShell(opts) {
         base + 'assets/js/theme.js',
         base + 'assets/js/app.js',
         base + 'assets/js/connectivity-indicator.js',
-        base + 'assets/js/charts.js'
+        base + 'assets/js/charts.js',
+        base + 'assets/js/rateb-modal.js',
+        base + 'assets/js/rateb-confirm.js',
+        base + 'assets/js/approvals-oversight.js',
+        base + 'assets/js/entity-documents-modal.js',
+        base + 'assets/js/table-tools.js',
+        base + 'assets/offline/erp-offline-nav-guard.js'
     ];
     // Tiny seed set only — full warm is client-side and idle-throttled (avoid page spin).
     var leanOps = [
@@ -1577,6 +1583,13 @@ self.addEventListener('install', function (event) {
                     'assets/js/theme.js',
                     'assets/js/app.js',
                     'assets/js/connectivity-indicator.js',
+                    'assets/js/rateb-modal.js',
+                    'assets/js/rateb-confirm.js',
+                    'assets/js/approvals-oversight.js',
+                    'assets/js/entity-documents-modal.js',
+                    'assets/js/table-tools.js',
+                    'assets/offline/erp-offline-nav-guard.js',
+                    'assets/offline/erp-offline-full-warm.js',
                     'manifest.webmanifest',
                     'offline-shell.html'
                 ];

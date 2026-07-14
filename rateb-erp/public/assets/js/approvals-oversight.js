@@ -75,11 +75,31 @@
     }
 
     function confirmAction(message, variant) {
+        // Offline: native confirm — ratebConfirm modal often fails if confirm JS is stale/uncached.
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return Promise.resolve(window.confirm(message));
+            }
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) {
+                return Promise.resolve(window.confirm(message));
+            }
+        } catch (eOff) { /* fall through */ }
         var confirmFn = window.ratebConfirm || window.confirm;
         if (confirmFn === window.confirm) {
             return Promise.resolve(confirmFn(message));
         }
-        return confirmFn(message, { variant: variant || 'primary' });
+        try {
+            var p = confirmFn(message, { variant: variant || 'primary' });
+            if (p && typeof p.then === 'function') {
+                return p.catch(function () {
+                    return window.confirm(message);
+                });
+            }
+            return Promise.resolve(!!p);
+        } catch (eC) {
+            return Promise.resolve(window.confirm(message));
+        }
     }
 
     function confirmMessageForAction(action) {
@@ -197,7 +217,7 @@
 
         var ops = '<div class="rateb-approval-ops rateb-approval-ops-detail">';
         if (detail.edit_url) {
-            ops += '<a href="' + escapeHtml(detail.edit_url) + '" class="rateb-approval-btn rateb-approval-btn-edit" target="_blank" rel="noopener"><i class="fas fa-edit"></i><span>' + escapeHtml(labels.edit || 'Edit') + '</span></a>';
+            ops += '<a href="' + escapeHtml(detail.edit_url) + '" class="rateb-approval-btn rateb-approval-btn-edit"><i class="fas fa-edit"></i><span>' + escapeHtml(labels.edit || 'Edit') + '</span></a>';
         }
         if (detail.can_approve) {
             ops += '<button type="button" class="rateb-approval-btn rateb-approval-btn-approve" data-action="approve"><i class="fas fa-check"></i><span>' + escapeHtml(labels.approve || 'Approve') + '</span></button>';
@@ -209,7 +229,7 @@
             ops += '<button type="button" class="rateb-approval-btn rateb-approval-btn-undo" data-action="undo"><i class="fas fa-rotate-left"></i><span>' + escapeHtml(labels.undo || 'Undo') + '</span></button>';
         }
         if (detail.view_url) {
-            ops += '<a href="' + escapeHtml(detail.view_url) + '" class="rateb-approval-btn rateb-approval-btn-link" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i><span>' + escapeHtml(labels.open_in_ops || 'Open') + '</span></a>';
+            ops += '<a href="' + escapeHtml(detail.view_url) + '" class="rateb-approval-btn rateb-approval-btn-link"><i class="fas fa-external-link-alt"></i><span>' + escapeHtml(labels.open_in_ops || 'Open') + '</span></a>';
         }
         ops += '<button type="button" class="rateb-approval-btn rateb-approval-btn-close" data-action="close-detail"><i class="fas fa-chevron-up"></i><span>' + escapeHtml(labels.close || 'Close') + '</span></button>';
         ops += '</div>';
@@ -260,7 +280,15 @@
                 }
             })
             .catch(function (err) {
-                body.innerHTML = '<div class="alert alert-danger m-3">' + escapeHtml(err.message || 'Error') + '</div>';
+                var msg = err && err.message ? String(err.message) : (labels.error || 'Error');
+                try {
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                        msg = 'التفاصيل تحتاج اتصال أو زيارة الصفحة وأنت متصل مرة لحفظها أوفلاين. استخدم زر التعديل إن كان متاحاً.';
+                    } else if (/failed to fetch|network|internet_disconnected|offline/i.test(msg)) {
+                        msg = 'تعذر تحميل التفاصيل — تحقق من الاتصال.';
+                    }
+                } catch (eM) { /* ignore */ }
+                body.innerHTML = '<div class="alert alert-warning m-3">' + escapeHtml(msg) + '</div>';
                 loading.classList.add('d-none');
                 body.classList.remove('d-none');
             });
@@ -504,8 +532,14 @@
                 ? (labels.confirm_edit || 'Open edit page?')
                 : (labels.confirm_open_ops || 'Open in operations?');
             confirmAction(msg, 'primary').then(function (ok) {
-                if (ok) {
-                    window.open(href, '_blank', 'noopener,noreferrer');
+                if (!ok) {
+                    return;
+                }
+                // Same-tab navigation — window.open fails / blanks while offline.
+                try {
+                    window.location.assign(href);
+                } catch (eNav) {
+                    window.location.href = href;
                 }
             });
             return;

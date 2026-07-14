@@ -618,6 +618,34 @@ if (!$ratebLocalAppliance) {
       sessionStorage.removeItem('rateb_sw_shell_warm_v46');
     } catch (e1) {}
   }
+  window.__RATEB_ASSET_BUILD__ = NEED;
+  // Force take new pos-sw when still stuck on an old controller (v42 screenshots).
+  try {
+    if ('serviceWorker' in navigator && navigator.onLine !== false) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        var stale = false;
+        (regs || []).forEach(function (reg) {
+          var script = '';
+          try {
+            script = (reg.active && reg.active.scriptURL) || (reg.waiting && reg.waiting.scriptURL) || '';
+          } catch (eS) { script = ''; }
+          if (script && script.indexOf(NEED) === -1) {
+            stale = true;
+            try {
+              if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              if (typeof reg.update === 'function') reg.update();
+            } catch (eU) {}
+          }
+        });
+        if (stale && sessionStorage.getItem('rateb_sw_force_' + NEED) !== '1') {
+          sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
+          setTimeout(function () {
+            try { location.reload(); } catch (eL) {}
+          }, 1200);
+        }
+      }).catch(function () {});
+    }
+  } catch (eForce) {}
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
 })();
 </script>
