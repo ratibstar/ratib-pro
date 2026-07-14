@@ -62,12 +62,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         /* Critical offline Save — runs even if deferred JS fails to load (fixes Save→dashboard). */
         var KEY = 'rateb_deferred_http_forms_v2';
         function offlineNow() {
+            /* Queue only when browser has no network — ignore soft offline badge. */
             try {
-                if (navigator.onLine === false) return true;
-                var b = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-                if (b && b.classList.contains('is-offline')) return true;
-            } catch (e) {}
-            return false;
+                return navigator.onLine === false;
+            } catch (e) {
+                return false;
+            }
         }
         function readList() {
             try {

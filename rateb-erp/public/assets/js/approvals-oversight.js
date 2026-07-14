@@ -440,13 +440,8 @@
 
             var offlineNow = false;
             try {
-                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                    offlineNow = true;
-                }
-                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-                if (badge && badge.classList.contains('is-offline')) {
-                    offlineNow = true;
-                }
+                // Soft badge alone must not divert approve to local queue.
+                offlineNow = typeof navigator !== 'undefined' && navigator.onLine === false;
             } catch (eOff) { /* ignore */ }
             if (offlineNow) {
                 queueOfflineDecision();

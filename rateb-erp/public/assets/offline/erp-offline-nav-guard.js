@@ -11,7 +11,7 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-online-pass-v51';
+    var GUARD_BUILD = '20260714-save-server-v52';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v29'];
     var flushing = false;
 
@@ -23,6 +23,7 @@
         }
     }
 
+    /** Soft badge for UI (browse toasts). Soft-offline must NOT divert Save to the local queue. */
     function isOffline() {
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -47,6 +48,18 @@
             }
         } catch (e1) { /* ignore */ }
         return false;
+    }
+
+    /**
+     * Queue Save only when the browser reports no network.
+     * False soft-offline badge used to queue while Wi‑Fi was up → fake «تم الحفظ».
+     */
+    function mustQueueFormSave() {
+        try {
+            return typeof navigator !== 'undefined' && navigator.onLine === false;
+        } catch (e) {
+            return false;
+        }
     }
 
     function hasSwController() {
@@ -396,8 +409,8 @@
             el.hidden = false;
             el.querySelector('span').textContent = 'تعديلات بانتظار المزامنة: ' + n
                 + (browserHasNetwork()
-                    ? ' — جاهزة للمزامنة'
-                    : ' — محفوظة محلياً مثل الأونلاين؛ ستُزامَن عند عودة النت');
+                    ? ' — الشبكة متاحة: اضغط مزامنة الآن لإرسالها للسيرفر'
+                    : ' — لا شبكة؛ محفوظة محلياً حتى يعود الاتصال');
         } catch (eB) { /* ignore */ }
     }
 
@@ -742,7 +755,8 @@
     }
 
     function onSubmit(ev) {
-        if (!isOffline()) {
+        // With network: let the browser POST to PHP (real table/server save). Never fake-queue.
+        if (!mustQueueFormSave()) {
             return;
         }
         var form = ev.target;
@@ -757,8 +771,7 @@
             return;
         }
 
-        // Always queue here (do not yield to ops SDK) so Save persists into Cache + deferred
-        // and re-open shows the saved values offline.
+        // Hard offline only: queue + keep values for reopen.
         ev.preventDefault();
         ev.stopPropagation();
         try {
@@ -986,32 +999,46 @@
                         try { root.location.reload(); } catch (eR) { /* ignore */ }
                     }
                 });
-            }, 600);
+            }, 400);
         });
         root.addEventListener('offline', function () {
             ensureCss();
             clearStaleMarks();
             updateSyncBanner();
         });
-        root.document.addEventListener('rateb-connection-badge', function (ev) {
+        root.document.addEventListener('rateb-connection-badge', function () {
             clearStaleMarks();
             ensureCss();
             updateSyncBanner();
+            // Soft «متصل» + pending queue → push to server (fixes stuck local saves).
+            if (browserHasNetwork() && readDeferred().length) {
+                flushDeferredForms({ force: true });
+            }
         });
         root.document.addEventListener('rateb-offline-connectivity', function (ev) {
             updateSyncBanner();
+            try {
+                if (ev && ev.detail && ev.detail.online && browserHasNetwork() && readDeferred().length) {
+                    flushDeferredForms({ force: true });
+                }
+            } catch (eC) { /* ignore */ }
         });
         setInterval(function () {
             clearStaleMarks();
             updateSyncBanner();
-            // Rare background flush only — frequent flush starved online page loads.
             if (browserHasNetwork() && readDeferred().length && document.visibilityState === 'visible') {
                 flushDeferredForms();
             }
-        }, 90000);
+        }, 20000);
         setTimeout(function () {
             pullDeferredFromCaches().then(function () {
-                // Do not auto-flush on every page open — blocks PHP while browsing online.
+                if (browserHasNetwork() && readDeferred().length) {
+                    flushDeferredForms({ force: true }).then(function (stats) {
+                        if (stats && stats.ok > 0) {
+                            try { root.location.reload(); } catch (eR) { /* ignore */ }
+                        }
+                    });
+                }
             });
             try {
                 var q = String(root.location.search || '');
