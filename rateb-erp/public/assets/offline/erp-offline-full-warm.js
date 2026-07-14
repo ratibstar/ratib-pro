@@ -268,10 +268,13 @@
         }
         // POS register shell is smaller than list pages but must carry register markers.
         if (/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(path.replace(/\/+$/, ''))) {
-            if (body.length < 1500) {
+            if (body.length < 2500) {
                 return false;
             }
-            return /data-pos-register|rateb-pos-register-config|pos-register\.css/i.test(body)
+            if (/data-pos-biometric-gate/i.test(body)) {
+                return false;
+            }
+            return /data-pos-register(?:\s|=|>)/i.test(body)
                 && !/<title>\s*POS Offline\s*<\/title>/i.test(head);
         }
         if (body.length < MIN_ERP_HTML_BYTES) {

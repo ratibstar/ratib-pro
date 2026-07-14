@@ -71,13 +71,23 @@ if ($mode === 'restore') {
 if (function_exists('rateb_adopt_ops_company_id')) {
     rateb_adopt_ops_company_id(22);
 }
+
+$posBio = false;
+if ($mode === 'mintpos') {
+    // Bench-only: simulate completed online biometric without changing product controllers.
+    $bio = new \Rateb\App\Services\BiometricAuthService();
+    $bio->markPosVerified((int) $row['id']);
+    $posBio = $bio->isPosVerified((int) $row['id']);
+}
+
 echo json_encode([
     'ok' => true,
-    'mode' => 'mint',
+    'mode' => $mode === 'mintpos' ? 'mintpos' : 'mint',
     'session_name' => session_name(),
     'session_id' => session_id(),
     'cookie' => session_name(),
     'user_id' => (int) $row['id'],
     'email' => $row['email'] ?? null,
     'company_id' => 22,
+    'pos_biometric_verified' => $posBio,
 ], JSON_UNESCAPED_SLASHES);

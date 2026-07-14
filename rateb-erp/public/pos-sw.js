@@ -6,10 +6,12 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-oh-v59';
+var SW_BUILD_ID = '20260714-phase-oj-v60';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
+var REGISTER_CERT_META_PATH = '__rateb_pos_register_cert_meta__';
+var POS_SNAPSHOT_VERSION = 'oj-v1';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
 var ERP_DEFERRED_POSTS_PREFIX = '__rateb_deferred_posts__/';
@@ -389,6 +391,75 @@ function registerShellUrl() {
         return self.location.origin + '/rateb-erp/public/' + REGISTER_SHELL_PATH;
     }
 }
+
+function registerCertMetaUrl() {
+    try {
+        return new URL(REGISTER_CERT_META_PATH, self.registration.scope).href;
+    } catch (e) {
+        return self.location.origin + '/rateb-erp/public/' + REGISTER_CERT_META_PATH;
+    }
+}
+
+/** Phase OJ — reject gate / stub / redirect shells; require real register markup. */
+function isCertifiedRegisterHtml(html) {
+    var body = String(html || '');
+    if (body.length < 2500) {
+        return false;
+    }
+    if (/data-pos-biometric-gate/i.test(body)) {
+        return false;
+    }
+    if (/<title>\s*POS Offline\s*<\/title>|data-rateb-uncached-page|نقطة البيع غير متصلة/i.test(body.slice(0, 4000))) {
+        return false;
+    }
+    if (/التحقق البيومتري/i.test(body.slice(0, 3000)) && !/data-pos-register(?:\s|=|>)/i.test(body)) {
+        return false;
+    }
+    if (!/data-pos-register(?:\s|=|>)/i.test(body)) {
+        return false;
+    }
+    return true;
+}
+
+function simpleHtmlHash(html) {
+    var s0 = String(html || '');
+    var h = 2166136261;
+    for (var i = 0; i < s0.length; i += 1) {
+        h ^= s0.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return 'fnv1a:' + (h >>> 0).toString(16) + ':len:' + s0.length;
+}
+
+function biometricRequiredOfflineResponse() {
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>POS — يلزم التحقق البيومتري</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
+        + 'h1{font-size:1.2rem;margin:0 0 .75rem}p{opacity:.9;line-height:1.55;max-width:28rem;margin:.6rem auto}'
+        + 'a{color:#8ab4ff}</style></head>'
+        + '<body data-rateb-pos-bio-required="1">'
+        + '<h1>يلزم التحقق البيومتري قبل استخدام نقطة البيع أوفلاين</h1>'
+        + '<p>Biometric verification required before offline POS can be used.</p>'
+        + '<p>افتح نقطة البيع وأنت متصل، أكمل التحقق البيومتري مرة واحدة، ثم أعد المحاولة دون إنترنت.</p>'
+        + '<p><a id="a-bio" href="#">فتح بوابة التحقق</a> · <a id="a-reg" href="#">شاشة البيع</a></p>'
+        + '<script>(function(){try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";'
+        + 'var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/biometric\\/?$/,"");'
+        + 'var bio=base.replace(/\\/?$/,"")+"/biometric"+q;var reg=base.replace(/\\/?$/,"")+"/register"+q;'
+        + 'var a1=document.getElementById("a-bio");var a2=document.getElementById("a-reg");'
+        + 'if(a1)a1.href=bio;if(a2)a2.href=reg;}catch(e){}})();<\/script>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Pos-Bio-Required': '1'
+        }
+    });
+}
+
 
 var OFFLINE_HTML = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>POS Offline</title><style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}h1{font-size:1.25rem}a{color:#a78bfa;display:inline-block;margin:.5rem}p{opacity:.85}</style></head><body><h1 id="t">نقطة البيع غير متصلة</h1><p id="m">جاري البحث عن نسخة محفوظة من شاشة البيع…</p><p id="links" hidden><a id="a1" href="#">شاشة البيع</a> · <a id="a2" href="#">شاشة البيع /register</a></p><script>(function(){var SHELL="rateb-pos-shell-v8";var KEY="__rateb_pos_register_shell__";function showFail(){var m=document.getElementById("m");var links=document.getElementById("links");if(m)m.textContent="افتح شاشة البيع مرة واحدة وأنت متصل بالإنترنت، ثم أعد المحاولة دون إنترنت. التقارير والإعدادات تحتاج اتصال.";if(links)links.hidden=false;try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/(reports|settings|dashboard|shifts|terminals).*$/,"");var a1=document.getElementById("a1");var a2=document.getElementById("a2");if(a1)a1.href=base+q;if(a2)a2.href=base.replace(/\\/?$/,"")+"/register"+q;}catch(e){}}function useResponse(res){if(!res)return Promise.resolve(false);return res.text().then(function(html){if(!html||html.indexOf("data-pos-register")<0)return false;document.open();document.write(html);document.close();return true;});}if(!("caches" in window)){showFail();return;}caches.open(SHELL).then(function(cache){var u=new URL(location.href);var candidates=[new URL(KEY,location.origin+"/rateb-erp/public/").href,u.origin+u.pathname,u.href,u.origin+u.pathname.replace(/\\/register\\/?$/,""),u.origin+u.pathname.replace(/\\/register\\/?$/,"")+(u.search||""),u.origin+u.pathname.replace(/\\/?$/,"")+"/register",u.origin+u.pathname.replace(/\\/?$/,"")+"/register"+(u.search||"")];return candidates.reduce(function(p,url){return p.then(function(done){if(done)return true;return cache.match(url).then(useResponse);});},Promise.resolve(false)).then(function(done){if(done)return;return cache.keys().then(function(keys){var next=Promise.resolve(false);keys.forEach(function(req){next=next.then(function(done){if(done)return true;var href=typeof req==="string"?req:(req&&req.url)||"";if(href.indexOf("/pos")<0)return false;return cache.match(req).then(useResponse);});});return next;});}).then(function(done){if(!done)showFail();});}).catch(showFail);})();</script></body></html>';
 
@@ -1315,14 +1386,20 @@ function warmErpOfflineShell(opts) {
             var body = String(html || '');
             if (body.length < 20000
                 && !(/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
-                    && body.length >= 1500
-                    && /data-pos-register|rateb-pos-register-config|pos-register\.css/i.test(body))) {
+                    && body.length >= 2500
+                    && /data-pos-register(?:\s|=|>)/i.test(body)
+                    && !/data-pos-biometric-gate/i.test(body))) {
                 return null;
             }
-            if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>/i.test(body.slice(0, 4000))) {
+            if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>|data-pos-biometric-gate/i.test(body.slice(0, 4000))) {
                 return null;
             }
             if (/data-rateb-login|id=["']login-form["']/i.test(body.slice(0, 4000))) {
+                return null;
+            }
+            // Phase OJ — POS ops warm must never store gate; only real register shell.
+            if (/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
+                && !/data-pos-register(?:\s|=|>)/i.test(body)) {
                 return null;
             }
             if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body)) {
@@ -1833,24 +1910,29 @@ function matchAsset(request) {
 }
 
 function putShell(request, response) {
-    if (!response || !response.ok) {
-        return Promise.resolve();
+    if (!response || !response.ok || response.status !== 200) {
+        return Promise.resolve(false);
     }
     var url = new URL(request.url || request);
     if (!isRegisterShellPath(url.pathname) && !isPosNavigation(url)) {
-        return Promise.resolve();
+        return Promise.resolve(false);
+    }
+    if (isBiometricGatePath(url.pathname)) {
+        return Promise.resolve(false);
     }
     return response.clone().text().then(function (html) {
-        var isRegisterHtml = isRegisterShellPath(url.pathname)
-            || (html && html.indexOf('data-pos-register') !== -1);
-        // Never pin dashboard/reports HTML as the offline register shell.
-        if (!isRegisterHtml && !isRegisterShellPath(url.pathname)) {
-            return caches.open(SHELL_CACHE).then(function (cache) {
-                return Promise.all([
-                    cache.put(url.origin + url.pathname, response.clone()),
-                    cache.put(url.origin + url.pathname + url.search, response.clone())
-                ]);
-            });
+        if (!isCertifiedRegisterHtml(html)) {
+            return false;
+        }
+        var hash = simpleHtmlHash(html);
+        var headers = new Headers({
+            'Content-Type': 'text/html; charset=utf-8',
+            'X-Rateb-Pos-Cert': '1',
+            'X-Rateb-Pos-Cert-Version': POS_SNAPSHOT_VERSION,
+            'X-Rateb-Pos-Cert-Hash': hash
+        });
+        function makeRes() {
+            return new Response(html, { status: 200, statusText: 'OK', headers: new Headers(headers) });
         }
         return caches.open(SHELL_CACHE).then(function (cache) {
             var shellKey = registerShellUrl();
@@ -1859,23 +1941,156 @@ function putShell(request, response) {
             var altRegister = /\/register$/i.test(url.pathname)
                 ? url.origin + url.pathname.replace(/\/register$/i, '')
                 : url.origin + url.pathname.replace(/\/?$/, '') + '/register';
+            var meta = {
+                version: POS_SNAPSHOT_VERSION,
+                certified: true,
+                certified_at: Date.now(),
+                biometric_completed_online: true,
+                html_hash: hash,
+                html_len: html.length,
+                company_id: 0,
+                branch_id: 0,
+                user_id: 0,
+                url: url.href
+            };
+            try {
+                var cid = parseInt(url.searchParams.get('company_id') || '0', 10) || 0;
+                if (cid > 0) {
+                    meta.company_id = cid;
+                    meta.tenant_id = cid;
+                }
+                var cfg = html.match(/id=["']rateb-pos-register-config["'][^>]*>([\s\S]*?)<\/script>/i);
+                if (cfg && cfg[1]) {
+                    var j = JSON.parse(cfg[1]);
+                    meta.company_id = parseInt(j.companyId, 10) || meta.company_id;
+                    meta.tenant_id = meta.company_id;
+                    meta.user_id = parseInt(j.userId, 10) || 0;
+                    meta.branch_id = parseInt((j.registerScope && j.registerScope.branch_id) || j.branchId || 0, 10) || 0;
+                    meta.cashier = String(j.displayName || '');
+                }
+            } catch (eMeta) { /* ignore */ }
+            var metaRes = new Response(JSON.stringify(meta), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-Rateb-Pos-Cert': '1' }
+            });
             var tasks = [
-                cache.put(bare, response.clone()),
-                cache.put(withQuery, response.clone()),
-                cache.put(shellKey, response.clone())
+                cache.put(bare, makeRes()),
+                cache.put(withQuery, makeRes()),
+                cache.put(shellKey, makeRes()),
+                cache.put(registerCertMetaUrl(), metaRes)
             ];
-            tasks.push(cache.put(altRegister, response.clone()));
-            tasks.push(cache.put(altRegister + url.search, response.clone()));
-            // Also alias admin/ops/pos ↔ pos when both exist under public/.
+            tasks.push(cache.put(altRegister, makeRes()));
+            tasks.push(cache.put(altRegister + url.search, makeRes()));
             try {
                 var opsReg = new URL('admin/ops/pos/register', self.registration.scope).href;
                 var opsBare = new URL('admin/ops/pos', self.registration.scope).href;
-                tasks.push(cache.put(opsReg, response.clone()));
-                tasks.push(cache.put(opsBare, response.clone()));
+                tasks.push(cache.put(opsReg, makeRes()));
+                tasks.push(cache.put(opsBare, makeRes()));
             } catch (eAlias) { /* ignore */ }
-            return Promise.all(tasks);
+            return Promise.all(tasks).then(function () { return true; });
         });
-    }).catch(function () { /* ignore quota */ });
+    }).catch(function () {
+        return false;
+    });
+}
+
+function readCertMeta(cache) {
+    return cache.match(registerCertMetaUrl()).then(function (res) {
+        if (!res) {
+            return null;
+        }
+        return res.json().catch(function () { return null; });
+    }).catch(function () {
+        return null;
+    });
+}
+
+function certMetaMatchesRequest(meta, url) {
+    if (!meta || meta.certified !== true) {
+        return false;
+    }
+    if (String(meta.version || '') !== POS_SNAPSHOT_VERSION) {
+        return false;
+    }
+    if (!meta.biometric_completed_online) {
+        return false;
+    }
+    if (!(parseInt(meta.company_id, 10) > 0) || !(parseInt(meta.user_id, 10) > 0)) {
+        return false;
+    }
+    try {
+        var cid = parseInt(url.searchParams.get('company_id') || '0', 10) || 0;
+        if (cid > 0 && cid !== parseInt(meta.company_id, 10)) {
+            return false;
+        }
+        var bid = parseInt(url.searchParams.get('branch_id') || '0', 10) || 0;
+        if (bid > 0 && meta.branch_id > 0 && bid !== parseInt(meta.branch_id, 10)) {
+            return false;
+        }
+        var uid = parseInt(url.searchParams.get('user_id') || '0', 10) || 0;
+        if (uid > 0 && uid !== parseInt(meta.user_id, 10)) {
+            return false;
+        }
+    } catch (e) { /* ignore */ }
+    return true;
+}
+
+function serveCertifiedShellOrBioRequired(request) {
+    var reqUrl = typeof request === 'string' ? request : (request && request.url ? request.url : '');
+    return caches.open(SHELL_CACHE).then(function (cache) {
+        var url = new URL(reqUrl, self.location.origin);
+        return readCertMeta(cache).then(function (meta) {
+            var shellKey = registerShellUrl();
+            var candidates = [
+                request,
+                url.href,
+                url.origin + url.pathname,
+                url.origin + url.pathname + url.search,
+                shellKey,
+                url.origin + url.pathname.replace(/\/register$/i, ''),
+                url.origin + url.pathname.replace(/\/register$/i, '') + url.search,
+                url.origin + url.pathname.replace(/\/?$/, '') + '/register',
+                url.origin + url.pathname.replace(/\/?$/, '') + '/register' + url.search
+            ];
+            return candidates.reduce(function (chain, key) {
+                return chain.then(function (hit) {
+                    if (hit) {
+                        return hit;
+                    }
+                    return cache.match(key);
+                });
+            }, Promise.resolve(null)).then(function (cached) {
+                if (!cached) {
+                    return biometricRequiredOfflineResponse();
+                }
+                return cached.clone().text().then(function (html) {
+                    if (!isCertifiedRegisterHtml(html)) {
+                        return biometricRequiredOfflineResponse();
+                    }
+                    // Phase OJ — certified meta is mandatory (no legacy uncertified shell).
+                    if (!meta || !certMetaMatchesRequest(meta, url)) {
+                        return biometricRequiredOfflineResponse();
+                    }
+                    var hashNow = simpleHtmlHash(html);
+                    if (meta.html_len && meta.html_len !== html.length) {
+                        return biometricRequiredOfflineResponse();
+                    }
+                    if (meta.html_hash && String(meta.html_hash).indexOf('fnv1a:') === 0 && meta.html_hash !== hashNow) {
+                        return biometricRequiredOfflineResponse();
+                    }
+                    var headers = new Headers({
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'X-Rateb-Offline': '1',
+                        'X-Rateb-Pos-Cert': '1',
+                        'X-Rateb-Pos-Cert-Version': POS_SNAPSHOT_VERSION
+                    });
+                    return new Response(html, { status: 200, headers: headers });
+                });
+            });
+        });
+    }).catch(function () {
+        return biometricRequiredOfflineResponse();
+    });
 }
 
 /** Offline POS: dashboard/reports → prefer cached register shell. */
@@ -1942,55 +2157,7 @@ function shellLookupRequest(urlHref, sourceRequest) {
 }
 
 function shellFallback(request) {
-    var reqUrl = typeof request === 'string'
-        ? request
-        : (request && request.url ? request.url : '');
-    return caches.open(SHELL_CACHE).then(function (cache) {
-        var url = new URL(reqUrl, self.location.origin);
-        var shellKey = registerShellUrl();
-        var candidates = [
-            request,
-            url.href,
-            url.origin + url.pathname,
-            url.origin + url.pathname + url.search,
-            shellKey,
-            url.origin + url.pathname.replace(/\/register$/i, ''),
-            url.origin + url.pathname.replace(/\/register$/i, '') + url.search,
-            url.origin + url.pathname.replace(/\/?$/, '') + '/register',
-            url.origin + url.pathname.replace(/\/?$/, '') + '/register' + url.search
-        ];
-        return candidates.reduce(function (chain, key) {
-            return chain.then(function (hit) {
-                if (hit) {
-                    return hit;
-                }
-                return cache.match(key);
-            });
-        }, Promise.resolve(null)).then(function (cached) {
-            if (cached) {
-                return cached;
-            }
-            return cache.keys().then(function (keys) {
-                var best = null;
-                keys.forEach(function (req) {
-                    try {
-                        var href = typeof req === 'string' ? req : req.url;
-                        var u = new URL(href, self.location.origin);
-                        if (isRegisterShellPath(u.pathname) || href.indexOf(REGISTER_SHELL_PATH) !== -1) {
-                            best = req;
-                        }
-                    } catch (e) { /* ignore */ }
-                });
-                if (best) {
-                    return cache.match(best);
-                }
-                if (wantsHtmlShell(request)) {
-                    return offlineHtmlResponse();
-                }
-                return offlineJsonResponse();
-            });
-        });
-    });
+    return serveCertifiedShellOrBioRequired(request);
 }
 
 self.addEventListener('install', function (event) {
@@ -2221,13 +2388,34 @@ self.addEventListener('message', function (event) {
         );
         return;
     }
-    if (data.type === 'PIN_REGISTER_SHELL' && data.url) {
+    if ((data.type === 'PIN_REGISTER_SHELL' || data.type === 'CERTIFY_POS_REGISTER_SNAPSHOT') && data.url) {
         event.waitUntil(
             fetch(data.url, {
                 credentials: 'same-origin',
-                headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+                redirect: 'follow',
+                headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1', 'X-Rateb-Pos-Certify': '1' }
             }).then(function (response) {
-                return putShell(data.url, response);
+                try {
+                    if (response && response.url && /\/pos\/biometric/i.test(response.url)) {
+                        return false;
+                    }
+                } catch (eBio) { /* ignore */ }
+                return putShell(data.url, response).then(function (ok) {
+                    if (ok && data.meta && typeof data.meta === 'object') {
+                        return caches.open(SHELL_CACHE).then(function (cache) {
+                            var merged = Object.assign({}, data.meta, {
+                                version: POS_SNAPSHOT_VERSION,
+                                certified: true,
+                                biometric_completed_online: true
+                            });
+                            return cache.put(registerCertMetaUrl(), new Response(JSON.stringify(merged), {
+                                status: 200,
+                                headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-Rateb-Pos-Cert': '1' }
+                            })).then(function () { return true; });
+                        });
+                    }
+                    return ok;
+                });
             }).catch(function () { /* ignore */ })
         );
         return;
