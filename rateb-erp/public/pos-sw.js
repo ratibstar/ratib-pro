@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260713-force-sw-v41';
+var SW_BUILD_ID = '20260713-force-sw-v42';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -593,8 +593,13 @@ function handleOfflineAdminPost(request, url) {
             via: 'service-worker'
         };
 
-        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-            var key = url.origin + '/' + ERP_DEFERRED_POSTS_PREFIX + entry.id;
+            return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            var key;
+            try {
+                key = new URL(ERP_DEFERRED_POSTS_PREFIX + entry.id, self.registration.scope).href;
+            } catch (eKey) {
+                key = url.origin + '/rateb-erp/public/' + ERP_DEFERRED_POSTS_PREFIX + entry.id;
+            }
             return cache.put(key, new Response(JSON.stringify(entry), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json; charset=utf-8' }
