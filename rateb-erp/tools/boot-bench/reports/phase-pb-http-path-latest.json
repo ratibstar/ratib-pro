@@ -1,0 +1,62 @@
+{
+  "phase": "PB",
+  "mode": "READ_ONLY_HTTP_PATH_AUDIT",
+  "generatedAt": "2026-07-14T23:55:00Z",
+  "target": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+  "key_ab_test": {
+    "serviceWorkers_block": {
+      "wall_ms": 835,
+      "responseStart_ms": 570.8,
+      "ttfb_request_to_response_ms": 234.8,
+      "dns_ms": 39.6,
+      "tcp_ms": 292.7,
+      "tls_ms": 104.4,
+      "workerStart_ms": 0,
+      "fromServiceWorker": false,
+      "register": true
+    },
+    "serviceWorkers_allow": {
+      "wall_ms": 5552,
+      "responseStart_ms": 5313,
+      "ttfb_request_to_response_ms": 339.8,
+      "workerStart_ms": 4973.1,
+      "fromServiceWorker": true,
+      "register": true,
+      "note": "Reproduces Phase PA ~5.3s TTFB"
+    },
+    "delta_ms": 4742,
+    "conclusion": "Service Worker control/install/activate path adds ~4.7–5.0s before first byte; Apache/PHP/FPM are not the 5.3s cost."
+  },
+  "server_path_isolated": {
+    "fpm_pm": "ondemand",
+    "pm_process_idle_timeout_s": 20,
+    "opcache_enable": false,
+    "opcache_loaded_in_fpm": false,
+    "cold_fpm_spawn_ttfb_ms_dns_bypassed": 169,
+    "warm_ttfb_ms_dns_bypassed": 97,
+    "fpm_spawn_delta_ms": 72,
+    "fpm_internal_warm_ms": 79,
+    "bootstrap_init_ms": 43,
+    "dispatch_ms": 24,
+    "auth_ms": 7,
+    "intermittent_dns_spike_ms": 1466,
+    "note": "With DNS bypassed, warm register is ~97ms end-to-end on server; FPM ondemand spawn adds only ~72ms."
+  },
+  "single_biggest_bottleneck": {
+    "file": "rateb-erp/public/pos-sw.js",
+    "class": null,
+    "function": "install → ensureProtectedOfflineCache(+ activate re-warm + clients.claim)",
+    "line": "2264-2274 (install waitUntil); also 2337-2411 (activate)",
+    "wall_ms": 4973.1,
+    "self_ms": 4973.1,
+    "calls": 1,
+    "percentage": 93.6,
+    "of": "browser responseStart 5313ms with SW allowed"
+  },
+  "before_after_estimation": {
+    "current_with_sw_ms": 5313,
+    "if_sw_gate_removed_ms": 571,
+    "improvement_pct": 89,
+    "basis": "A/B: SW allow 5313ms vs SW block 571ms responseStart"
+  }
+}
