@@ -49,6 +49,45 @@ final class Router
         ];
     }
 
+    /**
+     * Whether a route matches (no middleware / handler execution).
+     * Used by Phase AA.2 regression fallback before dispatch.
+     */
+    public function hasMatch(string $method, string $uri): bool
+    {
+        $method = strtoupper($method);
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $path = rtrim($path, '/') ?: '/';
+
+        foreach ($this->routes as $route) {
+            if ($route['method'] !== $method) {
+                continue;
+            }
+
+            $regex = '#^' . preg_replace_callback(
+                '#\{([a-zA-Z_][a-zA-Z0-9_]*)(?::(\.\+))?\}#',
+                static function (array $m): string {
+                    if (($m[2] ?? '') === '.+') {
+                        return '(?P<' . $m[1] . '>.+)';
+                    }
+                    return '(?P<' . $m[1] . '>[^/]+)';
+                },
+                $route['pattern']
+            ) . '$#';
+            if (preg_match($regex, $path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return int */
+    public function routeCount(): int
+    {
+        return count($this->routes);
+    }
+
     public function dispatch(string $method, string $uri): void
     {
         $method = strtoupper($method);

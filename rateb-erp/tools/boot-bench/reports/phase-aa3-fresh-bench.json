@@ -1,0 +1,619 @@
+{
+    "phase": "AA.3",
+    "measured_at": "2026-07-14T17:52:25+00:00",
+    "acceptance": {
+        "admin_routes_lt_150": true,
+        "admin_match": true,
+        "admin_handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index"
+    },
+    "summary": {
+        "/admin": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 29,
+            "reduction": 1990,
+            "all_reg_ms": 66.552,
+            "selective_reg_ms": 2.162,
+            "modules": [
+                "auth",
+                "dashboard"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/login": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 25,
+            "reduction": 1994,
+            "all_reg_ms": 53.157,
+            "selective_reg_ms": 1.724,
+            "modules": [
+                "auth"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::showLogin",
+            "memory_peak_selective": 16777216
+        },
+        "/logout": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 25,
+            "reduction": 1994,
+            "all_reg_ms": 56.201,
+            "selective_reg_ms": 2.922,
+            "modules": [
+                "auth"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::logout",
+            "memory_peak_selective": 16777216
+        },
+        "/admin/executive-dashboard": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 29,
+            "reduction": 1990,
+            "all_reg_ms": 61.842,
+            "selective_reg_ms": 1.837,
+            "modules": [
+                "auth",
+                "dashboard"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Admin\\ExecutiveDashboardController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/admin/users": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 266,
+            "reduction": 1753,
+            "all_reg_ms": 60.573,
+            "selective_reg_ms": 3.572,
+            "modules": [
+                "auth",
+                "platform"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Admin\\UsersController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/admin/ops/inventory": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 1181,
+            "reduction": 838,
+            "all_reg_ms": 57.595,
+            "selective_reg_ms": 53.253,
+            "modules": [
+                "auth",
+                "ops"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Company\\InventoryController::index",
+            "memory_peak_selective": 20971520
+        },
+        "/api/v1": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 123,
+            "reduction": 1896,
+            "all_reg_ms": 64.858,
+            "selective_reg_ms": 2.908,
+            "modules": [
+                "auth",
+                "api"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Api\\ApiController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/site": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 45,
+            "reduction": 1974,
+            "all_reg_ms": 63.079,
+            "selective_reg_ms": 2.558,
+            "modules": [
+                "auth",
+                "marketing"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Marketing\\MarketingController::home",
+            "memory_peak_selective": 16777216
+        },
+        "/admin/cms": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 389,
+            "reduction": 1630,
+            "all_reg_ms": 74.552,
+            "selective_reg_ms": 4.481,
+            "modules": [
+                "auth",
+                "cms"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Controllers\\Admin\\CmsDashboardController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/admin/ops/pos/register": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 136,
+            "reduction": 1883,
+            "all_reg_ms": 50.36,
+            "selective_reg_ms": 4.734,
+            "modules": [
+                "auth",
+                "pos",
+                "pos_v2"
+            ],
+            "mode": "selective",
+            "has_match": true,
+            "matched_handler": "Rateb\\App\\Pos\\Controllers\\PosRegisterController::index",
+            "memory_peak_selective": 16777216
+        },
+        "/totally-unknown-xyz": {
+            "aa1_style_all_routes": 2019,
+            "aa3_selective_routes": 2019,
+            "reduction": 0,
+            "all_reg_ms": 64.623,
+            "selective_reg_ms": 64.595,
+            "modules": [
+                "auth",
+                "dashboard",
+                "platform",
+                "marketing",
+                "cms",
+                "ops",
+                "api",
+                "pos",
+                "pos_v2"
+            ],
+            "mode": "all",
+            "has_match": false,
+            "matched_handler": null,
+            "memory_peak_selective": 20971520
+        }
+    },
+    "paths": {
+        "/admin": {
+            "all": {
+                "path": "/admin",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 66.552,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index"
+            },
+            "selective": {
+                "path": "/admin",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "dashboard"
+                ],
+                "route_count": 29,
+                "registration_ms": 2.162,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index"
+            }
+        },
+        "/login": {
+            "all": {
+                "path": "/login",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 53.157,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::showLogin"
+            },
+            "selective": {
+                "path": "/login",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth"
+                ],
+                "route_count": 25,
+                "registration_ms": 1.724,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::showLogin"
+            }
+        },
+        "/logout": {
+            "all": {
+                "path": "/logout",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 56.201,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::logout"
+            },
+            "selective": {
+                "path": "/logout",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth"
+                ],
+                "route_count": 25,
+                "registration_ms": 2.922,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Shared\\LoginController::logout"
+            }
+        },
+        "/admin/executive-dashboard": {
+            "all": {
+                "path": "/admin/executive-dashboard",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 61.842,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\ExecutiveDashboardController::index"
+            },
+            "selective": {
+                "path": "/admin/executive-dashboard",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "dashboard"
+                ],
+                "route_count": 29,
+                "registration_ms": 1.837,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\ExecutiveDashboardController::index"
+            }
+        },
+        "/admin/users": {
+            "all": {
+                "path": "/admin/users",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 60.573,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\UsersController::index"
+            },
+            "selective": {
+                "path": "/admin/users",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "platform"
+                ],
+                "route_count": 266,
+                "registration_ms": 3.572,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\UsersController::index"
+            }
+        },
+        "/admin/ops/inventory": {
+            "all": {
+                "path": "/admin/ops/inventory",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 57.595,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Company\\InventoryController::index"
+            },
+            "selective": {
+                "path": "/admin/ops/inventory",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "ops"
+                ],
+                "route_count": 1181,
+                "registration_ms": 53.253,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Company\\InventoryController::index"
+            }
+        },
+        "/api/v1": {
+            "all": {
+                "path": "/api/v1",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 64.858,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Api\\ApiController::index"
+            },
+            "selective": {
+                "path": "/api/v1",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "api"
+                ],
+                "route_count": 123,
+                "registration_ms": 2.908,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Api\\ApiController::index"
+            }
+        },
+        "/site": {
+            "all": {
+                "path": "/site",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 63.079,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Marketing\\MarketingController::home"
+            },
+            "selective": {
+                "path": "/site",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "marketing"
+                ],
+                "route_count": 45,
+                "registration_ms": 2.558,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Marketing\\MarketingController::home"
+            }
+        },
+        "/admin/cms": {
+            "all": {
+                "path": "/admin/cms",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 74.552,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\CmsDashboardController::index"
+            },
+            "selective": {
+                "path": "/admin/cms",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "cms"
+                ],
+                "route_count": 389,
+                "registration_ms": 4.481,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Controllers\\Admin\\CmsDashboardController::index"
+            }
+        },
+        "/admin/ops/pos/register": {
+            "all": {
+                "path": "/admin/ops/pos/register",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 50.36,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Pos\\Controllers\\PosRegisterController::index"
+            },
+            "selective": {
+                "path": "/admin/ops/pos/register",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 136,
+                "registration_ms": 4.734,
+                "memory_peak_bytes": 16777216,
+                "memory_delta_bytes": 0,
+                "has_match": true,
+                "matched_handler": "Rateb\\App\\Pos\\Controllers\\PosRegisterController::index"
+            }
+        },
+        "/totally-unknown-xyz": {
+            "all": {
+                "path": "/totally-unknown-xyz",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 64.623,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": false,
+                "matched_handler": null
+            },
+            "selective": {
+                "path": "/totally-unknown-xyz",
+                "mode_requested": "selective",
+                "mode": "all",
+                "modules": [
+                    "auth",
+                    "dashboard",
+                    "platform",
+                    "marketing",
+                    "cms",
+                    "ops",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 64.595,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": false,
+                "matched_handler": null
+            }
+        }
+    }
+}

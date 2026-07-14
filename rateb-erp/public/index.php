@@ -75,15 +75,24 @@ try {
 
     Rateb\App\Core\Auth::bootstrapFromSession();
 
-    $router = new Rateb\App\Core\Router();
-
-    // Phase AA.1 — identity loader (same files/order as previous direct requires).
-    Rateb\App\Core\RouteModuleLoader::loadAll($router);
-
     require_once RATEB_ROOT . '/app/helpers/Request.php';
 
     $path = \Rateb\App\Helpers\Request::resolvePath();
     $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+
+    $router = new Rateb\App\Core\Router();
+
+    // Phase AA.3 — dashboard-minimal modules; unknown / miss → loadAll (full set).
+    Rateb\App\Core\RouteModuleLoader::loadForPath($router, $path);
+    if (
+        Rateb\App\Core\RouteModuleLoader::lastMode() === 'selective'
+        && !$router->hasMatch($method, $path)
+    ) {
+        $router = new Rateb\App\Core\Router();
+        Rateb\App\Core\RouteModuleLoader::loadAll($router);
+        Rateb\App\Core\RouteModuleLoader::markFallbackAll();
+    }
+
     // Skip CMS redirect DB hit on admin/api/POS — saves a query on every ERP page.
     if ($method === 'GET'
         && !str_starts_with($path, '/admin')

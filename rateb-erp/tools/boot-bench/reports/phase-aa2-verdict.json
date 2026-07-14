@@ -1,0 +1,88 @@
+{
+  "phase": "AA.2",
+  "title": "Selective independent route module loading",
+  "measured_at": "2026-07-14T17:45:00Z",
+  "scope": {
+    "conditional_modules": ["marketing", "cms", "api", "pos", "pos_v2"],
+    "always_loaded": ["web", "company"],
+    "untouched": ["web.php contents", "company.php", "controllers", "middleware", "permissions", "route definitions"]
+  },
+  "implementation": {
+    "RouteModuleLoader": "app/Core/RouteModuleLoader.php — loadForPath / selectModuleIds / fallback marks",
+    "Router": "hasMatch() + routeCount()",
+    "index.php": "path-first loadForPath; selective miss → new Router + loadAll + markFallbackAll",
+    "manifest": "unchanged module list/order"
+  },
+  "success_criteria": {
+    "GET_/admin_fewer_routes_than_AA1": true,
+    "aa1_route_count": 2019,
+    "aa2_route_count_admin": 1426,
+    "route_count_reduction_admin": 593,
+    "admin_has_match": true,
+    "fallback_on_unknown": "loadAll (aa2_mode=all)",
+    "fallback_on_selective_miss": "index.php recreates Router + loadAll"
+  },
+  "modules_loaded_per_request": {
+    "/admin": ["web", "company"],
+    "/login": ["web", "company"],
+    "/logout": ["web", "company"],
+    "/api/v1": ["web", "company", "api"],
+    "/site": ["web", "marketing", "company"],
+    "/admin/cms": ["web", "cms", "company"],
+    "/admin/ops/pos/register": ["web", "company", "pos", "pos_v2"],
+    "unknown": "all modules (AA.1 identity)"
+  },
+  "fresh_process_cli_bench": {
+    "source": "tools/boot-bench/reports/phase-aa2-fresh-bench.json",
+    "note": "Registration wall only (not full HTTP TTFB). Separate PHP processes for AA.1 vs AA.2.",
+    "/admin": {
+      "route_count": {"aa1": 2019, "aa2": 1426, "reduction": 593},
+      "registration_ms": {"aa1": 49.85, "aa2": 35.103, "delta_ms": -14.747},
+      "memory_peak_bytes_aa2": 20971520
+    },
+    "/login": {
+      "route_count": {"aa1": 2019, "aa2": 1426},
+      "registration_ms": {"aa1": 56.811, "aa2": 36.546}
+    },
+    "/logout": {
+      "route_count": {"aa1": 2019, "aa2": 1426},
+      "registration_ms": {"aa1": 60.829, "aa2": 44.733}
+    },
+    "/api/v1": {
+      "route_count": {"aa1": 2019, "aa2": 1524},
+      "registration_ms": {"aa1": 54.424, "aa2": 48.957}
+    },
+    "/site": {
+      "route_count": {"aa1": 2019, "aa2": 1446},
+      "registration_ms": {"aa1": 53.402, "aa2": 40.164}
+    },
+    "/admin/cms": {
+      "route_count": {"aa1": 2019, "aa2": 1790},
+      "registration_ms": {"aa1": 52.846, "aa2": 55.326}
+    },
+    "/admin/ops/pos/register": {
+      "route_count": {"aa1": 2019, "aa2": 1537},
+      "registration_ms": {"aa1": 49.411, "aa2": 61.497}
+    },
+    "unknown": {
+      "route_count": {"aa1": 2019, "aa2": 2019},
+      "mode": "all"
+    }
+  },
+  "ttfb": {
+    "status": "not_measured_http_in_this_run",
+    "proxy": "CLI registration_ms above is the bootstrap-route portion of TTFB; production HTTP TTFB after deploy expected to improve modestly on /admin (~15ms CLI) while company.php cost remains",
+    "expected": "GET /admin fewer unused modules → lower registration wall; company.php still dominant"
+  },
+  "regression_gates": {
+    "RouteModuleLoaderSelectiveTest": "PASS / GATE: CLEAR",
+    "RouteModuleLoaderIdentityTest_AA1": "PASS (loadAll signature unchanged sha256 8f7a566d...)",
+    "GET_/admin_match": true,
+    "GET_/login_/logout_selective": true,
+    "marketing_skipped_on_admin": true,
+    "unknown_path_loadAll": true,
+    "controllers_middleware_permissions": "untouched — no code changes",
+    "observed_regressions": []
+  },
+  "verdict": "PASS — AA.2 selective loading enabled for independent modules; GET /admin registers 593 fewer routes than AA.1 with match preserved; unknown paths keep AA.1 loadAll; selective miss auto-falls back to loadAll"
+}

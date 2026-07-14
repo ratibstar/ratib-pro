@@ -1,0 +1,419 @@
+{
+    "measured_at": "2026-07-14T17:46:19+00:00",
+    "paths": {
+        "/admin": {
+            "all": {
+                "path": "/admin",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 49.85,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/admin",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "company"
+                ],
+                "route_count": 1426,
+                "registration_ms": 35.103,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/login": {
+            "all": {
+                "path": "/login",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 56.811,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/login",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "company"
+                ],
+                "route_count": 1426,
+                "registration_ms": 36.546,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/logout": {
+            "all": {
+                "path": "/logout",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 60.829,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/logout",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "company"
+                ],
+                "route_count": 1426,
+                "registration_ms": 44.733,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/api/v1": {
+            "all": {
+                "path": "/api/v1",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 54.424,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/api/v1",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "company",
+                    "api"
+                ],
+                "route_count": 1524,
+                "registration_ms": 48.957,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/site": {
+            "all": {
+                "path": "/site",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 53.402,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/site",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "company"
+                ],
+                "route_count": 1446,
+                "registration_ms": 40.164,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/admin/cms": {
+            "all": {
+                "path": "/admin/cms",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 52.846,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/admin/cms",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "cms",
+                    "company"
+                ],
+                "route_count": 1790,
+                "registration_ms": 55.326,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/admin/ops/pos/register": {
+            "all": {
+                "path": "/admin/ops/pos/register",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 49.411,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            },
+            "selective": {
+                "path": "/admin/ops/pos/register",
+                "mode_requested": "selective",
+                "mode": "selective",
+                "modules": [
+                    "web",
+                    "company",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 1537,
+                "registration_ms": 61.497,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": true
+            }
+        },
+        "/totally-unknown-xyz": {
+            "all": {
+                "path": "/totally-unknown-xyz",
+                "mode_requested": "all",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 60.083,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": false
+            },
+            "selective": {
+                "path": "/totally-unknown-xyz",
+                "mode_requested": "selective",
+                "mode": "all",
+                "modules": [
+                    "web",
+                    "marketing",
+                    "cms",
+                    "company",
+                    "api",
+                    "pos",
+                    "pos_v2"
+                ],
+                "route_count": 2019,
+                "registration_ms": 50.778,
+                "memory_peak_bytes": 20971520,
+                "memory_delta_bytes": 4194304,
+                "has_match": false
+            }
+        }
+    },
+    "summary": {
+        "/admin": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1426,
+            "reduction": 593,
+            "aa1_reg_ms": 49.85,
+            "aa2_reg_ms": 35.103,
+            "aa2_modules": [
+                "web",
+                "company"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/login": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1426,
+            "reduction": 593,
+            "aa1_reg_ms": 56.811,
+            "aa2_reg_ms": 36.546,
+            "aa2_modules": [
+                "web",
+                "company"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/logout": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1426,
+            "reduction": 593,
+            "aa1_reg_ms": 60.829,
+            "aa2_reg_ms": 44.733,
+            "aa2_modules": [
+                "web",
+                "company"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/api/v1": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1524,
+            "reduction": 495,
+            "aa1_reg_ms": 54.424,
+            "aa2_reg_ms": 48.957,
+            "aa2_modules": [
+                "web",
+                "company",
+                "api"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/site": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1446,
+            "reduction": 573,
+            "aa1_reg_ms": 53.402,
+            "aa2_reg_ms": 40.164,
+            "aa2_modules": [
+                "web",
+                "marketing",
+                "company"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/admin/cms": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1790,
+            "reduction": 229,
+            "aa1_reg_ms": 52.846,
+            "aa2_reg_ms": 55.326,
+            "aa2_modules": [
+                "web",
+                "cms",
+                "company"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/admin/ops/pos/register": {
+            "aa1_routes": 2019,
+            "aa2_routes": 1537,
+            "reduction": 482,
+            "aa1_reg_ms": 49.411,
+            "aa2_reg_ms": 61.497,
+            "aa2_modules": [
+                "web",
+                "company",
+                "pos",
+                "pos_v2"
+            ],
+            "aa2_mode": "selective",
+            "has_match": true,
+            "mem_peak_aa2": 20971520
+        },
+        "/totally-unknown-xyz": {
+            "aa1_routes": 2019,
+            "aa2_routes": 2019,
+            "reduction": 0,
+            "aa1_reg_ms": 60.083,
+            "aa2_reg_ms": 50.778,
+            "aa2_modules": [
+                "web",
+                "marketing",
+                "cms",
+                "company",
+                "api",
+                "pos",
+                "pos_v2"
+            ],
+            "aa2_mode": "all",
+            "has_match": false,
+            "mem_peak_aa2": 20971520
+        }
+    }
+}

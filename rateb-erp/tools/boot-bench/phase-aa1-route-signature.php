@@ -37,25 +37,25 @@ $loadedIds = [];
 $loadedFiles = [];
 
 if ($mode === 'legacy') {
-    require RATEB_ROOT . '/routes/web.php';
-    require RATEB_ROOT . '/routes/marketing.php';
-    require RATEB_ROOT . '/routes/cms.php';
-    require RATEB_ROOT . '/routes/company.php';
-    require RATEB_ROOT . '/routes/api.php';
-    require RATEB_ROOT . '/modules/pos/routes/pos.php';
-    $loadedIds = ['web', 'marketing', 'cms', 'company', 'api', 'pos'];
-    $loadedFiles = [
-        'routes/web.php',
-        'routes/marketing.php',
-        'routes/cms.php',
-        'routes/company.php',
-        'routes/api.php',
-        'modules/pos/routes/pos.php',
-    ];
-    if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-v2.php')) {
-        require RATEB_ROOT . '/modules/pos/routes/pos-v2.php';
-        $loadedIds[] = 'pos_v2';
-        $loadedFiles[] = 'modules/pos/routes/pos-v2.php';
+    // AA.3: same files/order as routes/manifest.php (direct require, no loader).
+    $manifest = require RATEB_ROOT . '/routes/manifest.php';
+    foreach ($manifest as $module) {
+        $id = (string) ($module['id'] ?? '');
+        $rel = (string) ($module['file'] ?? '');
+        $optional = !empty($module['optional']);
+        if ($id === '' || $rel === '') {
+            continue;
+        }
+        $filePath = RATEB_ROOT . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+        if (!is_file($filePath)) {
+            if ($optional) {
+                continue;
+            }
+            throw new RuntimeException('Missing route module: ' . $filePath);
+        }
+        require $filePath;
+        $loadedIds[] = $id;
+        $loadedFiles[] = $rel;
     }
 } else {
     $loadedIds = \Rateb\App\Core\RouteModuleLoader::loadAll($router);

@@ -1,0 +1,59 @@
+{
+    "path": "/admin/cms",
+    "method": "GET",
+    "selected_ids": [
+        "web",
+        "cms",
+        "company"
+    ],
+    "aa1": {
+        "label": "aa1_loadAll",
+        "mode": "all",
+        "modules": [
+            "web",
+            "marketing",
+            "cms",
+            "company",
+            "api",
+            "pos",
+            "pos_v2"
+        ],
+        "files": [
+            "routes/web.php",
+            "routes/marketing.php",
+            "routes/cms.php",
+            "routes/company.php",
+            "routes/api.php",
+            "modules/pos/routes/pos.php",
+            "modules/pos/routes/pos-v2.php"
+        ],
+        "route_count": 2019,
+        "registration_ms": 42.917,
+        "memory_peak_bytes": 20971520,
+        "memory_delta_bytes": 4194304,
+        "has_match": true
+    },
+    "aa2": {
+        "label": "aa2_selective",
+        "mode": "selective",
+        "modules": [
+            "web",
+            "cms",
+            "company"
+        ],
+        "files": [
+            "routes/web.php",
+            "routes/cms.php",
+            "routes/company.php"
+        ],
+        "route_count": 1790,
+        "registration_ms": 104.565,
+        "memory_peak_bytes": 23068672,
+        "memory_delta_bytes": 2097152,
+        "has_match": true
+    },
+    "fallback_used": false,
+    "route_count_reduction": 229,
+    "success_fewer_routes": true,
+    "admin_still_matches": true
+}

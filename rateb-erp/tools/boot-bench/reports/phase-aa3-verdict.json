@@ -1,0 +1,78 @@
+{
+  "phase": "AA.3",
+  "title": "Dashboard minimal bootstrap",
+  "measured_at": "2026-07-14T17:55:00Z",
+  "verdict": "PASS",
+  "acceptance": {
+    "GET_/admin_routes_lt_150": true,
+    "admin_route_count": 29,
+    "matched_controller": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+    "dashboard_identical_handler": true,
+    "controllers_untouched": true,
+    "middleware_untouched": true,
+    "permissions_untouched": true,
+    "urls_untouched": true,
+    "route_definitions_moved_only": true
+  },
+  "modules_layout": {
+    "routes/modules/auth.php": "login/logout/password/locale/documents/barcode/scan",
+    "routes/modules/dashboard.php": "ONLY /admin, executive-dashboard, module-metrics, dashboard-charts",
+    "routes/modules/platform.php": "remainder of former web.php",
+    "routes/modules/ops.php": "former company.php (tenant ERP)",
+    "routes/modules/marketing.php": "former marketing.php",
+    "routes/modules/cms.php": "former cms.php",
+    "routes/modules/api.php": "former api.php",
+    "routes/modules/pos.php": "wrapper → modules/pos/routes/pos.php",
+    "legacy_shims": ["routes/web.php", "routes/company.php", "routes/marketing.php", "routes/cms.php", "routes/api.php"]
+  },
+  "modules_loaded_per_request": {
+    "/admin": ["auth", "dashboard"],
+    "/admin/executive-dashboard": ["auth", "dashboard"],
+    "/login": ["auth"],
+    "/logout": ["auth"],
+    "/admin/users": ["auth", "platform"],
+    "/admin/ops/inventory": ["auth", "ops"],
+    "/api/v1": ["auth", "api"],
+    "/site": ["auth", "marketing"],
+    "/admin/cms": ["auth", "cms"],
+    "/admin/ops/pos/register": ["auth", "pos", "pos_v2"],
+    "unknown": "loadAll (all 9 modules)"
+  },
+  "before_after_GET_admin": {
+    "before_AA2": {
+      "modules": ["web", "company"],
+      "route_count": 1426,
+      "registration_ms_approx": 35
+    },
+    "after_AA3": {
+      "modules": ["auth", "dashboard"],
+      "route_count": 29,
+      "registration_ms": 2.162,
+      "memory_peak_bytes": 16777216,
+      "matched_handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index"
+    },
+    "vs_full_loadAll": {
+      "route_count": 2019,
+      "registration_ms": 66.552,
+      "reduction_routes": 1990,
+      "reduction_reg_ms": 64.39
+    }
+  },
+  "ttfb": {
+    "status": "CLI registration proxy (HTTP TTFB post-deploy)",
+    "note": "GET /admin registration wall ~2.2ms vs ~67ms loadAll / ~35ms AA.2 — expected large TTFB drop after deploy because company/ops and platform are skipped",
+    "cli_registration_ms_admin_aa3": 2.162,
+    "cli_registration_ms_admin_loadAll": 66.552
+  },
+  "fresh_bench_file": "tools/boot-bench/reports/phase-aa3-fresh-bench.json",
+  "gates": {
+    "RouteModuleLoaderAa3Test": "PASS / GATE: CLEAR (29 routes)",
+    "RouteModuleLoaderIdentityTest_loadAll": "PASS (2019 routes, sha256 17870df2…)",
+    "observed_regressions": []
+  },
+  "fallback": {
+    "unknown_path": "loadAll()",
+    "selective_miss": "index.php new Router + loadAll + markFallbackAll"
+  },
+  "success_criteria_met": true
+}
