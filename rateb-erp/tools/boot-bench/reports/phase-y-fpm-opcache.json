@@ -1,0 +1,30 @@
+{
+    "sapi": "fpm-fcgi",
+    "php_version": "8.3.31",
+    "opcache_extension_loaded": false,
+    "opcache_get_status_exists": false,
+    "opcache_get_configuration_exists": false,
+    "status": null,
+    "configuration": null,
+    "ini": {
+        "opcache.enable": false,
+        "opcache.enable_cli": false,
+        "opcache.validate_timestamps": false,
+        "opcache.revalidate_freq": false,
+        "opcache.max_accelerated_files": false,
+        "opcache.memory_consumption": false,
+        "opcache.interned_strings_buffer": false,
+        "opcache.file_cache": false,
+        "opcache.file_cache_only": false,
+        "opcache.blacklist_filename": false,
+        "realpath_cache_size": "4096K",
+        "realpath_cache_ttl": "120"
+    },
+    "ini_files": {
+        "loaded": "/usr/local/php83/lib/php.ini",
+        "scanned": "/usr/local/php83/lib/php.conf.d/10-directadmin.ini,\n/usr/local/php83/lib/php.conf.d/50-webapps.ini\n"
+    },
+    "extensions_matching": [],
+    "extension_count": 51,
+    "open_basedir": "/home/admin/:/tmp/:/var/tmp/:/opt/alt/php83/usr/share/pear/:/dev/urandom:/usr/local/php83/lib/:/usr/local/php83/lib/:/usr/local/lib/php/"
+}

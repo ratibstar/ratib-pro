@@ -1,0 +1,82 @@
+{
+  "phase": "Y",
+  "title": "OPcache & Route Bootstrap Evidence",
+  "generated_at": "2026-07-14T16:30:00Z",
+  "do_not_optimize_applied": true,
+  "production_php_ini_unchanged": true,
+  "hypothesis": "PHP-FPM recompiles company.php every request because OPcache is disabled or ineffective",
+  "hypothesis_result": "CONFIRMED — OPcache module is not loaded at all on PHP-FPM or CLI",
+  "opcache": {
+    "fpm_loaded": false,
+    "cli_loaded": false,
+    "opcache_get_status_exists": false,
+    "opcache_get_configuration_exists": false,
+    "same_ini_cli_and_fpm": true,
+    "ini_loaded": "/usr/local/php83/lib/php.ini",
+    "ini_scanned": [
+      "/usr/local/php83/lib/php.conf.d/10-directadmin.ini",
+      "/usr/local/php83/lib/php.conf.d/50-webapps.ini"
+    ],
+    "why_disabled": {
+      "exact_line": 976,
+      "exact_text": ";zend_extension=opcache",
+      "file": "/usr/local/php83/lib/php.ini",
+      "explanation": "The Zend OPcache shared object exists on disk (opcache.so) but is never loaded because zend_extension=opcache is commented out. All [opcache] settings below are also commented. conf.d and FPM pool do not re-enable it. Result: every request compiles PHP from source; no opcode cache hits possible."
+    },
+    "pool_overrides": "None for opcache. admin pool sets open_basedir, session.save_path, pm=ondemand only.",
+    "after_fpm": "NOT_APPLIED — production left disabled (evidence only)"
+  },
+  "company_php_profile": {
+    "bytes": 120382,
+    "lines": 1169,
+    "route_registrations_regex": 772,
+    "route_registrations_runtime_with_company_access": 1154,
+    "closures_total": 9,
+    "function_declarations_in_file": 0,
+    "use_statements": "100+",
+    "new_includes_on_require": 4,
+    "token_get_all_ms_fpm": [1.465, 1.34, 2.079],
+    "require_ms_fpm": [448.673, 425.898, 460.754],
+    "require_ms_cli": [28.145, 20.227, 20.416],
+    "opcache_compile_file_ms_cli_forced": { "first": 2.805, "second": 0.001 },
+    "compile_vs_execute": {
+      "lex_token_get_all_ms": "~1.5–2.0",
+      "full_compile_opcache_compile_file_ms": 2.805,
+      "fpm_require_wall_ms": "~426–461",
+      "conclusion": "Wall time under FPM is dominated by EXECUTING ~1154 route registrations (~0.37 ms/route), not by lex/compile (~3 ms). Without OPcache, compile still repeats each request but is small vs execute cost under FPM."
+    },
+    "sections": {
+      "pattern": "Uniform — 8 buckets of ~145 routes each ~50–59 ms",
+      "largest_inter_route_gaps_ge_1ms": 0,
+      "slowest_bucket": {
+        "delta_ms": 59.157,
+        "range": "stock-movements/bulk-delete … device-spare-parts/{id}/delete"
+      },
+      "implication": "No single hot function inside company.php; cost is proportional to route count."
+    }
+  },
+  "ttfb": {
+    "before_admin_warm_ms": [667.7, 572.5, 557.4],
+    "after_admin_warm_ms": null,
+    "note": "FPM OPcache not enabled; TTFB unchanged from prior RCA (~550–670 ms warm)"
+  },
+  "forced_opcache_cli_sandbox": {
+    "method": "php -d zend_extension=.../opcache.so -d opcache.enable=1 -d opcache.enable_cli=1",
+    "require_ms": [19.279, 19.181, 20.106],
+    "note": "Fresh CLI process each run cannot show cross-request FPM cache hits; opcache_compile_file proves compile caches (2.8 ms → 0.001 ms) inside one process."
+  },
+  "should_split_company_php": {
+    "recommendation": "DO NOT SPLIT for compile-time reasons alone",
+    "responsible_for_wall_time": true,
+    "excessive_compile_time": false,
+    "reason": "opcache_compile_file of the 120 KB file is only ~2.8 ms. FPM spent ~430 ms mostly executing 1154 registrations. Splitting into multiple files without lazy-loading still runs the same registrations every request. Enabling OPcache addresses repeated compile; lazy/portal-scoped route loading would address execute cost — out of scope for Phase Y evidence."
+  },
+  "artifacts": [
+    "tools/boot-bench/reports/phase-y-opcache-evidence.json",
+    "tools/boot-bench/reports/phase-y-fpm-opcache.json",
+    "tools/boot-bench/reports/phase-y-company-profile.json",
+    "tools/boot-bench/reports/phase-y-sections.json",
+    "tools/boot-bench/phase-y-opcache-evidence.sh",
+    "tools/boot-bench/phase-y-sections.sh"
+  ]
+}

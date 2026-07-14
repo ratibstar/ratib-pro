@@ -1,0 +1,72 @@
+REAL USER STARTUP TIMELINE (ms from Login click)
+============================================================
+00000000  marker | LOGIN_CLICK
+00000111  request | POST | /rateb-erp/public/login
+00000802  response | HTTP 302 | /rateb-erp/public/login
+00000803  request | GET | /rateb-erp/public/admin
+00000905  response | HTTP 301 | /rateb-erp/public/admin
+00000905  request | GET | /rateb-erp/public/admin/
+00001913  response | HTTP 200 | /rateb-erp/public/admin/
+00001919  navigate | /rateb-erp/public/admin/ | https://rateb.sa/rateb-erp/public/admin/
+00002178  request | GET | /rateb-erp/public/admin/api/dashboard-charts
+00002214  request | GET | /rateb-erp/public/connectivity-probe.json?_rateb_probe=1784045544360
+00002216  marker | AFTER_LOGIN_NAV | https://rateb.sa/rateb-erp/public/admin/
+00002220  marker | LOGIN_RESULT
+00002314  response | HTTP 200 | /rateb-erp/public/connectivity-probe.json?_rateb_probe=1784045544360
+00002814  response | HTTP 200 | /rateb-erp/public/admin/api/dashboard-charts
+00002906  request | GET | /rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52
+00002906  request | GET | /rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52
+00002906  request | GET | /rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52
+00002906  request | GET | /rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52
+00002906  request | GET | /rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52
+00002908  request | GET | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002909  response | HTTP 200 | /rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52
+00002913  response | HTTP 200 | /rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52
+00002917  response | HTTP 200 | /rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52
+00002919  response | HTTP 200 | /rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52
+00002925  response | HTTP 200 | /rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52
+00002926  response | HTTP 200 | /rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52
+00002926  response | HTTP 200 | /rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52
+00002926  response | HTTP 200 | /rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52
+00002927  response | HTTP 200 | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002927  response | HTTP 200 | /rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52
+00002927  response | HTTP 200 | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002927  response | HTTP 200 | /rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52
+00002928  response | HTTP 200 | /rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52
+00002928  response | HTTP 200 | /rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52
+00002928  response | HTTP 200 | /rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52
+00002929  response | HTTP 200 | /rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52
+00002929  response | HTTP 200 | /rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52
+00002929  response | HTTP 200 | /rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52
+00002929  response | HTTP 200 | /rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52
+00002930  response | HTTP 200 | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00002930  response | HTTP 200 | /rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52
+00002931  response | HTTP 200 | /rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52
+00004621  marker | DASHBOARD_USABLE
+00004646  marker | FINAL_STATE
+
+TOP GAPS (>=200ms)
+  +1008ms  after request//rateb-erp/public/admin/ → response//rateb-erp/public/admin/
+  +691ms  after request//rateb-erp/public/login → response//rateb-erp/public/login
+  +274ms  after poll_usable/ → poll_usable/
+  +270ms  after poll_usable/ → poll_usable/
+  +265ms  after poll_usable/ → poll_usable/
+  +263ms  after poll_usable/ → poll_usable/
+  +263ms  after poll_usable/ → poll_usable/
+  +262ms  after poll_usable/ → poll_usable/

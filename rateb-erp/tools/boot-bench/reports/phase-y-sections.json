@@ -1,0 +1,142 @@
+{
+    "require_ms": 430.721,
+    "route_count": 1154,
+    "slowest_buckets": [
+        {
+            "routes": 145,
+            "from_idx": 870,
+            "to_idx": 1014,
+            "start_ms": 317.045,
+            "end_ms": 376.202,
+            "delta_ms": 59.157,
+            "first_pattern": "/admin/ops/stock-movements/bulk-delete",
+            "last_pattern": "/admin/ops/device-spare-parts/{id}/delete"
+        },
+        {
+            "routes": 139,
+            "from_idx": 1015,
+            "to_idx": 1153,
+            "start_ms": 376.202,
+            "end_ms": 430.704,
+            "delta_ms": 54.502,
+            "first_pattern": "/admin/ops/device-spare-parts/bulk-delete",
+            "last_pattern": "/admin/ops/audit-logs"
+        },
+        {
+            "routes": 145,
+            "from_idx": 580,
+            "to_idx": 724,
+            "start_ms": 209.054,
+            "end_ms": 263.375,
+            "delta_ms": 54.321,
+            "first_pattern": "/admin/hr/permission-requests",
+            "last_pattern": "/admin/hr/payroll/{id}/approve"
+        },
+        {
+            "routes": 145,
+            "from_idx": 725,
+            "to_idx": 869,
+            "start_ms": 263.375,
+            "end_ms": 317.045,
+            "delta_ms": 53.67,
+            "first_pattern": "/admin/hr/payroll/{id}/post",
+            "last_pattern": "/admin/ops/stock-movements"
+        },
+        {
+            "routes": 145,
+            "from_idx": 435,
+            "to_idx": 579,
+            "start_ms": 155.921,
+            "end_ms": 209.054,
+            "delta_ms": 53.133,
+            "first_pattern": "/admin/qms/defects",
+            "last_pattern": "/admin/hr/permission-requests/create"
+        },
+        {
+            "routes": 145,
+            "from_idx": 290,
+            "to_idx": 434,
+            "start_ms": 103.032,
+            "end_ms": 155.921,
+            "delta_ms": 52.889,
+            "first_pattern": "/admin/eam/requests",
+            "last_pattern": "/admin/qms/defects"
+        },
+        {
+            "routes": 145,
+            "from_idx": 145,
+            "to_idx": 289,
+            "start_ms": 50.287,
+            "end_ms": 103.032,
+            "delta_ms": 52.745,
+            "first_pattern": "/admin/ops/medical-devices/{id}",
+            "last_pattern": "/admin/eam/maintenance/plans"
+        },
+        {
+            "routes": 145,
+            "from_idx": 0,
+            "to_idx": 144,
+            "start_ms": 0,
+            "end_ms": 50.287,
+            "delta_ms": 50.287,
+            "first_pattern": "/company/login",
+            "last_pattern": "/admin/ops/medical-devices/{id}/edit"
+        }
+    ],
+    "largest_gaps_ms": [],
+    "first_5": [
+        {
+            "t_ms": 2.144,
+            "method": "GET",
+            "pattern": "/company/login"
+        },
+        {
+            "t_ms": 2.147,
+            "method": "POST",
+            "pattern": "/company/login"
+        },
+        {
+            "t_ms": 2.148,
+            "method": "GET",
+            "pattern": "/company/logout"
+        },
+        {
+            "t_ms": 2.148,
+            "method": "GET",
+            "pattern": "/company"
+        },
+        {
+            "t_ms": 2.149,
+            "method": "GET",
+            "pattern": "/company/{legacy:.+}"
+        }
+    ],
+    "last_5": [
+        {
+            "t_ms": 429.257,
+            "method": "POST",
+            "pattern": "/admin/ops/support-tickets/{id}/documents"
+        },
+        {
+            "t_ms": 429.621,
+            "method": "POST",
+            "pattern": "/admin/ops/support-tickets/{id}/documents/{docId}"
+        },
+        {
+            "t_ms": 429.984,
+            "method": "POST",
+            "pattern": "/admin/ops/support-tickets/{id}/documents/{docId}/delete"
+        },
+        {
+            "t_ms": 430.349,
+            "method": "POST",
+            "pattern": "/admin/ops/users/{id}/regenerate-barcode"
+        },
+        {
+            "t_ms": 430.704,
+            "method": "GET",
+            "pattern": "/admin/ops/audit-logs"
+        }
+    ],
+    "opcache_loaded": false
+}

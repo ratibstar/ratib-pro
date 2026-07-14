@@ -1,0 +1,81 @@
+{
+    "sapi": "fpm-fcgi",
+    "opcache_loaded": false,
+    "structure": {
+        "bytes": 120382,
+        "lines": 1170,
+        "require_include_count": 3,
+        "function_declarations": 0,
+        "closures_fn": 1,
+        "closures_function": 8,
+        "router_get": 437,
+        "router_post": 335,
+        "router_put": 0,
+        "router_patch": 0,
+        "router_delete": 0,
+        "rateb_erp_mw_calls": 546,
+        "app_path_calls": 765,
+        "use_statements": 133,
+        "route_registrations": 772,
+        "closures_total": 9
+    },
+    "token_get_all_ms": 1.465,
+    "require_company_ms": 448.673,
+    "marks_ms": {
+        "start": 0.005,
+        "after_require_bootstrap": 0.633,
+        "after_bootstrap_init": 42.323,
+        "after_router_new": 42.327,
+        "after_company_require": 492.468
+    },
+    "includes_before": 57,
+    "includes_after": 61,
+    "new_includes_count": 4,
+    "new_includes": [
+        "company.php",
+        "middleware-helpers.php",
+        "module-permissions.php",
+        "company-access.php"
+    ],
+    "new_includes_full": [
+        "/home/admin/domains/rateb.sa/public_html/rateb-erp/routes/company.php",
+        "/home/admin/domains/rateb.sa/public_html/rateb-erp/routes/middleware-helpers.php",
+        "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/module-permissions.php",
+        "/home/admin/domains/rateb.sa/public_html/rateb-erp/routes/company-access.php"
+    ],
+    "section_line_ranges": {
+        "use_imports": [
+            1,
+            137
+        ],
+        "middleware_helpers_require": [
+            138,
+            141
+        ],
+        "early_redirects_and_aliases": [
+            142,
+            206
+        ],
+        "core_ops_routes": [
+            207,
+            400
+        ],
+        "hr_recruitment_crm": [
+            401,
+            700
+        ],
+        "projects_eam_mid": [
+            701,
+            1000
+        ],
+        "accounting_control_tail": [
+            1001,
+            1155
+        ],
+        "offline_and_access": [
+            1156,
+            1170
+        ]
+    },
+    "wall_ms": 492.532
+}

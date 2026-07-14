@@ -1,0 +1,455 @@
+{
+  "ok": false,
+  "reason": "LOGIN_FAILED_ON_REAL_APP",
+  "userTried": "admin@rateb.sa",
+  "loginFailed": {
+    "stillLogin": true,
+    "alert": "بيانات الدخول غير صحيحة",
+    "bodyHint": "EN\nعربي\nنظام رتب ERP\nبيانات الدخول غير صحيحة\n\nطريقة الدخول\n\n البريد وكلمة المرور\n الباركود / الشارة\n\nسجّل دخولك — ستفتح لوحة النظام الموحّدة (/admin) وتظهر القوائم والوحدات حسب صلاحيات حسابك.\n\nاسم الم"
+  },
+  "preLoginEvents": [
+    {
+      "t": 0,
+      "type": "marker",
+      "name": "GOTO_LOGIN_START"
+    },
+    {
+      "t": 10,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login",
+      "full": "https://rateb.sa/rateb-erp/public/login"
+    },
+    {
+      "t": 908,
+      "type": "response",
+      "status": 200,
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login",
+      "contentLength": "4291",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 911,
+      "type": "navigate",
+      "url": "/rateb-erp/public/login",
+      "full": "https://rateb.sa/rateb-erp/public/login"
+    },
+    {
+      "t": 919,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 919,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 919,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 919,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 921,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 921,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 921,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 921,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 921,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 922,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1008,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+      "contentLength": "205",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1010,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+      "contentLength": "2125",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1013,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+      "contentLength": "969",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1014,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+      "contentLength": "684",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1017,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52",
+      "contentLength": "874",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1018,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+      "contentLength": "923",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1018,
+      "type": "response",
+      "status": 200,
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "contentLength": "920",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1106,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+      "contentLength": "22608",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1203,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+      "contentLength": "31265",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1205,
+      "type": "response",
+      "status": 200,
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+      "contentLength": "23799",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1262,
+      "type": "marker",
+      "name": "LOGIN_DOMCONTENTLOADED",
+      "title": "تسجيل الدخول | نظام رتب ERP"
+    },
+    {
+      "t": 1337,
+      "type": "marker",
+      "name": "LOGIN_FORM_READY"
+    }
+  ],
+  "events": [
+    {
+      "t": 0,
+      "type": "marker",
+      "name": "LOGIN_CLICK",
+      "user": "admin@rateb.sa"
+    },
+    {
+      "t": 121,
+      "type": "request",
+      "method": "POST",
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login",
+      "full": "https://rateb.sa/rateb-erp/public/login"
+    },
+    {
+      "t": 822,
+      "type": "response",
+      "status": 302,
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login",
+      "contentLength": "0",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 823,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login?err=credentials",
+      "full": "https://rateb.sa/rateb-erp/public/login?err=credentials"
+    },
+    {
+      "t": 1420,
+      "type": "response",
+      "status": 200,
+      "resourceType": "document",
+      "url": "/rateb-erp/public/login?err=credentials",
+      "contentLength": "4344",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1424,
+      "type": "navigate",
+      "url": "/rateb-erp/public/login?err=credentials",
+      "full": "https://rateb.sa/rateb-erp/public/login?err=credentials"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1434,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1435,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1435,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1435,
+      "type": "request",
+      "method": "GET",
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52"
+    },
+    {
+      "t": 1435,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+      "contentLength": "205",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1436,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+      "contentLength": "31265",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1440,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+      "contentLength": "22608",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1441,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+      "contentLength": "684",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1442,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+      "contentLength": "2125",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1442,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+      "contentLength": "969",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1443,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+      "contentLength": "923",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1443,
+      "type": "response",
+      "status": 200,
+      "resourceType": "stylesheet",
+      "url": "/rateb-erp/public/assets/css/login-barcode.css?v=20260714-force-sw-v52",
+      "contentLength": "874",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1454,
+      "type": "response",
+      "status": 200,
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "contentLength": "920",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1454,
+      "type": "response",
+      "status": 200,
+      "resourceType": "script",
+      "url": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+      "contentLength": "23799",
+      "fromServiceWorker": false
+    },
+    {
+      "t": 1467,
+      "type": "marker",
+      "name": "AFTER_LOGIN_NAV",
+      "url": "https://rateb.sa/rateb-erp/public/login?err=credentials",
+      "title": "تسجيل الدخول | نظام رتب ERP"
+    },
+    {
+      "t": 1471,
+      "type": "marker",
+      "name": "LOGIN_RESULT",
+      "stillLogin": true,
+      "alert": "بيانات الدخول غير صحيحة",
+      "bodyHint": "EN\nعربي\nنظام رتب ERP\nبيانات الدخول غير صحيحة\n\nطريقة الدخول\n\n البريد وكلمة المرور\n الباركود / الشارة\n\nسجّل دخولك — ستفتح لوحة النظام الموحّدة (/admin) وتظهر القوائم والوحدات حسب صلاحيات حسابك.\n\nاسم الم"
+    }
+  ],
+  "generatedAt": "2026-07-14T16:09:48.014Z"
+}
