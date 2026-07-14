@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-ob-v55';
+var SW_BUILD_ID = '20260714-phase-ob-v56';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1089,7 +1089,7 @@ function warmErpOfflineShell(opts) {
 
 /**
  * Phase OB — JS under /assets/offline that must NEVER be replaced by the
- * emptyAssetResponse stub (28-byte "/* rateb-pos offline stub */").
+ * emptyAssetResponse stub (28-byte rateb-pos offline stub).
  * Covers OA bootstrap, modules/*, runtime/*, offline assets/*, shell SDK.
  */
 function isProtectedOfflineIdentityJs(pathname) {
