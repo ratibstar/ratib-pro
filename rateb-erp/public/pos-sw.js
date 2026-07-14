@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v32';
+var SW_BUILD_ID = '20260713-force-sw-v33';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -703,6 +703,9 @@ function warmErpOfflineShell() {
         'admin',
         'admin/',
         'admin/companies',
+        'admin/ops/access-control',
+        'admin/ops/access-control/matrix',
+        'admin/ops/pos/register',
         'admin/ops/branch-dashboard',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
@@ -713,8 +716,6 @@ function warmErpOfflineShell() {
         'admin/ops/stock-movements',
         'admin/ops/product-categories',
         'admin/ops/suppliers',
-        'admin/ops/hr/attendance',
-        'admin/ops/hr/leaves',
         'admin/hr/attendance',
         'admin/hr/leaves',
         'admin/notifications',
@@ -1050,7 +1051,8 @@ function isErpOfflineAsset(url) {
     if (p.indexOf('/assets/offline/') !== -1 || /\/offline-shell\.html$/i.test(p)) {
         return true;
     }
-    if (/\/manifest\.webmanifest$/i.test(p) || /\/pos-manifest\.webmanifest$/i.test(p)) {
+    if (/\/manifest\.webmanifest$/i.test(p) || /\/pos-manifest\.webmanifest$/i.test(p)
+        || /\/manifest\.json$/i.test(p)) {
         return true;
     }
     if (/\/assets\/pwa\//i.test(p)) {
@@ -1334,6 +1336,61 @@ self.addEventListener('install', function (event) {
     self.skipWaiting();
     event.waitUntil(
         seedInlineOfflineShell().then(function () {
+            return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                var base;
+                try {
+                    base = self.registration.scope;
+                } catch (eB) {
+                    base = self.location.origin + '/rateb-erp/public/';
+                }
+                if (base.slice(-1) !== '/') {
+                    base += '/';
+                }
+                var critical = [
+                    'assets/css/variables.css',
+                    'assets/css/main.css',
+                    'assets/css/components.css',
+                    'assets/css/dark.css',
+                    'assets/css/light.css',
+                    'assets/css/rtl.css',
+                    'assets/css/dashboard.css',
+                    'assets/css/ar-typography.css',
+                    'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
+                    'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
+                    'assets/vendor/fontawesome/6.5.2/css/all.min.css',
+                    'assets/vendor/fonts/tajawal/tajawal.css',
+                    'assets/js/theme.js',
+                    'assets/js/app.js',
+                    'assets/js/connectivity-indicator.js',
+                    'manifest.webmanifest',
+                    'offline-shell.html'
+                ];
+                var urls = [];
+                critical.forEach(function (rel) {
+                    urls.push(base + rel);
+                    urls.push(base + rel + '?v=' + encodeURIComponent(SW_BUILD_ID));
+                });
+                return Promise.all(urls.map(function (u) {
+                    return fetch(u, {
+                        credentials: 'same-origin',
+                        cache: 'reload',
+                        headers: { 'X-Rateb-Shell-Warm': '1' }
+                    }).then(function (res) {
+                        if (!res || !res.ok) {
+                            return null;
+                        }
+                        return cache.put(u, res.clone()).then(function () {
+                            try {
+                                var pu = new URL(u);
+                                return cache.put(pu.origin + pu.pathname, res.clone());
+                            } catch (eP) {
+                                return null;
+                            }
+                        });
+                    }).catch(function () { return null; });
+                }));
+            });
+        }).then(function () {
             return Promise.all([
                 caches.open(ASSET_CACHE),
                 loadErpOpsAllowlist(),
@@ -1376,19 +1433,18 @@ self.addEventListener('activate', function (event) {
                     // (prevents empty vN cache + hanging script loads while offline).
                     return migrateErpCoexistCaches(keys);
                 }).then(function () {
+                    // Keep previous coexist/ops caches — deleting them left offline CSS blank.
                     return Promise.all(keys.map(function (key) {
-                        // Keep POS shell/assets + current ERP offline caches; drop stale coexist versions only.
                         if (key === SHELL_CACHE || key === ASSET_CACHE
                             || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE
                             || key === ERP_OPS_ALLOWLIST_CACHE) {
                             return undefined;
                         }
-                        if (String(key).indexOf('rateb-erp-coexist-') === 0
-                            || String(key).indexOf('rateb-erp-ops-pages-') === 0
-                            || String(key).indexOf('rateb-erp-ops-allowlist-') === 0
-                            || String(key).indexOf('rateb-erp-assets-') === 0
-                            || String(key).indexOf('rateb-pos-shell-') === 0
-                            || String(key).indexOf('rateb-pos-assets-') === 0) {
+                        // Keep last coexist/ops versions; only drop ancient POS shells.
+                        if (String(key).indexOf('rateb-pos-shell-') === 0 && key !== SHELL_CACHE) {
+                            return caches.delete(key);
+                        }
+                        if (String(key).indexOf('rateb-pos-assets-') === 0 && key !== ASSET_CACHE) {
                             return caches.delete(key);
                         }
                         return undefined;

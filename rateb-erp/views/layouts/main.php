@@ -70,6 +70,107 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         } catch (e) {}
     })();
     </script>
+    <?php if (!(function_exists('rateb_is_local_appliance_host') && rateb_is_local_appliance_host())) { ?>
+    <script>
+    (function () {
+      /* Head-early: keep SW alive + rescue CSS from Cache API when offline / uncontrolled. */
+      var build = <?php echo json_encode(defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1'); ?>;
+      function publicBase() {
+        try {
+          var m = String(location.pathname || '').match(/^(.*\/public\/)/i);
+          if (m && m[1]) return m[1];
+        } catch (e0) {}
+        return '/rateb-erp/public/';
+      }
+      function matchAnyCache(url) {
+        if (!window.caches) return Promise.resolve(null);
+        var keys = [url];
+        try {
+          var u = new URL(url, location.href);
+          keys.push(u.href, u.origin + u.pathname);
+        } catch (e1) {}
+        return caches.keys().then(function (names) {
+          var chain = Promise.resolve(null);
+          (names || []).forEach(function (name) {
+            if (!/^rateb-/i.test(String(name || ''))) return;
+            chain = chain.then(function (hit) {
+              if (hit) return hit;
+              return caches.open(name).then(function (c) {
+                var inner = Promise.resolve(null);
+                keys.forEach(function (k) {
+                  inner = inner.then(function (h) {
+                    return h || c.match(k).then(function (m) {
+                      return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                    });
+                  });
+                });
+                return inner;
+              });
+            });
+          });
+          return chain;
+        }).catch(function () { return null; });
+      }
+      window.__RATEB_MATCH_ANY_CACHE__ = matchAnyCache;
+      function rescueStyles() {
+        try { if (navigator.onLine !== false) return; } catch (e2) { return; }
+        Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+          if (link.getAttribute('data-rateb-rescue') === '1') return;
+          var href = link.getAttribute('href');
+          if (!href) return;
+          matchAnyCache(href).then(function (res) {
+            if (!res) return null;
+            return res.text().then(function (css) {
+              if (!css || css.length < 40) return;
+              link.setAttribute('data-rateb-rescue', '1');
+              var style = document.createElement('style');
+              style.textContent = css;
+              document.head.appendChild(style);
+            });
+          }).catch(function () {});
+        });
+      }
+      window.__RATEB_RESCUE_STYLES__ = rescueStyles;
+      if ('serviceWorker' in navigator) {
+        try {
+          var swUrl = location.origin + publicBase() + 'pos-sw.js?v=' + encodeURIComponent(build);
+          var scope = location.origin + publicBase();
+          navigator.serviceWorker.register(swUrl, { scope: scope, updateViaCache: 'none' }).catch(function () {});
+        } catch (e3) {}
+      }
+      document.addEventListener('click', function (ev) {
+        try {
+          if (navigator.onLine !== false) return;
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) return;
+          var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+          if (!a) return;
+          var u = new URL(a.href, location.href);
+          if (u.origin !== location.origin) return;
+          if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          var keys = [u.href, u.origin + u.pathname, u.origin + u.pathname.replace(/\/+$/, '')];
+          if (/\/admin\/ops\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\/ops\//i, '/admin/'));
+          else if (/\/admin\//i.test(u.pathname)) keys.push(u.origin + u.pathname.replace(/\/admin\//i, '/admin/ops/'));
+          var p = Promise.resolve(null);
+          keys.forEach(function (k) { p = p.then(function (h) { return h || matchAnyCache(k); }); });
+          p.then(function (res) {
+            if (!res) { alert('الصفحة غير محفوظة أوفلاين — وصّل النت وافتحها مرة.'); return; }
+            return res.text().then(function (html) {
+              if (!html || html.length < 400) { alert('الصفحة غير محفوظة أوفلاين.'); return; }
+              document.open(); document.write(html); document.close();
+              setTimeout(rescueStyles, 30);
+            });
+          }).catch(function () { alert('الصفحة غير محفوظة أوفلاين.'); });
+        } catch (e4) {}
+      }, true);
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rescueStyles);
+      else setTimeout(rescueStyles, 0);
+      window.addEventListener('pageshow', rescueStyles);
+      setTimeout(rescueStyles, 800);
+    })();
+    </script>
+    <?php } ?>
     <script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>" defer></script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
@@ -443,15 +544,14 @@ if (!$ratebLocalAppliance) {
     ?>
 <script>
 (function () {
-  /* Coordinate SW version bump with register() so we never leave the page uncontrolled
-     (Chrome “لا يتوفر اتصال بالإنترنت” when unregister races register). */
+  /* Soft build bump only — NEVER unregister cloud SW (caused unstyled/Chrome interstitial offline). */
   var NEED = <?php echo json_encode(defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1'); ?>;
   var KEY = 'rateb_sw_build';
   var prev = null;
   try {
     prev = localStorage.getItem(KEY);
   } catch (e0) {}
-  function clearWarmKeys() {
+  if (prev !== NEED) {
     try {
       localStorage.setItem(KEY, NEED);
       [
@@ -472,34 +572,7 @@ if (!$ratebLocalAppliance) {
       sessionStorage.removeItem('rateb_sw_reloaded');
     } catch (e1) {}
   }
-  if (prev === NEED || !('serviceWorker' in navigator)) {
-    window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false });
-    return;
-  }
-  /* Never tear down SW while offline — keep current controller for matrix/sidebar nav. */
-  try {
-    if (navigator.onLine === false) {
-      window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, deferBump: true });
-      return;
-    }
-  } catch (eOff) {}
-  clearWarmKeys();
-  window.__RATEB_SW_READY_GATE__ = navigator.serviceWorker.getRegistrations().then(function (regs) {
-    return Promise.all((regs || []).map(function (r) {
-      return r.unregister().catch(function () { return false; });
-    }));
-  }).then(function () {
-    var already = false;
-    try {
-      already = sessionStorage.getItem('rateb_sw_force_' + NEED) === '1';
-      if (!already) {
-        sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
-      }
-    } catch (e2) {}
-    return { reload: !already };
-  }).catch(function () {
-    return { reload: false };
-  });
+  window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
 })();
 </script>
 <?php
@@ -773,75 +846,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       }
     }
   } catch (eEsc) {}
-  // Offline safety net: if SW is not controlling, never let Chrome show the interstitial.
-  document.addEventListener('click', function (ev) {
-    try {
-      if (navigator.onLine !== false) return;
-      var controlled = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
-      if (controlled) return;
-      var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
-      if (!a) return;
-      var u = new URL(a.href, location.href);
-      if (u.origin !== location.origin) return;
-      if (!/\/admin(\/|$)/i.test(u.pathname) && !/\/pos(\/|$)/i.test(u.pathname)) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      var keys = [u.href, u.origin + u.pathname, u.origin + u.pathname.replace(/\/+$/, '')];
-      if (/\/admin\/ops\//i.test(u.pathname)) {
-        keys.push(u.origin + u.pathname.replace(/\/admin\/ops\//i, '/admin/'));
-      } else if (/\/admin\//i.test(u.pathname)) {
-        keys.push(u.origin + u.pathname.replace(/\/admin\//i, '/admin/ops/'));
-      }
-      var tryCaches = function () {
-        if (!window.caches) return Promise.resolve(null);
-        return caches.keys().then(function (names) {
-          var chain = Promise.resolve(null);
-          (names || []).forEach(function (name) {
-            if (!/^rateb-/i.test(String(name || ''))) return;
-            chain = chain.then(function (hit) {
-              if (hit) return hit;
-              return caches.open(name).then(function (c) {
-                var inner = Promise.resolve(null);
-                keys.forEach(function (k) {
-                  inner = inner.then(function (h) {
-                    return h || c.match(k).then(function (m) {
-                      return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                    });
-                  });
-                });
-                return inner;
-              });
-            });
-          });
-          return chain;
-        });
-      };
-      tryCaches().then(function (res) {
-        if (res) {
-          return res.text().then(function (html) {
-            if (html && html.length > 400) {
-              document.open();
-              document.write(html);
-              document.close();
-              return;
-            }
-            location.href = (cfg.serviceWorkerScope || '/rateb-erp/public/') + 'admin/';
-          });
-        }
-        alert('الصفحة غير محفوظة أوفلاين — وصّل النت وافتحها مرة، أو انتظر اكتمال تجهيز الأوفلاين.');
-      }).catch(function () {
-        alert('الصفحة غير محفوظة أوفلاين — وصّل النت ثم أعد المحاولة.');
-      });
-    } catch (eNav) { /* ignore */ }
-  }, true);
   var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
-  gate.then(function (state) {
-    try {
-      if (state && state.reload && navigator.onLine !== false) {
-        location.reload();
-        return;
-      }
-    } catch (eReload) {}
+  gate.then(function () {
     navigator.serviceWorker.register(swUrl, scope
         ? { scope: scope, updateViaCache: 'none' }
         : { updateViaCache: 'none' })
@@ -850,14 +856,15 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           if (reg && typeof reg.update === 'function') reg.update();
           if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } catch (eUp) {}
+        // Never force-reload on controllerchange while offline (ERR interstitial).
         try {
           if (!window.__ratebSwReloadBound && navigator.serviceWorker) {
             window.__ratebSwReloadBound = true;
             navigator.serviceWorker.addEventListener('controllerchange', function () {
-              if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
               try {
-                if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-              } catch (eOff) {}
+                if (navigator.onLine === false) return;
+              } catch (eOff) { return; }
+              if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
               sessionStorage.setItem('rateb_sw_reloaded', '1');
               location.reload();
             });
