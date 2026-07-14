@@ -1,0 +1,582 @@
+{
+    "phase": "AH",
+    "title": "Accounting dashboard performance audit",
+    "mode": "read_only",
+    "measured_at": "2026-07-14T20:00:00+00:00",
+    "path": "/admin/ops/accounting",
+    "company_id": 22,
+    "controller_index_wall_ms": 180.206,
+    "ensureDefaultAccounts": {
+        "executes_every_dashboard_request": true,
+        "evidence": "AccountingDashboardController::index line 35 always calls $service->ensureDefaultAccounts(...); this audit timed exactly 1 invocation per request.",
+        "call_count": 1,
+        "wall_ms": 27.455,
+        "sql_count": 113,
+        "sql_ms": 12.726,
+        "DEFAULT_ACCOUNTS_code_count": 39,
+        "findCoa_sql_calls": 130,
+        "touchCoa_sql_calls": 117,
+        "can_skip_after_initial_setup": {
+            "verdict": "YES_IF_COA_ALREADY_PROVISIONED",
+            "evidence": "ensureDefaultAccounts loops DEFAULT_ACCOUNTS: findCoaByCode then touchCoaRow(UPDATE is_active/name) even when rows exist \u2014 not a create-only path. After initial setup, find+touch still run per code every request. Skipping/guarding when COA already complete would avoid this work.",
+            "current_behavior": "touchCoaRow still UPDATEs existing accounts every request"
+        }
+    },
+    "repeated_detectors": {
+        "liveTableHasColumn": {
+            "n": 61,
+            "ms": 31.94139999999999,
+            "sql_n": 61
+        },
+        "tableExists": {
+            "n": 1,
+            "ms": 0.6848,
+            "sql_n": 1
+        },
+        "findCoaByCode": {
+            "n": 130,
+            "ms": 16.91930000000001,
+            "sql_n": 130
+        },
+        "touchCoaRow": {
+            "n": 117,
+            "ms": 13.053799999999999,
+            "sql_n": 117
+        },
+        "ensureDefaultAccounts": {
+            "n": 1,
+            "ms": 27.454515,
+            "sql_n": 113
+        }
+    },
+    "schema_inspection": {
+        "show_columns_count": 62,
+        "table_exists_related_count": 1,
+        "schema_sql_total": 62,
+        "note": "liveTableHasColumn issues SHOW COLUMNS FROM `table` LIKE ... (Database.php:95-111)"
+    },
+    "sql_totals": {
+        "count": 550,
+        "ms": 103.129,
+        "unique_fingerprints": 54,
+        "duplicate_sql_extra_executions": 496,
+        "duplicate_fingerprint_count": 39
+    },
+    "sql_by_phase": {
+        "ensureDefaultAccounts": {
+            "n": 113,
+            "ms": 12.726
+        },
+        "dashboard_build": {
+            "n": 435,
+            "ms": 89.584
+        },
+        "trialBalance": {
+            "n": 2,
+            "ms": 0.82
+        }
+    },
+    "top20_hotspots": [
+        {
+            "rank": 1,
+            "function": "Rateb\\App\\Core\\Database::liveTableHasColumn",
+            "call_count_sql": 61,
+            "total_wall_ms_sql": 31.941,
+            "self_time_ms": 31.941,
+            "sql_count": 61,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 15,
+            "sample": "SHOW COLUMNS FROM `rateb_journal_entries` LIKE 'branch_id'"
+        },
+        {
+            "rank": 2,
+            "function": "Rateb\\App\\Services\\AccountingService::findCoaByCode",
+            "call_count_sql": 130,
+            "total_wall_ms_sql": 16.919,
+            "self_time_ms": 16.919,
+            "sql_count": 130,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 238,
+            "sample": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1"
+        },
+        {
+            "rank": 3,
+            "function": "Rateb\\App\\Services\\AccountingService::touchCoaRow",
+            "call_count_sql": 117,
+            "total_wall_ms_sql": 13.054,
+            "self_time_ms": 13.054,
+            "sql_count": 117,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 241,
+            "sample": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id"
+        },
+        {
+            "rank": 4,
+            "function": "Rateb\\App\\Core\\Model::update",
+            "call_count_sql": 102,
+            "total_wall_ms_sql": 12.236,
+            "self_time_ms": 12.236,
+            "sql_count": 102,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 285,
+            "sample": "UPDATE rateb_chart_of_accounts SET parent_id = :parent_id WHERE id = :id AND company_id = :admin_company_filter"
+        },
+        {
+            "rank": 5,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "call_count_sql": 39,
+            "total_wall_ms_sql": 7.065,
+            "self_time_ms": 7.065,
+            "sql_count": 39,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 558,
+            "sample": "SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :cid"
+        },
+        {
+            "rank": 6,
+            "function": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "call_count_sql": 24,
+            "total_wall_ms_sql": 6.207,
+            "self_time_ms": 6.207,
+            "sql_count": 24,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 42,
+            "sample": "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = 'paid' AND company_id = 22"
+        },
+        {
+            "rank": 7,
+            "function": "Rateb\\App\\Core\\Model::branchColumnIsSelectable",
+            "call_count_sql": 16,
+            "total_wall_ms_sql": 2.966,
+            "self_time_ms": 2.966,
+            "sql_count": 16,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 162,
+            "sample": "SELECT `branch_id` FROM `rateb_purchase_requests` LIMIT 0"
+        },
+        {
+            "rank": 8,
+            "function": "Rateb\\App\\Core\\Database::fetchOne",
+            "call_count_sql": 15,
+            "total_wall_ms_sql": 2.401,
+            "self_time_ms": 2.401,
+            "sql_count": 15,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 298,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :st AND e.company_id = :cid"
+        },
+        {
+            "rank": 9,
+            "function": "Rateb\\App\\Core\\Database::fetchAll",
+            "call_count_sql": 6,
+            "total_wall_ms_sql": 1.564,
+            "self_time_ms": 1.564,
+            "sql_count": 6,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingBranchScope.php",
+            "line": 285,
+            "sample": "SELECT i.*, je.id AS journal_id, je.entry_no FROM rateb_invoices i LEFT JOIN rateb_journal_entries je ON je.source_type = 'invoice' AND je.source_id = i.id AND je.status = 'posted' WHERE i.company_id = :cid AND i.status != 'cancelled' AND (je.id IS NULL OR je.branch_id IN (:_oje_"
+        },
+        {
+            "rank": 10,
+            "function": "Rateb\\App\\Services\\AccountingService::operationalTableSupportsBranchFilter",
+            "call_count_sql": 8,
+            "total_wall_ms_sql": 1.55,
+            "self_time_ms": 1.55,
+            "sql_count": 8,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 1378,
+            "sample": "SELECT `branch_id` FROM `rateb_purchase_orders` LIMIT 0"
+        },
+        {
+            "rank": 11,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::trends",
+            "call_count_sql": 4,
+            "total_wall_ms_sql": 1.246,
+            "self_time_ms": 1.246,
+            "sql_count": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 28,
+            "sample": "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='2026-07' AND company_id = 22"
+        },
+        {
+            "rank": 12,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::workflowCounts",
+            "call_count_sql": 6,
+            "total_wall_ms_sql": 0.886,
+            "self_time_ms": 0.886,
+            "sql_count": 6,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 125,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_journal_entries WHERE company_id = :cid AND status = 'draft'"
+        },
+        {
+            "rank": 13,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::charts",
+            "call_count_sql": 3,
+            "total_wall_ms_sql": 0.861,
+            "self_time_ms": 0.861,
+            "sql_count": 3,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 30,
+            "sample": "SELECT DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') AS month, COALESCE(SUM(amount), 0) AS total FROM rateb_payments WHERE status = 'completed' AND company_id = 22 GROUP BY DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') ORDER BY month ASC LIMIT 12"
+        },
+        {
+            "rank": 14,
+            "function": "Rateb\\App\\Services\\AccountingService::vatReport",
+            "call_count_sql": 4,
+            "total_wall_ms_sql": 0.773,
+            "self_time_ms": 0.773,
+            "sql_count": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 106,
+            "sample": "SELECT COALESCE(SUM(tax_amount), 0) AS t FROM rateb_invoices WHERE status IN ('paid','sent','overdue') AND company_id = :cid AND issued_at >= :from AND issued_at <= :to"
+        },
+        {
+            "rank": 15,
+            "function": "Rateb\\App\\Services\\BranchService::branchesTableExists",
+            "call_count_sql": 1,
+            "total_wall_ms_sql": 0.685,
+            "self_time_ms": 0.685,
+            "sql_count": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchAccessService.php",
+            "line": 84,
+            "sample": "SHOW TABLES LIKE 'rateb_branches'"
+        },
+        {
+            "rank": 16,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::topSoldItems",
+            "call_count_sql": 2,
+            "total_wall_ms_sql": 0.616,
+            "self_time_ms": 0.616,
+            "sql_count": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 34,
+            "sample": "SELECT COALESCE(NULLIF(TRIM(il.description), ''), il.item_name) AS name, COALESCE(SUM(il.line_total), 0) AS total FROM rateb_invoice_lines il JOIN rateb_invoices i ON i.id = il.invoice_id WHERE i.status != 'cancelled' AND i.company_id = 22 GROUP BY name ORDER BY total DESC LIMIT "
+        },
+        {
+            "rank": 17,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::invoiceStats",
+            "call_count_sql": 4,
+            "total_wall_ms_sql": 0.615,
+            "self_time_ms": 0.615,
+            "sql_count": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 124,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_invoices WHERE company_id = :cid AND status IN ('sent','draft','overdue') AND payment_status IN ('unpaid','partial')"
+        },
+        {
+            "rank": 18,
+            "function": "Rateb\\App\\Services\\BranchService::branchesHaveIsMainColumn",
+            "call_count_sql": 1,
+            "total_wall_ms_sql": 0.469,
+            "self_time_ms": 0.469,
+            "sql_count": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchService.php",
+            "line": 140,
+            "sample": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'"
+        },
+        {
+            "rank": 19,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::topCustomers",
+            "call_count_sql": 2,
+            "total_wall_ms_sql": 0.312,
+            "self_time_ms": 0.312,
+            "sql_count": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 33,
+            "sample": "SELECT c.name, COALESCE(SUM(v.amount), 0) AS total FROM rateb_customers c LEFT JOIN rateb_cash_vouchers v ON v.customer_id = c.id AND v.status = 'posted' WHERE c.company_id = :cid GROUP BY c.id ORDER BY total DESC LIMIT 5"
+        },
+        {
+            "rank": 20,
+            "function": "Rateb\\App\\Services\\AccountingDashboardService::newCustomersCount",
+            "call_count_sql": 2,
+            "total_wall_ms_sql": 0.298,
+            "self_time_ms": 0.298,
+            "sql_count": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingDashboardService.php",
+            "line": 131,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_customers WHERE company_id = :cid AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        }
+    ],
+    "top20_duplicate_sql": [
+        {
+            "fingerprint": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :p AND code = :p LIMIT ?",
+            "executions": 130,
+            "duplicate_extra": 129,
+            "total_ms": 16.919,
+            "function": "Rateb\\App\\Services\\AccountingService::findCoaByCode",
+            "sample": "SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1"
+        },
+        {
+            "fingerprint": "UPDATE rateb_chart_of_accounts SET is_active = ?, name = :p, name_ar = :p WHERE id = :p",
+            "executions": 117,
+            "duplicate_extra": 116,
+            "total_ms": 13.054,
+            "function": "Rateb\\App\\Services\\AccountingService::touchCoaRow",
+            "sample": "UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id"
+        },
+        {
+            "fingerprint": "UPDATE rateb_chart_of_accounts SET parent_id = :p WHERE id = :p AND company_id = :p",
+            "executions": 102,
+            "duplicate_extra": 101,
+            "total_ms": 12.236,
+            "function": "Rateb\\App\\Core\\Model::update",
+            "sample": "UPDATE rateb_chart_of_accounts SET parent_id = :parent_id WHERE id = :id AND company_id = :admin_company_filter"
+        },
+        {
+            "fingerprint": "SHOW COLUMNS FROM `rateb_journal_entries` LIKE ?",
+            "executions": 39,
+            "duplicate_extra": 38,
+            "total_ms": 20.528,
+            "function": "Rateb\\App\\Core\\Database::liveTableHasColumn",
+            "sample": "SHOW COLUMNS FROM `rateb_journal_entries` LIKE 'branch_id'"
+        },
+        {
+            "fingerprint": "SELECT id FROM rateb_branches WHERE company_id = :p AND status = :p ORDER BY is_main DESC, id ASC",
+            "executions": 10,
+            "duplicate_extra": 9,
+            "total_ms": 1.6,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT id FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC"
+        },
+        {
+            "fingerprint": "SHOW COLUMNS FROM `rateb_purchase_orders` LIKE ?",
+            "executions": 10,
+            "duplicate_extra": 9,
+            "total_ms": 5.209,
+            "function": "Rateb\\App\\Core\\Database::liveTableHasColumn",
+            "sample": "SHOW COLUMNS FROM `rateb_purchase_orders` LIKE 'branch_id'"
+        },
+        {
+            "fingerprint": "SELECT `branch_id` FROM `rateb_purchase_orders` LIMIT ?",
+            "executions": 10,
+            "duplicate_extra": 9,
+            "total_ms": 1.891,
+            "function": "Rateb\\App\\Core\\Model::branchColumnIsSelectable",
+            "sample": "SELECT `branch_id` FROM `rateb_purchase_orders` LIMIT 0"
+        },
+        {
+            "fingerprint": "SELECT `branch_id` FROM `rateb_journal_entries` LIMIT ?",
+            "executions": 10,
+            "duplicate_extra": 9,
+            "total_ms": 1.736,
+            "function": "Rateb\\App\\Core\\Model::branchColumnIsSelectable",
+            "sample": "SELECT `branch_id` FROM `rateb_journal_entries` LIMIT 0"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(l.debit), ?) AS dr, COALESCE(SUM(l.credit), ?) AS cr FROM rateb_journal_lines l JOIN rateb_journal_e",
+            "executions": 9,
+            "duplicate_extra": 8,
+            "total_ms": 1.539,
+            "function": "Rateb\\App\\Core\\Database::fetchOne",
+            "sample": "SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr FROM rateb_journal_lines l JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted WHERE l.account_id = :aid AND e.company_id <=> :cid"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(total_amount), ?) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = ? AND company_id = ?",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 1.571,
+            "function": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "sample": "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = 'paid' AND company_id = 22"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(total_amount), ?) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status IN (?,?,?) AND company_id = ?",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 1.549,
+            "function": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "sample": "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','overdue','draft') AND company_id = 22"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(amount), ?) AS t, COUNT(*) AS c FROM rateb_payments WHERE status = ? AND company_id = ?",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 1.55,
+            "function": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "sample": "SELECT COALESCE(SUM(amount), 0) AS t, COUNT(*) AS c FROM rateb_payments WHERE status = 'completed' AND company_id = 22"
+        },
+        {
+            "fingerprint": "SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :p AND e.company_id = :p",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 0.861,
+            "function": "Rateb\\App\\Core\\Database::fetchOne",
+            "sample": "SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :st AND e.company_id = :cid"
+        },
+        {
+            "fingerprint": "SELECT COUNT(*) AS c FROM rateb_chart_of_accounts WHERE is_active = ? AND company_id = :p",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 0.995,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT COUNT(*) AS c FROM rateb_chart_of_accounts WHERE is_active = 1 AND company_id = :cid"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(total_amount), ?) AS t FROM rateb_purchase_orders WHERE status IN (?,?) AND company_id = ?",
+            "executions": 6,
+            "duplicate_extra": 5,
+            "total_ms": 1.537,
+            "function": "Rateb\\App\\Services\\AccountingService::financialSummary",
+            "sample": "SELECT COALESCE(SUM(total_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed') AND company_id = 22"
+        },
+        {
+            "fingerprint": "SHOW COLUMNS FROM `rateb_bank_accounts` LIKE ?",
+            "executions": 5,
+            "duplicate_extra": 4,
+            "total_ms": 2.662,
+            "function": "Rateb\\App\\Core\\Database::liveTableHasColumn",
+            "sample": "SHOW COLUMNS FROM `rateb_bank_accounts` LIKE 'branch_id'"
+        },
+        {
+            "fingerprint": "SELECT b.*, a.code AS account_code FROM rateb_bank_accounts b JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_i",
+            "executions": 5,
+            "duplicate_extra": 4,
+            "total_ms": 0.907,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT b.*, a.code AS account_code FROM rateb_bank_accounts b JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id WHERE b.company_id = :cid AND b.is_active = 1 ORDER BY b.is_default DESC, b.name"
+        },
+        {
+            "fingerprint": "SELECT COALESCE(SUM(l.debit), ?) AS dr, COALESCE(SUM(l.credit), ?) AS cr FROM rateb_journal_lines l JOIN rateb_journal_e",
+            "executions": 4,
+            "duplicate_extra": 3,
+            "total_ms": 0.653,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr FROM rateb_journal_lines l JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted' WHERE l.account_id = :aid AND e.company_id <=> :cid AND e.entry_date >= :from AND e.entry_date <= "
+        },
+        {
+            "fingerprint": "SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :p",
+            "executions": 3,
+            "duplicate_extra": 2,
+            "total_ms": 0.543,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :cid"
+        },
+        {
+            "fingerprint": "SELECT a.id, a.code, a.name, a.name_ar, a.account_type, COALESCE(SUM(l.debit), ?) AS total_debit, COALESCE(SUM(l.credit)",
+            "executions": 3,
+            "duplicate_extra": 2,
+            "total_ms": 1.013,
+            "function": "Rateb\\App\\Core\\Model::executePrepared",
+            "sample": "SELECT a.id, a.code, a.name, a.name_ar, a.account_type, COALESCE(SUM(l.debit), 0) AS total_debit, COALESCE(SUM(l.credit), 0) AS total_credit FROM rateb_chart_of_accounts a INNER JOIN rateb_journal_lines l ON l.account_id = a.id INNER JOIN rateb_journal_entries e ON e.id = l.journ"
+        }
+    ],
+    "call_tree": {
+        "name": "AccountingDashboardController::index",
+        "file": "app/controllers/Company/AccountingControllers.php",
+        "lines": "22-48",
+        "wall_ms": 180.206,
+        "children": [
+            {
+                "name": "AccountingService::ensureDefaultAccounts",
+                "file": "app/services/AccountingService.php:231",
+                "wall_ms": 27.455,
+                "sql_n": 113,
+                "call_count": 1,
+                "children": [
+                    {
+                        "name": "findCoaByCode (loop DEFAULT_ACCOUNTS)",
+                        "evidence_sql_calls": 130,
+                        "wall_ms_sql_agg": 16.919
+                    },
+                    {
+                        "name": "touchCoaRow (when row exists)",
+                        "evidence_sql_calls": 117,
+                        "wall_ms_sql_agg": 13.054
+                    },
+                    {
+                        "name": "linkCoaParents \u2192 Model::update",
+                        "note": "parent_id backfill for every default code"
+                    }
+                ]
+            },
+            {
+                "name": "AccountingDashboardService::build",
+                "file": "app/services/AccountingDashboardService.php:23",
+                "wall_ms": 151.517,
+                "sql_n": 435,
+                "children": [
+                    {
+                        "name": "metrics / trends / kpis / charts / alerts / recent / \u2026"
+                    }
+                ]
+            },
+            {
+                "name": "AccountingService::trialBalance",
+                "wall_ms": 1.123,
+                "sql_n": 2
+            },
+            {
+                "name": "view company/accounting/dashboard.php",
+                "wall_ms": 0.033,
+                "html_bytes": 0
+            }
+        ]
+    },
+    "flame_graph_stacks": [
+        {
+            "stack": "index",
+            "ms": 0.079
+        },
+        {
+            "stack": "index;ensureDefaultAccounts",
+            "ms": 27.455
+        },
+        {
+            "stack": "index;AccountingDashboardService::build",
+            "ms": 151.517
+        },
+        {
+            "stack": "index;trialBalance",
+            "ms": 1.123
+        },
+        {
+            "stack": "index;view",
+            "ms": 0.033
+        }
+    ],
+    "sections_ms": {
+        "ensureDefaultAccounts": 27.455,
+        "dashboard_build": 151.517,
+        "trialBalance": 1.123,
+        "view_render": 0.033,
+        "other_in_index": 0.079
+    },
+    "single_biggest_bottleneck": {
+        "name": "dashboard_build",
+        "wall_ms": 151.517,
+        "pct_of_index": 84.08,
+        "file": "app/services/AccountingDashboardService.php",
+        "function": "build",
+        "line": 23,
+        "sql_n": 435
+    },
+    "optimization_opportunities_no_implementation": [
+        {
+            "id": 1,
+            "action": "Skip or gate ensureDefaultAccounts when company COA already provisioned (detect complete code set once)",
+            "expected_roi": "Remove ~27 ms wall and ~113 SQL (~15% of index) on every dashboard hit after initial setup",
+            "risk": "Must still provision on first company use / after plan changes"
+        },
+        {
+            "id": 2,
+            "action": "Stop touchCoaRow UPDATE on every request; only write when name/is_active actually differs",
+            "expected_roi": "Eliminate ~117 UPDATEs (~13.1 ms SQL)"
+        },
+        {
+            "id": 3,
+            "action": "Cache liveTableHasColumn / use Database::tableHasColumn (cached) instead of live SHOW COLUMNS in AccountingBranchScope",
+            "expected_roi": "Eliminate ~62 SHOW COLUMNS (~31.9 ms)"
+        },
+        {
+            "id": 4,
+            "action": "Defer trialBalance / chart queries or parallelize / cache short TTL for dashboard cards",
+            "expected_roi": "Reduce build+trialBalance residual (~153 ms)"
+        }
+    ],
+    "expected_roi_of_fixing_biggest": {
+        "fix_target": "dashboard_build",
+        "wall_ms_removable_estimate": 151.5,
+        "pct_of_index_estimate": 15.2,
+        "fpm_context": "Post-AG FPM accounting total ~325ms with dispatch ~277ms; removing ensureDefaultAccounts work transfers roughly its share of dispatch SQL (~ensure SQL ms) off the critical path"
+    }
+}

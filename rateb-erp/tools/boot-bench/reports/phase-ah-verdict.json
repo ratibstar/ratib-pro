@@ -1,0 +1,76 @@
+{
+  "phase": "AH",
+  "title": "Accounting dashboard performance audit — verdict",
+  "mode": "read_only_no_implementation",
+  "source": "tools/boot-bench/reports/phase-ah-accounting-audit.json",
+  "measured_at": "2026-07-14T20:00:00Z",
+  "controller": {
+    "file": "app/controllers/Company/AccountingControllers.php",
+    "class": "AccountingDashboardController",
+    "function": "index",
+    "lines": "22-48",
+    "wall_ms_exclusive_segments": 180.206
+  },
+  "answers": {
+    "ensureDefaultAccounts_every_request": true,
+    "evidence": "index() line 35 unconditionally calls ensureDefaultAccounts; audit counted call_count=1 per request",
+    "can_skip_after_initial_setup": true,
+    "skip_evidence": "For existing COA, path still runs findCoaByCode + touchCoaRow(UPDATE) for each of 39 DEFAULT_ACCOUNTS plus linkCoaParents UPDATEs — not create-only"
+  },
+  "single_biggest_bottleneck": {
+    "name": "AccountingDashboardService::build",
+    "file": "app/services/AccountingDashboardService.php",
+    "function": "build",
+    "line": 23,
+    "wall_ms": 151.517,
+    "pct_of_index": 84.08,
+    "sql_count": 435,
+    "sql_ms": 89.584,
+    "hottest_callee": {
+      "function": "Database::liveTableHasColumn",
+      "file": "app/Core/Database.php",
+      "lines": "95-111",
+      "caller": "AccountingBranchScope.php:15",
+      "calls": 61,
+      "ms": 31.941
+    }
+  },
+  "second_bottleneck": {
+    "name": "AccountingService::ensureDefaultAccounts",
+    "file": "app/services/AccountingService.php",
+    "line": 231,
+    "wall_ms": 27.455,
+    "pct_of_index": 15.2,
+    "sql_count": 113,
+    "findCoaByCode_calls": 130,
+    "touchCoaRow_calls": 117,
+    "Model_update_parent_calls": 102
+  },
+  "schema_inspection": {
+    "SHOW_COLUMNS_count": 62,
+    "tableExists_related": 1
+  },
+  "sql": {
+    "total": 550,
+    "ms": 103.129,
+    "unique_fingerprints": 54,
+    "duplicate_extra_executions": 496
+  },
+  "expected_roi": {
+    "fix_biggest_build_dedupe_and_cache_schema": {
+      "estimate": "Up to ~84% of index wall (~152 ms) addressable if build SQL volume/duplicates and liveTableHasColumn caching are fixed; SHOUT COLUMNS alone ~32 ms (18%)",
+      "note": "Do not implement in AH"
+    },
+    "gate_ensureDefaultAccounts_after_setup": {
+      "estimate": "~27.5 ms (~15% of index) + 113 SQL removable on warm companies",
+      "note": "Do not implement in AH"
+    },
+    "combined_optimistic": "Majority of ~180 ms index path; maps to FPM accounting dispatch ~277 ms residual after AG"
+  },
+  "optimization_opportunities_ranked_no_impl": [
+    "1. Deduplicate/cache AccountingDashboardService::build queries + liveTableHasColumn (largest)",
+    "2. Gate/skip ensureDefaultAccounts when COA already complete; stop unconditional touchCoaRow UPDATEs",
+    "3. Cache or use Database::tableHasColumn instead of live SHOW COLUMNS",
+    "4. Short-TTL cache for financialSummary / repeated invoice aggregates (executed 6× each)"
+  ]
+}
