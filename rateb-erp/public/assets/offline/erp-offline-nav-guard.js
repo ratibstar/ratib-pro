@@ -11,7 +11,7 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-table-save-v44';
+    var GUARD_BUILD = '20260714-table-save-v45';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v29'];
     var flushing = false;
 

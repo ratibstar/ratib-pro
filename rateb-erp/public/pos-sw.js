@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v44';
+var SW_BUILD_ID = '20260714-force-sw-v45';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1981,10 +1981,10 @@ self.addEventListener('fetch', function (event) {
         }
     }
 
-    // Soft-fail favicon offline.
+    // Soft-fail favicon offline (204 must use null body — empty string throws).
     if (/\/favicon\.(ico|svg|png)$/i.test(url.pathname)) {
         if (isCloudBrowserOffline()) {
-            event.respondWith(new Response('', { status: 204 }));
+            event.respondWith(new Response(null, { status: 204 }));
             return;
         }
     }
