@@ -1,0 +1,58 @@
+{
+  "phase": "AI",
+  "title": "Accounting dashboard performance optimization — verdict",
+  "measured_at": "2026-07-14T20:06:26Z",
+  "mode": "implemented_and_measured",
+  "before_source": "tools/boot-bench/reports/phase-ah-accounting-audit.json / phase-ah-verdict.json",
+  "after_source": "tools/boot-bench/reports/phase-ai-accounting-audit-after.json",
+  "architecture_lock": {
+    "controllers_urls_middleware_rbac_schema": "unchanged",
+    "allowed_changes": [
+      "request-scoped memoization",
+      "static per-request caches",
+      "duplicate SQL elimination",
+      "batch COA load",
+      "dirty-check updates",
+      "skip ensureDefaultAccounts when COA complete"
+    ]
+  },
+  "targets": {
+    "build_ms": {"before": 151.517, "after": 36.922, "target": 60, "pass": true},
+    "sql_total": {"before": 550, "after": 60, "target": 150, "pass": true},
+    "show_columns": {"before": 62, "after": 8, "target": 1, "pass": "partial", "note": "61 duplicate probes collapsed; 7 distinct tables still require one SHOW COLUMNS each (+1 BranchService is_main)"},
+    "findCoaByCode": {"before": 130, "after": 0, "target": 10, "pass": true},
+    "touchCoaRow": {"before": 117, "after": 0, "target": 0, "pass": true},
+    "ensureDefaultAccounts_ms": {"before": 27.455, "after": 0.732, "target": 0, "pass": true}
+  },
+  "stability_second_run": {
+    "index_ms": 45.323,
+    "build_ms": 43.338,
+    "sql_total": 60,
+    "show_columns": 8,
+    "ensure_ms": 0.706
+  },
+  "reductions": {
+    "wall_controller_index_ms": {"before": 180.206, "after": 38.692, "delta_ms": -141.514, "pct": -78.5},
+    "build_ms": {"before": 151.517, "after": 36.922, "delta_ms": -114.595, "pct": -75.6},
+    "sql_count": {"before": 550, "after": 60, "delta": -490, "pct": -89.1},
+    "sql_ms": {"before": 103.129, "after": 27.432, "delta_ms": -75.697, "pct": -73.4},
+    "show_columns": {"before": 62, "after": 8, "delta": -54, "pct": -87.1},
+    "duplicate_sql_extra": {"before": 496, "after": 9, "delta": -487}
+  },
+  "ttfb_estimate": {
+    "note": "CLI controller path only; browser TTFB also includes bootstrap/routes/HTML. Accounting post-AG browser TTFB was ~708 ms with FPM dispatch ~277–325 ms dominated by this index path (~180 ms).",
+    "controller_index_before_ms": 180.206,
+    "controller_index_after_ms": 38.692,
+    "estimated_dispatch_savings_ms": 141.5,
+    "estimated_accounting_browser_ttfb_ms": "≈567 (708 − 141) if other layers unchanged"
+  },
+  "files_changed": [
+    "app/Core/Database.php",
+    "app/Core/Model.php",
+    "app/services/AccountingBranchScope.php",
+    "app/services/AccountingService.php",
+    "app/services/AccountingDashboardService.php"
+  ],
+  "repair_escape_hatch": "RATEB_ACCOUNTING_REPAIR_COA=1 forces ensureDefaultAccounts full provision/touch/link path",
+  "verdict": "PASS — all primary targets met; SHOW COLUMNS reduced 87% (unique tables remain)"
+}

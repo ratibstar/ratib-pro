@@ -14,9 +14,27 @@ final class AccountingDashboardService
 {
     private AccountingService $acct;
 
+    /** @var array<string, mixed> Phase AI — request-scoped dashboard memo */
+    private static array $requestMemo = [];
+
     public function __construct(?AccountingService $acct = null)
     {
         $this->acct = $acct ?? new AccountingService();
+    }
+
+    /** @param callable():mixed $fn */
+    private static function requestMemo(string $key, callable $fn): mixed
+    {
+        if (array_key_exists($key, self::$requestMemo)) {
+            return self::$requestMemo[$key];
+        }
+
+        return self::$requestMemo[$key] = $fn();
+    }
+
+    private static function companyMemoKey(?int $companyId): string
+    {
+        return ($companyId !== null && $companyId > 0) ? (string) $companyId : 'null';
     }
 
     /** @return array<string, mixed> */
@@ -26,9 +44,9 @@ final class AccountingDashboardService
         return [
             'metrics' => $metrics,
             'trends' => $this->trends($companyId, $metrics),
-            'kpis' => $this->kpiList($companyId),
+            'kpis' => $this->kpiList($companyId, $metrics),
             'charts' => $this->charts($companyId),
-            'alerts' => $this->alerts($companyId),
+            'alerts' => $this->alerts($companyId, $metrics),
             'recent' => $this->recentActivity($companyId),
             'top_customers' => $this->topCustomers($companyId),
             'top_items' => $this->topSoldItems($companyId),
@@ -39,6 +57,7 @@ final class AccountingDashboardService
     /** @return array<string, float|int> */
     public function metrics(?int $companyId): array
     {
+        return self::requestMemo('metrics:' . self::companyMemoKey($companyId), function () use ($companyId): array {
         $summary = $this->acct->financialSummary($companyId);
         $metrics = [
             'invoices_paid_total' => (float) ($summary['invoices_paid_total'] ?? 0),
@@ -131,6 +150,7 @@ final class AccountingDashboardService
         $metrics['new_customers'] = $this->newCustomersCount($companyId);
 
         return $metrics;
+        });
     }
 
     /** @return array<string, string> */
@@ -324,9 +344,9 @@ final class AccountingDashboardService
     }
 
     /** @return array<int, array{key: string, label: string, value: string, trend: string, icon: string}> */
-    public function kpiList(?int $companyId): array
+    public function kpiList(?int $companyId, ?array $metrics = null): array
     {
-        $m = $this->metrics($companyId);
+        $m = $metrics ?? $this->metrics($companyId);
         $growth = $this->revenueGrowth($companyId);
 
         return [
@@ -422,7 +442,7 @@ final class AccountingDashboardService
     }
 
     /** @return array<int, array{type: string, severity: string, message: string, url: string}> */
-    public function alerts(?int $companyId): array
+    public function alerts(?int $companyId, ?array $metrics = null): array
     {
         if ($companyId === null || $companyId < 1) {
             return $this->platformAlerts();
@@ -470,7 +490,12 @@ final class AccountingDashboardService
             ];
         }
 
-        $draftJournals = $this->workflowCounts($companyId);
+        $draftJournals = is_array($metrics)
+            ? [
+                'draft_journals' => (int) ($metrics['draft_journals'] ?? 0),
+                'pending_vouchers' => (int) ($metrics['pending_vouchers'] ?? 0),
+            ]
+            : $this->workflowCounts($companyId);
         if ((int) ($draftJournals['draft_journals'] ?? 0) > 0) {
             $alerts[] = [
                 'type' => 'draft_journals',
@@ -489,10 +514,14 @@ final class AccountingDashboardService
             ];
         }
 
-        $bank = $this->acct->bankReconciliation($companyId);
-        $unreconciled = 0;
-        foreach ($bank['accounts'] ?? [] as $acc) {
-            $unreconciled += (int) ($acc['unreconciled_count'] ?? 0);
+        if (is_array($metrics) && array_key_exists('unreconciled_bank', $metrics)) {
+            $unreconciled = (int) $metrics['unreconciled_bank'];
+        } else {
+            $bank = $this->acct->bankReconciliation($companyId);
+            $unreconciled = 0;
+            foreach ($bank['accounts'] ?? [] as $acc) {
+                $unreconciled += (int) ($acc['unreconciled_count'] ?? 0);
+            }
         }
         if ($unreconciled > 0) {
             $alerts[] = [

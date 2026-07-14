@@ -91,27 +91,56 @@ final class Database
         }
     }
 
-    /** Uncached — use before adding branch_id to SQL on the active connection. */
+    /**
+     * Live schema probe — request-scoped memoization so each table is
+     * inspected at most once per PHP request (Phase AI).
+     */
     public static function liveTableHasColumn(string $table, string $column): bool
     {
-        try {
-            $pdo = self::connection();
-            $safeTable = str_replace('`', '', $table);
-            if (self::isSqlite()) {
-                return self::sqliteTableHasColumn($pdo, $safeTable, $column);
+        static $reqColumns = [];
+        $safeTable = str_replace('`', '', $table);
+        if (!array_key_exists($safeTable, $reqColumns)) {
+            try {
+                $pdo = self::connection();
+                $cols = [];
+                if (self::isSqlite()) {
+                    $safeIdent = preg_replace('/[^a-zA-Z0-9_]/', '', $safeTable) ?? '';
+                    if ($safeIdent === '') {
+                        $reqColumns[$safeTable] = [];
+                    } else {
+                        $stmt = $pdo->query('PRAGMA table_info(' . $safeIdent . ')');
+                        foreach ($stmt ? ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+                            $name = (string) ($row['name'] ?? '');
+                            if ($name !== '') {
+                                $cols[strtolower($name)] = true;
+                            }
+                        }
+                        $reqColumns[$safeTable] = $cols;
+                    }
+                } else {
+                    $stmt = $pdo->query('SHOW COLUMNS FROM `' . $safeTable . '`');
+                    foreach ($stmt ? ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+                        $name = (string) ($row['Field'] ?? '');
+                        if ($name !== '') {
+                            $cols[$name] = true;
+                        }
+                    }
+                    if ($stmt instanceof \PDOStatement) {
+                        $stmt->closeCursor();
+                    }
+                    $reqColumns[$safeTable] = $cols;
+                }
+                if (!array_key_exists($safeTable, $reqColumns)) {
+                    $reqColumns[$safeTable] = $cols;
+                }
+            } catch (\Throwable $e) {
+                $reqColumns[$safeTable] = [];
             }
-            $stmt = $pdo->query(
-                'SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column)
-            );
-            $exists = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-
-            return $exists;
-        } catch (\Throwable $e) {
-            return false;
         }
+
+        $map = $reqColumns[$safeTable] ?? [];
+
+        return isset($map[$column]) || isset($map[strtolower($column)]);
     }
 
     /** Cached per database — uses SHOW COLUMNS on MySQL or PRAGMA on SQLite. */

@@ -1,0 +1,24 @@
+{
+    "ok": true,
+    "wrote": "/home/admin/domains/rateb.sa/public_html/rateb-erp/tools/boot-bench/reports/phase-ah-accounting-audit.json",
+    "index_ms": 38.692,
+    "ensure_ms": 0.732,
+    "ensure_sql": 1,
+    "build_ms": 36.922,
+    "trial_ms": 0.992,
+    "view_ms": 0.023,
+    "sql_total": 60,
+    "sql_dup_extra": 9,
+    "show_columns": 8,
+    "biggest": {
+        "name": "dashboard_build",
+        "wall_ms": 36.922,
+        "pct_of_index": 95.43,
+        "file": "app/services/AccountingDashboardService.php",
+        "function": "build",
+        "line": 23,
+        "sql_n": 58
+    },
+    "ensure_every_request": true,
+    "can_skip_after_setup": "YES_IF_COA_ALREADY_PROVISIONED"
+}

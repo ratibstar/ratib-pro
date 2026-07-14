@@ -14,9 +14,91 @@ final class AccountingService
 
     private string $lastVoucherPostDetail = '';
 
+    /** @var array<string, mixed> Phase AI — request-scoped service memo */
+    private static array $requestMemo = [];
+
+    /** @var array<string, array<string, array<string, mixed>>> companyKey => code => row */
+    private static array $coaMapByCompany = [];
+
     public function lastVoucherPostDetail(): string
     {
         return $this->lastVoucherPostDetail;
+    }
+
+    /** @param callable():mixed $fn */
+    private static function requestMemo(string $key, callable $fn): mixed
+    {
+        if (array_key_exists($key, self::$requestMemo)) {
+            return self::$requestMemo[$key];
+        }
+
+        return self::$requestMemo[$key] = $fn();
+    }
+
+    private function coaMapKey(?int $companyId): string
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+
+        return $companyId === null ? 'null' : (string) $companyId;
+    }
+
+    /**
+     * Load all COA rows for a company (or platform template) once per request.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function coaCodeMap(?int $companyId): array
+    {
+        $key = $this->coaMapKey($companyId);
+        if (isset(self::$coaMapByCompany[$key])) {
+            return self::$coaMapByCompany[$key];
+        }
+        $companyId = $this->normalizeCompanyId($companyId);
+        $pdo = Database::connection();
+        if ($companyId === null) {
+            $stmt = $pdo->query('SELECT * FROM rateb_chart_of_accounts WHERE company_id IS NULL');
+            $rows = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        } else {
+            $stmt = $pdo->prepare('SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid');
+            $stmt->execute(['cid' => $companyId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string) ($row['code'] ?? '')] = $row;
+        }
+        self::$coaMapByCompany[$key] = $map;
+
+        return $map;
+    }
+
+    private function invalidateCoaCodeMap(?int $companyId): void
+    {
+        unset(self::$coaMapByCompany[$this->coaMapKey($companyId)]);
+    }
+
+    /** True when every DEFAULT_ACCOUNTS code already exists for the company/platform. */
+    private function defaultCoaIsComplete(?int $companyId): bool
+    {
+        $map = $this->coaCodeMap($companyId);
+        foreach (self::DEFAULT_ACCOUNTS as $def) {
+            $code = (string) ($def['code'] ?? '');
+            if ($code === '' || !isset($map[$code])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function accountingRepairMode(): bool
+    {
+        $v = getenv('RATEB_ACCOUNTING_REPAIR_COA');
+        if ($v === false || $v === '') {
+            $v = (string) ($_ENV['RATEB_ACCOUNTING_REPAIR_COA'] ?? '');
+        }
+
+        return $v === '1' || strtolower((string) $v) === 'true';
     }
 
     /** @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string}> */
@@ -96,21 +178,9 @@ final class AccountingService
     /** @return array<string, mixed>|null */
     private function findCoaByCode(?int $companyId, string $code): ?array
     {
-        $pdo = Database::connection();
-        $companyId = $this->normalizeCompanyId($companyId);
-        if ($companyId === null) {
-            $stmt = $pdo->prepare(
-                'SELECT * FROM rateb_chart_of_accounts WHERE company_id IS NULL AND code = :code LIMIT 1'
-            );
-            $stmt->execute(['code' => $code]);
-        } else {
-            $stmt = $pdo->prepare(
-                'SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1'
-            );
-            $stmt->execute(['cid' => $companyId, 'code' => $code]);
-        }
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $map = $this->coaCodeMap($companyId);
+
+        return $map[$code] ?? null;
     }
 
     /** @param array<string, mixed> $def */
@@ -121,27 +191,44 @@ final class AccountingService
             'INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
              VALUES (:cid, :code, :name, :name_ar, :type, :parent, 1)'
         );
+        $cid = $this->normalizeCompanyId($companyId);
         $stmt->execute([
-            'cid' => $this->normalizeCompanyId($companyId),
+            'cid' => $cid,
             'code' => (string) ($def['code'] ?? ''),
             'name' => (string) ($def['name'] ?? ''),
             'name_ar' => $def['name_ar'] ?? null,
             'type' => (string) ($def['account_type'] ?? $def['type'] ?? 'asset'),
             'parent' => $parentId,
         ]);
+        $this->invalidateCoaCodeMap($cid);
+
         return (int) $pdo->lastInsertId();
     }
 
     /** @param array<string, mixed> $def */
-    private function touchCoaRow(int $id, array $def): void
+    private function touchCoaRow(int $id, array $def, ?array $existing = null): void
     {
+        $name = (string) ($def['name'] ?? '');
+        $nameAr = $def['name_ar'] ?? null;
+        if (is_array($existing)) {
+            $curActive = (int) ($existing['is_active'] ?? 0);
+            $curName = (string) ($existing['name'] ?? '');
+            $curAr = $existing['name_ar'] ?? null;
+            if ($curActive === 1 && $curName === $name && (string) $curAr === (string) $nameAr) {
+                return;
+            }
+        }
         Database::connection()->prepare(
             'UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id'
         )->execute([
             'id' => $id,
-            'name' => (string) ($def['name'] ?? ''),
-            'name_ar' => $def['name_ar'] ?? null,
+            'name' => $name,
+            'name_ar' => $nameAr,
         ]);
+        $cid = is_array($existing) ? $this->normalizeCompanyId($existing['company_id'] ?? null) : null;
+        if ($cid !== null || (is_array($existing) && array_key_exists('company_id', $existing))) {
+            $this->invalidateCoaCodeMap($cid);
+        }
     }
 
     /**
@@ -231,6 +318,11 @@ final class AccountingService
     public function ensureDefaultAccounts(?int $companyId): void
     {
         $normalized = $this->normalizeCompanyId($companyId);
+        // Steady-state dashboard: skip when all default codes already exist (Phase AI).
+        // Force with RATEB_ACCOUNTING_REPAIR_COA=1 (install/migration/repair).
+        if (!self::accountingRepairMode() && $this->defaultCoaIsComplete($normalized)) {
+            return;
+        }
         $codeToId = [];
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $code = (string) $def['code'];
@@ -238,7 +330,7 @@ final class AccountingService
                 $row = $this->findCoaByCode($normalized, $code);
                 if ($row) {
                     $id = (int) $row['id'];
-                    $this->touchCoaRow($id, $def);
+                    $this->touchCoaRow($id, $def, $row);
                 } else {
                     $id = $this->provisionCompanyCoaCode($normalized, $code, $def, $codeToId);
                 }
@@ -246,7 +338,7 @@ final class AccountingService
                 $row = $this->findCoaByCode(null, $code);
                 if ($row) {
                     $id = (int) $row['id'];
-                    $this->touchCoaRow($id, $def);
+                    $this->touchCoaRow($id, $def, $row);
                 } else {
                     $parentId = null;
                     if (!empty($def['parent']) && isset($codeToId[$def['parent']])) {
@@ -258,6 +350,7 @@ final class AccountingService
             $codeToId[$code] = $id;
         }
         $this->linkCoaParents($normalized, null);
+        $this->invalidateCoaCodeMap($normalized);
     }
 
     /** Backfill parent_id for existing COA rows (company or platform template). */
@@ -1183,6 +1276,9 @@ final class AccountingService
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_posted: float} */
     public function accountsPayable(?int $companyId, bool $skipOperationalBranchScope = false): array
     {
+        $memoKey = 'accountsPayable:' . $this->coaMapKey($companyId) . ':' . ($skipOperationalBranchScope ? '1' : '0');
+
+        return self::requestMemo($memoKey, function () use ($companyId, $skipOperationalBranchScope): array {
         $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount, po.supplier_id,
                        s.name AS supplier_name, s.code AS supplier_code,
                        je.id AS journal_id, je.entry_no,
@@ -1227,6 +1323,7 @@ final class AccountingService
             }
         }
         return ['rows' => $rows, 'total_open' => $totalOpen, 'total_posted' => $totalPosted];
+        });
     }
 
     /** Outstanding AP balance for a supplier (posted PO totals minus payments). */
@@ -1364,6 +1461,7 @@ final class AccountingService
     /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_paid: float} */
     public function accountsReceivable(?int $companyId): array
     {
+        return self::requestMemo('accountsReceivable:' . $this->coaMapKey($companyId), function () use ($companyId): array {
         if ($companyId === null) {
             return ['rows' => [], 'total_open' => 0.0, 'total_paid' => 0.0];
         }
@@ -1401,11 +1499,15 @@ final class AccountingService
             }
         }
         return ['rows' => $rows, 'total_open' => $totalOpen, 'total_paid' => $totalPaid];
+        });
     }
 
     /** @return array{revenue: float, expenses: float, net: float, lines: array<int, array<string, mixed>>} */
     public function profitAndLoss(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
     {
+        $memoKey = 'profitAndLoss:' . $this->coaMapKey($companyId) . ':' . ($fromDate ?? '') . ':' . ($toDate ?? '');
+
+        return self::requestMemo($memoKey, function () use ($companyId, $fromDate, $toDate): array {
         $sql = "SELECT a.id, a.code, a.name, a.name_ar, a.account_type,
                        COALESCE(SUM(l.debit), 0) AS total_debit,
                        COALESCE(SUM(l.credit), 0) AS total_credit
@@ -1437,6 +1539,7 @@ final class AccountingService
             }
         }
         return ['revenue' => $revenue, 'expenses' => $expenses, 'net' => $revenue - $expenses, 'lines' => $lines];
+        });
     }
 
     /** @return array{total: float, accounts: array<int, array<string, mixed>>, entries: array<int, array<string, mixed>>} */
@@ -1588,6 +1691,7 @@ final class AccountingService
     /** @return array<string, mixed> */
     public function financialSummary(?int $companyId): array
     {
+        return self::requestMemo('financialSummary:' . $this->coaMapKey($companyId), function () use ($companyId): array {
         $pdo = Database::connection();
         $cidSql = $companyId !== null ? ' AND company_id = ' . (int) $companyId : '';
         $cidParam = $companyId !== null ? ['cid' => $companyId] : [];
@@ -1629,6 +1733,7 @@ final class AccountingService
             'accounts_active' => (int) ($accounts['c'] ?? 0),
             'procurement_received' => (float) ($poReceived['t'] ?? 0),
         ];
+        });
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -1765,6 +1870,9 @@ final class AccountingService
     /** @return array{output_vat:float,input_vat:float,net_vat:float,invoice_tax:float,po_tax:float} */
     public function vatReport(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
     {
+        $memoKey = 'vatReport:' . $this->coaMapKey($companyId) . ':' . ($fromDate ?? '') . ':' . ($toDate ?? '');
+
+        return self::requestMemo($memoKey, function () use ($companyId, $fromDate, $toDate): array {
         $this->ensureDefaultAccounts($companyId);
         $output = $this->accountBalanceInPeriod($companyId, '2200', $fromDate, $toDate, 'credit');
         $input = $this->accountBalanceInPeriod($companyId, '1210', $fromDate, $toDate, 'debit');
@@ -1807,6 +1915,7 @@ final class AccountingService
             'invoice_tax' => $invoiceTax,
             'po_tax' => $poTax,
         ];
+        });
     }
 
     private function accountBalanceInPeriod(?int $companyId, string $code, ?string $from, ?string $to, string $side): float
@@ -1983,6 +2092,7 @@ final class AccountingService
     /** @return array{accounts: array<int, array<string, mixed>>, total_cash: float, petty_cash: float} */
     public function bankReconciliation(?int $companyId): array
     {
+        return self::requestMemo('bankReconciliation:' . $this->coaMapKey($companyId), function () use ($companyId): array {
         $accounts = $this->listBankAccounts($companyId);
         foreach ($accounts as &$acc) {
             $bankId = (int) ($acc['id'] ?? 0);
@@ -1996,6 +2106,7 @@ final class AccountingService
         }
         $petty = $this->chartAccountBalance($companyId, $this->accountIdByCode($companyId, '1100') ?? 0, 0.0);
         return ['accounts' => $accounts, 'total_cash' => $total + $petty, 'petty_cash' => $petty];
+        });
     }
 
     /** @return array<string, mixed>|null */
@@ -2404,6 +2515,7 @@ final class AccountingService
     /** @return array<string, float|int> */
     public function cfoMetrics(?int $companyId): array
     {
+        return self::requestMemo('cfoMetrics:' . $this->coaMapKey($companyId), function () use ($companyId): array {
         if ($companyId === null || $companyId < 1) {
             return [];
         }
@@ -2417,7 +2529,8 @@ final class AccountingService
         $arData = $this->accountsReceivable($companyId);
         $apData = $this->accountsPayable($companyId);
         $revenue = max(0.01, (float) ($pl['revenue'] ?? 0));
-        $procurement = max(0.01, (float) ($this->financialSummary($companyId)['procurement_received'] ?? 0));
+        $summary = $this->financialSummary($companyId);
+        $procurement = max(0.01, (float) ($summary['procurement_received'] ?? 0));
         $dso = ((float) ($arData['total_open'] ?? 0)) / ($revenue / 365);
         $dpo = ((float) ($apData['total_open'] ?? 0)) / ($procurement / 365);
         return [
@@ -2431,8 +2544,9 @@ final class AccountingService
             'net_margin' => (float) ($pl['net'] ?? 0),
             'dso_days' => round($dso, 1),
             'dpo_days' => round($dpo, 1),
-            'procurement_ytd' => (float) ($this->financialSummary($companyId)['procurement_received'] ?? 0),
+            'procurement_ytd' => (float) ($summary['procurement_received'] ?? 0),
         ];
+        });
     }
 
     /**

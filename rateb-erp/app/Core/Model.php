@@ -143,16 +143,21 @@ abstract class Model
         if (!$this->tableHasBranchColumn()) {
             return false;
         }
+        static $reqSelectable = [];
+        $table = str_replace('`', '', $this->table);
+        $column = preg_replace('/[^a-z_0-9]/', '', $this->branchColumn) ?? 'branch_id';
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $reqSelectable)) {
+            return $reqSelectable[$key];
+        }
         try {
-            $table = str_replace('`', '', $this->table);
-            $column = preg_replace('/[^a-z_0-9]/', '', $this->branchColumn) ?? 'branch_id';
             $this->db->query('SELECT `' . $column . '` FROM `' . $table . '` LIMIT 0');
 
-            return true;
+            return $reqSelectable[$key] = true;
         } catch (\Throwable) {
             \Rateb\App\Core\Database::clearColumnCache();
 
-            return false;
+            return $reqSelectable[$key] = false;
         }
     }
 

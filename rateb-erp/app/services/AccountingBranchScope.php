@@ -18,18 +18,26 @@ trait AccountingBranchScope
     /** SHOW COLUMNS can disagree with the live connection — probe SELECT before filtering. */
     protected function operationalTableSupportsBranchFilter(string $table): bool
     {
+        static $reqOk = [];
+        $safe = str_replace('`', '', $table);
+        if (array_key_exists($safe, $reqOk)) {
+            return $reqOk[$safe];
+        }
         if (!$this->tableColumnExists($table, 'branch_id')) {
+            $reqOk[$safe] = false;
+
             return false;
         }
         try {
-            $safe = str_replace('`', '', $table);
             \Rateb\App\Core\Database::connection()->query(
                 'SELECT `branch_id` FROM `' . $safe . '` LIMIT 0'
             );
+            $reqOk[$safe] = true;
 
             return true;
         } catch (\Throwable) {
             \Rateb\App\Core\Database::clearColumnCache();
+            $reqOk[$safe] = false;
 
             return false;
         }
