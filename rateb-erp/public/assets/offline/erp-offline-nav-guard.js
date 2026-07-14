@@ -1,7 +1,8 @@
 /**
  * RATEB ERP — Offline guard (lean).
- * POST save/delete/export blocked. Edit deep-links offline return to list
- * (never uncontrolled navigation → Chrome «لا يتوفر اتصال»).
+ * - Mute online-only: delete/export/pay/final-approve.
+ * - Operational drafts: do NOT block — RatebOfflineOpsForms / FormPost enqueue + sync.
+ * - Unhooked forms (e.g. platform companies edit): clear explanation, no false "browse only".
  */
 (function (root) {
     'use strict';
@@ -9,10 +10,10 @@
     var STYLE_ID = 'rateb-offline-nav-guard-css';
     var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate)(\/|$|\?)/i;
     var EDIT_NAV_RE = /\/\d+\/(edit|show|view)(\/|$)/i;
-    var GUARD_BUILD = '20260714-edit-back-v38';
+    var ONLINE_ONLY_RE = /(?:post|reverse|close[-_]?period|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|suspend|wipe)/i;
+    var GUARD_BUILD = '20260714-offline-queue-v39';
 
     function isOffline() {
-        // Browser offline flag wins — soft "متصل" must not allow dead edit navigations.
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                 return true;
@@ -77,7 +78,7 @@
             clearTimeout(el.__hide);
             el.__hide = setTimeout(function () {
                 try { el.hidden = true; } catch (e) { /* ignore */ }
-            }, 3600);
+            }, 4200);
         } catch (e2) { /* ignore */ }
     }
 
@@ -178,7 +179,7 @@
                         root.document.open();
                         root.document.write(html);
                         root.document.close();
-                        toast('أوفلاين: رجوع لقائمة السجلات (نموذج التعديل غير محفوظ).');
+                        toast('أوفلاين: رجوع لقائمة السجلات (نموذج التعديل غير محفوظ محلياً بعد).');
                         return;
                     }
                     if (!useHistory()) {
@@ -194,6 +195,53 @@
                 root.location.replace(list);
             }
         });
+    }
+
+    function formIsOnlineOnly(form) {
+        if (!form) {
+            return true;
+        }
+        if (form.getAttribute('data-rateb-offline-online-only') === '1') {
+            return true;
+        }
+        var blob = [
+            form.getAttribute('action') || '',
+            form.getAttribute('id') || '',
+            form.className || '',
+            (root.location && root.location.pathname) || ''
+        ].join(' ');
+        return ONLINE_ONLY_RE.test(blob) || MUTE_NAV_RE.test(blob);
+    }
+
+    /** True when offline SDK can enqueue this path (ops drafts). */
+    function formCanQueueOffline(form) {
+        if (!form) {
+            return false;
+        }
+        if (form.getAttribute('data-rateb-offline-writable') === '1'
+            || form.getAttribute('data-rateb-form-post') === '1') {
+            return true;
+        }
+        var path = (form.getAttribute('action') || '') + ' '
+            + ((root.location && root.location.pathname) || '');
+        try {
+            if (root.RatebOfflineOpsForms && typeof root.RatebOfflineOpsForms.matchHook === 'function') {
+                if (root.RatebOfflineOpsForms.matchHook(path)
+                    || root.RatebOfflineOpsForms.matchHook(root.location && root.location.pathname)) {
+                    return true;
+                }
+            }
+        } catch (e0) { /* ignore */ }
+        try {
+            if (root.RatebOfflineFormPostAdapter
+                && typeof root.RatebOfflineFormPostAdapter.matchHook === 'function') {
+                if (root.RatebOfflineFormPostAdapter.matchHook(path)
+                    || root.RatebOfflineFormPostAdapter.matchHook(root.location && root.location.pathname)) {
+                    return true;
+                }
+            }
+        } catch (e1) { /* ignore */ }
+        return false;
     }
 
     function block(ev, reason) {
@@ -213,7 +261,6 @@
         var offline = isOffline();
         var noSw = !hasSwController();
 
-        // Edit without SW while offline → Chrome interstitial. Always handle in-page.
         if (a && href && isEditHref(href) && (offline || (noSw && offline))) {
             ev.preventDefault();
             ev.stopPropagation();
@@ -221,7 +268,6 @@
             goParentOrBack(href);
             return;
         }
-        // No SW + offline: any admin deep link risks Chrome interstitial.
         if (a && href && offline && noSw && /\/admin(\/|$)/i.test(href)) {
             if (isEditHref(href) || /\/\d+(\/|$)/i.test(href)) {
                 ev.preventDefault();
@@ -236,11 +282,22 @@
             return;
         }
 
+        // Save buttons: never blanket-block — let submit handler + ops queue decide.
         var submitBtn = target.closest('button[type="submit"], input[type="submit"], [data-rateb-save], .btn-save');
         if (submitBtn) {
             var form = submitBtn.closest('form');
             if (form && String(form.getAttribute('method') || 'get').toLowerCase() === 'post') {
-                block(ev, 'الحفظ يحتاج اتصال بالإنترنت. النموذج يمكنك تصفحه أوفلاين.');
+                if (formIsOnlineOnly(form)) {
+                    block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
+                    return;
+                }
+                if (formCanQueueOffline(form)) {
+                    // Let the form submit reach RatebOfflineOpsForms (queues + syncs).
+                    return;
+                }
+                block(ev,
+                    'هذه الشاشة غير مربوطة بطابور الأوفلاين بعد. المسودات التشغيلية (مشتريات، مخزون، حضور، CRM…) تُحفظ أوفلاين وتُزامن عند الاتصال.'
+                );
                 return;
             }
         }
@@ -264,9 +321,20 @@
         if (!form || !form.getAttribute) {
             return;
         }
-        if (String(form.getAttribute('method') || 'get').toLowerCase() === 'post') {
-            block(ev, 'الحفظ والإرسال يحتاجان اتصال بالإنترنت.');
+        if (String(form.getAttribute('method') || 'get').toLowerCase() !== 'post') {
+            return;
         }
+        if (formIsOnlineOnly(form)) {
+            block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
+            return;
+        }
+        if (formCanQueueOffline(form)) {
+            // Do not block — ops-forms / form-post adapters enqueue into RatebOfflineQueue.
+            return;
+        }
+        block(ev,
+            'هذه الشاشة غير مربوطة بطابور الأوفلاين بعد. المسودات التشغيلية تُحفظ أوفلاين وتُزامن عند عودة النت.'
+        );
     }
 
     function boot() {
