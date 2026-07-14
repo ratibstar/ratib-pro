@@ -1,0 +1,113 @@
+{
+  "phase": "OI",
+  "mode": "EVIDENCE_ONLY",
+  "generatedAt": "2026-07-14T22:40:55.100Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "online_follow": {
+    "status": 200,
+    "finalUrl": "https://rateb.sa/rateb-erp/public/admin/ops/pos/biometric?company_id=22",
+    "html_len": 6045,
+    "title": "التحقق البيومتري",
+    "has_data_pos_register": false,
+    "has_biometric_gate": true,
+    "has_rateb_pos_register_config": true,
+    "has_pos_offline_stub": false,
+    "has_uncached_marker": false,
+    "is_login": false,
+    "redirected_to_biometric": true
+  },
+  "online_manual": {
+    "status": 0,
+    "type": "opaqueredirect",
+    "location": null,
+    "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register"
+  },
+  "online_biometric_direct": {
+    "status": 200,
+    "finalUrl": "https://rateb.sa/rateb-erp/public/admin/ops/pos/biometric",
+    "html_len": 6045,
+    "title": "التحقق البيومتري",
+    "has_data_pos_register": false,
+    "has_biometric_gate": true,
+    "has_rateb_pos_register_config": true,
+    "has_pos_offline_stub": false,
+    "has_uncached_marker": false,
+    "is_login": false,
+    "redirected_to_biometric": true
+  },
+  "online_navigation": {
+    "status": 200,
+    "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/biometric?company_id=22",
+    "title": "التحقق البيومتري",
+    "markers": {
+      "biometric": true,
+      "register": false,
+      "config": true,
+      "body_len": 58,
+      "html_len": 6483
+    }
+  },
+  "cache_inventory": {
+    "cache_names": [
+      "rateb-erp-coexist-v30",
+      "rateb-pos-assets-v8",
+      "rateb-erp-ops-allowlist-v34",
+      "rateb-erp-ops-pages-v34"
+    ],
+    "entries": [
+      {
+        "cache": "rateb-erp-coexist-v30",
+        "pos_key_count": 0,
+        "sample_pos_keys": []
+      },
+      {
+        "cache": "rateb-erp-ops-pages-v34",
+        "pos_key_count": 0,
+        "sample_pos_keys": []
+      }
+    ]
+  },
+  "offline": {
+    "href": "chrome-error://chromewebdata/",
+    "title": "rateb.sa",
+    "html_len": 187056,
+    "decodedBodySize": 184659,
+    "transferSize": 0,
+    "biometric": false,
+    "register": false,
+    "stub": false,
+    "snippet": "Tap the dino or press space to play Try: Checking the network cables, modem, and router Reconnecting to Wi-Fi Running Windows Network Diagnostics ERR_INTERNET_DISCONNECTED",
+    "document_responses": []
+  },
+  "answers": {
+    "q1_biometric_prevents_caching": true,
+    "q2_register_only_after_js": false,
+    "q2_detail": "Full register HTML is server-rendered (PosRegisterController + register/index.php + data-pos-register) ONLY after biometric session; not a client-only SPA. JS enhances after load.",
+    "q3_controller_html_before_auth_differs": true,
+    "q3_detail": "PosRegisterController redirects to biometric when !isPosVerified; gate HTML ≠ register HTML.",
+    "q4_cached_intentionally_gate": true,
+    "q4_detail": "Warm/fetch followed redirect → biometric gate HTML (~6KB) stored in coexist/ops. SW putShell intentionally skips pinning biometric as register shell.",
+    "q5_different_offline_pipeline": true,
+    "q5_detail": "POS navigations use isPosNavigation → shellFallback (rateb-pos-shell-v8 / OFFLINE_HTML). ERP modules use neverFailNavigate → ops-pages/coexist. Cached gate in coexist is ignored for POS offline navigate."
+  },
+  "profile": {
+    "controller_gate": "PosBiometricAuthController::gate",
+    "controller_register": "PosRegisterController::index",
+    "view_gate": "modules/pos/views/auth/biometric-gate.php (layout pos-shell)",
+    "view_register": "modules/pos/views/register/index.php (layout pos-shell.php)",
+    "generated_html_online_follow": 6045,
+    "generated_html_online_nav": 6483,
+    "cached_html_in_coexist_or_ops": [],
+    "biometric_gate": true,
+    "offline_shell": "other",
+    "register_shell": "absent in rateb-pos-shell-v8 (no data-pos-register snapshot)"
+  },
+  "root_cause": {
+    "id": "pos_biometric_gate_blocks_register_shell_snapshot",
+    "summary": "Without an active POS biometric session, /admin/ops/pos/register never returns register HTML (302→biometric). Warm caches the gate; offline POS pipeline requires data-pos-register in rateb-pos-shell-v8 and intentionally will not use gate HTML, so it falls back to OFFLINE_HTML stub.",
+    "architectural": true,
+    "legal_note": "Biometric gate is an intentional second factor after ERP login (session flag pos_biometric_verified_at). Caching/serving full register without verification would bypass POS cashier biometric policy. Full offline register snapshot is only obtainable after a successful online biometric unlock (then SW putShell pins data-pos-register)."
+  },
+  "enterprise": "FAIL",
+  "ok": true
+}

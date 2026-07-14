@@ -1,0 +1,12 @@
+{
+  "phase": "OI",
+  "mode": "EVIDENCE_ONLY_NO_FIX",
+  "enterprise": "FAIL",
+  "evidence": "phase-oi-pos-1784068855099.json",
+  "oh_corroboration": "phase-oh-html-snapshot-1784068486849.json",
+  "root_cause": {
+    "id": "pos_biometric_gate_blocks_register_shell_snapshot",
+    "one_liner": "Warm cannot obtain data-pos-register HTML: PosRegisterController redirects unverified sessions to biometric gate; offline POS pipeline requires register shell in rateb-pos-shell-v8 and rejects gate HTML → OFFLINE_HTML stub."
+  },
+  "architectural_constraint": "Caching full register without pos_biometric_verified_at would bypass intentional cashier biometric second factor after ERP login."
+}
