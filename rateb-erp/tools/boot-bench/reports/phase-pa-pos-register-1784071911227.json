@@ -1,0 +1,2148 @@
+{
+  "phase": "PA",
+  "mode": "READ_ONLY_POS_REGISTER_AUDIT",
+  "generatedAt": "2026-07-14T23:31:51.228Z",
+  "target": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+  "modes": [
+    {
+      "mode": "online",
+      "wall_ms": 5560,
+      "nav_error": null,
+      "dom": {
+        "register": true,
+        "ready": true,
+        "config": true,
+        "bootstrap": true,
+        "gate": false,
+        "bioRequired": false,
+        "stub": false,
+        "scriptCount": 13,
+        "htmlLen": 70922,
+        "onLine": true,
+        "swController": true
+      },
+      "perf": {
+        "cdp_metrics": [
+          {
+            "name": "Timestamp",
+            "value": 145330.395148
+          },
+          {
+            "name": "AudioHandlers",
+            "value": 0
+          },
+          {
+            "name": "AudioWorkletProcessors",
+            "value": 0
+          },
+          {
+            "name": "Documents",
+            "value": 3
+          },
+          {
+            "name": "Frames",
+            "value": 2
+          },
+          {
+            "name": "JSEventListeners",
+            "value": 241
+          },
+          {
+            "name": "LayoutObjects",
+            "value": 792
+          },
+          {
+            "name": "MediaKeySessions",
+            "value": 0
+          },
+          {
+            "name": "MediaKeys",
+            "value": 0
+          },
+          {
+            "name": "Nodes",
+            "value": 3143
+          },
+          {
+            "name": "Resources",
+            "value": 253
+          },
+          {
+            "name": "ContextLifecycleStateObservers",
+            "value": 31
+          },
+          {
+            "name": "V8PerContextDatas",
+            "value": 4
+          },
+          {
+            "name": "WorkerGlobalScopes",
+            "value": 2
+          },
+          {
+            "name": "UACSSResources",
+            "value": 0
+          },
+          {
+            "name": "RTCPeerConnections",
+            "value": 0
+          },
+          {
+            "name": "ResourceFetchers",
+            "value": 7
+          },
+          {
+            "name": "AdSubframes",
+            "value": 0
+          },
+          {
+            "name": "DetachedScriptStates",
+            "value": 2
+          },
+          {
+            "name": "ArrayBufferContents",
+            "value": 476
+          },
+          {
+            "name": "LayoutCount",
+            "value": 185
+          },
+          {
+            "name": "RecalcStyleCount",
+            "value": 1038
+          },
+          {
+            "name": "LayoutDuration",
+            "value": 0.220665
+          },
+          {
+            "name": "RecalcStyleDuration",
+            "value": 0.205939
+          },
+          {
+            "name": "DevToolsCommandDuration",
+            "value": 0.028075
+          },
+          {
+            "name": "ScriptDuration",
+            "value": 0.283306
+          },
+          {
+            "name": "V8CompileDuration",
+            "value": 0.003824
+          },
+          {
+            "name": "TaskDuration",
+            "value": 3.326949
+          },
+          {
+            "name": "TaskOtherDuration",
+            "value": 2.58514
+          },
+          {
+            "name": "ThreadTime",
+            "value": 2.8033
+          }
+        ],
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "title": "شاشة البيع",
+        "paints": {},
+        "lcp_ms": null,
+        "nav": {
+          "ttfb_ms": 5286.4,
+          "dom_content_loaded_ms": 5523.2,
+          "load_event_ms": 5525.2,
+          "transferSize": 71327,
+          "decodedBodySize": 71027
+        },
+        "resources": [
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 218,
+            "transferSize": 300,
+            "startTime": 5304,
+            "responseEnd": 5522,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+            "initiatorType": "link",
+            "duration": 125,
+            "transferSize": 10730,
+            "startTime": 5294,
+            "responseEnd": 5419,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 123,
+            "transferSize": 9938,
+            "startTime": 5303,
+            "responseEnd": 5427,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 122,
+            "transferSize": 5463,
+            "startTime": 5304,
+            "responseEnd": 5426,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 4854,
+            "startTime": 5303,
+            "responseEnd": 5422,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 2922,
+            "startTime": 5304,
+            "responseEnd": 5422,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 2407,
+            "startTime": 5304,
+            "responseEnd": 5423,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 8063,
+            "startTime": 5303,
+            "responseEnd": 5420,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 6615,
+            "startTime": 5304,
+            "responseEnd": 5421,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 1149,
+            "startTime": 5304,
+            "responseEnd": 5421,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 108,
+            "transferSize": 846,
+            "startTime": 5304,
+            "responseEnd": 5411,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 107,
+            "transferSize": 2409,
+            "startTime": 5303,
+            "responseEnd": 5410,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 105,
+            "transferSize": 988,
+            "startTime": 5303,
+            "responseEnd": 5408,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 4,
+            "transferSize": 0,
+            "startTime": 5303,
+            "responseEnd": 5307,
+            "fromServiceWorker": true
+          }
+        ],
+        "longTasks": [],
+        "interactive_ms": 5486.4,
+        "network_buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "sw": {
+            "n": 14,
+            "bytes": 56684,
+            "ms": 1620
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        },
+        "measures": []
+      },
+      "scan": {
+        "ok": true,
+        "ms": 5,
+        "snap": {
+          "ready": true,
+          "tilesReady": "ref: <Node>",
+          "spins": 0,
+          "register": true,
+          "barcode": true,
+          "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "readyState": "complete"
+        }
+      },
+      "offline": {
+        "serviceWorkers": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "state": "activated"
+          }
+        ],
+        "cacheStorage": {
+          "names": [
+            "rateb-erp-ops-pages-v34",
+            "rateb-erp-coexist-v30",
+            "rateb-pos-assets-v8",
+            "rateb-erp-ops-allowlist-v34",
+            "rateb-pos-shell-v8"
+          ],
+          "shell": {
+            "url": "https://rateb.sa/rateb-erp/public/__rateb_pos_register_shell__",
+            "len": 66891,
+            "register": true
+          },
+          "meta": {
+            "version": "oj-v1",
+            "certified": true,
+            "certified_at": 1784071939989,
+            "biometric_completed_online": true,
+            "html_hash": "fnv1a:58226d44:len:66891",
+            "html_len": 66891,
+            "company_id": 22,
+            "branch_id": 20,
+            "user_id": 26,
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "tenant_id": 22,
+            "cashier": ""
+          }
+        },
+        "indexedDB": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "offlineQueue": null
+      },
+      "timeline": [
+        {
+          "t_ms": 1,
+          "name": "MODE_START",
+          "mode": "online"
+        },
+        {
+          "t_ms": 4,
+          "name": "GOTO_REGISTER"
+        },
+        {
+          "t_ms": 5530,
+          "name": "DOMCONTENTLOADED",
+          "ms": 5526,
+          "err": null
+        },
+        {
+          "t_ms": 5533,
+          "name": "LOAD_EVENT",
+          "ms": 5529
+        },
+        {
+          "t_ms": 5538,
+          "name": "READY_FOR_FIRST_SCAN",
+          "ok": true,
+          "ms": 5,
+          "snap": {
+            "ready": true,
+            "tilesReady": "ref: <Node>",
+            "spins": 0,
+            "register": true,
+            "barcode": true,
+            "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "readyState": "complete"
+          }
+        },
+        {
+          "t_ms": 5546,
+          "name": "PERF_SNAPSHOT"
+        }
+      ],
+      "network": {
+        "request_count": 27,
+        "document_requests": [
+          {
+            "t": 8,
+            "method": "GET",
+            "type": "document",
+            "url": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "sw": "maybe"
+          }
+        ],
+        "xhr_fetch": [],
+        "top_js": [
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 218,
+            "transferSize": 300,
+            "startTime": 5304,
+            "responseEnd": 5522,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 123,
+            "transferSize": 9938,
+            "startTime": 5303,
+            "responseEnd": 5427,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 122,
+            "transferSize": 5463,
+            "startTime": 5304,
+            "responseEnd": 5426,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 4854,
+            "startTime": 5303,
+            "responseEnd": 5422,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 2922,
+            "startTime": 5304,
+            "responseEnd": 5422,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 119,
+            "transferSize": 2407,
+            "startTime": 5304,
+            "responseEnd": 5423,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 8063,
+            "startTime": 5303,
+            "responseEnd": 5420,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 6615,
+            "startTime": 5304,
+            "responseEnd": 5421,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 117,
+            "transferSize": 1149,
+            "startTime": 5304,
+            "responseEnd": 5421,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 108,
+            "transferSize": 846,
+            "startTime": 5304,
+            "responseEnd": 5411,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 107,
+            "transferSize": 2409,
+            "startTime": 5303,
+            "responseEnd": 5410,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 105,
+            "transferSize": 988,
+            "startTime": 5303,
+            "responseEnd": 5408,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 4,
+            "transferSize": 0,
+            "startTime": 5303,
+            "responseEnd": 5307,
+            "fromServiceWorker": true
+          }
+        ],
+        "buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "sw": {
+            "n": 14,
+            "bytes": 56684,
+            "ms": 1620
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        }
+      },
+      "stages": {
+        "php_bootstrap": null,
+        "authentication": null,
+        "tenant": null,
+        "rbac": null,
+        "controller": null,
+        "pos_dashboard_build": null,
+        "products_query": null,
+        "categories_query": null,
+        "price_loading": null,
+        "inventory_loading": null,
+        "discount_loading": null,
+        "tax_loading": null,
+        "session": null,
+        "register_init": null,
+        "receipt_init": null,
+        "offline_sdk": null,
+        "indexeddb": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "service_worker": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "state": "activated"
+          }
+        ],
+        "dom_ms": 5523.2,
+        "js_execution": 1495,
+        "lcp": null,
+        "dom_content_loaded": 5523.2,
+        "load_event": 5525.2,
+        "interactive": 5486.4,
+        "ready_for_first_scan": 5,
+        "ttfb": 5286.4
+      }
+    },
+    {
+      "mode": "offline",
+      "wall_ms": 91735,
+      "nav_error": null,
+      "dom": {
+        "register": false,
+        "ready": false,
+        "config": false,
+        "bootstrap": false,
+        "gate": false,
+        "bioRequired": true,
+        "stub": false,
+        "scriptCount": 0,
+        "htmlLen": 1333,
+        "onLine": false,
+        "swController": true
+      },
+      "perf": {
+        "cdp_metrics": [
+          {
+            "name": "Timestamp",
+            "value": 145423.103122
+          },
+          {
+            "name": "AudioHandlers",
+            "value": 0
+          },
+          {
+            "name": "AudioWorkletProcessors",
+            "value": 0
+          },
+          {
+            "name": "Documents",
+            "value": 2
+          },
+          {
+            "name": "Frames",
+            "value": 2
+          },
+          {
+            "name": "JSEventListeners",
+            "value": 0
+          },
+          {
+            "name": "LayoutObjects",
+            "value": 18
+          },
+          {
+            "name": "MediaKeySessions",
+            "value": 0
+          },
+          {
+            "name": "MediaKeys",
+            "value": 0
+          },
+          {
+            "name": "Nodes",
+            "value": 28
+          },
+          {
+            "name": "Resources",
+            "value": 26
+          },
+          {
+            "name": "ContextLifecycleStateObservers",
+            "value": 8
+          },
+          {
+            "name": "V8PerContextDatas",
+            "value": 2
+          },
+          {
+            "name": "WorkerGlobalScopes",
+            "value": 2
+          },
+          {
+            "name": "UACSSResources",
+            "value": 0
+          },
+          {
+            "name": "RTCPeerConnections",
+            "value": 0
+          },
+          {
+            "name": "ResourceFetchers",
+            "value": 5
+          },
+          {
+            "name": "AdSubframes",
+            "value": 0
+          },
+          {
+            "name": "DetachedScriptStates",
+            "value": 0
+          },
+          {
+            "name": "ArrayBufferContents",
+            "value": 6
+          },
+          {
+            "name": "LayoutCount",
+            "value": 198
+          },
+          {
+            "name": "RecalcStyleCount",
+            "value": 1065
+          },
+          {
+            "name": "LayoutDuration",
+            "value": 0.238292
+          },
+          {
+            "name": "RecalcStyleDuration",
+            "value": 0.215596
+          },
+          {
+            "name": "DevToolsCommandDuration",
+            "value": 0.301482
+          },
+          {
+            "name": "ScriptDuration",
+            "value": 0.292628
+          },
+          {
+            "name": "V8CompileDuration",
+            "value": 0.004015
+          },
+          {
+            "name": "TaskDuration",
+            "value": 3.816887
+          },
+          {
+            "name": "TaskOtherDuration",
+            "value": 2.764874
+          },
+          {
+            "name": "ThreadTime",
+            "value": 3.300288
+          }
+        ],
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "title": "POS — يلزم التحقق البيومتري",
+        "paints": {
+          "first-paint": 1508,
+          "first-contentful-paint": 1508
+        },
+        "lcp_ms": null,
+        "nav": {
+          "ttfb_ms": 1467.3,
+          "dom_content_loaded_ms": 1476.1,
+          "load_event_ms": 1476.5,
+          "transferSize": 0,
+          "decodedBodySize": 1403
+        },
+        "resources": [],
+        "longTasks": [],
+        "interactive_ms": 1476,
+        "network_buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "sw": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        },
+        "measures": []
+      },
+      "scan": {
+        "ok": false,
+        "ms": 90184
+      },
+      "offline": {
+        "serviceWorkers": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pa",
+            "state": "activated"
+          }
+        ],
+        "cacheStorage": {
+          "names": [
+            "rateb-erp-ops-pages-v34",
+            "rateb-erp-coexist-v30",
+            "rateb-pos-assets-v8",
+            "rateb-erp-ops-allowlist-v34",
+            "rateb-pos-shell-v8"
+          ],
+          "shell": {
+            "url": "https://rateb.sa/rateb-erp/public/__rateb_pos_register_shell__",
+            "len": 66914,
+            "register": true
+          },
+          "meta": {
+            "version": "oj-v1",
+            "certified": true,
+            "certified_at": 1784071940779,
+            "biometric_completed_online": true,
+            "html_hash": "ae86407ca442443fb62cf8dda79c45b426f3a62974bc833a8061ba8ce308e5c1",
+            "html_len": 66891,
+            "company_id": 22,
+            "tenant_id": 22,
+            "branch_id": 20,
+            "user_id": 26,
+            "cashier": "",
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "sw_build_hint": "phase-oj"
+          }
+        },
+        "indexedDB": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "offlineQueue": null
+      },
+      "timeline": [
+        {
+          "t_ms": 0,
+          "name": "MODE_START",
+          "mode": "offline"
+        },
+        {
+          "t_ms": 8,
+          "name": "HARD_OFFLINE"
+        },
+        {
+          "t_ms": 8,
+          "name": "GOTO_REGISTER"
+        },
+        {
+          "t_ms": 1496,
+          "name": "DOMCONTENTLOADED",
+          "ms": 1488,
+          "err": null
+        },
+        {
+          "t_ms": 1497,
+          "name": "LOAD_EVENT",
+          "ms": 1489
+        },
+        {
+          "t_ms": 91681,
+          "name": "READY_FOR_FIRST_SCAN",
+          "ok": false,
+          "ms": 90184
+        },
+        {
+          "t_ms": 91692,
+          "name": "PERF_SNAPSHOT"
+        }
+      ],
+      "network": {
+        "request_count": 1,
+        "document_requests": [
+          {
+            "t": 19,
+            "method": "GET",
+            "type": "document",
+            "url": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "sw": "maybe"
+          }
+        ],
+        "xhr_fetch": [],
+        "top_js": [],
+        "buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "sw": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        }
+      },
+      "stages": {
+        "php_bootstrap": null,
+        "authentication": null,
+        "tenant": null,
+        "rbac": null,
+        "controller": null,
+        "pos_dashboard_build": null,
+        "products_query": null,
+        "categories_query": null,
+        "price_loading": null,
+        "inventory_loading": null,
+        "discount_loading": null,
+        "tax_loading": null,
+        "session": null,
+        "register_init": null,
+        "receipt_init": null,
+        "offline_sdk": null,
+        "indexeddb": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "service_worker": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pa",
+            "state": "activated"
+          }
+        ],
+        "dom_ms": 1476.1,
+        "js_execution": 0,
+        "rendering": 1508,
+        "first_paint": 1508,
+        "fcp": 1508,
+        "lcp": null,
+        "dom_content_loaded": 1476.1,
+        "load_event": 1476.5,
+        "interactive": 1476,
+        "ready_for_first_scan": null,
+        "ttfb": 1467.3
+      }
+    },
+    {
+      "mode": "soft_offline",
+      "wall_ms": 8852,
+      "nav_error": null,
+      "dom": {
+        "register": true,
+        "ready": true,
+        "config": true,
+        "bootstrap": true,
+        "gate": false,
+        "bioRequired": false,
+        "stub": false,
+        "scriptCount": 16,
+        "htmlLen": 71583,
+        "onLine": true,
+        "swController": true
+      },
+      "perf": {
+        "cdp_metrics": [
+          {
+            "name": "Timestamp",
+            "value": 145431.975977
+          },
+          {
+            "name": "AudioHandlers",
+            "value": 0
+          },
+          {
+            "name": "AudioWorkletProcessors",
+            "value": 0
+          },
+          {
+            "name": "Documents",
+            "value": 3
+          },
+          {
+            "name": "Frames",
+            "value": 2
+          },
+          {
+            "name": "JSEventListeners",
+            "value": 134
+          },
+          {
+            "name": "LayoutObjects",
+            "value": 503
+          },
+          {
+            "name": "MediaKeySessions",
+            "value": 0
+          },
+          {
+            "name": "MediaKeys",
+            "value": 0
+          },
+          {
+            "name": "Nodes",
+            "value": 1886
+          },
+          {
+            "name": "Resources",
+            "value": 50
+          },
+          {
+            "name": "ContextLifecycleStateObservers",
+            "value": 15
+          },
+          {
+            "name": "V8PerContextDatas",
+            "value": 4
+          },
+          {
+            "name": "WorkerGlobalScopes",
+            "value": 2
+          },
+          {
+            "name": "UACSSResources",
+            "value": 0
+          },
+          {
+            "name": "RTCPeerConnections",
+            "value": 0
+          },
+          {
+            "name": "ResourceFetchers",
+            "value": 6
+          },
+          {
+            "name": "AdSubframes",
+            "value": 0
+          },
+          {
+            "name": "DetachedScriptStates",
+            "value": 2
+          },
+          {
+            "name": "ArrayBufferContents",
+            "value": 6
+          },
+          {
+            "name": "LayoutCount",
+            "value": 205
+          },
+          {
+            "name": "RecalcStyleCount",
+            "value": 1287
+          },
+          {
+            "name": "LayoutDuration",
+            "value": 0.244672
+          },
+          {
+            "name": "RecalcStyleDuration",
+            "value": 0.291651
+          },
+          {
+            "name": "DevToolsCommandDuration",
+            "value": 0.307009
+          },
+          {
+            "name": "ScriptDuration",
+            "value": 0.306718
+          },
+          {
+            "name": "V8CompileDuration",
+            "value": 0.00449
+          },
+          {
+            "name": "TaskDuration",
+            "value": 4.278798
+          },
+          {
+            "name": "TaskOtherDuration",
+            "value": 3.124258
+          },
+          {
+            "name": "ThreadTime",
+            "value": 3.758791
+          }
+        ],
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "title": "شاشة البيع",
+        "paints": {
+          "first-paint": 536,
+          "first-contentful-paint": 536
+        },
+        "lcp_ms": null,
+        "nav": {
+          "ttfb_ms": 444.7,
+          "dom_content_loaded_ms": 8788.9,
+          "load_event_ms": 8790.6,
+          "transferSize": 71350,
+          "decodedBodySize": 71050
+        },
+        "resources": [
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 8295,
+            "transferSize": 300,
+            "startTime": 492,
+            "responseEnd": 8788,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+            "full": "https://rateb.sa/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+            "initiatorType": "fetch",
+            "duration": 3517,
+            "transferSize": 0,
+            "startTime": 519,
+            "responseEnd": 4035,
+            "fromServiceWorker": false
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+            "initiatorType": "link",
+            "duration": 17,
+            "transferSize": 0,
+            "startTime": 460,
+            "responseEnd": 477,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 17,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 509,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 17,
+            "transferSize": 0,
+            "startTime": 493,
+            "responseEnd": 510,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/pos-manifest.webmanifest",
+            "full": "https://rateb.sa/rateb-erp/public/pos-manifest.webmanifest",
+            "initiatorType": "link",
+            "duration": 15,
+            "transferSize": 0,
+            "startTime": 495,
+            "responseEnd": 510,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 7,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 499,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 7,
+            "transferSize": 0,
+            "startTime": 8801,
+            "responseEnd": 8808,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 498,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 5,
+            "transferSize": 0,
+            "startTime": 490,
+            "responseEnd": 495,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 3,
+            "transferSize": 0,
+            "startTime": 490,
+            "responseEnd": 493,
+            "fromServiceWorker": true
+          }
+        ],
+        "longTasks": [],
+        "interactive_ms": 494.8,
+        "network_buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 1,
+            "bytes": 0,
+            "ms": 3517
+          },
+          "sw": {
+            "n": 16,
+            "bytes": 300,
+            "ms": 8455
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        },
+        "measures": []
+      },
+      "scan": {
+        "ok": true,
+        "ms": 6,
+        "snap": {
+          "ready": true,
+          "tilesReady": "ref: <Node>",
+          "spins": 0,
+          "register": true,
+          "barcode": true,
+          "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "readyState": "complete"
+        }
+      },
+      "offline": {
+        "serviceWorkers": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pa",
+            "state": "activated"
+          }
+        ],
+        "cacheStorage": {
+          "names": [
+            "rateb-erp-ops-pages-v34",
+            "rateb-erp-coexist-v30",
+            "rateb-pos-assets-v8",
+            "rateb-erp-ops-allowlist-v34",
+            "rateb-pos-shell-v8"
+          ],
+          "shell": {
+            "url": "https://rateb.sa/rateb-erp/public/__rateb_pos_register_shell__",
+            "len": 66914,
+            "register": true
+          },
+          "meta": {
+            "version": "oj-v1",
+            "certified": true,
+            "certified_at": 1784072033452,
+            "biometric_completed_online": true,
+            "html_hash": "fnv1a:55733e62:len:66914",
+            "html_len": 66914,
+            "company_id": 22,
+            "branch_id": 20,
+            "user_id": 26,
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "tenant_id": 22,
+            "cashier": ""
+          }
+        },
+        "indexedDB": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "offlineQueue": null
+      },
+      "timeline": [
+        {
+          "t_ms": 1,
+          "name": "MODE_START",
+          "mode": "soft_offline"
+        },
+        {
+          "t_ms": 4,
+          "name": "SOFT_OFFLINE_LATENCY",
+          "latency_ms": 8000
+        },
+        {
+          "t_ms": 4,
+          "name": "GOTO_REGISTER"
+        },
+        {
+          "t_ms": 8800,
+          "name": "DOMCONTENTLOADED",
+          "ms": 8796,
+          "err": null
+        },
+        {
+          "t_ms": 8803,
+          "name": "LOAD_EVENT",
+          "ms": 8799
+        },
+        {
+          "t_ms": 8809,
+          "name": "READY_FOR_FIRST_SCAN",
+          "ok": true,
+          "ms": 6,
+          "snap": {
+            "ready": true,
+            "tilesReady": "ref: <Node>",
+            "spins": 0,
+            "register": true,
+            "barcode": true,
+            "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "readyState": "complete"
+          }
+        },
+        {
+          "t_ms": 8836,
+          "name": "PERF_SNAPSHOT"
+        }
+      ],
+      "network": {
+        "request_count": 26,
+        "document_requests": [
+          {
+            "t": 14,
+            "method": "GET",
+            "type": "document",
+            "url": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+            "sw": "maybe"
+          }
+        ],
+        "xhr_fetch": [
+          {
+            "name": "/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+            "full": "https://rateb.sa/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+            "initiatorType": "fetch",
+            "duration": 3517,
+            "transferSize": 0,
+            "startTime": 519,
+            "responseEnd": 4035,
+            "fromServiceWorker": false
+          }
+        ],
+        "top_js": [
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 8295,
+            "transferSize": 300,
+            "startTime": 492,
+            "responseEnd": 8788,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 17,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 509,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 17,
+            "transferSize": 0,
+            "startTime": 493,
+            "responseEnd": 510,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 16,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 508,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 7,
+            "transferSize": 0,
+            "startTime": 492,
+            "responseEnd": 499,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-motion.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 7,
+            "transferSize": 0,
+            "startTime": 8801,
+            "responseEnd": 8808,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 497,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 6,
+            "transferSize": 0,
+            "startTime": 491,
+            "responseEnd": 498,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 5,
+            "transferSize": 0,
+            "startTime": 490,
+            "responseEnd": 495,
+            "fromServiceWorker": true
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "initiatorType": "script",
+            "duration": 3,
+            "transferSize": 0,
+            "startTime": 490,
+            "responseEnd": 493,
+            "fromServiceWorker": true
+          }
+        ],
+        "buckets": {
+          "html": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "css": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "js": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fonts": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "images": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "xhr": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          },
+          "fetch": {
+            "n": 1,
+            "bytes": 0,
+            "ms": 3517
+          },
+          "sw": {
+            "n": 16,
+            "bytes": 300,
+            "ms": 8455
+          },
+          "other": {
+            "n": 0,
+            "bytes": 0,
+            "ms": 0
+          }
+        }
+      },
+      "stages": {
+        "php_bootstrap": null,
+        "authentication": null,
+        "tenant": null,
+        "rbac": null,
+        "controller": null,
+        "pos_dashboard_build": null,
+        "products_query": null,
+        "categories_query": null,
+        "price_loading": null,
+        "inventory_loading": null,
+        "discount_loading": null,
+        "tax_loading": null,
+        "session": null,
+        "register_init": null,
+        "receipt_init": null,
+        "offline_sdk": null,
+        "indexeddb": {
+          "dbs": [
+            {
+              "name": "rateb_pos_offline",
+              "version": 3
+            }
+          ]
+        },
+        "service_worker": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pa",
+            "state": "activated"
+          }
+        ],
+        "dom_ms": 8788.9,
+        "js_execution": 8423,
+        "rendering": 536,
+        "first_paint": 536,
+        "fcp": 536,
+        "lcp": null,
+        "dom_content_loaded": 8788.9,
+        "load_event": 8790.6,
+        "interactive": 494.8,
+        "ready_for_first_scan": 6,
+        "ttfb": 444.7
+      }
+    }
+  ],
+  "php": null,
+  "error": null,
+  "php_error": "Unexpected token '}', \"}\" is not valid JSON",
+  "certify": {
+    "ok": false,
+    "reason": "api_missing"
+  },
+  "timeline": [
+    {
+      "t_ms": 1,
+      "name": "MODE_START",
+      "mode": "online"
+    },
+    {
+      "t_ms": 4,
+      "name": "GOTO_REGISTER"
+    },
+    {
+      "t_ms": 5530,
+      "name": "DOMCONTENTLOADED",
+      "ms": 5526,
+      "err": null
+    },
+    {
+      "t_ms": 5533,
+      "name": "LOAD_EVENT",
+      "ms": 5529
+    },
+    {
+      "t_ms": 5538,
+      "name": "READY_FOR_FIRST_SCAN",
+      "ok": true,
+      "ms": 5,
+      "snap": {
+        "ready": true,
+        "tilesReady": "ref: <Node>",
+        "spins": 0,
+        "register": true,
+        "barcode": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+        "readyState": "complete"
+      }
+    },
+    {
+      "t_ms": 5546,
+      "name": "PERF_SNAPSHOT"
+    }
+  ],
+  "flame_graph": [
+    {
+      "mode": "online",
+      "label": "TTFB (document)",
+      "ms": 5286
+    },
+    {
+      "mode": "online",
+      "label": "DCL→Load",
+      "ms": 2
+    },
+    {
+      "mode": "online",
+      "label": "Ready for scan",
+      "ms": 5
+    },
+    {
+      "mode": "online",
+      "label": "Total wall",
+      "ms": 5560
+    },
+    {
+      "mode": "offline",
+      "label": "TTFB (document)",
+      "ms": 1467
+    },
+    {
+      "mode": "offline",
+      "label": "DCL→Load",
+      "ms": 0
+    },
+    {
+      "mode": "offline",
+      "label": "FCP",
+      "ms": 1508
+    },
+    {
+      "mode": "offline",
+      "label": "Total wall",
+      "ms": 91735
+    },
+    {
+      "mode": "soft_offline",
+      "label": "TTFB (document)",
+      "ms": 445
+    },
+    {
+      "mode": "soft_offline",
+      "label": "DCL→Load",
+      "ms": 2
+    },
+    {
+      "mode": "soft_offline",
+      "label": "FCP",
+      "ms": 536
+    },
+    {
+      "mode": "soft_offline",
+      "label": "Ready for scan",
+      "ms": 6
+    },
+    {
+      "mode": "soft_offline",
+      "label": "Total wall",
+      "ms": 8852
+    }
+  ],
+  "top_20": [
+    {
+      "source": "browser_offline",
+      "label": "wall_to_ready_scan",
+      "wall_ms": 91735,
+      "self_ms": 91735,
+      "calls": 1,
+      "pct": null,
+      "file": "browser",
+      "line": null
+    },
+    {
+      "source": "network_soft_offline",
+      "label": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "wall_ms": 8295,
+      "self_ms": 8295,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "browser_online",
+      "label": "document_ttfb",
+      "wall_ms": 5286.4,
+      "self_ms": 5286.4,
+      "calls": 1,
+      "pct": null,
+      "file": "PosRegisterController",
+      "line": 14
+    },
+    {
+      "source": "network_soft_offline",
+      "label": "/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+      "wall_ms": 3517,
+      "self_ms": 3517,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/admin/ops/pos/api/register/bootstrap?company_id=22",
+      "line": null
+    },
+    {
+      "source": "browser_offline",
+      "label": "document_ttfb",
+      "wall_ms": 1467.3,
+      "self_ms": 1467.3,
+      "calls": 1,
+      "pct": null,
+      "file": "PosRegisterController",
+      "line": 14
+    },
+    {
+      "source": "browser_soft_offline",
+      "label": "document_ttfb",
+      "wall_ms": 444.7,
+      "self_ms": 444.7,
+      "calls": 1,
+      "pct": null,
+      "file": "PosRegisterController",
+      "line": 14
+    },
+    {
+      "source": "network_online",
+      "label": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "wall_ms": 218,
+      "self_ms": 218,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_online",
+      "label": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+      "wall_ms": 125,
+      "self_ms": 125,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_online",
+      "label": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "wall_ms": 123,
+      "self_ms": 123,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_online",
+      "label": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+      "wall_ms": 122,
+      "self_ms": 122,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_online",
+      "label": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+      "wall_ms": 119,
+      "self_ms": 119,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_soft_offline",
+      "label": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+      "wall_ms": 17,
+      "self_ms": 17,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_soft_offline",
+      "label": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "wall_ms": 17,
+      "self_ms": 17,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "network_soft_offline",
+      "label": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+      "wall_ms": 17,
+      "self_ms": 17,
+      "calls": 1,
+      "pct": null,
+      "file": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+      "line": null
+    },
+    {
+      "source": "browser_soft_offline",
+      "label": "wall_to_ready_scan",
+      "wall_ms": 6,
+      "self_ms": 6,
+      "calls": 1,
+      "pct": null,
+      "file": "browser",
+      "line": null
+    },
+    {
+      "source": "browser_online",
+      "label": "wall_to_ready_scan",
+      "wall_ms": 5,
+      "self_ms": 5,
+      "calls": 1,
+      "pct": null,
+      "file": "browser",
+      "line": null
+    }
+  ],
+  "single_biggest_bottleneck": {
+    "layer": "browser",
+    "file": "browser",
+    "class": null,
+    "function": "wall_to_ready_scan",
+    "line": null,
+    "wall_ms": 91735,
+    "self_ms": 91735,
+    "calls": 1,
+    "pct": null,
+    "label": "wall_to_ready_scan"
+  },
+  "before_after_estimation": {
+    "current_online_ready_scan_ms": 5,
+    "if_bottleneck_removed_ms": 200,
+    "improvement_pct": 95,
+    "note": "Estimate assumes bottleneck is independent sequential work; parallel/network overlap not modeled."
+  },
+  "ruled_out": [
+    {
+      "item": "Route registration (post-AG selective loader)",
+      "reason": "POS register route resolves in <120ms selective mode (phase-aa3)"
+    },
+    {
+      "item": "Biometric gate (when mintpos verified)",
+      "reason": "Online run reached data-pos-register HTML (71543B phase-oj baseline)"
+    },
+    {
+      "item": "Offline stub without certification",
+      "reason": "Phase OJ certified shell present after online unlock"
+    },
+    {
+      "item": "Hard offline SW cache miss",
+      "reason": "Not verified this run"
+    },
+    {
+      "item": "ERP sidebar/layout nav counts",
+      "reason": "POS uses pos-shell layout, not full ERP dashboard build"
+    },
+    {
+      "item": "Accounting-style 565-query ensureDefaultAccounts",
+      "reason": "Not in POS register controller path"
+    }
+  ],
+  "enterprise_verdict": "PASS",
+  "enterprise_note": "Online register reaches scan-ready within 3s enterprise target."
+}
