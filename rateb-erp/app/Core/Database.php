@@ -510,7 +510,10 @@ final class Database
         self::$resolvedDbName = '';
         self::$columnCache = [];
         self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
-        HybridSyncOutboxCapture::resetConnection();
+        // Guard: cloud fast-deploys may not include every hybrid Core file yet.
+        if (class_exists(HybridSyncOutboxCapture::class, true)) {
+            HybridSyncOutboxCapture::resetConnection();
+        }
     }
 
     /** @param array<string, mixed> $params @return array<int, array<string, mixed>> */
