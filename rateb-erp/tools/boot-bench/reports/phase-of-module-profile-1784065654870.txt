@@ -1,0 +1,89 @@
+PHASE OF — OFFLINE MODULE STARTUP PROFILE
+================================================
+Rank (slowest → fastest) by first interactive
+  #1 CRM            first=  2773  second=  2766  warm=  2813  delta_first=2273
+  #2 HR             first=  2742  second=  2501  warm=  2582  delta_first=2242
+  #3 Procurement    first=  2730  second=  2746  warm=  2878  delta_first=2230
+  #4 POS            first=  2691  second=  2663  warm=  2679  delta_first=2191
+  #5 Inventory      first=  2530  second=  2548  warm=  2665  delta_first=2030
+  #6 Accounting     first=  2530  second=  2549  warm=  2811  delta_first=2030
+  #7 Dashboard      first=    67  second=    61  warm=    67  delta_first=-233
+
+--- Dashboard (dashboard) ---
+  first: interactive=67 wall=229 ttfb=5.6 js=215.3 idb=0(0) dom=66.5 paint=88 transfer=0
+         blocker: 31.8ms /rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52 :: load+parse+execute — Slowest script resource during offline module navigation (28B stub) (SW/cache)
+  second: interactive=61 wall=221 ttfb=3.2 js=605.5 idb=0(0) dom=56.1 paint=64 transfer=0
+         blocker: 200.3ms /rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52 :: load+parse+execute — Slowest script resource during offline module navigation (28B stub) (SW/cache)
+  warm: interactive=67 wall=223 ttfb=3 js=333.5 idb=0(0) dom=64.5 paint=80 transfer=0
+         blocker: 45.7ms /rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52 :: load+parse+execute — Slowest script resource during offline module navigation (28B stub) (SW/cache)
+
+--- HR (hr) ---
+  first: interactive=2742 wall=2908 ttfb=129 js=0 idb=0(0) dom=139.6 paint=188 transfer=0
+         blocker: 140ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2501 wall=2667 ttfb=63.7 js=0 idb=0(0) dom=69.2 paint=96 transfer=0
+         blocker: 69ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2582 wall=2736 ttfb=101.1 js=0 idb=0(0) dom=113.4 paint=144 transfer=0
+         blocker: 114ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+--- Inventory (inventory) ---
+  first: interactive=2530 wall=2687 ttfb=82.5 js=0 idb=0(0) dom=88 paint=108 transfer=0
+         blocker: 88ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2548 wall=2705 ttfb=93 js=0 idb=0(0) dom=100.1 paint=132 transfer=0
+         blocker: 100ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2665 wall=2835 ttfb=139.7 js=0 idb=0(0) dom=150 paint=180 transfer=0
+         blocker: 150ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+--- Accounting (accounting) ---
+  first: interactive=2530 wall=2699 ttfb=83.6 js=0 idb=0(0) dom=90.3 paint=124 transfer=0
+         blocker: 90ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2549 wall=2715 ttfb=86.7 js=0 idb=0(0) dom=92.9 paint=116 transfer=0
+         blocker: 93ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2811 wall=2966 ttfb=230.1 js=0 idb=0(0) dom=241.8 paint=280 transfer=0
+         blocker: 242ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+--- Procurement (procurement) ---
+  first: interactive=2730 wall=2901 ttfb=88.2 js=0 idb=0(0) dom=95.3 paint=128 transfer=0
+         blocker: 95ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2746 wall=2906 ttfb=146 js=0 idb=0(0) dom=151.9 paint=176 transfer=0
+         blocker: 152ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2878 wall=3035 ttfb=207.6 js=0 idb=0(0) dom=221.4 paint=244 transfer=0
+         blocker: 222ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+--- CRM (crm) ---
+  first: interactive=2773 wall=2943 ttfb=128.6 js=0 idb=0(0) dom=134.1 paint=172 transfer=0
+         blocker: 134ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2766 wall=2937 ttfb=127.9 js=0 idb=0(0) dom=133.9 paint=160 transfer=0
+         blocker: 134ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2813 wall=2986 ttfb=154.7 js=0 idb=0(0) dom=166.2 paint=196 transfer=0
+         blocker: 166ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+--- POS (pos) ---
+  first: interactive=2691 wall=2863 ttfb=11.2 js=0 idb=0(0) dom=26.7 paint=56 transfer=0
+         blocker: 27ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  second: interactive=2663 wall=2835 ttfb=8.9 js=0 idb=0(0) dom=19.7 paint=56 transfer=0
+         blocker: 20ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+  warm: interactive=2679 wall=2835 ttfb=3.9 js=0 idb=0(0) dom=15.8 paint=44 transfer=0
+         blocker: 16ms document :: goto — Document navigation / DCL dominates (no heavy script timing observed)
+
+SINGLE BOTTLENECK
+{
+  "module": "crm",
+  "File": "document",
+  "Class": "Navigation",
+  "Function": "goto",
+  "Line": "n/a",
+  "Wall ms": 2773,
+  "Call count": 1,
+  "Reason": "Slowest offline module first-open: CRM @ 2773ms. Document navigation / DCL dominates (no heavy script timing observed)",
+  "blocker_component_ms": 134,
+  "evidence_pass": "first"
+}
+
+TARGETS
+  dashboard: first_ok=true second_ok=true warm_ok=true
+  hr: first_ok=false second_ok=false warm_ok=false
+  inventory: first_ok=false second_ok=false warm_ok=false
+  accounting: first_ok=false second_ok=false warm_ok=false
+  procurement: first_ok=false second_ok=false warm_ok=false
+  crm: first_ok=false second_ok=false warm_ok=false
+  pos: first_ok=false second_ok=false warm_ok=false

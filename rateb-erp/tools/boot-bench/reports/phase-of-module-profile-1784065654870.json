@@ -1,0 +1,1962 @@
+{
+  "phase": "OF",
+  "mode": "READ_ONLY_OFFLINE_MODULE_PROFILE",
+  "generatedAt": "2026-07-14T21:47:34.872Z",
+  "base": "https://rateb.sa/rateb-erp/public",
+  "targets": {
+    "dashboard_usable_ms": 300,
+    "module_first_ms": 500,
+    "second_open_ms": 250
+  },
+  "modules": [
+    {
+      "id": "dashboard",
+      "label": "Dashboard",
+      "path": "/admin/",
+      "first": {
+        "modId": "dashboard",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 922,
+        "usable": true,
+        "ttfb": 5.6,
+        "responseStart": 5.6,
+        "domInteractive": 66.5,
+        "dcl": 0,
+        "load": 0,
+        "transferSize": 0,
+        "decodedBodySize": 83917,
+        "fp": 88,
+        "fcp": 88,
+        "js_execution_ms": 215.3,
+        "js_file_count": 9,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "start": 15.6,
+            "duration": 31.8,
+            "transferSize": 0,
+            "decodedBodySize": 28,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+            "start": 15.7,
+            "duration": 31.3,
+            "transferSize": 0,
+            "decodedBodySize": 8804,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+            "start": 15.9,
+            "duration": 31.3,
+            "transferSize": 0,
+            "decodedBodySize": 3325,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+            "start": 16,
+            "duration": 31.2,
+            "transferSize": 0,
+            "decodedBodySize": 9397,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+            "start": 16.1,
+            "duration": 31.2,
+            "transferSize": 0,
+            "decodedBodySize": 16426,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+            "start": 15.4,
+            "duration": 29.2,
+            "transferSize": 0,
+            "decodedBodySize": 80721,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+            "start": 14.6,
+            "duration": 11.7,
+            "transferSize": 0,
+            "decodedBodySize": 103009,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+            "start": 14.6,
+            "duration": 11.7,
+            "transferSize": 0,
+            "decodedBodySize": 2590,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+            "start": 14.6,
+            "duration": 11.6,
+            "transferSize": 0,
+            "decodedBodySize": 232911,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+            "start": 14.8,
+            "duration": 11.6,
+            "transferSize": 0,
+            "decodedBodySize": 34590,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+            "start": 14.8,
+            "duration": 11.6,
+            "transferSize": 0,
+            "decodedBodySize": 9949,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+            "start": 14.5,
+            "duration": 11.5,
+            "transferSize": 0,
+            "decodedBodySize": 559,
+            "initiatorType": "link"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": true
+        },
+        "mem": {
+          "usedMB": 18.4
+        },
+        "blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 31.8,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        },
+        "wall_ms": 229,
+        "interactive_ms": 67,
+        "nav_err": null,
+        "dom_render_ms": 66.5,
+        "paint_ms": 88
+      },
+      "second": {
+        "modId": "dashboard",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 926,
+        "usable": true,
+        "ttfb": 3.2,
+        "responseStart": 3.2,
+        "domInteractive": 56.1,
+        "dcl": 0,
+        "load": 0,
+        "transferSize": 0,
+        "decodedBodySize": 83917,
+        "fp": 64,
+        "fcp": 64,
+        "js_execution_ms": 605.5,
+        "js_file_count": 11,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52",
+            "start": 10.5,
+            "duration": 200.3,
+            "transferSize": 0,
+            "decodedBodySize": 28,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-console-quiet.js?v=20260714-force-sw-v52",
+            "start": 9.3,
+            "duration": 192.5,
+            "transferSize": 0,
+            "decodedBodySize": 28,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "start": 10.6,
+            "duration": 29.7,
+            "transferSize": 0,
+            "decodedBodySize": 28,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+            "start": 10.5,
+            "duration": 29.1,
+            "transferSize": 0,
+            "decodedBodySize": 80721,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+            "start": 10.8,
+            "duration": 28.8,
+            "transferSize": 0,
+            "decodedBodySize": 9397,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+            "start": 10.8,
+            "duration": 28.8,
+            "transferSize": 0,
+            "decodedBodySize": 3325,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+            "start": 10.9,
+            "duration": 28.8,
+            "transferSize": 0,
+            "decodedBodySize": 16426,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+            "start": 10.7,
+            "duration": 28.5,
+            "transferSize": 0,
+            "decodedBodySize": 8804,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+            "start": 10.3,
+            "duration": 14.8,
+            "transferSize": 0,
+            "decodedBodySize": 25761,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+            "start": 10.4,
+            "duration": 14.8,
+            "transferSize": 0,
+            "decodedBodySize": 2836,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+            "start": 10.1,
+            "duration": 14.5,
+            "transferSize": 0,
+            "decodedBodySize": 4313,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+            "start": 10.3,
+            "duration": 14.4,
+            "transferSize": 0,
+            "decodedBodySize": 3113,
+            "initiatorType": "link"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": true
+        },
+        "mem": {
+          "usedMB": 20.4
+        },
+        "blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 200.3,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        },
+        "wall_ms": 221,
+        "interactive_ms": 61,
+        "nav_err": null,
+        "dom_render_ms": 56.1,
+        "paint_ms": 64
+      },
+      "warm": {
+        "modId": "dashboard",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 922,
+        "usable": true,
+        "ttfb": 3,
+        "responseStart": 3,
+        "domInteractive": 64.5,
+        "dcl": 0,
+        "load": 0,
+        "transferSize": 0,
+        "decodedBodySize": 83917,
+        "fp": 80,
+        "fcp": 80,
+        "js_execution_ms": 333.5,
+        "js_file_count": 9,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+            "start": 12.5,
+            "duration": 45.7,
+            "transferSize": 0,
+            "decodedBodySize": 28,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52",
+            "start": 13,
+            "duration": 44.4,
+            "transferSize": 0,
+            "decodedBodySize": 16426,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js?v=20260714-force-sw-v52",
+            "start": 12.4,
+            "duration": 44.2,
+            "transferSize": 0,
+            "decodedBodySize": 80721,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-confirm.js?v=20260714-force-sw-v52",
+            "start": 12.7,
+            "duration": 44.1,
+            "transferSize": 0,
+            "decodedBodySize": 9397,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/connectivity-indicator.js?v=20260714-force-sw-v52",
+            "start": 12.6,
+            "duration": 44,
+            "transferSize": 0,
+            "decodedBodySize": 8804,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-modal.js?v=20260714-force-sw-v52",
+            "start": 12.7,
+            "duration": 44,
+            "transferSize": 0,
+            "decodedBodySize": 3325,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+            "start": 12.1,
+            "duration": 23.4,
+            "transferSize": 0,
+            "decodedBodySize": 2836,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+            "start": 12,
+            "duration": 22.7,
+            "transferSize": 0,
+            "decodedBodySize": 25761,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+            "start": 11.6,
+            "duration": 22.5,
+            "transferSize": 0,
+            "decodedBodySize": 2590,
+            "initiatorType": "link"
+          },
+          {
+            "name": "/rateb-erp/public/assets/offline/erp-offline-tenant-context.js?v=20260714-force-sw-v52",
+            "start": 13.1,
+            "duration": 22.4,
+            "transferSize": 0,
+            "decodedBodySize": 8904,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/offline/erp-offline-nav-guard.js?v=20260714-force-sw-v52",
+            "start": 13.5,
+            "duration": 22.4,
+            "transferSize": 0,
+            "decodedBodySize": 46260,
+            "initiatorType": "script"
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+            "start": 11.7,
+            "duration": 22.3,
+            "transferSize": 0,
+            "decodedBodySize": 9949,
+            "initiatorType": "link"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": true
+        },
+        "mem": {
+          "usedMB": 22.5
+        },
+        "blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 45.7,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        },
+        "wall_ms": 223,
+        "interactive_ms": 67,
+        "nav_err": null,
+        "dom_render_ms": 64.5,
+        "paint_ms": 80
+      },
+      "summary": {
+        "first_interactive_ms": 67,
+        "second_interactive_ms": 61,
+        "warm_interactive_ms": 67,
+        "first_wall_ms": 229,
+        "second_wall_ms": 221,
+        "warm_wall_ms": 223,
+        "first_ttfb": 5.6,
+        "first_js_ms": 215.3,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 66.5,
+        "first_paint_ms": 88,
+        "first_blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 31.8,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        },
+        "second_blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/dashboard-charts-defer.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 200.3,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        },
+        "warm_blocker": {
+          "kind": "resource_js",
+          "file": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+          "class": "Script",
+          "function": "load+parse+execute",
+          "line": "n/a",
+          "wall_ms": 45.7,
+          "call_count": 1,
+          "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+        }
+      }
+    },
+    {
+      "id": "hr",
+      "label": "HR",
+      "path": "/admin/hr/attendance",
+      "first": {
+        "modId": "hr",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 129,
+        "responseStart": 129,
+        "domInteractive": 139.6,
+        "dcl": 139.6,
+        "load": 140.3,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 188,
+        "fcp": 188,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 138.5,
+            "duration": 138.1,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 21.2
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 140,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2908,
+        "interactive_ms": 2742,
+        "nav_err": null,
+        "dom_render_ms": 139.6,
+        "paint_ms": 188
+      },
+      "second": {
+        "modId": "hr",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 63.7,
+        "responseStart": 63.7,
+        "domInteractive": 69.2,
+        "dcl": 69.2,
+        "load": 69.6,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 96,
+        "fcp": 96,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 21.8
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 69,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2667,
+        "interactive_ms": 2501,
+        "nav_err": null,
+        "dom_render_ms": 69.2,
+        "paint_ms": 96
+      },
+      "warm": {
+        "modId": "hr",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 101.1,
+        "responseStart": 101.1,
+        "domInteractive": 113.4,
+        "dcl": 113.5,
+        "load": 114,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 144,
+        "fcp": 144,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 111.9,
+            "duration": 132.9,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 4.4
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 114,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2736,
+        "interactive_ms": 2582,
+        "nav_err": null,
+        "dom_render_ms": 113.4,
+        "paint_ms": 144
+      },
+      "summary": {
+        "first_interactive_ms": 2742,
+        "second_interactive_ms": 2501,
+        "warm_interactive_ms": 2582,
+        "first_wall_ms": 2908,
+        "second_wall_ms": 2667,
+        "warm_wall_ms": 2736,
+        "first_ttfb": 129,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 139.6,
+        "first_paint_ms": 188,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 140,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 69,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 114,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory",
+      "path": "/admin/ops/inventory",
+      "first": {
+        "modId": "inventory",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 82.5,
+        "responseStart": 82.5,
+        "domInteractive": 88,
+        "dcl": 88,
+        "load": 88.4,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 108,
+        "fcp": 108,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 4.3
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 88,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2687,
+        "interactive_ms": 2530,
+        "nav_err": null,
+        "dom_render_ms": 88,
+        "paint_ms": 108
+      },
+      "second": {
+        "modId": "inventory",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 93,
+        "responseStart": 93,
+        "domInteractive": 100.1,
+        "dcl": 100.2,
+        "load": 101.5,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 132,
+        "fcp": 132,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 4.9
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 100,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2705,
+        "interactive_ms": 2548,
+        "nav_err": null,
+        "dom_render_ms": 100.1,
+        "paint_ms": 132
+      },
+      "warm": {
+        "modId": "inventory",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 239,
+        "usable": false,
+        "ttfb": 139.7,
+        "responseStart": 139.7,
+        "domInteractive": 150,
+        "dcl": 150,
+        "load": 150.4,
+        "transferSize": 0,
+        "decodedBodySize": 1244,
+        "fp": 180,
+        "fcp": 180,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 148.9,
+            "duration": 121.6,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 7.2
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 150,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2835,
+        "interactive_ms": 2665,
+        "nav_err": null,
+        "dom_render_ms": 150,
+        "paint_ms": 180
+      },
+      "summary": {
+        "first_interactive_ms": 2530,
+        "second_interactive_ms": 2548,
+        "warm_interactive_ms": 2665,
+        "first_wall_ms": 2687,
+        "second_wall_ms": 2705,
+        "warm_wall_ms": 2835,
+        "first_ttfb": 82.5,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 88,
+        "first_paint_ms": 108,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 88,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 100,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 150,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    },
+    {
+      "id": "accounting",
+      "label": "Accounting",
+      "path": "/admin/accounting",
+      "first": {
+        "modId": "accounting",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 236,
+        "usable": false,
+        "ttfb": 83.6,
+        "responseStart": 83.6,
+        "domInteractive": 90.3,
+        "dcl": 90.3,
+        "load": 92.1,
+        "transferSize": 0,
+        "decodedBodySize": 1241,
+        "fp": 124,
+        "fcp": 124,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 7.3
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 90,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2699,
+        "interactive_ms": 2530,
+        "nav_err": null,
+        "dom_render_ms": 90.3,
+        "paint_ms": 124
+      },
+      "second": {
+        "modId": "accounting",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 236,
+        "usable": false,
+        "ttfb": 86.7,
+        "responseStart": 86.7,
+        "domInteractive": 92.9,
+        "dcl": 92.9,
+        "load": 93.2,
+        "transferSize": 0,
+        "decodedBodySize": 1241,
+        "fp": 116,
+        "fcp": 116,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 7.9
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 93,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2715,
+        "interactive_ms": 2549,
+        "nav_err": null,
+        "dom_render_ms": 92.9,
+        "paint_ms": 116
+      },
+      "warm": {
+        "modId": "accounting",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/accounting",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 236,
+        "usable": false,
+        "ttfb": 230.1,
+        "responseStart": 230.1,
+        "domInteractive": 241.8,
+        "dcl": 241.9,
+        "load": 242.5,
+        "transferSize": 0,
+        "decodedBodySize": 1241,
+        "fp": 280,
+        "fcp": 280,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 240.7,
+            "duration": 167.7,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 9.3
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 242,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2966,
+        "interactive_ms": 2811,
+        "nav_err": null,
+        "dom_render_ms": 241.8,
+        "paint_ms": 280
+      },
+      "summary": {
+        "first_interactive_ms": 2530,
+        "second_interactive_ms": 2549,
+        "warm_interactive_ms": 2811,
+        "first_wall_ms": 2699,
+        "second_wall_ms": 2715,
+        "warm_wall_ms": 2966,
+        "first_ttfb": 83.6,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 90.3,
+        "first_paint_ms": 124,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 90,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 93,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 242,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    },
+    {
+      "id": "procurement",
+      "label": "Procurement",
+      "path": "/admin/ops/purchase-requests",
+      "first": {
+        "modId": "procurement",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 247,
+        "usable": false,
+        "ttfb": 88.2,
+        "responseStart": 88.2,
+        "domInteractive": 95.3,
+        "dcl": 95.4,
+        "load": 97.1,
+        "transferSize": 0,
+        "decodedBodySize": 1252,
+        "fp": 128,
+        "fcp": 128,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 9.9
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 95,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2901,
+        "interactive_ms": 2730,
+        "nav_err": null,
+        "dom_render_ms": 95.3,
+        "paint_ms": 128
+      },
+      "second": {
+        "modId": "procurement",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 247,
+        "usable": false,
+        "ttfb": 146,
+        "responseStart": 146,
+        "domInteractive": 151.9,
+        "dcl": 151.9,
+        "load": 152.2,
+        "transferSize": 0,
+        "decodedBodySize": 1252,
+        "fp": 176,
+        "fcp": 176,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 10.1
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 152,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2906,
+        "interactive_ms": 2746,
+        "nav_err": null,
+        "dom_render_ms": 151.9,
+        "paint_ms": 176
+      },
+      "warm": {
+        "modId": "procurement",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 247,
+        "usable": false,
+        "ttfb": 207.6,
+        "responseStart": 207.6,
+        "domInteractive": 221.4,
+        "dcl": 221.5,
+        "load": 222.1,
+        "transferSize": 0,
+        "decodedBodySize": 1252,
+        "fp": 244,
+        "fcp": 244,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 220.1,
+            "duration": 210.9,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 11.5
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 222,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 3035,
+        "interactive_ms": 2878,
+        "nav_err": null,
+        "dom_render_ms": 221.4,
+        "paint_ms": 244
+      },
+      "summary": {
+        "first_interactive_ms": 2730,
+        "second_interactive_ms": 2746,
+        "warm_interactive_ms": 2878,
+        "first_wall_ms": 2901,
+        "second_wall_ms": 2906,
+        "warm_wall_ms": 3035,
+        "first_ttfb": 88.2,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 95.3,
+        "first_paint_ms": 128,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 95,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 152,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 222,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    },
+    {
+      "id": "crm",
+      "label": "CRM",
+      "path": "/admin/crm",
+      "first": {
+        "modId": "crm",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 229,
+        "usable": false,
+        "ttfb": 128.6,
+        "responseStart": 128.6,
+        "domInteractive": 134.1,
+        "dcl": 134.2,
+        "load": 135,
+        "transferSize": 0,
+        "decodedBodySize": 1234,
+        "fp": 172,
+        "fcp": 172,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 12.1
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 134,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2943,
+        "interactive_ms": 2773,
+        "nav_err": null,
+        "dom_render_ms": 134.1,
+        "paint_ms": 172
+      },
+      "second": {
+        "modId": "crm",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 229,
+        "usable": false,
+        "ttfb": 127.9,
+        "responseStart": 127.9,
+        "domInteractive": 133.9,
+        "dcl": 133.9,
+        "load": 134.2,
+        "transferSize": 0,
+        "decodedBodySize": 1234,
+        "fp": 160,
+        "fcp": 160,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 4.5
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 134,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2937,
+        "interactive_ms": 2766,
+        "nav_err": null,
+        "dom_render_ms": 133.9,
+        "paint_ms": 160
+      },
+      "warm": {
+        "modId": "crm",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/crm",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 229,
+        "usable": false,
+        "ttfb": 154.7,
+        "responseStart": 154.7,
+        "domInteractive": 166.2,
+        "dcl": 166.2,
+        "load": 166.8,
+        "transferSize": 0,
+        "decodedBodySize": 1234,
+        "fp": 196,
+        "fcp": 196,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 164.9,
+            "duration": 159.3,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 6.1
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 166,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2986,
+        "interactive_ms": 2813,
+        "nav_err": null,
+        "dom_render_ms": 166.2,
+        "paint_ms": 196
+      },
+      "summary": {
+        "first_interactive_ms": 2773,
+        "second_interactive_ms": 2766,
+        "warm_interactive_ms": 2813,
+        "first_wall_ms": 2943,
+        "second_wall_ms": 2937,
+        "warm_wall_ms": 2986,
+        "first_ttfb": 128.6,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 134.1,
+        "first_paint_ms": 172,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 134,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 134,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 166,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    },
+    {
+      "id": "pos",
+      "label": "POS",
+      "path": "/admin/ops/pos",
+      "first": {
+        "modId": "pos",
+        "pass": "first",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 164,
+        "usable": false,
+        "ttfb": 11.2,
+        "responseStart": 11.2,
+        "domInteractive": 26.7,
+        "dcl": 26.8,
+        "load": 30.3,
+        "transferSize": 0,
+        "decodedBodySize": 2739,
+        "fp": 56,
+        "fcp": 56,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 6.7
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 27,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2863,
+        "interactive_ms": 2691,
+        "nav_err": null,
+        "dom_render_ms": 26.7,
+        "paint_ms": 56
+      },
+      "second": {
+        "modId": "pos",
+        "pass": "second",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 164,
+        "usable": false,
+        "ttfb": 8.9,
+        "responseStart": 8.9,
+        "domInteractive": 19.7,
+        "dcl": 19.7,
+        "load": 20.1,
+        "transferSize": 0,
+        "decodedBodySize": 2739,
+        "fp": 56,
+        "fcp": 56,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 7.3
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 20,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2835,
+        "interactive_ms": 2663,
+        "nav_err": null,
+        "dom_render_ms": 19.7,
+        "paint_ms": 56
+      },
+      "warm": {
+        "modId": "pos",
+        "pass": "warm",
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/pos",
+        "onLine": false,
+        "chromeError": false,
+        "bodyLen": 164,
+        "usable": false,
+        "ttfb": 3.9,
+        "responseStart": 3.9,
+        "domInteractive": 15.8,
+        "dcl": 15.9,
+        "load": 16.2,
+        "transferSize": 0,
+        "decodedBodySize": 2739,
+        "fp": 44,
+        "fcp": 44,
+        "js_execution_ms": 0,
+        "js_file_count": 0,
+        "idb_ms": 0,
+        "idb_opens": 0,
+        "idb_names": [],
+        "longtask_ms": 0,
+        "longtask_count": 0,
+        "longTasks": [],
+        "topResources": [
+          {
+            "name": "/rateb-erp/public/assets/pwa/erp-icon-192.png",
+            "start": 14.2,
+            "duration": 185.5,
+            "transferSize": 0,
+            "decodedBodySize": 42,
+            "initiatorType": "other"
+          }
+        ],
+        "storage": {
+          "oa": false,
+          "schema": false,
+          "tenant": false
+        },
+        "mem": {
+          "usedMB": 8.3
+        },
+        "blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 16,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "wall_ms": 2835,
+        "interactive_ms": 2679,
+        "nav_err": null,
+        "dom_render_ms": 15.8,
+        "paint_ms": 44
+      },
+      "summary": {
+        "first_interactive_ms": 2691,
+        "second_interactive_ms": 2663,
+        "warm_interactive_ms": 2679,
+        "first_wall_ms": 2863,
+        "second_wall_ms": 2835,
+        "warm_wall_ms": 2835,
+        "first_ttfb": 11.2,
+        "first_js_ms": 0,
+        "first_idb_ms": 0,
+        "first_idb_opens": 0,
+        "first_dom_ms": 26.7,
+        "first_paint_ms": 56,
+        "first_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 27,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "second_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 20,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        },
+        "warm_blocker": {
+          "kind": "navigation",
+          "file": "document",
+          "class": "Navigation",
+          "function": "goto",
+          "line": "n/a",
+          "wall_ms": 16,
+          "call_count": 1,
+          "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+        }
+      }
+    }
+  ],
+  "ranked": [
+    {
+      "rank": 1,
+      "id": "crm",
+      "label": "CRM",
+      "first_ms": 2773,
+      "second_ms": 2766,
+      "warm_ms": 2813,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 134,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2273,
+      "vs_target_second": 2516
+    },
+    {
+      "rank": 2,
+      "id": "hr",
+      "label": "HR",
+      "first_ms": 2742,
+      "second_ms": 2501,
+      "warm_ms": 2582,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 140,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2242,
+      "vs_target_second": 2251
+    },
+    {
+      "rank": 3,
+      "id": "procurement",
+      "label": "Procurement",
+      "first_ms": 2730,
+      "second_ms": 2746,
+      "warm_ms": 2878,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 95,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2230,
+      "vs_target_second": 2496
+    },
+    {
+      "rank": 4,
+      "id": "pos",
+      "label": "POS",
+      "first_ms": 2691,
+      "second_ms": 2663,
+      "warm_ms": 2679,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 27,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2191,
+      "vs_target_second": 2413
+    },
+    {
+      "rank": 5,
+      "id": "inventory",
+      "label": "Inventory",
+      "first_ms": 2530,
+      "second_ms": 2548,
+      "warm_ms": 2665,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 88,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2030,
+      "vs_target_second": 2298
+    },
+    {
+      "rank": 6,
+      "id": "accounting",
+      "label": "Accounting",
+      "first_ms": 2530,
+      "second_ms": 2549,
+      "warm_ms": 2811,
+      "first_blocker": {
+        "kind": "navigation",
+        "file": "document",
+        "class": "Navigation",
+        "function": "goto",
+        "line": "n/a",
+        "wall_ms": 90,
+        "call_count": 1,
+        "reason": "Document navigation / DCL dominates (no heavy script timing observed)"
+      },
+      "vs_target_first": 2030,
+      "vs_target_second": 2299
+    },
+    {
+      "rank": 7,
+      "id": "dashboard",
+      "label": "Dashboard",
+      "first_ms": 67,
+      "second_ms": 61,
+      "warm_ms": 67,
+      "first_blocker": {
+        "kind": "resource_js",
+        "file": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "class": "Script",
+        "function": "load+parse+execute",
+        "line": "n/a",
+        "wall_ms": 31.8,
+        "call_count": 1,
+        "reason": "Slowest script resource during offline module navigation (28B stub) (SW/cache)"
+      },
+      "vs_target_first": -233,
+      "vs_target_second": -189
+    }
+  ],
+  "duplicates": {
+    "idb_multi_open_events": [],
+    "notes": []
+  },
+  "singleBottleneck": {
+    "module": "crm",
+    "File": "document",
+    "Class": "Navigation",
+    "Function": "goto",
+    "Line": "n/a",
+    "Wall ms": 2773,
+    "Call count": 1,
+    "Reason": "Slowest offline module first-open: CRM @ 2773ms. Document navigation / DCL dominates (no heavy script timing observed)",
+    "blocker_component_ms": 134,
+    "evidence_pass": "first"
+  },
+  "targets_check": [
+    {
+      "id": "dashboard",
+      "first_ok": true,
+      "second_ok": true,
+      "warm_ok": true
+    },
+    {
+      "id": "hr",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    },
+    {
+      "id": "inventory",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    },
+    {
+      "id": "accounting",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    },
+    {
+      "id": "procurement",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    },
+    {
+      "id": "crm",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    },
+    {
+      "id": "pos",
+      "first_ok": false,
+      "second_ok": false,
+      "warm_ok": false
+    }
+  ]
+}

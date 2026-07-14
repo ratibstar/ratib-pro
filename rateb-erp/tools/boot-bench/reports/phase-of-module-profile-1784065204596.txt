@@ -1,0 +1,8 @@
+PHASE OF — OFFLINE MODULE STARTUP PROFILE
+================================================
+Rank (slowest → fastest) by first interactive
+
+SINGLE BOTTLENECK
+
+
+TARGETS

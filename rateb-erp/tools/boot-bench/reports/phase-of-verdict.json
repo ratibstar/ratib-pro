@@ -1,0 +1,47 @@
+{
+  "phase": "OF",
+  "mode": "READ_ONLY_OFFLINE_MODULE_PROFILE",
+  "no_code_changes": true,
+  "evidence_raw": "phase-of-module-profile-1784065654870.json",
+  "methodology_note": "Harness 'interactive' wait required bodyLen>300. Module offline pages return ~164–247 chars for ~2s until timeout. Correct readiness metric = Navigation Timing FCP/domInteractive (nav_ready).",
+  "ranked_slowest_to_fastest_by_first_FCP_ms": [
+    { "rank": 1, "module": "HR", "first": 188, "second": 96, "warm": 144, "doc_bytes": 1244, "bodyLen": 239, "usable_erp_ui": false },
+    { "rank": 2, "module": "CRM", "first": 172, "second": 160, "warm": 196, "doc_bytes": 1234, "bodyLen": 229, "usable_erp_ui": false },
+    { "rank": 3, "module": "Procurement", "first": 128, "second": 176, "warm": 244, "doc_bytes": 1252, "bodyLen": 247, "usable_erp_ui": false },
+    { "rank": 4, "module": "Accounting", "first": 124, "second": 116, "warm": 280, "doc_bytes": 1241, "bodyLen": 236, "usable_erp_ui": false },
+    { "rank": 5, "module": "Inventory", "first": 108, "second": 132, "warm": 180, "doc_bytes": 1244, "bodyLen": 239, "usable_erp_ui": false },
+    { "rank": 6, "module": "Dashboard", "first": 88, "second": 64, "warm": 80, "doc_bytes": 83917, "bodyLen": 922, "usable_erp_ui": true },
+    { "rank": 7, "module": "POS", "first": 56, "second": 56, "warm": 44, "doc_bytes": 2739, "bodyLen": 164, "usable_erp_ui": false }
+  ],
+  "per_module_first_open": {
+    "dashboard": { "ttfb": 5.6, "js_ms": 215.3, "idb_ms": 0, "idb_opens": 0, "dom_ms": 66.5, "paint_ms": 88, "interactive_nav_ms": 88, "transferSize": 0 },
+    "hr": { "ttfb": 129, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 139.6, "paint_ms": 188, "interactive_nav_ms": 188, "transferSize": 0 },
+    "inventory": { "ttfb": 82.5, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 88, "paint_ms": 108, "interactive_nav_ms": 108, "transferSize": 0 },
+    "accounting": { "ttfb": 83.6, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 90.3, "paint_ms": 124, "interactive_nav_ms": 124, "transferSize": 0 },
+    "procurement": { "ttfb": 88.2, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 95.3, "paint_ms": 128, "interactive_nav_ms": 128, "transferSize": 0 },
+    "crm": { "ttfb": 128.6, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 134.1, "paint_ms": 172, "interactive_nav_ms": 172, "transferSize": 0 },
+    "pos": { "ttfb": 11.2, "js_ms": 0, "idb_ms": 0, "idb_opens": 0, "dom_ms": 26.7, "paint_ms": 56, "interactive_nav_ms": 56, "transferSize": 0 }
+  },
+  "targets": {
+    "dashboard_usable_lt_300": true,
+    "normal_module_usable_lt_500": false,
+    "second_open_usable_lt_250": false,
+    "reason": "Non-dashboard modules receive ~1.2KB offline placeholder HTML (not full ERP document). Paint is fast; ERP UI never materializes."
+  },
+  "duplicates": {
+    "idb_opens": 0,
+    "duplicate_idb": false,
+    "duplicate_module_init": "n/a (module JS not loaded offline)",
+    "duplicate_rendering": false
+  },
+  "single_bottleneck": {
+    "File": "public/pos-sw.js",
+    "Class": "fetch / offline navigate (ERP_OPS_PAGE_CACHE + offline HTML fallback)",
+    "Function": "offline document respond for /admin/{module}*",
+    "Line": "fetch handler — ops page match / offlineHtmlResponse path",
+    "Wall ms": 188,
+    "Call count": 1,
+    "Reason": "HR (slowest first FCP among modules) gets transferSize=0 document decodedBodySize=1244 with bodyLen=239 and js_file_count=0 — SW serves a thin offline placeholder instead of warm full HTML (dashboard gets 83917 bytes). Module open cost is therefore content miss, not JS/IDB. Second/warm opens stay thin (no progressive recovery)."
+  },
+  "highest_roi_next_phase": "Ensure full HTML for ops module routes is cached during online warm (ops-page cache) so offline navigations return real admin documents (≥ tens of KB) rather than ~1KB placeholders."
+}

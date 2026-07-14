@@ -1,0 +1,48 @@
+PHASE OF — OFFLINE MODULE STARTUP PROFILE (CORRECTED)
+=====================================================
+Source: phase-of-module-profile-1784065654870.json
+Note: Raw "interactive" ~2.5s on modules = poll wait for bodyLen>300 on stub HTML.
+Correct metric: Navigation Timing FCP / domInteractive (nav_ready).
+
+RANK (slowest → fastest) first FCP ms
+  #1 HR           first=188  second=96   warm=144   doc=1244B   usable=FALSE
+  #2 CRM          first=172  second=160  warm=196   doc=1234B   usable=FALSE
+  #3 Procurement  first=128  second=176  warm=244   doc=1252B   usable=FALSE
+  #4 Accounting   first=124  second=116  warm=280   doc=1241B   usable=FALSE
+  #5 Inventory    first=108  second=132  warm=180   doc=1244B   usable=FALSE
+  #6 Dashboard    first=88   second=64   warm=80    doc=83917B  usable=TRUE
+  #7 POS          first=56   second=56   warm=44    doc=2739B   usable=FALSE
+
+PER MODULE FIRST OPEN
+  dashboard    TTFB=5.6  JS=215.3  IDB=0/0  DOM=66.5  Paint=88   Ready=88   xfer=0
+  hr           TTFB=129  JS=0      IDB=0/0  DOM=140   Paint=188  Ready=188  xfer=0
+  inventory    TTFB=82.5 JS=0      IDB=0/0  DOM=88    Paint=108  Ready=108  xfer=0
+  accounting   TTFB=83.6 JS=0      IDB=0/0  DOM=90    Paint=124  Ready=124  xfer=0
+  procurement  TTFB=88.2 JS=0      IDB=0/0  DOM=95    Paint=128  Ready=128  xfer=0
+  crm          TTFB=129  JS=0      IDB=0/0  DOM=134   Paint=172  Ready=172  xfer=0
+  pos          TTFB=11.2 JS=0      IDB=0/0  DOM=27    Paint=56   Ready=56   xfer=0
+
+LARGEST BLOCKING (first open)
+  dashboard: theme.js stub 28B @ 31.8ms (SW cache)
+  others: document navigation (DCL) — no module JS executed
+
+TARGETS
+  Dashboard usable <300ms: PASS (88ms, full HTML)
+  Normal module <500ms usable ERP UI: FAIL (thin offline placeholder ~1.2KB)
+  Second open <250ms usable: FAIL (same thin document)
+
+DUPLICATES
+  IndexedDB opens: 0 (no duplicate)
+  Module JS init: none offline (js_file_count=0 on modules)
+  Duplicate rendering: not observed
+
+SINGLE BOTTLENECK
+  File: public/pos-sw.js
+  Class: fetch / offline navigate (ERP_OPS_PAGE_CACHE + offline HTML fallback)
+  Function: offline document respond for /admin/{module}*
+  Line: fetch handler — ops page match / offlineHtmlResponse path
+  Wall ms: 188 (HR first FCP; content remains unusable)
+  Call count: 1
+  Reason: Offline module navigations return ~1.2KB placeholder HTML (js=0),
+           not warm full ERP documents (dashboard=83917B). Speed of paint
+           hides the real defect — module shells are not cached.
