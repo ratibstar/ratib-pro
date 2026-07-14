@@ -1,0 +1,52 @@
+{
+  "target": "GET /admin/",
+  "do_not_fix": true,
+  "evidence_generated_at": "2026-07-14",
+  "calibration": {
+    "browser_ttfb_ms_prior": 1252,
+    "http_ttfb_ms_server_curl": {
+      "first_public": 829,
+      "first_via_server_ip": 573,
+      "second_warm": 548
+    },
+    "cli_replay_wall_ms": 251,
+    "note": "CLI is warmer/faster than FPM TTFB; proportions and SQL call counts match production HTML (80955 bytes)."
+  },
+  "single_biggest_bottleneck": {
+    "span": "layout_main (views/layouts/main.php sidebar generation)",
+    "leaf_function": "rateb_ops_company_exists",
+    "file": "config/app.php",
+    "class": null,
+    "function": "rateb_ops_company_exists",
+    "calls_into": {
+      "file": "app/Core/Model.php",
+      "class": "Rateb\\App\\Core\\Model",
+      "function": "find"
+    },
+    "call_chain": [
+      "views/partials/sidebar-nav.php::$opsLink",
+      "rateb_app_url()",
+      "rateb_url_with_ops_company()",
+      "rateb_resolve_ops_company_id()",
+      "rateb_adopt_ops_company_id()",
+      "rateb_ops_company_exists()",
+      "Company::find() / Model::find()"
+    ],
+    "evidence": {
+      "company_find_repeats_in_layout": 99,
+      "stacks_from_rateb_app_url_path": 94,
+      "blocking": true,
+      "cacheable": true,
+      "repeated": true,
+      "can_defer": false,
+      "can_lazy_load": true
+    },
+    "why": "Every ops sidebar link URL for super-admin re-resolves ops company and re-SELECTs rateb_companies by id with no request-level cache."
+  },
+  "artifacts": [
+    "tools/boot-bench/profile-admin-get.php",
+    "tools/boot-bench/profile-admin-get-deep.php",
+    "tools/boot-bench/reports/rateb-admin-profile.json",
+    "tools/boot-bench/reports/rateb-admin-profile-deep.json"
+  ]
+}

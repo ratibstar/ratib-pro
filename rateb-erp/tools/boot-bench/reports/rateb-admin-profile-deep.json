@@ -1,0 +1,93 @@
+{
+    "ok": true,
+    "cli_admin_build_lite_ms": 38.132,
+    "cli_admin_build_lite_sql": 68,
+    "cli_layout_main_ms": 73.258,
+    "cli_layout_main_sql": 155,
+    "cli_html_bytes": 80954,
+    "layout_sql_by_fn": [
+        {
+            "fn": "Rateb\\App\\Services\\ApprovalOversightService::tableExists",
+            "n": 27,
+            "ms": 16.211,
+            "sample": "SHOW TABLES LIKE 'rateb_purchase_requests'"
+        },
+        {
+            "fn": "Rateb\\App\\Core\\Model::find",
+            "n": 99,
+            "ms": 10.413,
+            "sample": "SELECT * FROM rateb_companies WHERE id = :id"
+        },
+        {
+            "fn": "Rateb\\App\\Services\\ApprovalOversightService::tableHasColumn",
+            "n": 18,
+            "ms": 5.668,
+            "sample": "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c"
+        },
+        {
+            "fn": "Rateb\\App\\Services\\ApprovalOversightService::countTableStatuses",
+            "n": 9,
+            "ms": 1.013,
+            "sample": "SELECT COUNT(*) FROM rateb_purchase_requests t WHERE t.status IN (?,?) AND t.company_id = ?"
+        },
+        {
+            "fn": "Rateb\\App\\Core\\Model::executePrepared",
+            "n": 2,
+            "ms": 0.263,
+            "sample": "SELECT COUNT(*) AS c FROM rateb_cms_leads WHERE 1=1 AND status = :f_status"
+        }
+    ],
+    "company_find_stacks_in_layout": [
+        {
+            "n": 72,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2503 rateb_resolve_ops_company_id ← app.php:2547 rateb_url_with_ops_company ← sidebar-nav.php:27 rateb_app_url ← sidebar-nav.php:98 {closure}"
+        },
+        {
+            "n": 14,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2503 rateb_resolve_ops_company_id ← sidebar-hr-nav.php:51 rateb_url_with_ops_company ← sidebar-hr-nav.php:84 {closure} ← sidebar-hr-nav.php:105 {closure}"
+        },
+        {
+            "n": 8,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2503 rateb_resolve_ops_company_id ← sidebar-hr-nav.php:51 rateb_url_with_ops_company ← sidebar-hr-nav.php:107 {closure} ← sidebar-nav.php:59 {closure}"
+        },
+        {
+            "n": 1,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:3022 rateb_resolve_ops_company_id ← main.php:25 rateb_module_page_metrics"
+        },
+        {
+            "n": 1,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2661 rateb_resolve_ops_company_id ← app.php:2686 rateb_ops_nav_counts ← sidebar-nav.php:87 rateb_ops_nav_pending_badge ← sidebar-ops-nav.php:20 {closure}"
+        },
+        {
+            "n": 1,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2503 rateb_resolve_ops_company_id ← app.php:2547 rateb_url_with_ops_company ← sidebar-nav.php:27 rateb_app_url ← sidebar-ops-nav.php:105 {closure}"
+        },
+        {
+            "n": 1,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2503 rateb_resolve_ops_company_id ← app.php:2547 rateb_url_with_ops_company ← sidebar-nav.php:27 rateb_app_url ← sidebar-ops-nav.php:106 {closure}"
+        },
+        {
+            "n": 1,
+            "stack": "Model.php:196 RatebProfileStmt::execute ← app.php:2264 Rateb\\App\\Core\\Model::find ← app.php:2287 rateb_ops_company_exists ← app.php:2326 rateb_adopt_ops_company_id ← app.php:2368 rateb_resolve_ops_company_id ← main.php:868 rateb_resolve_erp_shell_company_id"
+        }
+    ],
+    "http_get_admin_first": {
+        "curl_exit": 0,
+        "raw": "301 1.485789 1.486126 1.511665 1.511879 1.514176 1.514331 288",
+        "http_code": 301,
+        "time_namelookup_ms": 1485.789,
+        "time_connect_ms": 1486.126,
+        "time_appconnect_ms": 1511.665,
+        "time_pretransfer_ms": 1511.879,
+        "ttfb_ms": 1514.176,
+        "total_ms": 1514.331,
+        "bytes": 288,
+        "cookie": "rateb_erp"
+    },
+    "http_get_admin_second": {
+        "http_code": 301,
+        "ttfb_ms": 1447.88,
+        "total_ms": 1448
+    },
+    "note": "HTTP uses same PHP session cookie minted in this process; TTFB is production FPM path"
+}
