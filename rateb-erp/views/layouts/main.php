@@ -251,25 +251,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         });
       }
       window.__RATEB_RESCUE_STYLES__ = rescueStyles;
+      /* Head: claim only when offline — never register here (single register owns boot). */
       if ('serviceWorker' in navigator) {
         try {
-          var swUrl = location.origin + publicBase() + 'pos-sw.js?v=' + encodeURIComponent(build);
           var scope = location.origin + publicBase();
-          function claimExisting() {
-            return navigator.serviceWorker.getRegistration(scope).then(function (reg) {
+          if (navigator.onLine === false) {
+            navigator.serviceWorker.getRegistration(scope).then(function (reg) {
               if (!reg) return;
               try {
                 if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                 if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
               } catch (eClaim) {}
             }).catch(function () {});
-          }
-          if (navigator.onLine === false) {
-            claimExisting();
-          } else {
-            navigator.serviceWorker.register(swUrl, { scope: scope, updateViaCache: 'none' })
-              .then(function () { return claimExisting(); })
-              .catch(function () { claimExisting(); });
           }
         } catch (e3) {}
       }
@@ -353,12 +346,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     </script>
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
     <?php if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) { ?>
-    <link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet"></noscript>
     <?php } ?>
     <?php if ($dir === 'rtl') { ?>
-    <link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet"></noscript>
     <style id="rateb-rtl-ar-fix">html[dir="rtl"] .rateb-app,html[dir="rtl"] .rateb-app *,html[dir="rtl"] body.rateb-app *{text-transform:none!important;letter-spacing:normal!important;font-feature-settings:normal!important}</style>
     <?php } ?>
+    <script>
+    /* Boot marks — First Paint / TTI proxies (no network). */
+    window.__RATEB_BOOT__ = { t0: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() };
+    </script>
 </head>
 <?php
 ?>
@@ -722,34 +721,98 @@ if (!$ratebLocalAppliance) {
     } catch (e1) {}
   }
   window.__RATEB_ASSET_BUILD__ = NEED;
-  // Force take new pos-sw when still stuck on an old controller (v42 screenshots).
+  // Stale SW: soft update only — never forced reload (startup spin loops).
   try {
     if ('serviceWorker' in navigator && navigator.onLine !== false) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
-        var stale = false;
         (regs || []).forEach(function (reg) {
           var script = '';
           try {
             script = (reg.active && reg.active.scriptURL) || (reg.waiting && reg.waiting.scriptURL) || '';
           } catch (eS) { script = ''; }
           if (script && script.indexOf(NEED) === -1) {
-            stale = true;
             try {
               if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
               if (typeof reg.update === 'function') reg.update();
             } catch (eU) {}
           }
         });
-        if (stale && sessionStorage.getItem('rateb_sw_force_' + NEED) !== '1') {
-          sessionStorage.setItem('rateb_sw_force_' + NEED, '1');
-          setTimeout(function () {
-            try { location.reload(); } catch (eL) {}
-          }, 1200);
-        }
       }).catch(function () {});
     }
   } catch (eForce) {}
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
+  /**
+   * Single ERP Service Worker register (layout owns it).
+   * No controllerchange → location.reload.
+   */
+  window.__ratebErpRegisterSwOnce = function (swUrl, scope) {
+    if (window.__RATEB_SW_REGISTER_PROMISE__) {
+      return window.__RATEB_SW_REGISTER_PROMISE__;
+    }
+    if (!('serviceWorker' in navigator) || !swUrl) {
+      window.__RATEB_SW_REGISTERED__ = true;
+      return Promise.resolve(null);
+    }
+    window.__RATEB_SW_REGISTERED__ = true;
+    function claim(reg) {
+      try {
+        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (reg && reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+      } catch (eC) {}
+      return reg;
+    }
+    function doRegister() {
+      try {
+        if (navigator.onLine === false) {
+          var getReg = scope
+            ? navigator.serviceWorker.getRegistration(scope)
+            : navigator.serviceWorker.getRegistration();
+          return getReg.then(claim).catch(function () { return null; });
+        }
+      } catch (eOff) { /* continue */ }
+      return navigator.serviceWorker.register(String(swUrl), scope
+          ? { scope: String(scope), updateViaCache: 'none' }
+          : { updateViaCache: 'none' })
+        .then(function (reg) {
+          try {
+            if (reg && typeof reg.update === 'function' && navigator.onLine !== false) {
+              reg.update();
+            }
+          } catch (eUp) {}
+          return claim(reg);
+        })
+        .catch(function () {
+          try {
+            var getReg2 = scope
+              ? navigator.serviceWorker.getRegistration(scope)
+              : navigator.serviceWorker.getRegistration();
+            return getReg2.then(claim).catch(function () { return null; });
+          } catch (eG) {
+            return null;
+          }
+        });
+    }
+    window.__RATEB_SW_REGISTER_PROMISE__ = doRegister();
+    return window.__RATEB_SW_REGISTER_PROMISE__;
+  };
+  window.__ratebErpScheduleSwRegister = function (swUrl, scope) {
+    var run = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(function () {
+          window.__ratebErpRegisterSwOnce(swUrl, scope);
+        }, { timeout: 3500 });
+      } else {
+        setTimeout(function () {
+          window.__ratebErpRegisterSwOnce(swUrl, scope);
+        }, 800);
+      }
+    };
+    if (document.readyState === 'complete') {
+      run();
+    } else {
+      window.addEventListener('load', run, { once: true });
+    }
+  };
 })();
 </script>
 <?php
@@ -837,7 +900,9 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'probeUrl' => $ratebConnectivityProbeUrl,
     'allowlistUrl' => $ratebOfflineAllowlistUrl,
     'flags' => $ratebOfflineFlags,
-    'startConnectivity' => true,
+    'startConnectivity' => false,
+    'startScheduler' => false,
+    'lazyBoot' => true,
     'company_id' => $ratebOfflineCompanyId,
     'tenant_id' => $ratebOfflineCompanyId,
     'branch_id' => $ratebOfflineBranchId,
@@ -856,26 +921,90 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<?php if (!empty($_GET['rateb_offline_debug'])) { ?>
-<script src="<?php echo rateb_asset('offline/erp-offline-debug.js'); ?>" defer></script>
-<?php } ?>
-<script src="<?php echo rateb_asset('offline/rateb-offline.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('offline/erp-shell-bootstrap.js'); ?>" defer></script>
-<?php if (!empty($ratebOfflineAuthUnlock) && $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isAuthUnlockEnabled()) { ?>
-<script src="<?php echo rateb_asset('offline/erp-auth-bootstrap.js'); ?>" defer></script>
-<?php } ?>
-<?php if ($ratebOfflineFlagSvc->isRbacCacheEnabled()) { ?>
-<script src="<?php echo rateb_asset('offline/erp-rbac-bootstrap.js'); ?>" defer></script>
-<?php } ?>
 <?php
+        $ratebOfflineLazyScripts = [];
+        if (!empty($_GET['rateb_offline_debug'])) {
+            $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-offline-debug.js');
+        }
+        $ratebOfflineLazyScripts[] = rateb_asset('offline/rateb-offline.js');
+        $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-shell-bootstrap.js');
+        if (!empty($ratebOfflineAuthUnlock) && $ratebOfflineFlagSvc && $ratebOfflineFlagSvc->isAuthUnlockEnabled()) {
+            $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-auth-bootstrap.js');
+        }
+        if ($ratebOfflineFlagSvc->isRbacCacheEnabled()) {
+            $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-rbac-bootstrap.js');
+        }
         $ratebOfflineOpsForms = $ratebOfflineFlagSvc->isAnyTier1WriteEnabled()
             || $ratebOfflineFlagSvc->isMasterDataEnabled()
             || $ratebOfflineFlagSvc->isPilotOpsPagesEnabled();
         if ($ratebOfflineOpsForms) {
-            ?>
-<script src="<?php echo rateb_asset('offline/erp-ops-forms-bootstrap.js'); ?>" defer></script>
-<?php
+            $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-ops-forms-bootstrap.js');
         }
+        ?>
+<script>
+(function () {
+  /* Lazy Offline SDK — after first paint / interactive. Offline: still post-paint, ASAP. */
+  var urls = <?php echo json_encode(array_values($ratebOfflineLazyScripts), JSON_UNESCAPED_SLASHES); ?>;
+  var swUrl = <?php echo json_encode($ratebOfflineSw, JSON_UNESCAPED_SLASHES); ?>;
+  var swScope = <?php echo json_encode($ratebOfflineSwScope, JSON_UNESCAPED_SLASHES); ?>;
+  function mark(k) {
+    try {
+      var b = window.__RATEB_BOOT__ || (window.__RATEB_BOOT__ = {});
+      b[k] = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    } catch (e) {}
+  }
+  function loadChain(i) {
+    if (i >= urls.length) {
+      mark('sdkReady');
+      try { window.dispatchEvent(new Event('rateb-offline-sdk-ready')); } catch (eE) {}
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.async = false;
+    s.onload = function () { loadChain(i + 1); };
+    s.onerror = function () { loadChain(i + 1); };
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function startSdk() {
+    mark('sdkStart');
+    loadChain(0);
+  }
+  function afterInteractive(fn) {
+    var kick = function () {
+      try {
+        if (navigator.onLine === false) {
+          setTimeout(fn, 0);
+          return;
+        }
+      } catch (e0) {}
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(fn, { timeout: 2200 });
+      } else {
+        setTimeout(fn, 900);
+      }
+    };
+    if (document.readyState === 'complete') {
+      kick();
+    } else {
+      window.addEventListener('load', kick, { once: true });
+    }
+  }
+  afterInteractive(startSdk);
+  if (swUrl && typeof window.__ratebErpScheduleSwRegister === 'function') {
+    window.__ratebErpScheduleSwRegister(swUrl, swScope || undefined);
+  }
+  try {
+    if (document.readyState === 'complete') {
+      mark('fp');
+    } else {
+      window.addEventListener('load', function () { mark('fp'); }, { once: true });
+    }
+    setTimeout(function () { mark('ttiProxy'); }, 0);
+  } catch (eM) {}
+})();
+</script>
+<?php
 } else {
         // Always-on lite SW: same rateb.sa URL works offline after one online visit.
         ?>
@@ -977,7 +1106,6 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         status: 200,
         headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
       });
-      // Also pin this page's stylesheets so offline doesn't 503 module CSS.
       var assetHrefs = [];
       try {
         Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
@@ -1021,7 +1149,6 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       setTimeout(cacheLiveAdminPage, 400);
     }
   });
-  // Offline browse notice (data = last online HTML snapshot, not live API).
   try {
     if (navigator.onLine === false && isAdminPath(location.pathname) && !isOfflineShellUi()) {
       var note = document.createElement('div');
@@ -1032,7 +1159,6 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       document.body.appendChild(note);
     }
   } catch (eNote) {}
-  // Escape hatch: only leave offline UI after a real probe succeeds.
   try {
     if (document.querySelector('.rateb-offline-home, #rateb-offline-shell-main, #offline-status, [data-rateb-offline-ops-banner]')) {
       if (navigator.onLine !== false) {
@@ -1078,64 +1204,13 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       }
     }
   } catch (eEsc) {}
-  var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
-  gate.then(function () {
-    function claimExistingSw() {
-      try {
-        var getReg = scope
-          ? navigator.serviceWorker.getRegistration(scope)
-          : navigator.serviceWorker.getRegistration();
-        return getReg.then(function (reg) {
-          if (!reg) return null;
-          try {
-            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
-          } catch (eC) {}
-          return reg;
-        });
-      } catch (eG) {
-        return Promise.resolve(null);
-      }
-    }
-    try {
-      // Offline: never register/update (script fetch fails) — claim existing SW so
-      // edit→back / oversight pages never fall to Chrome «لا يتوفر اتصال».
-      if (navigator.onLine === false) {
-        claimExistingSw();
-        return;
-      }
-    } catch (eOfflineSw) { /* continue register */ }
-    navigator.serviceWorker.register(swUrl, scope
-        ? { scope: scope, updateViaCache: 'none' }
-        : { updateViaCache: 'none' })
-      .then(function (reg) {
-        try {
-          // Never fetch pos-sw.js update while offline — causes "Failed to update ServiceWorker".
-          if (reg && typeof reg.update === 'function' && navigator.onLine !== false) {
-            reg.update();
-          }
-          if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          if (reg && reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
-        } catch (eUp) {}
-        // Never force-reload on controllerchange while offline (ERR interstitial).
-        try {
-          if (!window.__ratebSwReloadBound && navigator.serviceWorker) {
-            window.__ratebSwReloadBound = true;
-            navigator.serviceWorker.addEventListener('controllerchange', function () {
-              try {
-                if (navigator.onLine === false) return;
-              } catch (eOff) { return; }
-              if (sessionStorage.getItem('rateb_sw_reloaded') === '1') return;
-              sessionStorage.setItem('rateb_sw_reloaded', '1');
-              location.reload();
-            });
-          }
-        } catch (eCh) {}
-        scheduleWarm(reg);
-        return navigator.serviceWorker.ready.then(function (ready) { scheduleWarm(ready); });
-      })
-      .catch(function () { claimExistingSw(); });
-  });
+  // Single deferred SW register — no forced reload on controllerchange.
+  if (typeof window.__ratebErpScheduleSwRegister === 'function') {
+    window.__ratebErpScheduleSwRegister(swUrl, scope);
+    (window.__RATEB_SW_REGISTER_PROMISE__ || Promise.resolve(null)).then(function (reg) {
+      if (reg) scheduleWarm(reg);
+    });
+  }
 })();
 </script>
 <?php
@@ -1151,8 +1226,21 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   window.__RATEB_ERP_MASTER_DATA__.flags = window.__RATEB_ERP_SHELL_OFFLINE__.flags;
   window.__RATEB_ERP_MASTER_DATA__.apiBase = window.__RATEB_ERP_SHELL_OFFLINE__.apiBase || window.__RATEB_ERP_MASTER_DATA__.apiBase;
 }
+(function () {
+  /* Master-data bootstrap after Offline SDK (lazy chain). */
+  function inject() {
+    var s = document.createElement('script');
+    s.src = <?php echo json_encode(rateb_asset('offline/erp-master-data-bootstrap.js'), JSON_UNESCAPED_SLASHES); ?>;
+    s.async = false;
+    (document.body || document.documentElement).appendChild(s);
+  }
+  if (window.RatebOffline) {
+    inject();
+  } else {
+    window.addEventListener('rateb-offline-sdk-ready', inject, { once: true });
+  }
+})();
 </script>
-<script src="<?php echo rateb_asset('offline/erp-master-data-bootstrap.js'); ?>" defer></script>
 <?php
 }
 ?>
@@ -1169,8 +1257,38 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   } catch (e) {}
 })();
 </script>
-<script src="<?php echo rateb_asset('offline/erp-offline-full-warm.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('offline/erp-offline-nav-guard.js'); ?>" defer></script>
+<script>
+(function () {
+  /* Defer warm + nav-guard until after interactive (still available offline ASAP). */
+  var urls = [
+    <?php echo json_encode(rateb_asset('offline/erp-offline-full-warm.js'), JSON_UNESCAPED_SLASHES); ?>,
+    <?php echo json_encode(rateb_asset('offline/erp-offline-nav-guard.js'), JSON_UNESCAPED_SLASHES); ?>
+  ];
+  function chain(i) {
+    if (i >= urls.length) return;
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.async = false;
+    s.onload = s.onerror = function () { chain(i + 1); };
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function kick() {
+    try {
+      if (navigator.onLine === false) {
+        setTimeout(function () { chain(0); }, 0);
+        return;
+      }
+    } catch (e0) {}
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(function () { chain(0); }, { timeout: 4000 });
+    } else {
+      setTimeout(function () { chain(0); }, 1200);
+    }
+  }
+  if (document.readyState === 'complete') kick();
+  else window.addEventListener('load', kick, { once: true });
+})();
+</script>
 <?php } ?>
 
 </body>

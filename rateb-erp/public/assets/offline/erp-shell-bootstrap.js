@@ -236,11 +236,32 @@
             return Promise.resolve(null);
         }
         var swUrl = cfg.serviceWorker || '';
+        var scope = cfg.serviceWorkerScope || undefined;
+        // Layout owns the single register — shell only warms / coexists.
+        if (root.__RATEB_SW_REGISTERED__ || typeof root.__ratebErpRegisterSwOnce === 'function') {
+            tPass(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'layout owns SW — skip duplicate register');
+            var owned = (typeof root.__ratebErpRegisterSwOnce === 'function' && swUrl)
+                ? root.__ratebErpRegisterSwOnce(swUrl, scope)
+                : (root.__RATEB_SW_REGISTER_PROMISE__ || Promise.resolve(null));
+            return owned.then(function (reg) {
+                var ctrl = (root.navigator.serviceWorker && root.navigator.serviceWorker.controller)
+                    || (reg && reg.active)
+                    || null;
+                if (ctrl) {
+                    tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'using existing controller');
+                    tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker',
+                        'controller found script=' + (ctrl.scriptURL || ''));
+                    return warmErpShellViaPosSw(ctrl).then(function () { return reg; });
+                }
+                tPass(6, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'registered/owned; no controller yet');
+                tPass(7, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'controller absent — warm deferred');
+                return reg;
+            });
+        }
         if (!swUrl) {
             tFail(5, 'erp-shell-bootstrap.js', 'registerServiceWorker', 'cfg.serviceWorker empty');
             return Promise.resolve(null);
         }
-        var scope = cfg.serviceWorkerScope || undefined;
         if (scope === '/' || (root.location && scope === root.location.origin + '/')) {
             try {
                 scope = new URL('.', swUrl).pathname;
@@ -265,6 +286,7 @@
                 }
             });
             if (posReg) {
+                root.__RATEB_SW_REGISTERED__ = true;
                 try {
                     if (typeof posReg.update === 'function') {
                         posReg.update();
@@ -297,6 +319,7 @@
                 upgrade = legacyErpReg.unregister().catch(function () { return false; });
             }
             return upgrade.then(function () {
+                root.__RATEB_SW_REGISTERED__ = true;
                 return root.navigator.serviceWorker.register(swUrl, scope
                     ? { scope: scope, updateViaCache: 'none' }
                     : { updateViaCache: 'none' });
@@ -705,6 +728,15 @@
             tFail(15, 'erp-shell-bootstrap.js', 'indexedDB', 'indexedDB unavailable');
             return Promise.resolve();
         }
+        // Skip duplicate open when SDK already booted or diag already ran.
+        if (root.__RATEB_IDB_DIAG_DONE__
+            || (root.RatebOffline && typeof root.RatebOffline.isBooted === 'function' && root.RatebOffline.isBooted())) {
+            root.__RATEB_IDB_DIAG_DONE__ = true;
+            tPass(15, 'erp-shell-bootstrap.js', 'indexedDB.open', 'skipped — already opened/booted');
+            return Promise.resolve().then(function () {
+                return afterIdbReady();
+            });
+        }
         return new Promise(function (resolve) {
             var req = root.indexedDB.open('rateb_erp_offline');
             req.onerror = function () {
@@ -712,6 +744,7 @@
                 resolve();
             };
             req.onsuccess = function () {
+                root.__RATEB_IDB_DIAG_DONE__ = true;
                 tPass(15, 'erp-shell-bootstrap.js', 'indexedDB.open', 'rateb_erp_offline opened');
                 try {
                     req.result.close();
@@ -719,39 +752,45 @@
                 resolve();
             };
         }).then(function () {
-            if (tStopped()) {
-                return null;
-            }
-            var shell = root.RatebOfflineShellAdapter;
-            if (!shell || typeof shell.captureChrome !== 'function') {
-                tFail(16, 'erp-shell-bootstrap.js', 'captureChrome', 'RatebOfflineShellAdapter.captureChrome missing');
-                return null;
-            }
+            return afterIdbReady();
+        });
+    }
+
+    function afterIdbReady() {
+        if (tStopped()) {
+            return Promise.resolve(null);
+        }
+        var shell = root.RatebOfflineShellAdapter;
+        var capturePromise = Promise.resolve(null);
+        if (!shell || typeof shell.captureChrome !== 'function') {
+            tFail(16, 'erp-shell-bootstrap.js', 'captureChrome', 'RatebOfflineShellAdapter.captureChrome missing');
+        } else {
             try {
                 var capAt = parseInt(root.sessionStorage.getItem('rateb_erp_chrome_cap_at') || '0', 10) || 0;
                 if (capAt > 0 && (Date.now() - capAt) < (30 * 60 * 1000)) {
                     tPass(16, 'shell-adapter.js', 'captureChrome', 'skipped — captured this session');
-                    return null;
-                }
-                root.sessionStorage.setItem('rateb_erp_chrome_cap_at', String(Date.now()));
-            } catch (eCap) { /* ignore */ }
-            return shell.captureChrome().then(function (res) {
-                if (tStopped()) {
-                    return null;
-                }
-                if (res && res.ok) {
-                    tPass(16, 'shell-adapter.js', 'captureChrome', 'shell snapshot saved id=' + (res.id || ''));
                 } else {
-                    tFail(16, 'shell-adapter.js', 'captureChrome',
-                        'snapshot not saved: ' + JSON.stringify(res || {}));
+                    root.sessionStorage.setItem('rateb_erp_chrome_cap_at', String(Date.now()));
+                    capturePromise = shell.captureChrome().then(function (res) {
+                        if (tStopped()) {
+                            return null;
+                        }
+                        if (res && res.ok) {
+                            tPass(16, 'shell-adapter.js', 'captureChrome', 'shell snapshot saved id=' + (res.id || ''));
+                        } else {
+                            tFail(16, 'shell-adapter.js', 'captureChrome',
+                                'snapshot not saved: ' + JSON.stringify(res || {}));
+                        }
+                        return res;
+                    }).catch(function (err) {
+                        tFail(16, 'shell-adapter.js', 'captureChrome',
+                            'threw: ' + String(err && err.message ? err.message : err));
+                        return null;
+                    });
                 }
-                return res;
-            }).catch(function (err) {
-                tFail(16, 'shell-adapter.js', 'captureChrome',
-                    'threw: ' + String(err && err.message ? err.message : err));
-                return null;
-            });
-        }).then(function () {
+            } catch (eCap) { /* ignore */ }
+        }
+        return capturePromise.then(function () {
             if (tStopped()) {
                 return null;
             }
@@ -769,7 +808,6 @@
             }
             var rbac = root.RatebOfflineRbacCache;
             if (!rbac || typeof rbac.applyCachedNav !== 'function') {
-                // RBAC may be flag-off; do not hard-fail Offline Ready if rbac.cache disabled.
                 var flags = (cfg.flags || {});
                 if (!flags['offline.rbac.cache']) {
                     tPass(17, 'erp-shell-bootstrap.js', 'RBAC', 'offline.rbac.cache off — skipped');
@@ -867,18 +905,38 @@
                 probeUrl: cfg.probeUrl || null,
                 flags: flags,
                 clientQueueMax: !isNaN(max) && max >= 0 ? max : 500,
-                startConnectivity: cfg.startConnectivity !== false,
-                startScheduler: cfg.startScheduler !== false
+                // Connectivity + replay start after interactive (layout sets false).
+                startConnectivity: cfg.startConnectivity === true,
+                startScheduler: cfg.startScheduler === true
             });
         }
         bindSyncBadge();
-        // Register Background Sync for pending queue after boot.
-        try {
-            if (root.RatebOfflineReplayScheduler
-                && typeof root.RatebOfflineReplayScheduler.requestBackgroundSync === 'function') {
-                root.RatebOfflineReplayScheduler.requestBackgroundSync();
-            }
-        } catch (eBg) { /* ignore */ }
+        function startHeavyBackground() {
+            try {
+                if (root.RatebOfflineConnectivity
+                    && typeof root.RatebOfflineConnectivity.start === 'function'
+                    && cfg.startConnectivity !== true) {
+                    root.RatebOfflineConnectivity.start();
+                }
+            } catch (eConn) { /* ignore */ }
+            try {
+                if (root.RatebOfflineReplayScheduler) {
+                    if (typeof root.RatebOfflineReplayScheduler.start === 'function'
+                        && cfg.startScheduler !== true) {
+                        root.RatebOfflineReplayScheduler.start(15000);
+                    }
+                    if (typeof root.RatebOfflineReplayScheduler.requestBackgroundSync === 'function') {
+                        root.RatebOfflineReplayScheduler.requestBackgroundSync();
+                    }
+                }
+            } catch (eBg) { /* ignore */ }
+            registerServiceWorker().then(function () {
+                if (root.RatebOfflineShellAdapter && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
+                    root.RatebOfflineShellAdapter.startAutoCapture();
+                }
+                return afterWarmDiagnostics();
+            });
+        }
         // Offline: same-URL nav click on any live Admin page must not open offline-shell.
         try {
             if (root.document && !root.document.__ratebDashClickGuard) {
@@ -913,17 +971,48 @@
                 }, true);
             }
         } catch (eGuard) { /* ignore */ }
-        registerServiceWorker().then(function () {
-            if (root.RatebOfflineShellAdapter && typeof root.RatebOfflineShellAdapter.startAutoCapture === 'function') {
-                root.RatebOfflineShellAdapter.startAutoCapture();
+        // Heavy init after UI is interactive.
+        try {
+            if (root.navigator && root.navigator.onLine === false) {
+                setTimeout(startHeavyBackground, 0);
+            } else if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(startHeavyBackground, { timeout: 2800 });
+            } else {
+                setTimeout(startHeavyBackground, 600);
             }
-            return afterWarmDiagnostics();
-        });
+        } catch (eIdle) {
+            setTimeout(startHeavyBackground, 600);
+        }
     }
 
-    if (root.document && root.document.readyState === 'loading') {
-        root.document.addEventListener('DOMContentLoaded', boot, { once: true });
-    } else {
-        boot();
+    function scheduleBoot() {
+        var run = function () { boot(); };
+        try {
+            if (root.navigator && root.navigator.onLine === false) {
+                run();
+                return;
+            }
+        } catch (eOff) { /* fall through */ }
+        if (root.document && root.document.readyState === 'complete') {
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(run, { timeout: 1800 });
+            } else {
+                setTimeout(run, 200);
+            }
+            return;
+        }
+        if (root.document && root.document.readyState === 'loading') {
+            root.document.addEventListener('DOMContentLoaded', function () {
+                if (typeof root.requestIdleCallback === 'function') {
+                    root.requestIdleCallback(run, { timeout: 1800 });
+                } else {
+                    setTimeout(run, 200);
+                }
+            }, { once: true });
+            return;
+        }
+        run();
     }
+
+    scheduleBoot();
 })(typeof window !== 'undefined' ? window : globalThis);

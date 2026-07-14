@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v53-bgsync';
+var SW_BUILD_ID = '20260714-boot-perf-v54';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1642,73 +1642,75 @@ self.addEventListener('install', function (event) {
     self.skipWaiting();
     event.waitUntil(
         seedInlineOfflineShell().then(function () {
-            return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                var base;
-                try {
-                    base = self.registration.scope;
-                } catch (eB) {
-                    base = self.location.origin + '/rateb-erp/public/';
-                }
-                if (base.slice(-1) !== '/') {
-                    base += '/';
-                }
-                var critical = [
-                    'assets/css/variables.css',
-                    'assets/css/main.css',
-                    'assets/css/components.css',
-                    'assets/css/dark.css',
-                    'assets/css/light.css',
-                    'assets/css/rtl.css',
-                    'assets/css/dashboard.css',
-                    'assets/css/ar-typography.css',
-                    'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
-                    'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
-                    'assets/vendor/fontawesome/6.5.2/css/all.min.css',
-                    'assets/vendor/fonts/tajawal/tajawal.css',
-                    'assets/js/theme.js',
-                    'assets/js/app.js',
-                    'assets/js/connectivity-indicator.js',
-                    'assets/js/rateb-modal.js',
-                    'assets/js/rateb-confirm.js',
-                    'assets/js/approvals-oversight.js',
-                    'assets/js/entity-documents-modal.js',
-                    'assets/js/table-tools.js',
-                    'assets/offline/erp-offline-nav-guard.js',
-                    'assets/offline/erp-offline-full-warm.js',
-                    'manifest.webmanifest',
-                    'offline-shell.html'
-                ];
-                var urls = [];
-                critical.forEach(function (rel) {
-                    urls.push(base + rel);
-                    urls.push(base + rel + '?v=' + encodeURIComponent(SW_BUILD_ID));
-                });
-                return Promise.all(urls.map(function (u) {
-                    return fetch(u, {
-                        credentials: 'same-origin',
-                        cache: 'reload',
-                        headers: { 'X-Rateb-Shell-Warm': '1' }
-                    }).then(function (res) {
-                        if (!res || !res.ok) {
-                            return null;
-                        }
-                        return cache.put(u, res.clone()).then(function () {
-                            try {
-                                var pu = new URL(u);
-                                return cache.put(pu.origin + pu.pathname, res.clone());
-                            } catch (eP) {
-                                return null;
-                            }
-                        });
-                    }).catch(function () { return null; });
-                }));
-            });
-        }).then(function () {
             return Promise.all([
                 caches.open(ASSET_CACHE),
                 loadErpOpsAllowlist()
             ]);
         }).then(function () {
+            // Precache critical assets AFTER install completes — do not block activate/first paint.
+            setTimeout(function () {
+                caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                    var base;
+                    try {
+                        base = self.registration.scope;
+                    } catch (eB) {
+                        base = self.location.origin + '/rateb-erp/public/';
+                    }
+                    if (base.slice(-1) !== '/') {
+                        base += '/';
+                    }
+                    var critical = [
+                        'assets/css/variables.css',
+                        'assets/css/main.css',
+                        'assets/css/components.css',
+                        'assets/css/dark.css',
+                        'assets/css/light.css',
+                        'assets/css/rtl.css',
+                        'assets/css/dashboard.css',
+                        'assets/css/ar-typography.css',
+                        'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
+                        'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
+                        'assets/vendor/fontawesome/6.5.2/css/all.min.css',
+                        'assets/vendor/fonts/tajawal/tajawal.css',
+                        'assets/js/theme.js',
+                        'assets/js/app.js',
+                        'assets/js/connectivity-indicator.js',
+                        'assets/js/rateb-modal.js',
+                        'assets/js/rateb-confirm.js',
+                        'assets/js/approvals-oversight.js',
+                        'assets/js/entity-documents-modal.js',
+                        'assets/js/table-tools.js',
+                        'assets/offline/erp-offline-nav-guard.js',
+                        'assets/offline/erp-offline-full-warm.js',
+                        'manifest.webmanifest',
+                        'offline-shell.html'
+                    ];
+                    var urls = [];
+                    critical.forEach(function (rel) {
+                        urls.push(base + rel);
+                        urls.push(base + rel + '?v=' + encodeURIComponent(SW_BUILD_ID));
+                    });
+                    return Promise.all(urls.map(function (u) {
+                        return fetch(u, {
+                            credentials: 'same-origin',
+                            cache: 'reload',
+                            headers: { 'X-Rateb-Shell-Warm': '1' }
+                        }).then(function (res) {
+                            if (!res || !res.ok) {
+                                return null;
+                            }
+                            return cache.put(u, res.clone()).then(function () {
+                                try {
+                                    var pu = new URL(u);
+                                    return cache.put(pu.origin + pu.pathname, res.clone());
+                                } catch (eP) {
+                                    return null;
+                                }
+                            });
+                        }).catch(function () { return null; });
+                    }));
+                }).catch(function () { /* ignore */ });
+            }, 0);
             // Never block install/activate on warm — it starved every page load.
             setTimeout(function () {
                 warmErpOfflineShell({ force: true }).catch(function () { return null; });
