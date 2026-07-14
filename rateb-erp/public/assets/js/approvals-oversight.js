@@ -350,18 +350,6 @@
         var confirmMsg = confirmMessageForAction(action);
 
         function runPost() {
-            try {
-                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                    flashToast('الاعتماد يحتاج اتصال بالإنترنت. تصفّح الصفحة متاح أوفلاين.', 'warning');
-                    return;
-                }
-                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-                if (badge && badge.classList.contains('is-offline')) {
-                    flashToast('الاعتماد يحتاج اتصال بالإنترنت. تصفّح الصفحة متاح أوفلاين.', 'warning');
-                    return;
-                }
-            } catch (eOff) { /* continue */ }
-
             var form = new FormData();
             form.append('_csrf', csrf());
             form.append('decision', action);
@@ -373,6 +361,69 @@
             }
 
             setRowBusy(key, true);
+
+            function queueOfflineDecision() {
+                try {
+                    var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
+                    var raw = localStorage.getItem(DEFERRED_KEY);
+                    var list = raw ? JSON.parse(raw) : [];
+                    if (!Array.isArray(list)) {
+                        list = [];
+                    }
+                    var fields = {};
+                    form.forEach(function (v, k) {
+                        if (k === '_csrf') {
+                            return;
+                        }
+                        fields[k] = String(v);
+                    });
+                    var entry = {
+                        id: 'ap-' + Date.now() + '-' + Math.floor(Math.random() * 1e6),
+                        url: url,
+                        path: (location && location.pathname) || '',
+                        fields: fields,
+                        created_at: Date.now(),
+                        via: 'approvals-oversight'
+                    };
+                    list.push(entry);
+                    localStorage.setItem(DEFERRED_KEY, JSON.stringify(list));
+                    try {
+                        if (window.RatebOfflineNavGuard && typeof window.RatebOfflineNavGuard.refreshBanner === 'function') {
+                            window.RatebOfflineNavGuard.refreshBanner();
+                        }
+                    } catch (eBan) { /* ignore */ }
+                    try {
+                        var n = (window.RatebOfflineNavGuard && window.RatebOfflineNavGuard.deferredCount)
+                            ? window.RatebOfflineNavGuard.deferredCount()
+                            : list.length;
+                        flashToast('تم حفظ الاعتماد أوفلاين في قائمة المزامنة (' + n + ').', 'success');
+                    } catch (eN) {
+                        flashToast('تم حفظ الاعتماد أوفلاين — يُزامَن عند الاتصال أو من «مزامنة الآن».', 'success');
+                    }
+                    if (action === 'approve' || action === 'reject') {
+                        row.setAttribute('data-processed', '1');
+                    }
+                } catch (eQ) {
+                    flashToast(labels.error || 'Error', 'danger');
+                } finally {
+                    setRowBusy(key, false);
+                }
+            }
+
+            var offlineNow = false;
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    offlineNow = true;
+                }
+                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+                if (badge && badge.classList.contains('is-offline')) {
+                    offlineNow = true;
+                }
+            } catch (eOff) { /* ignore */ }
+            if (offlineNow) {
+                queueOfflineDecision();
+                return;
+            }
 
             fetch(url, {
                 method: 'POST',
@@ -387,8 +438,15 @@
             })
                 .then(parseJsonResponse)
                 .then(function (data) {
-                    if (data && data.offline) {
-                        flashToast(data.message || 'الاعتماد يحتاج اتصال بالإنترنت.', 'warning');
+                    if (data && data.queued) {
+                        flashToast(data.message || 'تم حفظ الاعتماد أوفلاين للمزامنة.', 'success');
+                        if (action === 'approve' || action === 'reject') {
+                            row.setAttribute('data-processed', '1');
+                        }
+                        return;
+                    }
+                    if (data && data.offline && !data.queued) {
+                        queueOfflineDecision();
                         return;
                     }
                     if (action === 'approve' || action === 'reject' || action === 'undo') {
@@ -399,11 +457,13 @@
                     }
                 })
                 .catch(function (err) {
-                    var msg = err && err.message ? err.message : (labels.error || 'Error');
-                    if (/failed to fetch|networkerror|internet_disconnected|offline/i.test(String(msg))) {
-                        msg = 'الاعتماد يحتاج اتصال بالإنترنت.';
+                    var msg = err && err.message ? String(err.message) : '';
+                    if (/failed to fetch|networkerror|internet_disconnected|offline/i.test(msg)) {
+                        queueOfflineDecision();
+                        return;
                     }
-                    flashToast(msg, 'danger');
+                    flashToast(msg || (labels.error || 'Error'), 'danger');
+                    setRowBusy(key, false);
                 })
                 .finally(function () {
                     setRowBusy(key, false);

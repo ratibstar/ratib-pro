@@ -7,10 +7,11 @@
 
     var STYLE_ID = 'rateb-offline-nav-guard-css';
     var BANNER_ID = 'rateb-offline-sync-banner';
-    var MUTE_NAV_RE = /\/(delete|destroy|export|pdf|excel|csv|json|regenerate|suspend|wipe)(\/|$|\?)/i;
-    var ONLINE_ONLY_RE = /(?:post|reverse|close[-_]?period|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|submit-approval|convert-to-po)(\/|$|\?)/i;
+    var MUTE_NAV_RE = /\/(export|pdf|excel|csv|json|regenerate|wipe)(\/|$|\?)/i;
+    // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
+    var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-sync-flush-v42';
+    var GUARD_BUILD = '20260714-offline-actions-v43';
     var flushing = false;
 
     function browserHasNetwork() {
@@ -432,8 +433,8 @@
         var a = target.closest('a[href]');
         if (a) {
             var href = a.getAttribute('href') || '';
-            if (href && href !== '#' && !/^javascript:/i.test(href) && isMuteHref(href)) {
-                block(ev, 'الحذف / التصدير / التعليق يحتاج اتصال بالإنترنت.');
+                if (href && href !== '#' && !/^javascript:/i.test(href) && isMuteHref(href)) {
+                block(ev, 'التصدير / المسح النهائي يحتاج اتصال بالإنترنت.');
                 return;
             }
             if (!hasSwController() && href && /\/admin(\/|$)/i.test(href)) {
@@ -475,7 +476,7 @@
             var form = submitBtn.closest('form');
             if (form && String(form.getAttribute('method') || 'get').toLowerCase() === 'post') {
                 if (formIsOnlineOnly(form)) {
-                    block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
+                    block(ev, 'ترحيل القيود / إغلاق الفترة / المسح النهائي يحتاج إنترنت.');
                 }
             }
         }
@@ -493,7 +494,7 @@
             return;
         }
         if (formIsOnlineOnly(form)) {
-            block(ev, 'هذا الإجراء يحتاج إنترنت (ترحيل / اعتماد نهائي / دفع / حذف).');
+            block(ev, 'ترحيل القيود / إغلاق الفترة / المسح النهائي يحتاج إنترنت.');
             return;
         }
 
@@ -598,7 +599,7 @@
                     } catch (eC) { /* ignore */ }
                 }
                 if (/[?&]rateb_offline_blocked=1(?:&|$)/.test(q)) {
-                    toast('هذا الإجراء يحتاج إنترنت (اعتماد / حذف / دفع).', true);
+                    toast('ترحيل القيود / إغلاق الفترة / المسح النهائي يحتاج إنترنت.', true);
                     try {
                         var clean2 = new URL(root.location.href);
                         clean2.searchParams.delete('rateb_offline_blocked');
@@ -630,6 +631,7 @@
 
     root.RatebOfflineNavGuard = {
         scan: clearStaleMarks,
+        refreshBanner: updateSyncBanner,
         isOffline: isOffline,
         flushDeferred: flushDeferredForms,
         deferredCount: function () { return readDeferred().length; },

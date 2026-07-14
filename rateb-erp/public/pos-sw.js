@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260713-force-sw-v42';
+var SW_BUILD_ID = '20260714-force-sw-v43';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -503,9 +503,11 @@ function neverFailNavigate(request, url) {
 
 function isOfflinePostDenyPath(pathname) {
     var p = String(pathname || '');
-    return /\/(delete|destroy|suspend|wipe|export|pdf|excel|csv)(\/|$)/i.test(p)
-        || /\/(final-approve|decide|escalate|pay(?:ment)?|transfer-funds|void-payment)(\/|$)/i.test(p)
-        || /\/journal-entries\/\d+\/(post|void|reject|submit-approval)(\/|$)/i.test(p);
+    // Only hard-online: permanent wipe / file export / period close / GL journal post.
+    // Approve, delete, pay, decide, suspend queue offline and sync later.
+    return /\/(wipe|export|pdf|excel|csv)(\/|$)/i.test(p)
+        || /\/(close[-_]?period|transfer-funds|void-payment|gl[-_]?post)(\/|$)/i.test(p)
+        || /\/journal-entries\/\d+\/(post|void)(\/|$)/i.test(p);
 }
 
 function wantsJsonPostResponse(request) {
@@ -521,8 +523,8 @@ function wantsJsonPostResponse(request) {
 }
 
 /**
- * Offline Save: queue form fields, redirect back to the form page (never Chrome interstitial).
- * Approvals / money / delete return JSON error — must stay online-only.
+ * Offline POST: queue form fields (including approve/delete/pay), never Chrome interstitial.
+ * Only wipe/export/period-close/GL-post stay hard-blocked.
  */
 function handleOfflineAdminPost(request, url) {
     var referer = '';
@@ -542,7 +544,7 @@ function handleOfflineAdminPost(request, url) {
             return Promise.resolve(new Response(JSON.stringify({
                 ok: false,
                 offline: true,
-                message: 'هذا الإجراء يحتاج اتصال بالإنترنت (اعتماد / حذف / دفع).'
+                message: 'ترحيل القيود / إغلاق الفترة / المسح النهائي يحتاج اتصال بالإنترنت.'
             }), {
                 status: 503,
                 headers: {
@@ -618,7 +620,7 @@ function handleOfflineAdminPost(request, url) {
                     ok: true,
                     offline: true,
                     queued: true,
-                    message: 'تم حفظ النموذج أوفلاين — يُرسل تلقائياً عند عودة الاتصال.'
+                    message: 'تم حفظ الإجراء أوفلاين — يُزامَن عند عودة الاتصال أو من «مزامنة الآن».'
                 }), {
                     status: 200,
                     headers: {

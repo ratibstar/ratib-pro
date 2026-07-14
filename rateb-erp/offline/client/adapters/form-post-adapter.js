@@ -1,13 +1,12 @@
 /**
  * RATEB Offline — Safe generic form-post enqueue (Phase 4 expansion).
  * Maps unmatched allowlisted forms to known replay actions via ops form_hooks.
- * Deny-list blocks money / posting / final-approve / payroll calculate.
- * Prefer RatebOfflineOpsForms when it already handles the path.
+ * Deny-list: period close / wipe / GL journal post / payroll calc. Approve/delete/pay queue offline.
  */
 (function (root) {
     'use strict';
 
-    var DENY_RE = /(?:post|reverse|close[-_]?period|approve|final[-_]?approve|decide|escalate|pay(?:ment)?|payroll[-_]?calc|calculate|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|delete[-_]?permanent)/i;
+    var DENY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post|journal-entries\/\d+\/(?:post|void)|delete[-_]?permanent)/i;
 
     function cfg() {
         return root.__RATEB_ERP_SHELL_OFFLINE__ || root.__RATEB_ERP_MASTER_DATA__ || {};
