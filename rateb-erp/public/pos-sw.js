@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v46';
+var SW_BUILD_ID = '20260714-force-sw-v47';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -1608,9 +1608,13 @@ self.addEventListener('install', function (event) {
         }).then(function () {
             return Promise.all([
                 caches.open(ASSET_CACHE),
-                loadErpOpsAllowlist(),
-                warmErpOfflineShell({ force: true })
+                loadErpOpsAllowlist()
             ]);
+        }).then(function () {
+            // Never block install/activate on warm — it starved every page load.
+            setTimeout(function () {
+                warmErpOfflineShell({ force: true }).catch(function () { return null; });
+            }, 25000);
         }).catch(function () { /* ignore */ })
     );
 });
@@ -1779,6 +1783,23 @@ self.addEventListener('fetch', function (event) {
                 return;
             }
         } catch (eProbe) { /* ignore */ }
+
+    // ONLINE cloud: never hijack Admin pages/assets — every respondWith added seconds.
+    // Offline-only intercept keeps PWA save/browse; live browsing stays as fast as no-SW.
+    if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
+        if (event.request.mode === 'navigate' && !isPosNavigation(url)) {
+            return;
+        }
+        if (isErpOfflineAsset(url)) {
+            return;
+        }
+        // Warm header: still bypass SW race for page-seed fetches.
+        try {
+            if (String(event.request.headers.get('X-Rateb-Shell-Warm') || '') === '1') {
+                return;
+            }
+        } catch (eWarmH) { /* ignore */ }
+    }
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         event.respondWith(

@@ -771,27 +771,26 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   var scope = cfg.serviceWorkerScope ? String(cfg.serviceWorkerScope) : undefined;
   var warmed = false;
   function warm(reg) {
-    if (warmed) return;
+    // Shell warm disabled during active browsing — use ?rateb_warm=1 to seed offline caches.
     try {
-      if (sessionStorage.getItem('rateb_sw_shell_warm_v46') === '1') {
-        warmed = true;
+      if (!/[?&]rateb_warm=1(?:&|$)/.test(String(location.search || ''))) {
         return;
       }
+    } catch (eQ) { return; }
+    if (warmed) return;
+    try {
       var w = reg && (reg.active || reg.waiting || reg.installing);
       if (!w) return;
       warmed = true;
-      try { sessionStorage.setItem('rateb_sw_shell_warm_v46', '1'); } catch (eS) {}
       w.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
     } catch (e) {}
   }
   function scheduleWarm(reg) {
     var run = function () { warm(reg); };
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(run, { timeout: 25000 });
-    } else if (document.readyState === 'complete') {
-      setTimeout(run, 12000);
+    if (document.readyState === 'complete') {
+      setTimeout(run, 1500);
     } else {
-      window.addEventListener('load', function () { setTimeout(run, 12000); }, { once: true });
+      window.addEventListener('load', function () { setTimeout(run, 1500); }, { once: true });
     }
   }
   function isAdminPath(pathname) {

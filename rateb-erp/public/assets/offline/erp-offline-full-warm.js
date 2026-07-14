@@ -852,22 +852,6 @@
                 killInFlightFetches();
                 stopWarmBannerIfOffline();
             });
-            root.addEventListener('online', function () {
-                if (!pendingResume && !forceWarmRequested()) {
-                    try {
-                        var ok = parseInt(root.localStorage.getItem(SUCCESS_KEY) || '0', 10) || 0;
-                        var at = parseInt(root.localStorage.getItem(STORAGE_KEY) || '0', 10) || 0;
-                        if (ok >= MIN_OK && at > 0 && (Date.now() - at) < WARM_TTL_MS) {
-                            return;
-                        }
-                    } catch (eT) { /* ignore */ }
-                }
-                pendingResume = false;
-                setTimeout(function () {
-                    run(true);
-                }, 5000);
-            });
-            // Pause warm while the user is navigating — stops "spin forever" on admin pages.
             root.document.addEventListener('click', function (ev) {
                 try {
                     var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
@@ -887,22 +871,17 @@
                 killInFlightFetches();
             });
         } catch (eOff) { /* ignore */ }
-        var kick = function () {
-            // Idle + long delay so first page paint / clicks are not starved by warm fetches.
-            if (root.requestIdleCallback) {
-                root.requestIdleCallback(function () { run(false); }, { timeout: 20000 });
+
+        // Auto warm killed online browsing. Only explicit ?rateb_warm=1 (or API start).
+        if (forceWarmRequested()) {
+            var kick = function () { run(true); };
+            if (root.document && root.document.readyState === 'complete') {
+                setTimeout(kick, 2000);
+            } else if (root.addEventListener) {
+                root.addEventListener('load', function () { setTimeout(kick, 2000); }, { once: true });
             } else {
-                setTimeout(function () { run(false); }, 15000);
+                setTimeout(kick, 3000);
             }
-        };
-        if (root.document && root.document.readyState === 'complete') {
-            setTimeout(kick, 8000);
-        } else if (root.addEventListener) {
-            root.addEventListener('load', function () {
-                setTimeout(kick, 8000);
-            }, { once: true });
-        } else {
-            setTimeout(kick, 12000);
         }
     }
 
