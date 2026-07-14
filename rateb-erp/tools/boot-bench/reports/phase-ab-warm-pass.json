@@ -1,0 +1,125 @@
+{
+    "mode": "warm_post_boot_same_process",
+    "post_boot_wall_ms": 36.007,
+    "fresh_bootstrap_ms": 30.089,
+    "reconstructed_full_request_ms": 66.096,
+    "route_count": 29,
+    "modules": [
+        "auth",
+        "dashboard"
+    ],
+    "stages_sorted": [
+        {
+            "name": "layouts/main.php include",
+            "ms": 7.001
+        },
+        {
+            "name": "DashboardService::adminBuildLite",
+            "ms": 6.699
+        },
+        {
+            "name": "ErpAuthMiddleware::handle",
+            "ms": 0.642
+        },
+        {
+            "name": "RouteModuleLoader::loadForPath",
+            "ms": 0.636
+        },
+        {
+            "name": "rateb_cms_new_leads_count",
+            "ms": 0.311
+        },
+        {
+            "name": "Bootstrap::init_ALREADY_DONE_note",
+            "ms": 0.001
+        },
+        {
+            "name": "rateb_oversight_menu_counts",
+            "ms": 0.001
+        }
+    ],
+    "top_sql": [
+        {
+            "ms": 0.266,
+            "bt": "query",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = 'active' AND ends_at IS NOT NULL AND ends_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)"
+        },
+        {
+            "ms": 0.229,
+            "bt": "query",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0 AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')"
+        },
+        {
+            "ms": 0.226,
+            "bt": "query",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_companies WHERE status = 'pending'"
+        },
+        {
+            "ms": 0.183,
+            "bt": "Model.php:558 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT id, name, code, is_main FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC, name ASC"
+        },
+        {
+            "ms": 0.162,
+            "bt": "Model.php:567 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active, SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) AS suspended FROM rateb_companies"
+        },
+        {
+            "ms": 0.144,
+            "bt": "Model.php:567 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = 'active'"
+        },
+        {
+            "ms": 0.119,
+            "bt": "ApprovalOversightService.php:83 Rateb\\App\\Services\\ApprovalOversightService::countWorkflowInstancesByMenu",
+            "sql": "SELECT entity_type, COUNT(*) AS c FROM rateb_approval_instances i WHERE i.status = 'pending' GROUP BY entity_type"
+        },
+        {
+            "ms": 0.116,
+            "bt": "Model.php:262 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_cms_leads WHERE 1=1 AND status = :f_status"
+        },
+        {
+            "ms": 0.112,
+            "bt": "Model.php:567 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0"
+        },
+        {
+            "ms": 0.087,
+            "bt": "Model.php:567 Rateb\\App\\Core\\Model::executePrepared",
+            "sql": "SELECT COUNT(*) AS c FROM rateb_plans WHERE is_active = 1"
+        }
+    ],
+    "sql_count": 10,
+    "sql_ms": 1.645,
+    "html_bytes": 79871,
+    "single_biggest_bottleneck": {
+        "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Bootstrap.php",
+        "class": "Rateb\\App\\Core\\Bootstrap",
+        "function": "init",
+        "line": 0,
+        "ms": 30.089,
+        "pct_of_full": 45.52,
+        "basis": "fresh_process_Bootstrap::init"
+    },
+    "candidates": [
+        {
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Bootstrap.php",
+            "class": "Rateb\\App\\Core\\Bootstrap",
+            "function": "init",
+            "line": 0,
+            "ms": 30.089,
+            "pct_of_full": 45.52,
+            "basis": "fresh_process_Bootstrap::init"
+        },
+        {
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "class": "",
+            "function": "include",
+            "line": 1,
+            "ms": 7.001,
+            "pct_of_full": 10.59,
+            "basis": "warm_stage:layouts/main.php include"
+        }
+    ]
+}

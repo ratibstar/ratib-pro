@@ -1,0 +1,2165 @@
+{
+    "phase": "AB",
+    "title": "End-to-end GET /admin runtime profile after AA.3",
+    "measured_at": "2026-07-14T17:58:19+00:00",
+    "runtime": {
+        "php": "8.3.31",
+        "sapi": "cli",
+        "host": "server-167-233-71-107",
+        "rateb_root": "/home/admin/domains/rateb.sa/public_html/rateb-erp",
+        "extensions": {
+            "xdebug": false,
+            "xhprof": false,
+            "tideways": false,
+            "spx": false
+        },
+        "opcache": null
+    },
+    "request": {
+        "method": "GET",
+        "path": "/admin",
+        "aa3_modules": [
+            "auth",
+            "dashboard"
+        ],
+        "aa3_mode": "selective",
+        "route_count": 29
+    },
+    "totals": {
+        "wall_ms": 76.126,
+        "sql_count": 33,
+        "sql_ms": 22.075,
+        "sql_pct": 29,
+        "include_events": 74,
+        "fs_events": 15,
+        "cache_events": 3,
+        "tick_samples": 0,
+        "memory_peak_bytes": 12582912,
+        "html_bytes": 79909
+    },
+    "stages": [
+        {
+            "id": "request_total",
+            "label": "GET /admin complete lifecycle (AA.3)",
+            "wall_ms": 76.126,
+            "self_ms": 0.081,
+            "pct": 100,
+            "sql_count": 33,
+            "mem_delta": 10485760,
+            "parent": null
+        },
+        {
+            "id": "dashboard_controller",
+            "label": "DashboardController render path (platform SA)",
+            "wall_ms": 40.278,
+            "self_ms": 0.026,
+            "pct": 52.91,
+            "sql_count": 22,
+            "mem_delta": 2097152,
+            "parent": "request_total"
+        },
+        {
+            "id": "php_bootstrap",
+            "label": "require Bootstrap.php + Bootstrap::init",
+            "wall_ms": 25.498,
+            "self_ms": 0.17,
+            "pct": 33.49,
+            "sql_count": 0,
+            "mem_delta": 8388608,
+            "parent": "request_total"
+        },
+        {
+            "id": "dashboard_service",
+            "label": "DashboardService::adminBuildLite",
+            "wall_ms": 25.495,
+            "self_ms": 25.495,
+            "pct": 33.49,
+            "sql_count": 20,
+            "mem_delta": 2097152,
+            "parent": "dashboard_controller"
+        },
+        {
+            "id": "composer_autoload",
+            "label": "Bootstrap::init (autoload + config + session start)",
+            "wall_ms": 25.328,
+            "self_ms": 25.328,
+            "pct": 33.27,
+            "sql_count": 0,
+            "mem_delta": 8388608,
+            "parent": "php_bootstrap"
+        },
+        {
+            "id": "view_rendering",
+            "label": "View: admin/dashboard + layouts/main",
+            "wall_ms": 14.524,
+            "self_ms": 0.035,
+            "pct": 19.08,
+            "sql_count": 2,
+            "mem_delta": 0,
+            "parent": "dashboard_controller"
+        },
+        {
+            "id": "layout_main_php",
+            "label": "include views/layouts/main.php",
+            "wall_ms": 12.742,
+            "self_ms": 0.006,
+            "pct": 16.74,
+            "sql_count": 1,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "output_buffering_layout",
+            "label": "ob_start + layout include",
+            "wall_ms": 12.736,
+            "self_ms": 12.736,
+            "pct": 16.73,
+            "sql_count": 1,
+            "mem_delta": 0,
+            "parent": "layout_main_php"
+        },
+        {
+            "id": "auth_bootstrap",
+            "label": "Auth::bootstrapFromSession",
+            "wall_ms": 3.143,
+            "self_ms": 3.143,
+            "pct": 4.13,
+            "sql_count": 4,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "session",
+            "label": "Session already started in Bootstrap; mint admin login",
+            "wall_ms": 2.634,
+            "self_ms": 2.634,
+            "pct": 3.46,
+            "sql_count": 4,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "db_trace_install",
+            "label": "Install tracing PDO",
+            "wall_ms": 2.457,
+            "self_ms": 2.457,
+            "pct": 3.23,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "view_dashboard_php",
+            "label": "include views/admin/dashboard.php",
+            "wall_ms": 0.964,
+            "self_ms": 0.008,
+            "pct": 1.27,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "output_buffering_page",
+            "label": "ob_start + page include",
+            "wall_ms": 0.956,
+            "self_ms": 0.956,
+            "pct": 1.26,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_dashboard_php"
+        },
+        {
+            "id": "routes_load_aa3",
+            "label": "RouteModuleLoader::loadForPath(/admin)",
+            "wall_ms": 0.859,
+            "self_ms": 0.859,
+            "pct": 1.13,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "middleware",
+            "label": "ErpAuthMiddleware::handle",
+            "wall_ms": 0.663,
+            "self_ms": 0.663,
+            "pct": 0.87,
+            "sql_count": 3,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "sidebar_rendering",
+            "label": "Sidebar badge helpers (first paint)",
+            "wall_ms": 0.615,
+            "self_ms": 0.007,
+            "pct": 0.81,
+            "sql_count": 1,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "cms_leads_count",
+            "label": "rateb_cms_new_leads_count()",
+            "wall_ms": 0.603,
+            "self_ms": 0.603,
+            "pct": 0.79,
+            "sql_count": 1,
+            "mem_delta": 0,
+            "parent": "sidebar_rendering"
+        },
+        {
+            "id": "pos_module",
+            "label": "PosModule::init",
+            "wall_ms": 0.272,
+            "self_ms": 0.272,
+            "pct": 0.36,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "csrf_token",
+            "label": "Csrf::token",
+            "wall_ms": 0.233,
+            "self_ms": 0.233,
+            "pct": 0.31,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "dashboard_controller"
+        },
+        {
+            "id": "offline_module",
+            "label": "OfflineModule::init",
+            "wall_ms": 0.208,
+            "self_ms": 0.208,
+            "pct": 0.27,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "blade_php_includes",
+            "label": "Delta includes during view/layout",
+            "wall_ms": 0.151,
+            "self_ms": 0.151,
+            "pct": 0.2,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "config_loading_evidence",
+            "label": "Config already in bootstrap; list loaded config files",
+            "wall_ms": 0.032,
+            "self_ms": 0.032,
+            "pct": 0.04,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        },
+        {
+            "id": "translation_loading",
+            "label": "__() sample keys (already warm from title)",
+            "wall_ms": 0.012,
+            "self_ms": 0.012,
+            "pct": 0.02,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "oversight_menu_counts",
+            "label": "rateb_oversight_menu_counts()",
+            "wall_ms": 0.005,
+            "self_ms": 0.005,
+            "pct": 0.01,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "sidebar_rendering"
+        },
+        {
+            "id": "json_encoding",
+            "label": "json_encode charts sample",
+            "wall_ms": 0.003,
+            "self_ms": 0.003,
+            "pct": 0,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "response_flush",
+            "label": "Simulate flush (strlen full HTML)",
+            "wall_ms": 0.002,
+            "self_ms": 0.002,
+            "pct": 0,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "view_rendering"
+        },
+        {
+            "id": "models_sql_attribution",
+            "label": "Aggregate SQL by class from stacks",
+            "wall_ms": 0.001,
+            "self_ms": 0.001,
+            "pct": 0,
+            "sql_count": 0,
+            "mem_delta": 0,
+            "parent": "request_total"
+        }
+    ],
+    "flame_tree": {
+        "id": "request_total",
+        "label": "GET /admin complete lifecycle (AA.3)",
+        "wall_ms": 76.126,
+        "self_ms": 0.081,
+        "pct": 100,
+        "sql_count": 33,
+        "mem_delta": 10485760,
+        "children": [
+            {
+                "id": "php_bootstrap",
+                "label": "require Bootstrap.php + Bootstrap::init",
+                "wall_ms": 25.498,
+                "self_ms": 0.17,
+                "pct": 33.49,
+                "sql_count": 0,
+                "mem_delta": 8388608,
+                "children": [
+                    {
+                        "id": "composer_autoload",
+                        "label": "Bootstrap::init (autoload + config + session start)",
+                        "wall_ms": 25.328,
+                        "self_ms": 25.328,
+                        "pct": 33.27,
+                        "sql_count": 0,
+                        "mem_delta": 8388608,
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": "db_trace_install",
+                "label": "Install tracing PDO",
+                "wall_ms": 2.457,
+                "self_ms": 2.457,
+                "pct": 3.23,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "session",
+                "label": "Session already started in Bootstrap; mint admin login",
+                "wall_ms": 2.634,
+                "self_ms": 2.634,
+                "pct": 3.46,
+                "sql_count": 4,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "pos_module",
+                "label": "PosModule::init",
+                "wall_ms": 0.272,
+                "self_ms": 0.272,
+                "pct": 0.36,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "offline_module",
+                "label": "OfflineModule::init",
+                "wall_ms": 0.208,
+                "self_ms": 0.208,
+                "pct": 0.27,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "auth_bootstrap",
+                "label": "Auth::bootstrapFromSession",
+                "wall_ms": 3.143,
+                "self_ms": 3.143,
+                "pct": 4.13,
+                "sql_count": 4,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "routes_load_aa3",
+                "label": "RouteModuleLoader::loadForPath(/admin)",
+                "wall_ms": 0.859,
+                "self_ms": 0.859,
+                "pct": 1.13,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "middleware",
+                "label": "ErpAuthMiddleware::handle",
+                "wall_ms": 0.663,
+                "self_ms": 0.663,
+                "pct": 0.87,
+                "sql_count": 3,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "dashboard_controller",
+                "label": "DashboardController render path (platform SA)",
+                "wall_ms": 40.278,
+                "self_ms": 0.026,
+                "pct": 52.91,
+                "sql_count": 22,
+                "mem_delta": 2097152,
+                "children": [
+                    {
+                        "id": "dashboard_service",
+                        "label": "DashboardService::adminBuildLite",
+                        "wall_ms": 25.495,
+                        "self_ms": 25.495,
+                        "pct": 33.49,
+                        "sql_count": 20,
+                        "mem_delta": 2097152,
+                        "children": []
+                    },
+                    {
+                        "id": "csrf_token",
+                        "label": "Csrf::token",
+                        "wall_ms": 0.233,
+                        "self_ms": 0.233,
+                        "pct": 0.31,
+                        "sql_count": 0,
+                        "mem_delta": 0,
+                        "children": []
+                    },
+                    {
+                        "id": "view_rendering",
+                        "label": "View: admin/dashboard + layouts/main",
+                        "wall_ms": 14.524,
+                        "self_ms": 0.035,
+                        "pct": 19.08,
+                        "sql_count": 2,
+                        "mem_delta": 0,
+                        "children": [
+                            {
+                                "id": "view_dashboard_php",
+                                "label": "include views/admin/dashboard.php",
+                                "wall_ms": 0.964,
+                                "self_ms": 0.008,
+                                "pct": 1.27,
+                                "sql_count": 0,
+                                "mem_delta": 0,
+                                "children": [
+                                    {
+                                        "id": "output_buffering_page",
+                                        "label": "ob_start + page include",
+                                        "wall_ms": 0.956,
+                                        "self_ms": 0.956,
+                                        "pct": 1.26,
+                                        "sql_count": 0,
+                                        "mem_delta": 0,
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "sidebar_rendering",
+                                "label": "Sidebar badge helpers (first paint)",
+                                "wall_ms": 0.615,
+                                "self_ms": 0.007,
+                                "pct": 0.81,
+                                "sql_count": 1,
+                                "mem_delta": 0,
+                                "children": [
+                                    {
+                                        "id": "oversight_menu_counts",
+                                        "label": "rateb_oversight_menu_counts()",
+                                        "wall_ms": 0.005,
+                                        "self_ms": 0.005,
+                                        "pct": 0.01,
+                                        "sql_count": 0,
+                                        "mem_delta": 0,
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "cms_leads_count",
+                                        "label": "rateb_cms_new_leads_count()",
+                                        "wall_ms": 0.603,
+                                        "self_ms": 0.603,
+                                        "pct": 0.79,
+                                        "sql_count": 1,
+                                        "mem_delta": 0,
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "translation_loading",
+                                "label": "__() sample keys (already warm from title)",
+                                "wall_ms": 0.012,
+                                "self_ms": 0.012,
+                                "pct": 0.02,
+                                "sql_count": 0,
+                                "mem_delta": 0,
+                                "children": []
+                            },
+                            {
+                                "id": "layout_main_php",
+                                "label": "include views/layouts/main.php",
+                                "wall_ms": 12.742,
+                                "self_ms": 0.006,
+                                "pct": 16.74,
+                                "sql_count": 1,
+                                "mem_delta": 0,
+                                "children": [
+                                    {
+                                        "id": "output_buffering_layout",
+                                        "label": "ob_start + layout include",
+                                        "wall_ms": 12.736,
+                                        "self_ms": 12.736,
+                                        "pct": 16.73,
+                                        "sql_count": 1,
+                                        "mem_delta": 0,
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "blade_php_includes",
+                                "label": "Delta includes during view/layout",
+                                "wall_ms": 0.151,
+                                "self_ms": 0.151,
+                                "pct": 0.2,
+                                "sql_count": 0,
+                                "mem_delta": 0,
+                                "children": []
+                            },
+                            {
+                                "id": "json_encoding",
+                                "label": "json_encode charts sample",
+                                "wall_ms": 0.003,
+                                "self_ms": 0.003,
+                                "pct": 0,
+                                "sql_count": 0,
+                                "mem_delta": 0,
+                                "children": []
+                            },
+                            {
+                                "id": "response_flush",
+                                "label": "Simulate flush (strlen full HTML)",
+                                "wall_ms": 0.002,
+                                "self_ms": 0.002,
+                                "pct": 0,
+                                "sql_count": 0,
+                                "mem_delta": 0,
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "config_loading_evidence",
+                "label": "Config already in bootstrap; list loaded config files",
+                "wall_ms": 0.032,
+                "self_ms": 0.032,
+                "pct": 0.04,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            },
+            {
+                "id": "models_sql_attribution",
+                "label": "Aggregate SQL by class from stacks",
+                "wall_ms": 0.001,
+                "self_ms": 0.001,
+                "pct": 0,
+                "sql_count": 0,
+                "mem_delta": 0,
+                "children": []
+            }
+        ]
+    },
+    "top20_spans_by_wall": [
+        {
+            "id": "request_total",
+            "parent": null,
+            "label": "GET /admin complete lifecycle (AA.3)",
+            "start_ms": 0.03683,
+            "end_ms": 76.162486,
+            "dur_ms": 76.126,
+            "self_ms": 0.081,
+            "mem_start": 2097152,
+            "mem_end": 12582912,
+            "mem_delta": 10485760,
+            "sql_before": 0,
+            "sql_after": 33,
+            "sql_count": 33,
+            "children": [
+                "php_bootstrap",
+                "db_trace_install",
+                "session",
+                "pos_module",
+                "offline_module",
+                "auth_bootstrap",
+                "routes_load_aa3",
+                "middleware",
+                "dashboard_controller",
+                "config_loading_evidence",
+                "models_sql_attribution"
+            ]
+        },
+        {
+            "id": "dashboard_controller",
+            "parent": "request_total",
+            "label": "DashboardController render path (platform SA)",
+            "start_ms": 35.843356,
+            "end_ms": 76.121216,
+            "dur_ms": 40.278,
+            "self_ms": 0.026,
+            "mem_start": 10485760,
+            "mem_end": 12582912,
+            "mem_delta": 2097152,
+            "sql_before": 11,
+            "sql_after": 33,
+            "sql_count": 22,
+            "children": [
+                "dashboard_service",
+                "csrf_token",
+                "view_rendering"
+            ]
+        },
+        {
+            "id": "php_bootstrap",
+            "parent": "request_total",
+            "label": "require Bootstrap.php + Bootstrap::init",
+            "start_ms": 0.04334,
+            "end_ms": 25.541721,
+            "dur_ms": 25.498,
+            "self_ms": 0.17,
+            "mem_start": 2097152,
+            "mem_end": 10485760,
+            "mem_delta": 8388608,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "children": [
+                "composer_autoload"
+            ],
+            "meta": {
+                "included_delta": 55,
+                "included_total": 56
+            }
+        },
+        {
+            "id": "dashboard_service",
+            "parent": "dashboard_controller",
+            "label": "DashboardService::adminBuildLite",
+            "start_ms": 35.844736,
+            "end_ms": 61.339608,
+            "dur_ms": 25.495,
+            "self_ms": 25.495,
+            "mem_start": 10485760,
+            "mem_end": 12582912,
+            "mem_delta": 2097152,
+            "sql_before": 11,
+            "sql_after": 31,
+            "sql_count": 20,
+            "children": []
+        },
+        {
+            "id": "composer_autoload",
+            "parent": "php_bootstrap",
+            "label": "Bootstrap::init (autoload + config + session start)",
+            "start_ms": 0.04848,
+            "end_ms": 25.376261,
+            "dur_ms": 25.328,
+            "self_ms": 25.328,
+            "mem_start": 2097152,
+            "mem_end": 10485760,
+            "mem_delta": 8388608,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "view_rendering",
+            "parent": "dashboard_controller",
+            "label": "View: admin/dashboard + layouts/main",
+            "start_ms": 61.595297,
+            "end_ms": 76.119796,
+            "dur_ms": 14.524,
+            "self_ms": 0.035,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 33,
+            "sql_count": 2,
+            "children": [
+                "view_dashboard_php",
+                "sidebar_rendering",
+                "translation_loading",
+                "layout_main_php",
+                "blade_php_includes",
+                "json_encoding",
+                "response_flush"
+            ]
+        },
+        {
+            "id": "layout_main_php",
+            "parent": "view_rendering",
+            "label": "include views/layouts/main.php",
+            "start_ms": 63.195691,
+            "end_ms": 75.937396,
+            "dur_ms": 12.742,
+            "self_ms": 0.006,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 32,
+            "sql_after": 33,
+            "sql_count": 1,
+            "children": [
+                "output_buffering_layout"
+            ],
+            "meta": {
+                "html_bytes": 79909,
+                "oversight": {
+                    "approvals": 0,
+                    "procurement": 0,
+                    "rfq": 0,
+                    "inventory": 0,
+                    "supplier_evaluations": 0,
+                    "company_pending": 0,
+                    "total": 0
+                },
+                "cms_leads": 23
+            }
+        },
+        {
+            "id": "output_buffering_layout",
+            "parent": "layout_main_php",
+            "label": "ob_start + layout include",
+            "start_ms": 63.197441,
+            "end_ms": 75.933416,
+            "dur_ms": 12.736,
+            "self_ms": 12.736,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 32,
+            "sql_after": 33,
+            "sql_count": 1,
+            "children": []
+        },
+        {
+            "id": "auth_bootstrap",
+            "parent": "request_total",
+            "label": "Auth::bootstrapFromSession",
+            "start_ms": 31.132302,
+            "end_ms": 34.275031,
+            "dur_ms": 3.143,
+            "self_ms": 3.143,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 8,
+            "sql_count": 4,
+            "children": []
+        },
+        {
+            "id": "session",
+            "parent": "request_total",
+            "label": "Session already started in Bootstrap; mint admin login",
+            "start_ms": 28.010063,
+            "end_ms": 30.644484,
+            "dur_ms": 2.634,
+            "self_ms": 2.634,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 0,
+            "sql_after": 4,
+            "sql_count": 4,
+            "children": []
+        },
+        {
+            "id": "db_trace_install",
+            "parent": "request_total",
+            "label": "Install tracing PDO",
+            "start_ms": 25.544391,
+            "end_ms": 28.001503,
+            "dur_ms": 2.457,
+            "self_ms": 2.457,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "view_dashboard_php",
+            "parent": "view_rendering",
+            "label": "include views/admin/dashboard.php",
+            "start_ms": 61.597277,
+            "end_ms": 62.560994,
+            "dur_ms": 0.964,
+            "self_ms": 0.008,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": [
+                "output_buffering_page"
+            ],
+            "meta": {
+                "html_bytes": 7095
+            }
+        },
+        {
+            "id": "output_buffering_page",
+            "parent": "view_dashboard_php",
+            "label": "ob_start + page include",
+            "start_ms": 61.602017,
+            "end_ms": 62.558154,
+            "dur_ms": 0.956,
+            "self_ms": 0.956,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "routes_load_aa3",
+            "parent": "request_total",
+            "label": "RouteModuleLoader::loadForPath(/admin)",
+            "start_ms": 34.290831,
+            "end_ms": 35.149648,
+            "dur_ms": 0.859,
+            "self_ms": 0.859,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 8,
+            "sql_after": 8,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "dashboard"
+                ],
+                "route_count": 29,
+                "included_delta": 5
+            }
+        },
+        {
+            "id": "middleware",
+            "parent": "request_total",
+            "label": "ErpAuthMiddleware::handle",
+            "start_ms": 35.161088,
+            "end_ms": 35.824396,
+            "dur_ms": 0.663,
+            "self_ms": 0.663,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 8,
+            "sql_after": 11,
+            "sql_count": 3,
+            "children": [],
+            "meta": {
+                "ok": true
+            }
+        },
+        {
+            "id": "sidebar_rendering",
+            "parent": "view_rendering",
+            "label": "Sidebar badge helpers (first paint)",
+            "start_ms": 62.564244,
+            "end_ms": 63.179581,
+            "dur_ms": 0.615,
+            "self_ms": 0.007,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 32,
+            "sql_count": 1,
+            "children": [
+                "oversight_menu_counts",
+                "cms_leads_count"
+            ]
+        },
+        {
+            "id": "cms_leads_count",
+            "parent": "sidebar_rendering",
+            "label": "rateb_cms_new_leads_count()",
+            "start_ms": 62.572914,
+            "end_ms": 63.176201,
+            "dur_ms": 0.603,
+            "self_ms": 0.603,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 32,
+            "sql_count": 1,
+            "children": []
+        },
+        {
+            "id": "pos_module",
+            "parent": "request_total",
+            "label": "PosModule::init",
+            "start_ms": 30.647454,
+            "end_ms": 30.919923,
+            "dur_ms": 0.272,
+            "self_ms": 0.272,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 4,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "csrf_token",
+            "parent": "dashboard_controller",
+            "label": "Csrf::token",
+            "start_ms": 61.345678,
+            "end_ms": 61.578437,
+            "dur_ms": 0.233,
+            "self_ms": 0.233,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "offline_module",
+            "parent": "request_total",
+            "label": "OfflineModule::init",
+            "start_ms": 30.921643,
+            "end_ms": 31.129882,
+            "dur_ms": 0.208,
+            "self_ms": 0.208,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 4,
+            "sql_count": 0,
+            "children": []
+        }
+    ],
+    "top20_leaf_spans": [
+        {
+            "id": "dashboard_service",
+            "parent": "dashboard_controller",
+            "label": "DashboardService::adminBuildLite",
+            "start_ms": 35.844736,
+            "end_ms": 61.339608,
+            "dur_ms": 25.495,
+            "self_ms": 25.495,
+            "mem_start": 10485760,
+            "mem_end": 12582912,
+            "mem_delta": 2097152,
+            "sql_before": 11,
+            "sql_after": 31,
+            "sql_count": 20,
+            "children": []
+        },
+        {
+            "id": "composer_autoload",
+            "parent": "php_bootstrap",
+            "label": "Bootstrap::init (autoload + config + session start)",
+            "start_ms": 0.04848,
+            "end_ms": 25.376261,
+            "dur_ms": 25.328,
+            "self_ms": 25.328,
+            "mem_start": 2097152,
+            "mem_end": 10485760,
+            "mem_delta": 8388608,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "output_buffering_layout",
+            "parent": "layout_main_php",
+            "label": "ob_start + layout include",
+            "start_ms": 63.197441,
+            "end_ms": 75.933416,
+            "dur_ms": 12.736,
+            "self_ms": 12.736,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 32,
+            "sql_after": 33,
+            "sql_count": 1,
+            "children": []
+        },
+        {
+            "id": "auth_bootstrap",
+            "parent": "request_total",
+            "label": "Auth::bootstrapFromSession",
+            "start_ms": 31.132302,
+            "end_ms": 34.275031,
+            "dur_ms": 3.143,
+            "self_ms": 3.143,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 8,
+            "sql_count": 4,
+            "children": []
+        },
+        {
+            "id": "session",
+            "parent": "request_total",
+            "label": "Session already started in Bootstrap; mint admin login",
+            "start_ms": 28.010063,
+            "end_ms": 30.644484,
+            "dur_ms": 2.634,
+            "self_ms": 2.634,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 0,
+            "sql_after": 4,
+            "sql_count": 4,
+            "children": []
+        },
+        {
+            "id": "db_trace_install",
+            "parent": "request_total",
+            "label": "Install tracing PDO",
+            "start_ms": 25.544391,
+            "end_ms": 28.001503,
+            "dur_ms": 2.457,
+            "self_ms": 2.457,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "output_buffering_page",
+            "parent": "view_dashboard_php",
+            "label": "ob_start + page include",
+            "start_ms": 61.602017,
+            "end_ms": 62.558154,
+            "dur_ms": 0.956,
+            "self_ms": 0.956,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "routes_load_aa3",
+            "parent": "request_total",
+            "label": "RouteModuleLoader::loadForPath(/admin)",
+            "start_ms": 34.290831,
+            "end_ms": 35.149648,
+            "dur_ms": 0.859,
+            "self_ms": 0.859,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 8,
+            "sql_after": 8,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "mode": "selective",
+                "modules": [
+                    "auth",
+                    "dashboard"
+                ],
+                "route_count": 29,
+                "included_delta": 5
+            }
+        },
+        {
+            "id": "middleware",
+            "parent": "request_total",
+            "label": "ErpAuthMiddleware::handle",
+            "start_ms": 35.161088,
+            "end_ms": 35.824396,
+            "dur_ms": 0.663,
+            "self_ms": 0.663,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 8,
+            "sql_after": 11,
+            "sql_count": 3,
+            "children": [],
+            "meta": {
+                "ok": true
+            }
+        },
+        {
+            "id": "cms_leads_count",
+            "parent": "sidebar_rendering",
+            "label": "rateb_cms_new_leads_count()",
+            "start_ms": 62.572914,
+            "end_ms": 63.176201,
+            "dur_ms": 0.603,
+            "self_ms": 0.603,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 32,
+            "sql_count": 1,
+            "children": []
+        },
+        {
+            "id": "pos_module",
+            "parent": "request_total",
+            "label": "PosModule::init",
+            "start_ms": 30.647454,
+            "end_ms": 30.919923,
+            "dur_ms": 0.272,
+            "self_ms": 0.272,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 4,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "csrf_token",
+            "parent": "dashboard_controller",
+            "label": "Csrf::token",
+            "start_ms": 61.345678,
+            "end_ms": 61.578437,
+            "dur_ms": 0.233,
+            "self_ms": 0.233,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "offline_module",
+            "parent": "request_total",
+            "label": "OfflineModule::init",
+            "start_ms": 30.921643,
+            "end_ms": 31.129882,
+            "dur_ms": 0.208,
+            "self_ms": 0.208,
+            "mem_start": 10485760,
+            "mem_end": 10485760,
+            "mem_delta": 0,
+            "sql_before": 4,
+            "sql_after": 4,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "blade_php_includes",
+            "parent": "view_rendering",
+            "label": "Delta includes during view/layout",
+            "start_ms": 75.941036,
+            "end_ms": 76.092106,
+            "dur_ms": 0.151,
+            "self_ms": 0.151,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 33,
+            "sql_after": 33,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "view_includes": 15
+            }
+        },
+        {
+            "id": "config_loading_evidence",
+            "parent": "request_total",
+            "label": "Config already in bootstrap; list loaded config files",
+            "start_ms": 76.123046,
+            "end_ms": 76.154695,
+            "dur_ms": 0.032,
+            "self_ms": 0.032,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 33,
+            "sql_after": 33,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "config_files": [
+                    "app.php",
+                    "database.php",
+                    "erp_agency_resolver.php",
+                    "agency_lookup.php",
+                    "load.php",
+                    "dotenv_bridge.php",
+                    "rateb_sa.php",
+                    "directadmin_db.php",
+                    "ar.php",
+                    "field-labels-ar.php",
+                    "entity-permissions.php",
+                    "entity-permissions.php",
+                    "ar.php",
+                    "hr-menu.php"
+                ]
+            }
+        },
+        {
+            "id": "translation_loading",
+            "parent": "view_rendering",
+            "label": "__() sample keys (already warm from title)",
+            "start_ms": 63.181301,
+            "end_ms": 63.193781,
+            "dur_ms": 0.012,
+            "self_ms": 0.012,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 32,
+            "sql_after": 32,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "oversight_menu_counts",
+            "parent": "sidebar_rendering",
+            "label": "rateb_oversight_menu_counts()",
+            "start_ms": 62.566674,
+            "end_ms": 62.571214,
+            "dur_ms": 0.005,
+            "self_ms": 0.005,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 31,
+            "sql_after": 31,
+            "sql_count": 0,
+            "children": []
+        },
+        {
+            "id": "json_encoding",
+            "parent": "view_rendering",
+            "label": "json_encode charts sample",
+            "start_ms": 76.108376,
+            "end_ms": 76.111836,
+            "dur_ms": 0.003,
+            "self_ms": 0.003,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 33,
+            "sql_after": 33,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "bytes": 2,
+                "wall_inner_ms": 0.004
+            }
+        },
+        {
+            "id": "response_flush",
+            "parent": "view_rendering",
+            "label": "Simulate flush (strlen full HTML)",
+            "start_ms": 76.115236,
+            "end_ms": 76.117716,
+            "dur_ms": 0.002,
+            "self_ms": 0.002,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 33,
+            "sql_after": 33,
+            "sql_count": 0,
+            "children": [],
+            "meta": {
+                "html_bytes": 79909,
+                "inner_ms": 0.003
+            }
+        },
+        {
+            "id": "models_sql_attribution",
+            "parent": "request_total",
+            "label": "Aggregate SQL by class from stacks",
+            "start_ms": 76.159775,
+            "end_ms": 76.161006,
+            "dur_ms": 0.001,
+            "self_ms": 0.001,
+            "mem_start": 12582912,
+            "mem_end": 12582912,
+            "mem_delta": 0,
+            "sql_before": 33,
+            "sql_after": 33,
+            "sql_count": 0,
+            "children": []
+        }
+    ],
+    "top20_functions_tick_samples": [],
+    "top20_sql_queries": [
+        {
+            "t_ms": 47.399,
+            "dur_ms": 6.875,
+            "sql": "ALTER TABLE rateb_journal_entries MODIFY status ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+            "caller": "AccountingService.php:823 Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 823,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingStatusEnums",
+            "phase": "dashboard_service",
+            "fp": "56e955ff082f1b0b19ba531cc2263893"
+        },
+        {
+            "t_ms": 54.025,
+            "dur_ms": 5.964,
+            "sql": "ALTER TABLE rateb_cash_vouchers MODIFY status ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+            "caller": "AccountingService.php:823 Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 823,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingStatusEnums",
+            "phase": "dashboard_service",
+            "fp": "84ec9004e07ba37cc8a115ef3ead4c1e"
+        },
+        {
+            "t_ms": 33.207,
+            "dur_ms": 0.711,
+            "sql": "SHOW TABLES LIKE 'rateb_branches'",
+            "caller": "BranchAccessService.php:84 Rateb\\App\\Services\\BranchService::branchesTableExists",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchAccessService.php",
+            "line": 84,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesTableExists",
+            "phase": "auth_bootstrap",
+            "fp": "d0324888240bc50e799d8fff2875544a"
+        },
+        {
+            "t_ms": 33.925,
+            "dur_ms": 0.679,
+            "sql": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'",
+            "caller": "BranchService.php:140 Rateb\\App\\Services\\BranchService::branchesHaveIsMainColumn",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchService.php",
+            "line": 140,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesHaveIsMainColumn",
+            "phase": "auth_bootstrap",
+            "fp": "b8f09c2d21c8602e0726fa6b16dfa2c7"
+        },
+        {
+            "t_ms": 48.011,
+            "dur_ms": 0.594,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'status'",
+            "caller": "AccountingService.php:823 Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 823,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingStatusEnums",
+            "phase": "dashboard_service",
+            "fp": "ee762aa69a1bb7f447aeede7c09d1943"
+        },
+        {
+            "t_ms": 54.683,
+            "dur_ms": 0.584,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'reject_reason'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "ebb237c57b3dedd360840982e770722f"
+        },
+        {
+            "t_ms": 56.331,
+            "dur_ms": 0.537,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'reject_reason'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "63a82525d3d0f26f9a0a7d1f6e07a450"
+        },
+        {
+            "t_ms": 56.912,
+            "dur_ms": 0.533,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'rejected_at'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "6c8bde63e993b3b5e6a6c413ebb044b9"
+        },
+        {
+            "t_ms": 55.211,
+            "dur_ms": 0.508,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'rejected_at'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "d857c65d1f0f1e06d4ad4acc59ea2187"
+        },
+        {
+            "t_ms": 55.755,
+            "dur_ms": 0.504,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'rejected_by'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "3f2b6bf428e730033128860cdbddc53b"
+        },
+        {
+            "t_ms": 57.526,
+            "dur_ms": 0.501,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'rejected_by'",
+            "caller": "AccountingService.php:824 Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "phase": "dashboard_service",
+            "fp": "eaf90322f99893048d720c03e95c2f43"
+        },
+        {
+            "t_ms": 58.068,
+            "dur_ms": 0.488,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'submitted_for_approval_at'",
+            "caller": "ApprovalOversightService.php:1482 Rateb\\App\\Services\\AccountingService::ensureApprovalSubmitColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "line": 1482,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureApprovalSubmitColumns",
+            "phase": "dashboard_service",
+            "fp": "35925aa91118396c6accd3b37012f011"
+        },
+        {
+            "t_ms": 40.505,
+            "dur_ms": 0.487,
+            "sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'status'",
+            "caller": "AccountingService.php:823 Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 823,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingStatusEnums",
+            "phase": "dashboard_service",
+            "fp": "d8f3a339fcd7317b5be334a7abde4e35"
+        },
+        {
+            "t_ms": 58.546,
+            "dur_ms": 0.461,
+            "sql": "SHOW COLUMNS FROM rateb_cash_vouchers LIKE 'submitted_for_approval_at'",
+            "caller": "ApprovalOversightService.php:1482 Rateb\\App\\Services\\AccountingService::ensureApprovalSubmitColumns",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "line": 1482,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureApprovalSubmitColumns",
+            "phase": "dashboard_service",
+            "fp": "a3649fdc0655b4ac3f4acc83d74f04bb"
+        },
+        {
+            "t_ms": 63.13,
+            "dur_ms": 0.315,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_cms_leads WHERE 1=1 AND status = :f_status",
+            "caller": "Model.php:262 Rateb\\App\\Core\\Model::executePrepared",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 262,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "executePrepared",
+            "phase": "cms_leads_count",
+            "fp": "4fc0c303779fc3cc11a30effb30d90cc"
+        },
+        {
+            "t_ms": 74.686,
+            "dur_ms": 0.218,
+            "sql": "SELECT id, name, code, is_main FROM rateb_branches WHERE company_id = :cid AND status = :st ORDER BY is_main DESC, id ASC, name ASC",
+            "caller": "Model.php:558 Rateb\\App\\Core\\Model::executePrepared",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 558,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "executePrepared",
+            "phase": "output_buffering_layout",
+            "fp": "d73cfe391dbdf8669ceddbcf07532613"
+        },
+        {
+            "t_ms": 37.461,
+            "dur_ms": 0.198,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_companies WHERE status = 'pending'",
+            "caller": "DashboardService.php:23 Rateb\\App\\Services\\DashboardService::adminMetrics",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/DashboardService.php",
+            "line": 23,
+            "class": "Rateb\\App\\Services\\DashboardService",
+            "function": "adminMetrics",
+            "phase": "dashboard_service",
+            "fp": "b4be994cd70891de503a6ef2262304fa"
+        },
+        {
+            "t_ms": 37.692,
+            "dur_ms": 0.198,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_subscriptions WHERE status = 'active' AND ends_at IS NOT NULL AND ends_at BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)",
+            "caller": "DashboardService.php:23 Rateb\\App\\Services\\DashboardService::adminMetrics",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/DashboardService.php",
+            "line": 23,
+            "class": "Rateb\\App\\Services\\DashboardService",
+            "function": "adminMetrics",
+            "phase": "dashboard_service",
+            "fp": "afa8a6324f8eb053ae61dd8ba8bf9275"
+        },
+        {
+            "t_ms": 37.905,
+            "dur_ms": 0.182,
+            "sql": "SELECT COUNT(*) AS c FROM rateb_users WHERE is_super_admin = 0 AND created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')",
+            "caller": "DashboardService.php:23 Rateb\\App\\Services\\DashboardService::adminMetrics",
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/DashboardService.php",
+            "line": 23,
+            "class": "Rateb\\App\\Services\\DashboardService",
+            "function": "adminMetrics",
+            "phase": "dashboard_service",
+            "fp": "1c373cbf0b7a5799304906595ede2f1e"
+        },
+        {
+            "t_ms": 28.43,
+            "dur_ms": 0.168,
+            "sql": "SELECT * FROM rateb_users WHERE email = ? LIMIT 1",
+            "caller": "unknown",
+            "file": "",
+            "line": 0,
+            "class": "",
+            "function": "",
+            "phase": "session",
+            "fp": "4ec396356aefd2ba4a55f28bee4ff516"
+        }
+    ],
+    "top20_sql_by_function": [
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+            "ms": 13.920000000000002,
+            "n": 4,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 823,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingStatusEnums",
+            "sample": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'status'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::ensureAccountingRejectColumns",
+            "ms": 3.167,
+            "n": 6,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "line": 824,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureAccountingRejectColumns",
+            "sample": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'reject_reason'"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::executePrepared",
+            "ms": 1.194,
+            "n": 8,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "line": 567,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "executePrepared",
+            "sample": "SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1"
+        },
+        {
+            "key": "Rateb\\App\\Services\\AccountingService::ensureApprovalSubmitColumns",
+            "ms": 0.9490000000000001,
+            "n": 2,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "line": 1482,
+            "class": "Rateb\\App\\Services\\AccountingService",
+            "function": "ensureApprovalSubmitColumns",
+            "sample": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'submitted_for_approval_at'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\BranchService::branchesTableExists",
+            "ms": 0.711,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchAccessService.php",
+            "line": 84,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesTableExists",
+            "sample": "SHOW TABLES LIKE 'rateb_branches'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\BranchService::branchesHaveIsMainColumn",
+            "ms": 0.679,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/BranchService.php",
+            "line": 140,
+            "class": "Rateb\\App\\Services\\BranchService",
+            "function": "branchesHaveIsMainColumn",
+            "sample": "SHOW COLUMNS FROM rateb_branches LIKE 'is_main'"
+        },
+        {
+            "key": "Rateb\\App\\Services\\DashboardService::adminMetrics",
+            "ms": 0.5780000000000001,
+            "n": 3,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/DashboardService.php",
+            "line": 23,
+            "class": "Rateb\\App\\Services\\DashboardService",
+            "function": "adminMetrics",
+            "sample": "SELECT COUNT(*) AS c FROM rateb_companies WHERE status = 'pending'"
+        },
+        {
+            "key": "Rateb\\App\\Models\\User::find",
+            "ms": 0.481,
+            "n": 5,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Auth.php",
+            "line": 244,
+            "class": "Rateb\\App\\Models\\User",
+            "function": "find",
+            "sample": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1"
+        },
+        {
+            "key": "unknown",
+            "ms": 0.168,
+            "n": 1,
+            "file": "",
+            "line": 0,
+            "class": "",
+            "function": "",
+            "sample": "SELECT * FROM rateb_users WHERE email = ? LIMIT 1"
+        },
+        {
+            "key": "Rateb\\App\\Services\\ApprovalOversightService::countWorkflowInstancesByMenu",
+            "ms": 0.127,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/ApprovalOversightService.php",
+            "line": 83,
+            "class": "Rateb\\App\\Services\\ApprovalOversightService",
+            "function": "countWorkflowInstancesByMenu",
+            "sample": "SELECT entity_type, COUNT(*) AS c FROM rateb_approval_instances i WHERE i.status = 'pending' GROUP BY entity_type"
+        },
+        {
+            "key": "Rateb\\App\\Core\\Model::find",
+            "ms": 0.101,
+            "n": 1,
+            "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "line": 2295,
+            "class": "Rateb\\App\\Core\\Model",
+            "function": "find",
+            "sample": "SELECT * FROM rateb_companies WHERE id = :id"
+        }
+    ],
+    "top20_includes_by_dur": [
+        {
+            "t_ms": 75.922,
+            "dur_ms": 12.715,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "op": "include",
+            "phase": "output_buffering_layout",
+            "bytes": 63677
+        },
+        {
+            "t_ms": 62.552,
+            "dur_ms": 0.939,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/admin/dashboard.php",
+            "op": "include",
+            "phase": "output_buffering_page",
+            "bytes": 12121
+        },
+        {
+            "t_ms": 31.12,
+            "dur_ms": 0.186,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/offline/OfflineModule.php",
+            "op": "include",
+            "phase": "offline_module",
+            "bytes": 4846
+        },
+        {
+            "t_ms": 30.779,
+            "dur_ms": 0.118,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/modules/pos/PosModule.php",
+            "op": "include",
+            "phase": "pos_module",
+            "bytes": 2953
+        },
+        {
+            "t_ms": 25.388,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Bootstrap.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 17900
+        },
+        {
+            "t_ms": 25.393,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/BranchServeEnvBootstrap.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 2606
+        },
+        {
+            "t_ms": 25.396,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/helpers/mbstring-polyfill.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 1610
+        },
+        {
+            "t_ms": 25.4,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/app/Core/Autoloader.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 670
+        },
+        {
+            "t_ms": 25.403,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/helpers/Request.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 2616
+        },
+        {
+            "t_ms": 25.406,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/models/Entities.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 15566
+        },
+        {
+            "t_ms": 25.409,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 24201
+        },
+        {
+            "t_ms": 25.412,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/CrudController.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 38116
+        },
+        {
+            "t_ms": 25.415,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Controller.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 767
+        },
+        {
+            "t_ms": 25.417,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/helpers/LineItems.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 14370
+        },
+        {
+            "t_ms": 25.42,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AuditService.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 2937
+        },
+        {
+            "t_ms": 25.423,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AdminControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 130677
+        },
+        {
+            "t_ms": 25.426,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AutomationControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 3239
+        },
+        {
+            "t_ms": 25.429,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/BusinessControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 798
+        },
+        {
+            "t_ms": 25.431,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/ExtendedControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 15247
+        },
+        {
+            "t_ms": 25.434,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AccountingControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 13444
+        }
+    ],
+    "top20_includes_by_bytes": [
+        {
+            "t_ms": 25.509,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 152394
+        },
+        {
+            "t_ms": 25.423,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/AdminControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 130677
+        },
+        {
+            "t_ms": 25.451,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/CompanyControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 123009
+        },
+        {
+            "t_ms": 25.519,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 109275
+        },
+        {
+            "t_ms": 25.464,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/AccountingControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 106334
+        },
+        {
+            "t_ms": 25.472,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/BusinessControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 89850
+        },
+        {
+            "t_ms": 75.922,
+            "dur_ms": 12.715,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "op": "include",
+            "phase": "output_buffering_layout",
+            "bytes": 63677
+        },
+        {
+            "t_ms": 76.034,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "op": "include",
+            "phase": "blade_php_includes",
+            "bytes": 63677
+        },
+        {
+            "t_ms": 25.437,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Admin/CmsControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 45946
+        },
+        {
+            "t_ms": 25.412,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/CrudController.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 38116
+        },
+        {
+            "t_ms": 25.453,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/HrControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 32985
+        },
+        {
+            "t_ms": 25.502,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/MigrationService.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 30046
+        },
+        {
+            "t_ms": 25.457,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/HrExtendedControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 29266
+        },
+        {
+            "t_ms": 25.448,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/HrService.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 28671
+        },
+        {
+            "t_ms": 25.409,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Model.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 24201
+        },
+        {
+            "t_ms": 25.46,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/ExtendedControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 22598
+        },
+        {
+            "t_ms": 25.499,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Middleware/Middleware.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 21999
+        },
+        {
+            "t_ms": 25.526,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/config/env/agency_lookup.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 18336
+        },
+        {
+            "t_ms": 25.47,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/controllers/Company/BranchControllers.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 18190
+        },
+        {
+            "t_ms": 25.388,
+            "dur_ms": 0,
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Bootstrap.php",
+            "op": "include",
+            "phase": "php_bootstrap",
+            "bytes": 17900
+        }
+    ],
+    "top20_filesystem": [
+        {
+            "t_ms": 76.002,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/admin/dashboard.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.011,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/dashboard/head.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.017,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/dashboard/hero.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.023,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/dashboard/alerts.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.029,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/dashboard/metrics-strip.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.035,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/layouts/main.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.042,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/partials/sidebar-nav.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.048,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/partials/platform-catalog-nav-link.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.053,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/partials/sidebar-ops-nav.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.062,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/modules/pos/views/partials/sidebar-pos-nav.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.068,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/partials/sidebar-hr-nav.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.073,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/flash.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.079,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/partials/branch-filter-switcher.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.084,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/entity-documents-modal-shell.php",
+            "phase": "blade_php_includes"
+        },
+        {
+            "t_ms": 76.09,
+            "dur_ms": 0,
+            "op": "include_view",
+            "path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/views/components/rateb-confirm-modal.php",
+            "phase": "blade_php_includes"
+        }
+    ],
+    "top20_cache": [
+        {
+            "t_ms": 63.173,
+            "dur_ms": 0.598,
+            "op": "cms_leads",
+            "key": "rateb_cms_new_leads_count",
+            "phase": "cms_leads_count",
+            "hit": null
+        },
+        {
+            "t_ms": 30.641,
+            "dur_ms": 0.003,
+            "op": "session_forget",
+            "key": "nav_badge_caches",
+            "phase": "session",
+            "hit": false
+        },
+        {
+            "t_ms": 62.569,
+            "dur_ms": 0.002,
+            "op": "oversight_menu_counts",
+            "key": "rateb_oversight_menu_counts",
+            "phase": "oversight_menu_counts",
+            "hit": null
+        }
+    ],
+    "single_biggest_bottleneck": {
+        "basis": "top_sql_by_function",
+        "span_id": null,
+        "label": "SQL attributed to Rateb\\App\\Services\\AccountingService::ensureAccountingStatusEnums",
+        "file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/services/AccountingService.php",
+        "class": "Rateb\\App\\Services\\AccountingService",
+        "function": "ensureAccountingStatusEnums",
+        "line": 823,
+        "ms": 13.92,
+        "pct_of_request": 18.29,
+        "sql_count_in_fn": 4,
+        "sample_sql": "SHOW COLUMNS FROM rateb_journal_entries LIKE 'status'"
+    },
+    "note": "Wall spans are authoritative. Tick samples are approximate (no xhprof/xdebug). SQL ms is execute/query wall on tracing PDO."
+}

@@ -1,0 +1,70 @@
+{
+  "phase": "AB",
+  "title": "End-to-end GET /admin profiling after AA.3",
+  "mode": "evidence_only_no_optimization",
+  "measured_at": "2026-07-14T18:00:00Z",
+  "runtime": {
+    "host": "167.233.71.107 (rateb.sa production)",
+    "php": "8.3 CLI (same tree as FPM)",
+    "aa3_route_count": 29,
+    "aa3_modules": ["auth", "dashboard"]
+  },
+  "cold_first_paint_cli": {
+    "source": "tools/boot-bench/reports/phase-ab-e2e-profile.json",
+    "wall_ms": 76.126,
+    "sql_ms": 22.075,
+    "sql_count": 33,
+    "note": "Includes one-shot AccountingService schema ALTER/SHOW on first ApprovalOversight path",
+    "top_spans_ms": {
+      "dashboard_controller": 40.278,
+      "php_bootstrap / Bootstrap::init": 25.498,
+      "dashboard_service": 25.495,
+      "layout_main": 12.742
+    },
+    "top_sql_function": {
+      "fn": "AccountingService::ensureAccountingStatusEnums",
+      "ms": 13.92,
+      "pct": 18.29,
+      "via": "adminBuildLite → adminMetrics → rateb_oversight_pending_approvals_count → ApprovalOversightService → ensureApprovalSubmitColumns"
+    }
+  },
+  "warm_steady_state": {
+    "source": "tools/boot-bench/reports/phase-ab-warm-pass.json",
+    "note": "Schema statics + session flags primed; reconstructed full request = fresh Bootstrap::init + post-boot path",
+    "fresh_bootstrap_ms": 30.089,
+    "post_boot_wall_ms": 36.007,
+    "reconstructed_full_request_ms": 66.096,
+    "post_boot_top_stages_ms": {
+      "layouts/main.php": 7.001,
+      "DashboardService::adminBuildLite": 6.699,
+      "ErpAuthMiddleware": 0.642,
+      "RouteModuleLoader::loadForPath": 0.636
+    },
+    "sql_ms": 1.645,
+    "sql_count": 10
+  },
+  "single_biggest_bottleneck": {
+    "basis": "warm_steady_state_reconstructed_request",
+    "file": "app/Core/Bootstrap.php",
+    "absolute_file": "/home/admin/domains/rateb.sa/public_html/rateb-erp/app/Core/Bootstrap.php",
+    "class": "Rateb\\App\\Core\\Bootstrap",
+    "function": "init",
+    "line": 10,
+    "ms": 30.089,
+    "pct_of_total_request": 45.52,
+    "total_request_ms": 66.096,
+    "why": "After AA.3, route registration is ~0.64ms. Schema DDL is one-shot. Steady-state GET /admin is dominated by Bootstrap::init (eager controller/model/service requires + config/session; OPcache still disabled)."
+  },
+  "runner_up_warm": {
+    "file": "views/layouts/main.php",
+    "function": "include",
+    "line": 1,
+    "ms": 7.001,
+    "pct": 10.59
+  },
+  "aa3_confirmation": {
+    "routes_load_ms": 0.636,
+    "route_count": 29,
+    "no_longer_primary_bottleneck": true
+  }
+}

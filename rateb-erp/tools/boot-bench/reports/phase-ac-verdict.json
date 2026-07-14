@@ -1,0 +1,77 @@
+{
+  "phase": "AC",
+  "title": "Infrastructure bottleneck audit (outside ERP application)",
+  "measured_at": "2026-07-14T18:15:00Z",
+  "mode": "evidence_only_no_optimization",
+  "context": {
+    "ab_php_request_ms": 66,
+    "ab_bootstrap_ms": 30,
+    "aa3_routes": 29,
+    "user_symptom": "several seconds before ERP usable after login"
+  },
+  "single_biggest_bottleneck": {
+    "component": "DNS resolution via Hetzner recursive resolvers (production /etc/resolv.conf nameservers 2a01:4ff:ff00::add:1 and ::add:2)",
+    "measured_time_ms": 1476.251,
+    "percentage": 93.72,
+    "percentage_of": "cold public HTTPS request total time from the production host (curl https://rateb.sa/... without --resolve)",
+    "evidence": [
+      "dig @2a01:4ff:ff00::add:2 rateb.sa → Query time 1452 ms (try1), 1451 ms (try3)",
+      "curl public1: dns=1.460498s ttfb=1.585412s total=1.585525s (DNS = 92.1% of TTFB)",
+      "curl public2: dns=1.476251s ttfb=1.575635s total=1.575738s (DNS = 93.7% of total)",
+      "Same URLs with --resolve rateb.sa:443:167.233.71.107: admin TTFB 80–151 ms (app+FPM path healthy once DNS skipped)",
+      "resolv.conf: nameserver 2a01:4ff:ff00::add:2 / ::add:1 (cloud-init Hetzner)"
+    ]
+  },
+  "layer_audit_summary": {
+    "1_DNS": "CRITICAL — cold lookups ~1450–1550 ms to Hetzner resolvers; dominates any client (incl. server-local curl) that resolves rateb.sa",
+    "2_TCP": "OK when IP known — loopback/resolve path tcp <1 ms; client WAN tcp ~100–110 ms",
+    "3_TLS": "OK — ~9–23 ms server-local; ~110–120 ms from Windows client",
+    "4_HTTP_keepalive": "HTTP/2 on server (ALPN); client curl.exe negotiated HTTP/1.1",
+    "5_Reverse_proxy": "Apache/2 — healthy; not the multi-second cost once DNS resolved",
+    "6_7_PHP_FPM": "pm=ondemand, max_children=10, idle_timeout=20s; workers_before=0 → spawn on demand; cold admin TTFB 151 ms vs warm 81 ms (spawn ~70 ms) — secondary",
+    "8_OPcache": "DISABLED — php.ini:976 `;zend_extension=opcache`; FPM probe opcache_loaded=false — secondary (explains AB Bootstrap 30 ms, not multi-second alone)",
+    "9_CPU": "loadavg 0.00 — idle",
+    "10_RAM": "7.3 Gi total, ~5 Gi available — no pressure",
+    "11_Swap": "0B — none",
+    "12_Disk_IO": "disk 6% used — not constrained",
+    "13_Inodes": "2% used",
+    "14_MySQL": "ping 0.198 ms; Slow_queries=0; slow_query_log=OFF",
+    "15_Slow_query_log": "OFF — no evidence of SQL as UX limiter",
+    "16_Redis_Memcached": "extensions not loaded",
+    "17_18_Compression": "gzip active for CSS (Content-Encoding: gzip; main.css 9949→2125)",
+    "19_HTTP2": "yes on Apache (server curl http_version=2)",
+    "20_21_Cache_Control_static": "static served; not multi-second root",
+    "22_Service_Worker": "pos-sw.js active for entire /rateb-erp/public/ scope; online path bypasses intercept (fromServiceWorker=false) — not the 1.4s DNS class cost",
+    "23_Browser_waterfall": "login→first spin-free poll 2224 ms; usableAtMs 4621 includes +~1.5s network-quiet heuristic",
+    "24_Largest_JS": "rateb-offline.min.js 387051 bytes; client download total ~732 ms",
+    "25_Largest_CSS": "bootstrap.rtl.min.css 232911 bytes; fontawesome all.min.css 103009 bytes",
+    "26_Fonts": "tajawal.css present; not top duration",
+    "27_Third_party": "no third-party origins in top slow resources (all first-party rateb.sa)",
+    "28_Connection_reuse": "HTTP/2 multiplexing on server; browser keep-alive after login page"
+  },
+  "server_waterfall_bypass_dns_ms": {
+    "login_ttfb": 91,
+    "admin_cold_ttfb": 151,
+    "admin_warm_ttfb": 81,
+    "charts_ttfb": 92,
+    "note": "Application path is tens–low hundreds of ms once DNS is eliminated"
+  },
+  "browser_waterfall_real_user": {
+    "source": "tools/boot-bench/reports/real-user-startup-1784045546795.json",
+    "usableAtMs_inflated": 4621,
+    "first_spin_free_poll_ms": 2224,
+    "top_gap_admin_document_ms": 1008,
+    "FCP_ms": 2044,
+    "top_resource": "admin/api/dashboard-charts 636 ms",
+    "active_sw": "pos-sw.js scope=/rateb-erp/public/"
+  },
+  "top20_slowest_assets_by_bytes": [
+    "rateb-offline.min.js 387051",
+    "rateb-offline.js 387051",
+    "html5-qrcode.min.js 375364",
+    "bootstrap.rtl.min.css 232911",
+    "chart.umd.min.js 205637",
+    "fa-solid-900.woff2 156400"
+  ],
+  "verdict": "PASS_IDENTIFIED — DNS recursion via Hetzner resolvers is the single largest outside-app wall (~1.45–1.55 s, ~94% of cold public request)."
+}
