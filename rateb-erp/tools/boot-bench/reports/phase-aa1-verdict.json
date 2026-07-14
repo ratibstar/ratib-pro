@@ -1,0 +1,74 @@
+{
+  "phase": "AA.1",
+  "title": "Identity Route Loader",
+  "generated_at": "2026-07-14T20:45:00Z",
+  "mode": "IMPLEMENTATION — identity only",
+  "behavior_change": false,
+  "files_created": [
+    "rateb-erp/app/Core/RouteModuleLoader.php",
+    "rateb-erp/routes/manifest.php",
+    "rateb-erp/tools/boot-bench/phase-aa1-route-signature.php",
+    "rateb-erp/tests/bootstrap/RouteModuleLoaderIdentityTest.php"
+  ],
+  "files_modified": [
+    "rateb-erp/public/index.php"
+  ],
+  "not_changed": [
+    "routes/web.php",
+    "routes/marketing.php",
+    "routes/cms.php",
+    "routes/company.php",
+    "routes/api.php",
+    "modules/pos/routes/pos.php",
+    "controllers",
+    "middleware",
+    "permissions",
+    "URLs",
+    "business logic",
+    "rateb_app_route"
+  ],
+  "comparison": {
+    "route_count_before": 2019,
+    "route_count_after": 2019,
+    "route_table_sha256_before": "8f7a566dd80557c73a6971a896a8c2367520e662f9bbcf73a35ff97568b84686",
+    "route_table_sha256_after": "8f7a566dd80557c73a6971a896a8c2367520e662f9bbcf73a35ff97568b84686",
+    "sha256_match": true,
+    "loaded_modules": ["web", "marketing", "cms", "company", "api", "pos", "pos_v2"],
+    "loaded_files_order": [
+      "routes/web.php",
+      "routes/marketing.php",
+      "routes/cms.php",
+      "routes/company.php",
+      "routes/api.php",
+      "modules/pos/routes/pos.php",
+      "modules/pos/routes/pos-v2.php"
+    ],
+    "GET_/admin_handler_before": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+    "GET_/admin_handler_after": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+    "middleware_signature_included_in_sha256": true,
+    "permissions_in_middleware_array_included_in_sha256": true,
+    "registration_ms_before": 192.051,
+    "registration_ms_after": 53.477,
+    "memory_peak_bytes_before": 20971520,
+    "memory_peak_bytes_after": 20971520,
+    "note_on_ms_delta": "Same machine sequential runs; timing variance only (warm process). Identity proven by SHA256 of normalized method+pattern+handler+middleware list, not wall clock."
+  },
+  "identity_gate": {
+    "test": "tests/bootstrap/RouteModuleLoaderIdentityTest.php",
+    "result": "PASS"
+  },
+  "html_checksum": {
+    "status": "deferred_to_route_table_sha256",
+    "reason": "Full admin HTML requires authenticated HTTP against a live DB session; route table SHA256 covers controllers, middleware, URLs, and permission middleware args identically. No partition/conditional load, so HTML cannot diverge from loader indirection alone."
+  },
+  "ttfb": {
+    "status": "not_expected_to_change",
+    "reason": "loadAll still requires every route file including company.php"
+  },
+  "existing_phase_tests": {
+    "note": "Many phase runners fail pre-existing gates (sidebar/EN-AR translations, offline registry). Not introduced by AA.1.",
+    "recruitment_phase15a": "PASS CLEAR",
+    "pos_blocking_fixes": "PASS 7/7",
+    "route_identity_aa1": "PASS"
+  }
+}

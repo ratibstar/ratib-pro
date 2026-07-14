@@ -1,0 +1,74 @@
+{
+    "mode": "legacy",
+    "ok": true,
+    "loaded_modules": [
+        "web",
+        "marketing",
+        "cms",
+        "company",
+        "api",
+        "pos",
+        "pos_v2"
+    ],
+    "loaded_files": [
+        "routes/web.php",
+        "routes/marketing.php",
+        "routes/cms.php",
+        "routes/company.php",
+        "routes/api.php",
+        "modules/pos/routes/pos.php",
+        "modules/pos/routes/pos-v2.php"
+    ],
+    "route_count": 2019,
+    "route_table_sha256": "8f7a566dd80557c73a6971a896a8c2367520e662f9bbcf73a35ff97568b84686",
+    "registration_ms": 43.533,
+    "bootstrap_wall_ms": 200.097,
+    "memory_bytes_before_routes": 16777216,
+    "memory_peak_bytes": 20971520,
+    "first_5": [
+        {
+            "method": "GET",
+            "pattern": "/rateb-erp",
+            "handler": "Closure",
+            "middleware": []
+        },
+        {
+            "method": "GET",
+            "pattern": "/favicon.ico",
+            "handler": "Closure",
+            "middleware": []
+        },
+        {
+            "method": "GET",
+            "pattern": "/",
+            "handler": "Closure",
+            "middleware": []
+        },
+        {
+            "method": "GET",
+            "pattern": "/login",
+            "handler": "Rateb\\App\\Controllers\\Shared\\LoginController::showLogin",
+            "middleware": [
+                "Rateb\\App\\Core\\Middleware\\GuestMiddleware"
+            ]
+        },
+        {
+            "method": "GET",
+            "pattern": "/scan/doc/{code}",
+            "handler": "Rateb\\App\\Controllers\\Shared\\DocumentScanController::show",
+            "middleware": [
+                "Rateb\\App\\Core\\Middleware\\ErpAuthMiddleware"
+            ]
+        }
+    ],
+    "admin_matches": [
+        {
+            "method": "GET",
+            "pattern": "/admin",
+            "handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+            "middleware": [
+                "Rateb\\App\\Core\\Middleware\\ErpAuthMiddleware"
+            ]
+        }
+    ]
+}

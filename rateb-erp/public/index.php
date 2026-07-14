@@ -77,15 +77,8 @@ try {
 
     $router = new Rateb\App\Core\Router();
 
-    require RATEB_ROOT . '/routes/web.php';
-    require RATEB_ROOT . '/routes/marketing.php';
-    require RATEB_ROOT . '/routes/cms.php';
-    require RATEB_ROOT . '/routes/company.php';
-    require RATEB_ROOT . '/routes/api.php';
-    require RATEB_ROOT . '/modules/pos/routes/pos.php';
-    if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-v2.php')) {
-        require RATEB_ROOT . '/modules/pos/routes/pos-v2.php';
-    }
+    // Phase AA.1 — identity loader (same files/order as previous direct requires).
+    Rateb\App\Core\RouteModuleLoader::loadAll($router);
 
     require_once RATEB_ROOT . '/app/helpers/Request.php';
 
