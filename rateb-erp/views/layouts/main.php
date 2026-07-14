@@ -608,11 +608,14 @@ if (!$ratebLocalAppliance) {
         'rateb_erp_full_warm_at_v8', 'rateb_erp_full_warm_ok_v8',
         'rateb_erp_full_warm_assets_v8',
         'rateb_erp_full_warm_at_v9', 'rateb_erp_full_warm_ok_v9',
-        'rateb_erp_full_warm_assets_v9'
+        'rateb_erp_full_warm_assets_v9',
+        'rateb_erp_full_warm_at_v12', 'rateb_erp_full_warm_ok_v12',
+        'rateb_erp_full_warm_assets_v12'
       ].forEach(function (k) {
         try { localStorage.removeItem(k); } catch (eR) {}
       });
       sessionStorage.removeItem('rateb_sw_reloaded');
+      sessionStorage.removeItem('rateb_sw_shell_warm_v46');
     } catch (e1) {}
   }
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
@@ -770,20 +773,25 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   function warm(reg) {
     if (warmed) return;
     try {
+      if (sessionStorage.getItem('rateb_sw_shell_warm_v46') === '1') {
+        warmed = true;
+        return;
+      }
       var w = reg && (reg.active || reg.waiting || reg.installing);
       if (!w) return;
       warmed = true;
+      try { sessionStorage.setItem('rateb_sw_shell_warm_v46', '1'); } catch (eS) {}
       w.postMessage({ type: 'WARM_ERP_OFFLINE_SHELL' });
     } catch (e) {}
   }
   function scheduleWarm(reg) {
     var run = function () { warm(reg); };
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(run, { timeout: 12000 });
+      window.requestIdleCallback(run, { timeout: 25000 });
     } else if (document.readyState === 'complete') {
-      setTimeout(run, 3000);
+      setTimeout(run, 12000);
     } else {
-      window.addEventListener('load', function () { setTimeout(run, 3000); }, { once: true });
+      window.addEventListener('load', function () { setTimeout(run, 12000); }, { once: true });
     }
   }
   function isAdminPath(pathname) {

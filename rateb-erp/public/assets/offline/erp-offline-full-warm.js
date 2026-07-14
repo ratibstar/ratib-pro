@@ -5,11 +5,11 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 120;
-    var CONCURRENCY = 2;
-    var GAP_MS = 250;
+    var MAX_URLS = 80;
+    var CONCURRENCY = 1;
+    var GAP_MS = 700;
     var MIN_OK = 8;
-    var WARM_TTL_MS = 4 * 60 * 60 * 1000;
+    var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v34';
     var COEXIST = 'rateb-erp-coexist-v29';
     var POS_SHELL = 'rateb-pos-shell-v8';
@@ -865,17 +865,44 @@
                 pendingResume = false;
                 setTimeout(function () {
                     run(true);
-                }, 1200);
+                }, 5000);
+            });
+            // Pause warm while the user is navigating — stops "spin forever" on admin pages.
+            root.document.addEventListener('click', function (ev) {
+                try {
+                    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+                    if (!a) {
+                        return;
+                    }
+                    var href = a.getAttribute('href') || '';
+                    if (!href || href.charAt(0) === '#' || /^javascript:/i.test(href)) {
+                        return;
+                    }
+                    if (/\/admin(\/|$)/i.test(href) || /\/admin(\/|$)/i.test(String(root.location.pathname || ''))) {
+                        killInFlightFetches();
+                    }
+                } catch (eClick) { /* ignore */ }
+            }, true);
+            root.addEventListener('pagehide', function () {
+                killInFlightFetches();
             });
         } catch (eOff) { /* ignore */ }
+        var kick = function () {
+            // Idle + long delay so first page paint / clicks are not starved by warm fetches.
+            if (root.requestIdleCallback) {
+                root.requestIdleCallback(function () { run(false); }, { timeout: 20000 });
+            } else {
+                setTimeout(function () { run(false); }, 15000);
+            }
+        };
         if (root.document && root.document.readyState === 'complete') {
-            setTimeout(function () { run(false); }, 600);
+            setTimeout(kick, 8000);
         } else if (root.addEventListener) {
             root.addEventListener('load', function () {
-                setTimeout(function () { run(false); }, 600);
+                setTimeout(kick, 8000);
             }, { once: true });
         } else {
-            setTimeout(function () { run(false); }, 1000);
+            setTimeout(kick, 12000);
         }
     }
 

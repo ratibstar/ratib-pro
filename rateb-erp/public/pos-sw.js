@@ -6,11 +6,14 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-force-sw-v45';
+var SW_BUILD_ID = '20260714-force-sw-v46';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
 var ERP_DEFERRED_POSTS_PREFIX = '__rateb_deferred_posts__/';
+var LAST_SHELL_WARM_AT = 0;
+var SHELL_WARM_TTL_MS = 30 * 60 * 1000;
+var shellWarmRunning = false;
 
 /**
  * Runtime paths from ops-page-allowlist.json (synced from
@@ -854,7 +857,19 @@ function matchOfflineShellOrInline(request) {
     });
 }
 
-function warmErpOfflineShell() {
+function warmErpOfflineShell(opts) {
+    opts = opts || {};
+    var now = Date.now();
+    if (!opts.force && shellWarmRunning) {
+        return Promise.resolve(null);
+    }
+    if (!opts.force && LAST_SHELL_WARM_AT > 0 && (now - LAST_SHELL_WARM_AT) < SHELL_WARM_TTL_MS) {
+        return Promise.resolve(null);
+    }
+    if (isCloudBrowserOffline()) {
+        return Promise.resolve(null);
+    }
+    shellWarmRunning = true;
     var base;
     try {
         base = self.registration.scope;
@@ -891,34 +906,13 @@ function warmErpOfflineShell() {
         base + 'assets/js/connectivity-indicator.js',
         base + 'assets/js/charts.js'
     ];
-    // Stage common Admin pages so offline nav keeps real module UI (not offline-home).
+    // Tiny seed set only — full warm is client-side and idle-throttled (avoid page spin).
     var leanOps = [
         'admin',
         'admin/',
         'admin/companies',
-        'admin/ops/access-control',
-        'admin/ops/access-control/matrix',
-        'admin/ops/pos/register',
-        'admin/ops/accounting',
-        'admin/ops/accounting/platform',
-        'admin/ops/branch-dashboard',
-        'admin/ops/purchase-requests',
-        'admin/ops/purchase-orders',
-        'admin/ops/rfq',
-        'admin/ops/quotations',
-        'admin/ops/inventory',
-        'admin/ops/warehouses',
-        'admin/ops/stock-movements',
-        'admin/ops/product-categories',
-        'admin/ops/supplier-classifications',
-        'admin/ops/suppliers',
-        'admin/hr/employees',
-        'admin/hr/attendance',
-        'admin/hr/leaves',
-        'admin/notifications',
-        'admin/profile',
-        'admin/oversight/companies-approvals',
-        'admin/oversight/approvals'
+        'admin/oversight/approvals',
+        'admin/profile'
     ];
     function cacheUrlList(cache, list) {
         return list.reduce(function (chain, key) {
@@ -960,35 +954,42 @@ function warmErpOfflineShell() {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
             return leanOps.reduce(function (chain, rel) {
                 return chain.then(function () {
-                    var pageUrl = base + rel.replace(/^\//, '');
-                    return fetch(pageUrl, {
-                        credentials: 'same-origin',
-                        cache: 'no-cache',
-                        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-                    }).then(function (res) {
-                        if (!res || !res.ok) {
-                            return null;
-                        }
-                        return putOpsHtml(opsCache, pageUrl, res);
-                    }).catch(function () { return null; });
+                    return new Promise(function (resolve) {
+                        setTimeout(resolve, 900);
+                    }).then(function () {
+                        var pageUrl = base + rel.replace(/^\//, '');
+                        return fetch(pageUrl, {
+                            credentials: 'same-origin',
+                            cache: 'no-cache',
+                            headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+                        }).then(function (res) {
+                            if (!res || !res.ok) {
+                                return null;
+                            }
+                            return putOpsHtml(opsCache, pageUrl, res);
+                        }).catch(function () { return null; });
+                    });
                 });
-            }, Promise.resolve()).then(function () {
-                // Do NOT warm the full allowlist here — many routes 404/500 and flood DevTools.
-                // Client erp-offline-full-warm.js warms sidebar + known-good URLs only.
-                return null;
-            });
+            }, Promise.resolve());
         });
     }
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
         return cacheUrlList(cache, urls).then(function () {
-            // Stage HTML warm after shell assets so first navigation stays fast.
+            // Stage HTML warm long after first paint so browsing stays snappy.
             return new Promise(function (resolve) {
                 setTimeout(function () {
                     warmLeanOpsPages().then(resolve).catch(function () { resolve(null); });
-                }, 4000);
+                }, 12000);
             });
         });
-    }).catch(function () { return null; });
+    }).then(function (result) {
+        LAST_SHELL_WARM_AT = Date.now();
+        shellWarmRunning = false;
+        return result;
+    }).catch(function () {
+        shellWarmRunning = false;
+        return null;
+    });
 }
 
 /** Prefer cached ERP offline assets; ignore ?v= query so warm keys still hit. */
@@ -1140,11 +1141,20 @@ function navigateFetchInput(request) {
     }
 }
 
-/** Strip redirected bit so respondWith / Cache.put never throws ERR_FAILED. */
 /** Strip redirected bit / materialize a fresh body so Cache.put never sees a used stream. */
 function asNonRedirectedResponse(response) {
     if (!response) {
         return Promise.resolve(null);
+    }
+    var redirected = false;
+    try {
+        redirected = !!response.redirected;
+    } catch (eR) {
+        redirected = false;
+    }
+    // Fast path: pass-through online navigations & assets — arrayBuffer copy stalls every page.
+    if (!redirected) {
+        return Promise.resolve(response);
     }
     var status = 200;
     var statusText = '';
@@ -1156,7 +1166,6 @@ function asNonRedirectedResponse(response) {
             headers.set(k, v);
         });
     } catch (eH) { /* ignore */ }
-    // Always copy bytes — never return the same Response object for caching/respondWith.
     var src;
     try {
         src = response.clone();
@@ -1164,6 +1173,14 @@ function asNonRedirectedResponse(response) {
         src = response;
     }
     return src.arrayBuffer().then(function (buf) {
+        // Null-body statuses must not receive a buffer (throws TypeError).
+        if (status === 204 || status === 205 || status === 304) {
+            return new Response(null, {
+                status: status,
+                statusText: statusText,
+                headers: headers
+            });
+        }
         return new Response(buf, {
             status: status,
             statusText: statusText,
@@ -1198,7 +1215,8 @@ function fetchNavigateNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
-    var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
+    // Cloud pages are slow when warm runs — never cut off at 1.5s (caused endless spin/fallback).
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 20000;
     var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
         // Non-OK (404/500) must fall through to cache — never paint server errors over
         // a good offline snapshot (edit→back to companies-approvals).
@@ -1591,7 +1609,7 @@ self.addEventListener('install', function (event) {
             return Promise.all([
                 caches.open(ASSET_CACHE),
                 loadErpOpsAllowlist(),
-                warmErpOfflineShell()
+                warmErpOfflineShell({ force: true })
             ]);
         }).catch(function () { /* ignore */ })
     );
@@ -1811,7 +1829,7 @@ self.addEventListener('fetch', function (event) {
         event.respondWith(
             (isCloudBrowserOffline()
                 ? neverFailNavigate(event.request, url)
-                :             fetchNavigateNetwork(event.request, 1500).catch(function () {
+                : fetchNavigateNetwork(event.request, 20000).catch(function () {
                     return neverFailNavigate(event.request, url);
                 })
             ).catch(function () {
