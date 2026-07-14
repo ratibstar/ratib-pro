@@ -3,10 +3,10 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v29';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260714-phase-ob-v56';
+var SW_BUILD_ID = '20260714-phase-od-v57';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -16,6 +16,269 @@ var ERP_DEFERRED_POSTS_PREFIX = '__rateb_deferred_posts__/';
 var LAST_SHELL_WARM_AT = 0;
 var SHELL_WARM_TTL_MS = 30 * 60 * 1000;
 var shellWarmRunning = false;
+/** Phase OD — last verified protected-asset warm result (for status messages). */
+var LAST_PROTECTED_CACHE_RESULT = null;
+
+/**
+ * Phase OD — assets that MUST exist in Cache Storage before offline use.
+ * Keep in sync with offline-shell.html load chain + OA modules.
+ */
+var PROTECTED_OFFLINE_RELS = [
+    'offline-shell.html',
+    'assets/offline/offline-bootstrap.js',
+    'assets/offline/rateb-offline.js',
+    'assets/offline/rateb-offline.min.js',
+    'assets/offline/erp-offline-shell-auth.js',
+    'assets/offline/erp-offline-shell-rbac.js',
+    'assets/offline/erp-shell-bootstrap.js',
+    'assets/offline/erp-offline-nav-guard.js',
+    'assets/offline/erp-offline-full-warm.js',
+    'assets/offline/ops-page-allowlist.json',
+    'assets/offline/modules/offline-storage.js',
+    'assets/offline/modules/offline-auth.js',
+    'assets/offline/modules/offline-rbac.js',
+    'assets/offline/modules/offline-core.js',
+    'assets/offline/modules/offline-crypto.js',
+    'assets/offline/modules/offline-sdk.js',
+    'assets/offline/modules/offline-queue.js',
+    'assets/offline/modules/offline-replay.js',
+    'assets/offline/modules/offline-sync.js',
+    'assets/offline/modules/offline-network.js',
+    'assets/offline/modules/offline-shell.js',
+    'assets/offline/modules/offline-forms.js',
+    'assets/offline/modules/offline-ops-forms.js',
+    'assets/offline/modules/offline-files.js',
+    'assets/offline/modules/offline-master-data.js',
+    'assets/offline/modules/offline-migrations.js',
+    'assets/offline/modules/offline-monitor.js',
+    'assets/offline/modules/offline-diagnostics.js',
+    'assets/offline/modules/offline-print.js',
+    'assets/offline/modules/offline-pos.js',
+    'assets/offline/modules/offline-adapter-hr.js',
+    'assets/offline/modules/offline-adapter-inventory.js',
+    'assets/offline/modules/offline-adapter-accounting.js',
+    'assets/offline/modules/offline-adapter-procurement.js',
+    'assets/offline/modules/offline-adapter-crm.js',
+    'assets/offline/modules/offline-adapter-recruitment.js',
+    'assets/offline/modules/offline-adapter-warehouse.js',
+    'assets/offline/modules/offline-adapter-payroll.js',
+    'assets/offline/modules/offline-adapter-assets.js',
+    'assets/offline/modules/offline-adapter-projects.js',
+    'assets/offline/modules/offline-adapter-manufacturing.js',
+    'assets/offline/modules/offline-adapter-quality.js',
+    'assets/offline/modules/offline-adapter-eproc.js',
+    'assets/offline/modules/offline-adapter-approval.js',
+    'assets/offline/modules/offline-adapter-bi.js'
+];
+
+/** Extra cache keys used by offline-shell.html fallbacks / cache-bust URLs. */
+var PROTECTED_OFFLINE_ALIAS_QUERIES = [
+    'assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard',
+    'assets/offline/rateb-offline.js?v=oid-20260713-lean'
+];
+
+function publicBaseUrl() {
+    var base;
+    try {
+        base = self.registration.scope;
+    } catch (eB) {
+        base = self.location.origin + '/rateb-erp/public/';
+    }
+    if (base.slice(-1) !== '/') {
+        base += '/';
+    }
+    return base;
+}
+
+function protectedMinBytes(rel) {
+    var r = String(rel || '').split('?')[0];
+    if (/offline-bootstrap\.js$/i.test(r)) {
+        return 10000;
+    }
+    if (/rateb-offline(\.min)?\.js$/i.test(r)) {
+        return 50000;
+    }
+    if (/erp-offline-shell-(auth|rbac)\.js$/i.test(r)) {
+        return 500;
+    }
+    if (/erp-shell-bootstrap\.js$/i.test(r)) {
+        return 5000;
+    }
+    if (/offline-shell\.html$/i.test(r)) {
+        return 500;
+    }
+    if (/modules\//i.test(r)) {
+        return 50;
+    }
+    return 20;
+}
+
+function protectedContentType(rel) {
+    var r = String(rel || '').split('?')[0];
+    if (/\.html$/i.test(r)) {
+        return 'text/html; charset=utf-8';
+    }
+    if (/\.json$/i.test(r)) {
+        return 'application/json; charset=utf-8';
+    }
+    return 'application/javascript; charset=utf-8';
+}
+
+function isAcceptableProtectedBody(rel, text) {
+    var t = String(text || '');
+    if (/rateb-pos\s+offline\s+stub/i.test(t)) {
+        return false;
+    }
+    if (/identity missing from cache/i.test(t)) {
+        return false;
+    }
+    return t.length >= protectedMinBytes(rel);
+}
+
+/**
+ * Phase OD — fetch + store one protected asset; reject stubs / empty bodies.
+ */
+function cacheOneProtectedAsset(cache, base, relPath) {
+    var rel = String(relPath || '').replace(/^\//, '');
+    var abs = /^https?:/i.test(rel) ? rel : (base + rel);
+    var bare = abs.split('?')[0];
+    return fetch(abs, {
+        credentials: 'same-origin',
+        cache: 'reload',
+        headers: {
+            Accept: '*/*',
+            'X-Rateb-Shell-Warm': '1',
+            'X-Rateb-Protected-Warm': '1'
+        }
+    }).then(function (res) {
+        if (!res || !res.ok) {
+            throw new Error('fetch_fail:' + rel + ':' + (res ? res.status : 'null'));
+        }
+        return res.text().then(function (text) {
+            if (!isAcceptableProtectedBody(rel, text)) {
+                throw new Error('bad_body:' + rel + ':len=' + String(text || '').length);
+            }
+            var headers = {
+                'Content-Type': res.headers.get('Content-Type') || protectedContentType(rel),
+                'X-Rateb-Protected-Cached': '1'
+            };
+            var body = text;
+            function putKey(key) {
+                return cache.put(key, new Response(body, { status: 200, headers: headers }));
+            }
+            return putKey(bare).then(function () {
+                return putKey(abs);
+            }).then(function () {
+                if (abs === bare) {
+                    return putKey(bare + '?v=' + encodeURIComponent(SW_BUILD_ID));
+                }
+                return null;
+            }).then(function () {
+                return { rel: rel, ok: true, len: body.length, url: bare };
+            });
+        });
+    });
+}
+
+function cacheOneProtectedAssetWithRetry(cache, base, relPath, retries) {
+    var left = retries == null ? 2 : retries;
+    function attempt() {
+        return cacheOneProtectedAsset(cache, base, relPath).catch(function (err) {
+            if (left <= 0) {
+                throw err;
+            }
+            left -= 1;
+            return new Promise(function (resolve) {
+                setTimeout(resolve, 250);
+            }).then(attempt);
+        });
+    }
+    return attempt();
+}
+
+/**
+ * Phase OD — verify Cache Storage has real bodies for all protected assets.
+ */
+function verifyProtectedOfflineCache() {
+    var base = publicBaseUrl();
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        var inventory = [];
+        var missing = [];
+        return PROTECTED_OFFLINE_RELS.reduce(function (chain, rel) {
+            return chain.then(function () {
+                var bare = base + rel.replace(/^\//, '');
+                return cache.match(bare).then(function (hit) {
+                    if (!hit) {
+                        return cache.match(bare, { ignoreSearch: true });
+                    }
+                    return hit;
+                }).then(function (hit) {
+                    if (!hit) {
+                        missing.push({ rel: rel, reason: 'absent' });
+                        inventory.push({ rel: rel, ok: false, len: 0 });
+                        return null;
+                    }
+                    return hit.text().then(function (text) {
+                        var ok = isAcceptableProtectedBody(rel, text);
+                        inventory.push({ rel: rel, ok: ok, len: String(text || '').length });
+                        if (!ok) {
+                            missing.push({ rel: rel, reason: 'bad_body', len: String(text || '').length });
+                        }
+                        return null;
+                    });
+                });
+            });
+        }, Promise.resolve()).then(function () {
+            return {
+                ok: missing.length === 0,
+                missing: missing,
+                inventory: inventory,
+                cache: ERP_COEXIST_CACHE,
+                build: SW_BUILD_ID,
+                at: Date.now()
+            };
+        });
+    });
+}
+
+/**
+ * Phase OD — populate + verify all protected offline assets.
+ * Never silently succeeds when any required asset is absent/stubbed.
+ */
+function ensureProtectedOfflineCache(opts) {
+    opts = opts || {};
+    if (isCloudBrowserOffline() && !opts.allowOffline) {
+        return verifyProtectedOfflineCache().then(function (v) {
+            LAST_PROTECTED_CACHE_RESULT = v;
+            if (!v.ok) {
+                throw new Error('protected_cache_incomplete_offline:' + JSON.stringify(v.missing || []));
+            }
+            return v;
+        });
+    }
+    var base = publicBaseUrl();
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        var results = [];
+        var queue = PROTECTED_OFFLINE_RELS.concat(PROTECTED_OFFLINE_ALIAS_QUERIES);
+        return queue.reduce(function (chain, rel) {
+            return chain.then(function () {
+                return cacheOneProtectedAssetWithRetry(cache, base, rel, 2).then(function (row) {
+                    results.push(row);
+                    return null;
+                });
+            });
+        }, Promise.resolve()).then(function () {
+            return verifyProtectedOfflineCache().then(function (v) {
+                v.cached = results;
+                LAST_PROTECTED_CACHE_RESULT = v;
+                if (!v.ok) {
+                    throw new Error('protected_cache_verify_failed:' + JSON.stringify(v.missing || []));
+                }
+                return v;
+            });
+        });
+    });
+}
 
 /**
  * Runtime paths from ops-page-allowlist.json (synced from
@@ -1068,22 +1331,34 @@ function warmErpOfflineShell(opts) {
             }, Promise.resolve());
         });
     }
-    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-        return cacheUrlList(cache, urls).then(function () {
-            // Stage HTML warm long after first paint so browsing stays snappy.
-            return new Promise(function (resolve) {
-                setTimeout(function () {
-                    warmLeanOpsPages().then(resolve).catch(function () { resolve(null); });
-                }, 12000);
+    // Phase OD — protected OA/identity assets first; fail closed (do not mark warm done).
+    return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
+        return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+            return cacheUrlList(cache, urls).then(function () {
+                // Stage HTML warm long after first paint so browsing stays snappy.
+                return new Promise(function (resolve) {
+                    setTimeout(function () {
+                        warmLeanOpsPages().then(function () {
+                            resolve(protectedResult);
+                        }).catch(function () { resolve(protectedResult); });
+                    }, 12000);
+                });
             });
+        }).then(function (result) {
+            LAST_SHELL_WARM_AT = Date.now();
+            shellWarmRunning = false;
+            return result;
         });
-    }).then(function (result) {
-        LAST_SHELL_WARM_AT = Date.now();
+    }).catch(function (err) {
         shellWarmRunning = false;
-        return result;
-    }).catch(function () {
-        shellWarmRunning = false;
-        return null;
+        LAST_PROTECTED_CACHE_RESULT = {
+            ok: false,
+            error: String(err && err.message ? err.message : err),
+            at: Date.now(),
+            build: SW_BUILD_ID
+        };
+        // Do not swallow — callers must see the failure.
+        throw err;
     });
 }
 
@@ -1680,18 +1955,13 @@ self.addEventListener('install', function (event) {
                 loadErpOpsAllowlist()
             ]);
         }).then(function () {
-            // Precache critical assets AFTER install completes — do not block activate/first paint.
+            // Phase OD — MUST populate protected offline assets before considering install done.
+            return ensureProtectedOfflineCache({ force: true });
+        }).then(function () {
+            // Non-protected chrome CSS/JS — best effort; do not hide protected failures.
             setTimeout(function () {
                 caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                    var base;
-                    try {
-                        base = self.registration.scope;
-                    } catch (eB) {
-                        base = self.location.origin + '/rateb-erp/public/';
-                    }
-                    if (base.slice(-1) !== '/') {
-                        base += '/';
-                    }
+                    var base = publicBaseUrl();
                     var critical = [
                         'assets/css/variables.css',
                         'assets/css/main.css',
@@ -1713,18 +1983,7 @@ self.addEventListener('install', function (event) {
                         'assets/js/approvals-oversight.js',
                         'assets/js/entity-documents-modal.js',
                         'assets/js/table-tools.js',
-                        // Phase OB — cache real OA files immediately (not only delayed warm).
-                        'assets/offline/offline-bootstrap.js',
-                        'assets/offline/modules/offline-storage.js',
-                        'assets/offline/modules/offline-auth.js',
-                        'assets/offline/modules/offline-rbac.js',
-                        'assets/offline/modules/offline-core.js',
-                        'assets/offline/erp-offline-shell-auth.js',
-                        'assets/offline/erp-shell-bootstrap.js',
-                        'assets/offline/erp-offline-nav-guard.js',
-                        'assets/offline/erp-offline-full-warm.js',
-                        'manifest.webmanifest',
-                        'offline-shell.html'
+                        'manifest.webmanifest'
                     ];
                     var urls = [];
                     critical.forEach(function (rel) {
@@ -1750,13 +2009,13 @@ self.addEventListener('install', function (event) {
                             });
                         }).catch(function () { return null; });
                     }));
-                }).catch(function () { /* ignore */ });
+                }).catch(function () { /* ignore optional chrome warm */ });
             }, 0);
-            // Never block install/activate on warm — it starved every page load.
+            // Secondary full shell warm (ops pages etc.) — protected already verified above.
             setTimeout(function () {
                 warmErpOfflineShell({ force: true }).catch(function () { return null; });
-            }, 25000);
-        }).catch(function () { /* ignore */ })
+            }, 5000);
+        })
     );
 });
 
@@ -1831,8 +2090,12 @@ self.addEventListener('activate', function (event) {
                 });
             });
         }).then(function () {
+            // Phase OD — re-verify / refill protected cache on every activate.
+            return ensureProtectedOfflineCache({ force: true });
+        }).then(function () {
             return self.clients.claim();
         }).catch(function () {
+            // Still claim clients, but do not pretend protected warm succeeded.
             return self.clients.claim();
         })
     );
@@ -1922,9 +2185,52 @@ self.addEventListener('message', function (event) {
         );
         return;
     }
-    if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
+    if (data.type === 'WARM_ERP_OFFLINE_SHELL'
+        || data.type === 'ENSURE_PROTECTED_OFFLINE_CACHE') {
+        var reply = function (result) {
+            try {
+                if (event.ports && event.ports[0]) {
+                    event.ports[0].postMessage(result);
+                }
+            } catch (ePort) { /* ignore */ }
+            try {
+                if (event.source && event.source.postMessage) {
+                    event.source.postMessage({
+                        type: 'PROTECTED_OFFLINE_CACHE_RESULT',
+                        result: result
+                    });
+                }
+            } catch (eSrc) { /* ignore */ }
+            return result;
+        };
         event.waitUntil(
-            warmErpOfflineShell().catch(function () { /* ignore warm errors */ })
+            ensureProtectedOfflineCache({ force: true }).then(function (result) {
+                if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
+                    // Non-protected CSS/ops warm after protected success (best effort).
+                    warmErpOfflineShell({ force: true }).catch(function () { return null; });
+                }
+                return reply(result);
+            }).catch(function (err) {
+                var fail = {
+                    ok: false,
+                    error: String(err && err.message ? err.message : err),
+                    build: SW_BUILD_ID,
+                    at: Date.now()
+                };
+                LAST_PROTECTED_CACHE_RESULT = fail;
+                return reply(fail);
+            })
+        );
+        return;
+    }
+    if (data.type === 'PROTECTED_OFFLINE_CACHE_STATUS') {
+        event.waitUntil(
+            verifyProtectedOfflineCache().then(function (result) {
+                if (event.ports && event.ports[0]) {
+                    event.ports[0].postMessage(result);
+                }
+                return result;
+            })
         );
         return;
     }
