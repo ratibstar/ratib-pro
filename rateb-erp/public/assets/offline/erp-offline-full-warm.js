@@ -13,9 +13,9 @@
     var CACHE_NAME = 'rateb-erp-ops-pages-v31';
     var COEXIST = 'rateb-erp-coexist-v26';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v8';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v8';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v8';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v9';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v9';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v9';
     var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
@@ -172,6 +172,10 @@
                 return false;
             }
             if (/\/\d+(\/|$)/.test(p) && !/\/(edit|create|new)(\/|$)/i.test(p) && !/\/\d+\/edit(\/|$)/i.test(p)) {
+                return false;
+            }
+            // Platform accounting child pages often 500 when schema/seed incomplete — skip warm noise.
+            if (/\/accounting\/(currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i.test(p)) {
                 return false;
             }
             return true;
@@ -552,7 +556,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v31';
+        var build = '20260713-force-sw-v32';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -716,11 +720,10 @@
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
             });
+            // Sidebar only — do not invent URLs from allowlist / seedCore / create derivation.
             collectSidebarUrls(seen, urls);
             collectActionUrls(seen, urls);
-            seedCoreUrls(seen, urls);
-            return loadAllowlistUrls(seen, urls).then(function (list) {
-                deriveCreateUrls(seen, list);
+            return Promise.resolve(urls).then(function (list) {
                 warmQueueSeen = seen;
                 warmQueueList = list;
                 progress.ok = assetStats.ok || 0;

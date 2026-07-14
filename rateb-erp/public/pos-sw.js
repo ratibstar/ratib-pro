@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v31';
+var SW_BUILD_ID = '20260713-force-sw-v32';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -773,41 +773,9 @@ function warmErpOfflineShell() {
                     }).catch(function () { return null; });
                 });
             }, Promise.resolve()).then(function () {
-                // Warm every allowlisted ops route (full program browse offline).
-                return fetch(base + ERP_OPS_ALLOWLIST_URL, {
-                    credentials: 'same-origin',
-                    cache: 'no-cache',
-                    headers: { Accept: 'application/json', 'X-Rateb-Shell-Warm': '1' }
-                }).then(function (res) {
-                    if (!res || !res.ok) {
-                        return null;
-                    }
-                    return res.json().then(function (payload) {
-                        var routes = (payload && payload.routes && typeof payload.routes === 'object')
-                            ? payload.routes
-                            : {};
-                        var list = Object.keys(routes).map(function (k) {
-                            return String(routes[k] || '').replace(/^\/+|\/+$/g, '');
-                        }).filter(Boolean);
-                        // Cap SW-side warm; client full-warm covers the rest with cookies.
-                        list = list.slice(0, 80);
-                        return list.reduce(function (chain, route) {
-                            return chain.then(function () {
-                                var pageUrl = base + route.replace(/^\//, '');
-                                return fetch(pageUrl, {
-                                    credentials: 'same-origin',
-                                    cache: 'no-cache',
-                                    headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-                                }).then(function (pageRes) {
-                                    if (!pageRes || !pageRes.ok) {
-                                        return null;
-                                    }
-                                    return putOpsHtml(opsCache, pageUrl, pageRes);
-                                }).catch(function () { return null; });
-                            });
-                        }, Promise.resolve());
-                    });
-                }).catch(function () { return null; });
+                // Do NOT warm the full allowlist here — many routes 404/500 and flood DevTools.
+                // Client erp-offline-full-warm.js warms sidebar + known-good URLs only.
+                return null;
             });
         });
     }
