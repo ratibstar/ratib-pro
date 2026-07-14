@@ -1,0 +1,8 @@
+===== TTFB /admin/ =====
+ttfb=0.135467 total=0.227482 code=200
+===== TTFB /admin/hr?company_id=22 =====
+ttfb=0.133841 total=0.231709 code=200
+===== TTFB /admin/ops/inventory?company_id=22 =====
+ttfb=0.137034 total=0.229564 code=200
+===== TTFB /admin/ops/accounting?company_id=22 =====
+ttfb=0.315741 total=0.404181 code=200

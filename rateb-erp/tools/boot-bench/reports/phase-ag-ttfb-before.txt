@@ -1,0 +1,4 @@
+/admin/ ttfb=0.170090 total=0.381932 code=200
+/admin/hr?company_id=22 ttfb=0.509048 total=0.709870 code=200
+/admin/ops/inventory?company_id=22 ttfb=0.511714 total=0.707560 code=200
+/admin/ops/accounting?company_id=22 ttfb=0.709504 total=0.905390 code=200

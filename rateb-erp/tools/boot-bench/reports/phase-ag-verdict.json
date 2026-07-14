@@ -1,0 +1,83 @@
+{
+  "phase": "AG",
+  "title": "Fix O(N²) conflictRoots in rateb_app_route",
+  "measured_at": "2026-07-14T19:00:00Z",
+  "scope": "config/app.php rateb_app_route() only — no routing/middleware/RBAC/URL changes",
+  "fix": {
+    "file": "rateb-erp/config/app.php",
+    "function": "rateb_app_route",
+    "change": "Build conflict-root set once into static $conflictLookup (array_fill_keys); array_merge at most once; O(1) isset lookup; never grow"
+  },
+  "acceptance": {
+    "initial_size_equals_final": true,
+    "initial_size": 53,
+    "final_size": 53,
+    "no_growth": true,
+    "no_duplicated_elements": true,
+    "unique_ok": true,
+    "merge_calls": 1,
+    "same_route_table_sha256": true,
+    "route_table_sha256": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+    "same_route_count": true,
+    "route_count": 1179,
+    "same_rateb_app_route_samples": true,
+    "samples": {
+      "hr": "admin/hr",
+      "inventory": "admin/ops/inventory",
+      "accounting": "admin/ops/accounting",
+      "users": "admin/ops/users",
+      "support-tickets": "admin/ops/support-tickets",
+      "dashboard-x": "admin/dashboard-x",
+      "crm/leads": "admin/crm/leads"
+    }
+  },
+  "before": {
+    "source": "phase-ag-before.json + phase-af-growth.json",
+    "request_total_ms": 476.96,
+    "routes_load_ms": 414.428,
+    "sum_array_merge_ms": 416.029,
+    "sum_in_array_ms": 6.341,
+    "sum_rateb_app_route_wall_ms": 423.371,
+    "conflictRoots_final_size": 9221,
+    "ttfb_s": {
+      "admin": 0.170,
+      "admin_hr": 0.509,
+      "inventory": 0.512,
+      "accounting": 0.710
+    }
+  },
+  "after": {
+    "source": "phase-ag-after-instrumented.json + phase-ag-after-clean.json + phase-ag-ttfb.txt",
+    "instrumented": {
+      "request_total_ms": 55.229,
+      "routes_load_ms": 5.514,
+      "invocation_count": 1154,
+      "sum_merge_ms": 0.374,
+      "sum_lookup_ms": 0.061,
+      "sum_wall_ms": 0.842,
+      "pct_of_request": 1.52
+    },
+    "clean": {
+      "request_total_ms": 78.076,
+      "routes_load_ms": 10.836
+    },
+    "ttfb_s": {
+      "admin": 0.135,
+      "admin_hr": 0.134,
+      "inventory": 0.137,
+      "accounting": 0.316
+    }
+  },
+  "improvements": {
+    "array_merge_ms": { "before": 416.029, "after": 0.374, "delta_ms": -415.655, "pct": -99.91 },
+    "rateb_app_route_wall_ms": { "before": 423.371, "after": 0.842, "delta_ms": -422.529, "pct": -99.8 },
+    "routes_load_ms": { "before": 414.428, "after_instrumented": 5.514, "after_clean": 10.836, "delta_ms": -403.6, "pct": -97.4 },
+    "request_total_ms": { "before": 476.96, "after_instrumented": 55.229, "delta_ms": -421.7, "pct": -88.4 },
+    "ttfb_admin_hr_ms": { "before": 509, "after": 134, "delta_ms": -375, "pct": -73.7 },
+    "ttfb_inventory_ms": { "before": 512, "after": 137, "delta_ms": -375, "pct": -73.2 },
+    "ttfb_accounting_ms": { "before": 710, "after": 316, "delta_ms": -394, "pct": -55.5 }
+  },
+  "deployed_to_production": true,
+  "production_path": "/home/admin/domains/rateb.sa/public_html/rateb-erp/config/app.php",
+  "note": "Fix is live on server via SCP; commit/push for durable deploy sync"
+}

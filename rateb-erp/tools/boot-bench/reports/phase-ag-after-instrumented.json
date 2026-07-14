@@ -1,0 +1,139 @@
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "request_total_ms": 55.229,
+    "routes_load_ms": 5.514,
+    "route_count": 1179,
+    "route_table_sha256": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "rateb_app_route_samples": {
+        "hr": "admin/hr",
+        "inventory": "admin/ops/inventory",
+        "accounting": "admin/ops/accounting",
+        "users": "admin/ops/users",
+        "support-tickets": "admin/ops/support-tickets",
+        "dashboard-x": "admin/dashboard-x",
+        "crm/leads": "admin/crm/leads"
+    },
+    "company_access": true,
+    "instrumented": true,
+    "invocation_count": 1154,
+    "initial_size": 53,
+    "final_size": 53,
+    "size_stable": true,
+    "unique_ok": true,
+    "merge_calls": 1,
+    "sum_merge_ms": 0.374228,
+    "sum_lookup_ms": 0.060549,
+    "sum_wall_ms": 0.842,
+    "pct_of_request": 1.52,
+    "table_every_100": [
+        {
+            "n": 1,
+            "size": 53,
+            "merge_ms": 0.374228,
+            "explode_ms": 0.0006,
+            "lookup_ms": 0.00015,
+            "wall_ms": 0.380918
+        },
+        {
+            "n": 100,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 9.0e-5,
+            "lookup_ms": 5.0e-5,
+            "wall_ms": 0.00035
+        },
+        {
+            "n": 200,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 9.0e-5,
+            "lookup_ms": 4.0e-5,
+            "wall_ms": 0.00036
+        },
+        {
+            "n": 300,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.00015,
+            "lookup_ms": 4.0e-5,
+            "wall_ms": 0.00042
+        },
+        {
+            "n": 400,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 8.0e-5,
+            "lookup_ms": 4.0e-5,
+            "wall_ms": 0.00034
+        },
+        {
+            "n": 500,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.0001,
+            "lookup_ms": 4.0e-5,
+            "wall_ms": 0.00037
+        },
+        {
+            "n": 600,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 9.0e-5,
+            "lookup_ms": 4.0e-5,
+            "wall_ms": 0.00035
+        },
+        {
+            "n": 700,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.00013,
+            "lookup_ms": 6.0e-5,
+            "wall_ms": 0.0004
+        },
+        {
+            "n": 800,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.00014,
+            "lookup_ms": 5.0e-5,
+            "wall_ms": 0.00042
+        },
+        {
+            "n": 900,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.00011,
+            "lookup_ms": 5.0e-5,
+            "wall_ms": 0.0004
+        },
+        {
+            "n": 1000,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 9.0e-5,
+            "lookup_ms": 8.0e-5,
+            "wall_ms": 0.0004
+        },
+        {
+            "n": 1100,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.0001,
+            "lookup_ms": 6.0e-5,
+            "wall_ms": 0.00039
+        },
+        {
+            "n": 1154,
+            "size": 53,
+            "merge_ms": 0,
+            "explode_ms": 0.00018,
+            "lookup_ms": 7.0e-5,
+            "wall_ms": 0.00045
+        }
+    ]
+}

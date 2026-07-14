@@ -1,0 +1,23 @@
+{
+    "ok": true,
+    "sapi": "fpm-fcgi",
+    "request_total_ms": 78.076,
+    "routes_load_ms": 10.836,
+    "route_count": 1179,
+    "route_table_sha256": "bd4081989eca0724497836e9b5dc7bec38e46e21b7429149e2401764ba4b32a8",
+    "loaded": [
+        "auth",
+        "ops"
+    ],
+    "rateb_app_route_samples": {
+        "hr": "admin/hr",
+        "inventory": "admin/ops/inventory",
+        "accounting": "admin/ops/accounting",
+        "users": "admin/ops/users",
+        "support-tickets": "admin/ops/support-tickets",
+        "dashboard-x": "admin/dashboard-x",
+        "crm/leads": "admin/crm/leads"
+    },
+    "company_access": true,
+    "instrumented": false
+}

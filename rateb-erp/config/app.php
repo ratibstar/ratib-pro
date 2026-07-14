@@ -2563,28 +2563,35 @@ if (!function_exists('rateb_app_route')) {
     function rateb_app_route(string $path): string
     {
         $path = ltrim(preg_replace('#^company/#', '', trim($path)), '/');
-        static $conflictRoots = [
-            'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
-            'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
-            'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
-            'cost-centers', 'cash-vouchers', 'fiscal-periods', 'bank-accounts',
-            'rfq', 'quotations', 'purchase-requests', 'purchase-orders',
-            'warehouses', 'warehouse-transfers', 'product-categories',
-            'branches', 'branch-dashboard', 'branch-financial', 'branch-transfers',
-            'inventory-batches', 'inventory-audits', 'inventory-forecast',
-            'supplier-comms', 'supplier-classifications', 'supplier-kpi',
-            'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',
-            'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
-            'documents', 'profile', 'pos',
-        ];
-        if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
-            $conflictRoots = array_merge($conflictRoots, [
-                'access-control', 'users', 'roles', 'permissions',
-                'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
-            ]);
+
+        // Phase AG: build conflict-root lookup once per process (never grow / re-merge).
+        static $conflictLookup = null;
+        if ($conflictLookup === null) {
+            $conflictRoots = [
+                'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
+                'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
+                'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
+                'cost-centers', 'cash-vouchers', 'fiscal-periods', 'bank-accounts',
+                'rfq', 'quotations', 'purchase-requests', 'purchase-orders',
+                'warehouses', 'warehouse-transfers', 'product-categories',
+                'branches', 'branch-dashboard', 'branch-financial', 'branch-transfers',
+                'inventory-batches', 'inventory-audits', 'inventory-forecast',
+                'supplier-comms', 'supplier-classifications', 'supplier-kpi',
+                'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',
+                'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
+                'documents', 'profile', 'pos',
+            ];
+            if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
+                $conflictRoots = array_merge($conflictRoots, [
+                    'access-control', 'users', 'roles', 'permissions',
+                    'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
+                ]);
+            }
+            $conflictLookup = array_fill_keys($conflictRoots, true);
         }
+
         $root = explode('/', $path)[0];
-        if (in_array($root, $conflictRoots, true)) {
+        if (isset($conflictLookup[$root])) {
             return 'admin/ops/' . $path;
         }
         return 'admin/' . $path;
