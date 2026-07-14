@@ -3,10 +3,10 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v26';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v31';
-var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v31';
-var SW_BUILD_ID = '20260713-force-sw-v35';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v27';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v32';
+var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v32';
+var SW_BUILD_ID = '20260713-force-sw-v36';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
@@ -797,6 +797,11 @@ function warmErpOfflineShell() {
 }
 
 /** Prefer cached ERP offline assets; ignore ?v= query so warm keys still hit. */
+function isVersionedOfflineIdentityJs(pathname) {
+    return /\/assets\/offline\/(erp-offline-nav-guard|erp-offline-full-warm|rateb-offline(\.min)?)\.js$/i
+        .test(String(pathname || ''));
+}
+
 function matchErpOfflineCached(request, url) {
     var pathnameKey = '';
     try {
@@ -804,17 +809,18 @@ function matchErpOfflineCached(request, url) {
     } catch (e0) {
         pathnameKey = '';
     }
-    // Stale HTML often requests erp-offline-nav-guard.js?v=OLD — that pinned the
-    // create/edit blocker toast. Always prefer the plain pathname entry (latest warm).
-    var forcePlain = /\/assets\/offline\/(erp-offline-nav-guard|erp-offline-full-warm|rateb-offline(\.min)?)\.js$/i
-        .test(String(url.pathname || ''));
+    // Version-busted offline identity scripts: NEVER prefer pathname-only over ?v=.
+    // Preferring plain keys re-ran stale warm.js (allowlist / recurring 500 storms).
+    var versionedJs = isVersionedOfflineIdentityJs(url.pathname);
     function matchInCache(cache) {
-        var start = forcePlain && pathnameKey
-            ? cache.match(pathnameKey)
-            : cache.match(request);
-        return start.then(function (hit) {
-            if (hit) {
-                return hit;
+        // Exact URL (with ?v=) first always.
+        return cache.match(request).then(function (hitExact) {
+            if (hitExact) {
+                return hitExact;
+            }
+            // Online + versioned warm/guard/SDK: miss → network must fetch the new build.
+            if (versionedJs && !isCloudBrowserOffline()) {
+                return null;
             }
             if (!pathnameKey) {
                 return null;
@@ -823,26 +829,21 @@ function matchErpOfflineCached(request, url) {
                 if (hit2) {
                     return hit2;
                 }
-                return cache.match(request).then(function (hitExact) {
-                    if (hitExact) {
-                        return hitExact;
+                return cache.match(pathnameKey, { ignoreSearch: true }).then(function (hit3) {
+                    if (hit3) {
+                        return hit3;
                     }
-                    return cache.match(pathnameKey, { ignoreSearch: true }).then(function (hit3) {
-                        if (hit3) {
-                            return hit3;
+                    return cache.keys().then(function (keys) {
+                        for (var i = 0; i < keys.length; i++) {
+                            try {
+                                var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
+                                var ku = new URL(href);
+                                if (ku.pathname === url.pathname) {
+                                    return cache.match(keys[i]);
+                                }
+                            } catch (e1) { /* ignore */ }
                         }
-                        return cache.keys().then(function (keys) {
-                            for (var i = 0; i < keys.length; i++) {
-                                try {
-                                    var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
-                                    var ku = new URL(href);
-                                    if (ku.pathname === url.pathname) {
-                                        return cache.match(keys[i]);
-                                    }
-                                } catch (e1) { /* ignore */ }
-                            }
-                            return null;
-                        });
+                        return null;
                     });
                 });
             });
@@ -1121,15 +1122,10 @@ function emptyAssetResponse(request) {
         body = '/* rateb-pos offline stub */';
         type = 'application/javascript; charset=utf-8';
     } else if (/\.css$/i.test(path)) {
-        // Never claim success with an empty stylesheet — that strips the online design.
-        return new Response('/* rateb offline: stylesheet missing from cache */', {
-            status: 503,
-            headers: {
-                'Content-Type': 'text/css; charset=utf-8',
-                'X-Rateb-Offline': '1',
-                'Cache-Control': 'no-store'
-            }
-        });
+        // Soft 200: missing module CSS must not spam console 503 / break other sheets.
+        // (Real design CSS is precached + page-rescued; empty stub is last resort.)
+        body = '/* rateb offline: stylesheet missing from cache */';
+        type = 'text/css; charset=utf-8';
     } else if (/\.(png|jpe?g|gif|webp|svg|ico)$/i.test(path)) {
         // 1x1 transparent GIF
         var bin = atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
@@ -1436,6 +1432,25 @@ self.addEventListener('activate', function (event) {
                     // Copy ERP offline assets from previous coexist cache before wipe
                     // (prevents empty vN cache + hanging script loads while offline).
                     return migrateErpCoexistCaches(keys);
+                }).then(function () {
+                    // Drop stale versioned offline identity scripts from EVERY cache so
+                    // pathname hits cannot re-serve old warm/guard/SDK after a build bump.
+                    return Promise.all(keys.map(function (name) {
+                        return caches.open(name).then(function (cache) {
+                            return cache.keys().then(function (reqs) {
+                                return Promise.all(reqs.map(function (req) {
+                                    try {
+                                        var href = typeof req === 'string' ? req : (req.url || '');
+                                        var pu = new URL(href);
+                                        if (isVersionedOfflineIdentityJs(pu.pathname)) {
+                                            return cache.delete(req);
+                                        }
+                                    } catch (eDel) { /* ignore */ }
+                                    return null;
+                                }));
+                            });
+                        }).catch(function () { return null; });
+                    }));
                 }).then(function () {
                     // Keep previous coexist/ops caches — deleting them left offline CSS blank.
                     return Promise.all(keys.map(function (key) {

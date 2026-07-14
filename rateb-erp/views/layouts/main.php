@@ -151,6 +151,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       window.__RATEB_RESCUE_STYLES__ = rescueStyles;
       if ('serviceWorker' in navigator) {
         try {
+          try {
+            if (navigator.onLine === false) return;
+          } catch (eOfflineReg) {}
           var swUrl = location.origin + publicBase() + 'pos-sw.js?v=' + encodeURIComponent(build);
           var scope = location.origin + publicBase();
           navigator.serviceWorker.register(swUrl, { scope: scope, updateViaCache: 'none' }).catch(function () {});
@@ -798,8 +801,8 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       if (html.length < 500 || html.length > 2500000) return;
       var cacheNames = [
-        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v31',
-        'rateb-erp-coexist-v26'
+        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v32',
+        'rateb-erp-coexist-v27'
       ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');
@@ -814,11 +817,36 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
         status: 200,
         headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Offline': '1' }
       });
+      // Also pin this page's stylesheets so offline doesn't 503 module CSS.
+      var assetHrefs = [];
+      try {
+        Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+          var href = link.getAttribute('href') || '';
+          if (/\/assets\//i.test(href)) {
+            try { assetHrefs.push(new URL(href, location.href).href); } catch (eA) {}
+          }
+        });
+      } catch (eLinks) {}
       cacheNames.forEach(function (cacheName) {
         caches.open(cacheName).then(function (cache) {
           return Promise.all(keys.map(function (k) {
             return cache.put(k, res.clone()).catch(function () { return null; });
-          }));
+          })).then(function () {
+            return Promise.all(assetHrefs.map(function (ah) {
+              return fetch(ah, { credentials: 'same-origin', cache: 'force-cache' }).then(function (ar) {
+                if (!ar || !ar.ok) return null;
+                var bareA = ah;
+                try {
+                  var au = new URL(ah);
+                  bareA = au.origin + au.pathname;
+                } catch (eBare) {}
+                return Promise.all([
+                  cache.put(ah, ar.clone()).catch(function () { return null; }),
+                  cache.put(bareA, ar.clone()).catch(function () { return null; })
+                ]);
+              }).catch(function () { return null; });
+            }));
+          });
         }).catch(function () {});
       });
     } catch (eCache) { /* ignore */ }
@@ -892,12 +920,21 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   } catch (eEsc) {}
   var gate = window.__RATEB_SW_READY_GATE__ || Promise.resolve({ reload: false });
   gate.then(function () {
+    try {
+      // Offline: keep the controlling SW; do not register/update (script fetch fails).
+      if (navigator.onLine === false) {
+        return;
+      }
+    } catch (eOfflineSw) { /* continue register */ }
     navigator.serviceWorker.register(swUrl, scope
         ? { scope: scope, updateViaCache: 'none' }
         : { updateViaCache: 'none' })
       .then(function (reg) {
         try {
-          if (reg && typeof reg.update === 'function') reg.update();
+          // Never fetch pos-sw.js update while offline — causes "Failed to update ServiceWorker".
+          if (reg && typeof reg.update === 'function' && navigator.onLine !== false) {
+            reg.update();
+          }
           if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         } catch (eUp) {}
         // Never force-reload on controllerchange while offline (ERR interstitial).

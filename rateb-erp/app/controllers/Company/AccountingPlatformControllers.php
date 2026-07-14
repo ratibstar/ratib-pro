@@ -204,21 +204,32 @@ final class AccountingRecurringController extends Controller
 {
     public function index(): void
     {
-        TenantContext::setCompanyId(rateb_require_ops_company());
-        $this->view('company/accounting/recurring/index', [
-            'title' => __('accounting_recurring'),
-            'csrf' => Csrf::token(),
-            'canCreate' => rateb_can('accounting.create') || rateb_can('accounting.manage'),
-        ], 'main');
+        try {
+            TenantContext::setCompanyId(rateb_require_ops_company());
+            $this->view('company/accounting/recurring/index', [
+                'title' => __('accounting_recurring'),
+                'csrf' => Csrf::token(),
+                'canCreate' => rateb_can('accounting.create') || rateb_can('accounting.manage'),
+            ], 'main');
+        } catch (\Throwable $e) {
+            // Soft-fail: missing migration/schema must not 500 warm probes / console noise.
+            SessionManager::flash('error', $e->getMessage());
+            Response::redirect(rateb_app_url('accounting/platform'));
+        }
     }
 
     public function create(): void
     {
-        rateb_require_ops_company();
-        $this->view('company/accounting/recurring/form', [
-            'title' => __('accounting_recurring_create'),
-            'csrf' => Csrf::token(),
-        ], 'main');
+        try {
+            rateb_require_ops_company();
+            $this->view('company/accounting/recurring/form', [
+                'title' => __('accounting_recurring_create'),
+                'csrf' => Csrf::token(),
+            ], 'main');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            Response::redirect(rateb_app_url('accounting/platform'));
+        }
     }
 
     public function store(): void

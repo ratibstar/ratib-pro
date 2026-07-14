@@ -10,12 +10,12 @@
     var GAP_MS = 250;
     var MIN_OK = 8;
     var WARM_TTL_MS = 4 * 60 * 60 * 1000;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v31';
-    var COEXIST = 'rateb-erp-coexist-v26';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v32';
+    var COEXIST = 'rateb-erp-coexist-v27';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v9';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v9';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v9';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v10';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v10';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v10';
     var deadWarmUrls = {};
     var running = false;
     var progress = { finished: 0, ok: 0, total: 0 };
@@ -174,14 +174,19 @@
             if (/\/\d+(\/|$)/.test(p) && !/\/(edit|create|new)(\/|$)/i.test(p) && !/\/\d+\/edit(\/|$)/i.test(p)) {
                 return false;
             }
-            // Platform accounting child pages often 500 when schema/seed incomplete — skip warm noise.
-            if (/\/accounting\/(currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i.test(p)) {
+            // Platform accounting child pages often 404/500 when schema/seed incomplete — skip warm noise.
+            if (isBrokenAccountingWarmPath(p)) {
                 return false;
             }
             return true;
         } catch (e) {
             return false;
         }
+    }
+
+    function isBrokenAccountingWarmPath(pathname) {
+        return /\/accounting\/(currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i
+            .test(String(pathname || ''));
     }
 
     function looksLikeLoginHtml(html) {
@@ -328,8 +333,14 @@
                     if (SKIP_LOGICAL.test(logical)) {
                         return;
                     }
+                    if (/^accounting\/(currencies|tax-codes|profit-centers|recurring|opening-balances)/i.test(logical)) {
+                        return;
+                    }
                     var route = String(routes[logical] || '').replace(/^\/+|\/+$/g, '');
                     if (!route || !/^admin\//i.test(route)) {
+                        return;
+                    }
+                    if (isBrokenAccountingWarmPath(route)) {
                         return;
                     }
                     pushUrl(seen, out, root.location.origin + publicBase() + route);
@@ -471,15 +482,41 @@
         });
     }
 
-    function harvestLinksFromHtml(html, seen, out) {
-        // Disabled: harvesting sprayed broken POS/create links into the warm queue.
-        return;
+    function harvestAssetLinksFromHtml(html) {
+        // Only CSS/JS/vendor — never harvest Admin HTML links (POS/create storms).
+        var out = [];
+        var seen = {};
+        String(html || '').replace(
+            /(?:href|src)=["']([^"']+)["']/gi,
+            function (_m, raw) {
+                try {
+                    if (!/\/assets\/(css|js|vendor|offline)\//i.test(raw)
+                        && !/connectivity-probe\.json/i.test(raw)) {
+                        return '';
+                    }
+                    var full = new URL(raw, root.location.href).href;
+                    if (seen[full]) {
+                        return '';
+                    }
+                    seen[full] = true;
+                    out.push(full);
+                } catch (eH) { /* ignore */ }
+                return '';
+            }
+        );
+        return out;
     }
 
     function fetchAndCache(href, signal) {
         if (abortWarm || stopWarmBannerIfOffline()) {
             return Promise.resolve(false);
         }
+        try {
+            var pathCheck = new URL(href, root.location.origin).pathname;
+            if (isBrokenAccountingWarmPath(pathCheck)) {
+                return Promise.resolve(false);
+            }
+        } catch (eSkip) { /* ignore */ }
         if (!isAdminHref(href) && !/\/assets\//i.test(href) && !/offline-shell\.html/i.test(href)
             && !/connectivity-probe\.json/i.test(href)
             && !/ops-page-allowlist\.json/i.test(href)) {
@@ -535,7 +572,22 @@
                             deadWarmUrls[deadKey] = true;
                             return false;
                         }
-                        return putIntoCaches(href, res);
+                        var assetExtras = harvestAssetLinksFromHtml(html);
+                        return putIntoCaches(href, res).then(function (ok) {
+                            if (!ok || !assetExtras.length || abortWarm || isBrowserOffline()) {
+                                return !!ok;
+                            }
+                            // Warm module CSS/JS referenced by this page (e.g. supplier-comms.css).
+                            return runQueue(assetExtras, {
+                                concurrency: 3,
+                                gapMs: 20,
+                                signal: signal
+                            }).then(function () {
+                                return true;
+                            }).catch(function () {
+                                return true;
+                            });
+                        });
                     });
                 }
                 return putIntoCaches(href, res);
@@ -556,7 +608,7 @@
 
     function criticalAssetUrls() {
         var base = root.location.origin + publicBase();
-        var build = '20260713-force-sw-v35';
+        var build = '20260713-force-sw-v36';
         var files = [
             'assets/offline/rateb-offline.js',
             'assets/offline/rateb-offline.min.js',
@@ -576,6 +628,8 @@
             'assets/css/rtl.css',
             'assets/css/dashboard.css',
             'assets/css/ar-typography.css',
+            'assets/css/supplier-comms.css',
+            'assets/css/supplier-payment.css',
             'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
             'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
             'assets/vendor/fontawesome/6.5.2/css/all.min.css',
