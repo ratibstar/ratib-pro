@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-phase-ok1-v61';
+var SW_BUILD_ID = '20260715-phase-pc-v63';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -247,6 +247,9 @@ function verifyProtectedOfflineCache() {
 /**
  * Phase OD — populate + verify all protected offline assets.
  * Never silently succeeds when any required asset is absent/stubbed.
+ *
+ * Phase PC — when opts.force is falsy, verify first and only fetch missing
+ * entries (avoids full serial re-download on every activate).
  */
 function ensureProtectedOfflineCache(opts) {
     opts = opts || {};
@@ -260,9 +263,8 @@ function ensureProtectedOfflineCache(opts) {
         });
     }
     var base = publicBaseUrl();
-    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+    function populateQueue(cache, queue) {
         var results = [];
-        var queue = PROTECTED_OFFLINE_RELS.concat(PROTECTED_OFFLINE_ALIAS_QUERIES);
         return queue.reduce(function (chain, rel) {
             return chain.then(function () {
                 return cacheOneProtectedAssetWithRetry(cache, base, rel, 2).then(function (row) {
@@ -271,15 +273,42 @@ function ensureProtectedOfflineCache(opts) {
                 });
             });
         }, Promise.resolve()).then(function () {
-            return verifyProtectedOfflineCache().then(function (v) {
-                v.cached = results;
-                LAST_PROTECTED_CACHE_RESULT = v;
-                if (!v.ok) {
-                    throw new Error('protected_cache_verify_failed:' + JSON.stringify(v.missing || []));
-                }
-                return v;
-            });
+            return results;
         });
+    }
+    function finalize(results) {
+        return verifyProtectedOfflineCache().then(function (v) {
+            v.cached = results || [];
+            LAST_PROTECTED_CACHE_RESULT = v;
+            if (!v.ok) {
+                throw new Error('protected_cache_verify_failed:' + JSON.stringify(v.missing || []));
+            }
+            return v;
+        });
+    }
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        if (!opts.force) {
+            return verifyProtectedOfflineCache().then(function (v) {
+                if (v.ok) {
+                    LAST_PROTECTED_CACHE_RESULT = v;
+                    return v;
+                }
+                var missing = (v.missing || []).map(function (m) {
+                    return m.rel;
+                });
+                var aliases = PROTECTED_OFFLINE_ALIAS_QUERIES.filter(function (a) {
+                    var bare = String(a).split('?')[0];
+                    return missing.indexOf(bare) !== -1 || missing.indexOf(a) !== -1;
+                });
+                var queue = missing.concat(aliases);
+                if (queue.length === 0) {
+                    queue = PROTECTED_OFFLINE_RELS.concat(PROTECTED_OFFLINE_ALIAS_QUERIES);
+                }
+                return populateQueue(cache, queue).then(finalize);
+            });
+        }
+        var queue = PROTECTED_OFFLINE_RELS.concat(PROTECTED_OFFLINE_ALIAS_QUERIES);
+        return populateQueue(cache, queue).then(finalize);
     });
 }
 
@@ -2261,157 +2290,204 @@ function shellFallback(request) {
     return serveCertifiedShellOrBioRequired(request);
 }
 
+/**
+ * Phase PC — non-blocking post-activate warm.
+ * Keeps install/activate waitUntil free of ensureProtectedOfflineCache and
+ * optional chrome/ops warm so navigation is never gated on protected inventory.
+ */
+var backgroundWarmRunning = false;
+var LAST_BACKGROUND_WARM = null;
+
+function migrateActivateCaches() {
+    return caches.keys().then(function (keys) {
+        var oldShells = keys.filter(function (k) {
+            return k.indexOf('rateb-pos-shell-') === 0 && k !== SHELL_CACHE;
+        });
+        return caches.open(SHELL_CACHE).then(function (fresh) {
+            return Promise.all(oldShells.map(function (name) {
+                return caches.open(name).then(function (old) {
+                    return old.keys().then(function (reqs) {
+                        return Promise.all(reqs.map(function (req) {
+                            return old.match(req).then(function (res) {
+                                if (!res) {
+                                    return;
+                                }
+                                var href = typeof req === 'string' ? req : (req.url || '');
+                                if (href.indexOf(REGISTER_SHELL_PATH) !== -1 || isRegisterShellPath(new URL(href, self.location.origin).pathname)) {
+                                    return fresh.put(req, res.clone()).then(function () {
+                                        return fresh.put(registerShellUrl(), res.clone());
+                                    });
+                                }
+                            });
+                        }));
+                    });
+                });
+            })).then(function () {
+                return migrateErpCoexistCaches(keys);
+            }).then(function () {
+                return Promise.all(keys.map(function (name) {
+                    return caches.open(name).then(function (cache) {
+                        return cache.keys().then(function (reqs) {
+                            return Promise.all(reqs.map(function (req) {
+                                try {
+                                    var href = typeof req === 'string' ? req : (req.url || '');
+                                    var pu = new URL(href);
+                                    if (isVersionedOfflineIdentityJs(pu.pathname)) {
+                                        return cache.delete(req);
+                                    }
+                                } catch (eDel) { /* ignore */ }
+                                return null;
+                            }));
+                        });
+                    }).catch(function () { return null; });
+                }));
+            }).then(function () {
+                return Promise.all(keys.map(function (key) {
+                    if (key === SHELL_CACHE || key === ASSET_CACHE
+                        || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE
+                        || key === ERP_OPS_ALLOWLIST_CACHE) {
+                        return undefined;
+                    }
+                    if (String(key).indexOf('rateb-pos-shell-') === 0 && key !== SHELL_CACHE) {
+                        return caches.delete(key);
+                    }
+                    if (String(key).indexOf('rateb-pos-assets-') === 0 && key !== ASSET_CACHE) {
+                        return caches.delete(key);
+                    }
+                    return undefined;
+                }));
+            });
+        });
+    });
+}
+
+function warmOptionalChromeAssets() {
+    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+        var base = publicBaseUrl();
+        var critical = [
+            'assets/css/variables.css',
+            'assets/css/main.css',
+            'assets/css/components.css',
+            'assets/css/dark.css',
+            'assets/css/light.css',
+            'assets/css/rtl.css',
+            'assets/css/dashboard.css',
+            'assets/css/ar-typography.css',
+            'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
+            'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
+            'assets/vendor/fontawesome/6.5.2/css/all.min.css',
+            'assets/vendor/fonts/tajawal/tajawal.css',
+            'assets/js/theme.js',
+            'assets/js/app.js',
+            'assets/js/connectivity-indicator.js',
+            'assets/js/rateb-modal.js',
+            'assets/js/rateb-confirm.js',
+            'assets/js/approvals-oversight.js',
+            'assets/js/entity-documents-modal.js',
+            'assets/js/table-tools.js',
+            'manifest.webmanifest'
+        ];
+        var urls = [];
+        critical.forEach(function (rel) {
+            urls.push(base + rel);
+            urls.push(base + rel + '?v=' + encodeURIComponent(SW_BUILD_ID));
+        });
+        return Promise.all(urls.map(function (u) {
+            return fetch(u, {
+                credentials: 'same-origin',
+                cache: 'reload',
+                headers: { 'X-Rateb-Shell-Warm': '1' }
+            }).then(function (res) {
+                if (!res || !res.ok) {
+                    return null;
+                }
+                return cache.put(u, res.clone()).then(function () {
+                    try {
+                        var pu = new URL(u);
+                        return cache.put(pu.origin + pu.pathname, res.clone());
+                    } catch (eP) {
+                        return null;
+                    }
+                });
+            }).catch(function () { return null; });
+        }));
+    }).catch(function () { return null; });
+}
+
+function runBackgroundWarm(opts) {
+    opts = opts || {};
+    var t0 = Date.now();
+    LAST_BACKGROUND_WARM = { started_at: t0, reason: opts.reason || 'idle', build: SW_BUILD_ID };
+    return migrateActivateCaches().catch(function () {
+        return null;
+    }).then(function () {
+        // Verify-first unless explicit force (preserves integrity without blocking nav).
+        return ensureProtectedOfflineCache({ force: !!opts.force }).catch(function (err) {
+            LAST_PROTECTED_CACHE_RESULT = {
+                ok: false,
+                error: String(err && err.message ? err.message : err),
+                build: SW_BUILD_ID,
+                at: Date.now()
+            };
+            return LAST_PROTECTED_CACHE_RESULT;
+        });
+    }).then(function (protectedResult) {
+        LAST_BACKGROUND_WARM.protected = protectedResult;
+        return warmOptionalChromeAssets().then(function () {
+            return warmErpOfflineShell({ force: true }).catch(function () { return null; });
+        }).then(function () {
+            LAST_BACKGROUND_WARM.finished_at = Date.now();
+            LAST_BACKGROUND_WARM.wall_ms = LAST_BACKGROUND_WARM.finished_at - t0;
+            return LAST_BACKGROUND_WARM;
+        });
+    });
+}
+
+function scheduleBackgroundWarm(opts) {
+    if (backgroundWarmRunning) {
+        return;
+    }
+    backgroundWarmRunning = true;
+    // Defer so activate waitUntil can resolve before warm starts.
+    setTimeout(function () {
+        runBackgroundWarm(opts || {}).then(function () {
+            backgroundWarmRunning = false;
+        }).catch(function () {
+            backgroundWarmRunning = false;
+        });
+    }, 0);
+}
+
+/**
+ * Phase PC critical path:
+ * install → minimal seed → activate → clients.claim → ready
+ * Background: migrate + ensureProtectedOfflineCache + optional assets
+ */
 self.addEventListener('install', function (event) {
     self.skipWaiting();
     event.waitUntil(
         seedInlineOfflineShell().then(function () {
             return Promise.all([
                 caches.open(ASSET_CACHE),
-                loadErpOpsAllowlist()
+                caches.open(SHELL_CACHE)
             ]);
         }).then(function () {
-            // Phase OD — MUST populate protected offline assets before considering install done.
-            return ensureProtectedOfflineCache({ force: true });
-        }).then(function () {
-            // Non-protected chrome CSS/JS — best effort; do not hide protected failures.
-            setTimeout(function () {
-                caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-                    var base = publicBaseUrl();
-                    var critical = [
-                        'assets/css/variables.css',
-                        'assets/css/main.css',
-                        'assets/css/components.css',
-                        'assets/css/dark.css',
-                        'assets/css/light.css',
-                        'assets/css/rtl.css',
-                        'assets/css/dashboard.css',
-                        'assets/css/ar-typography.css',
-                        'assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css',
-                        'assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js',
-                        'assets/vendor/fontawesome/6.5.2/css/all.min.css',
-                        'assets/vendor/fonts/tajawal/tajawal.css',
-                        'assets/js/theme.js',
-                        'assets/js/app.js',
-                        'assets/js/connectivity-indicator.js',
-                        'assets/js/rateb-modal.js',
-                        'assets/js/rateb-confirm.js',
-                        'assets/js/approvals-oversight.js',
-                        'assets/js/entity-documents-modal.js',
-                        'assets/js/table-tools.js',
-                        'manifest.webmanifest'
-                    ];
-                    var urls = [];
-                    critical.forEach(function (rel) {
-                        urls.push(base + rel);
-                        urls.push(base + rel + '?v=' + encodeURIComponent(SW_BUILD_ID));
-                    });
-                    return Promise.all(urls.map(function (u) {
-                        return fetch(u, {
-                            credentials: 'same-origin',
-                            cache: 'reload',
-                            headers: { 'X-Rateb-Shell-Warm': '1' }
-                        }).then(function (res) {
-                            if (!res || !res.ok) {
-                                return null;
-                            }
-                            return cache.put(u, res.clone()).then(function () {
-                                try {
-                                    var pu = new URL(u);
-                                    return cache.put(pu.origin + pu.pathname, res.clone());
-                                } catch (eP) {
-                                    return null;
-                                }
-                            });
-                        }).catch(function () { return null; });
-                    }));
-                }).catch(function () { /* ignore optional chrome warm */ });
-            }, 0);
-            // Secondary full shell warm (ops pages etc.) — protected already verified above.
-            setTimeout(function () {
-                warmErpOfflineShell({ force: true }).catch(function () { return null; });
-            }, 5000);
+            // Phase PC — allowlist + protected warm are background (activate/idle).
+            return null;
         })
     );
 });
 
 self.addEventListener('activate', function (event) {
+    // Phase PC — claim FIRST so navigation is never gated on allowlist/network.
     event.waitUntil(
-        loadErpOpsAllowlist().then(function () {
-            return caches.keys();
-        }).then(function (keys) {
-            // Migrate last register shell from older shell caches before delete.
-            var oldShells = keys.filter(function (k) {
-                return k.indexOf('rateb-pos-shell-') === 0 && k !== SHELL_CACHE;
-            });
-            return caches.open(SHELL_CACHE).then(function (fresh) {
-                return Promise.all(oldShells.map(function (name) {
-                    return caches.open(name).then(function (old) {
-                        return old.keys().then(function (reqs) {
-                            return Promise.all(reqs.map(function (req) {
-                                return old.match(req).then(function (res) {
-                                    if (!res) {
-                                        return;
-                                    }
-                                    var href = typeof req === 'string' ? req : (req.url || '');
-                                    if (href.indexOf(REGISTER_SHELL_PATH) !== -1 || isRegisterShellPath(new URL(href, self.location.origin).pathname)) {
-                                        return fresh.put(req, res.clone()).then(function () {
-                                            return fresh.put(registerShellUrl(), res.clone());
-                                        });
-                                    }
-                                });
-                            }));
-                        });
-                    });
-                })).then(function () {
-                    // Copy ERP offline assets from previous coexist cache before wipe
-                    // (prevents empty vN cache + hanging script loads while offline).
-                    return migrateErpCoexistCaches(keys);
-                }).then(function () {
-                    // Drop stale versioned offline identity scripts from EVERY cache so
-                    // pathname hits cannot re-serve old warm/guard/SDK after a build bump.
-                    return Promise.all(keys.map(function (name) {
-                        return caches.open(name).then(function (cache) {
-                            return cache.keys().then(function (reqs) {
-                                return Promise.all(reqs.map(function (req) {
-                                    try {
-                                        var href = typeof req === 'string' ? req : (req.url || '');
-                                        var pu = new URL(href);
-                                        if (isVersionedOfflineIdentityJs(pu.pathname)) {
-                                            return cache.delete(req);
-                                        }
-                                    } catch (eDel) { /* ignore */ }
-                                    return null;
-                                }));
-                            });
-                        }).catch(function () { return null; });
-                    }));
-                }).then(function () {
-                    // Keep previous coexist/ops caches — deleting them left offline CSS blank.
-                    return Promise.all(keys.map(function (key) {
-                        if (key === SHELL_CACHE || key === ASSET_CACHE
-                            || key === ERP_COEXIST_CACHE || key === ERP_OPS_PAGE_CACHE
-                            || key === ERP_OPS_ALLOWLIST_CACHE) {
-                            return undefined;
-                        }
-                        // Keep last coexist/ops versions; only drop ancient POS shells.
-                        if (String(key).indexOf('rateb-pos-shell-') === 0 && key !== SHELL_CACHE) {
-                            return caches.delete(key);
-                        }
-                        if (String(key).indexOf('rateb-pos-assets-') === 0 && key !== ASSET_CACHE) {
-                            return caches.delete(key);
-                        }
-                        return undefined;
-                    }));
-                });
-            });
-        }).then(function () {
-            // Phase OD — re-verify / refill protected cache on every activate.
-            return ensureProtectedOfflineCache({ force: true });
-        }).then(function () {
-            return self.clients.claim();
+        self.clients.claim().then(function () {
+            scheduleBackgroundWarm({ reason: 'activate', force: false });
+            loadErpOpsAllowlist().catch(function () { return null; });
+            return null;
         }).catch(function () {
-            // Still claim clients, but do not pretend protected warm succeeded.
-            return self.clients.claim();
+            scheduleBackgroundWarm({ reason: 'activate_fallback', force: false });
+            return null;
         })
     );
 });

@@ -1,0 +1,30 @@
+{
+  "phase": "PC",
+  "enterprise": "PASS",
+  "build": "20260715-phase-pc-v63",
+  "measuredAt": "2026-07-14T23:57:00Z",
+  "before": {
+    "register_to_activated_ms": 21131,
+    "install_wall_ms": 7257,
+    "activate_wall_ms": 7396,
+    "ensure_protected_ms": 6183,
+    "nav_responseStart_ms": 5313
+  },
+  "after": {
+    "register_to_activated_ms": 191,
+    "first_nav_responseStart_ms": 231,
+    "warm_nav_responseStart_ms": 7.3,
+    "protected_cache_ok": true
+  },
+  "acceptance": {
+    "sw_startup_lt_200": true,
+    "first_nav_lt_700": true,
+    "warm_nav_lt_300": true,
+    "pass": true
+  },
+  "bottleneck_fixed": {
+    "file": "rateb-erp/public/pos-sw.js",
+    "function": "install/activate waitUntil → ensureProtectedOfflineCache",
+    "change": "minimal install + claim-first activate; protected warm/migrate moved to scheduleBackgroundWarm"
+  }
+}
