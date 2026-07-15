@@ -373,23 +373,110 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $data = $this->collectData();
         $this->applyCompanyPlanFields($data, null);
         $data['status'] = 'pending';
+        $adminUsername = trim((string) $this->input('admin_username', ''));
+        $adminPassword = (string) $this->input('admin_password', '');
+        if ($adminUsername === '' || strlen($adminPassword) < 6) {
+            SessionManager::flash('error', __('company_admin_login_required'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         try {
             $id = $this->model->create($data);
             (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($id);
             (new \Rateb\App\Services\BranchService())->ensureMainBranch($id);
-            (new AuditService())->log('create', $this->entityName, $id, $data);
+            $this->createCompanyAdminUser(
+                $id,
+                $adminUsername,
+                $adminPassword,
+                (string) ($data['name'] ?? ''),
+                (string) ($data['phone'] ?? ''),
+                (string) ($data['slug'] ?? '')
+            );
+            $auditPayload = $data;
+            unset($auditPayload['admin_password'], $auditPayload['password']);
+            (new AuditService())->log('create', $this->entityName, $id, $auditPayload);
             \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
                 $id,
                 'company_registration',
                 (string) ($data['name'] ?? ('#' . $id)),
                 $id
             );
-            SessionManager::flash('success', __('company_saved_pending_oversight'));
+            SessionManager::flash('success', __('company_saved_pending_oversight') . ' — ' . __('company_admin_created_hint'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $this->redirect(rateb_url('admin/oversight/companies-approvals'));
+    }
+
+    /**
+     * Create the client company admin (tenant user) — not platform agency access-control users.
+     */
+    private function createCompanyAdminUser(
+        int $companyId,
+        string $username,
+        string $password,
+        string $companyName,
+        string $companyPhone,
+        string $slug
+    ): int {
+        $username = trim($username);
+        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $slug), '-'));
+        if ($slug === '') {
+            $slug = 'c' . $companyId;
+        }
+
+        if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $email = strtolower($username);
+            $displayName = $companyName !== '' ? $companyName : (string) strstr($email, '@', true);
+        } else {
+            $safeUser = strtolower(trim((string) preg_replace('/[^a-z0-9._-]+/i', '', $username)));
+            if ($safeUser === '') {
+                $safeUser = 'admin';
+            }
+            $email = $safeUser . '+' . $slug . '@rateb.sa';
+            // Short username login resolves via LOWER(name) in User::loginCandidates.
+            $displayName = $safeUser;
+        }
+
+        $users = new \Rateb\App\Models\User();
+        if ($users->findByEmail($email)) {
+            throw new \RuntimeException(__('company_admin_username_taken'));
+        }
+        // Short username login resolves via LOWER(name) — reject name collision.
+        if (!filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $nameTaken = $users->queryOne(
+                'SELECT id FROM rateb_users WHERE LOWER(name) = :n LIMIT 1',
+                ['n' => strtolower((string) $displayName)]
+            );
+            if ($nameTaken) {
+                throw new \RuntimeException(__('company_admin_username_taken'));
+            }
+        }
+
+        $userId = (int) $users->create([
+            'company_id' => $companyId,
+            'name' => (string) $displayName,
+            'email' => $email,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
+            'phone' => $companyPhone,
+            'is_super_admin' => 0,
+            'status' => 'active',
+            'locale' => function_exists('rateb_locale') ? rateb_locale() : 'ar',
+        ]);
+        if ($userId < 1) {
+            throw new \RuntimeException(__('company_admin_create_failed'));
+        }
+
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $roleRow = $authz->findRoleBySlug('company-full-access', $companyId);
+        if ($roleRow) {
+            $authz->assignRole($userId, (int) $roleRow['id']);
+        }
+        if (class_exists(\Rateb\App\Services\BarcodeLoginService::class)) {
+            (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($userId);
+        }
+
+        return $userId;
     }
 
     public function update(array $params): void
