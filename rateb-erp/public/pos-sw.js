@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-phase-pc-v63';
+var SW_BUILD_ID = '20260715-phase-pf-v65';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2294,9 +2294,70 @@ function shellFallback(request) {
  * Phase PC — non-blocking post-activate warm.
  * Keeps install/activate waitUntil free of ensureProtectedOfflineCache and
  * optional chrome/ops warm so navigation is never gated on protected inventory.
+ *
+ * Phase PF — first controlled document navigation always wins: arm warm on
+ * activate, release only after the first document respondWith promise settles.
  */
 var backgroundWarmRunning = false;
 var LAST_BACKGROUND_WARM = null;
+/** @type {object|null} */
+var pendingBackgroundWarmOpts = null;
+var firstDocumentResponseCommitted = false;
+/** Page/bootstrap asked for force ensure before first document — honor after gate. */
+var pendingForceEnsureFromMessage = false;
+
+function armBackgroundWarmAfterFirstDocument(opts) {
+    opts = opts || { reason: 'activate', force: false };
+    if (opts.force) {
+        pendingForceEnsureFromMessage = true;
+    }
+    if (firstDocumentResponseCommitted) {
+        scheduleBackgroundWarm(opts);
+        return;
+    }
+    if (!pendingBackgroundWarmOpts) {
+        pendingBackgroundWarmOpts = opts;
+    } else if (opts.force) {
+        pendingBackgroundWarmOpts.force = true;
+        if (opts.reason) {
+            pendingBackgroundWarmOpts.reason = opts.reason;
+        }
+    }
+}
+
+function releaseBackgroundWarmAfterFirstDocument() {
+    if (firstDocumentResponseCommitted) {
+        return;
+    }
+    firstDocumentResponseCommitted = true;
+    var opts = pendingBackgroundWarmOpts || { reason: 'first_document', force: false };
+    pendingBackgroundWarmOpts = null;
+    if (pendingForceEnsureFromMessage) {
+        opts.force = true;
+        pendingForceEnsureFromMessage = false;
+    }
+    scheduleBackgroundWarm(opts);
+}
+
+/**
+ * Commit document navigation response first; only then release the one-shot warm gate.
+ * Must not start populate/verify/cache.put on the critical path of first open.
+ */
+function respondWithDocumentAndReleaseWarmGate(event, responsePromise) {
+    event.respondWith(
+        Promise.resolve(responsePromise).then(function (response) {
+            setTimeout(function () {
+                releaseBackgroundWarmAfterFirstDocument();
+            }, 0);
+            return response;
+        }, function (err) {
+            setTimeout(function () {
+                releaseBackgroundWarmAfterFirstDocument();
+            }, 0);
+            return Promise.reject(err);
+        })
+    );
+}
 
 function migrateActivateCaches() {
     return caches.keys().then(function (keys) {
@@ -2459,9 +2520,10 @@ function scheduleBackgroundWarm(opts) {
 }
 
 /**
- * Phase PC critical path:
+ * Phase PC / PF critical path:
  * install → minimal seed → activate → clients.claim → ready
- * Background: migrate + ensureProtectedOfflineCache + optional assets
+ * WAIT → first document FetchEvent respondWith committed
+ * THEN → migrate + ensureProtectedOfflineCache + optional assets (once)
  */
 self.addEventListener('install', function (event) {
     self.skipWaiting();
@@ -2480,13 +2542,14 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
     // Phase PC — claim FIRST so navigation is never gated on allowlist/network.
+    // Phase PF — arm warm only; do not start populate until first document response commits.
     event.waitUntil(
         self.clients.claim().then(function () {
-            scheduleBackgroundWarm({ reason: 'activate', force: false });
+            armBackgroundWarmAfterFirstDocument({ reason: 'activate', force: false });
             loadErpOpsAllowlist().catch(function () { return null; });
             return null;
         }).catch(function () {
-            scheduleBackgroundWarm({ reason: 'activate_fallback', force: false });
+            armBackgroundWarmAfterFirstDocument({ reason: 'activate_fallback', force: false });
             return null;
         })
     );
@@ -2615,6 +2678,21 @@ self.addEventListener('message', function (event) {
             } catch (eSrc) { /* ignore */ }
             return result;
         };
+        // Phase PF — page bootstrap must not start populate before first document wins.
+        if (!firstDocumentResponseCommitted) {
+            armBackgroundWarmAfterFirstDocument({
+                reason: 'message_' + String(data.type || 'warm'),
+                force: true
+            });
+            reply({
+                ok: false,
+                deferred: true,
+                reason: 'awaiting_first_document',
+                build: SW_BUILD_ID,
+                at: Date.now()
+            });
+            return;
+        }
         event.waitUntil(
             ensureProtectedOfflineCache({ force: true }).then(function (result) {
                 if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
@@ -2676,14 +2754,16 @@ self.addEventListener('fetch', function (event) {
                 return;
             }
             if (isPosNavigation(url)) {
-                event.respondWith(
+                respondWithDocumentAndReleaseWarmGate(
+                    event,
                     navigatePosCloudWithCacheSafety(event.request, url).catch(function () {
                         return shellFallback(event.request);
                     })
                 );
                 return;
             }
-            event.respondWith(
+            respondWithDocumentAndReleaseWarmGate(
+                event,
                 navigateErpCloudWithCacheSafety(event.request, url).catch(function () {
                     try {
                         return erpInlineShellResponse();
@@ -2724,7 +2804,8 @@ self.addEventListener('fetch', function (event) {
         } catch (eProbe) { /* ignore */ }
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
-        event.respondWith(
+        respondWithDocumentAndReleaseWarmGate(
+            event,
             fetchNavigateNetwork(event.request, 2500).then(function (response) {
                 // Do not pin biometric gate HTML as the offline shell — register + lock is the offline entry.
                 if (!isBiometricGatePath(url.pathname) && response) {
@@ -2749,7 +2830,8 @@ self.addEventListener('fetch', function (event) {
 
     // Logout offline: never let Chrome show "لا يتوفر اتصال" interstitial.
     if (event.request.mode === 'navigate' && isLogoutPath(url.pathname)) {
-        event.respondWith(
+        respondWithDocumentAndReleaseWarmGate(
+            event,
             fetchNavigateNetwork(event.request, 2000).catch(function () {
                 var adminUrl;
                 try {
@@ -2768,7 +2850,8 @@ self.addEventListener('fetch', function (event) {
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
         && !isApiRequest(url)) {
-        event.respondWith(
+        respondWithDocumentAndReleaseWarmGate(
+            event,
             neverFailNavigate(event.request, url).catch(function () {
                 try {
                     return erpInlineShellResponse();
