@@ -89,6 +89,20 @@
             headers: headers,
             body: opts.body || null
         }).then(function (res) {
+            if (res.status === 419 && opts.method === 'POST') {
+                try {
+                    if (!sessionStorage.getItem('rateb_pos_csrf_reload')) {
+                        sessionStorage.setItem('rateb_pos_csrf_reload', '1');
+                        window.location.reload();
+                        return new Promise(function () { /* navigation */ });
+                    }
+                } catch (eReload) { /* ignore */ }
+            }
+            if (res.status === 200 || res.status === 201) {
+                try {
+                    sessionStorage.removeItem('rateb_pos_csrf_reload');
+                } catch (eClear) { /* ignore */ }
+            }
             return res.json().then(function (data) {
                 if (!res.ok) {
                     throw new Error((data && data.error) ? data.error : t('invalid_request', 'Failed'));

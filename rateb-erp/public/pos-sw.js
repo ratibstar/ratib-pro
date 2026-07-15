@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-phase-pf-v65';
+var SW_BUILD_ID = '20260715-csrf-nav-v66';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -945,7 +945,11 @@ function matchCertifiedPosShellSnapshot(request) {
     });
 }
 
-/** Cloud soft-online POS navigations — certified shell first; else network race; else shellFallback. */
+/**
+ * Cloud soft-online POS navigations.
+ * Network-first so HTML meta/config CSRF matches the live session (cache-first caused 419).
+ * Certified shell / shellFallback only when the network race fails.
+ */
 function navigatePosCloudWithCacheSafety(request, url) {
     var shellReq = request;
     if (isBiometricGatePath(url.pathname)) {
@@ -953,21 +957,24 @@ function navigatePosCloudWithCacheSafety(request, url) {
     } else if (/\/pos\/(dashboard|reports|settings|shifts|terminals)(\/|$)/i.test(url.pathname)) {
         shellReq = shellLookupRequest(posOfflineRegisterUrl(url).href, request);
     }
-    return matchCertifiedPosShellSnapshot(shellReq).then(function (hit) {
-        if (hit) {
-            return hit;
-        }
-        return fetchNavigateNetwork(request, 8000).then(function (response) {
-            if (!isBiometricGatePath(url.pathname) && response && response.ok) {
+    function fromCacheOrFallback() {
+        return matchCertifiedPosShellSnapshot(shellReq).then(function (hit) {
+            return hit || shellFallback(shellReq);
+        });
+    }
+    return fetchNavigateNetwork(request, 4000).then(function (response) {
+        if (response && response.ok) {
+            if (!isBiometricGatePath(url.pathname)) {
                 try {
                     var forShell = response.clone();
                     putShell(request, forShell).catch(function () { return null; });
                 } catch (ePin) { /* ignore */ }
             }
             return response;
-        }).catch(function () {
-            return shellFallback(shellReq);
-        });
+        }
+        return fromCacheOrFallback();
+    }).catch(function () {
+        return fromCacheOrFallback();
     });
 }
 
