@@ -1,0 +1,156 @@
+{
+  "phase": "PI",
+  "generatedAt": "2026-07-15T00:53:54.915Z",
+  "before": {
+    "after_rs_scan": 540.5,
+    "dcl_after_rs": 501.1,
+    "auth_stall_ms": 294.7
+  },
+  "after": {
+    "after_rs_scan": 237.7,
+    "dcl_after_rs": 222.6,
+    "responseStart": 252,
+    "dcl": 474.6,
+    "scan": {
+      "ok": true,
+      "ms": 12,
+      "snap": {
+        "ready": true,
+        "barcode": true,
+        "tilesReady": true,
+        "register": true,
+        "t": 486
+      }
+    }
+  },
+  "metrics": {
+    "responseStart": 252,
+    "dcl": 474.6,
+    "auth": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "start": 545.2,
+      "duration": 102,
+      "end": 647.2,
+      "end_after_rs": 395.2,
+      "transferSize": 6520,
+      "decodedBodySize": 28821
+    },
+    "peerMaxEnd": 143.2,
+    "authOnCritical": false,
+    "authLoadedAfterDcl": true,
+    "authHttpOk": true,
+    "scripts": [
+      {
+        "leaf": "theme.js",
+        "end_after_rs": 30.4,
+        "duration": 3.8,
+        "transferSize": 0,
+        "decodedBodySize": 3067
+      },
+      {
+        "leaf": "pos-module.js",
+        "end_after_rs": 130.2,
+        "duration": 103.4,
+        "transferSize": 988,
+        "decodedBodySize": 2698
+      },
+      {
+        "leaf": "pos-offline-sync.js",
+        "end_after_rs": 132.2,
+        "duration": 105.3,
+        "transferSize": 4854,
+        "decodedBodySize": 20752
+      },
+      {
+        "leaf": "pos-offline-print.js",
+        "end_after_rs": 133,
+        "duration": 106,
+        "transferSize": 2409,
+        "decodedBodySize": 7865
+      },
+      {
+        "leaf": "pos-register.js",
+        "end_after_rs": 143.2,
+        "duration": 116.2,
+        "transferSize": 9938,
+        "decodedBodySize": 53149
+      },
+      {
+        "leaf": "pos-register-tiles.js",
+        "end_after_rs": 137.3,
+        "duration": 110.2,
+        "transferSize": 8063,
+        "decodedBodySize": 35242
+      },
+      {
+        "leaf": "pos-keyboard.js",
+        "end_after_rs": 136.9,
+        "duration": 109.7,
+        "transferSize": 846,
+        "decodedBodySize": 1530
+      },
+      {
+        "leaf": "pos-register-checkout.js",
+        "end_after_rs": 137.7,
+        "duration": 110.4,
+        "transferSize": 6615,
+        "decodedBodySize": 30439
+      },
+      {
+        "leaf": "pos-register-ops.js",
+        "end_after_rs": 140.9,
+        "duration": 113.6,
+        "transferSize": 5463,
+        "decodedBodySize": 27748
+      },
+      {
+        "leaf": "pos-capabilities.js",
+        "end_after_rs": 142.2,
+        "duration": 114.8,
+        "transferSize": 1149,
+        "decodedBodySize": 3009
+      },
+      {
+        "leaf": "pos-supervisor-approval.js",
+        "end_after_rs": 142.8,
+        "duration": 115.3,
+        "transferSize": 2922,
+        "decodedBodySize": 10644
+      },
+      {
+        "leaf": "pos-biometric-gate.js",
+        "end_after_rs": 142.9,
+        "duration": 115.3,
+        "transferSize": 2407,
+        "decodedBodySize": 8702
+      },
+      {
+        "leaf": "pos-auth-lock.js",
+        "end_after_rs": 395.2,
+        "duration": 102,
+        "transferSize": 6520,
+        "decodedBodySize": 28821
+      }
+    ],
+    "hasLockApi": {
+      "initOnRegister": true,
+      "isUnlocked": true,
+      "lock": true,
+      "unlockWithPin": true
+    },
+    "authApi": true,
+    "dcl_after_rs": 222.6,
+    "after_rs_scan": 237.7,
+    "scan_t": 489.7
+  },
+  "targets": {
+    "after_rs_scan_le_250": true,
+    "dcl_not_waiting_auth": true,
+    "auth_still_loads": true,
+    "auth_http_ok": true,
+    "scan_ok": true
+  },
+  "gain_ms": 302.8,
+  "enterprise": "PASS",
+  "note": "Auth-lock idle after DCL; scan path ≤250ms after responseStart"
+}

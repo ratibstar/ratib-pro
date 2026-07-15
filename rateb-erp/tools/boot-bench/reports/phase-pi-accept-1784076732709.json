@@ -1,0 +1,128 @@
+{
+  "phase": "PI",
+  "generatedAt": "2026-07-15T00:52:12.683Z",
+  "before": {
+    "after_rs_scan": 540.5,
+    "dcl_after_rs": 501.1,
+    "auth_stall_ms": 294.7
+  },
+  "after": {
+    "after_rs_scan": 4452.8,
+    "dcl_after_rs": 213.8,
+    "responseStart": 261.3,
+    "dcl": 475.1,
+    "scan": {
+      "ok": true,
+      "ms": 16,
+      "snap": {
+        "ready": true,
+        "barcode": true,
+        "tilesReady": true,
+        "register": true,
+        "t": 489.90000000596046
+      }
+    }
+  },
+  "metrics": {
+    "responseStart": 261.3,
+    "dcl": 475.1,
+    "dcl_after_rs": 213.8,
+    "scan_t": 4714.1,
+    "after_rs_scan": 4452.8,
+    "peerMaxEnd": 140.9,
+    "authOnCritical": false,
+    "authApi": false,
+    "authInInitialDeferMarkup": true,
+    "idleQueueMentionsAuth": true,
+    "ready": true,
+    "scripts": [
+      {
+        "leaf": "theme.js",
+        "end_after_rs": 30.3,
+        "duration": 4.4,
+        "transferSize": 0
+      },
+      {
+        "leaf": "pos-module.js",
+        "end_after_rs": 127.2,
+        "duration": 101.3,
+        "transferSize": 988
+      },
+      {
+        "leaf": "pos-offline-print.js",
+        "end_after_rs": 127.9,
+        "duration": 101.8,
+        "transferSize": 2409
+      },
+      {
+        "leaf": "pos-offline-sync.js",
+        "end_after_rs": 135.6,
+        "duration": 109.5,
+        "transferSize": 4854
+      },
+      {
+        "leaf": "pos-register-tiles.js",
+        "end_after_rs": 135.2,
+        "duration": 109,
+        "transferSize": 8063
+      },
+      {
+        "leaf": "pos-register.js",
+        "end_after_rs": 140.4,
+        "duration": 114.2,
+        "transferSize": 9938
+      },
+      {
+        "leaf": "pos-keyboard.js",
+        "end_after_rs": 131,
+        "duration": 104.7,
+        "transferSize": 846
+      },
+      {
+        "leaf": "pos-register-checkout.js",
+        "end_after_rs": 136.8,
+        "duration": 110.4,
+        "transferSize": 6615
+      },
+      {
+        "leaf": "pos-register-ops.js",
+        "end_after_rs": 137.3,
+        "duration": 110.8,
+        "transferSize": 5463
+      },
+      {
+        "leaf": "pos-capabilities.js",
+        "end_after_rs": 137.5,
+        "duration": 110.9,
+        "transferSize": 1149
+      },
+      {
+        "leaf": "pos-supervisor-approval.js",
+        "end_after_rs": 140.7,
+        "duration": 114,
+        "transferSize": 2922
+      },
+      {
+        "leaf": "pos-biometric-gate.js",
+        "end_after_rs": 140.9,
+        "duration": 114.1,
+        "transferSize": 2407
+      }
+    ],
+    "hasLockApi": {
+      "initOnRegister": false,
+      "isUnlocked": false,
+      "lock": false,
+      "unlockWithPin": false
+    }
+  },
+  "targets": {
+    "after_rs_scan_le_250": false,
+    "dcl_not_waiting_auth": true,
+    "auth_still_loads": false,
+    "scan_ok": true
+  },
+  "gain_ms": -3912.3,
+  "enterprise": "FAIL",
+  "note": "Acceptance not met — see targets"
+}

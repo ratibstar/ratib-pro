@@ -4,11 +4,19 @@ declare(strict_types=1);
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $configJson = json_encode($registerConfig ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+// Phase PI — auth-lock stays on critical path only for biometric gate pages (security).
+// Register / scan-ready pages load it idle after DCL so it cannot stall first scan.
+$posAuthLockUrl = rateb_pos_asset('js/pos-auth-lock.js');
+$posAuthLockIdle = !str_contains((string) ($pageContent ?? ''), 'data-pos-biometric-gate');
 $deferScripts = [
     rateb_pos_asset('js/pos-register-motion.js'),
     rateb_pos_asset('js/pos-register-cashier.js'),
     rateb_pos_asset('js/pos-offline-bootstrap.js'),
 ];
+if ($posAuthLockIdle) {
+    // First in idle queue so vault/lock still initializes ASAP after load.
+    array_unshift($deferScripts, $posAuthLockUrl);
+}
 $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 ?>
 <!DOCTYPE html>
@@ -50,7 +58,9 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
 <script src="<?php echo rateb_pos_asset('js/pos-register-ops.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-capabilities.js'); ?>" defer></script>
 <script src="<?php echo rateb_pos_asset('js/pos-supervisor-approval.js'); ?>" defer></script>
-<script src="<?php echo rateb_pos_asset('js/pos-auth-lock.js'); ?>" defer></script>
+<?php if (!$posAuthLockIdle) { ?>
+<script src="<?php echo $posAuthLockUrl; ?>" defer></script>
+<?php } ?>
 <script src="<?php echo rateb_pos_asset('js/pos-biometric-gate.js'); ?>" defer></script>
 <script>
 (function () {
@@ -68,10 +78,11 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
         document.body.appendChild(s);
     }
     function start() {
+        // Phase PI — start idle queue soon after load; auth-lock (when queued) is first.
         if (window.requestIdleCallback) {
-            window.requestIdleCallback(loadNext, { timeout: 2500 });
+            window.requestIdleCallback(loadNext, { timeout: 1200 });
         } else {
-            setTimeout(loadNext, 400);
+            setTimeout(loadNext, 0);
         }
     }
     if (document.readyState === 'complete') {
