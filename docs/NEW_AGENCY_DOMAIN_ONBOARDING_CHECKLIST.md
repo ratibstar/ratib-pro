@@ -1,5 +1,9 @@
 # New Agency Domain Onboarding Checklist
 
+> **ERP dedicated agencies (domain + separate ERP DB):** use the short Arabic checklist  
+> [`NEW_AGENCY_ERP_ONBOARDING_CHECKLIST_AR.md`](./NEW_AGENCY_ERP_ONBOARDING_CHECKLIST_AR.md).  
+> This file remains useful for hosting/DNS/Open flow details (legacy Pro + shared notes).
+
 Use this checklist when onboarding a new custom agency domain (example: `https://www.domain.com`) without changing system architecture.
 
 ## 1) Domain and DNS

@@ -236,10 +236,46 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'branch_limit', 'label' => 'branch_limit', 'type' => 'number'],
             ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
+        $this->createEnabled = function_exists('rateb_platform_company_create_allowed')
+            ? rateb_platform_company_create_allowed()
+            : true;
+    }
+
+    public function index(): void
+    {
+        if (function_exists('rateb_sync_platform_company_create_maintenance')) {
+            rateb_sync_platform_company_create_maintenance();
+        }
+        $this->createEnabled = function_exists('rateb_platform_company_create_allowed')
+            ? rateb_platform_company_create_allowed()
+            : true;
+        parent::index();
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $data['createEnabled'] = $this->createEnabled;
+        $data['companyCreateAgencyHint'] = !$this->createEnabled
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host();
+        $data['companyCreateMaintenanceOn'] = function_exists('rateb_platform_company_create_maintenance_enabled')
+            && rateb_platform_company_create_maintenance_enabled();
+
+        return $data;
     }
 
     public function create(): void
     {
+        try {
+            if (function_exists('rateb_assert_platform_company_create_allowed')) {
+                rateb_assert_platform_company_create_allowed();
+            }
+            \Rateb\App\Services\DedicatedTenantPolicy::assertCanCreateCompany();
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $this->view($this->viewPrefix . '/form', $this->formData(null), $this->layout());
     }
 
@@ -374,6 +410,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         try {
+            if (function_exists('rateb_assert_platform_company_create_allowed')) {
+                rateb_assert_platform_company_create_allowed();
+            }
             \Rateb\App\Services\DedicatedTenantPolicy::assertCanCreateCompany();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());

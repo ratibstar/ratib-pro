@@ -343,6 +343,80 @@ if (!function_exists('rateb_is_platform_oversight_host')) {
     }
 }
 
+if (!function_exists('rateb_sync_platform_company_create_maintenance')) {
+    /**
+     * Super-admin maintenance unlock for creating companies on the platform host.
+     * Toggle: /admin/companies?company_create_maintenance=1 (or =0).
+     * Or set RATEB_ALLOW_PLATFORM_COMPANY_CREATE=1 in env.
+     */
+    function rateb_sync_platform_company_create_maintenance(): void
+    {
+        if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
+            return;
+        }
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return;
+        }
+        if (!isset($_GET['company_create_maintenance'])) {
+            return;
+        }
+        $raw = strtolower(trim((string) $_GET['company_create_maintenance']));
+        if (in_array($raw, ['1', 'true', 'yes', 'on'], true)) {
+            \Rateb\App\Core\SessionManager::set('rateb_company_create_maintenance', 1);
+        } else {
+            \Rateb\App\Core\SessionManager::forget('rateb_company_create_maintenance');
+        }
+    }
+}
+
+if (!function_exists('rateb_platform_company_create_maintenance_enabled')) {
+    function rateb_platform_company_create_maintenance_enabled(): bool
+    {
+        $env = getenv('RATEB_ALLOW_PLATFORM_COMPANY_CREATE');
+        if ($env === false || $env === '') {
+            $env = $_ENV['RATEB_ALLOW_PLATFORM_COMPANY_CREATE'] ?? '';
+        }
+        if (in_array(strtolower(trim((string) $env)), ['1', 'true', 'yes', 'on'], true)) {
+            return true;
+        }
+
+        return (int) \Rateb\App\Core\SessionManager::get('rateb_company_create_maintenance', 0) === 1;
+    }
+}
+
+if (!function_exists('rateb_platform_company_create_allowed')) {
+    /**
+     * Agency-first model: platform company create is off unless maintenance unlock.
+     * Dedicated agency ERP still allows create only when zero companies exist.
+     */
+    function rateb_platform_company_create_allowed(): bool
+    {
+        if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)
+            && \Rateb\App\Services\DedicatedTenantPolicy::isDedicated()
+        ) {
+            return \Rateb\App\Services\DedicatedTenantPolicy::canCreateCompany();
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return rateb_platform_company_create_maintenance_enabled();
+        }
+        if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
+            return \Rateb\App\Services\DedicatedTenantPolicy::canCreateCompany();
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('rateb_assert_platform_company_create_allowed')) {
+    function rateb_assert_platform_company_create_allowed(): void
+    {
+        if (rateb_platform_company_create_allowed()) {
+            return;
+        }
+        throw new \RuntimeException(__('company_create_agency_path_only'));
+    }
+}
+
 if (!function_exists('rateb_platform_oversight_public_url')) {
     function rateb_platform_oversight_public_url(string $route = 'admin'): string
     {
