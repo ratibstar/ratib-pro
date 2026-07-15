@@ -1,0 +1,2846 @@
+{
+  "phase": "PE",
+  "mode": "SW_THREAD_PROFILE_READ_ONLY",
+  "generatedAt": "2026-07-15T00:15:16.027Z",
+  "note": "Temporary instrumentation deployed then restored",
+  "lifecycle": {
+    "marks": [
+      {
+        "name": "registered",
+        "t": 1855
+      },
+      {
+        "name": "state_installed",
+        "t": 1867
+      },
+      {
+        "name": "state_activating",
+        "t": 1867
+      },
+      {
+        "name": "state_activated",
+        "t": 1867
+      },
+      {
+        "name": "ready",
+        "t": 1867
+      }
+    ],
+    "activated_ms": 1867
+  },
+  "first_nav": {
+    "wall_ms": 494,
+    "workerStart": 2,
+    "responseStart": 224.9,
+    "ttfb": 222.7,
+    "dcl": 486.1,
+    "load": 488.2
+  },
+  "warm_nav": {
+    "wall_ms": 1859,
+    "workerStart": 1.9000000059604645,
+    "responseStart": 7.4,
+    "ttfb": 5.3,
+    "dcl": 223.6
+  },
+  "sw_events_collected": 1,
+  "dump_early": {
+    "event_count": 49,
+    "build": "20260715-phase-pe-profile"
+  },
+  "dump_late": {
+    "event_count": 301,
+    "build": "20260715-phase-pe-profile"
+  },
+  "timeline_events": [
+    {
+      "t": 0,
+      "type": "begin",
+      "name": "runBackgroundWarm",
+      "id": "runBackgroundWarm#1"
+    },
+    {
+      "t": 0,
+      "type": "begin",
+      "name": "migrateActivateCaches_call",
+      "id": "migrateActivateCaches_call#2"
+    },
+    {
+      "t": 0,
+      "type": "begin",
+      "name": "migrateActivateCaches",
+      "id": "migrateActivateCaches#3"
+    },
+    {
+      "t": 1,
+      "type": "mark",
+      "name": "migrate_keys",
+      "n": 5
+    },
+    {
+      "t": 60,
+      "type": "end",
+      "name": "migrateActivateCaches_call",
+      "id": "migrateActivateCaches_call#2",
+      "wall_ms": 60,
+      "ok": true
+    },
+    {
+      "t": 60,
+      "type": "begin",
+      "name": "ensureProtectedOfflineCache:force=false",
+      "id": "ensureProtectedOfflineCache:force=false#4"
+    },
+    {
+      "t": 60,
+      "type": "mark",
+      "name": "ensure_cache_opened",
+      "force": false
+    },
+    {
+      "t": 60,
+      "type": "begin",
+      "name": "verifyProtectedOfflineCache",
+      "id": "verifyProtectedOfflineCache#5"
+    },
+    {
+      "t": 61,
+      "type": "mark",
+      "name": "verify_cache_opened"
+    },
+    {
+      "t": 280,
+      "type": "end",
+      "name": "verifyProtectedOfflineCache",
+      "id": "verifyProtectedOfflineCache#5",
+      "wall_ms": 220,
+      "missing": 39,
+      "inventory": 46
+    },
+    {
+      "t": 280,
+      "type": "begin",
+      "name": "populateQueue:n=41",
+      "id": "populateQueue:n=41#6"
+    },
+    {
+      "t": 280,
+      "type": "begin",
+      "name": "populate_item:assets/offline/offline-bootstrap.js",
+      "id": "populate_item:assets/offline/offline-bootstrap.js#7"
+    },
+    {
+      "t": 280,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js#8"
+    },
+    {
+      "t": 392,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js#8",
+      "wall_ms": 112,
+      "rel": "assets/offline/offline-bootstrap.js",
+      "len": 17584,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 392,
+      "type": "end",
+      "name": "populate_item:assets/offline/offline-bootstrap.js",
+      "id": "populate_item:assets/offline/offline-bootstrap.js#7",
+      "wall_ms": 112,
+      "len": 17584
+    },
+    {
+      "t": 392,
+      "type": "begin",
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "id": "populate_item:assets/offline/rateb-offline.js#9"
+    },
+    {
+      "t": 392,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#10"
+    },
+    {
+      "t": 553,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#10",
+      "wall_ms": 161,
+      "rel": "assets/offline/rateb-offline.js",
+      "len": 388640,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 554,
+      "type": "end",
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "id": "populate_item:assets/offline/rateb-offline.js#9",
+      "wall_ms": 162,
+      "len": 388640
+    },
+    {
+      "t": 554,
+      "type": "begin",
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "id": "populate_item:assets/offline/rateb-offline.min.js#11"
+    },
+    {
+      "t": 554,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#12"
+    },
+    {
+      "t": 698,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#12",
+      "wall_ms": 144,
+      "rel": "assets/offline/rateb-offline.min.js",
+      "len": 388640,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 698,
+      "type": "end",
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "id": "populate_item:assets/offline/rateb-offline.min.js#11",
+      "wall_ms": 144,
+      "len": 388640
+    },
+    {
+      "t": 698,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-shell-bootstrap.js",
+      "id": "populate_item:assets/offline/erp-shell-bootstrap.js#13"
+    },
+    {
+      "t": 698,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js#14"
+    },
+    {
+      "t": 829,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js#14",
+      "wall_ms": 131,
+      "rel": "assets/offline/erp-shell-bootstrap.js",
+      "len": 47134,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 829,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-shell-bootstrap.js",
+      "id": "populate_item:assets/offline/erp-shell-bootstrap.js#13",
+      "wall_ms": 131,
+      "len": 47134
+    },
+    {
+      "t": 829,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-nav-guard.js",
+      "id": "populate_item:assets/offline/erp-offline-nav-guard.js#15"
+    },
+    {
+      "t": 829,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js#16"
+    },
+    {
+      "t": 956,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js#16",
+      "wall_ms": 127,
+      "rel": "assets/offline/erp-offline-nav-guard.js",
+      "len": 45562,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 956,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-nav-guard.js",
+      "id": "populate_item:assets/offline/erp-offline-nav-guard.js#15",
+      "wall_ms": 127,
+      "len": 45562
+    },
+    {
+      "t": 956,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-full-warm.js",
+      "id": "populate_item:assets/offline/erp-offline-full-warm.js#17"
+    },
+    {
+      "t": 956,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js#18"
+    },
+    {
+      "t": 1082,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js#18",
+      "wall_ms": 126,
+      "rel": "assets/offline/erp-offline-full-warm.js",
+      "len": 41649,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1082,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-full-warm.js",
+      "id": "populate_item:assets/offline/erp-offline-full-warm.js#17",
+      "wall_ms": 126,
+      "len": 41649
+    },
+    {
+      "t": 1082,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-storage.js",
+      "id": "populate_item:assets/offline/modules/offline-storage.js#19"
+    },
+    {
+      "t": 1082,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js#20"
+    },
+    {
+      "t": 1203,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js#20",
+      "wall_ms": 121,
+      "rel": "assets/offline/modules/offline-storage.js",
+      "len": 8007,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1204,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-storage.js",
+      "id": "populate_item:assets/offline/modules/offline-storage.js#19",
+      "wall_ms": 122,
+      "len": 8007
+    },
+    {
+      "t": 1204,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-auth.js",
+      "id": "populate_item:assets/offline/modules/offline-auth.js#21"
+    },
+    {
+      "t": 1204,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js#22"
+    },
+    {
+      "t": 1331,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js#22",
+      "wall_ms": 127,
+      "rel": "assets/offline/modules/offline-auth.js",
+      "len": 52939,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1331,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-auth.js",
+      "id": "populate_item:assets/offline/modules/offline-auth.js#21",
+      "wall_ms": 127,
+      "len": 52939
+    },
+    {
+      "t": 1331,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-rbac.js",
+      "id": "populate_item:assets/offline/modules/offline-rbac.js#23"
+    },
+    {
+      "t": 1331,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js#24"
+    },
+    {
+      "t": 1453,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js#24",
+      "wall_ms": 122,
+      "rel": "assets/offline/modules/offline-rbac.js",
+      "len": 17287,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1453,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-rbac.js",
+      "id": "populate_item:assets/offline/modules/offline-rbac.js#23",
+      "wall_ms": 122,
+      "len": 17287
+    },
+    {
+      "t": 1453,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-core.js",
+      "id": "populate_item:assets/offline/modules/offline-core.js#25"
+    },
+    {
+      "t": 1453,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js#26"
+    },
+    {
+      "t": 1573,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js#26",
+      "wall_ms": 120,
+      "rel": "assets/offline/modules/offline-core.js",
+      "len": 1839,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1573,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-core.js",
+      "id": "populate_item:assets/offline/modules/offline-core.js#25",
+      "wall_ms": 120,
+      "len": 1839
+    },
+    {
+      "t": 1573,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-crypto.js",
+      "id": "populate_item:assets/offline/modules/offline-crypto.js#27"
+    },
+    {
+      "t": 1573,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js#28"
+    },
+    {
+      "t": 1700,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js#28",
+      "wall_ms": 127,
+      "rel": "assets/offline/modules/offline-crypto.js",
+      "len": 44944,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1700,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-crypto.js",
+      "id": "populate_item:assets/offline/modules/offline-crypto.js#27",
+      "wall_ms": 127,
+      "len": 44944
+    },
+    {
+      "t": 1700,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-sdk.js",
+      "id": "populate_item:assets/offline/modules/offline-sdk.js#29"
+    },
+    {
+      "t": 1700,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js#30"
+    },
+    {
+      "t": 1840,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js#30",
+      "wall_ms": 140,
+      "rel": "assets/offline/modules/offline-sdk.js",
+      "len": 28140,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1840,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-sdk.js",
+      "id": "populate_item:assets/offline/modules/offline-sdk.js#29",
+      "wall_ms": 140,
+      "len": 28140
+    },
+    {
+      "t": 1840,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-queue.js",
+      "id": "populate_item:assets/offline/modules/offline-queue.js#31"
+    },
+    {
+      "t": 1840,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js#32"
+    },
+    {
+      "t": 1973,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js#32",
+      "wall_ms": 133,
+      "rel": "assets/offline/modules/offline-queue.js",
+      "len": 14488,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 1973,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-queue.js",
+      "id": "populate_item:assets/offline/modules/offline-queue.js#31",
+      "wall_ms": 133,
+      "len": 14488
+    },
+    {
+      "t": 1973,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-replay.js",
+      "id": "populate_item:assets/offline/modules/offline-replay.js#33"
+    },
+    {
+      "t": 1973,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js#34"
+    },
+    {
+      "t": 2080,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js#34",
+      "wall_ms": 107,
+      "rel": "assets/offline/modules/offline-replay.js",
+      "len": 3726,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2080,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-replay.js",
+      "id": "populate_item:assets/offline/modules/offline-replay.js#33",
+      "wall_ms": 107,
+      "len": 3726
+    },
+    {
+      "t": 2080,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-sync.js",
+      "id": "populate_item:assets/offline/modules/offline-sync.js#35"
+    },
+    {
+      "t": 2080,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js#36"
+    },
+    {
+      "t": 2312,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js#36",
+      "wall_ms": 232,
+      "rel": "assets/offline/modules/offline-sync.js",
+      "len": 5306,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2312,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-sync.js",
+      "id": "populate_item:assets/offline/modules/offline-sync.js#35",
+      "wall_ms": 232,
+      "len": 5306
+    },
+    {
+      "t": 2312,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-network.js",
+      "id": "populate_item:assets/offline/modules/offline-network.js#37"
+    },
+    {
+      "t": 2312,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js#38"
+    },
+    {
+      "t": 2434,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js#38",
+      "wall_ms": 122,
+      "rel": "assets/offline/modules/offline-network.js",
+      "len": 6539,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2434,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-network.js",
+      "id": "populate_item:assets/offline/modules/offline-network.js#37",
+      "wall_ms": 122,
+      "len": 6539
+    },
+    {
+      "t": 2434,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-shell.js",
+      "id": "populate_item:assets/offline/modules/offline-shell.js#39"
+    },
+    {
+      "t": 2434,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js#40"
+    },
+    {
+      "t": 2563,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js#40",
+      "wall_ms": 129,
+      "rel": "assets/offline/modules/offline-shell.js",
+      "len": 32543,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2563,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-shell.js",
+      "id": "populate_item:assets/offline/modules/offline-shell.js#39",
+      "wall_ms": 129,
+      "len": 32543
+    },
+    {
+      "t": 2563,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-forms.js#41"
+    },
+    {
+      "t": 2563,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js#42"
+    },
+    {
+      "t": 2702,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js#42",
+      "wall_ms": 139,
+      "rel": "assets/offline/modules/offline-forms.js",
+      "len": 8382,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2702,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-forms.js#41",
+      "wall_ms": 139,
+      "len": 8382
+    },
+    {
+      "t": 2702,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-ops-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-ops-forms.js#43"
+    },
+    {
+      "t": 2702,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js#44"
+    },
+    {
+      "t": 2831,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js#44",
+      "wall_ms": 129,
+      "rel": "assets/offline/modules/offline-ops-forms.js",
+      "len": 57278,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2831,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-ops-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-ops-forms.js#43",
+      "wall_ms": 129,
+      "len": 57278
+    },
+    {
+      "t": 2831,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-files.js",
+      "id": "populate_item:assets/offline/modules/offline-files.js#45"
+    },
+    {
+      "t": 2831,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js#46"
+    },
+    {
+      "t": 2954,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js#46",
+      "wall_ms": 123,
+      "rel": "assets/offline/modules/offline-files.js",
+      "len": 7305,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 2954,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-files.js",
+      "id": "populate_item:assets/offline/modules/offline-files.js#45",
+      "wall_ms": 123,
+      "len": 7305
+    },
+    {
+      "t": 2954,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-master-data.js",
+      "id": "populate_item:assets/offline/modules/offline-master-data.js#47"
+    },
+    {
+      "t": 2954,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js#48"
+    },
+    {
+      "t": 3063,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js#48",
+      "wall_ms": 109,
+      "rel": "assets/offline/modules/offline-master-data.js",
+      "len": 17956,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3063,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-master-data.js",
+      "id": "populate_item:assets/offline/modules/offline-master-data.js#47",
+      "wall_ms": 109,
+      "len": 17956
+    },
+    {
+      "t": 3063,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-migrations.js",
+      "id": "populate_item:assets/offline/modules/offline-migrations.js#49"
+    },
+    {
+      "t": 3063,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js#50"
+    },
+    {
+      "t": 3177,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js#50",
+      "wall_ms": 114,
+      "rel": "assets/offline/modules/offline-migrations.js",
+      "len": 3964,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3177,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-migrations.js",
+      "id": "populate_item:assets/offline/modules/offline-migrations.js#49",
+      "wall_ms": 114,
+      "len": 3964
+    },
+    {
+      "t": 3177,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-monitor.js",
+      "id": "populate_item:assets/offline/modules/offline-monitor.js#51"
+    },
+    {
+      "t": 3177,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js#52"
+    },
+    {
+      "t": 3293,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js#52",
+      "wall_ms": 116,
+      "rel": "assets/offline/modules/offline-monitor.js",
+      "len": 6901,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3293,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-monitor.js",
+      "id": "populate_item:assets/offline/modules/offline-monitor.js#51",
+      "wall_ms": 116,
+      "len": 6901
+    },
+    {
+      "t": 3293,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-diagnostics.js",
+      "id": "populate_item:assets/offline/modules/offline-diagnostics.js#53"
+    },
+    {
+      "t": 3293,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js#54"
+    },
+    {
+      "t": 3424,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js#54",
+      "wall_ms": 131,
+      "rel": "assets/offline/modules/offline-diagnostics.js",
+      "len": 6905,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3424,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-diagnostics.js",
+      "id": "populate_item:assets/offline/modules/offline-diagnostics.js#53",
+      "wall_ms": 131,
+      "len": 6905
+    },
+    {
+      "t": 3424,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-print.js",
+      "id": "populate_item:assets/offline/modules/offline-print.js#55"
+    },
+    {
+      "t": 3424,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-print.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-print.js#56"
+    },
+    {
+      "t": 3546,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-print.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-print.js#56",
+      "wall_ms": 122,
+      "rel": "assets/offline/modules/offline-print.js",
+      "len": 102,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3546,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-print.js",
+      "id": "populate_item:assets/offline/modules/offline-print.js#55",
+      "wall_ms": 122,
+      "len": 102
+    },
+    {
+      "t": 3546,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-pos.js",
+      "id": "populate_item:assets/offline/modules/offline-pos.js#57"
+    },
+    {
+      "t": 3546,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-pos.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-pos.js#58"
+    },
+    {
+      "t": 3668,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-pos.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-pos.js#58",
+      "wall_ms": 122,
+      "rel": "assets/offline/modules/offline-pos.js",
+      "len": 1421,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3668,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-pos.js",
+      "id": "populate_item:assets/offline/modules/offline-pos.js#57",
+      "wall_ms": 122,
+      "len": 1421
+    },
+    {
+      "t": 3668,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-hr.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-hr.js#59"
+    },
+    {
+      "t": 3668,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-hr.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-hr.js#60"
+    },
+    {
+      "t": 3791,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-hr.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-hr.js#60",
+      "wall_ms": 123,
+      "rel": "assets/offline/modules/offline-adapter-hr.js",
+      "len": 13501,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3791,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-hr.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-hr.js#59",
+      "wall_ms": 123,
+      "len": 13501
+    },
+    {
+      "t": 3791,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-inventory.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-inventory.js#61"
+    },
+    {
+      "t": 3791,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-inventory.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-inventory.js#62"
+    },
+    {
+      "t": 3909,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-inventory.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-inventory.js#62",
+      "wall_ms": 118,
+      "rel": "assets/offline/modules/offline-adapter-inventory.js",
+      "len": 5345,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 3909,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-inventory.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-inventory.js#61",
+      "wall_ms": 118,
+      "len": 5345
+    },
+    {
+      "t": 3909,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-crm.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-crm.js#63"
+    },
+    {
+      "t": 3909,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-crm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-crm.js#64"
+    },
+    {
+      "t": 4039,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-crm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-crm.js#64",
+      "wall_ms": 130,
+      "rel": "assets/offline/modules/offline-adapter-crm.js",
+      "len": 7260,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4039,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-crm.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-crm.js#63",
+      "wall_ms": 130,
+      "len": 7260
+    },
+    {
+      "t": 4039,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-recruitment.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-recruitment.js#65"
+    },
+    {
+      "t": 4039,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-recruitment.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-recruitment.js#66"
+    },
+    {
+      "t": 4164,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-recruitment.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-recruitment.js#66",
+      "wall_ms": 125,
+      "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+      "len": 8841,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4164,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-recruitment.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-recruitment.js#65",
+      "wall_ms": 125,
+      "len": 8841
+    },
+    {
+      "t": 4164,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-warehouse.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-warehouse.js#67"
+    },
+    {
+      "t": 4164,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-warehouse.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-warehouse.js#68"
+    },
+    {
+      "t": 4281,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-warehouse.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-warehouse.js#68",
+      "wall_ms": 117,
+      "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+      "len": 3259,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4281,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-warehouse.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-warehouse.js#67",
+      "wall_ms": 117,
+      "len": 3259
+    },
+    {
+      "t": 4281,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-payroll.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-payroll.js#69"
+    },
+    {
+      "t": 4281,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-payroll.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-payroll.js#70"
+    },
+    {
+      "t": 4414,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-payroll.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-payroll.js#70",
+      "wall_ms": 133,
+      "rel": "assets/offline/modules/offline-adapter-payroll.js",
+      "len": 7423,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4414,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-payroll.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-payroll.js#69",
+      "wall_ms": 133,
+      "len": 7423
+    },
+    {
+      "t": 4414,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-assets.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-assets.js#71"
+    },
+    {
+      "t": 4414,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js#72"
+    },
+    {
+      "t": 4557,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js#72",
+      "wall_ms": 143,
+      "rel": "assets/offline/modules/offline-adapter-assets.js",
+      "len": 7638,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4557,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-assets.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-assets.js#71",
+      "wall_ms": 143,
+      "len": 7638
+    },
+    {
+      "t": 4557,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-projects.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-projects.js#73"
+    },
+    {
+      "t": 4557,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-projects.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-projects.js#74"
+    },
+    {
+      "t": 4688,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-projects.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-projects.js#74",
+      "wall_ms": 131,
+      "rel": "assets/offline/modules/offline-adapter-projects.js",
+      "len": 7217,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4688,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-projects.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-projects.js#73",
+      "wall_ms": 131,
+      "len": 7217
+    },
+    {
+      "t": 4688,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js#75"
+    },
+    {
+      "t": 4688,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js#76"
+    },
+    {
+      "t": 4825,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js#76",
+      "wall_ms": 137,
+      "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+      "len": 8201,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4825,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js#75",
+      "wall_ms": 137,
+      "len": 8201
+    },
+    {
+      "t": 4825,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-quality.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-quality.js#77"
+    },
+    {
+      "t": 4825,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js#78"
+    },
+    {
+      "t": 4964,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js#78",
+      "wall_ms": 139,
+      "rel": "assets/offline/modules/offline-adapter-quality.js",
+      "len": 7560,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 4964,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-quality.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-quality.js#77",
+      "wall_ms": 139,
+      "len": 7560
+    },
+    {
+      "t": 4964,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-eproc.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-eproc.js#79"
+    },
+    {
+      "t": 4964,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js#80"
+    },
+    {
+      "t": 5106,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js#80",
+      "wall_ms": 142,
+      "rel": "assets/offline/modules/offline-adapter-eproc.js",
+      "len": 8606,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 5106,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-eproc.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-eproc.js#79",
+      "wall_ms": 142,
+      "len": 8606
+    },
+    {
+      "t": 5106,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-approval.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-approval.js#81"
+    },
+    {
+      "t": 5106,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-approval.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-approval.js#82"
+    },
+    {
+      "t": 5243,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-approval.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-approval.js#82",
+      "wall_ms": 137,
+      "rel": "assets/offline/modules/offline-adapter-approval.js",
+      "len": 6003,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 5243,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-approval.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-approval.js#81",
+      "wall_ms": 137,
+      "len": 6003
+    },
+    {
+      "t": 5243,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-adapter-bi.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-bi.js#83"
+    },
+    {
+      "t": 5243,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-bi.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-bi.js#84"
+    },
+    {
+      "t": 5355,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-bi.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-bi.js#84",
+      "wall_ms": 112,
+      "rel": "assets/offline/modules/offline-adapter-bi.js",
+      "len": 6593,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 5355,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-adapter-bi.js",
+      "id": "populate_item:assets/offline/modules/offline-adapter-bi.js#83",
+      "wall_ms": 112,
+      "len": 6593
+    },
+    {
+      "t": 5355,
+      "type": "begin",
+      "name": "populate_item:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+      "id": "populate_item:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard#85"
+    },
+    {
+      "t": 5355,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard#86"
+    },
+    {
+      "t": 5479,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard#86",
+      "wall_ms": 124,
+      "rel": "assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+      "len": 17584,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 5479,
+      "type": "end",
+      "name": "populate_item:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+      "id": "populate_item:assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard#85",
+      "wall_ms": 124,
+      "len": 17584
+    },
+    {
+      "t": 5479,
+      "type": "begin",
+      "name": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "id": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean#87"
+    },
+    {
+      "t": 5479,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean#88"
+    },
+    {
+      "t": 5655,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean#88",
+      "wall_ms": 176,
+      "rel": "assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "len": 388640,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 5655,
+      "type": "end",
+      "name": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "id": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean#87",
+      "wall_ms": 176,
+      "len": 388640
+    },
+    {
+      "t": 5655,
+      "type": "end",
+      "name": "populateQueue:n=41",
+      "id": "populateQueue:n=41#6",
+      "wall_ms": 5375,
+      "n": 41
+    },
+    {
+      "t": 5655,
+      "type": "begin",
+      "name": "verifyProtectedOfflineCache",
+      "id": "verifyProtectedOfflineCache#89"
+    },
+    {
+      "t": 5655,
+      "type": "mark",
+      "name": "verify_cache_opened"
+    },
+    {
+      "t": 5715,
+      "type": "end",
+      "name": "verifyProtectedOfflineCache",
+      "id": "verifyProtectedOfflineCache#89",
+      "wall_ms": 60,
+      "missing": 0,
+      "inventory": 46
+    },
+    {
+      "t": 5715,
+      "type": "end",
+      "name": "ensureProtectedOfflineCache:force=false",
+      "id": "ensureProtectedOfflineCache:force=false#4",
+      "wall_ms": 5655,
+      "phase": "finalize",
+      "cached": 41,
+      "ok": true
+    },
+    {
+      "t": 5715,
+      "type": "mark",
+      "name": "protected_done",
+      "ok": true
+    },
+    {
+      "t": 5715,
+      "type": "begin",
+      "name": "warmOptionalChromeAssets",
+      "id": "warmOptionalChromeAssets#90"
+    },
+    {
+      "t": 6043,
+      "type": "end",
+      "name": "warmOptionalChromeAssets",
+      "id": "warmOptionalChromeAssets#90",
+      "wall_ms": 328,
+      "ok": true
+    },
+    {
+      "t": 6043,
+      "type": "begin",
+      "name": "warmErpOfflineShell",
+      "id": "warmErpOfflineShell#91"
+    },
+    {
+      "t": 6043,
+      "type": "begin",
+      "name": "ensureProtectedOfflineCache:force=true",
+      "id": "ensureProtectedOfflineCache:force=true#92"
+    },
+    {
+      "t": 6043,
+      "type": "mark",
+      "name": "ensure_cache_opened",
+      "force": true
+    },
+    {
+      "t": 6043,
+      "type": "begin",
+      "name": "populateQueue:n=48",
+      "id": "populateQueue:n=48#93"
+    },
+    {
+      "t": 6043,
+      "type": "begin",
+      "name": "populate_item:offline-shell.html",
+      "id": "populate_item:offline-shell.html#94"
+    },
+    {
+      "t": 6043,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:offline-shell.html",
+      "id": "cacheOneProtectedAsset:offline-shell.html#95"
+    },
+    {
+      "t": 6179,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:offline-shell.html",
+      "id": "cacheOneProtectedAsset:offline-shell.html#95",
+      "wall_ms": 136,
+      "rel": "offline-shell.html",
+      "len": 9416,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6179,
+      "type": "end",
+      "name": "populate_item:offline-shell.html",
+      "id": "populate_item:offline-shell.html#94",
+      "wall_ms": 136,
+      "len": 9416
+    },
+    {
+      "t": 6179,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-tenant-context.js",
+      "id": "populate_item:assets/offline/erp-offline-tenant-context.js#96"
+    },
+    {
+      "t": 6179,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-tenant-context.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-tenant-context.js#97"
+    },
+    {
+      "t": 6300,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-tenant-context.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-tenant-context.js#97",
+      "wall_ms": 121,
+      "rel": "assets/offline/erp-offline-tenant-context.js",
+      "len": 8902,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6300,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-tenant-context.js",
+      "id": "populate_item:assets/offline/erp-offline-tenant-context.js#96",
+      "wall_ms": 121,
+      "len": 8902
+    },
+    {
+      "t": 6300,
+      "type": "begin",
+      "name": "populate_item:assets/offline/offline-bootstrap.js",
+      "id": "populate_item:assets/offline/offline-bootstrap.js#98"
+    },
+    {
+      "t": 6300,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js#99"
+    },
+    {
+      "t": 6421,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/offline-bootstrap.js#99",
+      "wall_ms": 121,
+      "rel": "assets/offline/offline-bootstrap.js",
+      "len": 17584,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6421,
+      "type": "end",
+      "name": "populate_item:assets/offline/offline-bootstrap.js",
+      "id": "populate_item:assets/offline/offline-bootstrap.js#98",
+      "wall_ms": 121,
+      "len": 17584
+    },
+    {
+      "t": 6421,
+      "type": "begin",
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "id": "populate_item:assets/offline/rateb-offline.js#100"
+    },
+    {
+      "t": 6421,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#101"
+    },
+    {
+      "t": 6568,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#101",
+      "wall_ms": 147,
+      "rel": "assets/offline/rateb-offline.js",
+      "len": 388640,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6568,
+      "type": "end",
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "id": "populate_item:assets/offline/rateb-offline.js#100",
+      "wall_ms": 147,
+      "len": 388640
+    },
+    {
+      "t": 6568,
+      "type": "begin",
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "id": "populate_item:assets/offline/rateb-offline.min.js#102"
+    },
+    {
+      "t": 6568,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#103"
+    },
+    {
+      "t": 6727,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#103",
+      "wall_ms": 159,
+      "rel": "assets/offline/rateb-offline.min.js",
+      "len": 388640,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6727,
+      "type": "end",
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "id": "populate_item:assets/offline/rateb-offline.min.js#102",
+      "wall_ms": 159,
+      "len": 388640
+    },
+    {
+      "t": 6727,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-shell-auth.js",
+      "id": "populate_item:assets/offline/erp-offline-shell-auth.js#104"
+    },
+    {
+      "t": 6727,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-auth.js#105"
+    },
+    {
+      "t": 6844,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-auth.js#105",
+      "wall_ms": 117,
+      "rel": "assets/offline/erp-offline-shell-auth.js",
+      "len": 22556,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6844,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-shell-auth.js",
+      "id": "populate_item:assets/offline/erp-offline-shell-auth.js#104",
+      "wall_ms": 117,
+      "len": 22556
+    },
+    {
+      "t": 6844,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-shell-rbac.js",
+      "id": "populate_item:assets/offline/erp-offline-shell-rbac.js#106"
+    },
+    {
+      "t": 6844,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-rbac.js#107"
+    },
+    {
+      "t": 6958,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-shell-rbac.js#107",
+      "wall_ms": 114,
+      "rel": "assets/offline/erp-offline-shell-rbac.js",
+      "len": 4038,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 6958,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-shell-rbac.js",
+      "id": "populate_item:assets/offline/erp-offline-shell-rbac.js#106",
+      "wall_ms": 114,
+      "len": 4038
+    },
+    {
+      "t": 6958,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-shell-bootstrap.js",
+      "id": "populate_item:assets/offline/erp-shell-bootstrap.js#108"
+    },
+    {
+      "t": 6958,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js#109"
+    },
+    {
+      "t": 7074,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-shell-bootstrap.js#109",
+      "wall_ms": 116,
+      "rel": "assets/offline/erp-shell-bootstrap.js",
+      "len": 47134,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7074,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-shell-bootstrap.js",
+      "id": "populate_item:assets/offline/erp-shell-bootstrap.js#108",
+      "wall_ms": 116,
+      "len": 47134
+    },
+    {
+      "t": 7074,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-nav-guard.js",
+      "id": "populate_item:assets/offline/erp-offline-nav-guard.js#110"
+    },
+    {
+      "t": 7074,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js#111"
+    },
+    {
+      "t": 7190,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-nav-guard.js#111",
+      "wall_ms": 116,
+      "rel": "assets/offline/erp-offline-nav-guard.js",
+      "len": 45562,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7190,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-nav-guard.js",
+      "id": "populate_item:assets/offline/erp-offline-nav-guard.js#110",
+      "wall_ms": 116,
+      "len": 45562
+    },
+    {
+      "t": 7190,
+      "type": "begin",
+      "name": "populate_item:assets/offline/erp-offline-full-warm.js",
+      "id": "populate_item:assets/offline/erp-offline-full-warm.js#112"
+    },
+    {
+      "t": 7190,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js#113"
+    },
+    {
+      "t": 7307,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js",
+      "id": "cacheOneProtectedAsset:assets/offline/erp-offline-full-warm.js#113",
+      "wall_ms": 117,
+      "rel": "assets/offline/erp-offline-full-warm.js",
+      "len": 41649,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7307,
+      "type": "end",
+      "name": "populate_item:assets/offline/erp-offline-full-warm.js",
+      "id": "populate_item:assets/offline/erp-offline-full-warm.js#112",
+      "wall_ms": 117,
+      "len": 41649
+    },
+    {
+      "t": 7307,
+      "type": "begin",
+      "name": "populate_item:assets/offline/ops-page-allowlist.json",
+      "id": "populate_item:assets/offline/ops-page-allowlist.json#114"
+    },
+    {
+      "t": 7307,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/ops-page-allowlist.json",
+      "id": "cacheOneProtectedAsset:assets/offline/ops-page-allowlist.json#115"
+    },
+    {
+      "t": 7419,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/ops-page-allowlist.json",
+      "id": "cacheOneProtectedAsset:assets/offline/ops-page-allowlist.json#115",
+      "wall_ms": 112,
+      "rel": "assets/offline/ops-page-allowlist.json",
+      "len": 11152,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7419,
+      "type": "end",
+      "name": "populate_item:assets/offline/ops-page-allowlist.json",
+      "id": "populate_item:assets/offline/ops-page-allowlist.json#114",
+      "wall_ms": 112,
+      "len": 11152
+    },
+    {
+      "t": 7419,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-storage.js",
+      "id": "populate_item:assets/offline/modules/offline-storage.js#116"
+    },
+    {
+      "t": 7419,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js#117"
+    },
+    {
+      "t": 7530,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-storage.js#117",
+      "wall_ms": 111,
+      "rel": "assets/offline/modules/offline-storage.js",
+      "len": 8007,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7530,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-storage.js",
+      "id": "populate_item:assets/offline/modules/offline-storage.js#116",
+      "wall_ms": 111,
+      "len": 8007
+    },
+    {
+      "t": 7530,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-auth.js",
+      "id": "populate_item:assets/offline/modules/offline-auth.js#118"
+    },
+    {
+      "t": 7530,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js#119"
+    },
+    {
+      "t": 7644,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-auth.js#119",
+      "wall_ms": 114,
+      "rel": "assets/offline/modules/offline-auth.js",
+      "len": 52939,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7644,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-auth.js",
+      "id": "populate_item:assets/offline/modules/offline-auth.js#118",
+      "wall_ms": 114,
+      "len": 52939
+    },
+    {
+      "t": 7644,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-rbac.js",
+      "id": "populate_item:assets/offline/modules/offline-rbac.js#120"
+    },
+    {
+      "t": 7644,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js#121"
+    },
+    {
+      "t": 7758,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-rbac.js#121",
+      "wall_ms": 114,
+      "rel": "assets/offline/modules/offline-rbac.js",
+      "len": 17287,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7758,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-rbac.js",
+      "id": "populate_item:assets/offline/modules/offline-rbac.js#120",
+      "wall_ms": 114,
+      "len": 17287
+    },
+    {
+      "t": 7758,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-core.js",
+      "id": "populate_item:assets/offline/modules/offline-core.js#122"
+    },
+    {
+      "t": 7758,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js#123"
+    },
+    {
+      "t": 7871,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-core.js#123",
+      "wall_ms": 113,
+      "rel": "assets/offline/modules/offline-core.js",
+      "len": 1839,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7871,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-core.js",
+      "id": "populate_item:assets/offline/modules/offline-core.js#122",
+      "wall_ms": 113,
+      "len": 1839
+    },
+    {
+      "t": 7871,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-crypto.js",
+      "id": "populate_item:assets/offline/modules/offline-crypto.js#124"
+    },
+    {
+      "t": 7871,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js#125"
+    },
+    {
+      "t": 7988,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-crypto.js#125",
+      "wall_ms": 117,
+      "rel": "assets/offline/modules/offline-crypto.js",
+      "len": 44944,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 7988,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-crypto.js",
+      "id": "populate_item:assets/offline/modules/offline-crypto.js#124",
+      "wall_ms": 117,
+      "len": 44944
+    },
+    {
+      "t": 7988,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-sdk.js",
+      "id": "populate_item:assets/offline/modules/offline-sdk.js#126"
+    },
+    {
+      "t": 7988,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js#127"
+    },
+    {
+      "t": 8099,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js#127",
+      "wall_ms": 111,
+      "rel": "assets/offline/modules/offline-sdk.js",
+      "len": 28140,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8099,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-sdk.js",
+      "id": "populate_item:assets/offline/modules/offline-sdk.js#126",
+      "wall_ms": 111,
+      "len": 28140
+    },
+    {
+      "t": 8099,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-queue.js",
+      "id": "populate_item:assets/offline/modules/offline-queue.js#128"
+    },
+    {
+      "t": 8099,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js#129"
+    },
+    {
+      "t": 8214,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-queue.js#129",
+      "wall_ms": 115,
+      "rel": "assets/offline/modules/offline-queue.js",
+      "len": 14488,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8214,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-queue.js",
+      "id": "populate_item:assets/offline/modules/offline-queue.js#128",
+      "wall_ms": 115,
+      "len": 14488
+    },
+    {
+      "t": 8214,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-replay.js",
+      "id": "populate_item:assets/offline/modules/offline-replay.js#130"
+    },
+    {
+      "t": 8214,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js#131"
+    },
+    {
+      "t": 8324,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-replay.js#131",
+      "wall_ms": 110,
+      "rel": "assets/offline/modules/offline-replay.js",
+      "len": 3726,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8324,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-replay.js",
+      "id": "populate_item:assets/offline/modules/offline-replay.js#130",
+      "wall_ms": 110,
+      "len": 3726
+    },
+    {
+      "t": 8324,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-sync.js",
+      "id": "populate_item:assets/offline/modules/offline-sync.js#132"
+    },
+    {
+      "t": 8324,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js#133"
+    },
+    {
+      "t": 8436,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js#133",
+      "wall_ms": 112,
+      "rel": "assets/offline/modules/offline-sync.js",
+      "len": 5306,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8436,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-sync.js",
+      "id": "populate_item:assets/offline/modules/offline-sync.js#132",
+      "wall_ms": 112,
+      "len": 5306
+    },
+    {
+      "t": 8436,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-network.js",
+      "id": "populate_item:assets/offline/modules/offline-network.js#134"
+    },
+    {
+      "t": 8436,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js#135"
+    },
+    {
+      "t": 8546,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-network.js#135",
+      "wall_ms": 110,
+      "rel": "assets/offline/modules/offline-network.js",
+      "len": 6539,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8546,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-network.js",
+      "id": "populate_item:assets/offline/modules/offline-network.js#134",
+      "wall_ms": 110,
+      "len": 6539
+    },
+    {
+      "t": 8546,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-shell.js",
+      "id": "populate_item:assets/offline/modules/offline-shell.js#136"
+    },
+    {
+      "t": 8546,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js#137"
+    },
+    {
+      "t": 8665,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-shell.js#137",
+      "wall_ms": 119,
+      "rel": "assets/offline/modules/offline-shell.js",
+      "len": 32543,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8665,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-shell.js",
+      "id": "populate_item:assets/offline/modules/offline-shell.js#136",
+      "wall_ms": 119,
+      "len": 32543
+    },
+    {
+      "t": 8665,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-forms.js#138"
+    },
+    {
+      "t": 8665,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js#139"
+    },
+    {
+      "t": 8793,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js#139",
+      "wall_ms": 128,
+      "rel": "assets/offline/modules/offline-forms.js",
+      "len": 8382,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8793,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-forms.js#138",
+      "wall_ms": 128,
+      "len": 8382
+    },
+    {
+      "t": 8793,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-ops-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-ops-forms.js#140"
+    },
+    {
+      "t": 8793,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js#141"
+    },
+    {
+      "t": 8925,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-ops-forms.js#141",
+      "wall_ms": 132,
+      "rel": "assets/offline/modules/offline-ops-forms.js",
+      "len": 57278,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 8925,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-ops-forms.js",
+      "id": "populate_item:assets/offline/modules/offline-ops-forms.js#140",
+      "wall_ms": 132,
+      "len": 57278
+    },
+    {
+      "t": 8925,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-files.js",
+      "id": "populate_item:assets/offline/modules/offline-files.js#142"
+    },
+    {
+      "t": 8925,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js#143"
+    },
+    {
+      "t": 9053,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-files.js#143",
+      "wall_ms": 128,
+      "rel": "assets/offline/modules/offline-files.js",
+      "len": 7305,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 9053,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-files.js",
+      "id": "populate_item:assets/offline/modules/offline-files.js#142",
+      "wall_ms": 128,
+      "len": 7305
+    },
+    {
+      "t": 9053,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-master-data.js",
+      "id": "populate_item:assets/offline/modules/offline-master-data.js#144"
+    },
+    {
+      "t": 9053,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js#145"
+    },
+    {
+      "t": 9185,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-master-data.js#145",
+      "wall_ms": 132,
+      "rel": "assets/offline/modules/offline-master-data.js",
+      "len": 17956,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 9185,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-master-data.js",
+      "id": "populate_item:assets/offline/modules/offline-master-data.js#144",
+      "wall_ms": 132,
+      "len": 17956
+    },
+    {
+      "t": 9185,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-migrations.js",
+      "id": "populate_item:assets/offline/modules/offline-migrations.js#146"
+    },
+    {
+      "t": 9185,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js#147"
+    },
+    {
+      "t": 9310,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-migrations.js#147",
+      "wall_ms": 125,
+      "rel": "assets/offline/modules/offline-migrations.js",
+      "len": 3964,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 9310,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-migrations.js",
+      "id": "populate_item:assets/offline/modules/offline-migrations.js#146",
+      "wall_ms": 125,
+      "len": 3964
+    },
+    {
+      "t": 9310,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-monitor.js",
+      "id": "populate_item:assets/offline/modules/offline-monitor.js#148"
+    },
+    {
+      "t": 9310,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js#149"
+    },
+    {
+      "t": 9449,
+      "type": "end",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js#149",
+      "wall_ms": 139,
+      "rel": "assets/offline/modules/offline-monitor.js",
+      "len": 6901,
+      "kind": "fetch+put"
+    },
+    {
+      "t": 9449,
+      "type": "end",
+      "name": "populate_item:assets/offline/modules/offline-monitor.js",
+      "id": "populate_item:assets/offline/modules/offline-monitor.js#148",
+      "wall_ms": 139,
+      "len": 6901
+    },
+    {
+      "t": 9449,
+      "type": "begin",
+      "name": "populate_item:assets/offline/modules/offline-diagnostics.js",
+      "id": "populate_item:assets/offline/modules/offline-diagnostics.js#150"
+    },
+    {
+      "t": 9449,
+      "type": "begin",
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js",
+      "id": "cacheOneProtectedAsset:assets/offline/modules/offline-diagnostics.js#151"
+    }
+  ],
+  "top_30": [
+    {
+      "rank": 1,
+      "name": "ensureProtectedOfflineCache:force=false",
+      "wall_ms": 5655,
+      "self_ms": 5655,
+      "calls": 1,
+      "extra": {
+        "t": 5715,
+        "type": "end",
+        "name": "ensureProtectedOfflineCache:force=false",
+        "id": "ensureProtectedOfflineCache:force=false#4",
+        "wall_ms": 5655,
+        "phase": "finalize",
+        "cached": 41,
+        "ok": true
+      }
+    },
+    {
+      "rank": 2,
+      "name": "populateQueue:n=41",
+      "wall_ms": 5375,
+      "self_ms": 5375,
+      "calls": 1,
+      "extra": {
+        "t": 5655,
+        "type": "end",
+        "name": "populateQueue:n=41",
+        "id": "populateQueue:n=41#6",
+        "wall_ms": 5375,
+        "n": 41
+      }
+    },
+    {
+      "rank": 3,
+      "name": "warmOptionalChromeAssets",
+      "wall_ms": 328,
+      "self_ms": 328,
+      "calls": 1,
+      "extra": {
+        "t": 6043,
+        "type": "end",
+        "name": "warmOptionalChromeAssets",
+        "id": "warmOptionalChromeAssets#90",
+        "wall_ms": 328,
+        "ok": true
+      }
+    },
+    {
+      "rank": 4,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+      "wall_ms": 232,
+      "self_ms": 232,
+      "calls": 1,
+      "extra": {
+        "t": 2312,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sync.js#36",
+        "wall_ms": 232,
+        "rel": "assets/offline/modules/offline-sync.js",
+        "len": 5306,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 5,
+      "name": "populate_item:assets/offline/modules/offline-sync.js",
+      "wall_ms": 232,
+      "self_ms": 232,
+      "calls": 1,
+      "extra": {
+        "t": 2312,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-sync.js",
+        "id": "populate_item:assets/offline/modules/offline-sync.js#35",
+        "wall_ms": 232,
+        "len": 5306
+      }
+    },
+    {
+      "rank": 6,
+      "name": "verifyProtectedOfflineCache",
+      "wall_ms": 220,
+      "self_ms": 220,
+      "calls": 1,
+      "extra": {
+        "t": 280,
+        "type": "end",
+        "name": "verifyProtectedOfflineCache",
+        "id": "verifyProtectedOfflineCache#5",
+        "wall_ms": 220,
+        "missing": 39,
+        "inventory": 46
+      }
+    },
+    {
+      "rank": 7,
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "wall_ms": 176,
+      "self_ms": 176,
+      "calls": 1,
+      "extra": {
+        "t": 5655,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+        "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js?v=oid-20260713-lean#88",
+        "wall_ms": 176,
+        "rel": "assets/offline/rateb-offline.js?v=oid-20260713-lean",
+        "len": 388640,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 8,
+      "name": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+      "wall_ms": 176,
+      "self_ms": 176,
+      "calls": 1,
+      "extra": {
+        "t": 5655,
+        "type": "end",
+        "name": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean",
+        "id": "populate_item:assets/offline/rateb-offline.js?v=oid-20260713-lean#87",
+        "wall_ms": 176,
+        "len": 388640
+      }
+    },
+    {
+      "rank": 9,
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "wall_ms": 162,
+      "self_ms": 162,
+      "calls": 1,
+      "extra": {
+        "t": 554,
+        "type": "end",
+        "name": "populate_item:assets/offline/rateb-offline.js",
+        "id": "populate_item:assets/offline/rateb-offline.js#9",
+        "wall_ms": 162,
+        "len": 388640
+      }
+    },
+    {
+      "rank": 10,
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "wall_ms": 161,
+      "self_ms": 161,
+      "calls": 1,
+      "extra": {
+        "t": 553,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+        "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#10",
+        "wall_ms": 161,
+        "rel": "assets/offline/rateb-offline.js",
+        "len": 388640,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 11,
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "wall_ms": 159,
+      "self_ms": 159,
+      "calls": 1,
+      "extra": {
+        "t": 6727,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+        "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#103",
+        "wall_ms": 159,
+        "rel": "assets/offline/rateb-offline.min.js",
+        "len": 388640,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 12,
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "wall_ms": 159,
+      "self_ms": 159,
+      "calls": 1,
+      "extra": {
+        "t": 6727,
+        "type": "end",
+        "name": "populate_item:assets/offline/rateb-offline.min.js",
+        "id": "populate_item:assets/offline/rateb-offline.min.js#102",
+        "wall_ms": 159,
+        "len": 388640
+      }
+    },
+    {
+      "rank": 13,
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+      "wall_ms": 147,
+      "self_ms": 147,
+      "calls": 1,
+      "extra": {
+        "t": 6568,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.js",
+        "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.js#101",
+        "wall_ms": 147,
+        "rel": "assets/offline/rateb-offline.js",
+        "len": 388640,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 14,
+      "name": "populate_item:assets/offline/rateb-offline.js",
+      "wall_ms": 147,
+      "self_ms": 147,
+      "calls": 1,
+      "extra": {
+        "t": 6568,
+        "type": "end",
+        "name": "populate_item:assets/offline/rateb-offline.js",
+        "id": "populate_item:assets/offline/rateb-offline.js#100",
+        "wall_ms": 147,
+        "len": 388640
+      }
+    },
+    {
+      "rank": 15,
+      "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+      "wall_ms": 144,
+      "self_ms": 144,
+      "calls": 1,
+      "extra": {
+        "t": 698,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js",
+        "id": "cacheOneProtectedAsset:assets/offline/rateb-offline.min.js#12",
+        "wall_ms": 144,
+        "rel": "assets/offline/rateb-offline.min.js",
+        "len": 388640,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 16,
+      "name": "populate_item:assets/offline/rateb-offline.min.js",
+      "wall_ms": 144,
+      "self_ms": 144,
+      "calls": 1,
+      "extra": {
+        "t": 698,
+        "type": "end",
+        "name": "populate_item:assets/offline/rateb-offline.min.js",
+        "id": "populate_item:assets/offline/rateb-offline.min.js#11",
+        "wall_ms": 144,
+        "len": 388640
+      }
+    },
+    {
+      "rank": 17,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js",
+      "wall_ms": 143,
+      "self_ms": 143,
+      "calls": 1,
+      "extra": {
+        "t": 4557,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-assets.js#72",
+        "wall_ms": 143,
+        "rel": "assets/offline/modules/offline-adapter-assets.js",
+        "len": 7638,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 18,
+      "name": "populate_item:assets/offline/modules/offline-adapter-assets.js",
+      "wall_ms": 143,
+      "self_ms": 143,
+      "calls": 1,
+      "extra": {
+        "t": 4557,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-adapter-assets.js",
+        "id": "populate_item:assets/offline/modules/offline-adapter-assets.js#71",
+        "wall_ms": 143,
+        "len": 7638
+      }
+    },
+    {
+      "rank": 19,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js",
+      "wall_ms": 142,
+      "self_ms": 142,
+      "calls": 1,
+      "extra": {
+        "t": 5106,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-eproc.js#80",
+        "wall_ms": 142,
+        "rel": "assets/offline/modules/offline-adapter-eproc.js",
+        "len": 8606,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 20,
+      "name": "populate_item:assets/offline/modules/offline-adapter-eproc.js",
+      "wall_ms": 142,
+      "self_ms": 142,
+      "calls": 1,
+      "extra": {
+        "t": 5106,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-adapter-eproc.js",
+        "id": "populate_item:assets/offline/modules/offline-adapter-eproc.js#79",
+        "wall_ms": 142,
+        "len": 8606
+      }
+    },
+    {
+      "rank": 21,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+      "wall_ms": 140,
+      "self_ms": 140,
+      "calls": 1,
+      "extra": {
+        "t": 1840,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-sdk.js#30",
+        "wall_ms": 140,
+        "rel": "assets/offline/modules/offline-sdk.js",
+        "len": 28140,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 22,
+      "name": "populate_item:assets/offline/modules/offline-sdk.js",
+      "wall_ms": 140,
+      "self_ms": 140,
+      "calls": 1,
+      "extra": {
+        "t": 1840,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-sdk.js",
+        "id": "populate_item:assets/offline/modules/offline-sdk.js#29",
+        "wall_ms": 140,
+        "len": 28140
+      }
+    },
+    {
+      "rank": 23,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 2702,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-forms.js#42",
+        "wall_ms": 139,
+        "rel": "assets/offline/modules/offline-forms.js",
+        "len": 8382,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 24,
+      "name": "populate_item:assets/offline/modules/offline-forms.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 2702,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-forms.js",
+        "id": "populate_item:assets/offline/modules/offline-forms.js#41",
+        "wall_ms": 139,
+        "len": 8382
+      }
+    },
+    {
+      "rank": 25,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 4964,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-quality.js#78",
+        "wall_ms": 139,
+        "rel": "assets/offline/modules/offline-adapter-quality.js",
+        "len": 7560,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 26,
+      "name": "populate_item:assets/offline/modules/offline-adapter-quality.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 4964,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-adapter-quality.js",
+        "id": "populate_item:assets/offline/modules/offline-adapter-quality.js#77",
+        "wall_ms": 139,
+        "len": 7560
+      }
+    },
+    {
+      "rank": 27,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 9449,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-monitor.js#149",
+        "wall_ms": 139,
+        "rel": "assets/offline/modules/offline-monitor.js",
+        "len": 6901,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 28,
+      "name": "populate_item:assets/offline/modules/offline-monitor.js",
+      "wall_ms": 139,
+      "self_ms": 139,
+      "calls": 1,
+      "extra": {
+        "t": 9449,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-monitor.js",
+        "id": "populate_item:assets/offline/modules/offline-monitor.js#148",
+        "wall_ms": 139,
+        "len": 6901
+      }
+    },
+    {
+      "rank": 29,
+      "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js",
+      "wall_ms": 137,
+      "self_ms": 137,
+      "calls": 1,
+      "extra": {
+        "t": 4825,
+        "type": "end",
+        "name": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js",
+        "id": "cacheOneProtectedAsset:assets/offline/modules/offline-adapter-manufacturing.js#76",
+        "wall_ms": 137,
+        "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+        "len": 8201,
+        "kind": "fetch+put"
+      }
+    },
+    {
+      "rank": 30,
+      "name": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js",
+      "wall_ms": 137,
+      "self_ms": 137,
+      "calls": 1,
+      "extra": {
+        "t": 4825,
+        "type": "end",
+        "name": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js",
+        "id": "populate_item:assets/offline/modules/offline-adapter-manufacturing.js#75",
+        "wall_ms": 137,
+        "len": 8201
+      }
+    }
+  ],
+  "fetch_navigate_marks": [],
+  "marks": [
+    {
+      "t": 1,
+      "type": "mark",
+      "name": "migrate_keys",
+      "n": 5
+    },
+    {
+      "t": 60,
+      "type": "mark",
+      "name": "ensure_cache_opened",
+      "force": false
+    },
+    {
+      "t": 61,
+      "type": "mark",
+      "name": "verify_cache_opened"
+    },
+    {
+      "t": 5655,
+      "type": "mark",
+      "name": "verify_cache_opened"
+    },
+    {
+      "t": 5715,
+      "type": "mark",
+      "name": "protected_done",
+      "ok": true
+    },
+    {
+      "t": 6043,
+      "type": "mark",
+      "name": "ensure_cache_opened",
+      "force": true
+    }
+  ],
+  "aggregated": [
+    {
+      "name": "populate_item",
+      "wall_ms": 8781,
+      "calls": 69
+    },
+    {
+      "name": "cacheOneProtectedAsset",
+      "wall_ms": 8779,
+      "calls": 69
+    },
+    {
+      "name": "ensureProtectedOfflineCache",
+      "wall_ms": 5655,
+      "calls": 1
+    },
+    {
+      "name": "populateQueue",
+      "wall_ms": 5375,
+      "calls": 1
+    },
+    {
+      "name": "warmOptionalChromeAssets",
+      "wall_ms": 328,
+      "calls": 1
+    },
+    {
+      "name": "verifyProtectedOfflineCache",
+      "wall_ms": 280,
+      "calls": 2
+    },
+    {
+      "name": "migrateActivateCaches_call",
+      "wall_ms": 60,
+      "calls": 1
+    }
+  ]
+}

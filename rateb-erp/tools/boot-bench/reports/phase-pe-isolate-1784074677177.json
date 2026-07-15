@@ -1,0 +1,129 @@
+{
+  "phase": "PE_B",
+  "generatedAt": "2026-07-15T00:17:57.164Z",
+  "scenarios": [
+    {
+      "name": "A_clear_register_nav_immediate",
+      "opts": {
+        "clear": true,
+        "register": true,
+        "waitMs": 0
+      },
+      "metrics": {
+        "workerStart": 4,
+        "responseStart": 262.6,
+        "ttfb": 258.2,
+        "dcl": 537.2,
+        "load": 540.7,
+        "transferSize": 71327,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=peb-1784074632046",
+        "ready": true,
+        "register": true
+      },
+      "scan_after_dcl_ms": 3,
+      "scan_ready_est_ms": 540.2
+    },
+    {
+      "name": "B_clear_register_wait800_nav",
+      "opts": {
+        "clear": true,
+        "register": true,
+        "waitMs": 800
+      },
+      "metrics": {
+        "workerStart": 210.2999999821186,
+        "responseStart": 455.4,
+        "ttfb": 244.4,
+        "dcl": 685.2,
+        "load": 687,
+        "transferSize": 71327,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=peb-1784074636519",
+        "ready": true,
+        "register": true
+      },
+      "scan_after_dcl_ms": 1,
+      "scan_ready_est_ms": 686.2
+    },
+    {
+      "name": "C_clear_register_forceWarm_nav",
+      "opts": {
+        "clear": true,
+        "register": true,
+        "waitMs": 50,
+        "forceWarm": true,
+        "forceWarmDelayMs": 50
+      },
+      "metrics": {
+        "workerStart": 881.8000000119209,
+        "responseStart": 1113.1,
+        "ttfb": 229.3,
+        "dcl": 1352.1,
+        "load": 1353.7,
+        "transferSize": 71327,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=peb-1784074643665",
+        "ready": true,
+        "register": true
+      },
+      "scan_after_dcl_ms": 2,
+      "scan_ready_est_ms": 1354.1
+    },
+    {
+      "name": "D_reuse_no_clear_wait800",
+      "opts": {
+        "clear": false,
+        "register": true,
+        "waitMs": 800
+      },
+      "metrics": {
+        "workerStart": 346.5,
+        "responseStart": 567.4,
+        "ttfb": 219.5,
+        "dcl": 816.1,
+        "load": 818.5,
+        "transferSize": 71327,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "ready": true,
+        "register": true
+      },
+      "scan_after_dcl_ms": 2,
+      "scan_ready_est_ms": 818.1
+    },
+    {
+      "name": "E_warm_second_nav",
+      "opts": {
+        "clear": false,
+        "register": true,
+        "waitMs": 2000
+      },
+      "metrics": {
+        "workerStart": 3.0999999940395355,
+        "responseStart": 209.7,
+        "ttfb": 206.2,
+        "dcl": 454.5,
+        "load": 456.6,
+        "transferSize": 71327,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "ready": true,
+        "register": true
+      },
+      "scan_after_dcl_ms": 1,
+      "scan_ready_est_ms": 455.5
+    },
+    {
+      "name": "F_pd_protocol_first_then_warm",
+      "first": {
+        "workerStart": 327.5,
+        "responseStart": 552.7,
+        "ttfb": 224.5,
+        "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "second": {
+        "workerStart": 5.200000017881393,
+        "responseStart": 16.3,
+        "ttfb": 10.8,
+        "transferSize": 0,
+        "dcl": 226.4
+      }
+    }
+  ]
+}
