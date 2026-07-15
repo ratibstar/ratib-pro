@@ -1,0 +1,341 @@
+{
+  "phase": "PC",
+  "measuredAt": "2026-07-15T00:01:51.434Z",
+  "build": "20260715-phase-pc-v63",
+  "before": {
+    "register_to_activated_ms": 21131,
+    "ensure_protected_ms": 6183,
+    "nav_with_sw_responseStart_ms": 5313
+  },
+  "lifecycle": {
+    "marks": [
+      {
+        "name": "register_start",
+        "t": 0
+      },
+      {
+        "name": "register_returned",
+        "t": 172
+      },
+      {
+        "name": "state_installing",
+        "t": 172
+      },
+      {
+        "name": "state_installed",
+        "t": 190
+      },
+      {
+        "name": "state_activating",
+        "t": 191
+      },
+      {
+        "name": "state_activated",
+        "t": 191
+      },
+      {
+        "name": "activated",
+        "t": 191
+      },
+      {
+        "name": "ready",
+        "t": 191
+      }
+    ],
+    "register_to_activated_ms": 191,
+    "register_to_ready_ms": 191,
+    "controller_ms": 192,
+    "build_probe": true
+  },
+  "navigations": {
+    "first": {
+      "label": "first_after_sw_update",
+      "wall_ms": 451,
+      "status": 200,
+      "fromSW": true,
+      "register": true,
+      "timing": {
+        "workerStart": 1.5,
+        "responseStart": 231,
+        "ttfb": 229.2,
+        "download": 20.5,
+        "protocol": ""
+      }
+    },
+    "warm1": {
+      "label": "warm1",
+      "wall_ms": 213,
+      "status": 200,
+      "fromSW": true,
+      "register": true,
+      "timing": {
+        "workerStart": 1.4000000059604645,
+        "responseStart": 6.3,
+        "ttfb": 4.8,
+        "download": 2.3,
+        "protocol": ""
+      }
+    },
+    "warm2": {
+      "label": "warm2",
+      "wall_ms": 368,
+      "status": 200,
+      "fromSW": true,
+      "register": true,
+      "timing": {
+        "workerStart": 1.2000000178813934,
+        "responseStart": 7.3,
+        "ttfb": 5.9,
+        "download": 1.7,
+        "protocol": ""
+      }
+    }
+  },
+  "protectedStatus": {
+    "ok": true,
+    "missing": [],
+    "inventory": [
+      {
+        "rel": "offline-shell.html",
+        "ok": true,
+        "len": 9416
+      },
+      {
+        "rel": "assets/offline/erp-offline-tenant-context.js",
+        "ok": true,
+        "len": 8902
+      },
+      {
+        "rel": "assets/offline/offline-bootstrap.js",
+        "ok": true,
+        "len": 17584
+      },
+      {
+        "rel": "assets/offline/rateb-offline.js",
+        "ok": true,
+        "len": 388640
+      },
+      {
+        "rel": "assets/offline/rateb-offline.min.js",
+        "ok": true,
+        "len": 388640
+      },
+      {
+        "rel": "assets/offline/erp-offline-shell-auth.js",
+        "ok": true,
+        "len": 22556
+      },
+      {
+        "rel": "assets/offline/erp-offline-shell-rbac.js",
+        "ok": true,
+        "len": 4038
+      },
+      {
+        "rel": "assets/offline/erp-shell-bootstrap.js",
+        "ok": true,
+        "len": 47134
+      },
+      {
+        "rel": "assets/offline/erp-offline-nav-guard.js",
+        "ok": true,
+        "len": 45562
+      },
+      {
+        "rel": "assets/offline/erp-offline-full-warm.js",
+        "ok": true,
+        "len": 41649
+      },
+      {
+        "rel": "assets/offline/ops-page-allowlist.json",
+        "ok": true,
+        "len": 11152
+      },
+      {
+        "rel": "assets/offline/modules/offline-storage.js",
+        "ok": true,
+        "len": 8007
+      },
+      {
+        "rel": "assets/offline/modules/offline-auth.js",
+        "ok": true,
+        "len": 52939
+      },
+      {
+        "rel": "assets/offline/modules/offline-rbac.js",
+        "ok": true,
+        "len": 17287
+      },
+      {
+        "rel": "assets/offline/modules/offline-core.js",
+        "ok": true,
+        "len": 1839
+      },
+      {
+        "rel": "assets/offline/modules/offline-crypto.js",
+        "ok": true,
+        "len": 44944
+      },
+      {
+        "rel": "assets/offline/modules/offline-sdk.js",
+        "ok": true,
+        "len": 28140
+      },
+      {
+        "rel": "assets/offline/modules/offline-queue.js",
+        "ok": true,
+        "len": 14488
+      },
+      {
+        "rel": "assets/offline/modules/offline-replay.js",
+        "ok": true,
+        "len": 3726
+      },
+      {
+        "rel": "assets/offline/modules/offline-sync.js",
+        "ok": true,
+        "len": 5306
+      },
+      {
+        "rel": "assets/offline/modules/offline-network.js",
+        "ok": true,
+        "len": 6539
+      },
+      {
+        "rel": "assets/offline/modules/offline-shell.js",
+        "ok": true,
+        "len": 32543
+      },
+      {
+        "rel": "assets/offline/modules/offline-forms.js",
+        "ok": true,
+        "len": 8382
+      },
+      {
+        "rel": "assets/offline/modules/offline-ops-forms.js",
+        "ok": true,
+        "len": 57278
+      },
+      {
+        "rel": "assets/offline/modules/offline-files.js",
+        "ok": true,
+        "len": 7305
+      },
+      {
+        "rel": "assets/offline/modules/offline-master-data.js",
+        "ok": true,
+        "len": 17956
+      },
+      {
+        "rel": "assets/offline/modules/offline-migrations.js",
+        "ok": true,
+        "len": 3964
+      },
+      {
+        "rel": "assets/offline/modules/offline-monitor.js",
+        "ok": true,
+        "len": 6901
+      },
+      {
+        "rel": "assets/offline/modules/offline-diagnostics.js",
+        "ok": true,
+        "len": 6905
+      },
+      {
+        "rel": "assets/offline/modules/offline-print.js",
+        "ok": true,
+        "len": 102
+      },
+      {
+        "rel": "assets/offline/modules/offline-pos.js",
+        "ok": true,
+        "len": 1421
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-hr.js",
+        "ok": true,
+        "len": 13501
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-inventory.js",
+        "ok": true,
+        "len": 5345
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-accounting.js",
+        "ok": true,
+        "len": 9198
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-procurement.js",
+        "ok": true,
+        "len": 6386
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-crm.js",
+        "ok": true,
+        "len": 7260
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+        "ok": true,
+        "len": 8841
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+        "ok": true,
+        "len": 3259
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-payroll.js",
+        "ok": true,
+        "len": 7423
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-assets.js",
+        "ok": true,
+        "len": 7638
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-projects.js",
+        "ok": true,
+        "len": 7217
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+        "ok": true,
+        "len": 8201
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-quality.js",
+        "ok": true,
+        "len": 7560
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-eproc.js",
+        "ok": true,
+        "len": 8606
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-approval.js",
+        "ok": true,
+        "len": 6003
+      },
+      {
+        "rel": "assets/offline/modules/offline-adapter-bi.js",
+        "ok": true,
+        "len": 6593
+      }
+    ],
+    "cache": "rateb-erp-coexist-v30",
+    "build": "20260715-phase-pc-v63",
+    "at": 1784073711432
+  },
+  "acceptance": {
+    "sw_startup_lt_200": true,
+    "first_nav_lt_700": true,
+    "warm_nav_lt_300": true,
+    "protected_ok": true,
+    "register_html": true,
+    "pass": true
+  }
+}
