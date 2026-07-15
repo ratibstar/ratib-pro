@@ -386,19 +386,11 @@ if (!function_exists('rateb_platform_company_create_maintenance_enabled')) {
 
 if (!function_exists('rateb_platform_company_create_allowed')) {
     /**
-     * Agency-first model: platform company create is off unless maintenance unlock.
-     * Dedicated agency ERP still allows create only when zero companies exist.
+     * Create is allowed; dedicated ERP still blocks a 2nd company.
+     * Agency↔company link is done on the company form (linked_agency_id).
      */
     function rateb_platform_company_create_allowed(): bool
     {
-        if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)
-            && \Rateb\App\Services\DedicatedTenantPolicy::isDedicated()
-        ) {
-            return \Rateb\App\Services\DedicatedTenantPolicy::canCreateCompany();
-        }
-        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
-            return rateb_platform_company_create_maintenance_enabled();
-        }
         if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
             return \Rateb\App\Services\DedicatedTenantPolicy::canCreateCompany();
         }
@@ -413,7 +405,7 @@ if (!function_exists('rateb_assert_platform_company_create_allowed')) {
         if (rateb_platform_company_create_allowed()) {
             return;
         }
-        throw new \RuntimeException(__('company_create_agency_path_only'));
+        throw new \RuntimeException(__('erp_dedicated_single_company'));
     }
 }
 

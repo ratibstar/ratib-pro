@@ -7,6 +7,8 @@
 /** @var array<string, mixed>|null $limits */
 /** @var string $companyAdminLogin */
 /** @var string $companyLoginUrl */
+/** @var list<array<string, mixed>> $linkAgencies */
+/** @var int $linkedAgencyId */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $userLimitVal = (int) ($item['user_limit'] ?? 0);
@@ -51,6 +53,38 @@ $companyLoginUrl = (string) ($companyLoginUrl ?? '');
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('phone'); ?></label>
                     <input class="form-control" type="text" name="phone" value="<?php echo Rateb\App\Core\View::escape($item['phone'] ?? ''); ?>">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label"><?php echo __('company_linked_agency'); ?></label>
+                    <?php
+                    $linkAgencies = (isset($linkAgencies) && is_array($linkAgencies)) ? $linkAgencies : [];
+                    $linkedAgencyId = (int) ($linkedAgencyId ?? 0);
+                    ?>
+                    <select class="form-select" name="linked_agency_id" id="rateb-linked-agency">
+                        <option value="0"><?php echo Rateb\App\Core\View::escape(__('company_linked_agency_none')); ?></option>
+                        <?php foreach ($linkAgencies as $agency) {
+                            $aid = (int) ($agency['id'] ?? 0);
+                            if ($aid < 1) {
+                                continue;
+                            }
+                            $label = trim((string) ($agency['name'] ?? $agency['agency_name'] ?? ''));
+                            if ($label === '') {
+                                $label = '#' . $aid;
+                            }
+                            $site = trim((string) ($agency['site_url'] ?? ''));
+                            if ($site !== '') {
+                                $label .= ' — ' . $site;
+                            }
+                            ?>
+                        <option value="<?php echo $aid; ?>"<?php echo $linkedAgencyId === $aid ? ' selected' : ''; ?>>
+                            <?php echo Rateb\App\Core\View::escape($label); ?>
+                        </option>
+                        <?php } ?>
+                    </select>
+                    <p class="form-text mb-0"><?php echo __('company_linked_agency_help'); ?></p>
+                    <?php if ($linkAgencies === []) { ?>
+                    <p class="form-text text-warning mb-0"><?php echo __('company_linked_agency_empty'); ?></p>
+                    <?php } ?>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('status'); ?></label>
