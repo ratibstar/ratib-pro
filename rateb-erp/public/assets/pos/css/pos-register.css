@@ -3282,6 +3282,33 @@ html[dir="rtl"] .rateb-pos__nav {
     font-size: 36px;
 }
 
+.rateb-pos__supervisor-offline {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 4px;
+    text-align: start;
+}
+
+.rateb-pos__supervisor-offline[hidden] {
+    display: none !important;
+}
+
+.rateb-pos__supervisor-offline .rateb-pos__field-label {
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.rateb-pos__supervisor-offline .rateb-pos__input--block {
+    width: 100%;
+    text-align: center;
+    letter-spacing: 0.2em;
+    font-size: 1.15rem;
+}
+
 .rateb-pos__biometric-gate {
     display: flex;
     align-items: center;

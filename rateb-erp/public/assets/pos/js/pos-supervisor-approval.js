@@ -24,14 +24,32 @@
     var pinInput = root.querySelector('[data-pos-supervisor-pin]');
     var pinSubmit = root.querySelector('[data-pos-supervisor-pin-submit]');
     var pending = null;
+    var offlineNoPin = false;
 
     /** Actions that only mutate local UI and can be approved offline. */
     var OFFLINE_LOCAL_ACTIONS = {
         cancel_invoice: true
     };
 
+    var arFallback = {
+        pos_supervisor_offline_hint: 'وضع عدم الاتصال: أكّد الإلغاء برمز PIN المحلي، أو أكّد مباشرة إن لم يُعيَّن رمز.',
+        pos_supervisor_offline_confirm: 'تأكيد الإلغاء أوفلاين',
+        pos_supervisor_offline_blocked: 'هذا الإجراء يحتاج اتصالاً لاعتماد المشرف.',
+        pos_lock_pin: 'رمز PIN',
+        pos_lock_pin_required: 'أدخل رمز PIN',
+        pos_lock_pin_invalid: 'رمز PIN غير صحيح',
+        pos_supervisor_scan_hint: 'يُرجى مسح بصمة المشرف للمتابعة'
+    };
+
     function t(key, fb) {
-        return i18n[key] || fb || key;
+        if (i18n[key]) {
+            return i18n[key];
+        }
+        var locale = String(config.locale || document.documentElement.lang || '').toLowerCase();
+        if ((locale.indexOf('ar') === 0 || document.documentElement.dir === 'rtl') && arFallback[key]) {
+            return arFallback[key];
+        }
+        return fb || key;
     }
 
     function csrf() {
@@ -54,7 +72,46 @@
         }
     }
 
+    function ensureOfflineControls() {
+        if (offlineBlock && pinSubmit) {
+            return;
+        }
+        var scanHost = root.querySelector('.rateb-pos__supervisor-scan');
+        if (!scanHost) {
+            return;
+        }
+        if (!offlineBlock) {
+            offlineBlock = document.createElement('div');
+            offlineBlock.className = 'rateb-pos__supervisor-offline';
+            offlineBlock.setAttribute('data-pos-supervisor-offline', '');
+            offlineBlock.hidden = true;
+            offlineBlock.innerHTML =
+                '<label class="rateb-pos__field-label" for="rateb-pos-supervisor-pin-dyn">' + t('pos_lock_pin', 'PIN') + '</label>' +
+                '<input type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="12" ' +
+                'class="rateb-pos__input rateb-pos__input--block" id="rateb-pos-supervisor-pin-dyn" data-pos-supervisor-pin />' +
+                '<button type="button" class="rateb-pos__biometric-btn" data-pos-supervisor-pin-submit>' +
+                t('pos_supervisor_offline_confirm', 'Confirm offline cancel') + '</button>';
+            scanHost.appendChild(offlineBlock);
+            pinInput = offlineBlock.querySelector('[data-pos-supervisor-pin]');
+            pinSubmit = offlineBlock.querySelector('[data-pos-supervisor-pin-submit]');
+            if (pinSubmit) {
+                pinSubmit.addEventListener('click', function () {
+                    completeOfflineApproval();
+                });
+            }
+            if (pinInput) {
+                pinInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        completeOfflineApproval();
+                    }
+                });
+            }
+        }
+    }
+
     function setOfflineUi(showOffline) {
+        ensureOfflineControls();
         if (scanBtn) {
             scanBtn.hidden = !!showOffline;
         }
@@ -63,6 +120,14 @@
         }
         if (pinInput) {
             pinInput.value = '';
+            pinInput.hidden = !!offlineNoPin;
+            var label = offlineBlock ? offlineBlock.querySelector('label') : null;
+            if (label) {
+                label.hidden = !!offlineNoPin;
+            }
+        }
+        if (pinSubmit) {
+            pinSubmit.textContent = t('pos_supervisor_offline_confirm', 'Confirm offline cancel');
         }
     }
 
@@ -198,7 +263,7 @@
             finishGranted('offline:' + (pending.actionType || 'local'), 0);
         }
 
-        if (!lock || typeof lock.hasPinEnrolled !== 'function') {
+        if (offlineNoPin || !lock || typeof lock.hasPinEnrolled !== 'function') {
             grantOffline();
             return;
         }
@@ -231,13 +296,33 @@
             onGranted: onGranted,
             offline: true
         };
+        offlineNoPin = false;
         if (hintEl) {
             hintEl.textContent = t('pos_supervisor_offline_hint', 'Offline: confirm with local PIN or confirm directly if no PIN is set.');
         }
-        if (pinSubmit) {
-            pinSubmit.textContent = t('pos_supervisor_offline_confirm', 'Confirm offline cancel');
+        ensureOfflineControls();
+
+        function openWithPinState(hasPin) {
+            offlineNoPin = !hasPin;
+            if (hintEl && !hasPin) {
+                hintEl.textContent = t('pos_supervisor_offline_confirm', 'Confirm offline cancel');
+            }
+            if (pinSubmit) {
+                pinSubmit.textContent = t('pos_supervisor_offline_confirm', 'Confirm offline cancel');
+            }
+            modalOpen(true, true);
         }
-        modalOpen(true, true);
+
+        var lock = window.RatebPosAuthLock;
+        if (lock && typeof lock.hasPinEnrolled === 'function') {
+            lock.hasPinEnrolled().then(function (hasPin) {
+                openWithPinState(!!hasPin);
+            }).catch(function () {
+                openWithPinState(false);
+            });
+            return;
+        }
+        openWithPinState(false);
     }
 
     function requireApproval(actionType, payload, onGranted) {
