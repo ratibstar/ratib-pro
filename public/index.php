@@ -7,9 +7,14 @@
 declare(strict_types=1);
 
 /**
- * Front controller referenced by root .htaccess (RewriteRule → public/index.php).
- * Without this file, Apache returns 404 for any rewritten URL (including /Designed/).
+ * Front controller referenced by root .htaccess (DirectoryIndex + rewrites).
+ * Without this file, Apache returns 404 for rewritten URLs (including /Designed/).
  */
+
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$projectRoot = dirname(__DIR__);
+$host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+$isMainSa = in_array($host, ['rateb.sa', 'www.rateb.sa'], true);
 
 /* Surface fatal errors as plain text when Designed launcher fails (add &rateb_diag=1 for full notices). */
 if (!empty($_GET['rateb_designed'])) {
@@ -41,8 +46,68 @@ if (!empty($_GET['rateb_designed'])) {
     });
 }
 
-require_once dirname(__DIR__) . '/includes/designed_bootstrap.php';
-rateb_serve_designed_if_requested();
+/**
+ * Agency ERP domains: send `/` to ERP before Designed bootstrap.
+ * DirectoryIndex prefers this file over root index.php — a Designed include
+ * must never 500 the agency home page.
+ */
+if (($path === '/' || $path === '') && !$isMainSa) {
+    $isControlOpen = !empty($_GET['control']) && (string) $_GET['control'] === '1'
+        && !empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id']);
+    if ($isControlOpen) {
+        $loginPage = $projectRoot . '/pages/login.php';
+        if (is_file($loginPage)) {
+            require $loginPage;
+            exit;
+        }
+    }
+
+    $erpFront = $projectRoot . '/rateb-erp/public/index.php';
+    $redirectErp = false;
+    if (is_file($erpFront)) {
+        $agencyLookup = $projectRoot . '/config/env/agency_lookup.php';
+        if (is_file($agencyLookup)) {
+            require_once $agencyLookup;
+            $agencyRow = null;
+            if (function_exists('rateb_lookup_agency_erp_by_host')) {
+                $agencyRow = rateb_lookup_agency_erp_by_host($host);
+            }
+            if ($agencyRow === null && function_exists('rateb_lookup_agency_by_host')) {
+                $agencyRow = rateb_lookup_agency_by_host($host);
+            }
+            if (is_array($agencyRow)) {
+                $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
+                $status = strtolower(trim((string) ($agencyRow['erp_status'] ?? '')));
+                if ($erpDb !== '' && ($status === '' || $status === 'ready')) {
+                    $redirectErp = true;
+                }
+            }
+        }
+        if (!$redirectErp) {
+            $hostEnv = $projectRoot . '/config/env/' . str_replace('.', '_', $host) . '.php';
+            if (is_file($hostEnv)) {
+                $envSrc = (string) @file_get_contents($hostEnv);
+                if ($envSrc !== '' && str_contains($envSrc, 'RATEB_ERP_DB_NAME')) {
+                    $redirectErp = true;
+                }
+            }
+        }
+    }
+    if ($redirectErp) {
+        header('Location: /rateb-erp/public/admin', true, 302);
+        exit;
+    }
+    require $projectRoot . '/index.php';
+    exit;
+}
+
+$designedBootstrap = $projectRoot . '/includes/designed_bootstrap.php';
+if (is_file($designedBootstrap)) {
+    require_once $designedBootstrap;
+}
+if (function_exists('rateb_serve_designed_if_requested')) {
+    rateb_serve_designed_if_requested();
+}
 
 if (!empty($_GET['rateb_designed'])) {
     if (isset($_GET['ping']) && (string) $_GET['ping'] === '1') {
@@ -50,18 +115,20 @@ if (!empty($_GET['rateb_designed'])) {
         echo 'designed-launcher route OK (via public/index.php), PHP ' . PHP_VERSION . "\n";
         exit;
     }
-    rateb_run_designed_launcher();
+    if (function_exists('rateb_run_designed_launcher')) {
+        rateb_run_designed_launcher();
+        exit;
+    }
+    http_response_code(503);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "Designed launcher is not available (missing includes/designed_bootstrap.php).\n";
     exit;
 }
 
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$projectRoot = dirname(__DIR__);
-
-// Control Panel "Open" (?control=1&agency_id=) — same bootstrap as /pages/login (avoids index.php chain).
-$host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+// Control Panel "Open" on paths that reached here (non-root already handled for agency).
 $isControlOpen = !empty($_GET['control']) && (string) $_GET['control'] === '1'
     && !empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id']);
-if (($path === '/' || $path === '') && $isControlOpen && !in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+if (($path === '/' || $path === '') && $isControlOpen && !$isMainSa) {
     $loginPage = $projectRoot . '/pages/login.php';
     if (is_file($loginPage)) {
         require $loginPage;
@@ -70,23 +137,10 @@ if (($path === '/' || $path === '') && $isControlOpen && !in_array($host, ['rate
 }
 
 if ($path === '/' || $path === '') {
-    if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+    if ($isMainSa) {
         $_GET['route'] = 'site';
         require $projectRoot . '/rateb-erp/public/index.php';
         exit;
-    }
-    $agencyLookup = $projectRoot . '/config/env/agency_lookup.php';
-    if (is_file($agencyLookup)) {
-        require_once $agencyLookup;
-        if (function_exists('rateb_lookup_agency_by_host')) {
-            $agencyRow = rateb_lookup_agency_by_host($host);
-            $erpDb = is_array($agencyRow) ? trim((string) ($agencyRow['erp_db_name'] ?? '')) : '';
-            $erpReady = is_array($agencyRow) && (string) ($agencyRow['erp_status'] ?? '') === 'ready';
-            if ($erpDb !== '' && $erpReady) {
-                header('Location: /rateb-erp/public/admin', true, 302);
-                exit;
-            }
-        }
     }
     require $projectRoot . '/index.php';
     exit;
