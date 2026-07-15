@@ -1,0 +1,235 @@
+/* Company permissions — card list (platform SaaS entitlements) */
+.rateb-cp-page {
+    --cp-border: color-mix(in srgb, var(--rateb-border, #334155) 85%, transparent);
+    --cp-surface: var(--rateb-card-bg, #111827);
+    --cp-muted: var(--rateb-muted, #94a3b8);
+    --cp-accent: var(--rateb-primary, #3b82f6);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rateb-cp-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.35rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 1rem;
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--cp-accent) 12%, transparent), transparent 55%),
+        var(--cp-surface);
+}
+
+.rateb-cp-title {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.rateb-cp-lead {
+    margin: 0.4rem 0 0;
+    max-width: 42rem;
+    color: var(--cp-muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.rateb-cp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.rateb-cp-search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.rateb-cp-search .form-control {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+    max-width: 28rem;
+}
+
+.rateb-cp-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    border: 1px dashed var(--cp-border);
+    border-radius: 1rem;
+    color: var(--cp-muted);
+}
+
+.rateb-cp-empty i {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: block;
+    opacity: 0.7;
+}
+
+.rateb-cp-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+}
+
+@media (min-width: 1100px) {
+    .rateb-cp-list {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.rateb-cp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 0.95rem;
+    background: var(--cp-surface);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.rateb-cp-card-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.rateb-cp-identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    min-width: 0;
+}
+
+.rateb-cp-id {
+    font-size: 0.78rem;
+    color: var(--cp-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rateb-cp-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.rateb-cp-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.rateb-cp-status.is-active {
+    color: #166534;
+    background: #dcfce7;
+    border-color: #86efac;
+}
+
+.rateb-cp-status.is-suspended {
+    color: #92400e;
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+
+.rateb-cp-status.is-pending {
+    color: #1e40af;
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+html[data-bs-theme="dark"] .rateb-cp-status.is-active,
+body.rateb-theme-dark .rateb-cp-status.is-active {
+    color: #bbf7d0;
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+html[data-bs-theme="dark"] .rateb-cp-status.is-suspended,
+body.rateb-theme-dark .rateb-cp-status.is-suspended {
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.18);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+html[data-bs-theme="dark"] .rateb-cp-status.is-pending,
+body.rateb-theme-dark .rateb-cp-status.is-pending {
+    color: #bfdbfe;
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+.rateb-cp-manage {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.rateb-cp-meter-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.88rem;
+}
+
+.rateb-cp-meter-meta span {
+    color: var(--cp-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rateb-cp-meter-track {
+    height: 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cp-muted) 25%, transparent);
+    overflow: hidden;
+}
+
+.rateb-cp-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--cp-accent), color-mix(in srgb, var(--cp-accent) 60%, #22c55e));
+}
+
+.rateb-cp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.rateb-cp-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.22rem 0.55rem;
+    border-radius: 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    border: 1px solid var(--cp-border);
+    background: color-mix(in srgb, var(--cp-accent) 8%, transparent);
+    color: inherit;
+}
+
+.rateb-cp-chip.is-more {
+    font-weight: 700;
+    background: transparent;
+}
+
+.rateb-cp-chip.is-empty {
+    color: var(--cp-muted);
+    background: transparent;
+    border-style: dashed;
+}

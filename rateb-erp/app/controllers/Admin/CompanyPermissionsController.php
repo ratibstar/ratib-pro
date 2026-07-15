@@ -51,12 +51,18 @@ final class CompanyPermissionsController extends Controller
                 array_map('strval', $enabled),
                 static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
             ));
+            $labels = [];
+            foreach ($enabledKnown as $key) {
+                $langKey = $catalog[$key] ?? $key;
+                $labels[] = __(is_string($langKey) ? $langKey : $key);
+            }
             $row['modules_enabled'] = $enabledKnown;
+            $row['modules_labels'] = $labels;
             $row['modules_count'] = count($enabledKnown);
             $row['modules_total'] = count($catalog);
-            [$summary, $summaryFull] = $this->formatSummary($enabledKnown, $catalog);
-            $row['modules_summary'] = $summary;
-            $row['modules_summary_full'] = $summaryFull;
+            $row['modules_pct'] = count($catalog) > 0
+                ? (int) round((count($enabledKnown) / count($catalog)) * 100)
+                : 0;
         }
         unset($row);
 
@@ -69,7 +75,8 @@ final class CompanyPermissionsController extends Controller
             'search' => $search,
             'routePrefix' => 'admin/company-permissions',
             'csrf' => Csrf::token(),
-            'canManage' => rateb_can('company_plans.manage') || rateb_can('companies.manage'),
+            'canManage' => rateb_is_super_admin() || rateb_can('company_plans.manage') || rateb_can('companies.manage'),
+            'moduleCatalog' => $catalog,
         ], 'main');
     }
 
@@ -155,31 +162,5 @@ final class CompanyPermissionsController extends Controller
         }
         SessionManager::flash('error', __('access_denied'));
         Response::redirect(rateb_url('admin'));
-    }
-
-    /**
-     * @param list<string> $enabled
-     * @param array<string, string> $catalog
-     * @return array{0:string,1:string} short summary, full summary
-     */
-    private function formatSummary(array $enabled, array $catalog): array
-    {
-        if ($enabled === []) {
-            return ['—', '—'];
-        }
-        $labels = [];
-        foreach ($enabled as $key) {
-            $langKey = $catalog[$key] ?? $key;
-            $labels[] = __(is_string($langKey) ? $langKey : $key);
-        }
-        $full = implode('، ', $labels);
-        $shortLabels = array_slice($labels, 0, 4);
-        $short = implode('، ', $shortLabels);
-        $extra = count($labels) - count($shortLabels);
-        if ($extra > 0) {
-            $short .= ' +' . $extra;
-        }
-
-        return [$short, $full];
     }
 }

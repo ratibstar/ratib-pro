@@ -232,6 +232,7 @@ FAST_FILES = [
     "rateb-erp/views/components/crud-index.php",
     "rateb-erp/views/admin/company-permissions/index.php",
     "rateb-erp/views/admin/company-permissions/edit.php",
+    "rateb-erp/public/assets/css/company-permissions.css",
     "rateb-erp/app/controllers/Admin/CompanyPermissionsController.php",
     "rateb-erp/routes/modules/platform.php",
     "rateb-erp/views/company/accounting/profit-loss.php",
