@@ -267,7 +267,8 @@ final class MarketingController extends Controller
         }
     }
 
-    private function notFound(): void
+    /** Must stay protected — matches Controller::notFound() (PHP visibility fatal if private). */
+    protected function notFound(): void
     {
         http_response_code(404);
         $this->sendMarketingNoCacheHeaders();
