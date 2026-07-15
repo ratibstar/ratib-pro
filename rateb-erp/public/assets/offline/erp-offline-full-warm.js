@@ -12,7 +12,7 @@
     var MIN_ERP_HTML_BYTES = 20000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v34';
-    var COEXIST = 'rateb-erp-coexist-v32';
+    var COEXIST = 'rateb-erp-coexist-v33';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Phase OH — bump TTL keys so stale "success" without module HTML does not skip.
     var STORAGE_KEY = 'rateb_erp_full_warm_at_v13';

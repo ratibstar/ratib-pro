@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v32';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v33';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
 var SW_BUILD_ID = '20260715-offline-api-v68';
@@ -910,6 +910,17 @@ function withSoftOfflineCacheHeader(response) {
 
 /** Cloud soft-online ERP admin navigations — never leave respondWith unresolved. */
 function navigateErpCloudWithCacheSafety(request, url) {
+    // Company permissions mutate entitlements — cache-first would hide successful saves.
+    if (/\/admin\/company-permissions(\/|$)/i.test(String(url.pathname || ''))) {
+        return fetchNavigateNetwork(request, 8000).then(function (response) {
+            if (response && response.ok) {
+                return response;
+            }
+            return neverFailNavigate(request, url);
+        }).catch(function () {
+            return neverFailNavigate(request, url);
+        });
+    }
     return matchErpNavSnapshot(request, url).then(function (hit) {
         if (hit) {
             return asNonRedirectedResponse(hit).then(function (clean) {

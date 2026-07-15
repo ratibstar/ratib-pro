@@ -29,6 +29,7 @@ final class CompanyPermissionsController extends Controller
 
     public function index(): void
     {
+        $this->noStore();
         $this->guardAccess('companies.view');
 
         $page = max(1, (int) $this->input('page', 1));
@@ -42,26 +43,18 @@ final class CompanyPermissionsController extends Controller
         $catalogKeys = array_keys($catalog);
         foreach ($items as &$row) {
             $id = (int) ($row['id'] ?? 0);
-            $enabled = $id > 0 ? $this->limits->getLimits($id)['modules'] : [];
-            if (!is_array($enabled)) {
-                $enabled = [];
-            }
-            // Count only known catalog modules (ignore stray legacy keys).
-            $enabledKnown = array_values(array_filter(
-                array_map('strval', $enabled),
-                static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
-            ));
+            $enabled = $this->enabledModulesForCompany($row, $catalogKeys);
             $labels = [];
-            foreach ($enabledKnown as $key) {
+            foreach ($enabled as $key) {
                 $langKey = $catalog[$key] ?? $key;
                 $labels[] = __(is_string($langKey) ? $langKey : $key);
             }
-            $row['modules_enabled'] = $enabledKnown;
+            $row['modules_enabled'] = $enabled;
             $row['modules_labels'] = $labels;
-            $row['modules_count'] = count($enabledKnown);
+            $row['modules_count'] = count($enabled);
             $row['modules_total'] = count($catalog);
             $row['modules_pct'] = count($catalog) > 0
-                ? (int) round((count($enabledKnown) / count($catalog)) * 100)
+                ? (int) round((count($enabled) / count($catalog)) * 100)
                 : 0;
         }
         unset($row);
@@ -82,6 +75,7 @@ final class CompanyPermissionsController extends Controller
 
     public function edit(array $params): void
     {
+        $this->noStore();
         $this->guardAccess('company_plans.manage', 'companies.manage');
 
         $id = (int) ($params['id'] ?? 0);
@@ -92,12 +86,14 @@ final class CompanyPermissionsController extends Controller
             return;
         }
 
+        $catalog = PlanLimitService::moduleCatalog();
+        $selected = $this->enabledModulesForCompany($company, array_keys($catalog));
         $limits = $this->limits->getLimits($id);
         $this->view('admin/company-permissions/edit', [
             'title' => __('company_permissions') . ' — ' . (string) ($company['name'] ?? ''),
             'company' => $company,
-            'moduleCatalog' => PlanLimitService::moduleCatalog(),
-            'selectedModules' => $limits['modules'],
+            'moduleCatalog' => $catalog,
+            'selectedModules' => $selected,
             'limits' => $limits,
             'routePrefix' => 'admin/company-permissions',
             'csrf' => Csrf::token(),
@@ -106,36 +102,42 @@ final class CompanyPermissionsController extends Controller
 
     public function update(array $params): void
     {
+        $this->noStore();
         $this->guardAccess('company_plans.manage', 'companies.manage');
 
+        $id = (int) ($params['id'] ?? 0);
+        $back = rateb_url('admin/company-permissions/' . max(0, $id));
+
         if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('admin/company-permissions'));
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($id > 0 ? $back : rateb_url('admin/company-permissions'));
         }
 
-        $id = (int) ($params['id'] ?? 0);
         $company = $this->companies->find($id);
         if (!$company) {
             SessionManager::flash('error', __('no_records'));
             Response::redirect(rateb_url('admin/company-permissions'));
         }
 
-        $raw = $this->input('modules', []);
+        $raw = $_POST['modules'] ?? [];
         if (!is_array($raw)) {
             $raw = [];
         }
         $modules = PlanLimitService::filterKnownModules($raw);
-        // Keep implied core modules so tenant dashboards stay reachable.
         foreach (['dashboard', 'notifications'] as $implied) {
             if (!in_array($implied, $modules, true)) {
                 $modules[] = $implied;
             }
         }
+        $modules = array_values(array_unique($modules));
 
         try {
-            $this->companies->update($id, [
-                'modules' => json_encode(array_values($modules), JSON_UNESCAPED_UNICODE),
-            ]);
+            $ok = $this->companies->updateModules($id, $modules);
+            if (!$ok) {
+                SessionManager::flash('error', __('company_permissions_save_failed'));
+                Response::redirect($back);
+            }
+            PlanLimitService::forgetCompanyLimits($id);
             (new AuditService())->log('update', 'company_permissions', $id, [
                 'modules' => $modules,
                 'company_name' => (string) ($company['name'] ?? ''),
@@ -143,10 +145,11 @@ final class CompanyPermissionsController extends Controller
             SessionManager::flash('success', __('company_permissions_saved'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', DatabaseErrorService::userMessage($e));
-            Response::redirect(rateb_url('admin/company-permissions/' . $id));
+            Response::redirect($back);
         }
 
-        Response::redirect(rateb_url('admin/company-permissions/' . $id));
+        // Land on list with cache-buster so offline SW cannot serve stale edit HTML.
+        Response::redirect(rateb_url('admin/company-permissions') . '?saved=' . $id . '&t=' . time());
     }
 
     /** @param list<string> $requiredAny */
@@ -162,5 +165,49 @@ final class CompanyPermissionsController extends Controller
         }
         SessionManager::flash('error', __('access_denied'));
         Response::redirect(rateb_url('admin'));
+    }
+
+    private function noStore(): void
+    {
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+    }
+
+    /**
+     * Prefer explicit company.modules JSON; fall back to plan limits.
+     *
+     * @param array<string, mixed> $company
+     * @param list<string> $catalogKeys
+     * @return list<string>
+     */
+    private function enabledModulesForCompany(array $company, array $catalogKeys): array
+    {
+        $id = (int) ($company['id'] ?? 0);
+        $explicit = [];
+        $raw = $company['modules'] ?? null;
+        if (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $explicit = array_values(array_filter(array_map('strval', $decoded)));
+            }
+        } elseif (is_array($raw)) {
+            $explicit = array_values(array_filter(array_map('strval', $raw)));
+        }
+
+        $source = $explicit;
+        if ($source === [] && $id > 0) {
+            $source = $this->limits->getLimits($id)['modules'] ?? [];
+            if (!is_array($source)) {
+                $source = [];
+            }
+        }
+
+        return array_values(array_filter(
+            array_map('strval', $source),
+            static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
+        ));
     }
 }

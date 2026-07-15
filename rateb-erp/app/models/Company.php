@@ -34,6 +34,17 @@ final class Company extends Model
         return $stmt->execute(['id' => $id]);
     }
 
+    /** @param list<string> $modules */
+    public function updateModules(int $id, array $modules): bool
+    {
+        $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            return false;
+        }
+        $stmt = $this->db->prepare('UPDATE rateb_companies SET modules = :modules WHERE id = :id');
+        return $stmt->execute(['modules' => $json, 'id' => $id]);
+    }
+
     public function getStats(): array
     {
         $row = $this->queryOne(

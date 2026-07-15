@@ -513,6 +513,7 @@ return [
     'company_permissions_modules_count' => 'الوحدات',
     'company_permissions_modules_summary' => 'ملخص الوحدات',
     'company_permissions_saved' => 'تم حفظ صلاحيات الشركة.',
+    'company_permissions_save_failed' => 'تعذر حفظ صلاحيات الشركة. حاول مرة أخرى.',
     'company_permissions_clear_optional' => 'إلغاء الاختياري',
     'company_permissions_core' => 'أساسية',
     'company_permissions_search_ph' => 'ابحث باسم الشركة…',

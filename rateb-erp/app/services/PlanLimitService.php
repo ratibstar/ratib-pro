@@ -9,6 +9,9 @@ use Rateb\App\Models\User;
 
 final class PlanLimitService
 {
+    /** @var array<int, array<string, mixed>> */
+    private static array $limitsCache = [];
+
     /** @return array<string, array<string, mixed>> */
     public static function tierDefinitions(): array
     {
@@ -99,9 +102,8 @@ final class PlanLimitService
     /** @return array{user_limit:int,storage_limit_mb:int,modules:array<int,string>,plan_name:?string} */
     public function getLimits(int $companyId): array
     {
-        static $cache = [];
-        if (isset($cache[$companyId])) {
-            return $cache[$companyId];
+        if (isset(self::$limitsCache[$companyId])) {
+            return self::$limitsCache[$companyId];
         }
 
         $company = $this->getCompanyRow($companyId);
@@ -133,7 +135,7 @@ final class PlanLimitService
             $storageMb = 1024;
         }
 
-        $cache[$companyId] = [
+        self::$limitsCache[$companyId] = [
             'user_limit' => $userLimit,
             'storage_limit_mb' => $storageMb,
             'branch_limit' => $this->branchLimitForCompany($company, $plan),
@@ -141,7 +143,16 @@ final class PlanLimitService
             'plan_name' => $planName,
         ];
 
-        return $cache[$companyId];
+        return self::$limitsCache[$companyId];
+    }
+
+    public static function forgetCompanyLimits(?int $companyId = null): void
+    {
+        if ($companyId === null) {
+            self::$limitsCache = [];
+            return;
+        }
+        unset(self::$limitsCache[$companyId]);
     }
 
     private function branchLimitForCompany(array $company, ?array $plan): int

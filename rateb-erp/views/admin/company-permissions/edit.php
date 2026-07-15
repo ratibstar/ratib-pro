@@ -10,7 +10,8 @@ $selectedModules = is_array($selectedModules ?? null) ? $selectedModules : [];
 $moduleCatalog = is_array($moduleCatalog ?? null) ? $moduleCatalog : [];
 $lockedCore = ['dashboard', 'notifications'];
 ?>
-<div class="rateb-card">
+<link rel="stylesheet" href="<?php echo rateb_asset('css/company-permissions.css'); ?>">
+<div class="rateb-card rateb-cp-edit">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <span><?php echo Rateb\App\Core\View::escape($title ?? __('company_permissions')); ?></span>
@@ -36,7 +37,11 @@ $lockedCore = ['dashboard', 'notifications'];
         </div>
         <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_rbac'); ?></p>
 
-        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $cid); ?>" id="rateb-company-permissions-form" data-rateb-offline-writable="1">
+        <form method="post"
+              action="<?php echo rateb_url($routePrefix . '/' . $cid); ?>"
+              id="rateb-company-permissions-form"
+              autocomplete="off"
+              data-rateb-offline-online-only="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
 
             <div class="d-flex flex-wrap gap-2 mb-3">
@@ -51,13 +56,17 @@ $lockedCore = ['dashboard', 'notifications'];
                     ?>
                 <div class="col-md-4 col-lg-3">
                     <div class="form-check border rounded px-3 py-2 h-100<?php echo $isCore ? ' bg-light' : ''; ?>">
+                        <?php if ($isCore) { ?>
+                        <input type="hidden" name="modules[]" value="<?php echo Rateb\App\Core\View::escape($modKey); ?>">
+                        <input class="form-check-input rateb-cp-module" type="checkbox"
+                               value="<?php echo Rateb\App\Core\View::escape($modKey); ?>"
+                               id="cp_mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>"
+                               checked disabled>
+                        <?php } else { ?>
                         <input class="form-check-input rateb-cp-module" type="checkbox" name="modules[]"
                                value="<?php echo Rateb\App\Core\View::escape($modKey); ?>"
                                id="cp_mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>"
-                               <?php echo $checked ? ' checked' : ''; ?>
-                               <?php echo $isCore ? ' disabled' : ''; ?>>
-                        <?php if ($isCore) { ?>
-                        <input type="hidden" name="modules[]" value="<?php echo Rateb\App\Core\View::escape($modKey); ?>">
+                               <?php echo $checked ? ' checked' : ''; ?>>
                         <?php } ?>
                         <label class="form-check-label" for="cp_mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>">
                             <?php echo __(is_string($modLabel) ? $modLabel : $modKey); ?>
@@ -71,7 +80,9 @@ $lockedCore = ['dashboard', 'notifications'];
             </div>
 
             <div class="mt-4 d-flex gap-2 flex-wrap">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
+                <button type="submit" class="btn btn-primary" id="rateb-cp-save">
+                    <i class="fas fa-save"></i> <?php echo __('save'); ?>
+                </button>
                 <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
             </div>
         </form>
@@ -79,6 +90,7 @@ $lockedCore = ['dashboard', 'notifications'];
 </div>
 <script>
 (function () {
+    var form = document.getElementById('rateb-company-permissions-form');
     var selectAll = document.getElementById('rateb-cp-select-all');
     var clearAll = document.getElementById('rateb-cp-clear-all');
     var boxes = function () {
@@ -92,6 +104,25 @@ $lockedCore = ['dashboard', 'notifications'];
     if (clearAll) {
         clearAll.addEventListener('click', function () {
             boxes().forEach(function (el) { el.checked = false; });
+        });
+    }
+    if (form) {
+        form.addEventListener('submit', function () {
+            var btn = document.getElementById('rateb-cp-save');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo Rateb\App\Core\View::escape(__('save')); ?>…';
+            }
+            // Drop any stale offline HTML of this page before navigation.
+            try {
+                if (window.caches) {
+                    ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v32', 'rateb-erp-coexist-v33'].forEach(function (name) {
+                        caches.open(name).then(function (cache) {
+                            return cache.delete(location.href).catch(function () {});
+                        }).catch(function () {});
+                    });
+                }
+            } catch (eCache) { /* ignore */ }
         });
     }
 })();

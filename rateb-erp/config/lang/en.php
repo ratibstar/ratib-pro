@@ -513,6 +513,7 @@ return [
     'company_permissions_modules_count' => 'Modules',
     'company_permissions_modules_summary' => 'Module summary',
     'company_permissions_saved' => 'Company permissions saved.',
+    'company_permissions_save_failed' => 'Could not save company permissions. Please try again.',
     'company_permissions_clear_optional' => 'Clear optional',
     'company_permissions_core' => 'Core',
     'company_permissions_search_ph' => 'Search by company name…',
