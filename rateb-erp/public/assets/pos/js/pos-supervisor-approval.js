@@ -92,6 +92,10 @@
 
     function fetchJson(url, options) {
         options = options || {};
+        // Never hit the network while offline — SW returns 503 for JSON POSTs and spams the console.
+        if (isOffline() && !options.allowOffline) {
+            return Promise.reject(new Error('offline'));
+        }
         var headers = options.headers || {};
         if (options.json) {
             headers['Content-Type'] = 'application/json';
@@ -114,6 +118,9 @@
                     var err = data && data.error;
                     if (err && typeof err === 'object') {
                         err = err.message || err.code || '';
+                    }
+                    if (res.status === 503 || (data && data.offline)) {
+                        throw new Error('offline');
                     }
                     throw new Error(err || t('invalid_request', 'Failed'));
                 }

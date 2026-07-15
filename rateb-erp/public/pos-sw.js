@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-manifest-v67';
+var SW_BUILD_ID = '20260715-offline-api-v68';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1065,6 +1065,25 @@ function handleOfflineAdminPost(request, url) {
         } catch (eD) {
             return Promise.resolve(Response.redirect(returnUrl, 303));
         }
+    }
+
+    // POS JSON APIs (approval / biometric / register) are handled by IndexedDB clients —
+    // never parse as formData (throws) or emit a loud 503 for JSON POST bodies.
+    if (wantsJsonPostResponse(request)
+        && /\/pos\/api\/(approval|biometric|register|v2)\//i.test(String(url.pathname || ''))) {
+        return Promise.resolve(new Response(JSON.stringify({
+            ok: false,
+            offline: true,
+            error: 'offline',
+            message: 'يتطلب اتصالًا — أو استخدام المسار المحلي في نقطة البيع.'
+        }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Rateb-Offline': '1',
+                'Cache-Control': 'no-store'
+            }
+        }));
     }
 
     return request.clone().formData().then(function (fd) {
