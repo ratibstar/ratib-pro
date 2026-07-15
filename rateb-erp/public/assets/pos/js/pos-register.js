@@ -771,16 +771,26 @@
     }
 
     function clearCart(skipConfirm) {
+        if (!state.lines.length) {
+            return;
+        }
+        // Ask once up front. Never call window.confirm after WebAuthn — Chrome often
+        // auto-cancels the dialog and the cart stays filled after fingerprint success.
+        if (!skipConfirm && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
+            return;
+        }
         function doClear() {
-            if (!skipConfirm && state.lines.length && !window.confirm(t('pos_confirm_clear_cart', 'Cancel current sale and clear the cart?'))) {
-                return;
-            }
             state.lines = [];
             state.selectedLineId = null;
+            state.localCartOnly = false;
             renderCart();
+            scheduleSave();
+            showStatus(t('pos_clear_cart', 'Cart cleared'));
         }
-        if (window.RatebPosRequireApproval && state.lines.length) {
-            window.RatebPosRequireApproval('cancel_invoice', {}, doClear);
+        if (window.RatebPosRequireApproval) {
+            window.RatebPosRequireApproval('cancel_invoice', {}, function () {
+                doClear();
+            });
             return;
         }
         doClear();

@@ -248,7 +248,9 @@
                 })
             });
         }).then(function (grant) {
-            finishGranted(grant.approval_token, pending && pending.requestId);
+            var requestId = pending ? pending.requestId : 0;
+            var token = (grant && (grant.approval_token || grant.token)) || '';
+            finishGranted(token, requestId);
         });
     }
 
