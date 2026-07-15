@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use Rateb\App\Controllers\Marketing\CareerCandidateController;
+use Rateb\App\Controllers\Marketing\CareerPortalController;
 use Rateb\App\Controllers\Marketing\CustomerPortalController;
 use Rateb\App\Controllers\Marketing\MarketingAuthController;
 use Rateb\App\Controllers\Marketing\MarketingController;
@@ -20,6 +22,28 @@ $router->get('/site/portal/profile', [CustomerPortalController::class, 'profile'
 $router->post('/site/portal/profile', [CustomerPortalController::class, 'updateProfile'], rateb_portal_mw());
 $router->get('/site/portal/notifications', [CustomerPortalController::class, 'notifications'], rateb_portal_mw());
 $router->get('/site/portal/logout', [CustomerPortalController::class, 'logout']);
+
+// Phase WEBSITE-06 — Career portal (register before generic page slug route)
+$router->get('/site/careers', [CareerPortalController::class, 'index']);
+$router->get('/site/careers/search', [CareerPortalController::class, 'search']);
+$router->get('/site/careers/category/{slug}', [CareerPortalController::class, 'category']);
+$router->get('/site/careers/job/{slug}', [CareerPortalController::class, 'job']);
+$router->get('/site/careers/job/{slug}/apply', [CareerPortalController::class, 'applyForm']);
+$router->post('/site/careers/job/{slug}/apply', [CareerPortalController::class, 'apply']);
+
+$router->get('/site/candidate/register', [CareerCandidateController::class, 'showRegister']);
+$router->post('/site/candidate/register', [CareerCandidateController::class, 'register']);
+$router->get('/site/candidate/login', [CareerCandidateController::class, 'showLogin']);
+$router->post('/site/candidate/login', [CareerCandidateController::class, 'login']);
+$router->get('/site/candidate/logout', [CareerCandidateController::class, 'logout']);
+$router->get('/site/candidate', [CareerCandidateController::class, 'dashboard'], rateb_career_portal_mw());
+$router->get('/site/candidate/applications', [CareerCandidateController::class, 'applications'], rateb_career_portal_mw());
+$router->post('/site/candidate/withdraw/{id}', [CareerCandidateController::class, 'withdraw'], rateb_career_portal_mw());
+$router->get('/site/candidate/saved', [CareerCandidateController::class, 'savedJobs'], rateb_career_portal_mw());
+$router->post('/site/candidate/save/{careerId}', [CareerCandidateController::class, 'saveJob'], rateb_career_portal_mw());
+$router->post('/site/candidate/unsave/{careerId}', [CareerCandidateController::class, 'unsaveJob'], rateb_career_portal_mw());
+$router->get('/site/candidate/profile', [CareerCandidateController::class, 'profile'], rateb_career_portal_mw());
+$router->post('/site/candidate/profile', [CareerCandidateController::class, 'updateProfile'], rateb_career_portal_mw());
 
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);

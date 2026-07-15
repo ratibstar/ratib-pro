@@ -28,6 +28,14 @@ if (!function_exists('rateb_portal_mw')) {
     }
 }
 
+if (!function_exists('rateb_career_portal_mw')) {
+    /** Phase WEBSITE-06 — Career candidate portal (tenant-isolated session). */
+    function rateb_career_portal_mw(): array
+    {
+        return [\Rateb\App\Core\Middleware\CareerPortalAuthMiddleware::class];
+    }
+}
+
 if (!function_exists('rateb_admin_mw')) {
     /** Platform oversight routes — super admin + optional permission. */
     function rateb_admin_mw(string $permission = ''): array

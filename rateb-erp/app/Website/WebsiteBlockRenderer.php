@@ -15,6 +15,7 @@ final class WebsiteBlockRenderer
     private TenantBlockService $blocks;
     private TenantThemeService $theme;
     private WebsiteFormService $forms;
+    private ?Career\CareerBlockRenderer $careerBlocks = null;
 
     public function __construct(?TenantWebsiteRepository $repo = null)
     {
@@ -99,6 +100,12 @@ final class WebsiteBlockRenderer
             'map' => $this->renderMap($cls, $title, $settings),
             'forms' => $this->renderFormBlock($cls, $title, $settings),
             'cta' => $this->renderCta($cls, $title, $content, $link, $settings),
+            'jobs' => $this->careerBlocks()->renderJobs($cls, $title, $settings),
+            'featured_jobs' => $this->careerBlocks()->renderFeatured($cls, $title, $settings),
+            'job_categories' => $this->careerBlocks()->renderCategories($cls, $title),
+            'job_search' => $this->careerBlocks()->renderSearchWidget($cls, $title, $settings),
+            'cta_apply' => $this->careerBlocks()->renderCtaApply($cls, $title, $content, $settings),
+            'recruiter_team' => $this->careerBlocks()->renderRecruiterTeam($cls, $title, $settings),
             default => $this->renderGeneric($cls, $type, $title, $content, $image, $link, $icon, $settings),
         };
     }
@@ -252,6 +259,15 @@ final class WebsiteBlockRenderer
         $html .= '</form></div>';
 
         return $html;
+    }
+
+    private function careerBlocks(): Career\CareerBlockRenderer
+    {
+        if ($this->careerBlocks === null) {
+            $this->careerBlocks = new Career\CareerBlockRenderer(new Career\CareerJobService($this->repo));
+        }
+
+        return $this->careerBlocks;
     }
 
     /** @param array<string, mixed> $field */

@@ -118,6 +118,17 @@ final class TenantSeoService
             }
         }
 
+        if (class_exists(Career\CareerSeoService::class)) {
+            try {
+                $careerPaths = (new Career\CareerSeoService($this->repo))->sitemapPaths();
+                foreach ($careerPaths as $cp) {
+                    $paths[] = $cp;
+                }
+            } catch (\Throwable $e) {
+                error_log('TenantSeoService career sitemap: ' . $e->getMessage());
+            }
+        }
+
         return array_values(array_unique($paths));
     }
 

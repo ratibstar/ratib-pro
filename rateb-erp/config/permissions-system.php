@@ -271,6 +271,8 @@ return [
             'website.theme.import',
             'website.publish',
             'website.forms.manage',
+            'website.careers.view',
+            'website.careers.manage',
         ],
         'website.theme.manage' => [
             'website.view',

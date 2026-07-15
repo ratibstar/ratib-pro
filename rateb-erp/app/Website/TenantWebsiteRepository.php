@@ -80,6 +80,11 @@ final class TenantWebsiteRepository
         $stmt->execute($params);
     }
 
+    public function lastInsertId(): string
+    {
+        return Database::connection()->lastInsertId();
+    }
+
     public function assertRowCompany(?array $row, string $entity = 'cms'): void
     {
         if (!$this->scoped || $row === null) {
