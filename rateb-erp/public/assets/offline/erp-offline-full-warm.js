@@ -15,9 +15,9 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Phase OH — bump TTL keys so stale "success" without module HTML does not skip.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v14';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v14';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v14';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v15';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v15';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v15';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -25,18 +25,16 @@
         'admin/hr',
         'admin/hr/attendance',
         'admin/hr/leaves',
-        'admin/ops',
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/suppliers',
         'admin/ops/stock-movements',
-        'admin/accounting',
-        'admin/ops/accounting',
-        'admin/ops/accounting/platform',
         'admin/ops/pos/register',
         'admin/companies',
+        'admin/company-permissions',
+        'admin/agency-updates',
         'admin/profile',
         'admin/oversight/approvals'
     ];
@@ -103,19 +101,9 @@
     }
 
     function withCompany(href) {
-        var cid = companyId();
-        if (!(cid > 0)) {
-            return href;
-        }
-        try {
-            var u = new URL(href, root.location.origin);
-            if (!u.searchParams.get('company_id')) {
-                u.searchParams.set('company_id', String(cid));
-            }
-            return u.href;
-        } catch (e) {
-            return href;
-        }
+        // Never append ?company_id= during warm — it produced console 404/500 storms
+        // (e.g. /admin/ops?company_id=22, accounting/platform). Live visits are cached as-is.
+        return href;
     }
 
     function forceWarmRequested() {
@@ -202,8 +190,8 @@
             if (/\/\d+(\/|$)/.test(p) && !/\/(create|new)(\/|$)/i.test(p)) {
                 return false;
             }
-            // Platform accounting child pages often 404/500 when schema/seed incomplete — skip warm noise.
-            if (isBrokenAccountingWarmPath(p)) {
+            // Known-broken / platform-hub pages — skip warm to keep console clean.
+            if (isWarmDeniedPath(p)) {
                 return false;
             }
             return true;
@@ -212,8 +200,34 @@
         }
     }
 
+    function isWarmDeniedPath(pathname) {
+        var p = String(pathname || '').replace(/\/+$/, '');
+        // Bare /admin/ops is not a real page (404).
+        if (/\/admin\/ops$/i.test(p)) {
+            return true;
+        }
+        // Accounting hub / incomplete children often 500 on platform.
+        if (/\/accounting(\/platform)?$/i.test(p)) {
+            return true;
+        }
+        if (isBrokenAccountingWarmPath(p)) {
+            return true;
+        }
+        // Agency push / SaaS forms — online only, do not warm.
+        if (/\/admin\/(agency-updates|company-permissions)(\/|$)/i.test(p + '/')) {
+            // Still allow index list warm for company-permissions (useful offline browse).
+            if (/\/admin\/agency-updates$/i.test(p)) {
+                return true;
+            }
+            if (/\/admin\/company-permissions\/\d+$/i.test(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function isBrokenAccountingWarmPath(pathname) {
-        return /\/accounting\/(currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i
+        return /\/accounting\/(platform|currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i
             .test(String(pathname || ''));
     }
 
@@ -311,13 +325,11 @@
         [
             'admin/companies/create',
             'admin/ops/users/create', 'admin/users/create',
-            'admin/agency-updates',
             'admin/ops/access-control', 'admin/ops/access-control/matrix',
             'admin/access-control', 'admin/access-control/matrix',
             'admin/ops/purchase-requests/create',
             'admin/ops/purchase-orders/create',
             'admin/ops/rfq', 'admin/ops/quotations',
-            'admin/ops/stock-movements/create',
             'admin/ops/product-categories',
             'admin/ops/suppliers/create'
         ].forEach(function (rel) {
