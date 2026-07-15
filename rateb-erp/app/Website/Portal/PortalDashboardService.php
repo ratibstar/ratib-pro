@@ -50,7 +50,7 @@ final class PortalDashboardService
             'invoices' => $finance['invoices'],
             'payments' => $finance['payments'],
             'outstanding' => $finance['outstanding'],
-            'notifications' => $this->notifications->listInApp(),
+            'notifications' => $this->notifications->listInApp($user),
             'approvals' => $this->workflow->pendingForCompany(),
         ];
     }
@@ -70,7 +70,7 @@ final class PortalDashboardService
             'invoices' => $finance['invoices'],
             'payments' => $finance['payments'],
             'outstanding' => $finance['outstanding'],
-            'notifications' => $this->notifications->listInApp(),
+            'notifications' => $this->notifications->listInApp($user),
             'approvals' => $this->workflow->pendingForCompany(),
             'appointments' => $this->appointments->listForUser($uid),
         ];
@@ -90,7 +90,7 @@ final class PortalDashboardService
             'documents' => $this->documents->listForUser($uid),
             'payments' => $finance['payments'],
             'invoices' => $finance['invoices'],
-            'notifications' => $this->notifications->listInApp(),
+            'notifications' => $this->notifications->listInApp($user),
         ];
     }
 }

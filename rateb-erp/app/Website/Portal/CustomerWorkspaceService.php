@@ -40,13 +40,13 @@ final class CustomerWorkspaceService
     {
         $base = $this->dashboard->customer($user);
         $finance = $this->finance->snapshot($user);
-        $pipeline = $this->recruitment->pipelineSummary();
-        $contracts = $this->contracts->listActive(8);
+        $pipeline = $this->recruitment->pipelineSummary(20, $user);
+        $contracts = $this->contracts->listActive(8, 1, $user);
         $approvals = $this->workflow->pendingForCompany();
-        $notifications = $this->notifications->listInApp();
+        $notifications = $this->notifications->listInApp($user);
 
         $kpis = [
-            'active_contracts' => $this->contracts->activeCount(),
+            'active_contracts' => $this->contracts->activeCount($user),
             'open_requests' => count(array_filter(
                 $base['requests'] ?? [],
                 static fn ($r) => in_array((string) ($r['status'] ?? ''), ['submitted', 'in_progress', 'draft'], true)

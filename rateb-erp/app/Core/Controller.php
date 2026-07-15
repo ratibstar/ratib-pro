@@ -30,4 +30,26 @@ abstract class Controller
         $token = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
         return Csrf::validate((string) $token);
     }
+
+    /** HTTP 404 — never fatal (Website LOCK certification). */
+    protected function notFound(): void
+    {
+        http_response_code(404);
+        if (class_exists(View::class) && defined('RATEB_ROOT') && is_file(RATEB_ROOT . '/views/errors/404.php')) {
+            try {
+                View::render('errors/404', [
+                    'title' => '404',
+                    'message' => 'Not found',
+                ], class_exists(\Rateb\App\Website\WebsiteContext::class) && \Rateb\App\Website\WebsiteContext::current() !== null
+                    ? 'marketing'
+                    : 'main');
+                return;
+            } catch (\Throwable $e) {
+                // fall through to plain body
+            }
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Not found';
+        exit;
+    }
 }

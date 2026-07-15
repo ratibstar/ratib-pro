@@ -5,10 +5,16 @@
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
             <?php $pkg = (string) ($prefill_package ?? ''); ?>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('service_type') ?: 'Service type'; ?></label>
-                <select name="service_type">
+                <label for="svc_service_type"><?php echo __('service_type') ?: 'Service type'; ?></label>
+                <select id="svc_service_type" name="service_type">
                     <?php
-                    $types = ['recruitment' => 'Recruitment', 'domestic_worker' => 'Domestic Worker', 'workforce' => 'Company Workforce', 'package' => 'Package', 'other' => 'Other'];
+                    $types = [
+                        'recruitment' => __('service_type_recruitment') ?: 'Recruitment',
+                        'domestic_worker' => __('service_type_domestic_worker') ?: 'Domestic Worker',
+                        'workforce' => __('service_type_workforce') ?: 'Company Workforce',
+                        'package' => __('service_type_package') ?: 'Package',
+                        'other' => __('service_type_other') ?: 'Other',
+                    ];
                     $sel = (string) ($prefill_type ?? 'recruitment');
                     foreach ($types as $val => $label) {
                         $selected = $sel === $val ? ' selected' : '';
@@ -18,8 +24,8 @@
                 </select>
             </div>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('package') ?: 'Package'; ?></label>
-                <select name="package_code">
+                <label for="svc_package_code"><?php echo __('package') ?: 'Package'; ?></label>
+                <select id="svc_package_code" name="package_code">
                     <option value=""><?php echo __('none') ?: 'None'; ?></option>
                     <?php foreach (($packages ?? []) as $code => $p) {
                         $selected = $pkg === (string) $code ? ' selected' : '';
@@ -29,29 +35,29 @@
                 </select>
             </div>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('title') ?: 'Title'; ?></label>
-                <input type="text" name="title" required maxlength="255">
+                <label for="svc_title"><?php echo __('title') ?: 'Title'; ?></label>
+                <input id="svc_title" type="text" name="title" required maxlength="255">
             </div>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('description') ?: 'Description'; ?></label>
-                <textarea name="description" rows="4"></textarea>
+                <label for="svc_description"><?php echo __('description') ?: 'Description'; ?></label>
+                <textarea id="svc_description" name="description" rows="4"></textarea>
             </div>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('phone') ?: 'Phone'; ?></label>
-                <input type="text" name="phone" maxlength="40">
+                <label for="svc_phone"><?php echo __('phone') ?: 'Phone'; ?></label>
+                <input id="svc_phone" type="text" name="phone" maxlength="40">
             </div>
             <div class="rateb-portal-form__field">
-                <label><?php echo __('priority') ?: 'Priority'; ?></label>
-                <select name="priority">
-                    <option value="normal">Normal</option>
-                    <option value="low">Low</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
+                <label for="svc_priority"><?php echo __('priority') ?: 'Priority'; ?></label>
+                <select id="svc_priority" name="priority">
+                    <option value="normal"><?php echo __('normal') ?: 'Normal'; ?></option>
+                    <option value="low"><?php echo __('low') ?: 'Low'; ?></option>
+                    <option value="high"><?php echo __('high') ?: 'High'; ?></option>
+                    <option value="urgent"><?php echo __('urgent') ?: 'Urgent'; ?></option>
                 </select>
             </div>
             <div class="rateb-portal-form__field">
-                <label>
-                    <input type="checkbox" name="agreement_accepted" value="1" required data-agreement-check>
+                <label for="svc_agreement_accepted">
+                    <input id="svc_agreement_accepted" type="checkbox" name="agreement_accepted" value="1" required aria-required="true" data-agreement-check>
                     <?php echo __('accept_digital_agreement') ?: 'I accept the digital service agreement'; ?>
                 </label>
             </div>

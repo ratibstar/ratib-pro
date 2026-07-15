@@ -178,7 +178,15 @@ final class OnlineServiceService
         if ($amount <= 0) {
             return ['ok' => false, 'error' => 'no_amount'];
         }
-        $token = $this->finance->createServicePaymentToken($serviceRequestId, $amount, (string) ($req['currency'] ?? 'SAR'));
+        try {
+            $token = $this->finance->createServicePaymentToken($serviceRequestId, $amount, (string) ($req['currency'] ?? 'SAR'));
+        } catch (\Throwable $e) {
+            if (str_contains($e->getMessage(), 'payment_secret_missing')) {
+                return ['ok' => false, 'error' => 'secret_missing'];
+            }
+
+            return ['ok' => false, 'error' => 'payment_init_failed'];
+        }
         $this->repo->execute(
             "UPDATE rateb_website_service_requests SET payment_status = 'pending' WHERE id = :id AND company_id = :cid",
             ['id' => $serviceRequestId, 'cid' => $this->repo->companyId()]
@@ -201,12 +209,17 @@ final class OnlineServiceService
     }
 
     /**
-     * Secure payment callback — HMAC token + company isolation (no gateway secret exposure).
+     * Secure payment callback — requires POST paid-proof HMAC + payment_ref (never pending/SIM tokens).
      *
+     * @param array<string, mixed>|null $portalUser
      * @return array{ok: bool, error?: string}
      */
-    public function completePaymentCallback(int $serviceRequestId, string $token, string $paymentRef = ''): array
+    public function completePaymentCallback(int $serviceRequestId, string $token, string $paymentRef = '', ?array $portalUser = null): array
     {
+        $paymentRef = trim($paymentRef);
+        if ($paymentRef === '' || str_starts_with(strtoupper($paymentRef), 'SIM-')) {
+            return ['ok' => false, 'error' => 'invalid_ref'];
+        }
         $row = $this->repo->fetchOne(
             'SELECT * FROM rateb_website_service_requests WHERE id = :id AND company_id = :cid LIMIT 1',
             ['id' => $serviceRequestId, 'cid' => $this->repo->companyId()]
@@ -215,13 +228,25 @@ final class OnlineServiceService
             return ['ok' => false, 'error' => 'request_not_found'];
         }
         $this->repo->assertRowCompany($row, 'service_request');
-        if (!$this->finance->verifyServicePaymentToken($serviceRequestId, $token, (float) ($row['amount'] ?? 0), (string) ($row['currency'] ?? 'SAR'))) {
+        if ($portalUser !== null && (int) ($portalUser['id'] ?? 0) > 0) {
+            $owned = $this->findOwned($serviceRequestId, (int) $portalUser['id']);
+            if ($owned === null) {
+                return ['ok' => false, 'error' => 'request_not_found'];
+            }
+        }
+        $amount = (float) ($row['amount'] ?? 0);
+        $currency = (string) ($row['currency'] ?? 'SAR');
+        // Never accept pending/SIM redirect tokens as paid proof.
+        if (!$this->finance->verifyServicePaidProofToken($serviceRequestId, $token, $amount, $currency, $paymentRef)) {
             return ['ok' => false, 'error' => 'invalid_token'];
         }
         if ((string) ($row['payment_status'] ?? '') === 'paid') {
             return ['ok' => true];
         }
-        $ref = substr(preg_replace('/[^a-zA-Z0-9_\-]/', '', $paymentRef) ?: ('PAY-' . $serviceRequestId), 0, 120);
+        $ref = substr(preg_replace('/[^a-zA-Z0-9_\-]/', '', $paymentRef) ?: '', 0, 120);
+        if ($ref === '') {
+            return ['ok' => false, 'error' => 'invalid_ref'];
+        }
         $this->repo->execute(
             "UPDATE rateb_website_service_requests
              SET payment_status = 'paid', payment_ref = :ref, status = IF(status IN ('submitted','booked','draft'), 'paid', status)
@@ -229,7 +254,7 @@ final class OnlineServiceService
             ['ref' => $ref, 'id' => $serviceRequestId, 'cid' => $this->repo->companyId()]
         );
         $this->timeline->add($serviceRequestId, 'payment_paid', 'Payment confirmed', $ref, null, 'system');
-        $this->finance->recordServicePaymentBridge($serviceRequestId, (float) ($row['amount'] ?? 0), (string) ($row['currency'] ?? 'SAR'), $ref);
+        $this->finance->recordServicePaymentBridge($serviceRequestId, $amount, $currency, $ref);
 
         $userId = (int) ($row['portal_user_id'] ?? 0);
         if ($userId > 0) {

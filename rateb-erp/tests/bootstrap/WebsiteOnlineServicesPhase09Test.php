@@ -49,7 +49,9 @@ $check('online uses PortalFinanceService', str_contains($online, 'PortalFinanceS
 $check('online uses PortalNotificationService', str_contains($online, 'PortalNotificationService'));
 $check('online asserts company', str_contains($online, 'assertRowCompany'));
 $check('online agreement gate', str_contains($online, 'agreement_required'));
-$check('online payment callback verify', str_contains($online, 'completePaymentCallback') && str_contains($online, 'verifyServicePaymentToken'));
+$check('online payment callback verify', str_contains($online, 'completePaymentCallback') && str_contains($online, 'verifyServicePaidProofToken'));
+$check('online rejects SIM pending as paid', str_contains($online, 'SIM-') && str_contains($online, 'verifyServicePaidProofToken'));
+$check('online secret_missing on startPayment', str_contains($online, 'secret_missing') && str_contains($online, 'payment_secret_missing'));
 
 $book = (string) file_get_contents($root . '/app/Website/Portal/PortalBookingService.php');
 $check('booking reuses PortalAppointmentService', str_contains($book, 'PortalAppointmentService'));
@@ -58,6 +60,8 @@ $check('booking writes service appointments', str_contains($book, 'rateb_website
 $fin = (string) file_get_contents($root . '/app/Website/Portal/PortalFinanceService.php');
 $check('finance HMAC payment tokens', str_contains($fin, 'createServicePaymentToken') && str_contains($fin, 'hash_hmac'));
 $check('finance verify payment token', str_contains($fin, 'verifyServicePaymentToken'));
+$check('finance paid proof token', str_contains($fin, 'createServicePaidProofToken') && str_contains($fin, 'verifyServicePaidProofToken'));
+$check('finance payment_secret_missing', str_contains($fin, 'payment_secret_missing'));
 
 $notif = (string) file_get_contents($root . '/app/Website/Portal/PortalNotificationService.php');
 $check('notifications service status', str_contains($notif, 'notifyServiceStatus'));
@@ -71,6 +75,8 @@ $check('controller OnlineServiceService', str_contains($ctrl, 'OnlineServiceServ
 $check('controller servicePay', str_contains($ctrl, 'servicePay'));
 $check('controller payment callback', str_contains($ctrl, 'servicePaymentCallback'));
 $check('controller rate limit service', str_contains($ctrl, 'service_create'));
+$check('controller no SIM redirect pay', !preg_match('/function servicePay[\s\S]*?SIM-/', $ctrl));
+$check('controller payment callback POST proof', str_contains($ctrl, 'proof_token') || (str_contains($ctrl, 'servicePaymentCallback') && str_contains($ctrl, "!== 'POST'")));
 $check('no duplicate online controller', !is_file($root . '/app/controllers/Marketing/OnlineServiceController.php'));
 
 $routes = (string) file_get_contents($root . '/routes/modules/marketing.php');

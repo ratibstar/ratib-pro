@@ -18,10 +18,18 @@ final class PortalRecruitmentService
         $this->repo = $repo ?? new TenantWebsiteRepository();
     }
 
-    /** @return array{items: list<array<string,mixed>>, total: int} */
-    public function searchCandidates(string $search = '', int $limit = 25, int $offset = 0): array
+    /**
+     * Employer ATS search (company-scoped CandidateService + assertCandidate on shortlist).
+     * Customers must use pipelineSummary(), not this search.
+     *
+     * @param array<string, mixed>|null $portalUser Unused for employer search; reserved for future scoping.
+     * @return array{items: list<array<string,mixed>>, total: int}
+     */
+    public function searchCandidates(string $search = '', int $limit = 25, int $offset = 0, ?array $portalUser = null): array
     {
         TenantContext::setCompanyId($this->repo->companyId());
+        // Employer needs company-wide search to shortlist; customers use scoped pipelineSummary only.
+        unset($portalUser);
         if (!class_exists(\Rateb\App\Services\CandidateService::class)) {
             return ['items' => [], 'total' => 0];
         }
@@ -112,21 +120,30 @@ final class PortalRecruitmentService
     }
 
     /**
-     * Read-only ATS pipeline stages (RecruitmentWorkflowService statuses).
+     * Read-only ATS pipeline stages for a portal user only (shortlists + request links).
+     * Never returns company-wide candidates.
      *
+     * @param array<string, mixed>|null $portalUser
      * @return array{total: int, stages: array<string, list<array<string,mixed>>>}
      */
-    public function pipelineSummary(int $limitPerStage = 20): array
+    public function pipelineSummary(int $limitPerStage = 20, ?array $portalUser = null): array
     {
-        TenantContext::setCompanyId($this->repo->companyId());
-        $stages = [
-            'shortlisted' => [],
-            'interview' => [],
-            'medical' => [],
-            'visa' => [],
-            'ready' => [],
-            'deployed' => [],
+        $empty = [
+            'total' => 0,
+            'stages' => [
+                'shortlisted' => [],
+                'interview' => [],
+                'medical' => [],
+                'visa' => [],
+                'ready' => [],
+                'deployed' => [],
+            ],
         ];
+        if ($portalUser === null || (int) ($portalUser['id'] ?? 0) < 1) {
+            return $empty;
+        }
+        TenantContext::setCompanyId($this->repo->companyId());
+        $stages = $empty['stages'];
         $map = [
             'interview' => 'interview',
             'medical' => 'medical',
@@ -137,26 +154,77 @@ final class PortalRecruitmentService
             'documents_pending' => 'shortlisted',
             'draft' => 'shortlisted',
             'contract' => 'ready',
+            'shortlisted' => 'shortlisted',
         ];
         $limitPerStage = max(1, min(50, $limitPerStage));
+        $uid = (int) $portalUser['id'];
+        $cid = $this->repo->companyId();
         try {
             $rows = $this->repo->fetchAll(
-                "SELECT id, full_name, candidate_no, workflow_status, email, job_title_target
-                 FROM rateb_recruitment_candidates
-                 WHERE company_id = :cid AND deleted_at IS NULL
-                 ORDER BY id DESC LIMIT 200",
-                ['cid' => $this->repo->companyId()]
+                "SELECT DISTINCT c.id, c.full_name, c.candidate_no, c.workflow_status, c.email, c.job_title_target
+                 FROM rateb_recruitment_candidates c
+                 WHERE c.company_id = :cid
+                   AND (c.deleted_at IS NULL)
+                   AND (
+                        c.id IN (
+                            SELECT s.recruitment_candidate_id
+                            FROM rateb_website_portal_shortlists s
+                            WHERE s.company_id = :cid2 AND s.portal_user_id = :uid
+                        )
+                     OR c.id IN (
+                            SELECT r.recruitment_candidate_id
+                            FROM rateb_website_portal_requests r
+                            WHERE r.company_id = :cid3 AND r.portal_user_id = :uid2
+                              AND r.recruitment_candidate_id IS NOT NULL
+                              AND r.recruitment_candidate_id > 0
+                        )
+                   )
+                 ORDER BY c.id DESC LIMIT 200",
+                [
+                    'cid' => $cid,
+                    'cid2' => $cid,
+                    'uid' => $uid,
+                    'cid3' => $cid,
+                    'uid2' => $uid,
+                ]
             );
             foreach ($rows as $row) {
                 $ws = (string) ($row['workflow_status'] ?? 'draft');
                 $bucket = $map[$ws] ?? 'shortlisted';
+                if (!isset($stages[$bucket])) {
+                    $bucket = 'shortlisted';
+                }
                 if (count($stages[$bucket]) >= $limitPerStage) {
                     continue;
                 }
                 $stages[$bucket][] = $row;
             }
         } catch (\Throwable $e) {
-            error_log('PortalRecruitmentService pipeline: ' . $e->getMessage());
+            // Fallback without deleted_at / recruitment_candidate_id column differences.
+            try {
+                $rows = $this->repo->fetchAll(
+                    "SELECT DISTINCT c.id, c.full_name, c.candidate_no, c.workflow_status, c.email, c.job_title_target
+                     FROM rateb_recruitment_candidates c
+                     INNER JOIN rateb_website_portal_shortlists s
+                        ON s.recruitment_candidate_id = c.id AND s.company_id = c.company_id
+                     WHERE c.company_id = :cid AND s.portal_user_id = :uid
+                     ORDER BY c.id DESC LIMIT 200",
+                    ['cid' => $cid, 'uid' => $uid]
+                );
+                foreach ($rows as $row) {
+                    $ws = (string) ($row['workflow_status'] ?? 'draft');
+                    $bucket = $map[$ws] ?? 'shortlisted';
+                    if (!isset($stages[$bucket])) {
+                        $bucket = 'shortlisted';
+                    }
+                    if (count($stages[$bucket]) >= $limitPerStage) {
+                        continue;
+                    }
+                    $stages[$bucket][] = $row;
+                }
+            } catch (\Throwable $e2) {
+                error_log('PortalRecruitmentService pipeline: ' . $e2->getMessage());
+            }
         }
         $total = 0;
         foreach ($stages as $list) {

@@ -249,7 +249,7 @@ final class WebsitePortalController extends Controller
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $this->renderPortal($type, 'contracts', [
             'user' => $user,
-            'contracts' => (new PortalContractService())->listActive(20, $page),
+            'contracts' => (new PortalContractService())->listActive(20, $page, $user),
             'page' => $page,
         ]);
     }
@@ -267,7 +267,7 @@ final class WebsitePortalController extends Controller
         }
         $this->renderPortal($type, 'pipeline', [
             'user' => $user,
-            'pipeline' => (new PortalRecruitmentService())->pipelineSummary(),
+            'pipeline' => (new PortalRecruitmentService())->pipelineSummary(20, $user),
         ]);
     }
 
@@ -287,7 +287,7 @@ final class WebsitePortalController extends Controller
             return;
         }
         $invoiceId = (int) ($_GET['id'] ?? $this->input('id', 0));
-        $invoice = (new PortalFinanceService())->findInvoice($invoiceId);
+        $invoice = (new PortalFinanceService())->findInvoice($invoiceId, $user);
         if ($invoice === null) {
             $this->notFound();
             return;
@@ -794,8 +794,8 @@ final class WebsitePortalController extends Controller
             Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
             return;
         }
-        $token = (string) ($result['payment_token'] ?? '');
-        Response::redirect(rateb_url('site/customer/services/payment/callback') . '?id=' . $id . '&token=' . rawurlencode($token) . '&ref=SIM-' . $id);
+        SessionManager::flash('success', __('payment_pending') ?: 'Payment pending');
+        Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
     }
 
     public function servicePaymentCallback(string $type = ''): void
@@ -804,17 +804,28 @@ final class WebsitePortalController extends Controller
             $this->notFound();
             return;
         }
+        $id = (int) ($_POST['id'] ?? $_GET['id'] ?? 0);
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            SessionManager::flash('error', __('invalid_request') ?: 'Payment callback requires POST');
+            Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+            return;
+        }
         if (!PortalRateLimit::allow('service_pay_cb', 40, 60)) {
             SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
             Response::redirect(rateb_url('site/customer/services'));
             return;
         }
-        $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
-        $token = (string) ($_GET['token'] ?? $_POST['token'] ?? '');
-        $ref = (string) ($_GET['ref'] ?? $_POST['ref'] ?? '');
-        $result = (new OnlineServiceService())->completePaymentCallback($id, $token, $ref);
-        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? (__('payment_ok') ?: 'Payment confirmed') : ($result['error'] ?? 'failed'));
+        $status = strtolower(trim((string) ($_POST['status'] ?? '')));
+        $token = (string) ($_POST['proof_token'] ?? $_POST['token'] ?? '');
+        $ref = (string) ($_POST['ref'] ?? $_POST['payment_ref'] ?? '');
+        if ($status !== 'paid' || $token === '' || $ref === '') {
+            SessionManager::flash('error', __('invalid_request') ?: 'Missing payment proof');
+            Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+            return;
+        }
         $user = (new PortalAuthService())->currentUser('customer');
+        $result = (new OnlineServiceService())->completePaymentCallback($id, $token, $ref, $user);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? (__('payment_ok') ?: 'Payment confirmed') : ($result['error'] ?? 'failed'));
         if ($user !== null) {
             Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
             return;
@@ -850,7 +861,7 @@ final class WebsitePortalController extends Controller
         }
         $this->renderPortal($type, 'notifications', [
             'user' => $user,
-            'notifications' => (new \Rateb\App\Website\Portal\PortalNotificationService())->listInApp(),
+            'notifications' => (new \Rateb\App\Website\Portal\PortalNotificationService())->listInApp($user),
         ]);
     }
 

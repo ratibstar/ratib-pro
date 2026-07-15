@@ -1,26 +1,38 @@
 /* Phase WEBSITE-06 — Career portal (external stylesheet only) */
-.rateb-career-nav { border-bottom: 1px solid var(--rateb-border, #e2e8f0); background: var(--rateb-surface, #fff); }
+.rateb-career-nav { border-bottom: 1px solid var(--rateb-border, #e2e8f0); background: var(--rateb-surface, var(--bs-body-bg, #fff)); }
 .rateb-career-nav__inner { display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.75rem 0; align-items: center; }
 .rateb-career-nav__link { color: var(--rateb-text, #1e293b); text-decoration: none; font-weight: 500; }
 .rateb-career-nav__link--cta { color: var(--rateb-primary, #1a5fb4); }
+.rateb-career-nav__link:focus-visible,
+.rateb-career-search__input:focus-visible,
+.rateb-career-search__btn:focus-visible,
+.rateb-career-btn:focus-visible,
+.rateb-career-card__cta:focus-visible,
+.rateb-career-pagination__link:focus-visible,
+.rateb-career-form__field input:focus-visible,
+.rateb-career-form__field textarea:focus-visible,
+.rateb-career-form__field select:focus-visible {
+    outline: 2px solid var(--rateb-primary, #1a5fb4);
+    outline-offset: 2px;
+}
 .rateb-career-hero { padding: 2.5rem 0 2rem; background: linear-gradient(180deg, rgba(26,95,180,0.06), transparent); }
 .rateb-career-hero--compact { padding: 1.5rem 0; }
 .rateb-career-hero__lead { color: var(--rateb-muted, #64748b); max-width: 42rem; }
 .rateb-career-search { display: flex; gap: 0.5rem; max-width: 36rem; margin-top: 1rem; }
-.rateb-career-search__input { flex: 1; padding: 0.65rem 0.85rem; border: 1px solid var(--rateb-border, #cbd5e1); border-radius: 8px; }
+.rateb-career-search__input { flex: 1; padding: 0.65rem 0.85rem; border: 1px solid var(--rateb-border, #cbd5e1); border-radius: 8px; background: var(--rateb-surface, var(--bs-body-bg, #fff)); color: inherit; }
 .rateb-career-search__btn { padding: 0.65rem 1.25rem; border: 0; border-radius: 8px; background: var(--rateb-primary, #1a5fb4); color: #fff; cursor: pointer; }
 .rateb-career-section { padding: 2rem 0; }
 .rateb-career-section--muted { background: var(--rateb-surface-muted, #f8fafc); }
 .rateb-career-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .rateb-career-grid--compact { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-.rateb-career-card { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 12px; padding: 1rem; background: #fff; position: relative; }
+.rateb-career-card { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 12px; padding: 1rem; background: var(--rateb-surface, var(--bs-body-bg, #fff)); position: relative; }
 .rateb-career-card__title { margin: 0 0 0.35rem; font-size: 1.05rem; }
 .rateb-career-card__title a { color: inherit; text-decoration: none; }
 .rateb-career-card__meta { margin: 0; color: var(--rateb-muted, #64748b); font-size: 0.9rem; }
 .rateb-career-card__badge { display: inline-block; margin-top: 0.5rem; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #fef3c7; color: #92400e; }
 .rateb-career-card__cta { display: inline-block; margin-top: 0.75rem; font-weight: 600; color: var(--rateb-primary, #1a5fb4); text-decoration: none; }
 .rateb-career-categories { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.rateb-career-categories a { display: inline-block; padding: 0.5rem 0.85rem; border-radius: 999px; background: #fff; border: 1px solid var(--rateb-border, #e2e8f0); text-decoration: none; color: inherit; }
+.rateb-career-categories a { display: inline-block; padding: 0.5rem 0.85rem; border-radius: 999px; background: var(--rateb-surface, var(--bs-body-bg, #fff)); border: 1px solid var(--rateb-border, #e2e8f0); text-decoration: none; color: inherit; }
 .rateb-career-detail__header { margin-bottom: 1.5rem; }
 .rateb-career-detail__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
 .rateb-career-detail__body h2 { margin-top: 1.5rem; font-size: 1.1rem; }
@@ -32,7 +44,7 @@
 .rateb-career-form__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
 .rateb-career-form__field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
 .rateb-career-form__field--full { grid-column: 1 / -1; }
-.rateb-career-form__field input, .rateb-career-form__field textarea, .rateb-career-form__field select { padding: 0.55rem 0.75rem; border: 1px solid var(--rateb-border, #cbd5e1); border-radius: 8px; }
+.rateb-career-form__field input, .rateb-career-form__field textarea, .rateb-career-form__field select { padding: 0.55rem 0.75rem; border: 1px solid var(--rateb-border, #cbd5e1); border-radius: 8px; background: var(--rateb-surface, var(--bs-body-bg, #fff)); color: inherit; }
 .rateb-career-inline-form { display: inline; }
 .rateb-career-pagination { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 1.5rem; }
 .rateb-career-pagination__link { padding: 0.4rem 0.7rem; border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 6px; text-decoration: none; color: inherit; }
@@ -54,3 +66,33 @@
 .wb-career-job { padding: 0.75rem; border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 8px; }
 .wb-career-search-widget { display: flex; gap: 0.5rem; }
 .wb-career-cta { text-align: center; padding: 1.5rem; border-radius: 12px; background: var(--rateb-surface-muted, #f8fafc); }
+
+html[data-theme="dark"] .rateb-career-layout,
+html[data-theme="dark"] .rateb-career-main {
+    color: var(--rateb-text, #e2e8f0);
+}
+html[data-theme="dark"] .rateb-career-nav,
+html[data-theme="dark"] .rateb-career-card,
+html[data-theme="dark"] .rateb-career-categories a {
+    background: var(--rateb-surface, #1e293b);
+    border-color: var(--rateb-border, #334155);
+}
+html[data-theme="dark"] .rateb-career-nav__link,
+html[data-theme="dark"] .rateb-career-card__title a {
+    color: var(--rateb-text, #e2e8f0);
+}
+html[data-theme="dark"] .rateb-career-section--muted,
+html[data-theme="dark"] .wb-career-cta {
+    background: var(--rateb-surface-muted, #0f172a);
+}
+html[data-theme="dark"] .rateb-career-search__input,
+html[data-theme="dark"] .rateb-career-form__field input,
+html[data-theme="dark"] .rateb-career-form__field textarea,
+html[data-theme="dark"] .rateb-career-form__field select {
+    background: var(--rateb-surface, #0f172a);
+    border-color: var(--rateb-border, #334155);
+    color: var(--rateb-text, #e2e8f0);
+}
+html[data-theme="dark"] .rateb-career-hero {
+    background: linear-gradient(180deg, rgba(26,95,180,0.18), transparent);
+}

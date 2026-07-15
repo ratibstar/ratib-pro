@@ -18,24 +18,35 @@ final class PortalNotificationService
         $this->repo = $repo ?? new TenantWebsiteRepository();
     }
 
-    /** @return list<array<string, mixed>> */
-    public function listInApp(): array
+    /**
+     * @param array<string, mixed>|null $portalUser
+     * @return list<array<string, mixed>>
+     */
+    public function listInApp(?array $portalUser = null): array
     {
+        if ($portalUser === null || (int) ($portalUser['id'] ?? 0) < 1) {
+            return [];
+        }
         TenantContext::setCompanyId($this->repo->companyId());
         try {
             return $this->repo->fetchAll(
-                'SELECT id, title, message, type, is_read, created_at
+                "SELECT id, title, message, type, is_read, created_at
                  FROM rateb_notifications
                  WHERE company_id = :cid
-                 ORDER BY id DESC LIMIT 50',
-                ['cid' => $this->repo->companyId()]
+                   AND entity_type = 'website_portal_user'
+                   AND entity_id = :uid
+                 ORDER BY id DESC LIMIT 50",
+                [
+                    'cid' => $this->repo->companyId(),
+                    'uid' => (int) $portalUser['id'],
+                ]
             );
         } catch (\Throwable $e) {
             return [];
         }
     }
 
-    public function notifyCompany(string $title, string $message): void
+    public function notifyCompany(string $title, string $message, ?string $entityType = null, ?int $entityId = null): void
     {
         TenantContext::setCompanyId($this->repo->companyId());
         try {
@@ -45,7 +56,9 @@ final class PortalNotificationService
                     $title,
                     $message,
                     'info',
-                    'website_portal'
+                    'website_portal',
+                    $entityType,
+                    $entityId
                 );
             }
         } catch (\Throwable $e) {
@@ -72,7 +85,8 @@ final class PortalNotificationService
     public function notifyServiceStatus(array $portalUser, int $serviceRequestId, string $status, string $message): void
     {
         $title = 'Service #' . $serviceRequestId . ' — ' . $status;
-        $this->notifyCompany($title, $message);
+        $uid = (int) ($portalUser['id'] ?? 0);
+        $this->notifyCompany($title, $message, 'website_portal_user', $uid > 0 ? $uid : null);
         $email = trim((string) ($portalUser['email'] ?? ''));
         if ($email !== '') {
             $this->email($email, $title, $message);
