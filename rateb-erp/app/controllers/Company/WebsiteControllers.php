@@ -344,11 +344,17 @@ final class WebsiteThemeController extends Controller
     public function edit(): void
     {
         $this->bootWebsite();
+        $market = new \Rateb\App\Website\Theme\ThemeMarketplaceService();
+        $dash = $market->dashboard();
         $editor = new WebsiteThemeEditorService();
+        $activeId = isset($dash['active']['id']) ? (int) $dash['active']['id'] : 0;
         $this->view('company/website/theme/edit', [
             'title' => __('website_theme') ?: 'Theme',
             'tokens' => $editor->tokens(),
             'theme' => (new \Rateb\App\Website\TenantThemeService())->theme(),
+            'marketplace' => $dash,
+            'override' => $activeId > 0 ? $market->getOverride($activeId) : [],
+            'backups' => $activeId > 0 ? $market->backups($activeId) : [],
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -364,9 +370,183 @@ final class WebsiteThemeController extends Controller
         if (is_string($tokens)) {
             $tokens = json_decode($tokens, true) ?: [];
         }
-        (new WebsiteThemeEditorService())->save(is_array($tokens) ? $tokens : [], $_POST);
+        if (!is_array($tokens)) {
+            $tokens = [];
+        }
+        $market = new \Rateb\App\Website\Theme\ThemeMarketplaceService();
+        $active = $market->dashboard()['active'];
+        if ($active) {
+            $override = $market->getOverride((int) $active['id']);
+            $override['tokens'] = array_replace_recursive($override['tokens'] ?? [], $tokens);
+            if (!empty($_POST['logo_path'])) {
+                $override['logo_path'] = (string) $_POST['logo_path'];
+            }
+            if (!empty($_POST['favicon_path'])) {
+                $override['favicon_path'] = (string) $_POST['favicon_path'];
+            }
+            $market->saveOverride((int) $active['id'], $override);
+        } else {
+            (new WebsiteThemeEditorService())->save($tokens, $_POST);
+        }
         SessionManager::flash('success', __('saved_ok'));
         $this->redirect(rateb_url(rateb_app_route('website/theme')));
+    }
+
+    public function marketplaceInstall(): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => 'CSRF'], 403);
+            return;
+        }
+        $slug = (string) ($_POST['slug'] ?? '');
+        $result = (new \Rateb\App\Website\Theme\ThemeMarketplaceService())->install($slug);
+        Response::json($result, !empty($result['ok']) ? 200 : 400);
+    }
+
+    public function marketplaceActivate(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $m->activate($id);
+
+            return ['ok' => true];
+        });
+    }
+
+    public function marketplacePreview(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $m->preview($id);
+
+            return ['ok' => true, 'url' => rateb_url('site?theme_preview=1')];
+        });
+    }
+
+    public function marketplaceClearPreview(): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false], 403);
+            return;
+        }
+        (new \Rateb\App\Website\Theme\ThemeMarketplaceService())->clearPreview();
+        Response::json(['ok' => true]);
+    }
+
+    public function marketplaceDuplicate(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $newId = $m->duplicate($id, (string) ($_POST['name'] ?? ''));
+
+            return ['ok' => true, 'installed_id' => $newId];
+        });
+    }
+
+    public function marketplaceReset(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $m->reset($id);
+
+            return ['ok' => true];
+        });
+    }
+
+    public function marketplaceDelete(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $m->delete($id);
+
+            return ['ok' => true];
+        });
+    }
+
+    public function marketplaceExport(): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false], 403);
+            return;
+        }
+        $id = (int) ($_POST['id'] ?? 0);
+        try {
+            $payload = (new \Rateb\App\Website\Theme\ThemeMarketplaceService())->export($id);
+            Response::json(['ok' => true, 'package' => $payload]);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function marketplaceImport(): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false], 403);
+            return;
+        }
+        $raw = $_POST['package'] ?? '';
+        if (is_string($raw)) {
+            $payload = json_decode($raw, true);
+        } else {
+            $payload = $raw;
+        }
+        if (!is_array($payload) && !empty($_FILES['package_file']['tmp_name'])) {
+            $bin = file_get_contents((string) $_FILES['package_file']['tmp_name']);
+            $payload = is_string($bin) ? json_decode($bin, true) : null;
+        }
+        if (!is_array($payload)) {
+            Response::json(['ok' => false, 'message' => 'Invalid package'], 400);
+            return;
+        }
+        $result = (new \Rateb\App\Website\Theme\ThemeMarketplaceService())->import($payload);
+        Response::json($result, !empty($result['ok']) ? 200 : 400);
+    }
+
+    public function marketplaceDemo(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            return $m->importDemo($id);
+        });
+    }
+
+    public function marketplaceBackup(): void
+    {
+        $this->jsonThemeAction(static function (\Rateb\App\Website\Theme\ThemeMarketplaceService $m, int $id): array {
+            $vid = $m->backup($id, (string) ($_POST['label'] ?? 'Backup'));
+
+            return ['ok' => true, 'version_id' => $vid];
+        });
+    }
+
+    public function marketplaceRestore(): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false], 403);
+            return;
+        }
+        try {
+            (new \Rateb\App\Website\Theme\ThemeMarketplaceService())->restore((int) ($_POST['version_id'] ?? 0));
+            Response::json(['ok' => true]);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    /** @param callable(\Rateb\App\Website\Theme\ThemeMarketplaceService,int):array<string,mixed> $fn */
+    private function jsonThemeAction(callable $fn): void
+    {
+        $this->bootWebsite();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => 'CSRF'], 403);
+            return;
+        }
+        $id = (int) ($_POST['id'] ?? 0);
+        try {
+            $result = $fn(new \Rateb\App\Website\Theme\ThemeMarketplaceService(), $id);
+            Response::json($result, !empty($result['ok']) ? 200 : 400);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
     }
 }
 

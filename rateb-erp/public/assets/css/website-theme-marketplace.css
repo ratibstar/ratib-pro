@@ -1,0 +1,15 @@
+/* Phase WEBSITE-05 — Theme marketplace admin */
+.wb-theme-status-card,
+.wb-theme-card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+  height: 100%;
+}
+.wb-theme-actions .btn {
+  margin: 0.15rem;
+}
+.wb-theme-card h3 {
+  margin: 0;
+}

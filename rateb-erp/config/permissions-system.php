@@ -267,8 +267,15 @@ return [
             'website.builder.manage',
             'website.media.manage',
             'website.theme.manage',
+            'website.theme.marketplace',
+            'website.theme.import',
             'website.publish',
             'website.forms.manage',
+        ],
+        'website.theme.manage' => [
+            'website.view',
+            'website.theme.marketplace',
+            'website.theme.import',
         ],
         'website.builder.manage' => [
             'website.view',

@@ -1,0 +1,89 @@
+{
+  "slug": "oasis",
+  "name_en": "Oasis",
+  "name_ar": "واحة",
+  "version": "1.0.0",
+  "engine": "website-05",
+  "engine_min": "1.0",
+  "author": "RATEB",
+  "description_en": "Calm teal theme for service agencies.",
+  "description_ar": "سمة هادئة بدرجات التركواز لوكالات الخدمات.",
+  "fonts": ["Tajawal"],
+  "icons": "fontawesome",
+  "colors": {
+    "primary": "#0f766e",
+    "secondary": "#14b8a6",
+    "accent": "#f59e0b",
+    "background": "#f8faf9",
+    "surface": "#ffffff",
+    "text": "#134e4a",
+    "muted": "#5f6b6a"
+  },
+  "typography": {
+    "font_family": "Tajawal",
+    "heading_weight": 700,
+    "body_size": "17px",
+    "line_height": 1.7
+  },
+  "tokens": {
+    "buttons": {"radius": "999px", "padding_y": "0.7rem", "padding_x": "1.5rem"},
+    "cards": {"radius": "16px", "padding": "1.5rem", "border": "none"},
+    "radius": {"sm": "8px", "md": "14px", "lg": "24px"},
+    "shadows": {"sm": "0 1px 2px rgba(15,118,110,.06)", "md": "0 10px 30px rgba(15,118,110,.1)"},
+    "header": {"sticky": true, "height": "72px"},
+    "footer": {"columns": 4},
+    "layout": {"max_width": "1100px", "gutter": "1.75rem"},
+    "direction": "auto"
+  },
+  "blocks": ["hero", "about", "team", "testimonials", "faq", "gallery", "partners", "cta", "whatsapp"],
+  "assets": [],
+  "seo_defaults": {
+    "meta_title_en": "Oasis Agency",
+    "meta_title_ar": "وكالة واحة",
+    "robots": "index,follow"
+  },
+  "demo": {
+    "pages": [
+      {
+        "slug": "home",
+        "title_en": "Home",
+        "title_ar": "الرئيسية",
+        "template": "builder",
+        "status": "published",
+        "sections": [
+          {
+            "section_key": "hero",
+            "blocks": [
+              {
+                "block_type": "hero",
+                "title_en": "Welcome to Oasis",
+                "title_ar": "مرحباً بكم في واحة",
+                "content_en": "Trusted teams. Clear delivery.",
+                "content_ar": "فرق موثوقة وتنفيذ واضح."
+              }
+            ]
+          },
+          {
+            "section_key": "proof",
+            "title_en": "What clients say",
+            "title_ar": "ماذا يقول عملاؤنا",
+            "blocks": [
+              {"block_type": "testimonials", "title_en": "Excellent partner", "title_ar": "شريك ممتاز", "content_en": "Reliable and professional.", "content_ar": "موثوق واحترافي."}
+            ]
+          }
+        ]
+      }
+    ],
+    "menus": [
+      {
+        "slug": "main",
+        "name_en": "Main",
+        "location": "header",
+        "items": [
+          {"label_en": "Home", "label_ar": "الرئيسية", "url": "/site"}
+        ]
+      }
+    ],
+    "forms": []
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "slug": "aurora",
+  "name_en": "Aurora",
+  "name_ar": "أورورا",
+  "version": "1.0.0",
+  "engine": "website-05",
+  "engine_min": "1.0",
+  "author": "RATEB",
+  "description_en": "Bright professional agency theme with strong CTAs.",
+  "description_ar": "سمة احترافية مشرقة للوكالات مع دعوات واضحة للعمل.",
+  "preview_image": "",
+  "fonts": ["Tajawal"],
+  "icons": "fontawesome",
+  "colors": {
+    "primary": "#1a5fb4",
+    "secondary": "#3584e4",
+    "accent": "#26a269",
+    "background": "#ffffff",
+    "surface": "#f0f6ff",
+    "text": "#1c1c1c",
+    "muted": "#5e5c64"
+  },
+  "typography": {
+    "font_family": "Tajawal",
+    "heading_weight": 700,
+    "body_size": "16px",
+    "line_height": 1.65
+  },
+  "tokens": {
+    "buttons": {"radius": "10px", "padding_y": "0.7rem", "padding_x": "1.4rem"},
+    "cards": {"radius": "14px", "padding": "1.35rem", "border": "1px solid rgba(26,95,180,.08)"},
+    "radius": {"sm": "6px", "md": "10px", "lg": "18px"},
+    "shadows": {"sm": "0 1px 3px rgba(26,95,180,.08)", "md": "0 12px 28px rgba(26,95,180,.12)"},
+    "header": {"sticky": true, "height": "76px"},
+    "footer": {"columns": 3},
+    "layout": {"max_width": "1160px", "gutter": "1.5rem"},
+    "direction": "auto"
+  },
+  "blocks": ["hero", "about", "services", "features", "counters", "cta", "faq", "contact", "forms"],
+  "assets": [],
+  "seo_defaults": {
+    "meta_title_en": "Aurora Agency",
+    "meta_title_ar": "وكالة أورورا",
+    "meta_description_en": "Professional services website powered by RATEB.",
+    "meta_description_ar": "موقع خدمات احترافي مدعوم براتب.",
+    "twitter_card": "summary_large_image",
+    "robots": "index,follow"
+  },
+  "demo": {
+    "pages": [
+      {
+        "slug": "home",
+        "title_en": "Home",
+        "title_ar": "الرئيسية",
+        "template": "builder",
+        "status": "published",
+        "seo": {
+          "meta_title_en": "Home | Aurora",
+          "meta_title_ar": "الرئيسية | أورورا"
+        },
+        "sections": [
+          {
+            "section_key": "hero",
+            "title_en": "",
+            "blocks": [
+              {
+                "block_type": "hero",
+                "title_en": "Grow with Aurora",
+                "title_ar": "انمُ مع أورورا",
+                "content_en": "Enterprise website for your agency brand.",
+                "content_ar": "موقع مؤسسي لهوية وكالتك."
+              }
+            ]
+          },
+          {
+            "section_key": "services",
+            "title_en": "Services",
+            "title_ar": "خدمات",
+            "blocks": [
+              {"block_type": "services", "title_en": "Consulting", "title_ar": "استشارات", "content_en": "Strategy and delivery.", "content_ar": "استراتيجية وتنفيذ."},
+              {"block_type": "features", "title_en": "Automation", "title_ar": "أتمتة", "content_en": "Operational excellence.", "content_ar": "تميز تشغيلي."}
+            ]
+          },
+          {
+            "section_key": "cta",
+            "blocks": [
+              {"block_type": "cta", "title_en": "Talk to us", "title_ar": "تواصل معنا", "content_en": "Start your project today.", "content_ar": "ابدأ مشروعك اليوم.", "link_url": "/site/contact"}
+            ]
+          }
+        ]
+      },
+      {
+        "slug": "contact",
+        "title_en": "Contact",
+        "title_ar": "تواصل",
+        "template": "builder",
+        "status": "published",
+        "sections": [
+          {
+            "section_key": "contact",
+            "title_en": "Contact",
+            "blocks": [
+              {"block_type": "contact", "title_en": "Get in touch", "title_ar": "تواصل معنا"},
+              {"block_type": "forms", "title_en": "Contact form", "title_ar": "نموذج التواصل", "settings": {"form_slug": "contact"}}
+            ]
+          }
+        ]
+      }
+    ],
+    "menus": [
+      {
+        "slug": "main",
+        "name_en": "Main",
+        "name_ar": "الرئيسي",
+        "location": "header",
+        "items": [
+          {"label_en": "Home", "label_ar": "الرئيسية", "url": "/site"},
+          {"label_en": "Contact", "label_ar": "تواصل", "url": "/site/contact"}
+        ]
+      }
+    ],
+    "forms": [
+      {
+        "slug": "contact",
+        "name_en": "Contact",
+        "name_ar": "تواصل",
+        "crm_enabled": 1,
+        "crm_source_code": "website_form",
+        "fields": [
+          {"field_key": "name", "field_type": "text", "label_en": "Name", "label_ar": "الاسم", "is_required": 1},
+          {"field_key": "email", "field_type": "email", "label_en": "Email", "label_ar": "البريد", "is_required": 1},
+          {"field_key": "message", "field_type": "textarea", "label_en": "Message", "label_ar": "الرسالة", "is_required": 1}
+        ]
+      }
+    ]
+  }
+}

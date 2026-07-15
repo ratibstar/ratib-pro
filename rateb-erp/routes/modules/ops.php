@@ -1205,6 +1205,20 @@ $router->post($app('website/builder/preview'), [WebsiteBuilderController::class,
 
 $router->get($app('website/theme'), [WebsiteThemeController::class, 'edit'], $websiteThemeMw);
 $router->post($app('website/theme'), [WebsiteThemeController::class, 'save'], $websiteThemeMw);
+$websiteThemeMarketMw = rateb_erp_mw('website', 'website.theme.marketplace', 'website-theme');
+$websiteThemeImportMw = rateb_erp_mw('website', 'website.theme.import', 'website-theme');
+$router->post($app('website/theme/marketplace/install'), [WebsiteThemeController::class, 'marketplaceInstall'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/activate'), [WebsiteThemeController::class, 'marketplaceActivate'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/preview'), [WebsiteThemeController::class, 'marketplacePreview'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/clear-preview'), [WebsiteThemeController::class, 'marketplaceClearPreview'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/duplicate'), [WebsiteThemeController::class, 'marketplaceDuplicate'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/reset'), [WebsiteThemeController::class, 'marketplaceReset'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/delete'), [WebsiteThemeController::class, 'marketplaceDelete'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/export'), [WebsiteThemeController::class, 'marketplaceExport'], $websiteThemeImportMw);
+$router->post($app('website/theme/marketplace/import'), [WebsiteThemeController::class, 'marketplaceImport'], $websiteThemeImportMw);
+$router->post($app('website/theme/marketplace/demo'), [WebsiteThemeController::class, 'marketplaceDemo'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/backup'), [WebsiteThemeController::class, 'marketplaceBackup'], $websiteThemeMarketMw);
+$router->post($app('website/theme/marketplace/restore'), [WebsiteThemeController::class, 'marketplaceRestore'], $websiteThemeMarketMw);
 
 $router->get($app('website/media'), [WebsiteMediaController::class, 'index'], $websiteMediaMw);
 $router->post($app('website/media/upload'), [WebsiteMediaController::class, 'upload'], $websiteMediaMw);

@@ -62,6 +62,19 @@ final class WebsiteThemeEditorService
     /** @return array<string, mixed> */
     public function tokens(): array
     {
+        // WEBSITE-05 — Prefer marketplace resolver (base → override → runtime).
+        if (class_exists(\Rateb\App\Website\Theme\ThemeResolver::class)
+            && class_exists(\Rateb\App\Website\WebsiteContext::class)
+            && \Rateb\App\Website\WebsiteContext::current() !== null) {
+            try {
+                $resolved = (new \Rateb\App\Website\Theme\ThemeResolver($this->repo))->resolveRuntime();
+
+                return array_replace_recursive($this->defaultTokens(), $resolved['tokens']);
+            } catch (\Throwable $e) {
+                // Fall through to legacy tokens_json.
+            }
+        }
+
         $theme = (new TenantThemeService($this->repo))->theme();
         $raw = $theme['tokens_json'] ?? null;
         if (is_string($raw) && $raw !== '') {
