@@ -278,7 +278,7 @@ final class CmsMedia extends Model
 {
     protected string $table = 'rateb_cms_media';
     protected array $fillable = [
-        'category_id', 'file_name', 'file_path', 'mime_type', 'file_size',
+        'company_id', 'category_id', 'file_name', 'file_path', 'mime_type', 'file_size',
         'alt_en', 'alt_ar', 'uploaded_by',
     ];
 }
@@ -287,7 +287,7 @@ final class CmsTheme extends Model
 {
     protected string $table = 'rateb_cms_theme';
     protected array $fillable = [
-        'primary_color', 'secondary_color', 'font_family', 'logo_path', 'favicon_path',
+        'company_id', 'primary_color', 'secondary_color', 'font_family', 'logo_path', 'favicon_path',
         'custom_css', 'custom_js',
     ];
 }
@@ -295,7 +295,7 @@ final class CmsTheme extends Model
 final class CmsVisitor extends Model
 {
     protected string $table = 'rateb_cms_visitors';
-    protected array $fillable = ['visit_date', 'page_views', 'unique_visitors'];
+    protected array $fillable = ['company_id', 'visit_date', 'page_views', 'unique_visitors'];
 }
 
 final class CmsKbArticle extends Model

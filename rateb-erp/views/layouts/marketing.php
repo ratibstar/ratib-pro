@@ -29,6 +29,9 @@ $headerContext = 'marketing';
     <meta name="twitter:image" content="<?php echo Rateb\App\Core\View::escape($meta['og_image']); ?>">
     <?php } ?>
     <meta name="twitter:card" content="<?php echo Rateb\App\Core\View::escape($meta['twitter_card'] ?? 'summary_large_image'); ?>">
+    <?php if (!empty($meta['schema_json'])) { ?>
+    <script type="application/ld+json"><?php echo $meta['schema_json']; ?></script>
+    <?php } ?>
     <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
     <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">

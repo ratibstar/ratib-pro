@@ -121,6 +121,7 @@ final class WebsiteKernel
         try {
             require_once $ratebRoot . '/app/Core/Bootstrap.php';
             Bootstrap::initWebsite($ratebRoot);
+            WebsiteContext::bootFromRequest();
 
             if (class_exists(\Rateb\App\Core\Auth::class)) {
                 \Rateb\App\Core\Auth::bootstrapFromSession();

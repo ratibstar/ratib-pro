@@ -30,6 +30,21 @@ final class CmsService
     /** @var array<string, mixed>|null */
     private static ?array $themeCache = null;
 
+    private ?\Rateb\App\Website\TenantWebsiteService $tenantWebsite = null;
+
+    public function __construct()
+    {
+        if (class_exists(\Rateb\App\Website\WebsiteContext::class)
+            && \Rateb\App\Website\WebsiteContext::current() !== null) {
+            $this->tenantWebsite = new \Rateb\App\Website\TenantWebsiteService();
+        }
+    }
+
+    private function tenant(): ?\Rateb\App\Website\TenantWebsiteService
+    {
+        return $this->tenantWebsite;
+    }
+
     public static function localeField(string $base): string
     {
         return rateb_locale() === 'ar' ? $base . '_ar' : $base . '_en';
@@ -55,6 +70,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function footerColumns(): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->menuService()->footerColumns();
+        }
         $stmt = Database::connection()->query(
             'SELECT * FROM rateb_cms_footer_columns ORDER BY sort_order ASC, id ASC'
         );
@@ -64,6 +82,14 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function offices(): array
     {
+        if ($this->tenant() !== null) {
+            [$where, $params] = $this->tenant()->repository()->companyWhere();
+
+            return $this->tenant()->repository()->fetchAll(
+                "SELECT * FROM rateb_cms_offices WHERE {$where} ORDER BY sort_order ASC, id ASC",
+                $params
+            );
+        }
         $stmt = Database::connection()->query(
             'SELECT * FROM rateb_cms_offices ORDER BY sort_order ASC, id ASC'
         );
@@ -72,6 +98,10 @@ final class CmsService
 
     public function trackPageView(string $pageSlug): void
     {
+        if ($this->tenant() !== null) {
+            $this->tenant()->trackPageView($pageSlug);
+            return;
+        }
         try {
             $db = Database::connection();
             $today = date('Y-m-d');
@@ -88,6 +118,9 @@ final class CmsService
 
     public function pageBySlug(string $slug): ?array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->pageBySlug($slug);
+        }
         $stmt = Database::connection()->prepare('SELECT * FROM rateb_cms_pages WHERE slug = :s AND status = :st LIMIT 1');
         $stmt->execute(['s' => $slug, 'st' => 'published']);
         $row = $stmt->fetch();
@@ -97,6 +130,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function sectionsForPage(string $pageSlug): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->blockService()->sectionsForPage($pageSlug);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_sections WHERE page_slug = :p AND is_active = 1 ORDER BY sort_order ASC'
         );
@@ -107,6 +143,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function blocksForSection(int $sectionId): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->blockService()->blocksForSection($sectionId);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_blocks WHERE section_id = :id AND is_active = 1 ORDER BY sort_order ASC'
         );
@@ -117,6 +156,9 @@ final class CmsService
     /** @return array<string, array<int, array<string, mixed>>> */
     public function pageContent(string $pageSlug): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->pageContent($pageSlug);
+        }
         $sections = $this->sectionsForPage($pageSlug);
         $out = [];
         foreach ($sections as $section) {
@@ -132,6 +174,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function menuItems(string $menuSlug = 'main'): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->menuItems($menuSlug);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT i.* FROM rateb_cms_menu_items i
              JOIN rateb_cms_menus m ON m.id = i.menu_id
@@ -156,6 +201,9 @@ final class CmsService
     /** @return array<string, mixed>|null */
     public function seoForPage(string $pageSlug): ?array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->seoService()->seoRow($pageSlug);
+        }
         $stmt = Database::connection()->prepare('SELECT * FROM rateb_cms_seo WHERE page_slug = :s LIMIT 1');
         $stmt->execute(['s' => $pageSlug]);
         $row = $stmt->fetch();
@@ -165,6 +213,9 @@ final class CmsService
     /** @return array<string, string> */
     public function metaTags(string $pageSlug, string $defaultTitle): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->metaTags($pageSlug, $defaultTitle);
+        }
         $seo = $this->seoForPage($pageSlug);
         $titleKey = self::localeField('meta_title');
         $descKey = self::localeField('meta_description');
@@ -198,6 +249,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function activeSlides(): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->activeSlides();
+        }
         $now = date('Y-m-d H:i:s');
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_slides WHERE is_active = 1
@@ -212,6 +266,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function approvedTestimonials(int $limit = 6): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->approvedTestimonials($limit);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_testimonials WHERE status = :s ORDER BY sort_order ASC LIMIT :lim'
         );
@@ -230,6 +287,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function queryPublishedArticles(int $limit = 50): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->publishedArticles($limit);
+        }
         $stmt = Database::connection()->prepare(
             "SELECT * FROM rateb_cms_blog_articles WHERE status = 'published'
              AND (published_at IS NULL OR published_at <= NOW())
@@ -243,6 +303,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function activeFaqs(int $limit = 5): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->activeFaqs($limit);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_faqs WHERE is_active = 1 ORDER BY sort_order ASC LIMIT :lim'
         );
@@ -254,6 +317,9 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function approvedTestimonialsAll(int $limit = 50): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->approvedTestimonials($limit);
+        }
         $stmt = Database::connection()->prepare(
             'SELECT * FROM rateb_cms_testimonials WHERE status = :s ORDER BY sort_order ASC LIMIT :lim'
         );
@@ -276,6 +342,9 @@ final class CmsService
     /** @return array<string, mixed>|null */
     public function about(): ?array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->about();
+        }
         $stmt = Database::connection()->query('SELECT * FROM rateb_cms_about ORDER BY id ASC LIMIT 1');
         $row = $stmt ? $stmt->fetch() : false;
         return $row ?: null;
@@ -284,6 +353,9 @@ final class CmsService
     /** @return array<string, mixed>|null */
     public function contactSettings(): ?array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->contactSettings();
+        }
         $stmt = Database::connection()->query('SELECT * FROM rateb_cms_contact_settings ORDER BY id ASC LIMIT 1');
         $row = $stmt ? $stmt->fetch() : false;
         return $row ?: null;
@@ -292,6 +364,9 @@ final class CmsService
     /** @return array<string, mixed> */
     public function theme(): array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->theme();
+        }
         if (self::$themeCache !== null) {
             return self::$themeCache;
         }
@@ -308,6 +383,9 @@ final class CmsService
     /** @return array<string, mixed>|null */
     public function analytics(): ?array
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->analytics();
+        }
         $stmt = Database::connection()->query('SELECT * FROM rateb_cms_analytics ORDER BY id ASC LIMIT 1');
         $row = $stmt ? $stmt->fetch() : false;
         return $row ?: null;
@@ -315,9 +393,28 @@ final class CmsService
 
     public function robotsContent(): string
     {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->robotsContent();
+        }
         $stmt = Database::connection()->query('SELECT content FROM rateb_cms_robots ORDER BY id ASC LIMIT 1');
         $row = $stmt ? $stmt->fetch() : false;
         return $row ? (string) $row['content'] : "User-agent: *\nAllow: /";
+    }
+
+    /** @return list<string> */
+    public function tenantSitemapPaths(): array
+    {
+        if ($this->tenant() !== null) {
+            return $this->tenant()->sitemapPaths();
+        }
+
+        return [
+            'site', 'site/features', 'site/solutions', 'site/industries', 'site/pricing',
+            'site/request-demo', 'site/contact', 'site/about', 'site/faq', 'site/blog',
+            'site/services', 'site/reviews', 'site/partners', 'site/careers',
+            'site/privacy', 'site/terms', 'site/cookies', 'site/system-status',
+            'site/help-center', 'site/knowledge-base',
+        ];
     }
 
     /** @return array<string, int> */
@@ -378,6 +475,10 @@ final class CmsService
 
     public function applyRedirectIfAny(string $path): void
     {
+        if ($this->tenant() !== null) {
+            $this->tenant()->applyRedirectIfAny($path);
+            return;
+        }
         $row = $this->checkRedirect($path);
         if ($row === null) {
             return;

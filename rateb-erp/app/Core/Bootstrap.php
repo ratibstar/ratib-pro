@@ -312,7 +312,17 @@ final class Bootstrap
             '/app/controllers/Marketing/CustomerPortalController.php',
             '/app/controllers/Admin/LocaleController.php',
             '/app/Website/TenantContext.php',
+            '/app/Website/WebsiteContext.php',
+            '/app/Website/TenantWebsiteRepository.php',
+            '/app/Website/TenantThemeService.php',
+            '/app/Website/TenantSeoService.php',
+            '/app/Website/TenantMenuService.php',
+            '/app/Website/TenantBlockService.php',
+            '/app/Website/TenantMediaService.php',
+            '/app/Website/TenantWebsiteService.php',
             '/app/Website/WebsiteKernel.php',
+            '/app/services/DedicatedTenantPolicy.php',
+            '/app/models/Company.php',
         ] as $bundle) {
             $f = $basePath . $bundle;
             if (is_file($f)) {

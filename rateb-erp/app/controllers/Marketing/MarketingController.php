@@ -63,8 +63,23 @@ final class MarketingController extends Controller
 
     public function blogArticle(string $slug): void
     {
-        $stmt = (new CmsBlogArticle())->findBySlug($slug);
+        $stmt = null;
+        if (class_exists(\Rateb\App\Website\WebsiteContext::class)
+            && \Rateb\App\Website\WebsiteContext::current() !== null) {
+            $stmt = (new \Rateb\App\Website\TenantWebsiteService())->articleBySlug($slug);
+        }
         if ($stmt === null) {
+            $stmt = (new CmsBlogArticle())->findBySlug($slug);
+        }
+        if ($stmt === null) {
+            $this->notFound();
+            return;
+        }
+        $ctx = class_exists(\Rateb\App\Website\WebsiteContext::class)
+            ? \Rateb\App\Website\WebsiteContext::current()
+            : null;
+        if ($ctx !== null && $ctx->isolationEnabled()
+            && (int) ($stmt['company_id'] ?? -1) !== $ctx->companyId()) {
             $this->notFound();
             return;
         }
@@ -85,27 +100,12 @@ final class MarketingController extends Controller
 
     public function sitemap(): void
     {
-        $pages = [
-            'site', 'site/features', 'site/solutions', 'site/industries', 'site/pricing',
-            'site/request-demo', 'site/contact', 'site/about', 'site/faq', 'site/blog',
-            'site/services', 'site/reviews', 'site/partners', 'site/careers',
-            'site/privacy', 'site/terms', 'site/cookies', 'site/system-status',
-            'site/help-center', 'site/knowledge-base',
-        ];
+        $pages = $this->cms->tenantSitemapPaths();
         header('Content-Type: application/xml; charset=UTF-8');
         echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        $origin = rateb_site_origin();
         foreach ($pages as $p) {
             $loc = rateb_url($p);
-            echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
-        }
-        foreach ($this->cms->queryPublishedArticles(500) as $article) {
-            $slug = (string) ($article['slug'] ?? '');
-            if ($slug === '') {
-                continue;
-            }
-            $loc = rateb_url('site/blog/' . $slug);
             echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
         }
         echo '</urlset>';
@@ -278,7 +278,7 @@ final class MarketingFormsController extends Controller
         }
         $model = new CmsLead();
         try {
-            $leadId = $model->create([
+            $leadData = [
                 'lead_type' => $type,
                 'name' => $name,
                 'email' => $email,
@@ -288,7 +288,13 @@ final class MarketingFormsController extends Controller
                 'status' => 'new',
                 'source_page' => $type,
                 'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
-            ]);
+            ];
+            if (class_exists(\Rateb\App\Website\WebsiteContext::class)
+                && \Rateb\App\Website\WebsiteContext::current() !== null
+                && \Rateb\App\Website\WebsiteContext::current()->isolationEnabled()) {
+                $leadData['company_id'] = \Rateb\App\Website\WebsiteContext::current()->companyId();
+            }
+            $leadId = $model->create($leadData);
         } catch (\Throwable $e) {
             error_log('CMS lead save: ' . $e->getMessage());
             SessionManager::flash('error', __('cms_lead_save_failed'));
@@ -323,19 +329,32 @@ final class MarketingMediaController extends Controller
             http_response_code(404);
             exit;
         }
-        $base = RATEB_STORAGE_PATH . '/cms-media';
-        $found = null;
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS));
-        foreach ($iterator as $path) {
-            if ($path->getFilename() === $file) {
-                $found = $path->getPathname();
-                break;
+
+        if (class_exists(\Rateb\App\Website\WebsiteContext::class)
+            && \Rateb\App\Website\WebsiteContext::current() !== null) {
+            $media = new \Rateb\App\Website\TenantMediaService();
+            $row = $media->findByBasename($file);
+            $found = $row ? $media->absolutePathForRow($row) : null;
+            if ($found === null || !is_file($found)) {
+                http_response_code(404);
+                exit;
+            }
+        } else {
+            $base = RATEB_STORAGE_PATH . '/cms-media';
+            $found = null;
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS));
+            foreach ($iterator as $path) {
+                if ($path->getFilename() === $file) {
+                    $found = $path->getPathname();
+                    break;
+                }
+            }
+            if ($found === null || !is_file($found)) {
+                http_response_code(404);
+                exit;
             }
         }
-        if ($found === null || !is_file($found)) {
-            http_response_code(404);
-            exit;
-        }
+
         $mime = mime_content_type($found) ?: 'application/octet-stream';
         if (str_contains(strtolower($mime), 'svg')) {
             \Rateb\App\Core\SecurityHeaders::sendRestrictedMediaHeaders($mime);
