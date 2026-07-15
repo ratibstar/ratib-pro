@@ -146,6 +146,18 @@
         }
     }
 
+    function friendlyError(err) {
+        var msg = String((err && err.message) || err || '');
+        if (/^offline$/i.test(msg) || /sync_offline|ERR_INTERNET|Failed to fetch|NetworkError|503/i.test(msg)) {
+            return t('pos_offline', 'Offline');
+        }
+        return msg || t('invalid_request', 'Failed');
+    }
+
+    function isLocalOnlyAction(actionType) {
+        return !!(actionType && OFFLINE_LOCAL_ACTIONS[actionType]);
+    }
+
     function finishGranted(token, requestId) {
         var cb = pending && pending.onGranted;
         modalOpen(false, false);
@@ -211,10 +223,21 @@
     }
 
     function supervisorScan() {
-        if (!api.biometricStart || !api.approvalGrant) {
+        if (!pending) {
+            return Promise.reject(new Error(t('invalid_request', 'Failed')));
+        }
+        var actionType = pending.actionType || '';
+        var localOnly = !!pending.localOnly || isLocalOnlyAction(actionType);
+
+        if (!api.biometricStart) {
+            if (localOnly) {
+                finishGranted('local:' + actionType, 0);
+                return Promise.resolve();
+            }
             notify(t('invalid_request', 'Not configured'), true);
             return Promise.reject();
         }
+
         return fetchJson(api.biometricStart, {
             json: true,
             body: JSON.stringify({ supervisor: true })
@@ -234,6 +257,15 @@
             if (!cred || !pending) {
                 throw new Error(t('pos_biometric_failed', 'Verification failed'));
             }
+            // Clear cart / local UI actions: device biometric is enough — skip grant API
+            // (grant fails with SW/network "offline" and used to abort doClear).
+            if (localOnly || isLocalOnlyAction(pending.actionType)) {
+                finishGranted('local-bio:' + (pending.actionType || 'local'), pending.requestId || 0);
+                return null;
+            }
+            if (!api.approvalGrant) {
+                throw new Error(t('invalid_request', 'Not configured'));
+            }
             return fetchJson(api.approvalGrant, {
                 json: true,
                 body: JSON.stringify({
@@ -248,9 +280,24 @@
                 })
             });
         }).then(function (grant) {
+            if (!grant) {
+                return;
+            }
             var requestId = pending ? pending.requestId : 0;
             var token = (grant && (grant.approval_token || grant.token)) || '';
             finishGranted(token, requestId);
+        }).catch(function (err) {
+            if (pending && isLocalOnlyAction(pending.actionType)) {
+                var msg = String((err && err.message) || '');
+                // Bio start / grant blocked by network — fall back to local PIN confirm.
+                if (/offline|Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|503/i.test(msg)) {
+                    var action = pending.actionType;
+                    var cb = pending.onGranted;
+                    requireApprovalOffline(action, {}, cb);
+                    return;
+                }
+            }
+            throw err;
         });
     }
 
@@ -283,7 +330,7 @@
                 grantOffline();
             });
         }).catch(function (err) {
-            notify((err && err.message) || t('pos_lock_pin_invalid', 'Incorrect PIN'), true);
+            notify(friendlyError(err) || t('pos_lock_pin_invalid', 'Incorrect PIN'), true);
         });
     }
 
@@ -296,7 +343,8 @@
             requestId: 0,
             actionType: actionType,
             onGranted: onGranted,
-            offline: true
+            offline: true,
+            localOnly: true
         };
         offlineNoPin = false;
         if (hintEl) {
@@ -328,6 +376,26 @@
     }
 
     function requireApproval(actionType, payload, onGranted) {
+        // Cancel invoice / clear cart: never hard-depend on approval API grant.
+        if (isLocalOnlyAction(actionType)) {
+            if (isOffline() || !api.biometricStart) {
+                requireApprovalOffline(actionType, payload, onGranted);
+                return;
+            }
+            pending = {
+                requestId: 0,
+                actionType: actionType,
+                onGranted: onGranted,
+                offline: false,
+                localOnly: true
+            };
+            if (hintEl) {
+                hintEl.textContent = t('pos_supervisor_scan_hint', 'Supervisor fingerprint required');
+            }
+            modalOpen(true, false);
+            return;
+        }
+
         if (!api.approvalRequest) {
             if (typeof onGranted === 'function') {
                 onGranted('', 0);
@@ -346,7 +414,8 @@
                 requestId: data.approval_request_id,
                 actionType: actionType,
                 onGranted: onGranted,
-                offline: false
+                offline: false,
+                localOnly: false
             };
             if (hintEl) {
                 hintEl.textContent = t('pos_supervisor_scan_hint', 'Supervisor fingerprint required');
@@ -354,11 +423,11 @@
             modalOpen(true, false);
         }).catch(function (err) {
             var msg = (err && err.message) || '';
-            if (isOffline() || /Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg)) {
+            if (isOffline() || /Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline|503/i.test(msg)) {
                 requireApprovalOffline(actionType, payload, onGranted);
                 return;
             }
-            notify(msg || t('invalid_request', 'Failed'), true);
+            notify(friendlyError(err), true);
         });
     }
 
@@ -370,7 +439,7 @@
     if (scanBtn) {
         scanBtn.addEventListener('click', function () {
             supervisorScan().catch(function (err) {
-                notify(err.message, true);
+                notify(friendlyError(err), true);
             });
         });
     }
