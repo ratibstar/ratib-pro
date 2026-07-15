@@ -346,11 +346,16 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
     public function handle(): bool
     {
-        if (SessionManager::get('rateb_is_super_admin')) {
+        $enforceForSuper = function_exists('rateb_nav_enforce_company_modules')
+            && rateb_nav_enforce_company_modules();
+        if (SessionManager::get('rateb_is_super_admin') && !$enforceForSuper) {
             return true;
         }
 
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1 && $enforceForSuper && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
         if ($companyId < 1 || $this->module === '') {
             SessionManager::flash('error', __('module_not_allowed'));
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));

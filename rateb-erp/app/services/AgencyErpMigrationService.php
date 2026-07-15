@@ -381,6 +381,104 @@ final class AgencyErpMigrationService
      *
      * @return array{username:string,email:string,user_id:int,company_id:int}
      */
+    /**
+     * Linked Control Panel agency for a platform company (must have ERP DB ready).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findLinkedAgencyForPlatformCompany(int $platformCompanyId): ?array
+    {
+        if ($platformCompanyId < 1) {
+            return null;
+        }
+        $agencyId = $this->suggestedAgencyIdForCompany($platformCompanyId);
+        if ($agencyId < 1) {
+            return null;
+        }
+        foreach ($this->listControlAgencies(false) as $row) {
+            if ((int) ($row['id'] ?? 0) !== $agencyId) {
+                continue;
+            }
+            $cfg = $this->agencyDatabaseConfig($row);
+            if (trim((string) ($cfg['db'] ?? '')) === '') {
+                return null;
+            }
+
+            return $row;
+        }
+
+        return null;
+    }
+
+    /**
+     * Push module entitlements into the agency's dedicated ERP company row (nav / CompanyModule gate).
+     *
+     * @param list<string> $modules
+     * @return array{agency_company_id:int,agency_id:int}
+     */
+    public function syncDedicatedCompanyModules(array $agency, array $modules): array
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException(__('company_agency_admin_no_db'));
+        }
+        $modules = PlanLimitService::filterKnownModules($modules);
+        foreach (['dashboard', 'notifications'] as $implied) {
+            if (!in_array($implied, $modules, true)) {
+                $modules[] = $implied;
+            }
+        }
+        $modules = array_values(array_unique($modules));
+
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+        try {
+            $companies = new \Rateb\App\Models\Company();
+            $companyRow = $companies->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $agencyCompanyId = (int) ($companyRow['id'] ?? 0);
+            if ($agencyCompanyId < 1) {
+                throw new RuntimeException(__('company_agency_admin_no_company'));
+            }
+            if (!$companies->updateModules($agencyCompanyId, $modules)) {
+                throw new RuntimeException(__('company_permissions_save_failed'));
+            }
+            PlanLimitService::forgetCompanyLimits($agencyCompanyId);
+
+            return [
+                'agency_company_id' => $agencyCompanyId,
+                'agency_id' => (int) ($agency['id'] ?? 0),
+            ];
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
+    /**
+     * Sync platform company modules to linked agency ERP DB when present.
+     *
+     * @param list<string> $modules
+     * @return array{synced:bool,agency_id:int,agency_company_id:int}
+     */
+    public function pushModulesToLinkedAgency(int $platformCompanyId, array $modules): array
+    {
+        $agency = $this->findLinkedAgencyForPlatformCompany($platformCompanyId);
+        if ($agency === null) {
+            return ['synced' => false, 'agency_id' => 0, 'agency_company_id' => 0];
+        }
+        $result = $this->syncDedicatedCompanyModules($agency, $modules);
+
+        return [
+            'synced' => true,
+            'agency_id' => (int) ($result['agency_id'] ?? 0),
+            'agency_company_id' => (int) ($result['agency_company_id'] ?? 0),
+        ];
+    }
+
     public function syncDedicatedAdminLogin(array $agency, string $username, string $password): array
     {
         $cfg = $this->agencyDatabaseConfig($agency);

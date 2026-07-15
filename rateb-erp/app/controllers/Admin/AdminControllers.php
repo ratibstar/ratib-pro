@@ -885,6 +885,23 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         try {
             $this->model->update($id, $data);
             (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($id);
+            if (isset($data['modules']) && is_string($data['modules']) && $data['modules'] !== '') {
+                $decodedModules = json_decode($data['modules'], true);
+                if (is_array($decodedModules)) {
+                    try {
+                        (new \Rateb\App\Services\AgencyErpMigrationService())
+                            ->pushModulesToLinkedAgency($id, array_values(array_map('strval', $decodedModules)));
+                    } catch (\Throwable $agencyModErr) {
+                        error_log('company update agency modules sync #' . $id . ': ' . $agencyModErr->getMessage());
+                        SessionManager::flash(
+                            'error',
+                            __('company_permissions_agency_sync_failed') . ' — ' . $agencyModErr->getMessage()
+                        );
+                        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+                    }
+                    \Rateb\App\Services\PlanLimitService::forgetCompanyLimits($id);
+                }
+            }
             $agencyLogin = $this->syncCompanyAdminUser(
                 $id,
                 $adminUsername,

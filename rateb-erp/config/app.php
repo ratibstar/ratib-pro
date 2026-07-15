@@ -2843,6 +2843,31 @@ if (!function_exists('rateb_is_branch_appliance_runtime')) {
     }
 }
 
+if (!function_exists('rateb_nav_enforce_company_modules')) {
+    /**
+     * Agency / dedicated / branch appliance: company.modules is the nav ceiling —
+     * including for users flagged as super_admin on that host.
+     * Platform oversight host (rateb.sa) keeps full platform nav for super admins.
+     */
+    function rateb_nav_enforce_company_modules(): bool
+    {
+        if (function_exists('rateb_is_branch_appliance_runtime') && rateb_is_branch_appliance_runtime()) {
+            return true;
+        }
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return true;
+        }
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return true;
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {
@@ -2856,14 +2881,20 @@ if (!function_exists('rateb_nav_can')) {
             if ($permission !== '' && !rateb_can($permission)) {
                 return false;
             }
-            // Branch offline: match plan modules (same lean nav as configured online).
-            if (rateb_is_branch_appliance_runtime() && $module !== '') {
+            if ($module !== '' && rateb_nav_enforce_company_modules()) {
                 $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
                 if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
                     $companyId = (int) rateb_resolve_ops_company_id();
                 }
                 if ($companyId > 0) {
-                    return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+                    static $superModuleGate = [];
+                    $gateKey = $companyId . ':' . $module;
+                    if (!array_key_exists($gateKey, $superModuleGate)) {
+                        $superModuleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())
+                            ->companyHasModule($companyId, $module);
+                    }
+
+                    return $superModuleGate[$gateKey];
                 }
             }
 

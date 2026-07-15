@@ -138,11 +138,33 @@ final class CompanyPermissionsController extends Controller
                 Response::redirect($back);
             }
             PlanLimitService::forgetCompanyLimits($id);
+
+            $agencyPush = ['synced' => false, 'agency_id' => 0, 'agency_company_id' => 0];
+            try {
+                $agencyPush = (new \Rateb\App\Services\AgencyErpMigrationService())
+                    ->pushModulesToLinkedAgency($id, $modules);
+            } catch (\Throwable $agencyErr) {
+                error_log('company permissions agency modules sync #' . $id . ': ' . $agencyErr->getMessage());
+                SessionManager::flash(
+                    'error',
+                    __('company_permissions_agency_sync_failed') . ' — ' . $agencyErr->getMessage()
+                );
+                Response::redirect($back);
+            }
+
             (new AuditService())->log('update', 'company_permissions', $id, [
                 'modules' => $modules,
                 'company_name' => (string) ($company['name'] ?? ''),
+                'agency_synced' => !empty($agencyPush['synced']),
+                'agency_id' => (int) ($agencyPush['agency_id'] ?? 0),
+                'agency_company_id' => (int) ($agencyPush['agency_company_id'] ?? 0),
             ]);
-            SessionManager::flash('success', __('company_permissions_saved'));
+            SessionManager::flash(
+                'success',
+                !empty($agencyPush['synced'])
+                    ? __('company_permissions_saved_agency_synced')
+                    : __('company_permissions_saved')
+            );
         } catch (\Throwable $e) {
             SessionManager::flash('error', DatabaseErrorService::userMessage($e));
             Response::redirect($back);
