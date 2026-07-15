@@ -10,11 +10,13 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\CmsService;
 use Rateb\App\Website\Portal\PortalAppointmentService;
 use Rateb\App\Website\Portal\PortalAuthService;
+use Rateb\App\Website\Portal\PortalBookingService;
 use Rateb\App\Website\Portal\PortalContactService;
 use Rateb\App\Website\Portal\PortalContractService;
 use Rateb\App\Website\Portal\PortalDashboardService;
 use Rateb\App\Website\Portal\PortalDocumentService;
 use Rateb\App\Website\Portal\PortalFinanceService;
+use Rateb\App\Website\Portal\OnlineServiceService;
 use Rateb\App\Website\Portal\PortalRateLimit;
 use Rateb\App\Website\Portal\PortalRecruitmentService;
 use Rateb\App\Website\Portal\PortalRequestService;
@@ -593,6 +595,231 @@ final class WebsitePortalController extends Controller
         $result = (new PortalContactService())->add($user, $_POST);
         SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
         Response::redirect(rateb_url('site/' . $type . '/profile'));
+    }
+
+    /** Phase WEBSITE-09 */
+    public function services(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $svc = new OnlineServiceService();
+        $this->renderPortal($type, 'services', [
+            'user' => $user,
+            'services' => $svc->listForUser((int) $user['id'], $page),
+            'packages' => $svc->packages(),
+            'page' => $page,
+        ]);
+    }
+
+    public function serviceNew(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $svc = new OnlineServiceService();
+        $this->renderPortal($type, 'service-new', [
+            'user' => $user,
+            'packages' => $svc->packages(),
+            'prefill_type' => (string) ($_GET['type'] ?? 'recruitment'),
+            'prefill_package' => (string) ($_GET['package'] ?? ''),
+        ]);
+    }
+
+    public function serviceCreate(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        if (!PortalRateLimit::allow('service_create', 15, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/customer/services/new'));
+            return;
+        }
+        $user = $this->requireUser($type ?: 'customer');
+        if ($user === null) {
+            return;
+        }
+        $result = (new OnlineServiceService())->submitRequest($user, $_POST);
+        if ($result['ok'] ?? false) {
+            SessionManager::flash('success', __('request_submitted') ?: 'Submitted');
+            Response::redirect(rateb_url('site/customer/services/track?id=' . (int) ($result['id'] ?? 0)));
+            return;
+        }
+        SessionManager::flash('error', (string) ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/customer/services/new'));
+    }
+
+    public function serviceTrack(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $id = (int) ($_GET['id'] ?? 0);
+        $tracked = (new OnlineServiceService())->track($id, (int) $user['id']);
+        if ($tracked === null) {
+            $this->notFound();
+            return;
+        }
+        $this->renderPortal($type, 'service-track', [
+            'user' => $user,
+            'service' => $tracked,
+            'timeline' => $tracked['timeline'] ?? [],
+            'appointments' => $tracked['appointments'] ?? [],
+        ]);
+    }
+
+    public function serviceMessage(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        if (!PortalRateLimit::allow('service_message', 30, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        $user = $this->requireUser($type ?: 'customer');
+        if ($user === null) {
+            return;
+        }
+        $id = (int) $this->input('service_id', 0);
+        $result = (new OnlineServiceService())->addCustomerMessage($user, $id, (string) $this->input('message', ''));
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+    }
+
+    public function serviceAgreement(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        $user = $this->requireUser($type ?: 'customer');
+        if ($user === null) {
+            return;
+        }
+        $id = (int) $this->input('service_id', 0);
+        $result = (new OnlineServiceService())->acceptAgreement($user, $id);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+    }
+
+    public function serviceBook(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $svc = new OnlineServiceService();
+        $this->renderPortal($type, 'service-book', [
+            'user' => $user,
+            'services' => $svc->listForUser((int) $user['id'], 1, 50),
+            'appointments' => (new PortalBookingService())->appointmentsForUser((int) $user['id']),
+            'prefill_service_id' => (int) ($_GET['service_id'] ?? 0),
+        ]);
+    }
+
+    public function serviceBookSubmit(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/customer/services/book'));
+            return;
+        }
+        if (!PortalRateLimit::allow('service_book', 20, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/customer/services/book'));
+            return;
+        }
+        $user = $this->requireUser($type ?: 'customer');
+        if ($user === null) {
+            return;
+        }
+        $id = (int) $this->input('service_id', 0);
+        $result = (new OnlineServiceService())->bookAppointment($user, $id, $_POST);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+    }
+
+    public function servicePay(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        if (!PortalRateLimit::allow('service_pay', 10, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        $user = $this->requireUser($type ?: 'customer');
+        if ($user === null) {
+            return;
+        }
+        $id = (int) $this->input('service_id', 0);
+        $result = (new OnlineServiceService())->startPayment($user, $id);
+        if (!($result['ok'] ?? false)) {
+            SessionManager::flash('error', (string) ($result['error'] ?? 'failed'));
+            Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+            return;
+        }
+        $token = (string) ($result['payment_token'] ?? '');
+        Response::redirect(rateb_url('site/customer/services/payment/callback') . '?id=' . $id . '&token=' . rawurlencode($token) . '&ref=SIM-' . $id);
+    }
+
+    public function servicePaymentCallback(string $type = ''): void
+    {
+        if (!$this->ensureWebsite()) {
+            $this->notFound();
+            return;
+        }
+        if (!PortalRateLimit::allow('service_pay_cb', 40, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/customer/services'));
+            return;
+        }
+        $id = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
+        $token = (string) ($_GET['token'] ?? $_POST['token'] ?? '');
+        $ref = (string) ($_GET['ref'] ?? $_POST['ref'] ?? '');
+        $result = (new OnlineServiceService())->completePaymentCallback($id, $token, $ref);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? (__('payment_ok') ?: 'Payment confirmed') : ($result['error'] ?? 'failed'));
+        $user = (new PortalAuthService())->currentUser('customer');
+        if ($user !== null) {
+            Response::redirect(rateb_url('site/customer/services/track?id=' . $id));
+            return;
+        }
+        Response::redirect(rateb_url('site/customer/login'));
     }
 
     public function profile(string $type = ''): void

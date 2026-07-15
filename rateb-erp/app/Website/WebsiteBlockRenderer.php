@@ -130,6 +130,15 @@ final class WebsiteBlockRenderer
             'statistics_cards' => $this->portalBlocks()->renderDashboard($cls, $title, 'customer', $settings),
             'timeline' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer', __('timeline') ?: 'Timeline'),
             'quick_actions' => $this->portalBlocks()->renderDashboard($cls, $title, 'customer', $settings),
+            'service_packages' => $this->portalBlocks()->renderServicePackages($cls, $title, $settings),
+            'online_booking' => $this->portalBlocks()->renderOnlineBooking($cls, $title, $settings),
+            'recruitment_wizard' => $this->portalBlocks()->renderRecruitmentWizard($cls, $title, $settings),
+            'pricing_cards' => $this->portalBlocks()->renderPricingCards($cls, $title, $settings),
+            'service_timeline' => $this->portalBlocks()->renderServiceTimeline($cls, $title, $settings),
+            'appointment_calendar' => $this->portalBlocks()->renderAppointmentCalendar($cls, $title, $settings),
+            'customer_reviews' => $this->portalBlocks()->renderCustomerReviews($cls, $title, $content, $settings),
+            'cta_banner' => $this->portalBlocks()->renderCtaBanner($cls, $title, $content, $link, $settings),
+            'online_contact_form' => $this->portalBlocks()->renderOnlineContactForm($cls, $title, $settings),
             default => $this->renderGeneric($cls, $type, $title, $content, $image, $link, $icon, $settings),
         };
     }

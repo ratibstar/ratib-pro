@@ -63,4 +63,19 @@ final class PortalNotificationService
             error_log('PortalNotificationService mail: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Phase WEBSITE-09 — Status notification for online service requests.
+     *
+     * @param array<string, mixed> $portalUser
+     */
+    public function notifyServiceStatus(array $portalUser, int $serviceRequestId, string $status, string $message): void
+    {
+        $title = 'Service #' . $serviceRequestId . ' — ' . $status;
+        $this->notifyCompany($title, $message);
+        $email = trim((string) ($portalUser['email'] ?? ''));
+        if ($email !== '') {
+            $this->email($email, $title, $message);
+        }
+    }
 }

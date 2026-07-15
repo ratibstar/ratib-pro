@@ -30,7 +30,7 @@ final class PortalRequestService
         }
         $allowed = [
             'recruitment', 'workforce', 'visa', 'contract', 'service',
-            'replacement', 'support', 'referral', 'other',
+            'replacement', 'support', 'referral', 'domestic_worker', 'other',
         ];
         if (!in_array($requestType, $allowed, true)) {
             $requestType = 'other';

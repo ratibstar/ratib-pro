@@ -24,6 +24,7 @@ if ($portalType === 'customer') {
     $links = array_merge(
         ['dashboard' => ['label' => __('portal_dashboard') ?: 'Dashboard', 'href' => $base]],
         [
+            'services' => ['label' => __('online_services') ?: 'Services', 'href' => $base . '/services'],
             'contracts' => ['label' => __('contracts') ?: 'Contracts', 'href' => $base . '/contracts'],
             'pipeline' => ['label' => __('pipeline') ?: 'Pipeline', 'href' => $base . '/pipeline'],
         ],

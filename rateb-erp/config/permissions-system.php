@@ -277,6 +277,7 @@ return [
             'website.portal.manage',
             'website.customer.manage',
             'website.customer.workspace',
+            'website.services.manage',
             'website.employer.manage',
             'website.partner.manage',
         ],

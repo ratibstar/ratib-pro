@@ -32,7 +32,7 @@ final class PortalAppointmentService
             return ['ok' => false, 'error' => 'invalid_datetime'];
         }
         $type = (string) ($data['appointment_type'] ?? 'meeting');
-        if (!in_array($type, ['meeting', 'interview', 'other'], true)) {
+        if (!in_array($type, ['meeting', 'interview', 'service', 'other'], true)) {
             $type = 'meeting';
         }
         $this->repo->execute(

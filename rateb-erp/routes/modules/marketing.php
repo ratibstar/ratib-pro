@@ -83,6 +83,19 @@ $router->post('/site/customer/requests/update', [WebsitePortalController::class,
 $router->post('/site/customer/support/reply', [WebsitePortalController::class, 'replyTicket'], $cmw);
 $router->post('/site/customer/profile/contacts', [WebsitePortalController::class, 'addContact'], $cmw);
 
+// Phase WEBSITE-09 — Online services & booking
+$router->get('/site/customer/services', [WebsitePortalController::class, 'services'], $cmw);
+$router->get('/site/customer/services/new', [WebsitePortalController::class, 'serviceNew'], $cmw);
+$router->post('/site/customer/services', [WebsitePortalController::class, 'serviceCreate'], $cmw);
+$router->get('/site/customer/services/track', [WebsitePortalController::class, 'serviceTrack'], $cmw);
+$router->post('/site/customer/services/message', [WebsitePortalController::class, 'serviceMessage'], $cmw);
+$router->post('/site/customer/services/agreement', [WebsitePortalController::class, 'serviceAgreement'], $cmw);
+$router->get('/site/customer/services/book', [WebsitePortalController::class, 'serviceBook'], $cmw);
+$router->post('/site/customer/services/book', [WebsitePortalController::class, 'serviceBookSubmit'], $cmw);
+$router->post('/site/customer/services/pay', [WebsitePortalController::class, 'servicePay'], $cmw);
+$router->get('/site/customer/services/payment/callback', [WebsitePortalController::class, 'servicePaymentCallback'], $cmw);
+$router->post('/site/customer/services/payment/callback', [WebsitePortalController::class, 'servicePaymentCallback'], $cmw);
+
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);
 $router->get('/site/robots.txt', [MarketingController::class, 'robots']);
