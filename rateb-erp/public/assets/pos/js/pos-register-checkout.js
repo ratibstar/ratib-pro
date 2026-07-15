@@ -248,6 +248,17 @@
                 : computeLocalPricing(state);
             return Promise.resolve(applyPricingToUi(local));
         }
+        var hasCatalog = (state.lines || []).some(function (line) {
+            var code = String(line.item_code || line.sku || '');
+            return !!line.demo
+                || Number(line.product_id || 0) >= 990000
+                || code.indexOf('DEMO-') === 0;
+        });
+        if (hasCatalog || (window.RatebPosRegisterState && window.RatebPosRegisterState.localCartOnly)) {
+            return Promise.resolve(applyPricingToUi(
+                (state.totals && Number(state.totals.total) > 0) ? state.totals : computeLocalPricing(state)
+            ));
+        }
         if (!api.pricing) {
             return Promise.resolve(applyPricingToUi(computeLocalPricing(state)));
         }
@@ -542,7 +553,15 @@
             checkoutIdempotencyKey = newIdempotencyKey();
         }
 
-        if (!isPosOnline() && window.RatebPosOffline) {
+        var catalogOnly = (state.lines || []).some(function (line) {
+            var code = String(line.item_code || line.sku || '');
+            return !!line.demo
+                || Number(line.product_id || 0) >= 990000
+                || code.indexOf('DEMO-') === 0;
+        });
+
+        // Offline OR demo/catalog-only cart: queue locally (inventory soft products cannot hard-checkout).
+        if ((!isPosOnline() || catalogOnly) && window.RatebPosOffline) {
             var cfgScope = config.registerScope || {};
             var cfgSess = config.session || {};
             var cfgCtx = config.context || {};
@@ -585,6 +604,11 @@
                     completeBtn.disabled = false;
                 }
             });
+            return;
+        }
+
+        if (!isPosOnline() && !window.RatebPosOffline) {
+            notify(t('pos_offline', 'Offline'), true);
             return;
         }
 

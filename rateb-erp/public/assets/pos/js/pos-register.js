@@ -213,7 +213,7 @@
     }
 
     function refreshPricing() {
-        if (!api.pricing || !isPosOnline() || state.localCartOnly) {
+        if (!api.pricing || !isPosOnline() || state.localCartOnly || cartHasCatalogOnlyLines()) {
             computeTotalsLocal();
             return;
         }
@@ -244,12 +244,23 @@
             .catch(computeTotalsLocal);
     }
 
+    function cartHasCatalogOnlyLines() {
+        return state.lines.some(function (line) {
+            var code = String(line.item_code || line.sku || '');
+            return !!line.demo
+                || Number(line.product_id || 0) >= 990000
+                || code.indexOf('DEMO-') === 0;
+        });
+    }
+
     function persistSession() {
         if (!api.sessionSave || !isPosOnline()) {
             return;
         }
         // After inventory 404/422, keep cart local — avoid spam sessionSave failures.
-        if (state.localCartOnly) {
+        // Demo/catalog seed products are not inventory rows — never hard-save them online.
+        if (state.localCartOnly || cartHasCatalogOnlyLines()) {
+            state.localCartOnly = true;
             localSave();
             return;
         }
