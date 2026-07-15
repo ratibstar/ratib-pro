@@ -50,6 +50,24 @@ final class TenantContext
         return self::$current;
     }
 
+    /**
+     * Phase WEBSITE-04 — Company ERP builder session (not host-driven).
+     */
+    public static function forOpsCompany(int $companyId): self
+    {
+        self::reset();
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        self::$current = new self($host, false, [
+            'id' => 0,
+            'erp_company_id' => $companyId,
+            'erp_status' => 'ready',
+            'erp_db_name' => 'ops',
+            'site_url' => '',
+        ]);
+
+        return self::$current;
+    }
+
     /** @return array<string, mixed>|null */
     private static function lookupAgency(string $host): ?array
     {

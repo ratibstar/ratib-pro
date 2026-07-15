@@ -104,3 +104,14 @@ if (function_exists('rateb_company_access_routes_enabled') && rateb_company_acce
 }
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');
+if (rateb_can('website.view') || rateb_can('website.manage') || rateb_is_super_admin()) {
+    $opsSection(__('website') ?: 'Website', [
+        ['website', 'website', 'fa-globe', 'website', 'website.view'],
+        ['website/builder', 'website_builder', 'fa-table-columns', 'website', 'website.builder.manage'],
+        ['website/pages', 'website_pages', 'fa-file-lines', 'website', 'website.pages.manage'],
+        ['website/theme', 'website_theme', 'fa-palette', 'website', 'website.theme.manage'],
+        ['website/media', 'website_media', 'fa-images', 'website', 'website.media.manage'],
+        ['website/menus', 'website_menus', 'fa-bars', 'website', 'website.builder.manage'],
+        ['website/forms', 'website_forms', 'fa-list-check', 'website', 'website.forms.manage'],
+    ], 'fa-globe');
+}

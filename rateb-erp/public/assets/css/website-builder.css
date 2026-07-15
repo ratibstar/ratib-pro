@@ -1,0 +1,15 @@
+/* Phase WEBSITE-04 — company website builder admin */
+.wb-admin .wb-builder-toolbar { position: sticky; top: 0; z-index: 5; background: var(--bs-body-bg, #fff); padding: .75rem 0; border-bottom: 1px solid rgba(0,0,0,.08); }
+.wb-palette-list { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; max-height: 420px; overflow: auto; }
+.wb-palette-item { display: flex; flex-direction: column; align-items: center; gap: .25rem; border: 1px dashed rgba(0,0,0,.15); background: #fff; border-radius: 8px; padding: .5rem; font-size: .75rem; cursor: grab; }
+.wb-palette-item.is-selected { border-color: #1a5fb4; background: #eaf3ff; }
+.wb-canvas { display: flex; flex-direction: column; gap: 1rem; min-height: 320px; }
+.wb-section-card.is-drag-over { outline: 2px dashed #1a5fb4; }
+.wb-block-list { display: flex; flex-direction: column; gap: .5rem; min-height: 48px; }
+.wb-block-card { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: .5rem; align-items: center; border: 1px solid rgba(0,0,0,.1); border-radius: 8px; padding: .5rem; background: #fff; }
+.wb-block-card.is-dragging, .wb-section-card.is-dragging { opacity: .55; }
+.wb-drag-handle { cursor: grab; color: #777; }
+.wb-block-type { font-size: .75rem; text-transform: uppercase; color: #555; min-width: 4.5rem; }
+.wb-schedule-input { width: auto; max-width: 12rem; }
+.wb-media-thumb { max-height: 120px; width: 100%; object-fit: cover; border-radius: 6px; }
+.wb-drop-hint { width: 100%; }

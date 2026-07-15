@@ -24,6 +24,8 @@ $router->get('/site/portal/logout', [CustomerPortalController::class, 'logout'])
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);
 $router->get('/site/robots.txt', [MarketingController::class, 'robots']);
+$router->get('/site/theme.css', [MarketingController::class, 'themeCss']);
+$router->get('/site/preview/{token}', [MarketingController::class, 'preview']);
 $router->get('/site/blog/{slug}', [MarketingController::class, 'blogArticle']);
 $router->get('/site/{slug}', [MarketingController::class, 'page']);
 
@@ -31,5 +33,6 @@ $router->post('/site/contact', [MarketingFormsController::class, 'contact']);
 $router->post('/site/demo', [MarketingFormsController::class, 'demo']);
 $router->post('/site/quote', [MarketingFormsController::class, 'quote']);
 $router->post('/site/newsletter', [MarketingFormsController::class, 'newsletter']);
+$router->post('/site/forms/{slug}', [MarketingFormsController::class, 'websiteForm']);
 
 $router->get('/site/media/{file}', [MarketingMediaController::class, 'serve']);

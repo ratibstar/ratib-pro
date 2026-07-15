@@ -45,6 +45,7 @@ return [
         'payroll',
         'quality',
         'bi',
+        'website',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -73,6 +74,7 @@ return [
         'payroll' => 'payroll_platform',
         'quality' => 'quality_platform',
         'bi' => 'bi_platform',
+        'website' => 'website',
     ],
 
     /**
@@ -258,6 +260,23 @@ return [
             'crm.pipeline',
             'crm.activities',
             'crm.campaign',
+        ],
+        'website.manage' => [
+            'website.view',
+            'website.pages.manage',
+            'website.builder.manage',
+            'website.media.manage',
+            'website.theme.manage',
+            'website.publish',
+            'website.forms.manage',
+        ],
+        'website.builder.manage' => [
+            'website.view',
+            'website.pages.manage',
+        ],
+        'website.publish' => [
+            'website.view',
+            'website.builder.manage',
         ],
         'projects.manage' => [
             'projects.view',

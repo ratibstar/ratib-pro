@@ -54,11 +54,48 @@ final class MarketingController extends Controller
             'about', 'faq', 'blog', 'services', 'reviews', 'partners', 'careers',
             'privacy', 'terms', 'cookies', 'system-status', 'help-center', 'knowledge-base',
         ];
+        // WEBSITE-04 — unlimited CMS pages for tenant builders (slug whitelist only for platform defaults).
         if (!in_array($slug, $allowed, true)) {
+            $page = $this->cms->pageBySlug($slug);
+            if ($page === null || (string) ($page['status'] ?? '') === 'draft') {
+                $this->notFound();
+                return;
+            }
+        }
+        $this->renderPage($slug, $slug);
+    }
+
+    /** Phase WEBSITE-04 — signed preview token (WebsiteKernel stack only). */
+    public function preview(string $token): void
+    {
+        $this->sendMarketingNoCacheHeaders();
+        if (!class_exists(\Rateb\App\Website\WebsiteContext::class)
+            || \Rateb\App\Website\WebsiteContext::current() === null) {
             $this->notFound();
             return;
         }
-        $this->renderPage($slug, $slug);
+        $resolved = (new \Rateb\App\Website\WebsiteVersionService())->resolvePreviewToken($token);
+        if ($resolved === null) {
+            $this->notFound();
+            return;
+        }
+        $page = $resolved['page'];
+        $slug = (string) ($page['slug'] ?? 'home');
+        $meta = $this->cms->metaTags($slug, CmsService::pickLocale($page, 'title') . ' (Preview)');
+        $builderHtml = (new \Rateb\App\Website\WebsiteBlockRenderer())->renderPage($slug, true);
+        $this->view('marketing/builder', [
+            'page' => $page,
+            'builderHtml' => $builderHtml,
+            'isPreview' => true,
+            'meta' => $meta,
+            'title' => CmsService::pickLocale($page, 'title') . ' (Preview)',
+            'menuItems' => $this->cms->menuItems(),
+            'footerMenu' => $this->cms->menuItems('footer'),
+            'theme' => $this->cms->theme(),
+            'analytics' => [],
+            'csrf' => Csrf::token(),
+            'footerColumns' => $this->cms->footerColumns(),
+        ], 'marketing');
     }
 
     public function blogArticle(string $slug): void
@@ -119,6 +156,19 @@ final class MarketingController extends Controller
         exit;
     }
 
+    /** Phase WEBSITE-04 — theme tokens as external stylesheet (no inline CSS). */
+    public function themeCss(): void
+    {
+        header('Content-Type: text/css; charset=UTF-8');
+        header('Cache-Control: public, max-age=60');
+        if (class_exists(\Rateb\App\Website\WebsiteContext::class)
+            && \Rateb\App\Website\WebsiteContext::current() !== null) {
+            echo (new \Rateb\App\Website\WebsiteThemeEditorService())->cssVariables();
+            echo "\n";
+        }
+        exit;
+    }
+
     private function sendMarketingNoCacheHeaders(): void
     {
         if (headers_sent()) {
@@ -168,8 +218,23 @@ final class MarketingController extends Controller
         if ($tpl === 'default') {
             $tpl = $slug;
         }
+        // WEBSITE-04 — builder template uses shared WebsiteBlockRenderer (no duplicated marketing partials).
+        if ($tpl === 'builder' || ($page && (string) ($page['template'] ?? '') === 'builder')) {
+            $data['builderHtml'] = (new \Rateb\App\Website\WebsiteBlockRenderer())->renderPage($slug);
+            $data['isPreview'] = false;
+            $this->view('marketing/builder', $data, 'marketing');
+            return;
+        }
         $viewFile = RATEB_VIEWS_PATH . '/marketing/' . $tpl . '.php';
         if (!is_file($viewFile)) {
+            // Fallback: if page has sections, render via builder pipeline.
+            $content = $data['content'] ?? [];
+            if (is_array($content) && $content !== []) {
+                $data['builderHtml'] = (new \Rateb\App\Website\WebsiteBlockRenderer())->renderPage($slug);
+                $data['isPreview'] = false;
+                $this->view('marketing/builder', $data, 'marketing');
+                return;
+            }
             $tpl = $slug;
         }
         $this->view('marketing/' . $tpl, $data, 'marketing');
@@ -256,6 +321,37 @@ final class MarketingFormsController extends Controller
             ]);
         }
         SessionManager::flash('success', __('cms_newsletter_ok'));
+        $this->redirect(rateb_url('site'));
+    }
+
+    /** Phase WEBSITE-04 — visual form submit → CRM. */
+    public function websiteForm(string $slug): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirect(rateb_url('site'));
+            return;
+        }
+        if (!class_exists(\Rateb\App\Website\WebsiteContext::class)
+            || \Rateb\App\Website\WebsiteContext::current() === null) {
+            SessionManager::flash('error', __('cms_form_required'));
+            $this->redirect(rateb_url('site'));
+            return;
+        }
+        $fields = $_POST['fields'] ?? [];
+        if (!is_array($fields)) {
+            $fields = [];
+        }
+        $result = (new \Rateb\App\Website\WebsiteFormService())->submit(
+            $slug,
+            $fields,
+            (string) ($_SERVER['REMOTE_ADDR'] ?? '')
+        );
+        if (empty($result['ok'])) {
+            SessionManager::flash('error', (string) ($result['message'] ?? __('cms_form_required')));
+        } else {
+            SessionManager::flash('success', __('cms_lead_ok') ?: __('saved_ok'));
+        }
         $this->redirect(rateb_url('site'));
     }
 

@@ -29,6 +29,9 @@ $headerContext = 'marketing';
     <meta name="twitter:image" content="<?php echo Rateb\App\Core\View::escape($meta['og_image']); ?>">
     <?php } ?>
     <meta name="twitter:card" content="<?php echo Rateb\App\Core\View::escape($meta['twitter_card'] ?? 'summary_large_image'); ?>">
+    <?php if (!empty($meta['robots'])) { ?>
+    <meta name="robots" content="<?php echo Rateb\App\Core\View::escape($meta['robots']); ?>">
+    <?php } ?>
     <?php if (!empty($meta['schema_json'])) { ?>
     <script type="application/ld+json"><?php echo $meta['schema_json']; ?></script>
     <?php } ?>
@@ -43,6 +46,8 @@ $headerContext = 'marketing';
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_url('site/theme.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/website-blocks.css'); ?>" rel="stylesheet">
     <?php if (!empty($legacyHomePort)) {
         $legacyCssOrigin = \Rateb\App\Services\LegacyHomeContentService::assetOrigin();
         ?>

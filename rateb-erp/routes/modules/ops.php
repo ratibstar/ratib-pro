@@ -58,6 +58,13 @@ use Rateb\App\Controllers\Company\CrmCampaignsController;
 use Rateb\App\Controllers\Company\CrmContactsController;
 use Rateb\App\Controllers\Company\CrmCompaniesController;
 use Rateb\App\Controllers\Company\CrmCustomerProfileController;
+use Rateb\App\Controllers\Company\WebsiteDashboardController;
+use Rateb\App\Controllers\Company\WebsitePagesController;
+use Rateb\App\Controllers\Company\WebsiteBuilderController;
+use Rateb\App\Controllers\Company\WebsiteThemeController;
+use Rateb\App\Controllers\Company\WebsiteMediaController;
+use Rateb\App\Controllers\Company\WebsiteMenusController;
+use Rateb\App\Controllers\Company\WebsiteFormsController;
 use Rateb\App\Controllers\Company\ProjectsDashboardController;
 use Rateb\App\Controllers\Company\ProjectsController;
 use Rateb\App\Controllers\Company\ProjectTasksController;
@@ -1165,5 +1172,52 @@ $router->post($app('security/offline-devices/revoke'), [OfflineDevicesController
 $router->post($app('security/offline-devices/rename'), [OfflineDevicesController::class, 'rename'], $offlineDevicesManageMw);
 $router->post($app('security/offline-devices/force-logout'), [OfflineDevicesController::class, 'forceLogout'], $offlineDevicesManageMw);
 $router->post($app('security/offline-devices/restore'), [OfflineDevicesController::class, 'restore'], $offlineDevicesManageMw);
+
+// Phase WEBSITE-04 — Enterprise Website Builder (company-scoped)
+$websiteMw = rateb_erp_mw('website', 'website.view', 'website');
+$websiteBuilderMw = rateb_erp_mw('website', 'website.builder.manage', 'website-builder');
+$websitePublishMw = rateb_erp_mw('website', 'website.publish', 'website');
+$websiteThemeMw = rateb_erp_mw('website', 'website.theme.manage', 'website-theme');
+$websiteMediaMw = rateb_erp_mw('website', 'website.media.manage', 'website-media');
+$websiteFormsMw = rateb_erp_mw('website', 'website.forms.manage', 'website-forms');
+$websitePagesMw = rateb_erp_mw('website', 'website.pages.manage', 'website');
+
+$router->get($app('website'), [WebsiteDashboardController::class, 'index'], $websiteMw);
+$router->get($app('website/pages'), [WebsitePagesController::class, 'index'], $websitePagesMw);
+$router->get($app('website/pages/create'), [WebsitePagesController::class, 'create'], $websitePagesMw);
+$router->post($app('website/pages'), [WebsitePagesController::class, 'store'], $websitePagesMw);
+$router->get($app('website/pages/{id}/edit'), [WebsitePagesController::class, 'edit'], $websitePagesMw);
+$router->post($app('website/pages/{id}'), [WebsitePagesController::class, 'update'], $websitePagesMw);
+$router->post($app('website/pages/{id}/delete'), [WebsitePagesController::class, 'destroy'], $websitePagesMw);
+
+$router->get($app('website/builder'), [WebsiteBuilderController::class, 'index'], $websiteBuilderMw);
+$router->post($app('website/builder/reorder'), [WebsiteBuilderController::class, 'reorder'], $websiteBuilderMw);
+$router->post($app('website/builder/section'), [WebsiteBuilderController::class, 'addSection'], $websiteBuilderMw);
+$router->post($app('website/builder/section/delete'), [WebsiteBuilderController::class, 'deleteSection'], $websiteBuilderMw);
+$router->post($app('website/builder/block'), [WebsiteBuilderController::class, 'addBlock'], $websiteBuilderMw);
+$router->post($app('website/builder/block/update'), [WebsiteBuilderController::class, 'updateBlock'], $websiteBuilderMw);
+$router->post($app('website/builder/block/delete'), [WebsiteBuilderController::class, 'deleteBlock'], $websiteBuilderMw);
+$router->post($app('website/builder/draft'), [WebsiteBuilderController::class, 'saveDraft'], $websiteBuilderMw);
+$router->post($app('website/builder/publish'), [WebsiteBuilderController::class, 'publish'], $websitePublishMw);
+$router->post($app('website/builder/schedule'), [WebsiteBuilderController::class, 'schedule'], $websitePublishMw);
+$router->post($app('website/builder/rollback'), [WebsiteBuilderController::class, 'rollback'], $websitePublishMw);
+$router->post($app('website/builder/preview'), [WebsiteBuilderController::class, 'preview'], $websiteBuilderMw);
+
+$router->get($app('website/theme'), [WebsiteThemeController::class, 'edit'], $websiteThemeMw);
+$router->post($app('website/theme'), [WebsiteThemeController::class, 'save'], $websiteThemeMw);
+
+$router->get($app('website/media'), [WebsiteMediaController::class, 'index'], $websiteMediaMw);
+$router->post($app('website/media/upload'), [WebsiteMediaController::class, 'upload'], $websiteMediaMw);
+$router->post($app('website/media/folder'), [WebsiteMediaController::class, 'createFolder'], $websiteMediaMw);
+
+$router->get($app('website/menus'), [WebsiteMenusController::class, 'index'], $websiteBuilderMw);
+$router->post($app('website/menus/items'), [WebsiteMenusController::class, 'saveItems'], $websiteBuilderMw);
+$router->post($app('website/menus/footer'), [WebsiteMenusController::class, 'saveFooter'], $websiteBuilderMw);
+
+$router->get($app('website/forms'), [WebsiteFormsController::class, 'index'], $websiteFormsMw);
+$router->get($app('website/forms/create'), [WebsiteFormsController::class, 'create'], $websiteFormsMw);
+$router->post($app('website/forms'), [WebsiteFormsController::class, 'store'], $websiteFormsMw);
+$router->get($app('website/forms/{id}/edit'), [WebsiteFormsController::class, 'edit'], $websiteFormsMw);
+$router->post($app('website/forms/{id}'), [WebsiteFormsController::class, 'update'], $websiteFormsMw);
 
 require RATEB_ROOT . '/routes/company-access.php';

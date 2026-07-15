@@ -682,4 +682,29 @@ return [
         'view' => 'offline.devices.view',
         'manage' => 'offline.devices.manage',
     ],
+    'website' => [
+        'module' => 'website',
+        'view' => 'website.view',
+        'manage' => 'website.manage',
+    ],
+    'website-builder' => [
+        'module' => 'website',
+        'view' => 'website.builder.manage',
+        'manage' => 'website.builder.manage',
+    ],
+    'website-media' => [
+        'module' => 'website',
+        'view' => 'website.media.manage',
+        'manage' => 'website.media.manage',
+    ],
+    'website-theme' => [
+        'module' => 'website',
+        'view' => 'website.theme.manage',
+        'manage' => 'website.theme.manage',
+    ],
+    'website-forms' => [
+        'module' => 'website',
+        'view' => 'website.forms.manage',
+        'manage' => 'website.forms.manage',
+    ],
 ];

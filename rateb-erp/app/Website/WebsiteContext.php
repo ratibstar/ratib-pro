@@ -70,6 +70,34 @@ final class WebsiteContext
         return self::$current;
     }
 
+    /**
+     * Phase WEBSITE-04 — Boot website stack inside company ERP (builder admin).
+     */
+    public static function bootForOps(?int $companyId = null): self
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $cid = $companyId ?? (int) (ErpTenantContext::companyId() ?? 0);
+        if ($cid < 1 && class_exists(DedicatedTenantPolicy::class)) {
+            $cid = DedicatedTenantPolicy::primaryCompanyId();
+        }
+        if ($cid < 1) {
+            throw new \RuntimeException('Website builder requires a company context');
+        }
+
+        self::reset();
+        $tenant = TenantContext::forOpsCompany($cid);
+        $isolationEnabled = self::detectIsolationEnabled();
+        if ($isolationEnabled) {
+            self::claimOrphanCmsRows($cid);
+        }
+        self::$current = new self($tenant, $cid, $isolationEnabled);
+        ErpTenantContext::setCompanyId($cid);
+
+        return self::$current;
+    }
+
     private static function resolveCompanyId(TenantContext $tenant): int
     {
         if ($tenant->isPlatform()) {

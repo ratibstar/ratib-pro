@@ -293,7 +293,7 @@ final class RouteModuleLoader
             'supplier-comms', 'supplier-classifications', 'supplier-kpi', 'contract-renewals',
             'asset-maintenance', 'asset-assignments', 'asset-depreciation', 'device-maintenance',
             'device-spare-parts', 'device-warranty', 'cost-centers', 'cash-vouchers',
-            'fiscal-periods', 'bank-accounts',
+            'fiscal-periods', 'bank-accounts', 'website',
         ];
         $rest = substr($path, strlen('/admin/'));
         $root = explode('/', $rest, 2)[0];

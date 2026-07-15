@@ -59,8 +59,18 @@ final class TenantSeoService
             'og_image' => $ogImage,
             'canonical' => $canonical,
             'twitter_card' => $seo ? (string) ($seo['twitter_card'] ?? 'summary_large_image') : 'summary_large_image',
-            'schema_json' => $this->organizationSchemaJson($title, $description, $canonical),
+            'robots' => $seo ? (string) ($seo['robots'] ?? 'index,follow') : 'index,follow',
+            'schema_json' => '',
         ];
+        $customSchema = $seo['schema_json'] ?? null;
+        if (is_string($customSchema) && trim($customSchema) !== '') {
+            $meta['schema_json'] = $customSchema;
+        } elseif (is_array($customSchema)) {
+            $enc = json_encode($customSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
+            $meta['schema_json'] = is_string($enc) ? $enc : $this->organizationSchemaJson($title, $description, $canonical);
+        } else {
+            $meta['schema_json'] = $this->organizationSchemaJson($title, $description, $canonical);
+        }
 
         return $meta;
     }

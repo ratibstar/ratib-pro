@@ -1,0 +1,28 @@
+/* Phase WEBSITE-04 — public block renderer */
+.wb-page { max-width: var(--wb-max-width, 1140px); margin: 0 auto; padding: 1.5rem; color: var(--wb-color-text, #241f31); font-family: var(--wb-font-family, Tajawal, sans-serif); font-size: var(--wb-body-size, 16px); line-height: var(--wb-line-height, 1.6); }
+.wb-preview-banner { background: #f5c211; color: #241f31; text-align: center; padding: .5rem 1rem; font-weight: 600; }
+.wb-section { margin: 2.5rem 0; }
+.wb-section__title { font-size: 1.75rem; margin-bottom: .5rem; }
+.wb-section__lead { color: var(--wb-color-muted, #77767b); }
+.wb-section__blocks { display: grid; gap: 1.25rem; }
+.wb-block { background: var(--wb-color-surface, #f6f5f4); border-radius: var(--wb-card-radius, 12px); padding: 1.25rem; box-shadow: var(--wb-shadow-sm, none); }
+.wb-block--hero { position: relative; overflow: hidden; min-height: 280px; display: grid; place-items: center; background: var(--wb-color-primary, #1a5fb4); color: #fff; padding: 0; }
+.wb-hero__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
+.wb-hero__inner { position: relative; z-index: 1; text-align: center; padding: 3rem 1.5rem; max-width: 40rem; }
+.wb-hero__title { font-size: clamp(1.8rem, 4vw, 2.75rem); margin-bottom: .75rem; }
+.wb-btn { display: inline-block; border-radius: var(--wb-btn-radius, 8px); padding: .65rem 1.25rem; text-decoration: none; font-weight: 600; }
+.wb-btn--primary { background: var(--wb-color-primary, #1a5fb4); color: #fff; }
+.wb-btn--whatsapp { background: #25d366; color: #fff; }
+.wb-img { max-width: 100%; height: auto; border-radius: var(--wb-radius-md, 8px); }
+.wb-img--thumb { max-height: 48px; width: auto; }
+.wb-video { width: 100%; border-radius: var(--wb-radius-md, 8px); }
+.wb-map { width: 100%; border: 0; border-radius: var(--wb-radius-md, 8px); }
+.wb-form__field { margin-bottom: 1rem; display: grid; gap: .35rem; }
+.wb-form input, .wb-form textarea, .wb-form select { width: 100%; padding: .55rem .75rem; border: 1px solid rgba(0,0,0,.12); border-radius: var(--wb-radius-sm, 4px); }
+.wb-spacer--sm { height: 24px; }
+.wb-spacer--md { height: 48px; }
+.wb-spacer--lg { height: 96px; }
+.wb-spacer--xl { height: 160px; }
+.wb-divider { border: 0; border-top: 1px solid rgba(0,0,0,.12); margin: 1.5rem 0; }
+.wb-block__list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .75rem; }
+.wb-cta { text-align: center; padding: 2rem 1rem; }

@@ -48,6 +48,11 @@ final class TenantThemeService
         return $theme;
     }
 
+    public static function clearCache(): void
+    {
+        self::$cache = null;
+    }
+
     /** @return array<string, mixed>|null */
     public function contact(): ?array
     {

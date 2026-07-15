@@ -19,5 +19,8 @@ return [
     'branches' => 'branches.view',
     'pos' => 'pos.view',
     'recruitment' => 'recruitment.manage',
+    'crm' => 'crm.manage',
+    'projects' => 'projects.manage',
     'manufacturing' => 'manufacturing.manage',
+    'website' => 'website.view',
 ];
