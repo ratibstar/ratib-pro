@@ -488,8 +488,16 @@
             }).then(function () {
                 return refreshDepth();
             }).then(function () {
-                if (window.RatebPosConnectivity ? window.RatebPosConnectivity.isOnline() : navigator.onLine) {
-                    return window.RatebPosOffline.sync(options);
+                // Require both browser net + POS probe — never auto-sync against a SW soft-offline stub.
+                var canSync = navigator.onLine !== false
+                    && (!window.RatebPosConnectivity || window.RatebPosConnectivity.isOnline());
+                if (canSync) {
+                    return window.RatebPosOffline.sync(options).catch(function (err) {
+                        if (err && (err.offline || String(err.message || '') === 'sync_offline')) {
+                            return { queued: true, queueDepth: window.RatebPosOffline.queueDepth, client_id: entry.client_id };
+                        }
+                        throw err;
+                    });
                 }
                 return { queued: true, queueDepth: window.RatebPosOffline.queueDepth, client_id: entry.client_id };
             });
@@ -521,12 +529,21 @@
                         items: queue
                     })
                 }).then(function (res) {
+                    var softOffline = false;
+                    try {
+                        softOffline = String(res.headers.get('X-Rateb-Offline') || '') === '1';
+                    } catch (eHdr) { /* ignore */ }
                     if (res.status === 401 || res.status === 403 || res.status === 419) {
                         if (window.RatebPosAuthLock && window.RatebPosAuthLock.markSessionNeedsReauth) {
                             window.RatebPosAuthLock.markSessionNeedsReauth();
                         }
                     }
                     return res.json().then(function (payload) {
+                        if (softOffline || (payload && payload.offline)) {
+                            var offlineErr = new Error('sync_offline');
+                            offlineErr.offline = true;
+                            throw offlineErr;
+                        }
                         var result = (payload && payload.result) ? payload.result : {};
                         var clearable = Array.isArray(result.clearable_keys) ? result.clearable_keys : [];
                         if (!clearable.length && payload && payload.ok) {
@@ -585,11 +602,18 @@
         markOffline: function () {
             if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.setOnline === 'function') {
                 window.RatebPosConnectivity.setOnline(false);
-                return;
+            } else {
+                try {
+                    document.dispatchEvent(new CustomEvent('rateb-pos-force-offline'));
+                } catch (e) { /* ignore */ }
             }
-            try {
-                document.dispatchEvent(new CustomEvent('rateb-pos-force-offline'));
-            } catch (e) { /* ignore */ }
+            // If the PC still has net, re-probe quickly so a blip/timeout doesn't stick Offline.
+            if (navigator.onLine !== false && window.RatebPosConnectivity
+                && typeof window.RatebPosConnectivity.probe === 'function') {
+                setTimeout(function () {
+                    try { window.RatebPosConnectivity.probe(); } catch (e2) { /* ignore */ }
+                }, 800);
+            }
         },
         fetchJson: function (url, options, translate) {
             options = options || {};
@@ -615,8 +639,12 @@
                     return data;
                 });
             }).catch(function (err) {
+                var name = String((err && err.name) || '');
                 var msg = String((err && err.message) || err || '');
-                if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED|offline/i.test(msg) || !navigator.onLine) {
+                if (name === 'AbortError' || /abort/i.test(msg)) {
+                    throw err;
+                }
+                if (/Failed to fetch|NetworkError|ERR_INTERNET|ERR_FAILED/i.test(msg) || !navigator.onLine) {
                     window.RatebPosNet.markOffline();
                 }
                 throw err;
@@ -631,6 +659,7 @@
         var online = navigator.onLine !== false;
         var probeTimer = null;
         var probing = false;
+        var failStreak = 0;
 
         function emit() {
             listeners.forEach(function (fn) {
@@ -655,6 +684,17 @@
         }
 
         function resolveProbeUrl() {
+            // Prefer a tiny static marker — fast and not blocked by slow POS bootstrap/API.
+            try {
+                var origin = window.location.origin || '';
+                var path = window.location.pathname || '';
+                var pub = path.indexOf('/public/') >= 0
+                    ? path.slice(0, path.indexOf('/public/') + '/public'.length)
+                    : '';
+                if (origin && pub) {
+                    return origin + pub + '/connectivity-probe.json';
+                }
+            } catch (e0) { /* ignore */ }
             var cfgEl = document.getElementById('rateb-pos-register-config');
             var cfg = {};
             try {
@@ -663,22 +703,20 @@
                 cfg = {};
             }
             var api = cfg.api || {};
-            // Prefer bootstrap — already a working GET JSON endpoint with company_id query.
-            if (api.bootstrap) {
-                return String(api.bootstrap);
-            }
             if (api.sync) {
                 return joinUrlPath(api.sync, '/status');
             }
-            // Static marker on this origin — proves network even if API routes 404.
+            if (api.bootstrap) {
+                return String(api.bootstrap);
+            }
             try {
-                var origin = window.location.origin || '';
-                var path = window.location.pathname || '';
-                var pub = path.indexOf('/public/') >= 0
-                    ? path.slice(0, path.indexOf('/public/') + '/public'.length)
+                var origin2 = window.location.origin || '';
+                var path2 = window.location.pathname || '';
+                var pub2 = path2.indexOf('/public/') >= 0
+                    ? path2.slice(0, path2.indexOf('/public/') + '/public'.length)
                     : '';
-                if (origin && pub) {
-                    return origin + pub + '/ratib-erp-build.txt';
+                if (origin2 && pub2) {
+                    return origin2 + pub2 + '/ratib-erp-build.txt';
                 }
             } catch (e3) { /* ignore */ }
             return joinUrlPath(defaultApiBase(), '/status');
@@ -691,6 +729,7 @@
             }
             // Fully offline (browser flag) — never hit the network (avoids console spam).
             if (navigator.onLine === false) {
+                failStreak = 2;
                 setOnline(false);
                 return Promise.resolve(false);
             }
@@ -700,11 +739,13 @@
             probing = true;
             var url = resolveProbeUrl();
             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timedOut = false;
             var timer = setTimeout(function () {
+                timedOut = true;
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 3500);
+            }, 2500);
             return fetch(url, {
                 method: 'GET',
                 credentials: 'same-origin',
@@ -725,11 +766,23 @@
                 } else if (res.ok && window.RatebPosAuthLock && window.RatebPosAuthLock.clearSessionNeedsReauth) {
                     window.RatebPosAuthLock.clearSessionNeedsReauth();
                 }
+                failStreak = 0;
                 setOnline(true);
                 return true;
-            }).catch(function () {
-                setOnline(false);
-                return false;
+            }).catch(function (err) {
+                var name = String((err && err.name) || '');
+                var msg = String((err && err.message) || err || '');
+                // Timeout/abort while the browser still reports online is NOT proof of offline —
+                // a slow bootstrap/API/probe was marking Offline and forcing local-only checkout.
+                if (timedOut || name === 'AbortError' || /abort/i.test(msg)) {
+                    return online;
+                }
+                failStreak += 1;
+                if (failStreak >= 2 || navigator.onLine === false) {
+                    setOnline(false);
+                    return false;
+                }
+                return online;
             }).finally(function () {
                 clearTimeout(timer);
                 probing = false;

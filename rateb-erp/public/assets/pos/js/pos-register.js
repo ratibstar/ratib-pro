@@ -23,6 +23,8 @@
         totals: config.initialTotals || { subtotal: 0, tax: 0, total: 0, discount_total: 0 },
         localCartOnly: false
     };
+    /** Bumped on register reset so in-flight sessionSave cannot restore a cleared cart. */
+    var cartEpoch = 0;
 
     var els = {
         cartLines: root.querySelector('[data-pos-cart-lines]'),
@@ -126,6 +128,10 @@
     }
 
     function markPosOffline() {
+        if (window.RatebPosNet && typeof window.RatebPosNet.markOffline === 'function') {
+            window.RatebPosNet.markOffline();
+            return;
+        }
         if (window.RatebPosConnectivity && typeof window.RatebPosConnectivity.setOnline === 'function') {
             window.RatebPosConnectivity.setOnline(false);
             return;
@@ -178,8 +184,12 @@
                 throw new Error(t('invalid_request', 'Request failed'));
             });
         }).catch(function (err) {
+            var name = String((err && err.name) || '');
             var msg = String((err && err.message) || err || '');
-            if (/Failed to fetch|NetworkError|ERR_INTERNET|offline/i.test(msg) || !navigator.onLine) {
+            if (name === 'AbortError' || /abort/i.test(msg)) {
+                throw err;
+            }
+            if (/Failed to fetch|NetworkError|ERR_INTERNET/i.test(msg) || !navigator.onLine) {
                 markPosOffline();
             }
             throw err;
@@ -243,12 +253,16 @@
             localSave();
             return;
         }
+        var epochAtSend = cartEpoch;
         var body = new URLSearchParams();
         body.set('_csrf', csrfToken());
         body.set('lines', JSON.stringify(state.lines));
         body.set('customer', JSON.stringify(state.customer));
         fetchJson(api.sessionSave, { method: 'POST', body: body })
             .then(function (data) {
+                if (epochAtSend !== cartEpoch) {
+                    return;
+                }
                 if (data.lines) {
                     state.lines = data.lines;
                     renderCartWithoutSave();
@@ -268,6 +282,9 @@
                 showStatus(t('pos_session_saved', 'Session saved'));
             })
             .catch(function (err) {
+                if (epochAtSend !== cartEpoch) {
+                    return;
+                }
                 var msg = String((err && err.message) || '');
                 // Inventory validation failures — stay local, stop retry spam.
                 if (/422|404|invalid|stock|inventory|not found/i.test(msg) || !navigator.onLine) {
@@ -1423,9 +1440,12 @@
     });
 
     window.RatebPosRegisterReset = function () {
+        cartEpoch += 1;
         state.lines = [];
         state.customer = null;
         state.selectedLineId = null;
+        state.localCartOnly = false;
+        state.totals = { subtotal: 0, tax: 0, total: 0, discount_total: 0 };
         bumpOrderNo();
         renderCustomer();
         renderCartWithoutSave();
