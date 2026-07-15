@@ -90,3 +90,7 @@ rateb-platform-catalog/storage/cache/
 rateb-platform-catalog/storage/queue/
 rateb-platform-catalog/storage/backups/
 rateb-platform-catalog/storage/products/
+
+# Local agent worktree leftovers (must not be committed as gitlinks)
+.wt-boot-before/
+.wt-*/
