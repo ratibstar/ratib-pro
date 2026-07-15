@@ -1,0 +1,1640 @@
+{
+  "phase": "PH",
+  "mode": "READ_ONLY_POS_RUNTIME_AFTER_RESPONSESTART",
+  "generatedAt": "2026-07-15T00:47:26.543Z",
+  "target": "https://rateb.sa/rateb-erp/public/admin/ops/pos/register?company_id=22",
+  "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+  "scan": {
+    "ok": true,
+    "ms": 42,
+    "snap": {
+      "t_nav": 765.7,
+      "responseStart": 225.2,
+      "ready": true,
+      "barcode": true,
+      "tilesReady": true,
+      "register": true,
+      "focused": false
+    },
+    "snaps": [
+      {
+        "wall": 42,
+        "t_nav": 765.7,
+        "responseStart": 225.2,
+        "ready": true,
+        "barcode": true,
+        "tilesReady": true,
+        "register": true,
+        "focused": false
+      }
+    ]
+  },
+  "scan_wall_goto_ms": 782,
+  "responseStart_ms": 225.2,
+  "scan_ready_nav_ms": 765.7,
+  "after_responseStart_to_scan_ready_ms": 540.5,
+  "abs": {
+    "responseStart": 225.2,
+    "dcl": 726.3,
+    "load": 737.3,
+    "scan_ready_est": 765.7
+  },
+  "timeline": [
+    {
+      "t": 0,
+      "name": "responseStart",
+      "ms_after_rs": 0
+    },
+    {
+      "t": 33.2,
+      "name": "HTML download end",
+      "ms_after_rs": 33.2
+    },
+    {
+      "t": 222,
+      "name": "domInteractive (parse)",
+      "ms_after_rs": 222
+    },
+    {
+      "t": 501.1,
+      "name": "DOMContentLoaded",
+      "ms_after_rs": 501.1
+    },
+    {
+      "t": 512.1,
+      "name": "load",
+      "ms_after_rs": 512.1
+    },
+    {
+      "t": 540.5,
+      "name": "FIRST SCAN READY",
+      "ms_after_rs": 540.5
+    }
+  ],
+  "flame": {
+    "root": "responseStart → Scan Ready",
+    "wall_ms": 540.5,
+    "children": [
+      {
+        "name": "HTML download",
+        "wall_ms": 33.2
+      },
+      {
+        "name": "Parse → DCL",
+        "wall_ms": 501.1,
+        "children": [
+          {
+            "name": "pos-auth-lock.js?v=20260714-force-sw-v52",
+            "wall_ms": 459.9,
+            "start_after_rs": 34.7
+          },
+          {
+            "name": "pos-register-tiles.js?v=20260714-force-sw-v52",
+            "wall_ms": 166.2,
+            "start_after_rs": 33.7
+          },
+          {
+            "name": "pos-supervisor-approval.js?v=20260714-force-sw-v52",
+            "wall_ms": 164,
+            "start_after_rs": 34.5
+          },
+          {
+            "name": "pos-register-checkout.js?v=20260714-force-sw-v52",
+            "wall_ms": 162.9,
+            "start_after_rs": 34
+          },
+          {
+            "name": "pos-biometric-gate.js?v=20260714-force-sw-v52",
+            "wall_ms": 162.8,
+            "start_after_rs": 34.8
+          },
+          {
+            "name": "pos-register.js?v=20260714-force-sw-v52",
+            "wall_ms": 162.5,
+            "start_after_rs": 33.6
+          },
+          {
+            "name": "pos-register-ops.js?v=20260714-force-sw-v52",
+            "wall_ms": 161.2,
+            "start_after_rs": 34.1
+          },
+          {
+            "name": "pos-capabilities.js?v=20260714-force-sw-v52",
+            "wall_ms": 160.1,
+            "start_after_rs": 34.3
+          },
+          {
+            "name": "pos-keyboard.js?v=20260714-force-sw-v52",
+            "wall_ms": 159.6,
+            "start_after_rs": 33.9
+          },
+          {
+            "name": "pos-offline-print.js?v=20260714-force-sw-v52",
+            "wall_ms": 159.1,
+            "start_after_rs": 33.5
+          },
+          {
+            "name": "pos-offline-sync.js?v=20260714-force-sw-v52",
+            "wall_ms": 158.6,
+            "start_after_rs": 33.3
+          },
+          {
+            "name": "pos-module.js?v=20260714-force-sw-v52",
+            "wall_ms": 156.9,
+            "start_after_rs": 33.2
+          }
+        ]
+      },
+      {
+        "name": "Post-DCL → Scan Ready",
+        "wall_ms": 39.39999999999998
+      },
+      {
+        "name": "Longtasks after responseStart",
+        "wall_ms": 175,
+        "children": [
+          {
+            "name": "longtask",
+            "wall_ms": 175
+          }
+        ]
+      }
+    ]
+  },
+  "top30": [
+    {
+      "rank": 1,
+      "name": "responseStart → Scan Ready (nav clock)",
+      "wall_ms": 540.5,
+      "self_ms": 540.5,
+      "phase": "critical",
+      "percentage_of_after_rs": 100
+    },
+    {
+      "rank": 2,
+      "name": "responseStart → DOMContentLoaded",
+      "wall_ms": 501.1,
+      "self_ms": 501.1,
+      "phase": "critical",
+      "percentage_of_after_rs": 92.7
+    },
+    {
+      "rank": 3,
+      "name": "script:pos-auth-lock.js",
+      "wall_ms": 459.9,
+      "self_ms": 459.9,
+      "start_after_rs": 34.7,
+      "end_after_rs": 494.6,
+      "transferSize": 300,
+      "decodedBodySize": 0,
+      "leaf": "pos-auth-lock.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-auth-lock.js",
+      "cls": "auth lock",
+      "fn": "auth init",
+      "lines": "n/a",
+      "role": "authentication",
+      "phase": "js",
+      "percentage_of_after_rs": 85.1
+    },
+    {
+      "rank": 4,
+      "name": "cpu:(idle)@",
+      "wall_ms": 371,
+      "self_ms": 371,
+      "file": "",
+      "lines": "0",
+      "fn": "(idle)",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 68.6
+    },
+    {
+      "rank": 5,
+      "name": "cpu:(program)@",
+      "wall_ms": 290.3,
+      "self_ms": 290.3,
+      "file": "",
+      "lines": "0",
+      "fn": "(program)",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 53.7
+    },
+    {
+      "rank": 6,
+      "name": "longtask#1",
+      "wall_ms": 175,
+      "self_ms": 175,
+      "start_after_rs": 222.9,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerSrc": "",
+          "containerId": "",
+          "containerName": ""
+        }
+      ],
+      "phase": "event-loop",
+      "percentage_of_after_rs": 32.4
+    },
+    {
+      "rank": 7,
+      "name": "script:pos-register-tiles.js",
+      "wall_ms": 166.2,
+      "self_ms": 166.2,
+      "start_after_rs": 33.7,
+      "end_after_rs": 199.9,
+      "transferSize": 8063,
+      "decodedBodySize": 35242,
+      "leaf": "pos-register-tiles.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-register-tiles.js",
+      "cls": "IIFE tiles/catalog",
+      "fn": "catalog seed + virtual grid",
+      "lines": "1–990+",
+      "role": "catalog / tiles (scan path dependency)",
+      "phase": "js",
+      "percentage_of_after_rs": 30.7
+    },
+    {
+      "rank": 8,
+      "name": "script:pos-supervisor-approval.js",
+      "wall_ms": 164,
+      "self_ms": 164,
+      "start_after_rs": 34.5,
+      "end_after_rs": 198.5,
+      "transferSize": 2922,
+      "decodedBodySize": 10644,
+      "leaf": "pos-supervisor-approval.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-supervisor-approval.js",
+      "cls": "supervisor",
+      "fn": "approval init",
+      "lines": "n/a",
+      "role": "auth/approval",
+      "phase": "js",
+      "percentage_of_after_rs": 30.3
+    },
+    {
+      "rank": 9,
+      "name": "script:pos-register-checkout.js",
+      "wall_ms": 162.9,
+      "self_ms": 162.9,
+      "start_after_rs": 34,
+      "end_after_rs": 196.9,
+      "transferSize": 6615,
+      "decodedBodySize": 30439,
+      "leaf": "pos-register-checkout.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-register-checkout.js",
+      "cls": "checkout",
+      "fn": "checkout UI init",
+      "lines": "n/a",
+      "role": "receipt/checkout",
+      "phase": "js",
+      "percentage_of_after_rs": 30.1
+    },
+    {
+      "rank": 10,
+      "name": "script:pos-biometric-gate.js",
+      "wall_ms": 162.8,
+      "self_ms": 162.8,
+      "start_after_rs": 34.8,
+      "end_after_rs": 197.6,
+      "transferSize": 2407,
+      "decodedBodySize": 8702,
+      "leaf": "pos-biometric-gate.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-biometric-gate.js",
+      "cls": "biometric",
+      "fn": "gate init",
+      "lines": "n/a",
+      "role": "authentication/biometric",
+      "phase": "js",
+      "percentage_of_after_rs": 30.1
+    },
+    {
+      "rank": 11,
+      "name": "script:pos-register.js",
+      "wall_ms": 162.5,
+      "self_ms": 162.5,
+      "start_after_rs": 33.6,
+      "end_after_rs": 196.1,
+      "transferSize": 9938,
+      "decodedBodySize": 53149,
+      "leaf": "pos-register.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-register.js",
+      "cls": "IIFE register bootstrap",
+      "fn": "bindEvents / loadSession / ready",
+      "lines": "1–1461; ready@1402",
+      "role": "POS runtime + barcode + shortcuts",
+      "phase": "js",
+      "percentage_of_after_rs": 30.1
+    },
+    {
+      "rank": 12,
+      "name": "script:pos-register-ops.js",
+      "wall_ms": 161.2,
+      "self_ms": 161.2,
+      "start_after_rs": 34.1,
+      "end_after_rs": 195.3,
+      "transferSize": 5463,
+      "decodedBodySize": 27748,
+      "leaf": "pos-register-ops.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-register-ops.js",
+      "cls": "ops",
+      "fn": "ops panels",
+      "lines": "n/a",
+      "role": "ops (often post-ready)",
+      "phase": "js",
+      "percentage_of_after_rs": 29.8
+    },
+    {
+      "rank": 13,
+      "name": "script:pos-capabilities.js",
+      "wall_ms": 160.1,
+      "self_ms": 160.1,
+      "start_after_rs": 34.3,
+      "end_after_rs": 194.4,
+      "transferSize": 1149,
+      "decodedBodySize": 3009,
+      "leaf": "pos-capabilities.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-capabilities.js",
+      "cls": "capabilities",
+      "fn": "cap bootstrap",
+      "lines": "n/a",
+      "role": "module init",
+      "phase": "js",
+      "percentage_of_after_rs": 29.6
+    },
+    {
+      "rank": 14,
+      "name": "script:pos-keyboard.js",
+      "wall_ms": 159.6,
+      "self_ms": 159.6,
+      "start_after_rs": 33.9,
+      "end_after_rs": 193.5,
+      "transferSize": 846,
+      "decodedBodySize": 1530,
+      "leaf": "pos-keyboard.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-keyboard.js",
+      "cls": "keyboard shortcuts",
+      "fn": "shortcut bind",
+      "lines": "n/a",
+      "role": "keyboard shortcuts",
+      "phase": "js",
+      "percentage_of_after_rs": 29.5
+    },
+    {
+      "rank": 15,
+      "name": "script:pos-offline-print.js",
+      "wall_ms": 159.1,
+      "self_ms": 159.1,
+      "start_after_rs": 33.5,
+      "end_after_rs": 192.6,
+      "transferSize": 2409,
+      "decodedBodySize": 7865,
+      "leaf": "pos-offline-print.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-offline-print.js",
+      "cls": "print",
+      "fn": "print init",
+      "lines": "n/a",
+      "role": "receipt/print",
+      "phase": "js",
+      "percentage_of_after_rs": 29.4
+    },
+    {
+      "rank": 16,
+      "name": "script:pos-offline-sync.js",
+      "wall_ms": 158.6,
+      "self_ms": 158.6,
+      "start_after_rs": 33.3,
+      "end_after_rs": 191.9,
+      "transferSize": 4854,
+      "decodedBodySize": 20752,
+      "leaf": "pos-offline-sync.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-offline-sync.js",
+      "cls": "offline sync",
+      "fn": "sync init",
+      "lines": "n/a",
+      "role": "offline (post critical?)",
+      "phase": "js",
+      "percentage_of_after_rs": 29.3
+    },
+    {
+      "rank": 17,
+      "name": "script:pos-module.js",
+      "wall_ms": 156.9,
+      "self_ms": 156.9,
+      "start_after_rs": 33.2,
+      "end_after_rs": 190.1,
+      "transferSize": 988,
+      "decodedBodySize": 2698,
+      "leaf": "pos-module.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+      "file": "public/assets/pos/js/pos-module.js",
+      "cls": "pos module",
+      "fn": "module bootstrap",
+      "lines": "n/a",
+      "role": "module init",
+      "phase": "js",
+      "percentage_of_after_rs": 29
+    },
+    {
+      "rank": 18,
+      "name": "HTML document download",
+      "wall_ms": 33.2,
+      "self_ms": 33.2,
+      "pct": null,
+      "phase": "parse-prep",
+      "percentage_of_after_rs": 6.1
+    },
+    {
+      "rank": 19,
+      "name": "cpu:measureLayout@pos-register-tiles.js?v=20260714-force-sw-v52",
+      "wall_ms": 32.8,
+      "self_ms": 32.8,
+      "file": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "lines": "363",
+      "fn": "measureLayout",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 6.1
+    },
+    {
+      "rank": 20,
+      "name": "script:theme.js",
+      "wall_ms": 27.1,
+      "self_ms": 27.1,
+      "start_after_rs": 32.9,
+      "end_after_rs": 60,
+      "transferSize": 0,
+      "decodedBodySize": 3067,
+      "leaf": "theme.js",
+      "url": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "file": "public/assets/js/theme.js",
+      "cls": "theme",
+      "fn": "theme apply",
+      "lines": "n/a",
+      "role": "shell chrome",
+      "phase": "js",
+      "percentage_of_after_rs": 5
+    },
+    {
+      "rank": 21,
+      "name": "cpu:put@",
+      "wall_ms": 27,
+      "self_ms": 27,
+      "file": "",
+      "lines": "0",
+      "fn": "put",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 5
+    },
+    {
+      "rank": 22,
+      "name": "cpu:jsonValue@",
+      "wall_ms": 6.3,
+      "self_ms": 6.3,
+      "file": "",
+      "lines": "314",
+      "fn": "jsonValue",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 1.2
+    },
+    {
+      "rank": 23,
+      "name": "cpu:(anonymous)@register?company_id=22",
+      "wall_ms": 6.1,
+      "self_ms": 6.1,
+      "file": "/admin/ops/pos/register?company_id=22",
+      "lines": "9",
+      "fn": "(anonymous)",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 1.1
+    },
+    {
+      "rank": 24,
+      "name": "cpu:refreshPricing@pos-register.js?v=20260714-force-sw-v52",
+      "wall_ms": 5.7,
+      "self_ms": 5.7,
+      "file": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "lines": "215",
+      "fn": "refreshPricing",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 1.1
+    },
+    {
+      "rank": 25,
+      "name": "cpu:fetch@",
+      "wall_ms": 5.6,
+      "self_ms": 5.6,
+      "file": "",
+      "lines": "0",
+      "fn": "fetch",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 1
+    },
+    {
+      "rank": 26,
+      "name": "cpu:(anonymous)@pos-capabilities.js?v=20260714-force-sw-v52",
+      "wall_ms": 5,
+      "self_ms": 5,
+      "file": "/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+      "lines": "1",
+      "fn": "(anonymous)",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 0.9
+    },
+    {
+      "rank": 27,
+      "name": "cpu:scheduleRender@pos-register-tiles.js?v=20260714-force-sw-v52",
+      "wall_ms": 4.2,
+      "self_ms": 4.2,
+      "file": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "lines": "593",
+      "fn": "scheduleRender",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 0.8
+    },
+    {
+      "rank": 28,
+      "name": "cpu:measureLayout@pos-register-tiles.js?v=20260714-force-sw-v52",
+      "wall_ms": 4,
+      "self_ms": 4,
+      "file": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "lines": "363",
+      "fn": "measureLayout",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 0.7
+    },
+    {
+      "rank": 29,
+      "name": "cpu:abort@",
+      "wall_ms": 3.6,
+      "self_ms": 3.6,
+      "file": "",
+      "lines": "0",
+      "fn": "abort",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 0.7
+    },
+    {
+      "rank": 30,
+      "name": "cpu:(anonymous)@pos-register.js?v=20260714-force-sw-v52",
+      "wall_ms": 2.9,
+      "self_ms": 2.9,
+      "file": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "lines": "1",
+      "fn": "(anonymous)",
+      "phase": "cpu-sample",
+      "percentage_of_after_rs": 0.5
+    }
+  ],
+  "critical_path": {
+    "phases_ms_after_rs": [
+      {
+        "t": 0,
+        "name": "responseStart",
+        "ms_after_rs": 0
+      },
+      {
+        "t": 33.2,
+        "name": "HTML download end",
+        "ms_after_rs": 33.2
+      },
+      {
+        "t": 222,
+        "name": "domInteractive (parse)",
+        "ms_after_rs": 222
+      },
+      {
+        "t": 501.1,
+        "name": "DOMContentLoaded",
+        "ms_after_rs": 501.1
+      },
+      {
+        "t": 512.1,
+        "name": "load",
+        "ms_after_rs": 512.1
+      },
+      {
+        "t": 540.5,
+        "name": "FIRST SCAN READY",
+        "ms_after_rs": 540.5
+      }
+    ],
+    "script_waterfall_end_after_rs": 494.6,
+    "post_dcl_to_scan_ms": 39.39999999999998,
+    "pos_scripts_serial_duration_sum": 1430.8,
+    "dominant": "JS/CSS waterfall + parse through DCL"
+  },
+  "answers": {
+    "largest_sync_task": {
+      "name": "unknown",
+      "start": 448.1,
+      "dur": 175,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerSrc": "",
+          "containerId": "",
+          "containerName": ""
+        }
+      ]
+    },
+    "largest_async_task": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 259.9,
+      "start_after_rs": 34.7,
+      "duration": 459.9,
+      "responseEnd": 719.8,
+      "end_after_rs": 494.6,
+      "transferSize": 300,
+      "encodedBodySize": 0,
+      "decodedBodySize": 0
+    },
+    "largest_js_file": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 258.8,
+      "start_after_rs": 33.6,
+      "duration": 162.5,
+      "responseEnd": 421.3,
+      "end_after_rs": 196.1,
+      "transferSize": 9938,
+      "encodedBodySize": 9638,
+      "decodedBodySize": 53149
+    },
+    "largest_parse": {
+      "name": "HTML→domInteractive",
+      "wall_ms": 222
+    },
+    "largest_execute": {
+      "self_us": 371014,
+      "self_ms": 371,
+      "functionName": "(idle)",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    "largest_layout": {
+      "name": "/rateb-erp/public/pos-manifest.webmanifest",
+      "full": "https://rateb.sa/rateb-erp/public/pos-manifest.webmanifest",
+      "type": "link",
+      "start": 266.2,
+      "start_after_rs": 41,
+      "duration": 309.3,
+      "responseEnd": 575.5,
+      "end_after_rs": 350.3,
+      "transferSize": 504,
+      "encodedBodySize": 204,
+      "decodedBodySize": 291
+    },
+    "largest_paint": {
+      "lcp": null
+    },
+    "largest_idle_gap": {
+      "gap": 0,
+      "after": null,
+      "before": null
+    },
+    "largest_promise_chain": {
+      "note": "pos-register.js loadSession/fetchJson chains post-ready; scan-ready itself is sync IIFE end@1402",
+      "file": "public/assets/pos/js/pos-register.js",
+      "lines": "1400–1402"
+    },
+    "largest_event_loop_block": {
+      "name": "unknown",
+      "start": 448.1,
+      "dur": 175,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerSrc": "",
+          "containerId": "",
+          "containerName": ""
+        }
+      ]
+    },
+    "largest_render_block": {
+      "name": "unknown",
+      "start": 448.1,
+      "dur": 175,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerSrc": "",
+          "containerId": "",
+          "containerName": ""
+        }
+      ]
+    },
+    "largest_module_init": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 258.4,
+      "start_after_rs": 33.2,
+      "duration": 156.9,
+      "responseEnd": 415.3,
+      "end_after_rs": 190.1,
+      "transferSize": 988,
+      "encodedBodySize": 688,
+      "decodedBodySize": 2698
+    },
+    "largest_pos_service_init": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 258.8,
+      "start_after_rs": 33.6,
+      "duration": 162.5,
+      "responseEnd": 421.3,
+      "end_after_rs": 196.1,
+      "transferSize": 9938,
+      "encodedBodySize": 9638,
+      "decodedBodySize": 53149
+    },
+    "largest_barcode_init": {
+      "file": "public/assets/pos/js/pos-register.js",
+      "fn": "bindEvents barcode keydown + focus handlers",
+      "lines": "1156–1160, 1380–1384",
+      "note": "Embedded in register IIFE; not a separate network task"
+    },
+    "largest_auth_init": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 259.9,
+      "start_after_rs": 34.7,
+      "duration": 459.9,
+      "responseEnd": 719.8,
+      "end_after_rs": 494.6,
+      "transferSize": 300,
+      "encodedBodySize": 0,
+      "decodedBodySize": 0
+    },
+    "largest_unnecessary_init": {
+      "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "type": "script",
+      "start": 259.7,
+      "start_after_rs": 34.5,
+      "duration": 164,
+      "responseEnd": 423.7,
+      "end_after_rs": 198.5,
+      "transferSize": 2922,
+      "encodedBodySize": 2622,
+      "decodedBodySize": 10644
+    }
+  },
+  "one_optimization_roi": {
+    "target": "Largest POS JS download+compile on waterfall",
+    "file": "public/assets/pos/js/pos-auth-lock.js",
+    "class": "auth lock",
+    "function": "auth init (parse/compile/eval cost in Resource Timing duration)",
+    "lines": "n/a",
+    "wall_ms": 459.9,
+    "self_ms": 459.9,
+    "calls": 1,
+    "percentage": 85.1,
+    "before_after_rs_ms": 540.5,
+    "expected_after_rs_ms": 218.6,
+    "gain_ms": 321.9,
+    "note": "Optimistic: remove ~70% of this script from critical path (split/defer/cache hit). Full elimination not always possible."
+  },
+  "profiler_top_self": [
+    {
+      "self_us": 371014,
+      "self_ms": 371,
+      "functionName": "(idle)",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 290279,
+      "self_ms": 290.3,
+      "functionName": "(program)",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 32769,
+      "self_ms": 32.8,
+      "functionName": "measureLayout",
+      "url": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "line": 363,
+      "column": 27
+    },
+    {
+      "self_us": 26994,
+      "self_ms": 27,
+      "functionName": "put",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 6326,
+      "self_ms": 6.3,
+      "functionName": "jsonValue",
+      "url": "",
+      "line": 314,
+      "column": 12
+    },
+    {
+      "self_us": 6132,
+      "self_ms": 6.1,
+      "functionName": "(anonymous)",
+      "url": "/admin/ops/pos/register?company_id=22",
+      "line": 9,
+      "column": 15
+    },
+    {
+      "self_us": 5669,
+      "self_ms": 5.7,
+      "functionName": "refreshPricing",
+      "url": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "line": 215,
+      "column": 28
+    },
+    {
+      "self_us": 5569,
+      "self_ms": 5.6,
+      "functionName": "fetch",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 4965,
+      "self_ms": 5,
+      "functionName": "(anonymous)",
+      "url": "/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+      "line": 1,
+      "column": 11
+    },
+    {
+      "self_us": 4225,
+      "self_ms": 4.2,
+      "functionName": "scheduleRender",
+      "url": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "line": 593,
+      "column": 28
+    },
+    {
+      "self_us": 4018,
+      "self_ms": 4,
+      "functionName": "measureLayout",
+      "url": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "line": 363,
+      "column": 27
+    },
+    {
+      "self_us": 3585,
+      "self_ms": 3.6,
+      "functionName": "abort",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 2946,
+      "self_ms": 2.9,
+      "functionName": "(anonymous)",
+      "url": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "line": 1,
+      "column": 11
+    },
+    {
+      "self_us": 1956,
+      "self_ms": 2,
+      "functionName": "makeRes",
+      "url": "/assets/offline/erp-offline-full-warm.js?v=20260714-force-sw-v52",
+      "line": 516,
+      "column": 29
+    },
+    {
+      "self_us": 1952,
+      "self_ms": 2,
+      "functionName": "(anonymous)",
+      "url": "/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+      "line": 1,
+      "column": 11
+    },
+    {
+      "self_us": 1964,
+      "self_ms": 2,
+      "functionName": "querySelector",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 1879,
+      "self_ms": 1.9,
+      "functionName": "(anonymous)",
+      "url": "/assets/offline/erp-offline-full-warm.js?v=20260714-force-sw-v52",
+      "line": 530,
+      "column": 39
+    },
+    {
+      "self_us": 1585,
+      "self_ms": 1.6,
+      "functionName": "fetch",
+      "url": "",
+      "line": 0,
+      "column": 0
+    },
+    {
+      "self_us": 1475,
+      "self_ms": 1.5,
+      "functionName": "renderCart",
+      "url": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "line": 577,
+      "column": 24
+    },
+    {
+      "self_us": 1436,
+      "self_ms": 1.4,
+      "functionName": "Response",
+      "url": "",
+      "line": 0,
+      "column": 0
+    }
+  ],
+  "coverage_pos": [
+    {
+      "url": "/assets/js/theme.js?v=20260714-force-sw-v52",
+      "textLen": 3067,
+      "usedBytes": 9399,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+      "textLen": 2698,
+      "usedBytes": 10351,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+      "textLen": 20748,
+      "usedBytes": 56925,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+      "textLen": 7861,
+      "usedBytes": 15939,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "textLen": 53135,
+      "usedBytes": 130269,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "textLen": 35242,
+      "usedBytes": 84816,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+      "textLen": 1530,
+      "usedBytes": 3054,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+      "textLen": 30427,
+      "usedBytes": 64233,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+      "textLen": 27743,
+      "usedBytes": 61375,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+      "textLen": 3009,
+      "usedBytes": 6614,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "textLen": 10644,
+      "usedBytes": 25639,
+      "unusedApprox": 0
+    },
+    {
+      "url": "/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+      "textLen": 8698,
+      "usedBytes": 17390,
+      "unusedApprox": 0
+    }
+  ],
+  "runtime": {
+    "nav": {
+      "workerStart": 2.600000023841858,
+      "responseStart": 225.2,
+      "responseEnd": 258.4,
+      "html_download_ms": 33.2,
+      "domInteractive": 447.2,
+      "dcl": 726.3,
+      "load": 737.3,
+      "transferSize": 71327,
+      "decodedBodySize": 71027
+    },
+    "relative_to_responseStart": {
+      "html_download": 33.2,
+      "to_domInteractive": 222,
+      "to_dcl": 501.1,
+      "to_load": 512.1,
+      "to_fp": null,
+      "to_fcp": null,
+      "to_lcp": null
+    },
+    "paints": {},
+    "lcp": null,
+    "scripts": [
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.9,
+        "start_after_rs": 34.7,
+        "duration": 459.9,
+        "responseEnd": 719.8,
+        "end_after_rs": 494.6,
+        "transferSize": 300,
+        "encodedBodySize": 0,
+        "decodedBodySize": 0
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.9,
+        "start_after_rs": 33.7,
+        "duration": 166.2,
+        "responseEnd": 425.1,
+        "end_after_rs": 199.9,
+        "transferSize": 8063,
+        "encodedBodySize": 7763,
+        "decodedBodySize": 35242
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.7,
+        "start_after_rs": 34.5,
+        "duration": 164,
+        "responseEnd": 423.7,
+        "end_after_rs": 198.5,
+        "transferSize": 2922,
+        "encodedBodySize": 2622,
+        "decodedBodySize": 10644
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.2,
+        "start_after_rs": 34,
+        "duration": 162.9,
+        "responseEnd": 422.1,
+        "end_after_rs": 196.9,
+        "transferSize": 6615,
+        "encodedBodySize": 6315,
+        "decodedBodySize": 30439
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 260,
+        "start_after_rs": 34.8,
+        "duration": 162.8,
+        "responseEnd": 422.8,
+        "end_after_rs": 197.6,
+        "transferSize": 2407,
+        "encodedBodySize": 2107,
+        "decodedBodySize": 8702
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.8,
+        "start_after_rs": 33.6,
+        "duration": 162.5,
+        "responseEnd": 421.3,
+        "end_after_rs": 196.1,
+        "transferSize": 9938,
+        "encodedBodySize": 9638,
+        "decodedBodySize": 53149
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.3,
+        "start_after_rs": 34.1,
+        "duration": 161.2,
+        "responseEnd": 420.5,
+        "end_after_rs": 195.3,
+        "transferSize": 5463,
+        "encodedBodySize": 5163,
+        "decodedBodySize": 27748
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.5,
+        "start_after_rs": 34.3,
+        "duration": 160.1,
+        "responseEnd": 419.6,
+        "end_after_rs": 194.4,
+        "transferSize": 1149,
+        "encodedBodySize": 849,
+        "decodedBodySize": 3009
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.1,
+        "start_after_rs": 33.9,
+        "duration": 159.6,
+        "responseEnd": 418.7,
+        "end_after_rs": 193.5,
+        "transferSize": 846,
+        "encodedBodySize": 546,
+        "decodedBodySize": 1530
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.7,
+        "start_after_rs": 33.5,
+        "duration": 159.1,
+        "responseEnd": 417.8,
+        "end_after_rs": 192.6,
+        "transferSize": 2409,
+        "encodedBodySize": 2109,
+        "decodedBodySize": 7865
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.5,
+        "start_after_rs": 33.3,
+        "duration": 158.6,
+        "responseEnd": 417.1,
+        "end_after_rs": 191.9,
+        "transferSize": 4854,
+        "encodedBodySize": 4554,
+        "decodedBodySize": 20752
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.4,
+        "start_after_rs": 33.2,
+        "duration": 156.9,
+        "responseEnd": 415.3,
+        "end_after_rs": 190.1,
+        "transferSize": 988,
+        "encodedBodySize": 688,
+        "decodedBodySize": 2698
+      },
+      {
+        "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.1,
+        "start_after_rs": 32.9,
+        "duration": 27.1,
+        "responseEnd": 285.2,
+        "end_after_rs": 60,
+        "transferSize": 0,
+        "encodedBodySize": 920,
+        "decodedBodySize": 3067
+      }
+    ],
+    "css": [
+      {
+        "name": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+        "type": "link",
+        "start": 240.1,
+        "start_after_rs": 14.9,
+        "duration": 176.3,
+        "responseEnd": 416.4,
+        "end_after_rs": 191.2,
+        "transferSize": 10730,
+        "encodedBodySize": 10430,
+        "decodedBodySize": 70661
+      },
+      {
+        "name": "/rateb-erp/public/pos-manifest.webmanifest",
+        "full": "https://rateb.sa/rateb-erp/public/pos-manifest.webmanifest",
+        "type": "link",
+        "start": 266.2,
+        "start_after_rs": 41,
+        "duration": 309.3,
+        "responseEnd": 575.5,
+        "end_after_rs": 350.3,
+        "transferSize": 504,
+        "encodedBodySize": 204,
+        "decodedBodySize": 291
+      }
+    ],
+    "top_resources": [
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.9,
+        "start_after_rs": 34.7,
+        "duration": 459.9,
+        "responseEnd": 719.8,
+        "end_after_rs": 494.6,
+        "transferSize": 300,
+        "encodedBodySize": 0,
+        "decodedBodySize": 0
+      },
+      {
+        "name": "/rateb-erp/public/pos-manifest.webmanifest",
+        "full": "https://rateb.sa/rateb-erp/public/pos-manifest.webmanifest",
+        "type": "link",
+        "start": 266.2,
+        "start_after_rs": 41,
+        "duration": 309.3,
+        "responseEnd": 575.5,
+        "end_after_rs": 350.3,
+        "transferSize": 504,
+        "encodedBodySize": 204,
+        "decodedBodySize": 291
+      },
+      {
+        "name": "/rateb-erp/public/admin/ops/pos/api/register/pricing?company_id=22",
+        "full": "https://rateb.sa/rateb-erp/public/admin/ops/pos/api/register/pricing?company_id=22",
+        "type": "fetch",
+        "start": 651.2,
+        "start_after_rs": 426,
+        "duration": 183.8,
+        "responseEnd": 835,
+        "end_after_rs": 609.8,
+        "transferSize": 427,
+        "encodedBodySize": 127,
+        "decodedBodySize": 336
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/css/pos-register.css?v=20260714-force-sw-v52",
+        "type": "link",
+        "start": 240.1,
+        "start_after_rs": 14.9,
+        "duration": 176.3,
+        "responseEnd": 416.4,
+        "end_after_rs": 191.2,
+        "transferSize": 10730,
+        "encodedBodySize": 10430,
+        "decodedBodySize": 70661
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.9,
+        "start_after_rs": 33.7,
+        "duration": 166.2,
+        "responseEnd": 425.1,
+        "end_after_rs": 199.9,
+        "transferSize": 8063,
+        "encodedBodySize": 7763,
+        "decodedBodySize": 35242
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.7,
+        "start_after_rs": 34.5,
+        "duration": 164,
+        "responseEnd": 423.7,
+        "end_after_rs": 198.5,
+        "transferSize": 2922,
+        "encodedBodySize": 2622,
+        "decodedBodySize": 10644
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.2,
+        "start_after_rs": 34,
+        "duration": 162.9,
+        "responseEnd": 422.1,
+        "end_after_rs": 196.9,
+        "transferSize": 6615,
+        "encodedBodySize": 6315,
+        "decodedBodySize": 30439
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 260,
+        "start_after_rs": 34.8,
+        "duration": 162.8,
+        "responseEnd": 422.8,
+        "end_after_rs": 197.6,
+        "transferSize": 2407,
+        "encodedBodySize": 2107,
+        "decodedBodySize": 8702
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.8,
+        "start_after_rs": 33.6,
+        "duration": 162.5,
+        "responseEnd": 421.3,
+        "end_after_rs": 196.1,
+        "transferSize": 9938,
+        "encodedBodySize": 9638,
+        "decodedBodySize": 53149
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.3,
+        "start_after_rs": 34.1,
+        "duration": 161.2,
+        "responseEnd": 420.5,
+        "end_after_rs": 195.3,
+        "transferSize": 5463,
+        "encodedBodySize": 5163,
+        "decodedBodySize": 27748
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.5,
+        "start_after_rs": 34.3,
+        "duration": 160.1,
+        "responseEnd": 419.6,
+        "end_after_rs": 194.4,
+        "transferSize": 1149,
+        "encodedBodySize": 849,
+        "decodedBodySize": 3009
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 259.1,
+        "start_after_rs": 33.9,
+        "duration": 159.6,
+        "responseEnd": 418.7,
+        "end_after_rs": 193.5,
+        "transferSize": 846,
+        "encodedBodySize": 546,
+        "decodedBodySize": 1530
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.7,
+        "start_after_rs": 33.5,
+        "duration": 159.1,
+        "responseEnd": 417.8,
+        "end_after_rs": 192.6,
+        "transferSize": 2409,
+        "encodedBodySize": 2109,
+        "decodedBodySize": 7865
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.5,
+        "start_after_rs": 33.3,
+        "duration": 158.6,
+        "responseEnd": 417.1,
+        "end_after_rs": 191.9,
+        "transferSize": 4854,
+        "encodedBodySize": 4554,
+        "decodedBodySize": 20752
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.4,
+        "start_after_rs": 33.2,
+        "duration": 156.9,
+        "responseEnd": 415.3,
+        "end_after_rs": 190.1,
+        "transferSize": 988,
+        "encodedBodySize": 688,
+        "decodedBodySize": 2698
+      },
+      {
+        "name": "/favicon.ico",
+        "full": "https://rateb.sa/favicon.ico",
+        "type": "other",
+        "start": 754,
+        "start_after_rs": 528.8,
+        "duration": 100.8,
+        "responseEnd": 854.8,
+        "end_after_rs": 629.6,
+        "transferSize": 524,
+        "encodedBodySize": 224,
+        "decodedBodySize": 289
+      },
+      {
+        "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "full": "https://rateb.sa/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "type": "script",
+        "start": 258.1,
+        "start_after_rs": 32.9,
+        "duration": 27.1,
+        "responseEnd": 285.2,
+        "end_after_rs": 60,
+        "transferSize": 0,
+        "encodedBodySize": 920,
+        "decodedBodySize": 3067
+      }
+    ],
+    "script_chain": [
+      {
+        "name": "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+        "start": 258.1,
+        "end": 285.2,
+        "dur": 27.1
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+        "start": 258.4,
+        "end": 415.3,
+        "dur": 156.9
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+        "start": 258.5,
+        "end": 417.1,
+        "dur": 158.6
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+        "start": 258.7,
+        "end": 417.8,
+        "dur": 159.1
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+        "start": 258.8,
+        "end": 421.3,
+        "dur": 162.5
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+        "start": 258.9,
+        "end": 425.1,
+        "dur": 166.2
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+        "start": 259.1,
+        "end": 418.7,
+        "dur": 159.6
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+        "start": 259.2,
+        "end": 422.1,
+        "dur": 162.9
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+        "start": 259.3,
+        "end": 420.5,
+        "dur": 161.2
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+        "start": 259.5,
+        "end": 419.6,
+        "dur": 160.1
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+        "start": 259.7,
+        "end": 423.7,
+        "dur": 164
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+        "start": 259.9,
+        "end": 719.8,
+        "dur": 459.9
+      },
+      {
+        "name": "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52",
+        "start": 260,
+        "end": 422.8,
+        "dur": 162.8
+      }
+    ],
+    "largestIdle": {
+      "gap": 0,
+      "after": null,
+      "before": null
+    },
+    "longtasks": [
+      {
+        "name": "unknown",
+        "start": 448.1,
+        "dur": 175,
+        "attribution": [
+          {
+            "name": "unknown",
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      }
+    ],
+    "longtasks_all": [
+      {
+        "name": "unknown",
+        "start": 448.1,
+        "dur": 175,
+        "attribution": [
+          {
+            "name": "unknown",
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      }
+    ],
+    "htmlLen": 70335,
+    "scriptTags": [
+      "/rateb-erp/public/assets/js/theme.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-module.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-offline-sync.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-offline-print.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-register.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-register-tiles.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-keyboard.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-register-checkout.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-register-ops.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-capabilities.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-supervisor-approval.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-auth-lock.js?v=20260714-force-sw-v52",
+      "/rateb-erp/public/assets/pos/js/pos-biometric-gate.js?v=20260714-force-sw-v52"
+    ],
+    "inlineJsonBytes": {
+      "config": 13069,
+      "bootstrap": 460
+    },
+    "sw": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "ready": true
+  },
+  "enterprise": "PASS — runtime after responseStart profiled; single-task ROI identified"
+}
