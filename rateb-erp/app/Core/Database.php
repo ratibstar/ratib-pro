@@ -6,6 +6,14 @@ namespace Rateb\App\Core;
 use PDO;
 use PDOException;
 
+// Control-panel (and other non-Composer bootstraps) may require Database.php alone.
+if (!class_exists(HybridRuntime::class, false)) {
+    $hybridRuntimeFile = __DIR__ . DIRECTORY_SEPARATOR . 'HybridRuntime.php';
+    if (is_file($hybridRuntimeFile)) {
+        require_once $hybridRuntimeFile;
+    }
+}
+
 final class Database
 {
     private static ?PDO $pdo = null;
@@ -509,7 +517,9 @@ final class Database
         self::$pdo = null;
         self::$resolvedDbName = '';
         self::$columnCache = [];
-        self::$activeDriver = HybridRuntime::DRIVER_MYSQL;
+        self::$activeDriver = class_exists(HybridRuntime::class, false)
+            ? HybridRuntime::DRIVER_MYSQL
+            : 'mysql';
         // Guard: cloud fast-deploys may not include every hybrid Core file yet.
         if (class_exists(HybridSyncOutboxCapture::class, true)) {
             HybridSyncOutboxCapture::resetConnection();
