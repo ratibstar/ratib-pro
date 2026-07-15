@@ -673,6 +673,8 @@
         function setOnline(next) {
             next = !!next;
             if (online === next) {
+                // Still (re)arm the probe loop — navigator can flip without a state change.
+                scheduleProbeLoop();
                 return;
             }
             online = next;
@@ -692,7 +694,7 @@
                     ? path.slice(0, path.indexOf('/public/') + '/public'.length)
                     : '';
                 if (origin && pub) {
-                    return origin + pub + '/connectivity-probe.json';
+                    return origin + pub + '/connectivity-probe.json?_=' + String(Date.now());
                 }
             } catch (e0) { /* ignore */ }
             var cfgEl = document.getElementById('rateb-pos-register-config');
@@ -704,10 +706,11 @@
             }
             var api = cfg.api || {};
             if (api.sync) {
-                return joinUrlPath(api.sync, '/status');
+                return joinUrlPath(api.sync, '/status') + (String(api.sync).indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
             }
             if (api.bootstrap) {
-                return String(api.bootstrap);
+                var boot = String(api.bootstrap);
+                return boot + (boot.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
             }
             try {
                 var origin2 = window.location.origin || '';
@@ -716,15 +719,24 @@
                     ? path2.slice(0, path2.indexOf('/public/') + '/public'.length)
                     : '';
                 if (origin2 && pub2) {
-                    return origin2 + pub2 + '/ratib-erp-build.txt';
+                    return origin2 + pub2 + '/ratib-erp-build.txt?_=' + String(Date.now());
                 }
             } catch (e3) { /* ignore */ }
-            return joinUrlPath(defaultApiBase(), '/status');
+            return joinUrlPath(defaultApiBase(), '/status') + '?_=' + Date.now();
+        }
+
+        function scheduleRecoverySoon(delayMs) {
+            setTimeout(function () {
+                if (navigator.onLine === false) {
+                    return;
+                }
+                probe({ force: true });
+            }, typeof delayMs === 'number' ? delayMs : 1200);
         }
 
         function probe(options) {
             options = options || {};
-            if (probing) {
+            if (probing && !options.force) {
                 return Promise.resolve(online);
             }
             // Fully offline (browser flag) — never hit the network (avoids console spam).
@@ -745,7 +757,7 @@
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 2500);
+            }, 4000);
             return fetch(url, {
                 method: 'GET',
                 credentials: 'same-origin',
@@ -757,6 +769,9 @@
                 // Do not treat 404/5xx as "offline" — that trapped the UI on غير متصل
                 // while Wi‑Fi was fine and forced a full refresh to recover.
                 if (!res) {
+                    if (!online) {
+                        scheduleRecoverySoon(1500);
+                    }
                     return online;
                 }
                 if (res.status === 401 || res.status === 403 || res.status === 419) {
@@ -772,16 +787,22 @@
             }).catch(function (err) {
                 var name = String((err && err.name) || '');
                 var msg = String((err && err.message) || err || '');
-                // Timeout/abort while the browser still reports online is NOT proof of offline —
-                // a slow bootstrap/API/probe was marking Offline and forcing local-only checkout.
+                // Timeout/abort while browser says online is ambiguous — keep state, retry soon.
                 if (timedOut || name === 'AbortError' || /abort/i.test(msg)) {
+                    if (!online && navigator.onLine !== false) {
+                        scheduleRecoverySoon(2000);
+                    }
                     return online;
                 }
                 failStreak += 1;
                 if (failStreak >= 2 || navigator.onLine === false) {
                     setOnline(false);
+                    if (navigator.onLine !== false) {
+                        scheduleRecoverySoon(2500);
+                    }
                     return false;
                 }
+                scheduleRecoverySoon(1500);
                 return online;
             }).finally(function () {
                 clearTimeout(timer);
@@ -798,8 +819,8 @@
             if (navigator.onLine === false) {
                 return;
             }
-            // Online: health check every 12s. Marked offline but PC has net: recover every 8s.
-            var interval = online ? 12000 : 8000;
+            // Online: health check every 12s. Soft-offline with net up: recover every 3s.
+            var interval = online ? 12000 : 3000;
             probeTimer = setInterval(function () {
                 if (navigator.onLine === false) {
                     setOnline(false);
@@ -826,10 +847,35 @@
             }
         };
 
-        window.addEventListener('online', function () { probe(); });
+        function onBrowserOnline() {
+            // Always re-arm the loop — it was stopped while navigator.onLine was false.
+            scheduleProbeLoop();
+            probe({ force: true });
+            scheduleRecoverySoon(800);
+            scheduleRecoverySoon(2500);
+        }
+
+        window.addEventListener('online', onBrowserOnline);
         window.addEventListener('offline', function () { setOnline(false); });
-        document.addEventListener('rateb-pos-force-offline', function () { setOnline(false); });
-        setTimeout(probe, 200);
+        document.addEventListener('rateb-pos-force-offline', function () {
+            setOnline(false);
+            if (navigator.onLine !== false) {
+                scheduleProbeLoop();
+                scheduleRecoverySoon(1000);
+            }
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible' && navigator.onLine !== false) {
+                probe({ force: true });
+                scheduleProbeLoop();
+            }
+        });
+        window.addEventListener('focus', function () {
+            if (navigator.onLine !== false && !online) {
+                probe({ force: true });
+            }
+        });
+        setTimeout(function () { probe({ force: true }); }, 200);
         scheduleProbeLoop();
         window.addEventListener('beforeunload', function () {
             if (probeTimer) {

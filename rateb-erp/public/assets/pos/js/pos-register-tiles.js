@@ -909,7 +909,12 @@
         }
         if (window.RatebPosConnectivity && window.RatebPosConnectivity.subscribe) {
             window.RatebPosConnectivity.subscribe(applyOnlineState);
-            window.RatebPosConnectivity.probe();
+            window.RatebPosConnectivity.probe({ force: true });
+            window.addEventListener('online', function () {
+                if (window.RatebPosConnectivity && window.RatebPosConnectivity.probe) {
+                    window.RatebPosConnectivity.probe({ force: true });
+                }
+            });
             return;
         }
         function sync() {
