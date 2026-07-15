@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v32';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
 var SW_BUILD_ID = '20260715-offline-api-v68';
