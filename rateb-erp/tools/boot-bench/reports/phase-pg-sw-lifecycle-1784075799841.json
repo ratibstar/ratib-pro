@@ -1,0 +1,509 @@
+{
+  "phase": "PG",
+  "mode": "READ_ONLY_SW_LIFECYCLE_AUDIT",
+  "generatedAt": "2026-07-15T00:36:39.830Z",
+  "production_sw_build": "var SW_BUILD_ID = '20260715-phase-pf-v65';",
+  "staticInventory": {
+    "registrations": [
+      {
+        "file": "views/layouts/main.php",
+        "fn": "__ratebErpRegisterSwOnce / doRegister",
+        "lines": "775–777",
+        "url": "pos-sw.js?v=RATEB_ASSET_BUILD (20260714-force-sw-v52)"
+      },
+      {
+        "file": "public/assets/offline/erp-shell-bootstrap.js",
+        "fn": "registerServiceWorker",
+        "lines": "325–327",
+        "note": "Only if no existing pos-sw registration; else update()"
+      },
+      {
+        "file": "public/assets/pos/js/pos-offline-bootstrap.js",
+        "fn": "register",
+        "lines": "79",
+        "note": "POS offline bootstrap"
+      },
+      {
+        "file": "bench tools (not production UX)",
+        "fn": "phase-*-audit register",
+        "lines": "various",
+        "note": "Synthetic ?v= timestamps in audits"
+      }
+    ],
+    "update_calls": [
+      {
+        "file": "views/layouts/main.php",
+        "lines": "738",
+        "note": "stale SW soft update when script URL missing NEED"
+      },
+      {
+        "file": "views/layouts/main.php",
+        "lines": "781",
+        "note": "after every register()"
+      },
+      {
+        "file": "public/assets/offline/erp-shell-bootstrap.js",
+        "lines": "294",
+        "note": "when posReg already present"
+      },
+      {
+        "file": "public/assets/offline/erp-shell-bootstrap.js",
+        "lines": "334",
+        "note": "after fresh register"
+      }
+    ],
+    "skipWaiting_claim": [
+      {
+        "file": "public/pos-sw.js",
+        "lines": "2529 install skipWaiting; 2547 activate clients.claim"
+      },
+      {
+        "file": "public/pos-sw.js",
+        "lines": "2606–2610 message SKIP_WAITING / CLIENTS_CLAIM"
+      },
+      {
+        "file": "views/layouts/main.php",
+        "lines": "737, 761–762, 262–263 postMessage SKIP_WAITING / CLIENTS_CLAIM"
+      },
+      {
+        "file": "erp-shell-bootstrap.js",
+        "lines": "297, 337 SKIP_WAITING"
+      }
+    ],
+    "asset_build": "20260714-force-sw-v52 (config/app.php RATEB_ASSET_BUILD)"
+  },
+  "scenarios": [
+    {
+      "name": "A_natural_wait800",
+      "metrics": {
+        "workerStart": 2.2999999821186066,
+        "fetchStart": 2.6,
+        "requestStart": 2.6,
+        "responseStart": 266,
+        "ttfb": 263.4,
+        "dcl": 531.2,
+        "transferSize": 71327,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "counts": {
+        "register_calls": 0,
+        "unique_register_urls": [],
+        "update_calls": 0,
+        "updatefound": 0,
+        "installed": 0,
+        "activated": 0,
+        "controllerchange": 0
+      },
+      "beforeNav": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": null
+          }
+        ],
+        "log_len": 13
+      },
+      "analysis": {
+        "register_urls": [],
+        "updatefound_during_wait": 0,
+        "statechanges_during_wait": 0,
+        "update_calls_during_wait": 0,
+        "register_during_wait": 0,
+        "force_sw_involved": true,
+        "synth_involved": false,
+        "during_wait_events": [],
+        "installs": [],
+        "activates": [],
+        "controllerchanges": [],
+        "updatefounds": []
+      },
+      "log_preview": [
+        {
+          "t_ms": 8.2,
+          "wall": 1784075769397,
+          "wall_rel": 8,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 8.6,
+          "wall": 1784075769397,
+          "wall_rel": 8,
+          "type": "regs_snapshot",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "n": 1,
+          "scripts": [
+            {
+              "scope": "https://rateb.sa/rateb-erp/public/",
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "t_ms": 246.5,
+          "wall": 1784075769635,
+          "wall_rel": 246,
+          "type": "pos_goto_dcl",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22"
+        }
+      ],
+      "log_len": 3
+    },
+    {
+      "name": "B_natural_immediate",
+      "metrics": {
+        "workerStart": 1.4000000059604645,
+        "fetchStart": 1.7,
+        "requestStart": 1.7,
+        "responseStart": 230.9,
+        "ttfb": 229.2,
+        "dcl": 471.3,
+        "transferSize": 71327,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "counts": {
+        "register_calls": 0,
+        "unique_register_urls": [],
+        "update_calls": 0,
+        "updatefound": 0,
+        "installed": 0,
+        "activated": 0,
+        "controllerchange": 0
+      },
+      "beforeNav": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": null
+          }
+        ],
+        "log_len": 13
+      },
+      "analysis": {
+        "register_urls": [],
+        "updatefound_during_wait": 0,
+        "statechanges_during_wait": 0,
+        "update_calls_during_wait": 0,
+        "register_during_wait": 0,
+        "force_sw_involved": true,
+        "synth_involved": false,
+        "during_wait_events": [],
+        "installs": [],
+        "activates": [],
+        "controllerchanges": [],
+        "updatefounds": []
+      },
+      "log_preview": [
+        {
+          "t_ms": 5.9,
+          "wall": 1784075777225,
+          "wall_rel": 5,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 6.4,
+          "wall": 1784075777226,
+          "wall_rel": 6,
+          "type": "regs_snapshot",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "n": 1,
+          "scripts": [
+            {
+              "scope": "https://rateb.sa/rateb-erp/public/",
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "t_ms": 238.6,
+          "wall": 1784075777458,
+          "wall_rel": 238,
+          "type": "pos_goto_dcl",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22"
+        }
+      ],
+      "log_len": 3
+    },
+    {
+      "name": "C_synth_wait800",
+      "metrics": {
+        "workerStart": 182.2999999821186,
+        "fetchStart": 183,
+        "requestStart": 183,
+        "responseStart": 421.1,
+        "ttfb": 238.1,
+        "dcl": 720.5,
+        "transferSize": 71327,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447"
+      },
+      "counts": {
+        "register_calls": 0,
+        "unique_register_urls": [],
+        "update_calls": 0,
+        "updatefound": 0,
+        "installed": 0,
+        "activated": 0,
+        "controllerchange": 0
+      },
+      "beforeNav": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447",
+        "regs": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447",
+            "waiting": null,
+            "installing": null
+          }
+        ],
+        "log_len": 22
+      },
+      "analysis": {
+        "register_urls": [],
+        "updatefound_during_wait": 0,
+        "statechanges_during_wait": 0,
+        "update_calls_during_wait": 0,
+        "register_during_wait": 0,
+        "force_sw_involved": false,
+        "synth_involved": false,
+        "during_wait_events": [],
+        "installs": [],
+        "activates": [],
+        "controllerchanges": [],
+        "updatefounds": []
+      },
+      "log_preview": [
+        {
+          "t_ms": 10,
+          "wall": 1784075785878,
+          "wall_rel": 10,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447"
+        },
+        {
+          "t_ms": 10.7,
+          "wall": 1784075785878,
+          "wall_rel": 10,
+          "type": "regs_snapshot",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "n": 1,
+          "scripts": [
+            {
+              "scope": "https://rateb.sa/rateb-erp/public/",
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075784447",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "t_ms": 288.8,
+          "wall": 1784075786156,
+          "wall_rel": 288,
+          "type": "pos_goto_dcl",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22"
+        }
+      ],
+      "log_len": 3
+    },
+    {
+      "name": "D_synth_immediate",
+      "metrics": {
+        "workerStart": 998.2999999821186,
+        "fetchStart": 999.4,
+        "requestStart": 999.4,
+        "responseStart": 1262.7,
+        "ttfb": 263.3,
+        "dcl": 1542,
+        "transferSize": 71327,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129"
+      },
+      "counts": {
+        "register_calls": 0,
+        "unique_register_urls": [],
+        "update_calls": 0,
+        "updatefound": 0,
+        "installed": 0,
+        "activated": 0,
+        "controllerchange": 0
+      },
+      "beforeNav": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129",
+        "regs": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129",
+            "waiting": null,
+            "installing": null
+          }
+        ],
+        "log_len": 22
+      },
+      "analysis": {
+        "register_urls": [],
+        "updatefound_during_wait": 0,
+        "statechanges_during_wait": 0,
+        "update_calls_during_wait": 0,
+        "register_during_wait": 0,
+        "force_sw_involved": false,
+        "synth_involved": false,
+        "during_wait_events": [],
+        "installs": [],
+        "activates": [],
+        "controllerchanges": [],
+        "updatefounds": []
+      },
+      "log_preview": [
+        {
+          "t_ms": 6.9,
+          "wall": 1784075794580,
+          "wall_rel": 7,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129"
+        },
+        {
+          "t_ms": 7.7,
+          "wall": 1784075794581,
+          "wall_rel": 8,
+          "type": "regs_snapshot",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "n": 1,
+          "scripts": [
+            {
+              "scope": "https://rateb.sa/rateb-erp/public/",
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075793129",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "t_ms": 267.3,
+          "wall": 1784075794840,
+          "wall_rel": 267,
+          "type": "pos_goto_dcl",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22"
+        }
+      ],
+      "log_len": 3
+    },
+    {
+      "name": "E_reuse_wait800",
+      "metrics": {
+        "workerStart": 0.9000000059604645,
+        "fetchStart": 1.1,
+        "requestStart": 1.1,
+        "responseStart": 251.2,
+        "ttfb": 250.1,
+        "dcl": 500.3,
+        "transferSize": 71327,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "counts": {
+        "register_calls": 0,
+        "unique_register_urls": [],
+        "update_calls": 0,
+        "updatefound": 0,
+        "installed": 0,
+        "activated": 0,
+        "controllerchange": 0
+      },
+      "beforeNav": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "scope": "https://rateb.sa/rateb-erp/public/",
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": null
+          }
+        ],
+        "log_len": 12
+      },
+      "analysis": {
+        "register_urls": [],
+        "updatefound_during_wait": 0,
+        "statechanges_during_wait": 0,
+        "update_calls_during_wait": 0,
+        "register_during_wait": 0,
+        "force_sw_involved": true,
+        "synth_involved": false,
+        "during_wait_events": [],
+        "installs": [],
+        "activates": [],
+        "controllerchanges": [],
+        "updatefounds": []
+      },
+      "log_preview": [
+        {
+          "t_ms": 5.7,
+          "wall": 1784075799422,
+          "wall_rel": 5,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 6.1,
+          "wall": 1784075799423,
+          "wall_rel": 6,
+          "type": "regs_snapshot",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "n": 1,
+          "scripts": [
+            {
+              "scope": "https://rateb.sa/rateb-erp/public/",
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "t_ms": 246.6,
+          "wall": 1784075799663,
+          "wall_rel": 246,
+          "type": "pos_goto_dcl",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22"
+        }
+      ],
+      "log_len": 3
+    }
+  ],
+  "conclusion": {
+    "largestBlocker": "undetermined",
+    "who": null,
+    "compare": {
+      "C_synth_wait800_ws": 182.2999999821186,
+      "D_synth_immediate_ws": 998.2999999821186,
+      "A_natural_wait800_ws": 2.2999999821186066,
+      "B_natural_immediate_ws": 1.4000000059604645
+    },
+    "pass": null
+  },
+  "enterprise": "FAIL — could not attribute workerStart to a lifecycle actor with certainty"
+}

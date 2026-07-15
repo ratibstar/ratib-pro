@@ -1,0 +1,3208 @@
+{
+  "phase": "PG",
+  "mode": "READ_ONLY",
+  "generatedAt": "2026-07-15T00:38:34.725Z",
+  "production_sw": "var SW_BUILD_ID = '20260715-phase-pf-v65';",
+  "who_causes_197ms": {
+    "actor": "Synthetic Service Worker re-registration with unique ?v= query (bench protocol)",
+    "mechanism": "navigator.serviceWorker.register(pos-sw.js?v=pg-synth-<timestamp>) creates a new SW script URL → install/activate. Natural shell uses a stable URL pos-sw.js?v=20260714-force-sw-v52 and does NOT reproduce ~197ms.",
+    "not_actor": "force-sw-v52 stable registration itself (natural_wait800 workerStart≈1.800000011920929ms)",
+    "evidence": {
+      "natural_wait800_ws": 1.800000011920929,
+      "synth_wait800_ws": 188.69999998807907,
+      "synth_immediate_ws": 1.600000023841858,
+      "natural_controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "synth_controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+      "synth_registers": [
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+      ]
+    }
+  },
+  "summaries": [
+    {
+      "name": "natural_wait800",
+      "workerStart": 1.800000011920929,
+      "responseStart": 214.9,
+      "controller_after": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "controller_before": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "register_calls": [
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      ],
+      "update_calls": 1,
+      "updatefound": 1,
+      "statechanges": [
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "installed",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "activated",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        }
+      ],
+      "controllerchanges": 1,
+      "cdp_running_tail": [
+        {
+          "wall": 1784075873385,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075875920,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075875922,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "redundant"
+        },
+        {
+          "wall": 1784075876288,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075876399,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075876402,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075876402,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075876412,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075876412,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075876436,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "installed"
+        },
+        {
+          "wall": 1784075876436,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075876436,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075876436,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075880999,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075881252,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        }
+      ],
+      "has_force_sw": true,
+      "has_synth": false
+    },
+    {
+      "name": "natural_immediate",
+      "workerStart": 1.899999976158142,
+      "responseStart": 256.3,
+      "controller_after": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "controller_before": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "register_calls": [
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      ],
+      "update_calls": 1,
+      "updatefound": 1,
+      "statechanges": [
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "installed",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "activated",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        }
+      ],
+      "controllerchanges": 1,
+      "cdp_running_tail": [
+        {
+          "wall": 1784075884777,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075887317,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075887317,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "redundant"
+        },
+        {
+          "wall": 1784075887650,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075887755,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075887755,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075887755,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075887767,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075887767,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075887786,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "installed"
+        },
+        {
+          "wall": 1784075887786,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075887786,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075887786,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075891542,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075891801,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        }
+      ],
+      "has_force_sw": true,
+      "has_synth": false
+    },
+    {
+      "name": "synth_wait800",
+      "workerStart": 188.69999998807907,
+      "responseStart": 401,
+      "controller_after": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+      "controller_before": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+      "register_calls": [
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+      ],
+      "update_calls": 1,
+      "updatefound": 2,
+      "statechanges": [
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "installed",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "activated",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "installed",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "redundant",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "state": "activating",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        }
+      ],
+      "controllerchanges": 2,
+      "cdp_running_tail": [
+        {
+          "wall": 1784075901863,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075901977,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075901977,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075901977,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075901985,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "starting",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075901985,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075901999,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "installed"
+        },
+        {
+          "wall": 1784075901999,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopping",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075902002,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075902002,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "redundant"
+        },
+        {
+          "wall": 1784075902002,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075902002,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "activating"
+        },
+        {
+          "wall": 1784075903012,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075903012,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075903220,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "runningStatus": "running",
+          "status": "activated"
+        }
+      ],
+      "has_force_sw": false,
+      "has_synth": true
+    },
+    {
+      "name": "synth_immediate",
+      "workerStart": 1.600000023841858,
+      "responseStart": 221.6,
+      "controller_after": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "controller_before": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "register_calls": [
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925"
+      ],
+      "update_calls": 1,
+      "updatefound": 2,
+      "statechanges": [
+        {
+          "state": null,
+          "url": null
+        },
+        {
+          "state": "installed",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        }
+      ],
+      "controllerchanges": 1,
+      "cdp_running_tail": [
+        {
+          "wall": 1784075913919,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075914030,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "stopped",
+          "status": "new"
+        },
+        {
+          "wall": 1784075914030,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075914030,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "starting",
+          "status": "new"
+        },
+        {
+          "wall": 1784075914053,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "starting",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075914053,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "running",
+          "status": "installing"
+        },
+        {
+          "wall": 1784075914074,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914074,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "runningStatus": "running",
+          "status": "installed"
+        },
+        {
+          "wall": 1784075914296,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914316,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopping",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914319,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "stopped",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914319,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914319,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914320,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "starting",
+          "status": "activated"
+        },
+        {
+          "wall": 1784075914326,
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "runningStatus": "running",
+          "status": "activated"
+        }
+      ],
+      "has_force_sw": true,
+      "has_synth": false
+    }
+  ],
+  "results": [
+    {
+      "name": "natural_wait800",
+      "metrics": {
+        "workerStart": 1.800000011920929,
+        "requestStart": 2,
+        "responseStart": 214.9,
+        "ttfb": 212.9,
+        "dcl": 424.2,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "before": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": null
+          }
+        ]
+      },
+      "synthUrl": null,
+      "timeline": [
+        {
+          "wall": 1784075873103,
+          "label": "admin_loaded"
+        },
+        {
+          "wall": 1784075875597,
+          "label": "cleared"
+        },
+        {
+          "wall": 1784075876140,
+          "label": "admin_reloaded"
+        },
+        {
+          "wall": 1784075880155,
+          "label": "after_idle_4s"
+        },
+        {
+          "wall": 1784075880163,
+          "label": "wait800_begin"
+        },
+        {
+          "wall": 1784075880969,
+          "label": "wait800_end"
+        },
+        {
+          "wall": 1784075880990,
+          "label": "before_pos",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "regs": [
+            {
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "wall": 1784075880991,
+          "label": "pos_goto_begin"
+        },
+        {
+          "wall": 1784075881421,
+          "label": "pos_goto_dcl"
+        }
+      ],
+      "log": [
+        {
+          "t_ms": 341.1,
+          "wall": 1784075876283,
+          "wall_rel": 341,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at doRegister (https://rateb.sa/rateb-erp/public/admin/:716:38) || at window.__ratebErpRegisterSwOnce (https://rateb.sa/rateb-erp/public/admin/:738:44) || at window.requestIdleCallback.timeout (https://rateb.sa/rateb-erp/public/admin/:745:18)"
+        },
+        {
+          "t_ms": 478,
+          "wall": 1784075876419,
+          "wall_rel": 477,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": null,
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null
+        },
+        {
+          "t_ms": 478.1,
+          "wall": 1784075876420,
+          "wall_rel": 478,
+          "type": "update_call",
+          "href": "/rateb-erp/public/admin/",
+          "source": "register",
+          "active": null,
+          "stack": "at reg.update (<anonymous>:29:89) || at https://rateb.sa/rateb-erp/public/admin/:722:19"
+        },
+        {
+          "t_ms": 478.3,
+          "wall": 1784075876420,
+          "wall_rel": 478,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "active": null
+        },
+        {
+          "t_ms": 501.8,
+          "wall": 1784075876443,
+          "wall_rel": 501,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 501.9,
+          "wall": 1784075876443,
+          "wall_rel": 501,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "installed",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 502.1,
+          "wall": 1784075876444,
+          "wall_rel": 502,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": null
+        },
+        {
+          "t_ms": 502.4,
+          "wall": 1784075876444,
+          "wall_rel": 502,
+          "type": "controllerchange",
+          "href": "/rateb-erp/public/admin/",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 502.7,
+          "wall": 1784075876444,
+          "wall_rel": 502,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 502.7,
+          "wall": 1784075876444,
+          "wall_rel": 502,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "activated",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 618,
+          "wall": 1784075876560,
+          "wall_rel": 618,
+          "type": "update_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null,
+          "installing": null
+        },
+        {
+          "t_ms": 4228.6,
+          "wall": 1784075880170,
+          "wall_rel": 4228,
+          "type": "wait_begin",
+          "href": "/rateb-erp/public/admin/",
+          "ms": 800
+        },
+        {
+          "t_ms": 5035.2,
+          "wall": 1784075880977,
+          "wall_rel": 5035,
+          "type": "wait_end",
+          "href": "/rateb-erp/public/admin/"
+        },
+        {
+          "t_ms": 7.1,
+          "wall": 1784075881240,
+          "wall_rel": 7,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "_page": "pos"
+        }
+      ],
+      "cdp_tail": [
+        {
+          "wall": 1784075871962,
+          "type": "registration",
+          "registrations": []
+        },
+        {
+          "wall": 1784075871962,
+          "type": "version",
+          "versions": []
+        },
+        {
+          "wall": 1784075873196,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075873196,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873332,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873332,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873332,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873357,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873357,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075873357,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873385,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873385,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873385,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075873385,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075875572,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": true
+            }
+          ]
+        },
+        {
+          "wall": 1784075875920,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075875922,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "redundant"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876288,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075876288,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876399,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876402,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876402,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876412,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876412,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075876412,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876436,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876436,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876436,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075876436,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075880999,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075881252,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "natural_immediate",
+      "metrics": {
+        "workerStart": 1.899999976158142,
+        "requestStart": 2.2,
+        "responseStart": 256.3,
+        "ttfb": 254.1,
+        "dcl": 506.1,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "before": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": null
+          }
+        ]
+      },
+      "synthUrl": null,
+      "timeline": [
+        {
+          "wall": 1784075884511,
+          "label": "admin_loaded"
+        },
+        {
+          "wall": 1784075886984,
+          "label": "cleared"
+        },
+        {
+          "wall": 1784075887517,
+          "label": "admin_reloaded"
+        },
+        {
+          "wall": 1784075891519,
+          "label": "after_idle_4s"
+        },
+        {
+          "wall": 1784075891535,
+          "label": "before_pos",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "regs": [
+            {
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "wall": 1784075891536,
+          "label": "pos_goto_begin"
+        },
+        {
+          "wall": 1784075892045,
+          "label": "pos_goto_dcl"
+        }
+      ],
+      "log": [
+        {
+          "t_ms": 308.8,
+          "wall": 1784075887645,
+          "wall_rel": 308,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at doRegister (https://rateb.sa/rateb-erp/public/admin/:716:38) || at window.__ratebErpRegisterSwOnce (https://rateb.sa/rateb-erp/public/admin/:738:44) || at window.requestIdleCallback.timeout (https://rateb.sa/rateb-erp/public/admin/:745:18)"
+        },
+        {
+          "t_ms": 438.4,
+          "wall": 1784075887775,
+          "wall_rel": 438,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": null,
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null
+        },
+        {
+          "t_ms": 438.6,
+          "wall": 1784075887775,
+          "wall_rel": 438,
+          "type": "update_call",
+          "href": "/rateb-erp/public/admin/",
+          "source": "register",
+          "active": null,
+          "stack": "at reg.update (<anonymous>:29:89) || at https://rateb.sa/rateb-erp/public/admin/:722:19"
+        },
+        {
+          "t_ms": 438.6,
+          "wall": 1784075887775,
+          "wall_rel": 438,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "active": null
+        },
+        {
+          "t_ms": 456.8,
+          "wall": 1784075887793,
+          "wall_rel": 456,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 456.8,
+          "wall": 1784075887793,
+          "wall_rel": 456,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "installed",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 457,
+          "wall": 1784075887794,
+          "wall_rel": 457,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": null
+        },
+        {
+          "t_ms": 457.4,
+          "wall": 1784075887794,
+          "wall_rel": 457,
+          "type": "controllerchange",
+          "href": "/rateb-erp/public/admin/",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 457.5,
+          "wall": 1784075887794,
+          "wall_rel": 457,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 457.6,
+          "wall": 1784075887794,
+          "wall_rel": 457,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "activated",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 569.7,
+          "wall": 1784075887906,
+          "wall_rel": 569,
+          "type": "update_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null,
+          "installing": null
+        },
+        {
+          "t_ms": 4.9,
+          "wall": 1784075891821,
+          "wall_rel": 5,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "_page": "pos"
+        }
+      ],
+      "cdp_tail": [
+        {
+          "wall": 1784075883418,
+          "type": "registration",
+          "registrations": []
+        },
+        {
+          "wall": 1784075883418,
+          "type": "version",
+          "versions": []
+        },
+        {
+          "wall": 1784075884594,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075884594,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884741,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884742,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884742,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884754,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884754,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075884754,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884777,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884777,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884777,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075884777,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075886968,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": true
+            }
+          ]
+        },
+        {
+          "wall": 1784075887317,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887317,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "redundant"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887646,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075887650,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887755,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887755,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887755,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887767,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887767,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075887767,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887786,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887786,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887786,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075887786,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075891542,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075891801,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "synth_wait800",
+      "metrics": {
+        "workerStart": 188.69999998807907,
+        "requestStart": 192.3,
+        "responseStart": 401,
+        "ttfb": 208.7,
+        "dcl": 712.4,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+      },
+      "before": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+        "regs": [
+          {
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+            "waiting": null,
+            "installing": null
+          }
+        ]
+      },
+      "synthUrl": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+      "timeline": [
+        {
+          "wall": 1784075895068,
+          "label": "admin_loaded"
+        },
+        {
+          "wall": 1784075897506,
+          "label": "cleared"
+        },
+        {
+          "wall": 1784075897843,
+          "label": "admin_reloaded"
+        },
+        {
+          "wall": 1784075901845,
+          "label": "after_idle_4s"
+        },
+        {
+          "wall": 1784075901985,
+          "label": "synth_registered",
+          "synthUrl": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "wall": 1784075901993,
+          "label": "wait800_begin"
+        },
+        {
+          "wall": 1784075902796,
+          "label": "wait800_end"
+        },
+        {
+          "wall": 1784075902810,
+          "label": "before_pos",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "regs": [
+            {
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "waiting": null,
+              "installing": null
+            }
+          ]
+        },
+        {
+          "wall": 1784075902811,
+          "label": "pos_goto_begin"
+        },
+        {
+          "wall": 1784075903529,
+          "label": "pos_goto_dcl"
+        }
+      ],
+      "log": [
+        {
+          "t_ms": 59.9,
+          "wall": 1784075897874,
+          "wall_rel": 60,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at doRegister (https://rateb.sa/rateb-erp/public/admin/:716:38) || at window.__ratebErpRegisterSwOnce (https://rateb.sa/rateb-erp/public/admin/:738:44) || at window.requestIdleCallback.timeout (https://rateb.sa/rateb-erp/public/admin/:745:18)"
+        },
+        {
+          "t_ms": 186.9,
+          "wall": 1784075898001,
+          "wall_rel": 187,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": null,
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null
+        },
+        {
+          "t_ms": 187,
+          "wall": 1784075898001,
+          "wall_rel": 187,
+          "type": "update_call",
+          "href": "/rateb-erp/public/admin/",
+          "source": "register",
+          "active": null,
+          "stack": "at reg.update (<anonymous>:29:89) || at https://rateb.sa/rateb-erp/public/admin/:722:19"
+        },
+        {
+          "t_ms": 187.2,
+          "wall": 1784075898001,
+          "wall_rel": 187,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "active": null
+        },
+        {
+          "t_ms": 208.4,
+          "wall": 1784075898022,
+          "wall_rel": 208,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 208.4,
+          "wall": 1784075898022,
+          "wall_rel": 208,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "installed",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 208.6,
+          "wall": 1784075898022,
+          "wall_rel": 208,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": null
+        },
+        {
+          "t_ms": 209.4,
+          "wall": 1784075898023,
+          "wall_rel": 209,
+          "type": "controllerchange",
+          "href": "/rateb-erp/public/admin/",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 209.6,
+          "wall": 1784075898023,
+          "wall_rel": 209,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 209.6,
+          "wall": 1784075898023,
+          "wall_rel": 209,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "activated",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 310.5,
+          "wall": 1784075898124,
+          "wall_rel": 310,
+          "type": "update_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null,
+          "installing": null
+        },
+        {
+          "t_ms": 4053.8,
+          "wall": 1784075901868,
+          "wall_rel": 4054,
+          "type": "synth_register_begin",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "t_ms": 4054.2,
+          "wall": 1784075901868,
+          "wall_rel": 4054,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at eval (eval at evaluate (:303:30), <anonymous>:5:49) || at UtilityScript.evaluate (<anonymous>:305:16) || at UtilityScript.<anonymous> (<anonymous>:1:44)"
+        },
+        {
+          "t_ms": 4178.8,
+          "wall": 1784075901993,
+          "wall_rel": 4179,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "waiting": null
+        },
+        {
+          "t_ms": 4178.8,
+          "wall": 1784075901993,
+          "wall_rel": 4179,
+          "type": "synth_register_ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 4178.9,
+          "wall": 1784075901993,
+          "wall_rel": 4179,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 4185.9,
+          "wall": 1784075902000,
+          "wall_rel": 4186,
+          "type": "wait_begin",
+          "href": "/rateb-erp/public/admin/",
+          "ms": 800
+        },
+        {
+          "t_ms": 4192.7,
+          "wall": 1784075902006,
+          "wall_rel": 4192,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 4192.7,
+          "wall": 1784075902006,
+          "wall_rel": 4192,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "installed",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "t_ms": 4195.3,
+          "wall": 1784075902009,
+          "wall_rel": 4195,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 4195.3,
+          "wall": 1784075902009,
+          "wall_rel": 4195,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "redundant",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 4195.6,
+          "wall": 1784075902009,
+          "wall_rel": 4195,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "activating",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "t_ms": 4195.6,
+          "wall": 1784075902009,
+          "wall_rel": 4195,
+          "type": "controllerchange",
+          "href": "/rateb-erp/public/admin/",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868"
+        },
+        {
+          "t_ms": 4989.7,
+          "wall": 1784075902804,
+          "wall_rel": 4990,
+          "type": "wait_end",
+          "href": "/rateb-erp/public/admin/"
+        },
+        {
+          "t_ms": 4.3,
+          "wall": 1784075903238,
+          "wall_rel": 4,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+          "_page": "pos"
+        }
+      ],
+      "cdp_tail": [
+        {
+          "wall": 1784075895298,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895298,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895311,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895311,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075895311,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895330,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895330,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895330,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075895330,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897494,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": true
+            }
+          ]
+        },
+        {
+          "wall": 1784075897792,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897792,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "redundant"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897867,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075897868,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897975,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897975,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897975,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897993,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075897993,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075897993,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075898015,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075898015,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075898015,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075898016,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901863,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901977,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901977,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901977,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901985,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901985,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075901985,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901999,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075901999,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopping",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075902002,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075902002,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "redundant"
+            }
+          ]
+        },
+        {
+          "wall": 1784075902002,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075902002,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075903012,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075903012,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075903220,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075901868",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "synth_immediate",
+      "metrics": {
+        "workerStart": 1.600000023841858,
+        "requestStart": 1.9,
+        "responseStart": 221.6,
+        "ttfb": 219.7,
+        "dcl": 483.8,
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+      },
+      "before": {
+        "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+        "regs": [
+          {
+            "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+            "waiting": null,
+            "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925"
+          }
+        ]
+      },
+      "synthUrl": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+      "timeline": [
+        {
+          "wall": 1784075906571,
+          "label": "admin_loaded"
+        },
+        {
+          "wall": 1784075909365,
+          "label": "cleared"
+        },
+        {
+          "wall": 1784075909902,
+          "label": "admin_reloaded"
+        },
+        {
+          "wall": 1784075913905,
+          "label": "after_idle_4s"
+        },
+        {
+          "wall": 1784075914061,
+          "label": "synth_registered",
+          "synthUrl": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925"
+        },
+        {
+          "wall": 1784075914067,
+          "label": "before_pos",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "regs": [
+            {
+              "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "waiting": null,
+              "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914067,
+          "label": "pos_goto_begin"
+        },
+        {
+          "wall": 1784075914554,
+          "label": "pos_goto_dcl"
+        }
+      ],
+      "log": [
+        {
+          "t_ms": 222.2,
+          "wall": 1784075909932,
+          "wall_rel": 222,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at doRegister (https://rateb.sa/rateb-erp/public/admin/:716:38) || at window.__ratebErpRegisterSwOnce (https://rateb.sa/rateb-erp/public/admin/:738:44) || at window.requestIdleCallback.timeout (https://rateb.sa/rateb-erp/public/admin/:745:18)"
+        },
+        {
+          "t_ms": 440.9,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": null,
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null
+        },
+        {
+          "t_ms": 441,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "update_call",
+          "href": "/rateb-erp/public/admin/",
+          "source": "register",
+          "active": null,
+          "stack": "at reg.update (<anonymous>:29:89) || at https://rateb.sa/rateb-erp/public/admin/:722:19"
+        },
+        {
+          "t_ms": 441.1,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "active": null
+        },
+        {
+          "t_ms": 441.2,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": null,
+          "scriptURL": null
+        },
+        {
+          "t_ms": 441.2,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "worker_statechange",
+          "href": "/rateb-erp/public/admin/",
+          "state": "installed",
+          "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 441.3,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": null
+        },
+        {
+          "t_ms": 441.3,
+          "wall": 1784075910151,
+          "wall_rel": 441,
+          "type": "controllerchange",
+          "href": "/rateb-erp/public/admin/",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 551.5,
+          "wall": 1784075910261,
+          "wall_rel": 551,
+          "type": "update_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "waiting": null,
+          "installing": null
+        },
+        {
+          "t_ms": 4215.3,
+          "wall": 1784075913925,
+          "wall_rel": 4215,
+          "type": "synth_register_begin",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925"
+        },
+        {
+          "t_ms": 4215.6,
+          "wall": 1784075913925,
+          "wall_rel": 4215,
+          "type": "register_call",
+          "href": "/rateb-erp/public/admin/",
+          "url": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "stack": "at navigator.serviceWorker.register (<anonymous>:56:80) || at eval (eval at evaluate (:303:30), <anonymous>:5:49) || at UtilityScript.evaluate (<anonymous>:305:16) || at UtilityScript.<anonymous> (<anonymous>:1:44)"
+        },
+        {
+          "t_ms": 4358,
+          "wall": 1784075914068,
+          "wall_rel": 4358,
+          "type": "register_resolved",
+          "href": "/rateb-erp/public/admin/",
+          "scope": "https://rateb.sa/rateb-erp/public/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "waiting": null
+        },
+        {
+          "t_ms": 4358.1,
+          "wall": 1784075914068,
+          "wall_rel": 4358,
+          "type": "synth_register_ready",
+          "href": "/rateb-erp/public/admin/",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 4358.1,
+          "wall": 1784075914068,
+          "wall_rel": 4358,
+          "type": "updatefound",
+          "href": "/rateb-erp/public/admin/",
+          "installing": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52"
+        },
+        {
+          "t_ms": 6.2,
+          "wall": 1784075914316,
+          "wall_rel": 7,
+          "type": "ready",
+          "href": "/rateb-erp/public/admin/ops/pos/register?company_id=22",
+          "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+          "_page": "pos"
+        }
+      ],
+      "cdp_tail": [
+        {
+          "wall": 1784075906798,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906798,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906813,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906813,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075906813,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906833,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906833,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906833,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075906833,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075909326,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "0",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": true
+            }
+          ]
+        },
+        {
+          "wall": 1784075909693,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075909693,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "0",
+              "registrationId": "0",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "redundant"
+            }
+          ]
+        },
+        {
+          "wall": 1784075909953,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075909953,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910062,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910062,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910062,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910081,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910081,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075910081,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910103,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910103,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910103,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activating"
+            }
+          ]
+        },
+        {
+          "wall": 1784075910104,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075913919,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914030,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "stopped",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914030,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914030,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "starting",
+              "status": "new"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914053,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "starting",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914053,
+          "type": "registration",
+          "registrations": [
+            {
+              "registrationId": "1",
+              "scopeURL": "https://rateb.sa/rateb-erp/public/",
+              "isDeleted": false
+            }
+          ]
+        },
+        {
+          "wall": 1784075914053,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "running",
+              "status": "installing"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914074,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914074,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "2",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=pg-synth-1784075913925",
+              "runningStatus": "running",
+              "status": "installed"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914296,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914316,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopping",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914319,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "stopped",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914319,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914319,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914320,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "starting",
+              "status": "activated"
+            }
+          ]
+        },
+        {
+          "wall": 1784075914326,
+          "type": "version",
+          "versions": [
+            {
+              "versionId": "1",
+              "registrationId": "1",
+              "scriptURL": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+              "runningStatus": "running",
+              "status": "activated"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "enterprise": "PASS — identified WHO causes ~197ms workerStart"
+}
