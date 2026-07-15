@@ -1,0 +1,72 @@
+{
+  "phase": "PD",
+  "mode": "ENTERPRISE_FINAL_CERTIFICATION",
+  "generatedAt": "2026-07-15T00:10:00Z",
+  "evidence": "tools/boot-bench/reports/phase-pd-pos-cert-latest.json",
+  "summary": {
+    "online_first_ready_scan_ms": 867,
+    "online_warm_ready_scan_ms": 306,
+    "document_responseStart_ms": 549.1,
+    "workerStart_ms": 336.5,
+    "ttfb_request_to_response_ms": 211.5,
+    "server_curl_ttfb_ms": [121, 149, 178],
+    "dcl_ms": 843.5,
+    "post_dcl_to_scan_ms": 24,
+    "register_html": true
+  },
+  "critical_path_segments_first_open": [
+    { "id": "sw_pre_fetch_delay", "from": 0, "to": 336.5, "wall_ms": 336.5, "pct": 38.8 },
+    { "id": "sw_plus_network_ttfb", "from": 336.5, "to": 549.1, "wall_ms": 212.6, "pct": 24.5 },
+    { "id": "html_scripts_to_dcl", "from": 549.1, "to": 843.5, "wall_ms": 294.4, "pct": 34.0 },
+    { "id": "pos_init_to_scan", "from": 843.5, "to": 867, "wall_ms": 23.5, "pct": 2.7 }
+  ],
+  "single_biggest_bottleneck": {
+    "file": "rateb-erp/public/pos-sw.js",
+    "class": null,
+    "function": "runBackgroundWarm → ensureProtectedOfflineCache (serial protected warm on SW thread)",
+    "line": "2417-2455 (runBackgroundWarm); 251-284 (ensureProtectedOfflineCache populateQueue)",
+    "wall_ms": 336.5,
+    "self_ms": 336.5,
+    "calls": 1,
+    "percentage": 38.8,
+    "evidence": "First POS nav workerStart=336.5ms while warm nav workerStart=1.8ms; SW thread busy finishing PC background warm before fetch event.",
+    "of": "867ms ready-for-first-scan"
+  },
+  "before_after_estimation": {
+    "current_first_ready_ms": 867,
+    "if_sw_thread_idle_at_nav_ms": 531,
+    "improvement_pct": 39,
+    "basis": "Remove workerStart delay (336ms); warm path already proves responseStart≈7ms and scan-ready≈306ms"
+  },
+  "enterprise_ready": false,
+  "remaining_by_roi": [
+    {
+      "rank": 1,
+      "wall_ms": 336.5,
+      "item": "SW background warm saturates SW thread → delays first fetch (workerStart)",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "runBackgroundWarm / ensureProtectedOfflineCache"
+    },
+    {
+      "rank": 2,
+      "wall_ms": 294.4,
+      "item": "POS script waterfall after first byte (largest: pos-auth-lock.js ~274ms)",
+      "file": "rateb-erp/public/assets/pos/js/pos-auth-lock.js (+ pos-register*.js chain)",
+      "function": "deferred script load to DCL"
+    },
+    {
+      "rank": 3,
+      "wall_ms": 211.5,
+      "item": "Document network/server TTFB after SW accepts request (server curl 121–178ms)",
+      "file": "rateb-erp/public/index.php / Bootstrap.php",
+      "function": "PHP-FPM document generation (OPcache still off — infra)"
+    },
+    {
+      "rank": 4,
+      "wall_ms": 23.5,
+      "item": "POS register JS init after DCL (already excellent)",
+      "file": "rateb-erp/public/assets/pos/js/pos-register.js",
+      "function": "data-pos-register-ready"
+    }
+  ]
+}
