@@ -405,6 +405,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ];
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
+                ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-sliders', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
                 ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
                 [

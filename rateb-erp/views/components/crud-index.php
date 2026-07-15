@@ -288,6 +288,11 @@ $ratebRowRecordLabel = static function (array $row): string {
                         </form>
                         <?php if ($isCompanies) {
                             $companyStatus = (string) ($row['status'] ?? '');
+                            if ((rateb_can('company_plans.manage') || rateb_can('companies.manage') || rateb_is_super_admin())) {
+                                $cpTitle = __('company_permissions') . ' — #' . (int) ($row['id'] ?? 0);
+                                ?>
+                        <a href="<?php echo rateb_url('admin/company-permissions/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo Rateb\App\Core\View::escape($cpTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($cpTitle); ?>"><i class="fas fa-sliders"></i></a>
+                        <?php }
                             if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
                                 $branchCompanyId = $companyRowId > 0 ? $companyRowId : (int) ($row['id'] ?? 0);
                                 $branchCompanyName = trim((string) ($row['name'] ?? ''));

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 use Rateb\App\Controllers\Admin\AuditLogsController;
 use Rateb\App\Controllers\Admin\CompaniesController;
+use Rateb\App\Controllers\Admin\CompanyPermissionsController;
 use Rateb\App\Controllers\Admin\EmailTemplatesController;
 use Rateb\App\Controllers\Admin\InventoryController as AdminInventoryController;
 use Rateb\App\Controllers\Admin\InvoicesController;
@@ -46,6 +47,10 @@ $router->get('/admin/companies/create', [CompaniesController::class, 'create'], 
 $router->post('/admin/companies', [CompaniesController::class, 'store'], rateb_platform_oversight_mw('companies.manage'));
 $router->get('/admin/companies/{id}/edit', [CompaniesController::class, 'edit'], rateb_platform_oversight_mw('company_plans.manage'));
 $router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], rateb_platform_oversight_mw('company_plans.manage'));
+
+$router->get('/admin/company-permissions', [CompanyPermissionsController::class, 'index'], rateb_platform_oversight_mw('companies.view'));
+$router->get('/admin/company-permissions/{id}', [CompanyPermissionsController::class, 'edit'], rateb_platform_oversight_mw('company_plans.manage'));
+$router->post('/admin/company-permissions/{id}', [CompanyPermissionsController::class, 'update'], rateb_platform_oversight_mw('company_plans.manage'));
 $router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_platform_oversight_mw('companies.manage'));

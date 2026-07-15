@@ -77,7 +77,14 @@ if ($storageLimitVal < 1) {
             </div>
 
             <div class="mt-4" id="rateb-company-modules">
-                <h3 class="h6 mb-2"><?php echo __('plan_modules'); ?></h3>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <h3 class="h6 mb-0"><?php echo __('plan_modules'); ?> / <?php echo __('company_permissions'); ?></h3>
+                    <?php if ($isEdit) { ?>
+                    <a href="<?php echo rateb_url('admin/company-permissions/' . (int) $item['id']); ?>" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-sliders"></i> <?php echo __('company_permissions_manage'); ?>
+                    </a>
+                    <?php } ?>
+                </div>
                 <p class="form-text mb-2"><?php echo __('company_plan_modules_tenant_help'); ?></p>
                 <div class="row g-2">
                     <?php foreach ($moduleCatalog as $modKey => $modLabel) { ?>
