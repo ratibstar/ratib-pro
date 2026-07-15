@@ -67,6 +67,15 @@ def main() -> int:
         if code == 404:
             continue
 
+    # DB not provisioned / MySQL user lacks GRANT — do not fail the whole app deploy.
+    if "Access denied" in last_body and ("call-center" in last_body or "call_center" in last_body):
+        print(
+            "::warning::RCC migrations skipped — grant the call-center DB user full access "
+            "in DirectAdmin (or set RATIB_CC_DB_NAME / RATIB_CC_DB_USER / RATIB_CC_DB_PASS in .env)",
+            flush=True,
+        )
+        return 0
+
     if "ERROR:" in last_body:
         print("::error::RCC migration failed", flush=True)
         return 1
