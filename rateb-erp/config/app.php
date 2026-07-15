@@ -516,6 +516,22 @@ if (!function_exists('rateb_platform_company_branches_url')) {
     }
 }
 
+if (!function_exists('rateb_control_panel_agencies_url')) {
+    /** Control Panel → إدارة الوكالات (مصدر الشركات في المنصة). */
+    function rateb_control_panel_agencies_url(int $countryId = 0): string
+    {
+        $base = defined('SITE_URL') && trim((string) SITE_URL) !== ''
+            ? rtrim((string) SITE_URL, '/')
+            : 'https://rateb.sa';
+        $url = $base . '/control-panel/pages/control/agencies?control=1';
+        if ($countryId > 0) {
+            $url .= '&country_id=' . $countryId;
+        }
+
+        return $url;
+    }
+}
+
 if (!function_exists('rateb_control_panel_branch_manage_url')) {
     /** Control Panel → الشركات والفروع (optional company / agency focus). */
     function rateb_control_panel_branch_manage_url(int $companyId = 0, int $agencyId = 0): string

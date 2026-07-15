@@ -35,6 +35,97 @@ final class AgencyErpMigrationService
     }
 
     /**
+     * All CP agencies (including before ERP DB provision) — platform companies mirror.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listControlAgencies(bool $activeOnly = false): array
+    {
+        $this->ensureAgencyLookup();
+        if (function_exists('rateb_list_control_agencies')) {
+            return rateb_list_control_agencies($activeOnly);
+        }
+
+        return $this->listAgencies(false);
+    }
+
+    /**
+     * Ensure platform rateb_companies row exists for this Control Panel agency and link erp_company_id.
+     * Agency = company (same client).
+     */
+    public function ensurePlatformCompanyForAgency(array $agency): int
+    {
+        $agencyId = (int) ($agency['id'] ?? 0);
+        if ($agencyId < 1) {
+            throw new RuntimeException(__('agency_erp_push_link_invalid_agency'));
+        }
+
+        $linked = (int) ($agency['erp_company_id'] ?? 0);
+        $companies = new \Rateb\App\Models\Company();
+        if ($linked > 0) {
+            $existing = $companies->find($linked);
+            if ($existing !== null) {
+                return $linked;
+            }
+        }
+
+        $name = trim((string) ($agency['name'] ?? ''));
+        if ($name === '') {
+            $name = 'Agency #' . $agencyId;
+        }
+        $slugBase = trim((string) ($agency['slug'] ?? ''));
+        if ($slugBase === '') {
+            $slugBase = 'agency-' . $agencyId;
+        }
+        $slugBase = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $slugBase), '-'));
+        if ($slugBase === '') {
+            $slugBase = 'agency-' . $agencyId;
+        }
+        $slug = $slugBase;
+        $n = 0;
+        while ($companies->findBySlug($slug) !== null) {
+            $n++;
+            $slug = $slugBase . '-' . $n;
+            if ($n > 50) {
+                $slug = $slugBase . '-' . $agencyId . '-' . time();
+                break;
+            }
+        }
+
+        $site = trim((string) ($agency['site_url'] ?? ''));
+        $emailLocal = 'agency' . $agencyId;
+        $email = $emailLocal . '@rateb.sa';
+
+        $isActive = (int) ($agency['is_active'] ?? 1) === 1;
+        $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
+        $status = $isSuspended ? 'suspended' : ($isActive ? 'active' : 'pending');
+
+        $companyId = (int) $companies->create([
+            'name' => $name,
+            'slug' => $slug,
+            'email' => $email,
+            'phone' => '',
+            'status' => $status,
+            'modules' => json_encode(\Rateb\App\Services\PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE),
+            'user_limit' => 25,
+            'storage_limit_mb' => 2048,
+            'settings' => json_encode([
+                'control_agency_id' => $agencyId,
+                'site_url' => $site,
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+        if ($companyId < 1) {
+            throw new RuntimeException(__('company_admin_create_failed'));
+        }
+
+        (new AuthorizationService())->ensureCompanyRoles($companyId);
+        (new BranchService())->ensureMainBranch($companyId);
+        $this->linkAgencyToCompany($agencyId, $companyId);
+
+        return $companyId;
+    }
+
+    /**
      * @param array<string, mixed> $agency
      * @return array{host:string,port:int,user:string,pass:string,db:string}
      */

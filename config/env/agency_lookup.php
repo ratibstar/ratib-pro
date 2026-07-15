@@ -316,6 +316,56 @@ if (!function_exists('rateb_list_agencies_with_erp')) {
     }
 }
 
+if (!function_exists('rateb_list_control_agencies')) {
+    /**
+     * All Control Panel agencies (وكالة = الشركة). Used by platform ERP companies list.
+     *
+     * @return list<array<string, mixed>>
+     */
+    function rateb_list_control_agencies(bool $activeOnly = false): array
+    {
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn) {
+            return [];
+        }
+        $chk = @$conn->query("SHOW TABLES LIKE 'control_agencies'");
+        if (!$chk || $chk->num_rows === 0) {
+            $conn->close();
+
+            return [];
+        }
+        $hasSusp = false;
+        $suspChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($suspChk && $suspChk->num_rows > 0) {
+            $hasSusp = true;
+        }
+        $cols = rateb_agency_lookup_select_columns($conn);
+        $sql = "SELECT {$cols} FROM control_agencies WHERE 1=1";
+        if ($activeOnly) {
+            $sql .= ' AND is_active = 1';
+            if ($hasSusp) {
+                $sql .= ' AND COALESCE(is_suspended, 0) = 0';
+            }
+        }
+        $sql .= ' ORDER BY name ASC, id ASC';
+        $res = $conn->query($sql);
+        if (!$res) {
+            $conn->close();
+
+            return [];
+        }
+        $rows = [];
+        while ($row = $res->fetch_assoc()) {
+            if (is_array($row)) {
+                $rows[] = $row;
+            }
+        }
+        $conn->close();
+
+        return $rows;
+    }
+}
+
 if (!function_exists('rateb_lookup_agency_by_erp_company_id')) {
     /**
      * @return array<string, mixed>|null

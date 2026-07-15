@@ -7,8 +7,7 @@
 /** @var array<string, mixed>|null $limits */
 /** @var string $companyAdminLogin */
 /** @var string $companyLoginUrl */
-/** @var list<array<string, mixed>> $linkAgencies */
-/** @var int $linkedAgencyId */
+/** @var array<string, mixed>|null $linkedAgency */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $userLimitVal = (int) ($item['user_limit'] ?? 0);
@@ -21,10 +20,22 @@ if ($storageLimitVal < 1) {
 }
 $companyAdminLogin = (string) ($companyAdminLogin ?? '');
 $companyLoginUrl = (string) ($companyLoginUrl ?? '');
+$linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgency : null;
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php if ($linkedAgency) { ?>
+        <div class="alert alert-secondary mb-3">
+            <strong><?php echo __('company_agency_mirror_title'); ?></strong>
+            #<?php echo (int) ($linkedAgency['id'] ?? 0); ?>
+            — <?php echo Rateb\App\Core\View::escape((string) ($linkedAgency['name'] ?? '')); ?>
+            <?php if (!empty($linkedAgency['site_url'])) { ?>
+            · <a href="<?php echo Rateb\App\Core\View::escape((string) $linkedAgency['site_url']); ?>" target="_blank" rel="noopener"><?php echo Rateb\App\Core\View::escape((string) $linkedAgency['site_url']); ?></a>
+            <?php } ?>
+            <div class="small mt-1 mb-0"><?php echo __('company_agency_mirror_help'); ?></div>
+        </div>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>" id="rateb-company-form" data-rateb-offline-writable="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <input type="hidden" name="sync_from_plan" id="rateb-sync-from-plan" value="0">
@@ -53,38 +64,6 @@ $companyLoginUrl = (string) ($companyLoginUrl ?? '');
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('phone'); ?></label>
                     <input class="form-control" type="text" name="phone" value="<?php echo Rateb\App\Core\View::escape($item['phone'] ?? ''); ?>">
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label"><?php echo __('company_linked_agency'); ?></label>
-                    <?php
-                    $linkAgencies = (isset($linkAgencies) && is_array($linkAgencies)) ? $linkAgencies : [];
-                    $linkedAgencyId = (int) ($linkedAgencyId ?? 0);
-                    ?>
-                    <select class="form-select" name="linked_agency_id" id="rateb-linked-agency">
-                        <option value="0"><?php echo Rateb\App\Core\View::escape(__('company_linked_agency_none')); ?></option>
-                        <?php foreach ($linkAgencies as $agency) {
-                            $aid = (int) ($agency['id'] ?? 0);
-                            if ($aid < 1) {
-                                continue;
-                            }
-                            $label = trim((string) ($agency['name'] ?? $agency['agency_name'] ?? ''));
-                            if ($label === '') {
-                                $label = '#' . $aid;
-                            }
-                            $site = trim((string) ($agency['site_url'] ?? ''));
-                            if ($site !== '') {
-                                $label .= ' — ' . $site;
-                            }
-                            ?>
-                        <option value="<?php echo $aid; ?>"<?php echo $linkedAgencyId === $aid ? ' selected' : ''; ?>>
-                            <?php echo Rateb\App\Core\View::escape($label); ?>
-                        </option>
-                        <?php } ?>
-                    </select>
-                    <p class="form-text mb-0"><?php echo __('company_linked_agency_help'); ?></p>
-                    <?php if ($linkAgencies === []) { ?>
-                    <p class="form-text text-warning mb-0"><?php echo __('company_linked_agency_empty'); ?></p>
-                    <?php } ?>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('status'); ?></label>

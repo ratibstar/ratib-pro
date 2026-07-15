@@ -227,38 +227,117 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         ];
         $this->indexFields = [
             ['name' => 'id', 'label' => 'id', 'type' => 'id'],
+            ['name' => 'agency_id', 'label' => 'agency_id', 'type' => 'number'],
             ['name' => 'name', 'label' => 'name', 'type' => 'clip'],
+            ['name' => 'site_url', 'label' => 'company_agency_site', 'type' => 'clip'],
+            ['name' => 'erp_status', 'label' => 'company_agency_erp_status', 'type' => 'clip'],
             ['name' => 'email', 'label' => 'email', 'type' => 'clip'],
-            ['name' => 'phone', 'label' => 'phone', 'type' => 'clip'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
             ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'number'],
             ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'number'],
-            ['name' => 'branch_limit', 'label' => 'branch_limit', 'type' => 'number'],
             ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
-        $this->createEnabled = true;
+        // Platform: create agencies in Control Panel — not a second create here.
+        $this->createEnabled = !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
     }
 
     public function index(): void
     {
-        $this->createEnabled = function_exists('rateb_platform_company_create_allowed')
-            ? rateb_platform_company_create_allowed()
-            : true;
+        $this->createEnabled = !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
         parent::index();
     }
 
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return $this->platformAgenciesIndexData($limit, $offset, $page, $search);
+        }
+
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $data['createEnabled'] = $this->createEnabled;
-        $data['companyCreateAgencyHint'] = function_exists('rateb_is_platform_oversight_host')
-            && rateb_is_platform_oversight_host();
+        $data['companyCreateAgencyHint'] = false;
 
         return $data;
     }
 
+    /**
+     * Platform companies list = Control Panel agencies (وكالة = الشركة).
+     *
+     * @return array<string, mixed>
+     */
+    private function platformAgenciesIndexData(int $limit, int $offset, int $page, string $search): array
+    {
+        $svc = new \Rateb\App\Services\AgencyErpMigrationService();
+        $agencies = $svc->listControlAgencies(false);
+        $search = trim($search);
+        $items = [];
+        foreach ($agencies as $agency) {
+            if (!is_array($agency)) {
+                continue;
+            }
+            $agencyId = (int) ($agency['id'] ?? 0);
+            if ($agencyId < 1) {
+                continue;
+            }
+            $name = trim((string) ($agency['name'] ?? ''));
+            $site = trim((string) ($agency['site_url'] ?? ''));
+            $erpStatus = trim((string) ($agency['erp_status'] ?? ''));
+            if ($search !== '') {
+                $hay = strtolower($name . ' ' . $site . ' ' . $agencyId . ' ' . $erpStatus);
+                if (!str_contains($hay, strtolower($search))) {
+                    continue;
+                }
+            }
+            try {
+                $companyId = $svc->ensurePlatformCompanyForAgency($agency);
+            } catch (\Throwable $e) {
+                error_log('ensurePlatformCompanyForAgency #' . $agencyId . ': ' . $e->getMessage());
+                continue;
+            }
+            $company = $this->model->find($companyId);
+            if ($company === null) {
+                continue;
+            }
+            $items[] = array_merge($company, [
+                'id' => $companyId,
+                'agency_id' => $agencyId,
+                'name' => $name !== '' ? $name : (string) ($company['name'] ?? ''),
+                'site_url' => $site,
+                'erp_status' => $erpStatus !== '' ? $erpStatus : '—',
+            ]);
+        }
+
+        $total = count($items);
+        $slice = array_slice($items, $offset, $limit);
+
+        return [
+            'title' => __('companies'),
+            'items' => $slice,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'search' => $search,
+            'routePrefix' => $this->routePrefix,
+            'exportRoute' => rateb_url($this->routePrefix . '/export'),
+            'fields' => $this->resolveIndexFields(),
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => false,
+            'actionsEnabled' => $this->actionsEnabled,
+            'documentEntityType' => '',
+            'companyCreateAgencyHint' => true,
+            'controlPanelAgenciesUrl' => function_exists('rateb_control_panel_agencies_url')
+                ? rateb_control_panel_agencies_url()
+                : '',
+        ];
+    }
+
     public function create(): void
     {
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            SessionManager::flash('error', __('company_create_use_control_panel'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         try {
             \Rateb\App\Services\DedicatedTenantPolicy::assertCanCreateCompany();
         } catch (\RuntimeException $e) {
@@ -317,8 +396,23 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $companyLoginUrl = $slug !== '' && function_exists('rateb_public_url')
             ? rateb_public_url('login?company=' . rawurlencode($slug))
             : '';
-        $agencySvc = new \Rateb\App\Services\AgencyErpMigrationService();
-        $linkedAgencyId = $companyId > 0 ? $agencySvc->suggestedAgencyIdForCompany($companyId) : 0;
+        $linkedAgency = null;
+        if ($companyId > 0) {
+            try {
+                $agencySvc = new \Rateb\App\Services\AgencyErpMigrationService();
+                $aid = $agencySvc->suggestedAgencyIdForCompany($companyId);
+                if ($aid > 0) {
+                    foreach ($agencySvc->listControlAgencies(false) as $row) {
+                        if ((int) ($row['id'] ?? 0) === $aid) {
+                            $linkedAgency = $row;
+                            break;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                $linkedAgency = null;
+            }
+        }
 
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
@@ -333,57 +427,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId) : null,
             'companyAdminLogin' => $adminUser ? $this->displayCompanyAdminLogin($adminUser) : '',
             'companyLoginUrl' => $companyLoginUrl,
-            'linkAgencies' => $this->agenciesForCompanyLink($companyId > 0 ? $companyId : null),
-            'linkedAgencyId' => $linkedAgencyId,
+            'linkedAgency' => $linkedAgency,
         ];
-    }
-
-    /**
-     * Agencies from Control Panel available to link (unlinked, or already linked to this company).
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function agenciesForCompanyLink(?int $companyId): array
-    {
-        try {
-            $svc = new \Rateb\App\Services\AgencyErpMigrationService();
-            $out = [];
-            foreach ($svc->listAgencies(false) as $agency) {
-                if (!is_array($agency)) {
-                    continue;
-                }
-                $aid = (int) ($agency['id'] ?? 0);
-                if ($aid < 1) {
-                    continue;
-                }
-                $linked = (int) ($agency['erp_company_id'] ?? 0);
-                if ($linked > 0 && ($companyId === null || $linked !== $companyId)) {
-                    continue;
-                }
-                $out[] = $agency;
-            }
-
-            return $out;
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }
-
-    private function syncAgencyCompanyLink(int $companyId, int $agencyId): void
-    {
-        if ($companyId < 1) {
-            return;
-        }
-        $svc = new \Rateb\App\Services\AgencyErpMigrationService();
-        $previous = $svc->suggestedAgencyIdForCompany($companyId);
-        if ($agencyId < 1) {
-            if ($previous > 0) {
-                $svc->linkAgencyToCompany($previous, 0);
-            }
-
-            return;
-        }
-        $svc->linkAgencyToCompany($agencyId, $companyId);
     }
 
     protected function collectData(): array
@@ -446,6 +491,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
     public function store(): void
     {
         $this->guardManage();
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            SessionManager::flash('error', __('company_create_use_control_panel'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -461,7 +510,6 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $data['status'] = 'pending';
         $adminUsername = trim((string) $this->input('admin_username', ''));
         $adminPassword = (string) $this->input('admin_password', '');
-        $linkedAgencyId = (int) $this->input('linked_agency_id', 0);
         if ($adminUsername === '' || strlen($adminPassword) < 6) {
             SessionManager::flash('error', __('company_admin_login_required'));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
@@ -478,10 +526,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 (string) ($data['phone'] ?? ''),
                 (string) ($data['slug'] ?? '')
             );
-            $this->syncAgencyCompanyLink($id, $linkedAgencyId);
             $auditPayload = $data;
             unset($auditPayload['admin_password'], $auditPayload['password']);
-            $auditPayload['linked_agency_id'] = $linkedAgencyId;
             (new AuditService())->log('create', $this->entityName, $id, $auditPayload);
             \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
                 $id,
@@ -489,11 +535,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 (string) ($data['name'] ?? ('#' . $id)),
                 $id
             );
-            $okMsg = __('company_saved_pending_oversight') . ' — ' . __('company_admin_created_hint');
-            if ($linkedAgencyId > 0) {
-                $okMsg .= ' — ' . __('company_agency_linked_ok');
-            }
-            SessionManager::flash('success', $okMsg);
+            SessionManager::flash('success', __('company_saved_pending_oversight') . ' — ' . __('company_admin_created_hint'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/create'));
@@ -711,7 +753,6 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         $adminUsername = trim((string) $this->input('admin_username', ''));
         $adminPassword = (string) $this->input('admin_password', '');
-        $linkedAgencyId = (int) $this->input('linked_agency_id', 0);
         $data = $this->collectData();
         $this->applyCompanyPlanFields($data, $old);
         unset($data['status']);
@@ -734,10 +775,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 (string) ($data['phone'] ?? ($old['phone'] ?? '')),
                 (string) ($data['slug'] ?? ($old['slug'] ?? ''))
             );
-            $this->syncAgencyCompanyLink($id, $linkedAgencyId);
             $auditPayload = $data;
             unset($auditPayload['admin_password'], $auditPayload['password']);
-            $auditPayload['linked_agency_id'] = $linkedAgencyId;
             (new AuditService())->log('update', $this->entityName, $id, $auditPayload);
             if (($data['status'] ?? '') === 'pending' && $oldStatus === 'active') {
                 \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
@@ -749,11 +788,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 SessionManager::flash('success', __('company_edit_pending_oversight'));
                 $this->redirect(rateb_url('admin/oversight/companies-approvals'));
             }
-            $okMsg = __('save') . ' OK';
-            if ($linkedAgencyId > 0) {
-                $okMsg .= ' — ' . __('company_agency_linked_ok');
-            }
-            SessionManager::flash('success', $okMsg);
+            SessionManager::flash('success', __('save') . ' OK');
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
