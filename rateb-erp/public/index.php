@@ -1,8 +1,18 @@
 <?php
 declare(strict_types=1);
 
-// PHP built-in server (Branch Appliance): static files bypass the front controller.
-// Missing assets must NOT boot ERP (each miss was ~1.5–2s and queued on single-thread -S).
+/**
+ * Phase WEBSITE-02 — ERP/website front controller.
+ * Public paths → Website Kernel (no POS/Offline/ERP ops).
+ * /admin, /api, /pos, /login, … → ERP bootstrap (unchanged).
+ */
+
+$ratebRootHint = realpath(dirname(__FILE__, 2));
+if ($ratebRootHint === false) {
+    $ratebRootHint = dirname(__FILE__, 2);
+}
+
+// Early static bypass for PHP built-in server (unchanged).
 if (PHP_SAPI === 'cli-server') {
     $cliPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
     if ($cliPath !== '' && $cliPath !== '/') {
@@ -30,6 +40,15 @@ if (PHP_SAPI === 'cli-server') {
     }
 }
 
+$kernelFile = $ratebRootHint . '/app/Website/WebsiteKernel.php';
+if (is_file($kernelFile)) {
+    require_once $kernelFile;
+    if (\Rateb\App\Website\WebsiteKernel::shouldHandle()) {
+        \Rateb\App\Website\WebsiteKernel::run($ratebRootHint);
+        return;
+    }
+}
+
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
@@ -51,11 +70,6 @@ register_shutdown_function(static function (): void {
 });
 
 try {
-    $ratebRootHint = realpath(dirname(__FILE__, 2));
-    if ($ratebRootHint === false) {
-        $ratebRootHint = dirname(__FILE__, 2);
-    }
-
     require_once dirname(__FILE__, 2) . '/app/Core/Bootstrap.php';
 
     Rateb\App\Core\Bootstrap::init($ratebRootHint);

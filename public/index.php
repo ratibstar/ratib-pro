@@ -47,9 +47,8 @@ if (!empty($_GET['rateb_designed'])) {
 }
 
 /**
- * Agency ERP domains: send `/` to ERP before Designed bootstrap.
- * DirectoryIndex prefers this file over root index.php — a Designed include
- * must never 500 the agency home page.
+ * Phase WEBSITE-02 — Agency domain root → Website Kernel (public site).
+ * ERP stays under /admin and /rateb-erp/public/admin (never force / → ERP).
  */
 if (($path === '/' || $path === '') && !$isMainSa) {
     $isControlOpen = !empty($_GET['control']) && (string) $_GET['control'] === '1'
@@ -63,40 +62,16 @@ if (($path === '/' || $path === '') && !$isMainSa) {
     }
 
     $erpFront = $projectRoot . '/rateb-erp/public/index.php';
-    $redirectErp = false;
-    if (is_file($erpFront)) {
-        $agencyLookup = $projectRoot . '/config/env/agency_lookup.php';
-        if (is_file($agencyLookup)) {
-            require_once $agencyLookup;
-            $agencyRow = null;
-            if (function_exists('rateb_lookup_agency_erp_by_host')) {
-                $agencyRow = rateb_lookup_agency_erp_by_host($host);
-            }
-            if ($agencyRow === null && function_exists('rateb_lookup_agency_by_host')) {
-                $agencyRow = rateb_lookup_agency_by_host($host);
-            }
-            if (is_array($agencyRow)) {
-                $erpDb = trim((string) ($agencyRow['erp_db_name'] ?? ''));
-                $status = strtolower(trim((string) ($agencyRow['erp_status'] ?? '')));
-                if ($erpDb !== '' && ($status === '' || $status === 'ready')) {
-                    $redirectErp = true;
-                }
-            }
-        }
-        if (!$redirectErp) {
-            $hostEnv = $projectRoot . '/config/env/' . str_replace('.', '_', $host) . '.php';
-            if (is_file($hostEnv)) {
-                $envSrc = (string) @file_get_contents($hostEnv);
-                if ($envSrc !== '' && str_contains($envSrc, 'RATEB_ERP_DB_NAME')) {
-                    $redirectErp = true;
-                }
-            }
-        }
-    }
-    if ($redirectErp) {
-        header('Location: /rateb-erp/public/admin', true, 302);
+    $websiteKernel = $projectRoot . '/rateb-erp/app/Website/WebsiteKernel.php';
+    if (is_file($erpFront) && is_file($websiteKernel)) {
+        require_once $websiteKernel;
+        $_GET['route'] = 'site';
+        $_GET['rateb_website_kernel'] = '1';
+        \Rateb\App\Website\WebsiteKernel::run(dirname($erpFront, 2));
         exit;
     }
+
+    // Fallback when website kernel is not deployed yet.
     require $projectRoot . '/index.php';
     exit;
 }
@@ -138,6 +113,15 @@ if (($path === '/' || $path === '') && $isControlOpen && !$isMainSa) {
 
 if ($path === '/' || $path === '') {
     if ($isMainSa) {
+        $erpFront = $projectRoot . '/rateb-erp/public/index.php';
+        $websiteKernel = $projectRoot . '/rateb-erp/app/Website/WebsiteKernel.php';
+        if (is_file($erpFront) && is_file($websiteKernel)) {
+            require_once $websiteKernel;
+            $_GET['route'] = 'site';
+            $_GET['rateb_website_kernel'] = '1';
+            \Rateb\App\Website\WebsiteKernel::run(dirname($erpFront, 2));
+            exit;
+        }
         $_GET['route'] = 'site';
         require $projectRoot . '/rateb-erp/public/index.php';
         exit;

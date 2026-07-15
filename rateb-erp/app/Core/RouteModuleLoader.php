@@ -117,6 +117,13 @@ final class RouteModuleLoader
 
         $want = [];
 
+        // Phase WEBSITE-02 — public website kernel: marketing (+ auth for locale/portal) only.
+        if (defined('RATEB_WEBSITE_KERNEL') && RATEB_WEBSITE_KERNEL) {
+            $want = ['auth' => true, 'marketing' => true];
+
+            return self::orderWant($want);
+        }
+
         // Dashboard minimal set — Phase AA.3 acceptance target.
         if (self::isDashboardPath($path)) {
             $want = ['auth' => true, 'dashboard' => true];

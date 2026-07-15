@@ -241,6 +241,103 @@ final class Bootstrap
     }
 
     /**
+     * Phase WEBSITE-02 — Public website bootstrap (marketing/CMS public only).
+     * Does not load ERP ops controllers, POS, Offline, or full enterprise service bundles.
+     */
+    public static function initWebsite(string $basePath): void
+    {
+        if (self::$booted) {
+            return;
+        }
+
+        self::$booted = true;
+
+        $basePath = self::resolveRootPath($basePath);
+        if (!defined('RATEB_ROOT')) {
+            define('RATEB_ROOT', $basePath);
+        }
+        if (!defined('RATEB_WEBSITE_KERNEL')) {
+            define('RATEB_WEBSITE_KERNEL', true);
+        }
+
+        $branchServeBootstrap = $basePath . '/app/Core/BranchServeEnvBootstrap.php';
+        if (is_file($branchServeBootstrap)) {
+            require_once $branchServeBootstrap;
+            BranchServeEnvBootstrap::apply($basePath);
+        }
+
+        if (PHP_VERSION_ID < 70400) {
+            http_response_code(500);
+            exit('RATEB Website requires PHP 7.4 or newer.');
+        }
+
+        error_reporting(E_ALL);
+        ini_set('display_errors', '0');
+        ini_set('log_errors', '1');
+        date_default_timezone_set('Asia/Riyadh');
+
+        $mbPolyfill = $basePath . '/app/helpers/mbstring-polyfill.php';
+        if (is_file($mbPolyfill)) {
+            require_once $mbPolyfill;
+        }
+
+        self::registerAutoloader($basePath);
+        self::registerSiteAppAutoloader();
+
+        foreach ([
+            '/app/helpers/Request.php',
+            '/app/Core/Router.php',
+            '/app/Core/View.php',
+            '/app/Core/Response.php',
+            '/app/Core/Controller.php',
+            '/app/Core/Csrf.php',
+            '/app/Core/SessionManager.php',
+            '/app/Core/Auth.php',
+            '/app/Core/Database.php',
+            '/app/Core/Model.php',
+            '/app/Core/RouteModuleLoader.php',
+            '/app/Core/SecurityHeaders.php',
+            '/app/Core/Middleware/Middleware.php',
+            '/app/models/Entities.php',
+            '/app/models/CmsModels.php',
+            '/app/services/AuditService.php',
+            '/app/services/CmsService.php',
+            '/app/services/CmsLeadNotificationService.php',
+            '/app/services/CmsArticleTagService.php',
+            '/app/services/CmsMediaService.php',
+            '/app/services/LegacyHomeContentService.php',
+            '/app/services/DatabaseErrorService.php',
+            '/app/controllers/Marketing/MarketingController.php',
+            '/app/controllers/Marketing/MarketingAuthController.php',
+            '/app/controllers/Marketing/CustomerPortalController.php',
+            '/app/controllers/Admin/LocaleController.php',
+            '/app/Website/TenantContext.php',
+            '/app/Website/WebsiteKernel.php',
+        ] as $bundle) {
+            $f = $basePath . $bundle;
+            if (is_file($f)) {
+                require_once $f;
+            }
+        }
+
+        SessionManager::start();
+        self::loadConfig($basePath);
+        if (is_file($branchServeBootstrap)) {
+            BranchServeEnvBootstrap::apply($basePath, true);
+        }
+        if (function_exists('rateb_apply_agency_erp_request_binding')) {
+            rateb_apply_agency_erp_request_binding();
+        }
+        self::ensureStorage($basePath);
+        if (class_exists(SecurityHeaders::class)) {
+            SecurityHeaders::send();
+        }
+        if (function_exists('rateb_init_marketing_locale')) {
+            rateb_init_marketing_locale();
+        }
+    }
+
+    /**
      * Project-root app/ (App\Accounting\, App\Core\) lives beside rateb-erp/ on production.
      */
     private static function registerSiteAppAutoloader(): void
