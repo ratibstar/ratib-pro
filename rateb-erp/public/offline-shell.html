@@ -135,12 +135,19 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
       var s = document.createElement('script');
       s.src = src;
       s.async = false;
+      var ms = typeof timeoutMs === 'number' ? timeoutMs : 4000;
+      /* PERF-P0.1 — offline: never wait multi-second for a missing SW cache entry. */
+      try {
+        if (navigator.onLine === false && ms > 2000) {
+          ms = 2000;
+        }
+      } catch (eOff) { /* ignore */ }
       var timer = setTimeout(function () {
         if (done) return;
         done = true;
         try { s.remove(); } catch (e) { /* ignore */ }
         reject(new Error('timeout:' + src));
-      }, typeof timeoutMs === 'number' ? timeoutMs : 4000);
+      }, ms);
       s.onload = function () {
         if (done) return;
         done = true;
@@ -157,17 +164,30 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     });
   }
 
-  /** Prefer cached pathname (no ?v=); fall back to cache-busted URL. */
+  /** Prefer cached pathname (no ?v=); fall back to cache-busted URL — fail-fast offline. */
   function loadOfflineScript(relPath) {
     var base = publicBase();
     var plain = base + relPath;
     var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=20260713-offline-nav-guard';
-    return loadScript(plain, 8000).catch(function () {
-      return loadScript(bust, 8000);
+    var tShort = 2000;
+    var tLong = 8000;
+    try {
+      if (navigator.onLine === false) {
+        tLong = 2000;
+      }
+    } catch (eT) { /* ignore */ }
+    return loadScript(plain, tLong).catch(function () {
+      return loadScript(bust, tShort);
     }).catch(function () {
-      return loadScript(base + 'assets/offline/rateb-offline.min.js', 8000);
-    }).catch(function () {
-      return loadScript(base + 'assets/offline/rateb-offline.js?v=oid-20260713-lean', 8000);
+      /* Only fall back to monolith for bootstrap entry, not for every module. */
+      if (/offline-bootstrap\.js$/i.test(relPath) || /tenant-context\.js$/i.test(relPath)) {
+        return loadScript(base + 'assets/offline/rateb-offline.min.js', tShort).catch(function () {
+          return loadScript(base + 'assets/offline/rateb-offline.js?v=oid-20260713-lean', tShort);
+        }).catch(function () {
+          return loadScript(base + 'assets/offline/rateb-offline.js', tShort);
+        });
+      }
+      return Promise.reject(new Error('load_failed:' + plain));
     });
   }
 

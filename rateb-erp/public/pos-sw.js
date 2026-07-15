@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-offline-api-v68';
+var SW_BUILD_ID = '20260716-perf-p01-idb-cache-v69';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -77,8 +77,14 @@ var PROTECTED_OFFLINE_RELS = [
 /** Extra cache keys used by offline-shell.html fallbacks / cache-bust URLs. */
 var PROTECTED_OFFLINE_ALIAS_QUERIES = [
     'assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard',
-    'assets/offline/rateb-offline.js?v=oid-20260713-lean'
+    'assets/offline/rateb-offline.js?v=oid-20260713-lean',
+    'assets/offline/erp-offline-tenant-context.js?v=20260713-offline-nav-guard',
+    'assets/offline/erp-offline-shell-auth.js?v=20260713-offline-nav-guard',
+    'assets/offline/erp-offline-shell-rbac.js?v=20260713-offline-nav-guard'
 ];
+
+/** PERF-P0.1 — memoize offline identity match results for this SW lifetime (no duplicate lookups). */
+var IDENTITY_MATCH_MEMO = Object.create(null);
 
 function publicBaseUrl() {
     var base;
@@ -177,10 +183,38 @@ function cacheOneProtectedAsset(cache, base, relPath) {
                 }
                 return null;
             }).then(function () {
+                // PERF-P0.1 — stamp every known shell alias for this bare path so ?v=oid-… hits without re-fetch.
+                var aliasPuts = [];
+                PROTECTED_OFFLINE_ALIAS_QUERIES.forEach(function (aliasRel) {
+                    var aliasBare = String(aliasRel).split('?')[0];
+                    if (aliasBare.replace(/^\//, '') === rel.split('?')[0].replace(/^\//, '')
+                        || (base + aliasBare) === bare) {
+                        aliasPuts.push(putKey(base + String(aliasRel).replace(/^\//, '')));
+                    }
+                });
+                if (/rateb-offline(\.min)?\.js$/i.test(bare)) {
+                    aliasPuts.push(putKey(bare + '?v=oid-20260713-lean'));
+                    aliasPuts.push(putKey(bare + '?v=' + encodeURIComponent(SW_BUILD_ID)));
+                }
+                return aliasPuts.length ? Promise.all(aliasPuts) : null;
+            }).then(function () {
+                try {
+                    delete IDENTITY_MATCH_MEMO[bare];
+                    delete IDENTITY_MATCH_MEMO[urlPathMemoKey(bare)];
+                } catch (eMemo) { /* ignore */ }
                 return { rel: rel, ok: true, len: body.length, url: bare };
             });
         });
     });
+}
+
+function urlPathMemoKey(hrefOrPath) {
+    try {
+        var u = new URL(hrefOrPath, publicBaseUrl());
+        return u.origin + u.pathname;
+    } catch (e) {
+        return String(hrefOrPath || '');
+    }
 }
 
 function cacheOneProtectedAssetWithRetry(cache, base, relPath, retries) {
@@ -1461,12 +1495,18 @@ function warmErpOfflineShell(opts) {
     var urls = [
         base + ERP_OFFLINE_SHELL,
         // Phase OA — critical path: bootstrap + storage/auth (not the 387KB monolith).
+        base + 'assets/offline/erp-offline-tenant-context.js',
         base + 'assets/offline/offline-bootstrap.js',
+        // PERF-P0.1 — monolith fallbacks used by offline-shell.html loadOfflineScript chain.
+        base + 'assets/offline/rateb-offline.js',
+        base + 'assets/offline/rateb-offline.min.js',
+        base + 'assets/offline/rateb-offline.js?v=oid-20260713-lean',
         base + 'assets/offline/modules/offline-storage.js',
         base + 'assets/offline/modules/offline-auth.js',
         base + 'assets/offline/modules/offline-rbac.js',
         base + 'assets/offline/modules/offline-core.js',
         base + 'assets/offline/erp-offline-shell-auth.js',
+        base + 'assets/offline/erp-offline-shell-rbac.js',
         base + 'assets/offline/erp-shell-bootstrap.js',
         base + 'assets/offline/ops-page-allowlist.json',
         base + 'assets/css/variables.css',
@@ -1652,27 +1692,49 @@ function warmErpOfflineShell(opts) {
  */
 function isProtectedOfflineIdentityJs(pathname) {
     var path = String(pathname || '').toLowerCase();
-    return /\/assets\/offline\/(?:offline-bootstrap\.js|erp-shell-bootstrap\.js|rateb-offline(?:\.min)?\.js|erp-offline-shell[^/]*\.js|(?:modules|runtime|assets)\/)/i
+    return /\/assets\/offline\/(?:offline-bootstrap\.js|erp-shell-bootstrap\.js|erp-offline-tenant-context\.js|rateb-offline(?:\.min)?\.js|erp-offline-shell[^/]*\.js|(?:modules|runtime|assets)\/)/i
         .test(path);
 }
 
 /** Prefer cached ERP offline assets; ignore ?v= query so warm keys still hit. */
 function isVersionedOfflineIdentityJs(pathname) {
-    return /\/assets\/offline\/(offline-bootstrap|erp-offline-nav-guard|erp-offline-full-warm|erp-shell-bootstrap|rateb-offline(\.min)?)\.js$/i
+    return /\/assets\/offline\/(offline-bootstrap|erp-offline-nav-guard|erp-offline-full-warm|erp-shell-bootstrap|erp-offline-tenant-context|erp-offline-shell-(auth|rbac)|rateb-offline(\.min)?)\.js$/i
         .test(String(pathname || ''))
         || /\/assets\/offline\/modules\//i.test(String(pathname || ''));
 }
 
+/**
+ * PERF-P0.1 — Cache lookup for offline identity/runtime assets.
+ * Offline: prefer ignoreSearch immediately; search coexist + assets + shell + all rateb-* caches.
+ * Memoize hits by pathname to prevent duplicate multi-cache walks.
+ * Never hang: no network race offline; keys() walk only as last resort and capped.
+ */
 function matchErpOfflineCached(request, url) {
     var pathnameKey = '';
+    var reqUrl = '';
     try {
         pathnameKey = url.origin + url.pathname;
+        reqUrl = String(request && request.url ? request.url : (url.href || pathnameKey));
     } catch (e0) {
         pathnameKey = '';
+        reqUrl = '';
     }
-    // Version-busted offline identity scripts: NEVER prefer pathname-only over ?v=.
-    // Preferring plain keys re-ran stale warm.js (allowlist / recurring 500 storms).
+    var offline = isCloudBrowserOffline();
     var versionedJs = isVersionedOfflineIdentityJs(url.pathname);
+    var identity = isProtectedOfflineIdentityJs(url.pathname);
+    var memoKey = pathnameKey || reqUrl;
+
+    if (offline && identity && memoKey && IDENTITY_MATCH_MEMO[memoKey]) {
+        return Promise.resolve(IDENTITY_MATCH_MEMO[memoKey]);
+    }
+
+    function remember(hit) {
+        if (offline && identity && memoKey && hit) {
+            IDENTITY_MATCH_MEMO[memoKey] = hit;
+        }
+        return hit;
+    }
+
     function matchInCache(cache) {
         // Exact URL (with ?v=) first always.
         return cache.match(request).then(function (hitExact) {
@@ -1680,11 +1742,20 @@ function matchErpOfflineCached(request, url) {
                 return hitExact;
             }
             // Online + versioned warm/guard/SDK: miss → network must fetch the new build.
-            if (versionedJs && !isCloudBrowserOffline()) {
+            if (versionedJs && !offline) {
                 return null;
             }
             if (!pathnameKey) {
                 return null;
+            }
+            // PERF-P0.1 offline identity: ignoreSearch next (avoid keys() scan).
+            if (offline || identity) {
+                return cache.match(pathnameKey).then(function (hit2) {
+                    if (hit2) {
+                        return hit2;
+                    }
+                    return cache.match(pathnameKey, { ignoreSearch: true });
+                });
             }
             return cache.match(pathnameKey).then(function (hit2) {
                 if (hit2) {
@@ -1695,7 +1766,8 @@ function matchErpOfflineCached(request, url) {
                         return hit3;
                     }
                     return cache.keys().then(function (keys) {
-                        for (var i = 0; i < keys.length; i++) {
+                        var limit = Math.min(keys.length, 80);
+                        for (var i = 0; i < limit; i++) {
                             try {
                                 var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
                                 var ku = new URL(href);
@@ -1710,25 +1782,41 @@ function matchErpOfflineCached(request, url) {
             });
         });
     }
-    return caches.open(ERP_COEXIST_CACHE).then(matchInCache).then(function (hit) {
+
+    var preferredNames = [
+        ERP_COEXIST_CACHE,
+        ASSET_CACHE,
+        SHELL_CACHE,
+        ERP_OPS_PAGE_CACHE
+    ];
+
+    function searchNames(names) {
+        return (names || []).reduce(function (chain, name) {
+            return chain.then(function (found) {
+                if (found) {
+                    return found;
+                }
+                return caches.open(name).then(matchInCache).catch(function () {
+                    return null;
+                });
+            });
+        }, Promise.resolve(null));
+    }
+
+    return searchNames(preferredNames).then(function (hit) {
         if (hit) {
-            return hit;
+            return remember(hit);
         }
         return caches.keys().then(function (names) {
-            var erpCaches = (names || []).filter(function (n) {
-                return String(n).indexOf('rateb-erp-coexist-') === 0
-                    || String(n).indexOf('rateb-erp-assets-') === 0
-                    || String(n).indexOf('rateb-erp-ops-pages-') === 0;
+            var rest = (names || []).filter(function (n) {
+                var s = String(n);
+                if (preferredNames.indexOf(s) !== -1) {
+                    return false;
+                }
+                return s.indexOf('rateb-') === 0;
             });
-            return erpCaches.reduce(function (chain, name) {
-                return chain.then(function (found) {
-                    if (found) {
-                        return found;
-                    }
-                    return caches.open(name).then(matchInCache);
-                });
-            }, Promise.resolve(null));
-        });
+            return searchNames(rest);
+        }).then(remember);
     }).catch(function () {
         return null;
     });
@@ -2430,22 +2518,68 @@ function migrateActivateCaches() {
             })).then(function () {
                 return migrateErpCoexistCaches(keys);
             }).then(function () {
-                return Promise.all(keys.map(function (name) {
-                    return caches.open(name).then(function (cache) {
-                        return cache.keys().then(function (reqs) {
-                            return Promise.all(reqs.map(function (req) {
-                                try {
-                                    var href = typeof req === 'string' ? req : (req.url || '');
-                                    var pu = new URL(href);
-                                    if (isVersionedOfflineIdentityJs(pu.pathname)) {
-                                        return cache.delete(req);
-                                    }
-                                } catch (eDel) { /* ignore */ }
-                                return null;
-                            }));
-                        });
-                    }).catch(function () { return null; });
-                }));
+                // PERF-P0.1 — NEVER wipe real identity JS on activate/warm.
+                // Prior code deleted every isVersionedOfflineIdentityJs entry across all caches
+                // before deferred ensureProtectedOfflineCache, creating a miss window:
+                // offline-shell → load_failed → harness waits ~21s for dashboard.
+                // Only remove stub / identity-missing placeholders; migrate good bodies into coexist.
+                return caches.open(ERP_COEXIST_CACHE).then(function (coexist) {
+                    return Promise.all(keys.map(function (name) {
+                        return caches.open(name).then(function (cache) {
+                            return cache.keys().then(function (reqs) {
+                                return Promise.all(reqs.map(function (req) {
+                                    try {
+                                        var href = typeof req === 'string' ? req : (req.url || '');
+                                        var pu = new URL(href);
+                                        if (!isVersionedOfflineIdentityJs(pu.pathname)
+                                            && !isProtectedOfflineIdentityJs(pu.pathname)) {
+                                            return null;
+                                        }
+                                        return cache.match(req).then(function (res) {
+                                            if (!res) {
+                                                return null;
+                                            }
+                                            return res.clone().text().then(function (text) {
+                                                var relGuess = pu.pathname.replace(/^.*\/assets\//i, 'assets/');
+                                                if (!isAcceptableProtectedBody(relGuess, text)) {
+                                                    return cache.delete(req);
+                                                }
+                                                // Stamp bare + request URL into coexist (alias-safe).
+                                                var headers = {
+                                                    'Content-Type': res.headers.get('Content-Type')
+                                                        || 'application/javascript; charset=utf-8',
+                                                    'X-Rateb-Protected-Cached': '1'
+                                                };
+                                                var bare = pu.origin + pu.pathname;
+                                                var body = text;
+                                                function put(key) {
+                                                    return coexist.put(key, new Response(body, {
+                                                        status: 200,
+                                                        headers: headers
+                                                    })).catch(function () { return null; });
+                                                }
+                                                return put(bare).then(function () {
+                                                    return put(href);
+                                                }).then(function () {
+                                                    if (/rateb-offline(\.min)?\.js$/i.test(pu.pathname)) {
+                                                        return put(bare + '?v=oid-20260713-lean');
+                                                    }
+                                                    return null;
+                                                }).then(function () {
+                                                    try {
+                                                        delete IDENTITY_MATCH_MEMO[bare];
+                                                    } catch (eM) { /* ignore */ }
+                                                    return null;
+                                                });
+                                            });
+                                        });
+                                    } catch (eDel) { /* ignore */ }
+                                    return null;
+                                }));
+                            });
+                        }).catch(function () { return null; });
+                    }));
+                });
             }).then(function () {
                 return Promise.all(keys.map(function (key) {
                     if (key === SHELL_CACHE || key === ASSET_CACHE
