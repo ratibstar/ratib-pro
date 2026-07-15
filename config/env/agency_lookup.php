@@ -407,6 +407,56 @@ if (!function_exists('rateb_lookup_agency_by_erp_company_id')) {
     }
 }
 
+if (!function_exists('rateb_deactivate_control_agency')) {
+    /** Soft-remove agency so it no longer mirrors into ERP companies list. */
+    function rateb_deactivate_control_agency(int $agencyId): bool
+    {
+        if ($agencyId < 1) {
+            return false;
+        }
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn) {
+            return false;
+        }
+        $chk = @$conn->query("SHOW TABLES LIKE 'control_agencies'");
+        if (!$chk || $chk->num_rows === 0) {
+            $conn->close();
+
+            return false;
+        }
+        $hasSusp = false;
+        $suspChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($suspChk && $suspChk->num_rows > 0) {
+            $hasSusp = true;
+        }
+        $hasErpCo = false;
+        $erpChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'erp_company_id'");
+        if ($erpChk && $erpChk->num_rows > 0) {
+            $hasErpCo = true;
+        }
+        if ($hasSusp && $hasErpCo) {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = 0, is_suspended = 1, erp_company_id = NULL WHERE id = ?');
+        } elseif ($hasErpCo) {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = 0, erp_company_id = NULL WHERE id = ?');
+        } elseif ($hasSusp) {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = 0, is_suspended = 1 WHERE id = ?');
+        } else {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = 0 WHERE id = ?');
+        }
+        if (!$stmt) {
+            $conn->close();
+
+            return false;
+        }
+        $stmt->bind_param('i', $agencyId);
+        $ok = $stmt->execute();
+        $stmt->close();
+        $conn->close();
+
+        return (bool) $ok;
+    }
+}
+
 if (!function_exists('rateb_save_agency_erp_company_link')) {
     function rateb_save_agency_erp_company_link(int $agencyId, int $companyId): bool
     {

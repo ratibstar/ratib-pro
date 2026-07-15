@@ -268,7 +268,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
     private function platformAgenciesIndexData(int $limit, int $offset, int $page, string $search): array
     {
         $svc = new \Rateb\App\Services\AgencyErpMigrationService();
-        $agencies = $svc->listControlAgencies(false);
+        $agencies = $svc->listControlAgencies(true);
         $search = trim($search);
         $items = [];
         foreach ($agencies as $agency) {
@@ -816,9 +816,114 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $this->model->suspend($id);
+        $this->detachAndDeactivateAgencyForCompany($id);
         (new AuditService())->log('suspend', 'company', $id);
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect(rateb_url('admin/companies'));
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        try {
+            $this->removeCompanyFromPlatformList($id);
+            (new AuditService())->log('delete', $this->entityName, $id);
+            SessionManager::flash('success', __('company_deleted_with_agency'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        if (!$this->bulkEnabled) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $deleted = 0;
+        $errors = 0;
+        foreach ($ids as $id) {
+            try {
+                $this->removeCompanyFromPlatformList((int) $id);
+                (new AuditService())->log('bulk_delete', $this->entityName, (int) $id);
+                $deleted++;
+            } catch (\Throwable $e) {
+                $errors++;
+                error_log('companies bulkDestroy #' . $id . ': ' . $e->getMessage());
+            }
+        }
+        if ($deleted > 0) {
+            SessionManager::flash(
+                'success',
+                __('bulk_deleted', ['count' => $deleted])
+                . ($errors > 0 ? ' — ' . __('company_delete_partial_errors', ['count' => $errors]) : '')
+            );
+        } else {
+            SessionManager::flash('error', __('company_delete_failed'));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /**
+     * Agency = company: remove from ERP list by deactivating CP agency + deleting platform company row.
+     * Prevents auto-recreate on next companies index load.
+     */
+    private function removeCompanyFromPlatformList(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $this->detachAndDeactivateAgencyForCompany($companyId);
+        try {
+            $this->model->delete($companyId);
+        } catch (\Throwable $e) {
+            // FK leftovers — hide company so it stays off the agency-driven list.
+            $this->model->suspend($companyId);
+            error_log('removeCompanyFromPlatformList delete fallback suspend #' . $companyId . ': ' . $e->getMessage());
+        }
+    }
+
+    private function detachAndDeactivateAgencyForCompany(int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        try {
+            $svc = new \Rateb\App\Services\AgencyErpMigrationService();
+            $agencyId = $svc->suggestedAgencyIdForCompany($companyId);
+            if ($agencyId < 1) {
+                return;
+            }
+            try {
+                $svc->linkAgencyToCompany($agencyId, 0);
+            } catch (\Throwable $e) {
+                error_log('unlink agency #' . $agencyId . ': ' . $e->getMessage());
+            }
+            if (function_exists('rateb_deactivate_control_agency')) {
+                rateb_deactivate_control_agency($agencyId);
+            }
+        } catch (\Throwable $e) {
+            error_log('detachAndDeactivateAgencyForCompany #' . $companyId . ': ' . $e->getMessage());
+        }
     }
 
     public function activate(array $params): void
@@ -1012,7 +1117,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         $count = 0;
         foreach ($this->parseBulkIds() as $id) {
+            $id = (int) $id;
             $this->model->suspend($id);
+            $this->detachAndDeactivateAgencyForCompany($id);
             (new AuditService())->log('bulk_suspend', 'company', $id);
             $count++;
         }
