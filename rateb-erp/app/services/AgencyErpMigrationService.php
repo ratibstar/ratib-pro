@@ -332,6 +332,194 @@ final class AgencyErpMigrationService
         }
     }
 
+    /**
+     * Read dedicated ERP admin login (agency DB — not platform rateb.sa users).
+     *
+     * @return array{username:string,email:string,user_id:int,company_id:int}|null
+     */
+    public function readDedicatedAdminLogin(array $agency): ?array
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            return null;
+        }
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+        try {
+            $row = $this->findDedicatedAdminUserRow();
+            if ($row === null) {
+                return null;
+            }
+            $email = strtolower(trim((string) ($row['email'] ?? '')));
+            $name = trim((string) ($row['name'] ?? ''));
+            $username = $name !== '' ? strtolower($name) : $email;
+            if ($email === DedicatedCompanySeedService::DEFAULT_EMAIL || $username === 'admin') {
+                $username = DedicatedCompanySeedService::DEFAULT_LOGIN;
+            } elseif ($email !== '' && !str_ends_with($email, '@local') && !str_ends_with($email, '@rateb.sa')) {
+                $username = $email;
+            }
+
+            return [
+                'username' => $username,
+                'email' => $email,
+                'user_id' => (int) ($row['id'] ?? 0),
+                'company_id' => (int) ($row['company_id'] ?? 0),
+            ];
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
+    /**
+     * Push username/password into the agency dedicated ERP database.
+     * Blank password keeps the current hash.
+     *
+     * @return array{username:string,email:string,user_id:int,company_id:int}
+     */
+    public function syncDedicatedAdminLogin(array $agency, string $username, string $password): array
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException(__('company_agency_admin_no_db'));
+        }
+        $username = trim($username);
+        if ($username === '') {
+            throw new RuntimeException(__('company_admin_login_required'));
+        }
+        if ($password !== '' && strlen($password) < 6) {
+            throw new RuntimeException(__('company_admin_login_required'));
+        }
+
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+        try {
+            $companyRow = (new \Rateb\App\Models\Company())->queryOne(
+                'SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1'
+            );
+            $companyId = (int) ($companyRow['id'] ?? 0);
+            if ($companyId < 1) {
+                throw new RuntimeException(__('company_agency_admin_no_company'));
+            }
+
+            if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
+                $email = strtolower($username);
+                $displayName = (string) strstr($email, '@', true);
+                if ($displayName === '') {
+                    $displayName = DedicatedCompanySeedService::DEFAULT_LOGIN;
+                }
+            } else {
+                $safe = strtolower(trim((string) preg_replace('/[^a-z0-9._-]+/i', '', $username)));
+                if ($safe === '') {
+                    $safe = DedicatedCompanySeedService::DEFAULT_LOGIN;
+                }
+                $displayName = $safe;
+                $email = $safe === DedicatedCompanySeedService::DEFAULT_LOGIN
+                    ? DedicatedCompanySeedService::DEFAULT_EMAIL
+                    : ($safe . '@local');
+            }
+
+            $users = new \Rateb\App\Models\User();
+            $existing = $this->findDedicatedAdminUserRow();
+            $payload = [
+                'company_id' => $companyId,
+                'name' => $displayName,
+                'email' => $email,
+                'status' => 'active',
+                'is_super_admin' => 0,
+            ];
+            if ($password !== '') {
+                $payload['password'] = password_hash($password, PASSWORD_DEFAULT);
+            } elseif ($existing === null) {
+                throw new RuntimeException(__('company_admin_login_required'));
+            }
+
+            if ($existing !== null) {
+                $userId = (int) ($existing['id'] ?? 0);
+                $users->update($userId, $payload);
+            } else {
+                $userId = (int) $users->create(array_merge($payload, [
+                    'password' => password_hash(
+                        $password !== '' ? $password : DedicatedCompanySeedService::DEFAULT_PASSWORD,
+                        PASSWORD_DEFAULT
+                    ),
+                    'locale' => 'ar',
+                ]));
+            }
+            if ($userId < 1) {
+                throw new RuntimeException(__('company_admin_create_failed'));
+            }
+
+            (new AuthorizationService())->ensureCompanyRoles($companyId);
+            $role = (new AuthorizationService())->findRoleBySlug('company-full-access', $companyId);
+            if ($role) {
+                (new AuthorizationService())->assignRole($userId, (int) $role['id']);
+            }
+            if (class_exists(BarcodeLoginService::class)) {
+                (new BarcodeLoginService())->ensureUserBarcode($userId);
+            }
+
+            return [
+                'username' => $displayName === DedicatedCompanySeedService::DEFAULT_LOGIN
+                    ? DedicatedCompanySeedService::DEFAULT_LOGIN
+                    : (filter_var($username, FILTER_VALIDATE_EMAIL) ? $email : $displayName),
+                'email' => $email,
+                'user_id' => $userId,
+                'company_id' => $companyId,
+            ];
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findDedicatedAdminUserRow(): ?array
+    {
+        $users = new \Rateb\App\Models\User();
+        $row = $users->queryOne(
+            "SELECT u.* FROM rateb_users u
+             INNER JOIN rateb_user_roles ur ON ur.user_id = u.id
+             INNER JOIN rateb_roles r ON r.id = ur.role_id AND r.slug = 'company-full-access'
+             WHERE COALESCE(u.is_super_admin, 0) = 0
+             ORDER BY u.id ASC
+             LIMIT 1"
+        );
+        if ($row) {
+            return $row;
+        }
+        $row = $users->queryOne(
+            "SELECT * FROM rateb_users
+             WHERE COALESCE(is_super_admin, 0) = 0
+               AND (
+                 email = :em
+                 OR email LIKE 'admin+%'
+                 OR LOWER(name) = 'admin'
+               )
+             ORDER BY id ASC
+             LIMIT 1",
+            ['em' => DedicatedCompanySeedService::DEFAULT_EMAIL]
+        );
+        if ($row) {
+            return $row;
+        }
+
+        return $users->queryOne(
+            'SELECT * FROM rateb_users
+             WHERE COALESCE(is_super_admin, 0) = 0
+             ORDER BY id ASC
+             LIMIT 1'
+        );
+    }
+
     /** @return array<int, string> */
     public function platformCompanyNames(): array
     {

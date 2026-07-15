@@ -430,6 +430,23 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 $companyAdminUrl = rateb_agency_erp_admin_url($agencySite);
             }
         }
+        $companyAdminLogin = '';
+        if (is_array($linkedAgency)) {
+            try {
+                $agencyLogin = (new \Rateb\App\Services\AgencyErpMigrationService())
+                    ->readDedicatedAdminLogin($linkedAgency);
+                if (is_array($agencyLogin)) {
+                    $companyAdminLogin = (string) ($agencyLogin['username'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                $companyAdminLogin = \Rateb\App\Services\DedicatedCompanySeedService::DEFAULT_LOGIN;
+            }
+            if ($companyAdminLogin === '') {
+                $companyAdminLogin = \Rateb\App\Services\DedicatedCompanySeedService::DEFAULT_LOGIN;
+            }
+        } elseif ($adminUser) {
+            $companyAdminLogin = $this->displayCompanyAdminLogin($adminUser);
+        }
         if ($companyLoginUrl === '') {
             $slug = trim((string) ($item['slug'] ?? ''));
             $companyLoginUrl = $slug !== '' && function_exists('rateb_public_url')
@@ -448,7 +465,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
             'selectedModules' => $selectedModules,
             'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId) : null,
-            'companyAdminLogin' => $adminUser ? $this->displayCompanyAdminLogin($adminUser) : '',
+            'companyAdminLogin' => $companyAdminLogin,
             'companyLoginUrl' => $companyLoginUrl,
             'companyAdminUrl' => $companyAdminUrl,
             'linkedAgency' => $linkedAgency,
@@ -696,7 +713,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
     /**
      * Update existing company admin login, or create one if missing.
-     * Blank password on edit keeps the current password.
+     * Blank password on edit keeps the current password (platform only).
+     * Linked agency ERP requires password (≥6) so login works on the agency domain.
+     *
+     * @return array{username:string,login_url:string}|null Agency sync result when pushed.
      */
     private function syncCompanyAdminUser(
         int $companyId,
@@ -705,8 +725,13 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         string $companyName,
         string $companyPhone,
         string $slug
-    ): void {
+    ): ?array {
         $username = trim($username);
+        $agencyPush = $this->resolveLinkedAgencyForLoginPush($companyId);
+        if ($agencyPush !== null && strlen($password) < 6) {
+            throw new \RuntimeException(__('company_agency_admin_password_required'));
+        }
+
         $existing = $this->findCompanyAdminUser($companyId);
         if ($existing === null) {
             if ($username === '' || strlen($password) < 6) {
@@ -714,7 +739,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             }
             $this->createCompanyAdminUser($companyId, $username, $password, $companyName, $companyPhone, $slug);
 
-            return;
+            return $this->pushAdminLoginToLinkedAgency($companyId, $username, $password);
         }
 
         if ($username === '') {
@@ -761,6 +786,74 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         if ($roleRow) {
             $authz->assignRole($userId, (int) $roleRow['id']);
         }
+
+        return $this->pushAdminLoginToLinkedAgency($companyId, $username, $password);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function resolveLinkedAgencyForLoginPush(int $companyId): ?array
+    {
+        if ($companyId < 1) {
+            return null;
+        }
+        if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
+            return null;
+        }
+        try {
+            $svc = new \Rateb\App\Services\AgencyErpMigrationService();
+            $agencyId = $svc->suggestedAgencyIdForCompany($companyId);
+            if ($agencyId < 1) {
+                return null;
+            }
+            foreach ($svc->listControlAgencies(false) as $row) {
+                if ((int) ($row['id'] ?? 0) !== $agencyId) {
+                    continue;
+                }
+                $cfg = $svc->agencyDatabaseConfig($row);
+                if (trim((string) ($cfg['db'] ?? '')) === '') {
+                    return null;
+                }
+
+                return $row;
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sync client login into dedicated agency ERP DB when this platform company is linked.
+     *
+     * @return array{username:string,login_url:string}|null
+     */
+    private function pushAdminLoginToLinkedAgency(int $companyId, string $username, string $password): ?array
+    {
+        if ($companyId < 1 || $username === '') {
+            return null;
+        }
+        $agency = $this->resolveLinkedAgencyForLoginPush($companyId);
+        if ($agency === null) {
+            return null;
+        }
+        try {
+            $svc = new \Rateb\App\Services\AgencyErpMigrationService();
+            $synced = $svc->syncDedicatedAdminLogin($agency, $username, $password);
+            $site = function_exists('rateb_normalize_agency_site_url')
+                ? rateb_normalize_agency_site_url((string) ($agency['site_url'] ?? ''))
+                : trim((string) ($agency['site_url'] ?? ''));
+            $loginUrl = ($site !== '' && function_exists('rateb_agency_erp_login_url'))
+                ? rateb_agency_erp_login_url($site)
+                : '';
+
+            return [
+                'username' => (string) ($synced['username'] ?? $username),
+                'login_url' => $loginUrl,
+            ];
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(__('company_agency_admin_sync_failed') . ' — ' . $e->getMessage(), 0, $e);
+        }
     }
 
     public function update(array $params): void
@@ -792,7 +885,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         try {
             $this->model->update($id, $data);
             (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($id);
-            $this->syncCompanyAdminUser(
+            $agencyLogin = $this->syncCompanyAdminUser(
                 $id,
                 $adminUsername,
                 $adminPassword,
@@ -813,12 +906,22 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 SessionManager::flash('success', __('company_edit_pending_oversight'));
                 $this->redirect(rateb_url('admin/oversight/companies-approvals'));
             }
-            SessionManager::flash('success', __('save') . ' OK');
+            if (is_array($agencyLogin) && ($agencyLogin['login_url'] ?? '') !== '') {
+                SessionManager::flash(
+                    'success',
+                    __('company_agency_login_ready', [
+                        'user' => (string) ($agencyLogin['username'] ?? $adminUsername),
+                        'url' => (string) $agencyLogin['login_url'],
+                    ])
+                );
+            } else {
+                SessionManager::flash('success', __('save') . ' OK');
+            }
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        $this->redirect(rateb_url($this->routePrefix));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
 
     /** @param array<string, mixed> $before @param array<string, mixed> $after */

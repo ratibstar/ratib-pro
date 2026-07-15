@@ -131,17 +131,25 @@ $agencyPortalMode = !empty($agencyPortalMode);
 
             <div class="mt-4 p-3 border rounded" id="rateb-company-admin-login">
                 <h3 class="h6 mb-2"><?php echo __('company_admin_login_title'); ?></h3>
-                <p class="form-text mb-3"><?php echo $isEdit ? __('company_admin_login_edit_help') : __('company_admin_login_help'); ?></p>
+                <p class="form-text mb-3"><?php
+                    if ($agencyPortalMode && $isEdit) {
+                        echo __('company_admin_login_edit_help_agency');
+                    } elseif ($isEdit) {
+                        echo __('company_admin_login_edit_help');
+                    } else {
+                        echo __('company_admin_login_help');
+                    }
+                ?></p>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label"><?php echo __('company_admin_username'); ?></label>
                         <input class="form-control" type="text" name="admin_username" value="<?php echo Rateb\App\Core\View::escape($companyAdminLogin); ?>" required autocomplete="off"
-                               placeholder="<?php echo Rateb\App\Core\View::escape(__('company_admin_username_ph')); ?>">
+                               placeholder="<?php echo Rateb\App\Core\View::escape($agencyPortalMode ? 'admin' : __('company_admin_username_ph')); ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label"><?php echo __('company_admin_password'); ?></label>
-                        <input class="form-control" type="text" name="admin_password" value="" <?php echo $isEdit ? '' : 'required'; ?> autocomplete="new-password" minlength="6"
-                               placeholder="<?php echo Rateb\App\Core\View::escape($isEdit ? __('company_admin_password_edit_ph') : __('company_admin_password_ph')); ?>">
+                        <input class="form-control" type="text" name="admin_password" value="" <?php echo ($isEdit && !$agencyPortalMode) ? '' : 'required'; ?> autocomplete="new-password" minlength="6"
+                               placeholder="<?php echo Rateb\App\Core\View::escape($agencyPortalMode ? __('company_agency_admin_password_ph') : ($isEdit ? __('company_admin_password_edit_ph') : __('company_admin_password_ph'))); ?>">
                     </div>
                 </div>
             </div>
