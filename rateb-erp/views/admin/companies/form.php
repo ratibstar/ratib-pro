@@ -5,6 +5,8 @@
 /** @var array<string, string> $moduleCatalog */
 /** @var array<int, string> $selectedModules */
 /** @var array<string, mixed>|null $limits */
+/** @var string $companyAdminLogin */
+/** @var string $companyLoginUrl */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $userLimitVal = (int) ($item['user_limit'] ?? 0);
@@ -15,6 +17,8 @@ $storageLimitVal = (int) ($item['storage_limit_mb'] ?? 0);
 if ($storageLimitVal < 1) {
     $storageLimitVal = (int) ($limits['storage_limit_mb'] ?? 1024);
 }
+$companyAdminLogin = (string) ($companyAdminLogin ?? '');
+$companyLoginUrl = (string) ($companyLoginUrl ?? '');
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -28,8 +32,17 @@ if ($storageLimitVal < 1) {
                     <input class="form-control" type="text" name="name" value="<?php echo Rateb\App\Core\View::escape($item['name'] ?? ''); ?>" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label"><?php echo __('slug'); ?></label>
-                    <input class="form-control" type="text" name="slug" value="<?php echo Rateb\App\Core\View::escape($item['slug'] ?? ''); ?>" required>
+                    <label class="form-label"><?php echo __('slug'); ?> / <?php echo __('company_login_link'); ?></label>
+                    <input class="form-control" type="text" name="slug" id="rateb-company-slug" value="<?php echo Rateb\App\Core\View::escape($item['slug'] ?? ''); ?>" required>
+                    <p class="form-text mb-1"><?php echo __('company_login_link_help'); ?></p>
+                    <?php if ($companyLoginUrl !== '') { ?>
+                    <div class="input-group input-group-sm">
+                        <input class="form-control" type="text" id="rateb-company-login-url" value="<?php echo Rateb\App\Core\View::escape($companyLoginUrl); ?>" readonly>
+                        <a class="btn btn-outline-secondary" href="<?php echo Rateb\App\Core\View::escape($companyLoginUrl); ?>" target="_blank" rel="noopener"><?php echo __('open_company_portal'); ?></a>
+                    </div>
+                    <?php } else { ?>
+                    <p class="form-text text-muted mb-0"><?php echo __('company_login_link_after_slug'); ?></p>
+                    <?php } ?>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('email'); ?></label>
@@ -76,24 +89,22 @@ if ($storageLimitVal < 1) {
                 </div>
             </div>
 
-            <?php if (!$isEdit) { ?>
             <div class="mt-4 p-3 border rounded" id="rateb-company-admin-login">
                 <h3 class="h6 mb-2"><?php echo __('company_admin_login_title'); ?></h3>
-                <p class="form-text mb-3"><?php echo __('company_admin_login_help'); ?></p>
+                <p class="form-text mb-3"><?php echo $isEdit ? __('company_admin_login_edit_help') : __('company_admin_login_help'); ?></p>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label"><?php echo __('company_admin_username'); ?></label>
-                        <input class="form-control" type="text" name="admin_username" value="" required autocomplete="off"
+                        <input class="form-control" type="text" name="admin_username" value="<?php echo Rateb\App\Core\View::escape($companyAdminLogin); ?>" required autocomplete="off"
                                placeholder="<?php echo Rateb\App\Core\View::escape(__('company_admin_username_ph')); ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label"><?php echo __('company_admin_password'); ?></label>
-                        <input class="form-control" type="text" name="admin_password" value="" required autocomplete="new-password" minlength="6"
-                               placeholder="<?php echo Rateb\App\Core\View::escape(__('company_admin_password_ph')); ?>">
+                        <input class="form-control" type="text" name="admin_password" value="" <?php echo $isEdit ? '' : 'required'; ?> autocomplete="new-password" minlength="6"
+                               placeholder="<?php echo Rateb\App\Core\View::escape($isEdit ? __('company_admin_password_edit_ph') : __('company_admin_password_ph')); ?>">
                     </div>
                 </div>
             </div>
-            <?php } ?>
 
             <div class="mt-4" id="rateb-company-modules">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">

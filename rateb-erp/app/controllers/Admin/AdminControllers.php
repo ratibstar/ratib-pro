@@ -286,6 +286,13 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ];
         }
 
+        $companyId = $item ? (int) ($item['id'] ?? 0) : 0;
+        $adminUser = $companyId > 0 ? $this->findCompanyAdminUser($companyId) : null;
+        $slug = trim((string) ($item['slug'] ?? ''));
+        $companyLoginUrl = $slug !== '' && function_exists('rateb_public_url')
+            ? rateb_public_url('login?company=' . rawurlencode($slug))
+            : '';
+
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
             'item' => $item,
@@ -296,7 +303,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'planPresets' => $planPresets,
             'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
             'selectedModules' => $selectedModules,
-            'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits((int) $item['id']) : null,
+            'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId) : null,
+            'companyAdminLogin' => $adminUser ? $this->displayCompanyAdminLogin($adminUser) : '',
+            'companyLoginUrl' => $companyLoginUrl,
         ];
     }
 
@@ -408,6 +417,77 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url('admin/oversight/companies-approvals'));
     }
 
+    /** @return array{email:string,name:string} */
+    private function resolveCompanyAdminIdentity(string $username, string $companyName, string $slug, int $companyId): array
+    {
+        $username = trim($username);
+        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $slug), '-'));
+        if ($slug === '') {
+            $slug = 'c' . $companyId;
+        }
+
+        if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $email = strtolower($username);
+            $displayName = $companyName !== '' ? $companyName : (string) strstr($email, '@', true);
+
+            return ['email' => $email, 'name' => (string) $displayName];
+        }
+
+        $safeUser = strtolower(trim((string) preg_replace('/[^a-z0-9._-]+/i', '', $username)));
+        if ($safeUser === '') {
+            $safeUser = 'admin';
+        }
+
+        return [
+            'email' => $safeUser . '+' . $slug . '@rateb.sa',
+            'name' => $safeUser,
+        ];
+    }
+
+    /** @param array<string, mixed> $user */
+    private function displayCompanyAdminLogin(array $user): string
+    {
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        $name = trim((string) ($user['name'] ?? ''));
+        if ($email !== '' && !str_ends_with($email, '@rateb.sa') && !str_ends_with($email, '@local')) {
+            return $email;
+        }
+        if ($name !== '') {
+            return strtolower($name);
+        }
+
+        return $email;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findCompanyAdminUser(int $companyId): ?array
+    {
+        if ($companyId < 1) {
+            return null;
+        }
+        $users = new \Rateb\App\Models\User();
+        $row = $users->queryOne(
+            "SELECT u.* FROM rateb_users u
+             INNER JOIN rateb_user_roles ur ON ur.user_id = u.id
+             INNER JOIN rateb_roles r ON r.id = ur.role_id AND r.slug = 'company-full-access'
+             WHERE u.company_id = :cid AND COALESCE(u.is_super_admin, 0) = 0
+             ORDER BY u.id ASC
+             LIMIT 1",
+            ['cid' => $companyId]
+        );
+        if ($row) {
+            return $row;
+        }
+
+        return $users->queryOne(
+            'SELECT * FROM rateb_users
+             WHERE company_id = :cid AND COALESCE(is_super_admin, 0) = 0
+             ORDER BY id ASC
+             LIMIT 1',
+            ['cid' => $companyId]
+        );
+    }
+
     /**
      * Create the client company admin (tenant user) — not platform agency access-control users.
      */
@@ -419,34 +499,18 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         string $companyPhone,
         string $slug
     ): int {
-        $username = trim($username);
-        $slug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $slug), '-'));
-        if ($slug === '') {
-            $slug = 'c' . $companyId;
-        }
-
-        if (filter_var($username, FILTER_VALIDATE_EMAIL)) {
-            $email = strtolower($username);
-            $displayName = $companyName !== '' ? $companyName : (string) strstr($email, '@', true);
-        } else {
-            $safeUser = strtolower(trim((string) preg_replace('/[^a-z0-9._-]+/i', '', $username)));
-            if ($safeUser === '') {
-                $safeUser = 'admin';
-            }
-            $email = $safeUser . '+' . $slug . '@rateb.sa';
-            // Short username login resolves via LOWER(name) in User::loginCandidates.
-            $displayName = $safeUser;
-        }
+        $identity = $this->resolveCompanyAdminIdentity($username, $companyName, $slug, $companyId);
+        $email = $identity['email'];
+        $displayName = $identity['name'];
 
         $users = new \Rateb\App\Models\User();
         if ($users->findByEmail($email)) {
             throw new \RuntimeException(__('company_admin_username_taken'));
         }
-        // Short username login resolves via LOWER(name) — reject name collision.
-        if (!filter_var($username, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var(trim($username), FILTER_VALIDATE_EMAIL)) {
             $nameTaken = $users->queryOne(
                 'SELECT id FROM rateb_users WHERE LOWER(name) = :n LIMIT 1',
-                ['n' => strtolower((string) $displayName)]
+                ['n' => strtolower($displayName)]
             );
             if ($nameTaken) {
                 throw new \RuntimeException(__('company_admin_username_taken'));
@@ -455,7 +519,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
         $userId = (int) $users->create([
             'company_id' => $companyId,
-            'name' => (string) $displayName,
+            'name' => $displayName,
             'email' => $email,
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'phone' => $companyPhone,
@@ -479,6 +543,75 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         return $userId;
     }
 
+    /**
+     * Update existing company admin login, or create one if missing.
+     * Blank password on edit keeps the current password.
+     */
+    private function syncCompanyAdminUser(
+        int $companyId,
+        string $username,
+        string $password,
+        string $companyName,
+        string $companyPhone,
+        string $slug
+    ): void {
+        $username = trim($username);
+        $existing = $this->findCompanyAdminUser($companyId);
+        if ($existing === null) {
+            if ($username === '' || strlen($password) < 6) {
+                throw new \RuntimeException(__('company_admin_login_required'));
+            }
+            $this->createCompanyAdminUser($companyId, $username, $password, $companyName, $companyPhone, $slug);
+
+            return;
+        }
+
+        if ($username === '') {
+            throw new \RuntimeException(__('company_admin_login_required'));
+        }
+        if ($password !== '' && strlen($password) < 6) {
+            throw new \RuntimeException(__('company_admin_login_required'));
+        }
+
+        $identity = $this->resolveCompanyAdminIdentity($username, $companyName, $slug, $companyId);
+        $users = new \Rateb\App\Models\User();
+        $userId = (int) ($existing['id'] ?? 0);
+        $emailTaken = $users->queryOne(
+            'SELECT id FROM rateb_users WHERE email = :email AND id <> :uid LIMIT 1',
+            ['email' => $identity['email'], 'uid' => $userId]
+        );
+        if ($emailTaken) {
+            throw new \RuntimeException(__('company_admin_username_taken'));
+        }
+        if (!filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $nameTaken = $users->queryOne(
+                'SELECT id FROM rateb_users WHERE LOWER(name) = :n AND id <> :uid LIMIT 1',
+                ['n' => strtolower($identity['name']), 'uid' => $userId]
+            );
+            if ($nameTaken) {
+                throw new \RuntimeException(__('company_admin_username_taken'));
+            }
+        }
+
+        $payload = [
+            'company_id' => $companyId,
+            'name' => $identity['name'],
+            'email' => $identity['email'],
+            'phone' => $companyPhone,
+            'status' => 'active',
+        ];
+        if ($password !== '') {
+            $payload['password'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+        $users->update($userId, $payload);
+
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $roleRow = $authz->findRoleBySlug('company-full-access', $companyId);
+        if ($roleRow) {
+            $authz->assignRole($userId, (int) $roleRow['id']);
+        }
+    }
+
     public function update(array $params): void
     {
         $this->guardManage();
@@ -492,6 +625,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             SessionManager::flash('error', __('no_records'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        $adminUsername = trim((string) $this->input('admin_username', ''));
+        $adminPassword = (string) $this->input('admin_password', '');
         $data = $this->collectData();
         $this->applyCompanyPlanFields($data, $old);
         unset($data['status']);
@@ -505,7 +640,18 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         try {
             $this->model->update($id, $data);
-            (new AuditService())->log('update', $this->entityName, $id, $data);
+            (new \Rateb\App\Services\AuthorizationService())->ensureCompanyRoles($id);
+            $this->syncCompanyAdminUser(
+                $id,
+                $adminUsername,
+                $adminPassword,
+                (string) ($data['name'] ?? ($old['name'] ?? '')),
+                (string) ($data['phone'] ?? ($old['phone'] ?? '')),
+                (string) ($data['slug'] ?? ($old['slug'] ?? ''))
+            );
+            $auditPayload = $data;
+            unset($auditPayload['admin_password'], $auditPayload['password']);
+            (new AuditService())->log('update', $this->entityName, $id, $auditPayload);
             if (($data['status'] ?? '') === 'pending' && $oldStatus === 'active') {
                 \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
                     $id,
