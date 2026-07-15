@@ -152,19 +152,22 @@
         }, delayMs || 0);
     }
 
-    /** PERF-P0.3-A — first cloud probe after paint / idle so usable metrics are not AJAX-bound. */
+    /** PERF-P0.3-A — first cloud probe well after first paint + netQuiet window (~1.5s). */
     function scheduleVerifyAfterPaint() {
         var run = function () {
             scheduleVerify(0);
         };
-        try {
-            if (typeof window.requestIdleCallback === 'function') {
-                window.requestIdleCallback(function () { run(); }, { timeout: 4000 });
-                return;
-            }
-        } catch (eIdle) { /* ignore */ }
         var start = function () {
-            setTimeout(run, 2000);
+            // Hard floor: do not let requestIdleCallback fire during dashboard charts / usable wait.
+            setTimeout(function () {
+                try {
+                    if (typeof window.requestIdleCallback === 'function') {
+                        window.requestIdleCallback(function () { run(); }, { timeout: 2000 });
+                        return;
+                    }
+                } catch (eIdle) { /* ignore */ }
+                run();
+            }, 3500);
         };
         if (document.readyState === 'complete') {
             start();

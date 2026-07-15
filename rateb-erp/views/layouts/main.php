@@ -1134,48 +1134,49 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           }
         });
       } catch (eLinks) {}
+      // HTML put immediately (no network). CSS re-fetch batched much later so
+      // login→usable (sidebar + 1.5s netQuiet) is not held by cache-warming XHR.
       cacheNames.forEach(function (cacheName) {
         caches.open(cacheName).then(function (cache) {
           return Promise.all(keys.map(function (k) {
             return cache.put(k, res.clone()).catch(function () { return null; });
-          })).then(function () {
-            // CSS network fetches deferred — they were inflating “ajax” + netQuiet usable waits.
-            if (!assetHrefs.length) return null;
-            ratebIdle(function () {
-              var i = 0;
-              function next() {
-                if (i >= assetHrefs.length) return;
-                var ah = assetHrefs[i++];
-                fetch(ah, { credentials: 'same-origin', cache: 'force-cache' }).then(function (ar) {
-                  if (!ar || !ar.ok) return null;
-                  var bareA = ah;
-                  try {
-                    var au = new URL(ah);
-                    bareA = au.origin + au.pathname;
-                  } catch (eBare) {}
-                  return Promise.all([
-                    cache.put(ah, ar.clone()).catch(function () { return null; }),
-                    cache.put(bareA, ar.clone()).catch(function () { return null; })
-                  ]);
-                }).catch(function () { return null; }).then(function () {
-                  setTimeout(next, 120);
-                });
-              }
-              next();
-            }, 6000);
-            return null;
-          });
+          }));
         }).catch(function () {});
       });
+      if (assetHrefs.length) {
+        setTimeout(function () {
+          ratebIdle(function () {
+            cacheNames.forEach(function (cacheName) {
+              caches.open(cacheName).then(function (cache) {
+                return Promise.all(assetHrefs.map(function (ah) {
+                  return fetch(ah, { credentials: 'same-origin', cache: 'force-cache' }).then(function (ar) {
+                    if (!ar || !ar.ok) return null;
+                    var bareA = ah;
+                    try {
+                      var au = new URL(ah);
+                      bareA = au.origin + au.pathname;
+                    } catch (eBare) {}
+                    return Promise.all([
+                      cache.put(ah, ar.clone()).catch(function () { return null; }),
+                      cache.put(bareA, ar.clone()).catch(function () { return null; })
+                    ]);
+                  }).catch(function () { return null; });
+                }));
+              }).catch(function () {});
+            });
+          }, 3000);
+        }, 4000);
+      }
     } catch (eCache) { /* ignore */ }
   }
   function scheduleCacheLiveAdminPage() {
-    ratebIdle(function () { cacheLiveAdminPage(); }, 5000);
+    ratebIdle(function () { cacheLiveAdminPage(); }, 3000);
   }
+  // PERF-P0.3-A — start after load+2s so charts/probe quiet (~1.5s) can clear first.
   if (document.readyState === 'complete') {
-    setTimeout(scheduleCacheLiveAdminPage, 1500);
+    setTimeout(scheduleCacheLiveAdminPage, 2000);
   } else {
-    window.addEventListener('load', function () { setTimeout(scheduleCacheLiveAdminPage, 1500); }, { once: true });
+    window.addEventListener('load', function () { setTimeout(scheduleCacheLiveAdminPage, 2000); }, { once: true });
   }
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
