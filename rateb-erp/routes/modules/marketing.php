@@ -8,6 +8,7 @@ use Rateb\App\Controllers\Marketing\MarketingAuthController;
 use Rateb\App\Controllers\Marketing\MarketingController;
 use Rateb\App\Controllers\Marketing\MarketingFormsController;
 use Rateb\App\Controllers\Marketing\MarketingMediaController;
+use Rateb\App\Controllers\Marketing\WebsitePortalController;
 
 /** @var Rateb\App\Core\Router $router */
 
@@ -44,6 +45,34 @@ $router->post('/site/candidate/save/{careerId}', [CareerCandidateController::cla
 $router->post('/site/candidate/unsave/{careerId}', [CareerCandidateController::class, 'unsaveJob'], rateb_career_portal_mw());
 $router->get('/site/candidate/profile', [CareerCandidateController::class, 'profile'], rateb_career_portal_mw());
 $router->post('/site/candidate/profile', [CareerCandidateController::class, 'updateProfile'], rateb_career_portal_mw());
+
+// Phase WEBSITE-07 — Employer / Customer / Partner portals (before /site/{slug})
+foreach (['employer', 'customer', 'partner'] as $__portalType) {
+    $mw = rateb_website_portal_mw($__portalType);
+    $router->get('/site/' . $__portalType . '/login', [WebsitePortalController::class, 'showLogin']);
+    $router->post('/site/' . $__portalType . '/login', [WebsitePortalController::class, 'login']);
+    $router->get('/site/' . $__portalType . '/register', [WebsitePortalController::class, 'showRegister']);
+    $router->post('/site/' . $__portalType . '/register', [WebsitePortalController::class, 'register']);
+    $router->get('/site/' . $__portalType . '/logout', [WebsitePortalController::class, 'logout']);
+    $router->get('/site/' . $__portalType, [WebsitePortalController::class, 'dashboard'], $mw);
+    $router->get('/site/' . $__portalType . '/requests', [WebsitePortalController::class, 'requests'], $mw);
+    $router->post('/site/' . $__portalType . '/requests', [WebsitePortalController::class, 'createRequest'], $mw);
+    $router->get('/site/' . $__portalType . '/finance', [WebsitePortalController::class, 'finance'], $mw);
+    $router->get('/site/' . $__portalType . '/documents', [WebsitePortalController::class, 'documents'], $mw);
+    $router->post('/site/' . $__portalType . '/documents', [WebsitePortalController::class, 'uploadDocument'], $mw);
+    $router->get('/site/' . $__portalType . '/support', [WebsitePortalController::class, 'support'], $mw);
+    $router->post('/site/' . $__portalType . '/support', [WebsitePortalController::class, 'createTicket'], $mw);
+    $router->get('/site/' . $__portalType . '/appointments', [WebsitePortalController::class, 'appointments'], $mw);
+    $router->post('/site/' . $__portalType . '/appointments', [WebsitePortalController::class, 'bookAppointment'], $mw);
+    $router->get('/site/' . $__portalType . '/approvals', [WebsitePortalController::class, 'approvals'], $mw);
+    $router->post('/site/' . $__portalType . '/approvals', [WebsitePortalController::class, 'decideApproval'], $mw);
+    $router->get('/site/' . $__portalType . '/notifications', [WebsitePortalController::class, 'notifications'], $mw);
+    $router->get('/site/' . $__portalType . '/profile', [WebsitePortalController::class, 'profile'], $mw);
+    $router->post('/site/' . $__portalType . '/profile', [WebsitePortalController::class, 'updateProfile'], $mw);
+}
+$router->get('/site/employer/recruitment', [WebsitePortalController::class, 'recruitment'], rateb_website_portal_mw('employer'));
+$router->post('/site/employer/recruitment/shortlist', [WebsitePortalController::class, 'shortlistCandidate'], rateb_website_portal_mw('employer'));
+$router->post('/site/employer/recruitment/decide', [WebsitePortalController::class, 'decideShortlist'], rateb_website_portal_mw('employer'));
 
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);

@@ -16,6 +16,7 @@ final class WebsiteBlockRenderer
     private TenantThemeService $theme;
     private WebsiteFormService $forms;
     private ?Career\CareerBlockRenderer $careerBlocks = null;
+    private ?Portal\PortalBlockRenderer $portalBlocks = null;
 
     public function __construct(?TenantWebsiteRepository $repo = null)
     {
@@ -106,6 +107,18 @@ final class WebsiteBlockRenderer
             'job_search' => $this->careerBlocks()->renderSearchWidget($cls, $title, $settings),
             'cta_apply' => $this->careerBlocks()->renderCtaApply($cls, $title, $content, $settings),
             'recruiter_team' => $this->careerBlocks()->renderRecruiterTeam($cls, $title, $settings),
+            'employer_dashboard' => $this->portalBlocks()->renderDashboard($cls, $title, 'employer', $settings),
+            'customer_dashboard' => $this->portalBlocks()->renderDashboard($cls, $title, 'customer', $settings),
+            'outstanding_invoices' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/finance', __('invoices') ?: 'Invoices'),
+            'active_contracts' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/requests', __('contracts') ?: 'Contracts'),
+            'recent_requests' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/employer/requests', __('requests') ?: 'Requests'),
+            'recruitment_status' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/employer/recruitment', __('recruitment') ?: 'Recruitment'),
+            'candidate_pipeline' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/employer/recruitment', __('candidate_pipeline') ?: 'Pipeline'),
+            'portal_documents' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/documents', __('documents') ?: 'Documents'),
+            'portal_payments' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/finance', __('payments') ?: 'Payments'),
+            'portal_support_tickets' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/support', __('support') ?: 'Support'),
+            'portal_notifications' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/notifications', __('notifications') ?: 'Notifications'),
+            'portal_calendar' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/employer/appointments', __('calendar') ?: 'Calendar'),
             default => $this->renderGeneric($cls, $type, $title, $content, $image, $link, $icon, $settings),
         };
     }
@@ -268,6 +281,15 @@ final class WebsiteBlockRenderer
         }
 
         return $this->careerBlocks;
+    }
+
+    private function portalBlocks(): Portal\PortalBlockRenderer
+    {
+        if ($this->portalBlocks === null) {
+            $this->portalBlocks = new Portal\PortalBlockRenderer();
+        }
+
+        return $this->portalBlocks;
     }
 
     /** @param array<string, mixed> $field */

@@ -1,0 +1,29 @@
+/* Phase WEBSITE-07 — Enterprise portals (external stylesheet only) */
+.rateb-portal-nav { border-bottom: 1px solid var(--rateb-border, #e2e8f0); background: #fff; }
+.rateb-portal-nav__inner { display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 0; align-items: center; }
+.rateb-portal-nav__brand { margin-inline-end: 0.5rem; color: var(--rateb-primary, #1a5fb4); }
+.rateb-portal-nav__link { text-decoration: none; color: var(--rateb-text, #1e293b); font-weight: 500; }
+.rateb-portal-nav__link.is-active { color: var(--rateb-primary, #1a5fb4); }
+.rateb-portal-nav__link--out { margin-inline-start: auto; }
+.rateb-portal-section { padding: 1.75rem 0 2.5rem; }
+.rateb-portal-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.rateb-portal-stat { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 10px; padding: 1rem; background: #fff; }
+.rateb-portal-stat span { display: block; color: var(--rateb-muted, #64748b); font-size: 0.85rem; }
+.rateb-portal-stat strong { font-size: 1.35rem; }
+.rateb-portal-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.rateb-portal-table th, .rateb-portal-table td { padding: 0.6rem; border-bottom: 1px solid var(--rateb-border, #e2e8f0); text-align: start; }
+.rateb-portal-form { max-width: 640px; margin-bottom: 1.5rem; }
+.rateb-portal-form--inline { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; max-width: none; align-items: end; }
+.rateb-portal-form__field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.65rem; }
+.rateb-portal-form__field--full { grid-column: 1 / -1; }
+.rateb-portal-form input, .rateb-portal-form select, .rateb-portal-form textarea { padding: 0.55rem 0.75rem; border: 1px solid var(--rateb-border, #cbd5e1); border-radius: 8px; }
+.rateb-portal-btn { display: inline-block; padding: 0.55rem 1rem; border: 0; border-radius: 8px; background: var(--rateb-primary, #1a5fb4); color: #fff; font-weight: 600; cursor: pointer; text-decoration: none; }
+.rateb-portal-btn--ghost { background: transparent; border: 1px solid var(--rateb-border, #cbd5e1); color: inherit; }
+.rateb-portal-list { padding-inline-start: 1.2rem; }
+.rateb-portal-auth { max-width: 440px; }
+.rateb-portal-auth__alt { margin-top: 1rem; }
+.rateb-portal-inline-form { display: inline; }
+.rateb-portal-lead { color: var(--rateb-muted, #64748b); }
+.wb-portal-panel { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 10px; padding: 1rem; background: #fff; }
+.wb-portal-panel h3 { margin-top: 0; }
+.wb-portal-panel ul { margin: 0; padding-inline-start: 1.1rem; }

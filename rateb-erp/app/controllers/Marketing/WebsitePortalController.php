@@ -1,0 +1,498 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Controllers\Marketing;
+
+use Rateb\App\Core\Controller;
+use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Response;
+use Rateb\App\Core\SessionManager;
+use Rateb\App\Services\CmsService;
+use Rateb\App\Website\Portal\PortalAppointmentService;
+use Rateb\App\Website\Portal\PortalAuthService;
+use Rateb\App\Website\Portal\PortalDashboardService;
+use Rateb\App\Website\Portal\PortalDocumentService;
+use Rateb\App\Website\Portal\PortalFinanceService;
+use Rateb\App\Website\Portal\PortalRecruitmentService;
+use Rateb\App\Website\Portal\PortalRequestService;
+use Rateb\App\Website\Portal\PortalSupportService;
+use Rateb\App\Website\Portal\PortalWorkflowService;
+use Rateb\App\Website\WebsiteContext;
+
+/**
+ * Phase WEBSITE-07 — Employer / Customer / Partner self-service portals.
+ */
+final class WebsitePortalController extends Controller
+{
+    private function ensureWebsite(): bool
+    {
+        if (!class_exists(WebsiteContext::class)) {
+            $this->notFound();
+            return false;
+        }
+        if (WebsiteContext::current() === null) {
+            WebsiteContext::bootFromRequest();
+        }
+
+        return true;
+    }
+
+    private function resolvePortalType(string $type = ''): string
+    {
+        if (PortalAuthService::isValidType($type)) {
+            return $type;
+        }
+        $path = '';
+        if (isset($_GET['route']) && is_string($_GET['route'])) {
+            $path = '/' . trim($_GET['route'], '/');
+        } else {
+            $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        }
+        if (preg_match('#/(employer|customer|partner)(/|$)#', $path, $m)) {
+            return $m[1];
+        }
+
+        return '';
+    }
+
+    private function requireUser(string $type): ?array
+    {
+        $user = (new PortalAuthService())->currentUser($type);
+        if ($user === null) {
+            Response::redirect(rateb_url('site/' . $type . '/login'));
+
+            return null;
+        }
+
+        return $user;
+    }
+
+    public function showLogin(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            $this->notFound();
+            return;
+        }
+        if ((new PortalAuthService())->isLoggedIn($type)) {
+            Response::redirect(rateb_url('site/' . $type));
+            return;
+        }
+        $this->renderAuth($type, 'login');
+    }
+
+    public function login(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('site/' . $type . '/login'));
+            return;
+        }
+        $result = (new PortalAuthService())->login(
+            $type,
+            (string) $this->input('email', ''),
+            (string) $this->input('password', '')
+        );
+        if (!($result['ok'] ?? false)) {
+            SessionManager::flash('error', __('invalid_credentials') ?: 'Invalid credentials');
+            Response::redirect(rateb_url('site/' . $type . '/login'));
+            return;
+        }
+        Response::redirect(rateb_url('site/' . $type));
+    }
+
+    public function showRegister(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            $this->notFound();
+            return;
+        }
+        if ((new PortalAuthService())->isLoggedIn($type)) {
+            Response::redirect(rateb_url('site/' . $type));
+            return;
+        }
+        $this->renderAuth($type, 'register');
+    }
+
+    public function register(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            $this->notFound();
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('site/' . $type . '/register'));
+            return;
+        }
+        $result = (new PortalAuthService())->register($type, $_POST);
+        if (!($result['ok'] ?? false)) {
+            SessionManager::flash('error', (string) ($result['error'] ?? 'register_failed'));
+            Response::redirect(rateb_url('site/' . $type . '/register'));
+            return;
+        }
+        SessionManager::flash('success', __('register_ok') ?: 'Account created');
+        Response::redirect(rateb_url('site/' . $type));
+    }
+
+    public function logout(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type) ?: 'employer';
+        (new PortalAuthService())->logout();
+        Response::redirect(rateb_url('site/' . $type . '/login'));
+    }
+
+    public function dashboard(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $dash = new PortalDashboardService();
+        $data = match ($type) {
+            PortalAuthService::TYPE_EMPLOYER => $dash->employer($user),
+            PortalAuthService::TYPE_PARTNER => $dash->partner($user),
+            default => $dash->customer($user),
+        };
+        $this->renderPortal($type, 'dashboard', $data);
+    }
+
+    public function requests(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !PortalAuthService::isValidType($type)) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'requests', [
+            'user' => $user,
+            'requests' => (new PortalRequestService())->listForUser((int) $user['id']),
+        ]);
+    }
+
+    public function createRequest(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/requests'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $rtype = (string) $this->input('request_type', 'service');
+        $result = (new PortalRequestService())->create($user, $rtype, $_POST);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('request_submitted') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/requests'));
+    }
+
+    public function finance(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'finance', array_merge(
+            ['user' => $user],
+            (new PortalFinanceService())->snapshot($user)
+        ));
+    }
+
+    public function documents(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'documents', [
+            'user' => $user,
+            'documents' => (new PortalDocumentService())->listForUser((int) $user['id']),
+        ]);
+    }
+
+    public function uploadDocument(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/documents'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $file = isset($_FILES['document']) && is_array($_FILES['document']) ? $_FILES['document'] : [];
+        $result = (new PortalDocumentService())->upload(
+            $user,
+            $file,
+            (string) $this->input('doc_category', 'attachment'),
+            (string) $this->input('title', '')
+        );
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('upload_ok') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/documents'));
+    }
+
+    public function support(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'support', [
+            'user' => $user,
+            'tickets' => (new PortalSupportService())->ticketsForUser((int) $user['id']),
+        ]);
+    }
+
+    public function createTicket(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/support'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $result = (new PortalSupportService())->createTicket($user, $_POST);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('ticket_created') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/support'));
+    }
+
+    public function appointments(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'appointments', [
+            'user' => $user,
+            'appointments' => (new PortalAppointmentService())->listForUser((int) $user['id']),
+        ]);
+    }
+
+    public function bookAppointment(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/appointments'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $result = (new PortalAppointmentService())->book($user, $_POST);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('appointment_booked') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/appointments'));
+    }
+
+    public function recruitment(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type) ?: PortalAuthService::TYPE_EMPLOYER;
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_EMPLOYER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $this->renderPortal($type, 'recruitment', [
+            'user' => $user,
+            'search' => $q,
+            'candidates' => (new PortalRecruitmentService())->searchCandidates($q),
+            'shortlists' => (new PortalRecruitmentService())->shortlistsForUser((int) $user['id']),
+        ]);
+    }
+
+    public function shortlistCandidate(string $type = ''): void
+    {
+        $type = PortalAuthService::TYPE_EMPLOYER;
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/employer/recruitment'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $ok = (new PortalRecruitmentService())->shortlist($user, (int) $this->input('candidate_id', 0));
+        SessionManager::flash($ok ? 'success' : 'error', $ok ? __('shortlisted') : __('invalid_request'));
+        Response::redirect(rateb_url('site/employer/recruitment'));
+    }
+
+    public function decideShortlist(string $type = ''): void
+    {
+        $type = PortalAuthService::TYPE_EMPLOYER;
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/employer/recruitment'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $ok = (new PortalRecruitmentService())->decide(
+            $user,
+            (int) $this->input('shortlist_id', 0),
+            (string) $this->input('decision', ''),
+            (string) $this->input('notes', '')
+        );
+        SessionManager::flash($ok ? 'success' : 'error', $ok ? __('saved') : __('invalid_request'));
+        Response::redirect(rateb_url('site/employer/recruitment'));
+    }
+
+    public function approvals(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'approvals', [
+            'user' => $user,
+            'approvals' => (new PortalWorkflowService())->pendingForCompany(),
+        ]);
+    }
+
+    public function decideApproval(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/approvals'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $wf = new PortalWorkflowService();
+        $id = (int) $this->input('instance_id', 0);
+        $action = (string) $this->input('action', '');
+        $ok = $action === 'approve' ? $wf->approve($id) : ($action === 'reject' ? $wf->reject($id) : false);
+        SessionManager::flash($ok ? 'success' : 'error', $ok ? __('saved') : __('invalid_request'));
+        Response::redirect(rateb_url('site/' . $type . '/approvals'));
+    }
+
+    public function profile(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'profile', ['user' => $user]);
+    }
+
+    public function updateProfile(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/profile'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        try {
+            (new PortalAuthService())->updateProfile((int) $user['id'], $_POST);
+            SessionManager::flash('success', __('portal_profile_saved') ?: 'Profile saved');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        Response::redirect(rateb_url('site/' . $type . '/profile'));
+    }
+
+    public function notifications(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'notifications', [
+            'user' => $user,
+            'notifications' => (new \Rateb\App\Website\Portal\PortalNotificationService())->listInApp(),
+        ]);
+    }
+
+    private function renderAuth(string $type, string $section): void
+    {
+        $cms = new CmsService();
+        $title = ucfirst($type) . ' ' . ucfirst($section);
+        $this->view('marketing/portals/auth/' . $section, [
+            'title' => $title,
+            'portalType' => $type,
+            'meta' => $cms->metaTags($type . '-portal', $title),
+            'menuItems' => $cms->menuItems(),
+            'theme' => $cms->theme(),
+            'analytics' => $cms->analytics(),
+            'csrf' => Csrf::token(),
+            'isPortalPage' => true,
+            'hidePortalNav' => true,
+        ], 'marketing-portals');
+    }
+
+    /** @param array<string, mixed> $extra */
+    private function renderPortal(string $type, string $section, array $extra = []): void
+    {
+        $cms = new CmsService();
+        $title = ucfirst($type) . ' — ' . ucfirst($section);
+        $this->view('marketing/portals/' . $section, array_merge([
+            'title' => $title,
+            'portalType' => $type,
+            'portalSection' => $section,
+            'meta' => $cms->metaTags($type . '-portal', $title),
+            'menuItems' => $cms->menuItems(),
+            'theme' => $cms->theme(),
+            'analytics' => $cms->analytics(),
+            'csrf' => Csrf::token(),
+            'isPortalPage' => true,
+        ], $extra), 'marketing-portals');
+    }
+}

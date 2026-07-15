@@ -273,6 +273,11 @@ return [
             'website.forms.manage',
             'website.careers.view',
             'website.careers.manage',
+            'website.portal.view',
+            'website.portal.manage',
+            'website.customer.manage',
+            'website.employer.manage',
+            'website.partner.manage',
         ],
         'website.theme.manage' => [
             'website.view',

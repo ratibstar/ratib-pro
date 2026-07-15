@@ -36,6 +36,14 @@ if (!function_exists('rateb_career_portal_mw')) {
     }
 }
 
+if (!function_exists('rateb_website_portal_mw')) {
+    /** Phase WEBSITE-07 — Employer / Customer / Partner portal middleware. */
+    function rateb_website_portal_mw(string $portalType): array
+    {
+        return [[\Rateb\App\Core\Middleware\WebsitePortalAuthMiddleware::class, $portalType]];
+    }
+}
+
 if (!function_exists('rateb_admin_mw')) {
     /** Platform oversight routes — super admin + optional permission. */
     function rateb_admin_mw(string $permission = ''): array
