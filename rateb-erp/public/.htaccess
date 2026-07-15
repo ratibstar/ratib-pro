@@ -10,12 +10,24 @@
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
+# PWA manifests — without this Apache may omit Content-Type; Chrome + nosniff →
+# "Manifest: Line: 1, column: 1, Syntax error" and offline install breaks.
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+</IfModule>
+<FilesMatch "\.webmanifest$">
+    <IfModule mod_headers.c>
+        Header set Content-Type "application/manifest+json; charset=utf-8"
+        Header set Cache-Control "public, max-age=3600"
+    </IfModule>
+</FilesMatch>
+
 # Compress static assets — rateb-offline.js is ~370KB uncompressed without this.
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/manifest+json application/xml
 </IfModule>
 <IfModule mod_headers.c>
-    <FilesMatch "\.(js|css|json|svg)$">
+    <FilesMatch "\.(js|css|json|svg|webmanifest)$">
         Header append Vary Accept-Encoding
     </FilesMatch>
 </IfModule>

@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v30';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260715-csrf-nav-v66';
+var SW_BUILD_ID = '20260715-manifest-v67';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2016,6 +2016,21 @@ function emptyAssetResponse(request) {
                 'Cache-Control': 'no-store'
             }
         });
+    } else if (/\.webmanifest$/i.test(path) || /\/manifest\.json$/i.test(path)) {
+        // Never return empty text/plain — Chrome reports manifest syntax error at 1:1.
+        body = JSON.stringify({
+            name: 'RATEB POS',
+            short_name: 'POS',
+            start_url: './admin/ops/pos/register',
+            scope: './',
+            display: 'standalone',
+            background_color: '#0f1419',
+            theme_color: '#0f1419',
+            lang: 'ar',
+            dir: 'rtl',
+            icons: []
+        });
+        type = 'application/manifest+json; charset=utf-8';
     }
     return new Response(body, {
         status: 200,
@@ -2453,7 +2468,8 @@ function warmOptionalChromeAssets() {
             'assets/js/approvals-oversight.js',
             'assets/js/entity-documents-modal.js',
             'assets/js/table-tools.js',
-            'manifest.webmanifest'
+            'manifest.webmanifest',
+            'pos-manifest.webmanifest'
         ];
         var urls = [];
         critical.forEach(function (rel) {
