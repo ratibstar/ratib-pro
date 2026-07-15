@@ -5,19 +5,19 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 120;
+    var MAX_URLS = 40;
     var CONCURRENCY = 1;
-    var GAP_MS = 700;
+    var GAP_MS = 1200;
     var MIN_OK = 8;
     var MIN_ERP_HTML_BYTES = 20000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v34';
-    var COEXIST = 'rateb-erp-coexist-v33';
+    var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Phase OH — bump TTL keys so stale "success" without module HTML does not skip.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v13';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v13';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v13';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v14';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v14';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v14';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -1014,11 +1014,12 @@
             }
             return;
         }
+        // Idle auto-warm — delay so first Admin paint is not fighting page warm for bandwidth.
         var idleKick = function () {
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(function () { setTimeout(kickIdle, 2500); }, { timeout: 12000 });
+                root.requestIdleCallback(function () { setTimeout(kickIdle, 20000); }, { timeout: 45000 });
             } else {
-                setTimeout(kickIdle, 6000);
+                setTimeout(kickIdle, 30000);
             }
         };
         if (root.document && root.document.readyState === 'complete') {

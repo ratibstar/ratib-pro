@@ -12,7 +12,7 @@
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
     var GUARD_BUILD = '20260714-save-server-v52';
-    var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v33'];
+    var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v34'];
     var flushing = false;
 
     function browserHasNetwork() {

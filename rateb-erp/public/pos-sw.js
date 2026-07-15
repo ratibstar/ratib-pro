@@ -3,7 +3,7 @@
 
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
-var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v33';
+var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
 var SW_BUILD_ID = '20260715-offline-api-v68';
@@ -910,35 +910,27 @@ function withSoftOfflineCacheHeader(response) {
 
 /** Cloud soft-online ERP admin navigations — never leave respondWith unresolved. */
 function navigateErpCloudWithCacheSafety(request, url) {
-    // Company permissions mutate entitlements — cache-first would hide successful saves.
-    if (/\/admin\/company-permissions(\/|$)/i.test(String(url.pathname || ''))) {
-        return fetchNavigateNetwork(request, 8000).then(function (response) {
-            if (response && response.ok) {
-                return response;
+    // Soft-online: network-first so Admin opens quickly. Cache only if network is slow/fails.
+    // (Cache-first previously caused long spins while warm competed for bandwidth.)
+    function fromCacheOrFallback() {
+        return matchErpNavSnapshot(request, url).then(function (hit) {
+            if (!hit) {
+                return neverFailNavigate(request, url);
             }
-            return neverFailNavigate(request, url);
+            return asNonRedirectedResponse(hit).then(function (clean) {
+                return withSoftOfflineCacheHeader(clean || hit);
+            });
         }).catch(function () {
             return neverFailNavigate(request, url);
         });
     }
-    return matchErpNavSnapshot(request, url).then(function (hit) {
-        if (hit) {
-            return asNonRedirectedResponse(hit).then(function (clean) {
-                var base = clean || hit;
-                return withSoftOfflineCacheHeader(base);
-            });
+    return fetchNavigateNetwork(request, 4500).then(function (response) {
+        if (response && response.ok) {
+            return response;
         }
-        // No snapshot: network with bounded timeout, then neverFailNavigate (placeholder / parent list).
-        return fetchNavigateNetwork(request, 8000).then(function (response) {
-            if (response && response.ok) {
-                return response;
-            }
-            return neverFailNavigate(request, url);
-        }).catch(function () {
-            return neverFailNavigate(request, url);
-        });
+        return fromCacheOrFallback();
     }).catch(function () {
-        return neverFailNavigate(request, url);
+        return fromCacheOrFallback();
     });
 }
 
@@ -1888,8 +1880,8 @@ function fetchNavigateNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
-    // Cloud pages are slow when warm runs — never cut off at 1.5s (caused endless spin/fallback).
-    var ms = typeof timeoutMs === 'number' ? timeoutMs : 20000;
+    // Cloud pages: prefer a bounded wait, then fall back to cache (network-first navigation).
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 4500;
     var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
         // Non-OK (404/500) must fall through to cache — never paint server errors over
         // a good offline snapshot (edit→back to companies-approvals).
