@@ -461,11 +461,18 @@
             return;
         }
         var linesHtml = (receipt.lines || []).map(function (line) {
-            return '<div class="rateb-pos__receipt-line"><span>' + escapeHtml(line.description || '') + '</span><span>×' + line.quantity + '</span><span>' + money(line.line_total) + '</span></div>';
+            return '<div class="rateb-pos__receipt-line"><span>' + escapeHtml(line.description || line.item_name || '') + '</span><span>×' + line.quantity + '</span><span>' + money(line.line_total) + '</span></div>';
+        }).join('');
+        var payHtml = (receipt.payments || []).map(function (p) {
+            return '<div class="rateb-pos__receipt-line"><span>' + escapeHtml(p.method || '') + '</span><span>' + money(p.amount) + '</span></div>';
         }).join('');
         body.innerHTML =
             '<p class="rateb-pos__receipt-no"><strong>' + escapeHtml(receipt.order_no || '') + '</strong></p>' +
+            (receipt.customer_name ? '<p>' + escapeHtml(receipt.customer_name) + '</p>' : '') +
             '<div class="rateb-pos__receipt-lines">' + linesHtml + '</div>' +
+            (payHtml ? '<div class="rateb-pos__receipt-pays">' + payHtml + '</div>' : '') +
+            '<p class="rateb-pos__receipt-total">' + t('pos_subtotal', 'Subtotal') + ': ' + money(receipt.totals && receipt.totals.subtotal) + '</p>' +
+            '<p class="rateb-pos__receipt-total">' + t('pos_tax', 'Tax') + ': ' + money(receipt.totals && receipt.totals.tax) + '</p>' +
             '<p class="rateb-pos__receipt-total">' + t('pos_total', 'Total') + ': <strong>' + money(receipt.totals && receipt.totals.total) + '</strong></p>';
         receiptModal.hidden = false;
         try {
@@ -475,9 +482,54 @@
 
     window.RatebPosShowReceipt = showReceipt;
 
+    function buildLocalReceipt(state, payments, orderNo) {
+        state = state || getState();
+        var totals = state.totals || computeLocalPricing(state) || {};
+        return {
+            order_no: orderNo || ('LOCAL-' + Date.now().toString(36).toUpperCase()),
+            customer_name: (state.customer && state.customer.name) ? state.customer.name : t('pos_walk_in_customer', 'Walk-in customer'),
+            lines: (state.lines || []).map(function (line) {
+                return {
+                    description: line.item_name || line.description || '',
+                    quantity: line.quantity,
+                    line_total: line.line_total,
+                    unit_price: line.unit_price
+                };
+            }),
+            payments: (payments || []).map(function (p) {
+                return { method: p.method || 'cash', amount: p.amount };
+            }),
+            totals: {
+                subtotal: totals.subtotal || 0,
+                tax: totals.tax || 0,
+                total: totals.total || 0,
+                discount_total: totals.discount_total || 0
+            },
+            printed_at: new Date().toISOString(),
+            local: true
+        };
+    }
+
+    function presentReceiptAndPrint(receipt, autoPrint) {
+        if (!receipt) {
+            return;
+        }
+        showReceipt(receipt);
+        if (autoPrint === false) {
+            return;
+        }
+        // Give the modal a tick to paint before opening the print dialog.
+        setTimeout(function () {
+            try {
+                printReceipt();
+            } catch (ePrint) { /* ignore */ }
+        }, 250);
+    }
+
     function printReceipt() {
         var area = receiptModal ? receiptModal.querySelector('[data-pos-receipt-body]') : null;
-        if (!area) {
+        if (!area || !area.innerHTML) {
+            notify(t('pos_print_receipt', 'Print'), true);
             return;
         }
         var html = area.innerHTML;
@@ -499,7 +551,13 @@
             notify(t('pos_print_receipt', 'Print'), true);
             return;
         }
-        w.document.write('<html><head><title>' + t('pos_receipt', 'Receipt') + '</title><style>body{font-family:monospace;padding:12px} .rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}</style></head><body>' + html + '</body></html>');
+        w.document.write(
+            '<html><head><meta charset="utf-8"><title>' + t('pos_receipt', 'Receipt') + '</title>' +
+            '<style>body{font-family:Tajawal,monospace;padding:12px;direction:rtl}' +
+            '.rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}' +
+            '.rateb-pos__receipt-total{margin:6px 0;font-size:1.05rem}</style></head><body>' +
+            html + '</body></html>'
+        );
         w.document.close();
         w.focus();
         w.print();
@@ -591,9 +649,11 @@
                 },
                 version: 1
             }, { apiBase: api.sync }).then(function () {
+                var localReceipt = buildLocalReceipt(state, payments, 'OFF-' + String(checkoutIdempotencyKey || '').slice(0, 8).toUpperCase());
                 closeCheckout();
                 checkoutIdempotencyKey = null;
                 notify(t('pos_offline_queued', 'Sale queued for sync'));
+                presentReceiptAndPrint(localReceipt, true);
                 if (window.RatebPosRegisterReset) {
                     window.RatebPosRegisterReset();
                 }
@@ -636,9 +696,11 @@
                 closeCheckout();
                 checkoutIdempotencyKey = null;
                 notify(t('pos_complete_sale', 'Sale complete'));
-                if (data.receipt) {
-                    showReceipt(data.receipt);
+                var receipt = data.receipt || null;
+                if (!receipt) {
+                    receipt = buildLocalReceipt(getState(), payments, (data.order_no || data.orderNo || ''));
                 }
+                presentReceiptAndPrint(receipt, true);
                 if (window.RatebPosRegisterReset) {
                     window.RatebPosRegisterReset();
                 }
