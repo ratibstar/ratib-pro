@@ -7,7 +7,9 @@
 /** @var array<string, mixed>|null $limits */
 /** @var string $companyAdminLogin */
 /** @var string $companyLoginUrl */
+/** @var string $companyAdminUrl */
 /** @var array<string, mixed>|null $linkedAgency */
+/** @var bool $agencyPortalMode */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $userLimitVal = (int) ($item['user_limit'] ?? 0);
@@ -20,7 +22,9 @@ if ($storageLimitVal < 1) {
 }
 $companyAdminLogin = (string) ($companyAdminLogin ?? '');
 $companyLoginUrl = (string) ($companyLoginUrl ?? '');
+$companyAdminUrl = (string) ($companyAdminUrl ?? '');
 $linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgency : null;
+$agencyPortalMode = !empty($agencyPortalMode);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -30,8 +34,10 @@ $linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgenc
             <strong><?php echo __('company_agency_mirror_title'); ?></strong>
             #<?php echo (int) ($linkedAgency['id'] ?? 0); ?>
             — <?php echo Rateb\App\Core\View::escape((string) ($linkedAgency['name'] ?? '')); ?>
-            <?php if (!empty($linkedAgency['site_url'])) { ?>
-            · <a href="<?php echo Rateb\App\Core\View::escape((string) $linkedAgency['site_url']); ?>" target="_blank" rel="noopener"><?php echo Rateb\App\Core\View::escape((string) $linkedAgency['site_url']); ?></a>
+            <?php
+            $bannerSite = trim((string) ($linkedAgency['site_url'] ?? ''));
+            if ($bannerSite !== '') { ?>
+            · <a href="<?php echo Rateb\App\Core\View::escape($bannerSite); ?>" target="_blank" rel="noopener"><?php echo Rateb\App\Core\View::escape($bannerSite); ?></a>
             <?php } ?>
             <div class="small mt-1 mb-0"><?php echo __('company_agency_mirror_help'); ?></div>
         </div>
@@ -45,8 +51,28 @@ $linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgenc
                     <input class="form-control" type="text" name="name" value="<?php echo Rateb\App\Core\View::escape($item['name'] ?? ''); ?>" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label"><?php echo __('slug'); ?> / <?php echo __('company_login_link'); ?></label>
+                    <label class="form-label"><?php echo __('slug'); ?></label>
                     <input class="form-control" type="text" name="slug" id="rateb-company-slug" value="<?php echo Rateb\App\Core\View::escape($item['slug'] ?? ''); ?>" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label"><?php echo $agencyPortalMode ? __('company_agency_portal_links') : __('company_login_link'); ?></label>
+                    <?php if ($agencyPortalMode) { ?>
+                    <p class="form-text mb-2"><?php echo __('company_agency_portal_help'); ?></p>
+                    <?php if ($companyLoginUrl !== '') { ?>
+                    <label class="form-label small mb-1"><?php echo __('company_agency_login'); ?></label>
+                    <div class="input-group input-group-sm mb-2">
+                        <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape($companyLoginUrl); ?>" readonly>
+                        <a class="btn btn-outline-secondary" href="<?php echo Rateb\App\Core\View::escape($companyLoginUrl); ?>" target="_blank" rel="noopener"><?php echo __('open_company_portal'); ?></a>
+                    </div>
+                    <?php } ?>
+                    <?php if ($companyAdminUrl !== '') { ?>
+                    <label class="form-label small mb-1"><?php echo __('company_agency_admin'); ?></label>
+                    <div class="input-group input-group-sm">
+                        <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape($companyAdminUrl); ?>" readonly>
+                        <a class="btn btn-outline-primary" href="<?php echo Rateb\App\Core\View::escape($companyAdminUrl); ?>" target="_blank" rel="noopener"><?php echo __('company_agency_open_admin'); ?></a>
+                    </div>
+                    <?php } ?>
+                    <?php } else { ?>
                     <p class="form-text mb-1"><?php echo __('company_login_link_help'); ?></p>
                     <?php if ($companyLoginUrl !== '') { ?>
                     <div class="input-group input-group-sm">
@@ -55,6 +81,7 @@ $linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgenc
                     </div>
                     <?php } else { ?>
                     <p class="form-text text-muted mb-0"><?php echo __('company_login_link_after_slug'); ?></p>
+                    <?php } ?>
                     <?php } ?>
                 </div>
                 <div class="col-md-6">

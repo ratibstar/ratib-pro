@@ -229,7 +229,8 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'id', 'label' => 'id', 'type' => 'id'],
             ['name' => 'agency_id', 'label' => 'agency_id', 'type' => 'number'],
             ['name' => 'name', 'label' => 'name', 'type' => 'clip'],
-            ['name' => 'site_url', 'label' => 'company_agency_site', 'type' => 'clip'],
+            ['name' => 'site_url', 'label' => 'company_agency_site', 'type' => 'url'],
+            ['name' => 'agency_login_url', 'label' => 'company_agency_login', 'type' => 'url'],
             ['name' => 'erp_status', 'label' => 'company_agency_erp_status', 'type' => 'clip'],
             ['name' => 'email', 'label' => 'email', 'type' => 'clip'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
@@ -280,10 +281,16 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 continue;
             }
             $name = trim((string) ($agency['name'] ?? ''));
-            $site = trim((string) ($agency['site_url'] ?? ''));
+            $siteRaw = trim((string) ($agency['site_url'] ?? ''));
+            $site = function_exists('rateb_normalize_agency_site_url')
+                ? rateb_normalize_agency_site_url($siteRaw)
+                : $siteRaw;
+            $loginUrl = function_exists('rateb_agency_erp_login_url')
+                ? rateb_agency_erp_login_url($site)
+                : '';
             $erpStatus = trim((string) ($agency['erp_status'] ?? ''));
             if ($search !== '') {
-                $hay = strtolower($name . ' ' . $site . ' ' . $agencyId . ' ' . $erpStatus);
+                $hay = strtolower($name . ' ' . $site . ' ' . $loginUrl . ' ' . $agencyId . ' ' . $erpStatus);
                 if (!str_contains($hay, strtolower($search))) {
                     continue;
                 }
@@ -303,6 +310,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 'agency_id' => $agencyId,
                 'name' => $name !== '' ? $name : (string) ($company['name'] ?? ''),
                 'site_url' => $site,
+                'agency_login_url' => $loginUrl,
                 'erp_status' => $erpStatus !== '' ? $erpStatus : '—',
             ]);
         }
@@ -392,10 +400,6 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
         $companyId = $item ? (int) ($item['id'] ?? 0) : 0;
         $adminUser = $companyId > 0 ? $this->findCompanyAdminUser($companyId) : null;
-        $slug = trim((string) ($item['slug'] ?? ''));
-        $companyLoginUrl = $slug !== '' && function_exists('rateb_public_url')
-            ? rateb_public_url('login?company=' . rawurlencode($slug))
-            : '';
         $linkedAgency = null;
         if ($companyId > 0) {
             try {
@@ -413,6 +417,25 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 $linkedAgency = null;
             }
         }
+        $agencySite = '';
+        $companyLoginUrl = '';
+        $companyAdminUrl = '';
+        if (is_array($linkedAgency)) {
+            $agencySite = function_exists('rateb_normalize_agency_site_url')
+                ? rateb_normalize_agency_site_url((string) ($linkedAgency['site_url'] ?? ''))
+                : trim((string) ($linkedAgency['site_url'] ?? ''));
+            $linkedAgency['site_url'] = $agencySite;
+            if ($agencySite !== '' && function_exists('rateb_agency_erp_login_url')) {
+                $companyLoginUrl = rateb_agency_erp_login_url($agencySite);
+                $companyAdminUrl = rateb_agency_erp_admin_url($agencySite);
+            }
+        }
+        if ($companyLoginUrl === '') {
+            $slug = trim((string) ($item['slug'] ?? ''));
+            $companyLoginUrl = $slug !== '' && function_exists('rateb_public_url')
+                ? rateb_public_url('login?company=' . rawurlencode($slug))
+                : '';
+        }
 
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
@@ -427,7 +450,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId) : null,
             'companyAdminLogin' => $adminUser ? $this->displayCompanyAdminLogin($adminUser) : '',
             'companyLoginUrl' => $companyLoginUrl,
+            'companyAdminUrl' => $companyAdminUrl,
             'linkedAgency' => $linkedAgency,
+            'agencyPortalMode' => is_array($linkedAgency) && $agencySite !== '',
         ];
     }
 

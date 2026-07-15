@@ -80,7 +80,11 @@ if (!function_exists('rateb_normalize_http_host')) {
 if (!function_exists('rateb_agency_host_from_site_url')) {
     function rateb_agency_host_from_site_url(string $siteUrl): string
     {
-        $siteUrl = trim($siteUrl);
+        if (function_exists('rateb_normalize_agency_site_url')) {
+            $siteUrl = rateb_normalize_agency_site_url($siteUrl);
+        } else {
+            $siteUrl = trim($siteUrl);
+        }
         if ($siteUrl === '') {
             return '';
         }
@@ -92,6 +96,76 @@ if (!function_exists('rateb_agency_host_from_site_url')) {
         $clean = explode('/', $clean, 2)[0];
 
         return rateb_normalize_http_host($clean);
+    }
+}
+
+if (!function_exists('rateb_normalize_agency_site_url')) {
+    /**
+     * Fix common CP typos: "/https://test.rateb.sa" → "https://test.rateb.sa"
+     */
+    function rateb_normalize_agency_site_url(string $siteUrl): string
+    {
+        $siteUrl = trim($siteUrl);
+        if ($siteUrl === '') {
+            return '';
+        }
+        $siteUrl = preg_replace('#^/+#', '', $siteUrl) ?? $siteUrl;
+        $siteUrl = preg_replace('#^(https?:)/+#i', '$1//', $siteUrl) ?? $siteUrl;
+        if (!preg_match('#^https?://#i', $siteUrl)) {
+            $siteUrl = 'https://' . ltrim($siteUrl, '/');
+        }
+        $parts = parse_url($siteUrl);
+        if (!is_array($parts) || empty($parts['host'])) {
+            return rtrim($siteUrl, '/');
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'https'));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            $scheme = 'https';
+        }
+        $host = strtolower((string) $parts['host']);
+        $port = isset($parts['port']) ? (':' . (int) $parts['port']) : '';
+        $path = (string) ($parts['path'] ?? '');
+        $path = rtrim($path, '/');
+
+        return $scheme . '://' . $host . $port . $path;
+    }
+}
+
+if (!function_exists('rateb_agency_erp_public_base')) {
+    /** Base ERP public URL for an agency site_url, e.g. https://test.rateb.sa/rateb-erp/public */
+    function rateb_agency_erp_public_base(string $siteUrl): string
+    {
+        $base = rateb_normalize_agency_site_url($siteUrl);
+        if ($base === '') {
+            return '';
+        }
+        if (preg_match('#/rateb-erp/public(?:/|$)#i', $base)) {
+            return (string) preg_replace('#/rateb-erp/public(?:/.*)?$#i', '/rateb-erp/public', $base);
+        }
+        if (preg_match('#/rateb-erp(?:/|$)#i', $base)) {
+            return (string) preg_replace('#/rateb-erp(?:/.*)?$#i', '/rateb-erp/public', $base);
+        }
+
+        return $base . '/rateb-erp/public';
+    }
+}
+
+if (!function_exists('rateb_agency_erp_login_url')) {
+    /** Client login URL on the agency domain (not rateb.sa/?company=). */
+    function rateb_agency_erp_login_url(string $siteUrl): string
+    {
+        $public = rateb_agency_erp_public_base($siteUrl);
+
+        return $public !== '' ? ($public . '/login') : '';
+    }
+}
+
+if (!function_exists('rateb_agency_erp_admin_url')) {
+    function rateb_agency_erp_admin_url(string $siteUrl): string
+    {
+        $public = rateb_agency_erp_public_base($siteUrl);
+
+        return $public !== '' ? ($public . '/admin') : '';
     }
 }
 
@@ -307,6 +381,9 @@ if (!function_exists('rateb_list_agencies_with_erp')) {
         $rows = [];
         while ($row = $res->fetch_assoc()) {
             if (is_array($row)) {
+                if (isset($row['site_url']) && function_exists('rateb_normalize_agency_site_url')) {
+                    $row['site_url'] = rateb_normalize_agency_site_url((string) $row['site_url']);
+                }
                 $rows[] = $row;
             }
         }
@@ -357,6 +434,9 @@ if (!function_exists('rateb_list_control_agencies')) {
         $rows = [];
         while ($row = $res->fetch_assoc()) {
             if (is_array($row)) {
+                if (isset($row['site_url']) && function_exists('rateb_normalize_agency_site_url')) {
+                    $row['site_url'] = rateb_normalize_agency_site_url((string) $row['site_url']);
+                }
                 $rows[] = $row;
             }
         }

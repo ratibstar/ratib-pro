@@ -208,6 +208,19 @@ $ratebRowRecordLabel = static function (array $row): string {
                             }
                             ?>
                     <td class="rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape($display); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
+                        <?php } elseif ($colType === 'url') {
+                            $href = trim((string) $val);
+                            if ($href !== '' && !preg_match('#^https?://#i', $href)) {
+                                $href = '';
+                            }
+                            ?>
+                    <td class="rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>">
+                        <?php if ($href !== '') { ?>
+                        <a href="<?php echo Rateb\App\Core\View::escape($href); ?>" target="_blank" rel="noopener" class="text-break"><?php echo Rateb\App\Core\View::escape((string) $val); ?></a>
+                        <?php } else { ?>
+                        <span class="text-muted">—</span>
+                        <?php } ?>
+                    </td>
                         <?php } elseif ($colType === 'slug' || $colName === 'slug') {
                             Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => array_merge($col, ['type' => 'id', 'name' => 'slug'])]);
                         } elseif ($colType === 'html_preview') {
