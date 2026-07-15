@@ -66,6 +66,11 @@ $ratebRowRecordLabel = static function (array $row): string {
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title); ?></span>
         <div class="d-flex flex-wrap gap-2">
+        <?php if ($isCompanies) { ?>
+        <a href="<?php echo rateb_url('admin/company-permissions'); ?>" class="btn btn-info btn-sm">
+            <i class="fas fa-toggle-on"></i> <?php echo __('company_permissions'); ?>
+        </a>
+        <?php } ?>
         <?php if ($isCompanies && function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled()) { ?>
         <a href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_platform_company_branches_url') ? rateb_platform_company_branches_url() : rateb_control_panel_branch_manage_url()); ?>" class="btn btn-outline-primary btn-sm" title="<?php echo Rateb\App\Core\View::escape(__('manage_branches_cp')); ?>">
             <i class="fas fa-code-branch"></i> <?php echo __('manage_branches_cp'); ?>
@@ -114,7 +119,7 @@ $ratebRowRecordLabel = static function (array $row): string {
             ]);
         } ?>
         <div class="rateb-table-wrap" data-rateb-table-root="1"<?php echo ($exportEnabled ?? true) && $exportRoute !== '' ? ' data-export-route="' . Rateb\App\Core\View::escape($exportRoute) . '"' : ''; ?>>
-            <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
+            <table class="table rateb-table mb-0<?php echo $isCompanies ? ' rateb-companies-table' : ''; ?>" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>
                     <?php foreach ($columns as $col) { ?>
@@ -231,6 +236,86 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                         <?php } ?>
                         <?php if ($actionsEnabled) { ?>
+                        <?php if ($isCompanies) {
+                            $companyStatus = (string) ($row['status'] ?? '');
+                            $cid = (int) ($row['id'] ?? 0);
+                            $canCompanyPerms = rateb_is_super_admin()
+                                || rateb_can('company_plans.manage')
+                                || rateb_can('companies.manage');
+                            $branchCompanyId = $companyRowId > 0 ? $companyRowId : $cid;
+                            $branchCompanyName = trim((string) ($row['name'] ?? ''));
+                            $branchCpUrl = function_exists('rateb_platform_company_branches_url')
+                                ? rateb_platform_company_branches_url($branchCompanyId)
+                                : rateb_control_panel_branch_manage_url($branchCompanyId);
+                            $showBranches = function_exists('rateb_platform_branch_manage_enabled')
+                                && rateb_platform_branch_manage_enabled()
+                                && $companyStatus === 'active';
+                            ?>
+                        <?php if ($canCompanyPerms) { ?>
+                        <a href="<?php echo rateb_url('admin/company-permissions/' . $cid); ?>" class="btn btn-sm btn-info" title="<?php echo Rateb\App\Core\View::escape(__('company_permissions')); ?>">
+                            <i class="fas fa-toggle-on"></i>
+                            <span class="rateb-btn-label"><?php echo __('company_permissions'); ?></span>
+                        </a>
+                        <?php } ?>
+                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . $cid . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" title="<?php echo __('edit'); ?>">
+                            <i class="fas fa-edit"></i>
+                            <span class="rateb-btn-label"><?php echo __('edit'); ?></span>
+                        </a>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<?php echo __('actions'); ?>">
+                                <?php echo __('more'); ?>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <?php if ($documentEntityType !== '') {
+                                    $docCount = (int) ($row['document_count'] ?? 0);
+                                    $rowLabel = $ratebRowRecordLabel($row);
+                                    ?>
+                                <li>
+                                    <button type="button" class="dropdown-item js-entity-docs-open"
+                                        data-route-prefix="<?php echo Rateb\App\Core\View::escape(rateb_url($actionsRoutePrefix)); ?>"
+                                        data-entity-id="<?php echo $cid; ?>"
+                                        data-record-label="<?php echo Rateb\App\Core\View::escape($rowLabel); ?>"
+                                        data-docs-title="<?php echo Rateb\App\Core\View::escape(__('entity_documents')); ?>"
+                                        data-doc-count="<?php echo $docCount; ?>">
+                                        <i class="fas fa-paperclip me-1"></i><?php echo __('view_files'); ?><?php echo $docCount > 0 ? ' (' . $docCount . ')' : ''; ?>
+                                    </button>
+                                </li>
+                                <?php } ?>
+                                <?php if ($showBranches) { ?>
+                                <li>
+                                    <a class="dropdown-item" href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>">
+                                        <i class="fas fa-code-branch me-1"></i><?php echo __('manage_branches_cp'); ?>
+                                    </a>
+                                </li>
+                                <?php } ?>
+                                <?php if ($companyStatus === 'active') { ?>
+                                <li>
+                                    <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/suspend'); ?>">
+                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                        <button type="submit" class="dropdown-item text-warning">
+                                            <i class="fas fa-pause me-1"></i><?php echo __('bulk_suspend'); ?>
+                                        </button>
+                                    </form>
+                                </li>
+                                <?php } elseif ($companyStatus === 'pending') { ?>
+                                <li>
+                                    <a class="dropdown-item text-success" href="<?php echo rateb_url('admin/oversight/companies-approvals'); ?>">
+                                        <i class="fas fa-check-double me-1"></i><?php echo __('companies_approvals_oversight'); ?>
+                                    </a>
+                                </li>
+                                <?php } ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . $cid . '/delete'); ?>" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
+                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-trash me-1"></i><?php echo __('delete'); ?>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                        <?php } else { ?>
                         <?php if ($isInventoryList && (float) ($row['quantity'] ?? 0) > 0) { ?>
                         <form method="post"
                               action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int) $row['id'] . '/transfer-to-pos-warehouse'); ?>"
@@ -286,33 +371,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>
-                        <?php if ($isCompanies) {
-                            $companyStatus = (string) ($row['status'] ?? '');
-                            if ((rateb_can('company_plans.manage') || rateb_can('companies.manage') || rateb_is_super_admin())) {
-                                $cpTitle = __('company_permissions') . ' — #' . (int) ($row['id'] ?? 0);
-                                ?>
-                        <a href="<?php echo rateb_url('admin/company-permissions/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo Rateb\App\Core\View::escape($cpTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($cpTitle); ?>"><i class="fas fa-sliders"></i></a>
-                        <?php }
-                            if (function_exists('rateb_platform_branch_manage_enabled') && rateb_platform_branch_manage_enabled() && $companyStatus === 'active') {
-                                $branchCompanyId = $companyRowId > 0 ? $companyRowId : (int) ($row['id'] ?? 0);
-                                $branchCompanyName = trim((string) ($row['name'] ?? ''));
-                                $branchCpUrl = function_exists('rateb_platform_company_branches_url')
-                                    ? rateb_platform_company_branches_url($branchCompanyId)
-                                    : rateb_control_panel_branch_manage_url($branchCompanyId);
-                                $branchTitle = __('manage_branches_cp') . ($branchCompanyName !== '' ? ' — ' . $branchCompanyName : '') . ' #' . $branchCompanyId;
-                                ?>
-                        <a href="<?php echo Rateb\App\Core\View::escape($branchCpUrl); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>" aria-label="<?php echo Rateb\App\Core\View::escape($branchTitle); ?>"><i class="fas fa-code-branch"></i><span class="visually-hidden">#<?php echo $branchCompanyId; ?></span></a>
-                        <?php }
-                            if ($companyStatus === 'active') { ?>
-                        <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">
-                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-warning" title="<?php echo Rateb\App\Core\View::escape(__('bulk_suspend')); ?>"><i class="fas fa-pause"></i></button>
-                        </form>
-                        <?php }
-                            if ($companyStatus === 'pending') { ?>
-                        <a href="<?php echo rateb_url('admin/oversight/companies-approvals'); ?>" class="btn btn-sm btn-outline-success" title="<?php echo Rateb\App\Core\View::escape(__('companies_approvals_oversight')); ?>"><i class="fas fa-check-double"></i></a>
-                        <?php }
-                        } ?>
+                        <?php } ?>
                         <?php } ?>
                         <?php } ?>
                         </div>

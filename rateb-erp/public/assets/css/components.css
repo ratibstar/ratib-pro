@@ -153,6 +153,27 @@
     max-width: none;
 }
 
+/* Companies list — readable action labels (avoid icon-only crush) */
+.rateb-companies-table {
+    table-layout: auto !important;
+}
+.rateb-companies-table th.rateb-th-actions,
+.rateb-companies-table td.rateb-actions-cell {
+    min-width: 18rem;
+    width: 22%;
+}
+.rateb-companies-table td.rateb-actions-cell > .rateb-actions {
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+.rateb-companies-table .rateb-btn-label {
+    display: inline;
+    margin-inline-start: 0.25rem;
+}
+.rateb-companies-table .dropdown-menu {
+    z-index: 1080;
+}
+
 .rateb-main table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table),
 .rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) {
     table-layout: fixed;

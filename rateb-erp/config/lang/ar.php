@@ -515,6 +515,7 @@ return [
     'company_permissions_saved' => 'تم حفظ صلاحيات الشركة.',
     'company_permissions_clear_optional' => 'إلغاء الاختياري',
     'company_permissions_core' => 'أساسية',
+    'more' => 'المزيد',
     'company_saved_pending_oversight' => 'تم حفظ الشركة — بانتظار الاعتماد في مراقبة الإدارة.',
     'company_edit_pending_oversight' => 'تم حفظ التعديلات — بانتظار اعتماد الإدارة.',
     'company_approve_in_oversight' => 'اعتماد الشركات (إضافة/تعديل) يتم من مراقبة الإدارة → اعتماد الشركات.',

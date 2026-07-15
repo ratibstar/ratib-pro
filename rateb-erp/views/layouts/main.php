@@ -405,7 +405,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ];
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
-                ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-sliders', 'companies.view']],
+                ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
                 ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
                 [
@@ -1098,7 +1098,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       if (html.length < 500 || html.length > 2500000) return;
       var cacheNames = [
         (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v34',
-        'rateb-erp-coexist-v30'
+        'rateb-erp-coexist-v32'
       ];
       var keys = [location.href, location.origin + location.pathname];
       var bare = location.pathname.replace(/\/+$/, '');

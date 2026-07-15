@@ -515,6 +515,7 @@ return [
     'company_permissions_saved' => 'Company permissions saved.',
     'company_permissions_clear_optional' => 'Clear optional',
     'company_permissions_core' => 'Core',
+    'more' => 'More',
     'company_saved_pending_oversight' => 'Company saved — pending approval in admin oversight.',
     'company_edit_pending_oversight' => 'Changes saved — pending management approval.',
     'company_approve_in_oversight' => 'Company add/edit approval is handled under Admin oversight → Company approvals.',
