@@ -74,6 +74,15 @@ $router->get('/site/employer/recruitment', [WebsitePortalController::class, 'rec
 $router->post('/site/employer/recruitment/shortlist', [WebsitePortalController::class, 'shortlistCandidate'], rateb_website_portal_mw('employer'));
 $router->post('/site/employer/recruitment/decide', [WebsitePortalController::class, 'decideShortlist'], rateb_website_portal_mw('employer'));
 
+// Phase WEBSITE-08 — Customer workspace extensions
+$cmw = rateb_website_portal_mw('customer');
+$router->get('/site/customer/contracts', [WebsitePortalController::class, 'contracts'], $cmw);
+$router->get('/site/customer/pipeline', [WebsitePortalController::class, 'pipeline'], $cmw);
+$router->get('/site/customer/finance/download', [WebsitePortalController::class, 'downloadInvoice'], $cmw);
+$router->post('/site/customer/requests/update', [WebsitePortalController::class, 'updateRequest'], $cmw);
+$router->post('/site/customer/support/reply', [WebsitePortalController::class, 'replyTicket'], $cmw);
+$router->post('/site/customer/profile/contacts', [WebsitePortalController::class, 'addContact'], $cmw);
+
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);
 $router->get('/site/robots.txt', [MarketingController::class, 'robots']);

@@ -28,7 +28,7 @@ final class PortalFinanceService
         $payments = [];
         try {
             $invoices = $this->repo->fetchAll(
-                'SELECT id, invoice_no, total_amount, currency, status, payment_status, due_date, issued_at
+                'SELECT id, invoice_no, total_amount, currency, status, payment_status, due_date, issued_at, document_path
                  FROM rateb_invoices WHERE company_id = :cid ORDER BY id DESC LIMIT 50',
                 ['cid' => $cid]
             );
@@ -55,5 +55,34 @@ final class PortalFinanceService
             'outstanding' => $outstanding,
             'portal_user_id' => $portalUser !== null ? (int) ($portalUser['id'] ?? 0) : 0,
         ];
+    }
+
+    /** @return array{balance: float, invoices: list<array<string,mixed>>, payments: list<array<string,mixed>>} */
+    public function statement(?array $portalUser = null): array
+    {
+        $snap = $this->snapshot($portalUser);
+
+        return [
+            'balance' => (float) $snap['outstanding'],
+            'invoices' => $snap['invoices'],
+            'payments' => $snap['payments'],
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findInvoice(int $invoiceId): ?array
+    {
+        if ($invoiceId < 1) {
+            return null;
+        }
+        $row = $this->repo->fetchOne(
+            'SELECT * FROM rateb_invoices WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $invoiceId, 'cid' => $this->repo->companyId()]
+        );
+        if ($row !== null) {
+            $this->repo->assertRowCompany($row, 'invoice');
+        }
+
+        return $row;
     }
 }

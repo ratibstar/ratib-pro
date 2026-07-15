@@ -110,4 +110,59 @@ final class PortalRecruitmentService
             $params
         );
     }
+
+    /**
+     * Read-only ATS pipeline stages (RecruitmentWorkflowService statuses).
+     *
+     * @return array{total: int, stages: array<string, list<array<string,mixed>>>}
+     */
+    public function pipelineSummary(int $limitPerStage = 20): array
+    {
+        TenantContext::setCompanyId($this->repo->companyId());
+        $stages = [
+            'shortlisted' => [],
+            'interview' => [],
+            'medical' => [],
+            'visa' => [],
+            'ready' => [],
+            'deployed' => [],
+        ];
+        $map = [
+            'interview' => 'interview',
+            'medical' => 'medical',
+            'visa' => 'visa',
+            'ready' => 'ready',
+            'deployed' => 'deployed',
+            'registered' => 'shortlisted',
+            'documents_pending' => 'shortlisted',
+            'draft' => 'shortlisted',
+            'contract' => 'ready',
+        ];
+        $limitPerStage = max(1, min(50, $limitPerStage));
+        try {
+            $rows = $this->repo->fetchAll(
+                "SELECT id, full_name, candidate_no, workflow_status, email, job_title_target
+                 FROM rateb_recruitment_candidates
+                 WHERE company_id = :cid AND deleted_at IS NULL
+                 ORDER BY id DESC LIMIT 200",
+                ['cid' => $this->repo->companyId()]
+            );
+            foreach ($rows as $row) {
+                $ws = (string) ($row['workflow_status'] ?? 'draft');
+                $bucket = $map[$ws] ?? 'shortlisted';
+                if (count($stages[$bucket]) >= $limitPerStage) {
+                    continue;
+                }
+                $stages[$bucket][] = $row;
+            }
+        } catch (\Throwable $e) {
+            error_log('PortalRecruitmentService pipeline: ' . $e->getMessage());
+        }
+        $total = 0;
+        foreach ($stages as $list) {
+            $total += count($list);
+        }
+
+        return ['total' => $total, 'stages' => $stages];
+    }
 }

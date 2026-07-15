@@ -84,4 +84,69 @@ final class PortalSupportService
             $params
         );
     }
+
+    /** @return array{ok: bool, error?: string} */
+    public function addReply(array $portalUser, int $ticketId, string $body, ?array $file = null): array
+    {
+        $body = trim($body);
+        if ($body === '') {
+            return ['ok' => false, 'error' => 'message_required'];
+        }
+        if (!$this->userOwnsTicket((int) $portalUser['id'], $ticketId)) {
+            return ['ok' => false, 'error' => 'ticket_not_found'];
+        }
+        $mediaId = null;
+        $path = null;
+        if ($file !== null && !empty($file['tmp_name'])) {
+            $upload = (new \Rateb\App\Website\TenantMediaService($this->repo))->upload($file);
+            if (($upload['ok'] ?? false) === true) {
+                $mediaId = (int) ($upload['id'] ?? 0) ?: null;
+                $path = (string) ($upload['path'] ?? '');
+            }
+        }
+        $this->repo->execute(
+            'INSERT INTO rateb_website_portal_ticket_replies
+             (company_id, portal_user_id, support_ticket_id, body, attachment_media_id, attachment_path)
+             VALUES (:cid, :uid, :tid, :body, :mid, :path)',
+            [
+                'cid' => $this->repo->companyId(),
+                'uid' => (int) $portalUser['id'],
+                'tid' => $ticketId,
+                'body' => $body,
+                'mid' => $mediaId,
+                'path' => $path,
+            ]
+        );
+
+        return ['ok' => true];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function repliesForTicket(int $portalUserId, int $ticketId): array
+    {
+        if (!$this->userOwnsTicket($portalUserId, $ticketId)) {
+            return [];
+        }
+        [$where, $params] = $this->repo->companyWhere();
+        $params['tid'] = $ticketId;
+
+        return $this->repo->fetchAll(
+            "SELECT * FROM rateb_website_portal_ticket_replies WHERE {$where} AND support_ticket_id = :tid ORDER BY id ASC",
+            $params
+        );
+    }
+
+    private function userOwnsTicket(int $portalUserId, int $ticketId): bool
+    {
+        [$where, $params] = $this->repo->companyWhere();
+        $params['uid'] = $portalUserId;
+        $params['tid'] = $ticketId;
+        $row = $this->repo->fetchOne(
+            "SELECT id FROM rateb_website_portal_ticket_links
+             WHERE {$where} AND portal_user_id = :uid AND support_ticket_id = :tid LIMIT 1",
+            $params
+        );
+
+        return $row !== null;
+    }
 }

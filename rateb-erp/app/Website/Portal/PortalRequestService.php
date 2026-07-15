@@ -40,7 +40,8 @@ final class PortalRequestService
             $priority = 'normal';
         }
 
-        $crmLeadId = $this->routeToCrm($portalUser, $requestType, $title, $data);
+        $isDraft = !empty($data['as_draft']) || (string) ($data['status'] ?? '') === 'draft';
+        $crmLeadId = $isDraft ? null : $this->routeToCrm($portalUser, $requestType, $title, $data);
 
         $this->repo->execute(
             'INSERT INTO rateb_website_portal_requests
@@ -54,7 +55,7 @@ final class PortalRequestService
                 'title' => $title,
                 'desc' => trim((string) ($data['description'] ?? '')) ?: null,
                 'prio' => $priority,
-                'st' => 'submitted',
+                'st' => $isDraft ? 'draft' : 'submitted',
                 'lead' => $crmLeadId,
                 'meta' => json_encode([
                     'contact_phone' => $data['phone'] ?? null,
@@ -64,6 +65,62 @@ final class PortalRequestService
         );
 
         return ['ok' => true, 'id' => (int) $this->repo->lastInsertId()];
+    }
+
+    /**
+     * Edit draft only — then optional submit to CRM.
+     *
+     * @param array<string, mixed> $data
+     * @return array{ok: bool, error?: string}
+     */
+    public function updateDraft(array $portalUser, int $requestId, array $data, bool $submit = false): array
+    {
+        $row = $this->findForUser($requestId, (int) $portalUser['id']);
+        if ($row === null || (string) ($row['status'] ?? '') !== 'draft') {
+            return ['ok' => false, 'error' => 'draft_not_found'];
+        }
+        $title = trim((string) ($data['title'] ?? $row['title'] ?? ''));
+        if ($title === '') {
+            return ['ok' => false, 'error' => 'title_required'];
+        }
+        $desc = array_key_exists('description', $data)
+            ? (trim((string) $data['description']) ?: null)
+            : ($row['description'] ?? null);
+        $priority = (string) ($data['priority'] ?? $row['priority'] ?? 'normal');
+        if (!in_array($priority, ['low', 'normal', 'high', 'urgent'], true)) {
+            $priority = 'normal';
+        }
+
+        $status = 'draft';
+        $crmLeadId = $row['crm_lead_id'] ?? null;
+        if ($submit) {
+            $status = 'submitted';
+            $crmLeadId = $this->routeToCrm(
+                $portalUser,
+                (string) ($row['request_type'] ?? 'other'),
+                $title,
+                array_merge($data, ['description' => (string) $desc])
+            );
+        }
+
+        $this->repo->execute(
+            'UPDATE rateb_website_portal_requests
+             SET title = :title, description = :desc, priority = :prio, status = :st, crm_lead_id = :lead
+             WHERE id = :id AND company_id = :cid AND portal_user_id = :uid AND status = :draft',
+            [
+                'title' => $title,
+                'desc' => $desc,
+                'prio' => $priority,
+                'st' => $status,
+                'lead' => $crmLeadId,
+                'id' => $requestId,
+                'cid' => $this->repo->companyId(),
+                'uid' => (int) $portalUser['id'],
+                'draft' => 'draft',
+            ]
+        );
+
+        return ['ok' => true];
     }
 
     /** @return list<array<string, mixed>> */

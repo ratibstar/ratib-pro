@@ -10,9 +10,12 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\CmsService;
 use Rateb\App\Website\Portal\PortalAppointmentService;
 use Rateb\App\Website\Portal\PortalAuthService;
+use Rateb\App\Website\Portal\PortalContactService;
+use Rateb\App\Website\Portal\PortalContractService;
 use Rateb\App\Website\Portal\PortalDashboardService;
 use Rateb\App\Website\Portal\PortalDocumentService;
 use Rateb\App\Website\Portal\PortalFinanceService;
+use Rateb\App\Website\Portal\PortalRateLimit;
 use Rateb\App\Website\Portal\PortalRecruitmentService;
 use Rateb\App\Website\Portal\PortalRequestService;
 use Rateb\App\Website\Portal\PortalSupportService;
@@ -164,9 +167,10 @@ final class WebsitePortalController extends Controller
         $data = match ($type) {
             PortalAuthService::TYPE_EMPLOYER => $dash->employer($user),
             PortalAuthService::TYPE_PARTNER => $dash->partner($user),
-            default => $dash->customer($user),
+            default => (new \Rateb\App\Website\Portal\CustomerWorkspaceService())->workspace($user),
         };
-        $this->renderPortal($type, 'dashboard', $data);
+        $view = $type === PortalAuthService::TYPE_CUSTOMER ? 'workspace' : 'dashboard';
+        $this->renderPortal($type, $view, $data);
     }
 
     public function requests(string $type = ''): void
@@ -192,14 +196,130 @@ final class WebsitePortalController extends Controller
             Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/requests'));
             return;
         }
+        if (!PortalRateLimit::allow('create_request', 20, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/' . $type . '/requests'));
+            return;
+        }
         $user = $this->requireUser($type);
         if ($user === null) {
             return;
         }
         $rtype = (string) $this->input('request_type', 'service');
         $result = (new PortalRequestService())->create($user, $rtype, $_POST);
+        if (($result['ok'] ?? false) && class_exists(\Rateb\App\Services\AuditService::class)) {
+            (new \Rateb\App\Services\AuditService())->log('portal.request', 'website_portal_request', (int) ($result['id'] ?? 0), [
+                'portal_type' => $type,
+            ]);
+        }
         SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('request_submitted') : ($result['error'] ?? 'failed'));
         Response::redirect(rateb_url('site/' . $type . '/requests'));
+    }
+
+    public function updateRequest(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/requests'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $submit = !empty($_POST['submit_request']);
+        $result = (new PortalRequestService())->updateDraft($user, (int) $this->input('request_id', 0), $_POST, $submit);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/requests'));
+    }
+
+    public function contracts(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $this->renderPortal($type, 'contracts', [
+            'user' => $user,
+            'contracts' => (new PortalContractService())->listActive(20, $page),
+            'page' => $page,
+        ]);
+    }
+
+    public function pipeline(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || $type !== PortalAuthService::TYPE_CUSTOMER) {
+            $this->notFound();
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'pipeline', [
+            'user' => $user,
+            'pipeline' => (new PortalRecruitmentService())->pipelineSummary(),
+        ]);
+    }
+
+    public function downloadInvoice(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        if (!PortalRateLimit::allow('invoice_download', 40, 60)) {
+            SessionManager::flash('error', __('rate_limited') ?: 'Too many requests');
+            Response::redirect(rateb_url('site/' . $type . '/finance'));
+            return;
+        }
+        $invoiceId = (int) ($_GET['id'] ?? $this->input('id', 0));
+        $invoice = (new PortalFinanceService())->findInvoice($invoiceId);
+        if ($invoice === null) {
+            $this->notFound();
+            return;
+        }
+        $path = trim((string) ($invoice['document_path'] ?? ''));
+        if ($path === '') {
+            SessionManager::flash('error', __('document_unavailable') ?: 'PDF not available');
+            Response::redirect(rateb_url('site/' . $type . '/finance'));
+            return;
+        }
+        $full = (defined('RATEB_ROOT') ? RATEB_ROOT . '/' : '') . ltrim(str_replace('..', '', $path), '/');
+        if (!is_file($full) && defined('RATEB_STORAGE_PATH')) {
+            $alt = RATEB_STORAGE_PATH . '/' . ltrim($path, '/');
+            $full = is_file($alt) ? $alt : $full;
+        }
+        if (!is_file($full)) {
+            // Attempt project-relative path
+            $full = dirname(__DIR__, 3) . '/' . ltrim($path, '/');
+        }
+        if (!is_file($full)) {
+            SessionManager::flash('error', __('document_unavailable') ?: 'PDF not available');
+            Response::redirect(rateb_url('site/' . $type . '/finance'));
+            return;
+        }
+        if (class_exists(\Rateb\App\Services\AuditService::class)) {
+            (new \Rateb\App\Services\AuditService())->log('portal.invoice_download', 'invoice', $invoiceId, [
+                'portal_user_id' => (int) $user['id'],
+            ]);
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . rawurlencode((string) ($invoice['invoice_no'] ?? 'invoice')) . '.pdf"');
+        header('X-Content-Type-Options: nosniff');
+        readfile($full);
+        exit;
     }
 
     public function finance(string $type = ''): void
@@ -214,7 +334,7 @@ final class WebsitePortalController extends Controller
         }
         $this->renderPortal($type, 'finance', array_merge(
             ['user' => $user],
-            (new PortalFinanceService())->snapshot($user)
+            (new PortalFinanceService())->statement($user)
         ));
     }
 
@@ -266,9 +386,14 @@ final class WebsitePortalController extends Controller
         if ($user === null) {
             return;
         }
+        $svc = new PortalSupportService();
+        $tickets = $svc->ticketsForUser((int) $user['id']);
+        $ticketId = (int) ($_GET['ticket_id'] ?? 0);
         $this->renderPortal($type, 'support', [
             'user' => $user,
-            'tickets' => (new PortalSupportService())->ticketsForUser((int) $user['id']),
+            'tickets' => $tickets,
+            'replies' => $ticketId > 0 ? $svc->repliesForTicket((int) $user['id'], $ticketId) : [],
+            'activeTicketId' => $ticketId,
         ]);
     }
 
@@ -412,19 +537,6 @@ final class WebsitePortalController extends Controller
         Response::redirect(rateb_url('site/' . $type . '/approvals'));
     }
 
-    public function profile(string $type = ''): void
-    {
-        $type = $this->resolvePortalType($type);
-        if (!$this->ensureWebsite()) {
-            return;
-        }
-        $user = $this->requireUser($type);
-        if ($user === null) {
-            return;
-        }
-        $this->renderPortal($type, 'profile', ['user' => $user]);
-    }
-
     public function updateProfile(string $type = ''): void
     {
         $type = $this->resolvePortalType($type);
@@ -443,6 +555,60 @@ final class WebsitePortalController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         Response::redirect(rateb_url('site/' . $type . '/profile'));
+    }
+
+    public function replyTicket(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/support'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $file = isset($_FILES['attachment']) && is_array($_FILES['attachment']) ? $_FILES['attachment'] : null;
+        $result = (new PortalSupportService())->addReply(
+            $user,
+            (int) $this->input('ticket_id', 0),
+            (string) $this->input('body', ''),
+            $file
+        );
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/support'));
+    }
+
+    public function addContact(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite() || !$this->validateCsrf()) {
+            Response::redirect(rateb_url('site/' . ($type ?: 'customer') . '/profile'));
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $result = (new PortalContactService())->add($user, $_POST);
+        SessionManager::flash(($result['ok'] ?? false) ? 'success' : 'error', ($result['ok'] ?? false) ? __('saved') : ($result['error'] ?? 'failed'));
+        Response::redirect(rateb_url('site/' . $type . '/profile'));
+    }
+
+    public function profile(string $type = ''): void
+    {
+        $type = $this->resolvePortalType($type);
+        if (!$this->ensureWebsite()) {
+            return;
+        }
+        $user = $this->requireUser($type);
+        if ($user === null) {
+            return;
+        }
+        $this->renderPortal($type, 'profile', [
+            'user' => $user,
+            'contacts' => (new PortalContactService())->listForUser((int) $user['id']),
+        ]);
     }
 
     public function notifications(string $type = ''): void

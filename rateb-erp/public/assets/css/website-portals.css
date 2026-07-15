@@ -24,6 +24,13 @@
 .rateb-portal-auth__alt { margin-top: 1rem; }
 .rateb-portal-inline-form { display: inline; }
 .rateb-portal-lead { color: var(--rateb-muted, #64748b); }
+.rateb-portal-quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+.rateb-portal-workspace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; }
+.rateb-portal-pipeline { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
+.rateb-portal-pipeline__col { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 10px; padding: 0.75rem; background: #fff; min-height: 140px; }
+.rateb-portal-pipeline__col h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
 .wb-portal-panel { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 10px; padding: 1rem; background: #fff; }
 .wb-portal-panel h3 { margin-top: 0; }
 .wb-portal-panel ul { margin: 0; padding-inline-start: 1.1rem; }
+.wb-portal-stats-inline { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.wb-portal-stats-inline span { border: 1px solid var(--rateb-border, #e2e8f0); border-radius: 8px; padding: 0.4rem 0.7rem; }

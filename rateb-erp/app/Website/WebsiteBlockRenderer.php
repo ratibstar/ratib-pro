@@ -119,6 +119,17 @@ final class WebsiteBlockRenderer
             'portal_support_tickets' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/support', __('support') ?: 'Support'),
             'portal_notifications' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/notifications', __('notifications') ?: 'Notifications'),
             'portal_calendar' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/employer/appointments', __('calendar') ?: 'Calendar'),
+            'invoice_summary' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/finance', __('invoices') ?: 'Invoices'),
+            'contract_summary' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/contracts', __('contracts') ?: 'Contracts'),
+            'recruitment_progress' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/pipeline', __('pipeline') ?: 'Pipeline'),
+            'recent_candidates' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/pipeline', __('candidates') ?: 'Candidates'),
+            'pending_approvals' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/approvals', __('approvals') ?: 'Approvals'),
+            'payment_status' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/finance', __('payments') ?: 'Payments'),
+            'support_widget' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/support', __('support') ?: 'Support'),
+            'documents_widget' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer/documents', __('documents') ?: 'Documents'),
+            'statistics_cards' => $this->portalBlocks()->renderDashboard($cls, $title, 'customer', $settings),
+            'timeline' => $this->portalBlocks()->renderLinkPanel($cls, $title, 'site/customer', __('timeline') ?: 'Timeline'),
+            'quick_actions' => $this->portalBlocks()->renderDashboard($cls, $title, 'customer', $settings),
             default => $this->renderGeneric($cls, $type, $title, $content, $image, $link, $icon, $settings),
         };
     }

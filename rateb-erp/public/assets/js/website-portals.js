@@ -1,5 +1,5 @@
 /**
- * Phase WEBSITE-07 — Portal interactions.
+ * Phase WEBSITE-07/08 — Portal interactions + lazy workspace hints.
  */
 (function () {
   'use strict';
@@ -10,4 +10,12 @@
       }
     });
   });
+  var pipeline = document.querySelector('[data-lazy-pipeline]');
+  if (pipeline) {
+    pipeline.setAttribute('data-pipeline-ready', '1');
+  }
+  var kpis = document.querySelector('[data-workspace-kpis]');
+  if (kpis) {
+    kpis.setAttribute('data-kpis-ready', '1');
+  }
 })();

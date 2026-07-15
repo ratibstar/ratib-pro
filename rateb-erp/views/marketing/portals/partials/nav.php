@@ -20,6 +20,16 @@ if ($portalType === 'employer') {
         array_slice($links, 1, null, true)
     );
 }
+if ($portalType === 'customer') {
+    $links = array_merge(
+        ['dashboard' => ['label' => __('portal_dashboard') ?: 'Dashboard', 'href' => $base]],
+        [
+            'contracts' => ['label' => __('contracts') ?: 'Contracts', 'href' => $base . '/contracts'],
+            'pipeline' => ['label' => __('pipeline') ?: 'Pipeline', 'href' => $base . '/pipeline'],
+        ],
+        array_slice($links, 1, null, true)
+    );
+}
 ?>
 <nav class="rateb-portal-nav" aria-label="Portal">
     <div class="container rateb-portal-nav__inner">
