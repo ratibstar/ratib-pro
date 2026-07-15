@@ -152,6 +152,27 @@
         }, delayMs || 0);
     }
 
+    /** PERF-P0.3-A — first cloud probe after paint / idle so usable metrics are not AJAX-bound. */
+    function scheduleVerifyAfterPaint() {
+        var run = function () {
+            scheduleVerify(0);
+        };
+        try {
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(function () { run(); }, { timeout: 4000 });
+                return;
+            }
+        } catch (eIdle) { /* ignore */ }
+        var start = function () {
+            setTimeout(run, 2000);
+        };
+        if (document.readyState === 'complete') {
+            start();
+        } else {
+            window.addEventListener('load', start, { once: true });
+        }
+    }
+
     function bootLocalAppliance() {
         // Local PHP works without internet; badge = Wi‑Fi / internet only.
         function syncNav() {
@@ -177,8 +198,9 @@
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             apply(false);
         } else {
+            // PERF-P0.3-A — optimistic offline until idle probe; avoid blocking first usable paint.
             apply(false);
-            scheduleVerify(0);
+            scheduleVerifyAfterPaint();
         }
 
         window.addEventListener('online', function () {

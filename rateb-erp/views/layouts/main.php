@@ -1087,6 +1087,16 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     } catch (eClick) { /* ignore */ }
   }, true);
   // Cache every live Admin page so offline navigation keeps the same UI + rows.
+  // PERF-P0.3-A — HTML put first; stylesheet fetch/put only on idle after first paint.
+  function ratebIdle(fn, timeoutMs) {
+    try {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(function () { fn(); }, { timeout: timeoutMs || 5000 });
+        return;
+      }
+    } catch (eIdle) { /* ignore */ }
+    setTimeout(fn, Math.max(2000, (timeoutMs || 5000) / 2));
+  }
   function cacheLiveAdminPage() {
     try {
       if (navigator.onLine === false) return;
@@ -1129,33 +1139,47 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           return Promise.all(keys.map(function (k) {
             return cache.put(k, res.clone()).catch(function () { return null; });
           })).then(function () {
-            return Promise.all(assetHrefs.map(function (ah) {
-              return fetch(ah, { credentials: 'same-origin', cache: 'force-cache' }).then(function (ar) {
-                if (!ar || !ar.ok) return null;
-                var bareA = ah;
-                try {
-                  var au = new URL(ah);
-                  bareA = au.origin + au.pathname;
-                } catch (eBare) {}
-                return Promise.all([
-                  cache.put(ah, ar.clone()).catch(function () { return null; }),
-                  cache.put(bareA, ar.clone()).catch(function () { return null; })
-                ]);
-              }).catch(function () { return null; });
-            }));
+            // CSS network fetches deferred — they were inflating “ajax” + netQuiet usable waits.
+            if (!assetHrefs.length) return null;
+            ratebIdle(function () {
+              var i = 0;
+              function next() {
+                if (i >= assetHrefs.length) return;
+                var ah = assetHrefs[i++];
+                fetch(ah, { credentials: 'same-origin', cache: 'force-cache' }).then(function (ar) {
+                  if (!ar || !ar.ok) return null;
+                  var bareA = ah;
+                  try {
+                    var au = new URL(ah);
+                    bareA = au.origin + au.pathname;
+                  } catch (eBare) {}
+                  return Promise.all([
+                    cache.put(ah, ar.clone()).catch(function () { return null; }),
+                    cache.put(bareA, ar.clone()).catch(function () { return null; })
+                  ]);
+                }).catch(function () { return null; }).then(function () {
+                  setTimeout(next, 120);
+                });
+              }
+              next();
+            }, 6000);
+            return null;
           });
         }).catch(function () {});
       });
     } catch (eCache) { /* ignore */ }
   }
+  function scheduleCacheLiveAdminPage() {
+    ratebIdle(function () { cacheLiveAdminPage(); }, 5000);
+  }
   if (document.readyState === 'complete') {
-    setTimeout(cacheLiveAdminPage, 600);
+    setTimeout(scheduleCacheLiveAdminPage, 1500);
   } else {
-    window.addEventListener('load', function () { setTimeout(cacheLiveAdminPage, 600); }, { once: true });
+    window.addEventListener('load', function () { setTimeout(scheduleCacheLiveAdminPage, 1500); }, { once: true });
   }
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
-      setTimeout(cacheLiveAdminPage, 400);
+      ratebIdle(function () { cacheLiveAdminPage(); }, 4000);
     }
   });
   try {
@@ -1176,40 +1200,43 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
           var m = p.match(/^(.*\/public\/)/i);
           return (m && m[1]) ? m[1] : '/rateb-erp/public/';
         })();
-        fetch(probeBase + 'connectivity-probe.json?_rateb_probe=' + Date.now(), {
-          method: 'GET',
-          credentials: 'same-origin',
-          cache: 'no-store',
-          headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
-        }).then(function (res) {
-          if (!res || !res.ok) return;
-          var u = new URL(location.href);
-          var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
-          if (already) {
-            var done = function () {
-              u.searchParams.delete('rateb_live');
-              u.searchParams.set('rateb_force_live', String(Date.now()));
-              location.replace(u.href);
-            };
-            var jobs = [];
-            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-              jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
-                return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
-              }));
-            }
-            if (window.caches && caches.keys) {
-              jobs.push(caches.keys().then(function (keys) {
-                return Promise.all((keys || []).map(function (k) {
-                  return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+        // PERF-P0.3-A — live-escape probe after idle (not on critical paint/usable path).
+        ratebIdle(function () {
+          fetch(probeBase + 'connectivity-probe.json?_rateb_probe=' + Date.now(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' }
+          }).then(function (res) {
+            if (!res || !res.ok) return;
+            var u = new URL(location.href);
+            var already = u.searchParams.get('rateb_live') || u.searchParams.get('rateb_force_live');
+            if (already) {
+              var done = function () {
+                u.searchParams.delete('rateb_live');
+                u.searchParams.set('rateb_force_live', String(Date.now()));
+                location.replace(u.href);
+              };
+              var jobs = [];
+              if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+                  return Promise.all((regs || []).map(function (r) { return r.unregister(); }));
                 }));
-              }));
+              }
+              if (window.caches && caches.keys) {
+                jobs.push(caches.keys().then(function (keys) {
+                  return Promise.all((keys || []).map(function (k) {
+                    return /^rateb-/i.test(String(k || '')) ? caches.delete(k) : null;
+                  }));
+                }));
+              }
+              Promise.all(jobs).then(done).catch(done);
+              return;
             }
-            Promise.all(jobs).then(done).catch(done);
-            return;
-          }
-          u.searchParams.set('rateb_live', String(Date.now()));
-          location.replace(u.href);
-        }).catch(function () { /* stay on cached UI */ });
+            u.searchParams.set('rateb_live', String(Date.now()));
+            location.replace(u.href);
+          }).catch(function () { /* stay on cached UI */ });
+        }, 3500);
       }
     }
   } catch (eEsc) {}
