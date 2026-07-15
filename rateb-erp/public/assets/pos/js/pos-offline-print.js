@@ -97,7 +97,7 @@
         });
     }
 
-    function renderAndPrint(job) {
+                function renderAndPrint(job) {
         return new Promise(function (resolve) {
             try {
                 var html = (job && job.html) ? String(job.html) : '';
@@ -108,21 +108,36 @@
                     resolve({ ok: false, error: 'empty_print_payload' });
                     return;
                 }
-                var w = root.open('', '_blank', 'width=400,height=600');
-                if (!w) {
-                    resolve({ ok: false, error: 'popup_blocked' });
+                var iframe = root.document.getElementById('rateb-pos-print-frame');
+                if (!iframe) {
+                    iframe = root.document.createElement('iframe');
+                    iframe.id = 'rateb-pos-print-frame';
+                    iframe.setAttribute('aria-hidden', 'true');
+                    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+                    root.document.body.appendChild(iframe);
+                }
+                var win = iframe.contentWindow;
+                var doc = win && (iframe.contentDocument || win.document);
+                if (!doc || !win) {
+                    resolve({ ok: false, error: 'print_frame_missing' });
                     return;
                 }
-                w.document.write(
-                    '<html><head><title>Receipt</title>'
-                    + '<style>body{font-family:monospace;padding:12px}</style></head><body>'
-                    + html
-                    + '</body></html>'
+                doc.open();
+                doc.write(
+                    '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>Receipt</title>'
+                    + '<style>@page{size:80mm auto;margin:4mm}body{font-family:monospace;width:72mm;padding:0;margin:0;direction:rtl}</style>'
+                    + '</head><body>' + html + '</body></html>'
                 );
-                w.document.close();
-                w.focus();
-                w.print();
-                resolve({ ok: true });
+                doc.close();
+                setTimeout(function () {
+                    try {
+                        win.focus();
+                        win.print();
+                        resolve({ ok: true });
+                    } catch (ePrint) {
+                        resolve({ ok: false, error: String(ePrint && ePrint.message ? ePrint.message : ePrint) });
+                    }
+                }, 80);
             } catch (e) {
                 resolve({ ok: false, error: String(e && e.message ? e.message : e) });
             }

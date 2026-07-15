@@ -207,6 +207,7 @@ final class PosRegisterController extends PosBaseController
             'pos_pay_in', 'pos_pay_out', 'pos_no_sale', 'pos_open_drawer', 'pos_cashier_tools',
             'pos_line_discount', 'pos_apply_line_discount', 'pos_confirm_clear_cart', 'pos_customer_quick_add',
             'pos_customer_name', 'pos_customer_phone', 'pos_add_customer', 'pos_print_receipt', 'pos_reprint_last',
+            'pos_printing', 'pos_print_blocked', 'pos_print_queued',
             'pos_offline_queue', 'pos_gift_card_validate', 'pos_coupon_invalid', 'notes', 'close', 'saved',
             'pos_nav_sales', 'pos_nav_customers', 'pos_nav_products', 'pos_nav_inventory', 'pos_nav_purchases', 'pos_nav_orders',
             'pos_pay_cash', 'pos_pay_card', 'pos_pay_other', 'pos_main_branch', 'pos_notifications', 'pos_fullscreen',

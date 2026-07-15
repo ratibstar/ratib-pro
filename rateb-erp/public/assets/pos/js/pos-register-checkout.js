@@ -518,49 +518,124 @@
         if (autoPrint === false) {
             return;
         }
-        // Give the modal a tick to paint before opening the print dialog.
+        // Give the modal a tick to paint, then send straight to the system printer dialog.
         setTimeout(function () {
             try {
-                printReceipt();
+                printReceipt({ auto: true });
             } catch (ePrint) { /* ignore */ }
-        }, 250);
+        }, 180);
     }
 
-    function printReceipt() {
+    function receiptPrintHtml(inner) {
+        return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+            + '<title>' + t('pos_receipt', 'Receipt') + '</title>'
+            + '<style>'
+            + '@page{size:80mm auto;margin:4mm}'
+            + 'body{font-family:Tajawal,"Courier New",monospace;padding:0;margin:0;direction:rtl;'
+            + 'width:72mm;font-size:12px;color:#000;background:#fff}'
+            + '.rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:6px;margin:3px 0}'
+            + '.rateb-pos__receipt-total{margin:6px 0;font-size:13px;font-weight:700}'
+            + '.rateb-pos__receipt-no{margin:0 0 8px;font-size:14px}'
+            + '</style></head><body>' + inner + '</body></html>';
+    }
+
+    function ensurePrintFrame() {
+        var iframe = document.getElementById('rateb-pos-print-frame');
+        if (iframe) {
+            return iframe;
+        }
+        iframe = document.createElement('iframe');
+        iframe.id = 'rateb-pos-print-frame';
+        iframe.setAttribute('title', 'POS print');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.setAttribute('tabindex', '-1');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+        document.body.appendChild(iframe);
+        return iframe;
+    }
+
+    function printViaFrame(html) {
+        return new Promise(function (resolve) {
+            try {
+                var iframe = ensurePrintFrame();
+                var win = iframe.contentWindow;
+                var doc = win && (iframe.contentDocument || win.document);
+                if (!doc || !win) {
+                    resolve(false);
+                    return;
+                }
+                doc.open();
+                doc.write(receiptPrintHtml(html));
+                doc.close();
+                var done = false;
+                function finish(ok) {
+                    if (done) {
+                        return;
+                    }
+                    done = true;
+                    resolve(!!ok);
+                }
+                // Some browsers fire afterprint; others need a short timer.
+                try {
+                    win.onafterprint = function () { finish(true); };
+                } catch (eAfter) { /* ignore */ }
+                setTimeout(function () {
+                    try {
+                        win.focus();
+                        win.print();
+                        setTimeout(function () { finish(true); }, 800);
+                    } catch (ePrint) {
+                        finish(false);
+                    }
+                }, 60);
+            } catch (e) {
+                resolve(false);
+            }
+        });
+    }
+
+    function printReceipt(opts) {
+        opts = opts || {};
         var area = receiptModal ? receiptModal.querySelector('[data-pos-receipt-body]') : null;
         if (!area || !area.innerHTML) {
             notify(t('pos_print_receipt', 'Print'), true);
-            return;
+            return Promise.resolve(false);
         }
         var html = area.innerHTML;
         var lastReceipt = null;
         try {
             lastReceipt = JSON.parse(localStorage.getItem('rateb_pos_last_receipt') || 'null');
         } catch (eRec) { /* ignore */ }
-        var w = window.open('', '_blank', 'width=400,height=600');
-        if (!w) {
-            // Popup blocked — durable offline print queue (retry via Background Sync).
-            if (window.RatebPosOfflinePrint && typeof window.RatebPosOfflinePrint.enqueue === 'function') {
-                window.RatebPosOfflinePrint.enqueue({ html: html, receipt: lastReceipt }).then(function () {
-                    notify(t('pos_print_queued', 'Print queued — will retry when allowed'), false);
-                }).catch(function () {
-                    notify(t('pos_print_receipt', 'Print'), true);
-                });
-                return;
-            }
-            notify(t('pos_print_receipt', 'Print'), true);
-            return;
+
+        if (opts.auto) {
+            notify(t('pos_printing', 'Printing receipt…'), false);
         }
-        w.document.write(
-            '<html><head><meta charset="utf-8"><title>' + t('pos_receipt', 'Receipt') + '</title>' +
-            '<style>body{font-family:Tajawal,monospace;padding:12px;direction:rtl}' +
-            '.rateb-pos__receipt-line{display:flex;justify-content:space-between;gap:8px;margin:4px 0}' +
-            '.rateb-pos__receipt-total{margin:6px 0;font-size:1.05rem}</style></head><body>' +
-            html + '</body></html>'
-        );
-        w.document.close();
-        w.focus();
-        w.print();
+
+        return printViaFrame(html).then(function (ok) {
+            if (ok) {
+                return true;
+            }
+            // Fallback: popup window (may be blocked).
+            var w = window.open('', '_blank', 'width=400,height=600');
+            if (!w) {
+                if (window.RatebPosOfflinePrint && typeof window.RatebPosOfflinePrint.enqueue === 'function') {
+                    return window.RatebPosOfflinePrint.enqueue({ html: html, receipt: lastReceipt }).then(function () {
+                        notify(t('pos_print_queued', 'Print queued — will retry when allowed'), false);
+                        return false;
+                    }).catch(function () {
+                        notify(t('pos_print_blocked', 'Allow popups to print, or press Print on the receipt'), true);
+                        return false;
+                    });
+                }
+                notify(t('pos_print_blocked', 'Allow popups to print, or press Print on the receipt'), true);
+                return false;
+            }
+            w.document.write(receiptPrintHtml(html));
+            w.document.close();
+            w.focus();
+            w.print();
+            return true;
+        });
     }
 
     function applyCoupon() {
