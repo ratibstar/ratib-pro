@@ -39,13 +39,24 @@ final class CompanyPermissionsController extends Controller
         $items = $this->companies->all($limit, $offset, [], $search);
         $catalog = PlanLimitService::moduleCatalog();
 
+        $catalogKeys = array_keys($catalog);
         foreach ($items as &$row) {
             $id = (int) ($row['id'] ?? 0);
             $enabled = $id > 0 ? $this->limits->getLimits($id)['modules'] : [];
-            $row['modules_enabled'] = $enabled;
-            $row['modules_count'] = count($enabled);
+            if (!is_array($enabled)) {
+                $enabled = [];
+            }
+            // Count only known catalog modules (ignore stray legacy keys).
+            $enabledKnown = array_values(array_filter(
+                array_map('strval', $enabled),
+                static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
+            ));
+            $row['modules_enabled'] = $enabledKnown;
+            $row['modules_count'] = count($enabledKnown);
             $row['modules_total'] = count($catalog);
-            $row['modules_summary'] = $this->formatSummary($enabled, $catalog);
+            [$summary, $summaryFull] = $this->formatSummary($enabledKnown, $catalog);
+            $row['modules_summary'] = $summary;
+            $row['modules_summary_full'] = $summaryFull;
         }
         unset($row);
 
@@ -149,26 +160,26 @@ final class CompanyPermissionsController extends Controller
     /**
      * @param list<string> $enabled
      * @param array<string, string> $catalog
+     * @return array{0:string,1:string} short summary, full summary
      */
-    private function formatSummary(array $enabled, array $catalog): string
+    private function formatSummary(array $enabled, array $catalog): array
     {
         if ($enabled === []) {
-            return '—';
+            return ['—', '—'];
         }
         $labels = [];
         foreach ($enabled as $key) {
             $langKey = $catalog[$key] ?? $key;
             $labels[] = __(is_string($langKey) ? $langKey : $key);
-            if (count($labels) >= 4) {
-                break;
-            }
         }
-        $extra = count($enabled) - count($labels);
-        $text = implode(' · ', $labels);
+        $full = implode('، ', $labels);
+        $shortLabels = array_slice($labels, 0, 4);
+        $short = implode('، ', $shortLabels);
+        $extra = count($labels) - count($shortLabels);
         if ($extra > 0) {
-            $text .= ' (+' . $extra . ')';
+            $short .= ' +' . $extra;
         }
 
-        return $text;
+        return [$short, $full];
     }
 }

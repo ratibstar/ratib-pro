@@ -27,15 +27,15 @@ $canManage = !empty($canManage);
         </form>
 
         <div class="table-responsive">
-            <table class="table rateb-table mb-0">
+            <table class="table rateb-table align-middle mb-0">
                 <thead>
                 <tr>
-                    <th><?php echo __('id'); ?></th>
+                    <th style="width:4rem"><?php echo __('id'); ?></th>
                     <th><?php echo __('name'); ?></th>
-                    <th><?php echo __('status'); ?></th>
-                    <th><?php echo __('company_permissions_modules_count'); ?></th>
+                    <th style="width:7rem"><?php echo __('status'); ?></th>
+                    <th style="width:8rem" class="text-nowrap"><?php echo __('company_permissions_modules_count'); ?></th>
                     <th><?php echo __('company_permissions_modules_summary'); ?></th>
-                    <th></th>
+                    <th style="width:10rem" class="text-nowrap"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -49,22 +49,33 @@ $canManage = !empty($canManage);
                         'suspended' => 'warning',
                         default => 'info',
                     };
+                    $modCount = (int) ($row['modules_count'] ?? 0);
+                    $modTotal = (int) ($row['modules_total'] ?? 0);
+                    $summary = (string) ($row['modules_summary'] ?? '—');
+                    $summaryFull = (string) ($row['modules_summary_full'] ?? $summary);
                     ?>
                 <tr>
                     <td><?php echo $cid; ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></td>
+                    <td class="fw-semibold"><?php echo Rateb\App\Core\View::escape((string) ($row['name'] ?? '')); ?></td>
                     <td><span class="badge bg-<?php echo $statusBadge; ?>"><?php echo __($status !== '' ? $status : 'pending'); ?></span></td>
-                    <td>
-                        <?php echo (int) ($row['modules_count'] ?? 0); ?>
-                        /
-                        <?php echo (int) ($row['modules_total'] ?? 0); ?>
+                    <td class="text-nowrap">
+                        <span class="badge bg-secondary-subtle text-body border" dir="ltr" style="unicode-bidi:isolate">
+                            <?php echo $modCount; ?> / <?php echo $modTotal; ?>
+                        </span>
                     </td>
-                    <td class="text-muted small"><?php echo Rateb\App\Core\View::escape((string) ($row['modules_summary'] ?? '—')); ?></td>
+                    <td style="max-width:28rem" title="<?php echo Rateb\App\Core\View::escape($summaryFull); ?>">
+                        <span class="text-muted small d-inline-block text-truncate w-100" dir="auto" style="max-width:100%">
+                            <?php echo Rateb\App\Core\View::escape($summary); ?>
+                        </span>
+                    </td>
                     <td class="text-nowrap">
                         <?php if ($canManage) { ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . $cid); ?>" class="btn btn-sm btn-primary">
-                            <i class="fas fa-sliders"></i> <?php echo __('company_permissions_manage'); ?>
+                            <i class="fas fa-sliders-h"></i>
+                            <span><?php echo __('company_permissions_manage'); ?></span>
                         </a>
+                        <?php } else { ?>
+                        <span class="text-muted small">—</span>
                         <?php } ?>
                     </td>
                 </tr>
