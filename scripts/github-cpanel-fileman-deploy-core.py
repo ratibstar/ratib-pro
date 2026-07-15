@@ -369,6 +369,7 @@ CRITICAL = [
     "css/pages/home-public.css",
     "css/pages/rateb-mega-nav.css",
     "public/index.php",
+    "includes/designed_bootstrap.php",
     "public/cms-media.php",
     "public/cms_media.php",
     "public/cms-bundle-gov-control.png",
@@ -1257,7 +1258,43 @@ def main() -> int:
         return 1
 
     upload_erp_migrate_token(remote_base, succeeded)
+    mirror_test_rateb_entry_files(succeeded)
     return 0
+
+
+def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:
+    """
+    Fast deploy targets rateb.sa public_html only. test.rateb.sa is a separate tree;
+    mirror entry files so agency root (/) does not keep a stale public/index.php (HTTP 500).
+    """
+    del succeeded  # reserved for future selective mirrors
+    test_base = os.environ.get(
+        "CPANEL_TEST_REMOTE_BASE",
+        "/home/admin/domains/test.rateb.sa/public_html",
+    ).rstrip("/")
+    remote_main = os.environ.get("CPANEL_REMOTE_BASE", "/home/admin/public_html").rstrip("/")
+    if not test_base or test_base == remote_main:
+        return
+    mirror = [
+        ".htaccess",
+        "index.php",
+        "public/index.php",
+        "includes/designed_bootstrap.php",
+        "config/env/test_rateb_sa.php",
+        "config/env/agency_lookup.php",
+        "config/env/control_db_for_lookup.php",
+    ]
+    ordered = [rel for rel in mirror if os.path.isfile(rel)]
+    if not ordered:
+        return
+    print(f"test.rateb.sa mirror: uploading {len(ordered)} entry file(s) → {test_base}", flush=True)
+    ok, fail, _ = run_uploads(ordered, test_base, max(2, min(4, len(ordered))))
+    print(f"test.rateb.sa mirror: ok={ok} fail={fail}", flush=True)
+    if fail > 0:
+        print(
+            "::warning::test.rateb.sa entry mirror had failures — run Control Panel → Sync test domain",
+            flush=True,
+        )
 
 
 def upload_erp_migrate_token(remote_base: str, succeeded: set[str]) -> None:

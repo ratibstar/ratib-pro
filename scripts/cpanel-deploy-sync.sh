@@ -23,6 +23,9 @@ log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete
 
 CRITICAL_FILES=(
   ".htaccess"
+  "index.php"
+  "public/index.php"
+  "includes/designed_bootstrap.php"
   "favicon.php"
   "erp-health.php"
   "rateb-profile-fix.php"
