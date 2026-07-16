@@ -71,16 +71,20 @@
                 if (probeStarted || root.RatebOfflineV2DB) {
                     return;
                 }
+                // Phase Z: never abort on offline/network errors — only on definitive HTTP miss while online.
+                if (root.navigator && root.navigator.onLine === false) {
+                    return;
+                }
                 probeStarted = true;
                 var vendorUrl = new URL('vendor/sqlite/index.mjs', root.location.href).href;
                 root.fetch(vendorUrl, { method: 'HEAD', cache: 'no-cache', credentials: 'same-origin' })
                     .then(function (res) {
-                        if (!res || !res.ok) {
+                        if (res && (res.status === 404 || res.status === 0)) {
                             finish();
                         }
                     })
                     .catch(function () {
-                        finish();
+                        /* keep waiting until maxMs — offline/SW miss is not a definitive absence */
                     });
             }
 
