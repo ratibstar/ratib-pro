@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v70';
+var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v71';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -703,19 +703,56 @@ function erpInlineShellResponse() {
 }
 
 /**
- * PERF-P0.3-C — seed LAST-RESORT inline shell under a private key only.
- * Never cache.PUT under offline-shell.html (that poisoned OA bootstrap).
+ * PERF-P0.3-C — seed LAST-RESORT inline under a private key only (never offline-shell.html).
+ * Prefer network-fetch of the real OA offline-shell.html into coexist when online.
  */
 function seedInlineOfflineShell() {
-    var key = erpInlineShellKeyUrl();
-    var res = erpInlineShellResponse();
+    var inlineKey = erpInlineShellKeyUrl();
+    var inlineRes = erpInlineShellResponse();
+    var shellUrl = erpOfflineShellUrl();
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-        return Promise.all([
-            cache.put(key, res.clone()),
-            cache.put(ERP_INLINE_SHELL_KEY, res.clone()).catch(function () { return null; }),
-            cache.delete(erpOfflineShellUrl()).catch(function () { return null; }),
+        var purge = Promise.all([
+            cache.put(inlineKey, inlineRes.clone()).catch(function () { return null; }),
+            cache.put(ERP_INLINE_SHELL_KEY, inlineRes.clone()).catch(function () { return null; }),
+            cache.delete(shellUrl).catch(function () { return null; }),
             cache.delete(ERP_OFFLINE_SHELL).catch(function () { return null; })
         ]);
+        return purge.then(function () {
+            if (isCloudBrowserOffline()) {
+                return null;
+            }
+            return fetch(shellUrl, {
+                credentials: 'same-origin',
+                cache: 'reload',
+                headers: {
+                    Accept: 'text/html',
+                    'X-Rateb-Shell-Warm': '1',
+                    'X-Rateb-Protected-Warm': '1'
+                }
+            }).then(function (res) {
+                if (!res || !res.ok) {
+                    throw new Error('shell_fetch_fail');
+                }
+                return res.text().then(function (text) {
+                    if (!isAcceptableProtectedBody('offline-shell.html', text)) {
+                        throw new Error('shell_bad_body:' + String(text || '').length);
+                    }
+                    var headers = {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'X-Rateb-Protected-Cached': '1',
+                        'X-Rateb-OA-Shell': '1'
+                    };
+                    var body = text;
+                    return Promise.all([
+                        cache.put(shellUrl, new Response(body, { status: 200, headers: headers })),
+                        cache.put(ERP_OFFLINE_SHELL, new Response(body, { status: 200, headers: headers }))
+                            .catch(function () { return null; })
+                    ]);
+                });
+            }).catch(function () {
+                return null;
+            });
+        });
     }).catch(function () { return null; });
 }
 

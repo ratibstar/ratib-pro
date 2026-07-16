@@ -17,7 +17,7 @@ const BASE = process.env.RATEB_ERP_URL || 'https://rateb.sa/rateb-erp/public';
 const KEY = process.env.RATEB_SSH_KEY || 'C:\\Users\\Public\\ratib_da_deploy_runtime';
 const HOST = process.env.RATEB_SSH_HOST || 'admin@167.233.71.107';
 const OUT_DIR = path.join(__dirname, 'reports');
-const EXPECT_BUILD = '20260716-perf-p03c-oa-shell-v70';
+const EXPECT_BUILD = '20260716-perf-p03c-oa-shell-v71';
 const BEFORE_GAP_MS = 21251;
 const TARGET_MS = 3000;
 
