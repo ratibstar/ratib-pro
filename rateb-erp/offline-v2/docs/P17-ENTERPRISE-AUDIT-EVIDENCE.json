@@ -1,0 +1,100 @@
+{
+  "phase": 17,
+  "task": "manufacturing_mrp_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "Online Manufacturing is Phase 22A /mfg/* foundation (BOM, routing, PO/WO, capacity, QC, meta material/FG/cost); branded MRP but no explode/net engine; soft-links only — no stock/GL. Offline V2 MFG BM must depend on identity+inventory and never own stock/GL/sales/procurement/CRM/HR.",
+  "primary_evidence_roots": [
+    "docs/PHASE_22A_MANUFACTURING_ONLINE.md",
+    "migrations/188_manufacturing_platform_enterprise.sql",
+    "migrations/191_quality_management_platform.sql",
+    "app/models/MfgModels.php",
+    "app/services/ManufacturingSupport.php",
+    "app/services/ManufacturingWorkflowService.php",
+    "app/services/ManufacturingTimelineService.php",
+    "app/services/ManufacturingDomainServices.php",
+    "app/controllers/Company/ManufacturingControllers.php",
+    "routes/modules/ops.php",
+    "tests/manufacturing/ManufacturingPhase22ATest.php",
+    "offline/docs/PHASE_22B_MANUFACTURING_OFFLINE.md"
+  ],
+  "out_of_scope": [
+    "offline_v1_mfg_adapters_as_sot",
+    "offline_v2_mfg_bm",
+    "eam_maintenance_work_orders",
+    "qms_ownership",
+    "true_mrp_engine_implementation"
+  ],
+  "core_capabilities": [
+    "products_variants",
+    "bom_versions_lines",
+    "work_centers_machines",
+    "routings_operations",
+    "production_orders",
+    "work_orders",
+    "capacity_calendar_schedule",
+    "material_reservation_meta",
+    "material_consumption_meta",
+    "finished_goods_receipt_meta",
+    "scrap_meta",
+    "quality_checks",
+    "production_cost_meta",
+    "timeline",
+    "manufacturing_rbac"
+  ],
+  "gaps": [
+    "no_mrp_explode_net_planned_orders",
+    "no_inventory_stock_posting",
+    "no_gl_posting",
+    "no_sales_demand_bridge",
+    "no_procurement_shortage_bridge",
+    "no_rest_mfg_api",
+    "no_mfg_notifications",
+    "incomplete_machines_ui"
+  ],
+  "critical_risks": [
+    "mrp_branding_without_mrp_engine",
+    "meta_posted_implies_stock_moved",
+    "cost_posted_implies_gl",
+    "no_sales_procurement_demand_bridge"
+  ],
+  "missing_abstractions": [
+    "MfgWorkflowPort",
+    "BomPort",
+    "ProductionOrderPort",
+    "WorkOrderPort",
+    "MaterialLedgerPort",
+    "InventoryIssuePort",
+    "InventoryReceiptPort",
+    "CapacityPort",
+    "QualityCheckPort",
+    "CostLedgerPort",
+    "MrpRunPort_future"
+  ],
+  "recommended_deps": {
+    "mandatory": ["identity", "inventory"],
+    "optional": ["procurement", "sales", "accounting"],
+    "forbidden_ownership": [
+      "authentication",
+      "inventory_balances",
+      "accounting_journals",
+      "procurement_documents",
+      "sales_documents",
+      "crm_data",
+      "hr_records"
+    ]
+  },
+  "dependency_graph": {
+    "identity": "mandatory",
+    "inventory": "mandatory_stock_ports",
+    "procurement": "optional_shortage_events",
+    "sales": "optional_demand_signals",
+    "accounting": "optional_cost_ref_never_gl"
+  },
+  "artifacts": {
+    "audit": "offline-v2/docs/P17-00-MANUFACTURING-AUDIT.md",
+    "evidence": "offline-v2/docs/P17-ENTERPRISE-AUDIT-EVIDENCE.json"
+  },
+  "phase_gate": "STOP — audit only; do not implement Manufacturing BusinessModule",
+  "final_decision": "PASS (audit complete)"
+}
