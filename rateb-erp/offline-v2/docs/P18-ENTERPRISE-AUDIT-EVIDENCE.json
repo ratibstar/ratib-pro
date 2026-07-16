@@ -1,0 +1,117 @@
+{
+  "phase": 18,
+  "task": "projects_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "Online Projects is Phase 18A /projects/* foundation (projects, phases, milestones, tasks, issues, risks, timesheets, resources, budget/cost meta, timeline); MVC+session RBAC not JSON API; soft-links only — no stock/GL/sales/proc ownership. Offline V2 Projects BM must depend on identity only (mandatory) and never own inventory/GL/sales/proc/CRM/HR/MFG.",
+  "primary_evidence_roots": [
+    "docs/PHASE_18A_PROJECTS_ONLINE.md",
+    "migrations/184_projects_platform_enterprise.sql",
+    "app/models/ProjectModels.php",
+    "app/services/ProjectSupport.php",
+    "app/services/ProjectWorkflowService.php",
+    "app/services/ProjectTimelineService.php",
+    "app/services/ProjectDomainServices.php",
+    "app/services/ProjectActivityServices.php",
+    "app/controllers/Company/ProjectControllers.php",
+    "routes/modules/ops.php",
+    "tests/projects/ProjectsPhase18ATest.php",
+    "offline/docs/PHASE_18B_PROJECTS_OFFLINE.md"
+  ],
+  "out_of_scope": [
+    "offline_v1_projects_adapters_as_sot",
+    "offline_v2_proj_bm",
+    "crm_tasks_rateb_crm_tasks",
+    "hr_attendance_as_timesheets",
+    "mfg_production_order_ownership",
+    "accounting_projections_page"
+  ],
+  "core_capabilities": [
+    "projects",
+    "phases",
+    "milestones",
+    "tasks_subtasks",
+    "kanban_gantt_calendar",
+    "issues",
+    "risks",
+    "timesheets_draft",
+    "resources",
+    "budget_cost_meta",
+    "comments",
+    "assignments",
+    "tags_schema",
+    "timeline",
+    "status_history",
+    "project_task_workflows",
+    "projects_rbac"
+  ],
+  "gaps": [
+    "no_timesheet_approve_workflow",
+    "no_budget_approve_lock_workflow",
+    "no_phase_tag_http_routes",
+    "no_rest_projects_api",
+    "no_attachment_store",
+    "no_inventory_item_id_on_material_resources",
+    "no_gl_posting",
+    "no_sales_procurement_document_bridge",
+    "reports_board_counts_only",
+    "customer_cost_center_soft_ref_unvalidated"
+  ],
+  "critical_risks": [
+    "soft_customer_cost_center_refs_without_ports",
+    "budget_cost_meta_mistaken_for_accounting_sot",
+    "timesheet_approved_enum_without_workflow",
+    "dual_assignment_member_and_assignment_tables"
+  ],
+  "missing_abstractions": [
+    "ProjectWorkflowPort",
+    "TaskPort",
+    "WbsPort",
+    "TimesheetPort",
+    "BudgetLedgerPort",
+    "ResourcePort",
+    "IssueRiskPort",
+    "TimelinePort",
+    "CustomerLinkPort",
+    "CostCenterLinkPort",
+    "DirectoryPort"
+  ],
+  "recommended_deps": {
+    "mandatory": ["identity"],
+    "optional": ["crm", "sales", "procurement", "accounting", "inventory"],
+    "forbidden_ownership": [
+      "authentication",
+      "inventory_balances",
+      "accounting_journals",
+      "procurement_documents",
+      "sales_documents",
+      "crm_data",
+      "hr_records",
+      "manufacturing_documents"
+    ]
+  },
+  "dependency_graph": {
+    "identity": "mandatory",
+    "crm": "optional_account_contact_soft_refs",
+    "sales": "optional_customer_ref",
+    "accounting": "optional_cost_center_and_cost_events_never_gl",
+    "procurement": "optional_requisition_signals",
+    "inventory": "optional_item_read_for_material_resources"
+  },
+  "ownership_verification": {
+    "authentication": "PASS_session_only_not_sot",
+    "inventory_balances": "PASS_no_stock_posting",
+    "accounting_journals": "PASS_local_cost_meta_only",
+    "procurement_documents": "PASS_no_ownership",
+    "sales_documents": "PASS_customer_id_soft_only",
+    "crm_ownership": "PASS_distinct_from_crm_tasks",
+    "hr_ownership": "PASS_timesheets_not_hr_attendance",
+    "manufacturing_ownership": "PASS_mfg_may_soft_link_project_id"
+  },
+  "artifacts": {
+    "audit": "offline-v2/docs/P18-00-PROJECTS-AUDIT.md",
+    "evidence": "offline-v2/docs/P18-ENTERPRISE-AUDIT-EVIDENCE.json"
+  },
+  "phase_gate": "STOP — audit only; do not implement Projects BusinessModule",
+  "final_decision": "PASS (audit complete)"
+}
