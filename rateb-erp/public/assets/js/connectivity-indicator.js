@@ -86,7 +86,7 @@
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-        }, 3500);
+            }, 8000);
         return fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
@@ -167,7 +167,7 @@
                     }
                 } catch (eIdle) { /* ignore */ }
                 run();
-            }, 3500);
+            }, 8000);
         };
         if (document.readyState === 'complete') {
             start();

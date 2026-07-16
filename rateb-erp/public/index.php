@@ -72,6 +72,14 @@ register_shutdown_function(static function (): void {
 try {
     require_once dirname(__FILE__, 2) . '/app/Core/Bootstrap.php';
 
+    if (is_file(dirname(__FILE__, 2) . '/app/Core/ServerTiming.php')) {
+        require_once dirname(__FILE__, 2) . '/app/Core/ServerTiming.php';
+        if (class_exists(\Rateb\App\Core\ServerTiming::class)) {
+            \Rateb\App\Core\ServerTiming::arm();
+            \Rateb\App\Core\ServerTiming::mark('controller', 'router+controller');
+        }
+    }
+
     Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
     $posModule = dirname(__FILE__, 2) . '/modules/pos/PosModule.php';

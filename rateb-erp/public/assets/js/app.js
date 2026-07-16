@@ -3,6 +3,10 @@
 
     function initBulkTables() {
         document.querySelectorAll('[data-rateb-bulk-table="1"]').forEach(function (table) {
+            if (table.getAttribute('data-rateb-bound') === '1') {
+                return;
+            }
+            table.setAttribute('data-rateb-bound', '1');
             var card = table.closest('.rateb-card');
             if (!card) {
                 return;
@@ -305,11 +309,26 @@
         initCoaFullTree();
     });
 
+    // PERF-P1 — re-bind content widgets after content-swap (never re-bind sidebar).
+    window.RatebApp = window.RatebApp || {};
+    window.RatebApp.reinit = function () {
+        initBulkTables();
+        initTableSearch();
+        initPermissionMatrix();
+        initCoaFullTree();
+    };
+    document.addEventListener('rateb:nav:afterEnter', function () {
+        if (window.RatebApp && typeof window.RatebApp.reinit === 'function') {
+            window.RatebApp.reinit();
+        }
+    });
+
     function initCoaFullTree() {
         var wrap = document.querySelector('[data-rateb-coa-full-tree="1"]');
-        if (!wrap) {
+        if (!wrap || wrap.getAttribute('data-rateb-bound') === '1') {
             return;
         }
+        wrap.setAttribute('data-rateb-bound', '1');
         var table = wrap.querySelector('.rateb-coa-tree');
         if (!table) {
             return;

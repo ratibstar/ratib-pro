@@ -1,6 +1,32 @@
 (function () {
     'use strict';
 
+    // PERF-P1 — dedupe concurrent GET fetches of the same POS asset (was 3× in P0.4).
+    if (!window.__RATEB_POS_FETCH_DEDUP__) {
+        window.__RATEB_POS_FETCH_DEDUP__ = true;
+        var _origFetch = window.fetch.bind(window);
+        var _inflight = Object.create(null);
+        window.fetch = function (input, init) {
+            var url = typeof input === 'string' ? input : (input && input.url) || '';
+            var method = ((init && init.method) || (input && input.method) || 'GET') + '';
+            if (method.toUpperCase() !== 'GET' || !/\/assets\/pos\//i.test(url)) {
+                return _origFetch(input, init);
+            }
+            var key = String(url).split('?')[0];
+            if (_inflight[key]) {
+                return _inflight[key].then(function (r) { return r.clone(); });
+            }
+            _inflight[key] = _origFetch(input, init).then(function (r) {
+                delete _inflight[key];
+                return r;
+            }, function (err) {
+                delete _inflight[key];
+                throw err;
+            });
+            return _inflight[key].then(function (r) { return r.clone(); });
+        };
+    }
+
     var DB_NAME = 'rateb_pos_offline';
     var DB_VERSION = 4;
     var QUEUE_STORE = 'queue';
@@ -819,8 +845,8 @@
             if (navigator.onLine === false) {
                 return;
             }
-            // Online: health check every 12s. Soft-offline with net up: recover every 3s.
-            var interval = online ? 12000 : 3000;
+            // PERF-P1 — Online: health check every 45s (was 12s). Soft-offline recover every 8s (was 3s).
+            var interval = online ? 45000 : 8000;
             probeTimer = setInterval(function () {
                 if (navigator.onLine === false) {
                     setOnline(false);

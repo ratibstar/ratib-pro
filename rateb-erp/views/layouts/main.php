@@ -1,4 +1,8 @@
 <?php
+if (class_exists(\Rateb\App\Core\ServerTiming::class)) {
+    \Rateb\App\Core\ServerTiming::end('controller');
+    \Rateb\App\Core\ServerTiming::mark('view', 'layout+sidebar+content');
+}
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
@@ -517,7 +521,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 </div>
             </div>
         </header>
-        <main class="rateb-content">
+        <main class="rateb-content" id="rateb-main-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
             <?php if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
                 $branchLabel = function_exists('rateb_portal_branch_label') ? rateb_portal_branch_label() : '';
@@ -587,6 +591,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 <script src="<?php echo rateb_asset('js/table-tools.js'); ?>" defer></script>
 <?php } ?>
 <script src="<?php echo rateb_asset('js/app.js'); ?>" defer></script>
+<script src="<?php echo rateb_asset('js/erp-nav-instant.js'); ?>" defer></script>
 <?php if (!empty($layoutAssets['dateInputs'])) { ?>
 <script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>" defer></script>
 <?php } ?>

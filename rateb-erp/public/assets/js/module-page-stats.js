@@ -69,7 +69,19 @@
     }
 
     function boot() {
-        document.querySelectorAll('[data-module-metrics-async]').forEach(loadMetrics);
+        document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
+            if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
+                return;
+            }
+            el.setAttribute('data-rateb-metrics-loaded', '1');
+            // PERF-P1 — defer metrics so navigation paints first.
+            var run = function () { loadMetrics(el); };
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(run, { timeout: 2500 });
+            } else {
+                setTimeout(run, 800);
+            }
+        });
     }
 
     if (document.readyState === 'loading') {
@@ -77,4 +89,5 @@
     } else {
         boot();
     }
+    document.addEventListener('rateb:nav:afterEnter', boot);
 })();

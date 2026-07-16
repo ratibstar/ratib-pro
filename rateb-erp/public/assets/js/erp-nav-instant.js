@@ -1,0 +1,434 @@
+/**
+ * PERF-P1 — Instant ERP navigation (content-swap + prefetch).
+ * Same tenant/session/shell only. Full reload fallback otherwise.
+ * Keeps sidebar/topbar/theme/RBAC shell alive; swaps main.rateb-content.
+ */
+(function (root) {
+    'use strict';
+
+    if (root.__RATEB_NAV_INSTANT__) {
+        return;
+    }
+    root.__RATEB_NAV_INSTANT__ = true;
+
+    var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
+    var POS_PATH_RE = /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i;
+    var ADMIN_PATH_RE = /\/admin(\/|$)/i;
+    var loadedScripts = Object.create(null);
+    var navigating = false;
+    var prefetchSeen = Object.create(null);
+    var lastHref = '';
+
+    function shellCfg() {
+        return root.__RATEB_ERP_SHELL_OFFLINE__ || {};
+    }
+
+    function sameShell(doc) {
+        try {
+            if (!doc.querySelector('#rateb-sidebar, .rateb-sidebar')) {
+                return false;
+            }
+            if (!doc.querySelector('main.rateb-content, #rateb-main-content')) {
+                return false;
+            }
+            if (doc.querySelector('[data-rateb-login], #login-form, [data-rateb-uncached-page]')) {
+                return false;
+            }
+            if (doc.querySelector('[data-pos-register], .rateb-pos-shell')) {
+                return false;
+            }
+            var cfg = shellCfg();
+            var remote = {};
+            try {
+                var scripts = doc.querySelectorAll('script:not([src])');
+                for (var i = 0; i < scripts.length; i++) {
+                    var t = scripts[i].textContent || '';
+                    var m = t.match(/__RATEB_ERP_SHELL_OFFLINE__\s*=\s*(\{[\s\S]*?\});/);
+                    if (m) {
+                        remote = JSON.parse(m[1]);
+                        break;
+                    }
+                }
+            } catch (eJ) { /* ignore */ }
+            if (cfg.company_id && remote.company_id && String(cfg.company_id) !== String(remote.company_id)) {
+                return false;
+            }
+            if (cfg.user_id && remote.user_id && String(cfg.user_id) !== String(remote.user_id)) {
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function scriptKey(src) {
+        try {
+            var u = new URL(src, root.location.href);
+            return u.origin + u.pathname;
+        } catch (e) {
+            return String(src).split('?')[0];
+        }
+    }
+
+    function rememberExistingScripts() {
+        document.querySelectorAll('script[src]').forEach(function (s) {
+            loadedScripts[scriptKey(s.src)] = true;
+        });
+    }
+
+    function postSw(msg) {
+        try {
+            var reg = navigator.serviceWorker && navigator.serviceWorker.controller;
+            if (!reg && navigator.serviceWorker) {
+                return navigator.serviceWorker.ready.then(function (r) {
+                    if (r.active) {
+                        r.active.postMessage(msg);
+                    }
+                });
+            }
+            if (reg) {
+                reg.postMessage(msg);
+            }
+        } catch (e) { /* ignore */ }
+        return Promise.resolve();
+    }
+
+    function prefetchUrl(href) {
+        if (!href || prefetchSeen[href]) {
+            return;
+        }
+        prefetchSeen[href] = true;
+        postSw({ type: 'PREFETCH_ERP_OPS_URL', url: href });
+        // Also warm browser HTTP cache / SW fetch path
+        try {
+            fetch(href, {
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html', 'X-Rateb-Prefetch': '1' }
+            }).then(function (res) {
+                if (!res || !res.ok) {
+                    return null;
+                }
+                return res.text().then(function (html) {
+                    if (html && html.length >= 20000) {
+                        postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                    }
+                });
+            }).catch(function () { /* ignore */ });
+        } catch (e2) { /* ignore */ }
+    }
+
+    function bindPrefetch(rootEl) {
+        var scope = rootEl || document;
+        scope.querySelectorAll('a.rateb-nav-link[href], a[href*="/admin"]').forEach(function (a) {
+            if (a.__ratebPrefetchBound) {
+                return;
+            }
+            a.__ratebPrefetchBound = true;
+            var go = function () {
+                try {
+                    var u = new URL(a.href, root.location.href);
+                    if (u.origin !== root.location.origin) {
+                        return;
+                    }
+                    if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+                        return;
+                    }
+                    prefetchUrl(u.href);
+                } catch (e) { /* ignore */ }
+            };
+            a.addEventListener('pointerenter', go, { passive: true });
+            a.addEventListener('focus', go, { passive: true });
+            a.addEventListener('touchstart', go, { passive: true });
+        });
+    }
+
+    function idlePrefetchVisible() {
+        try {
+            var links = document.querySelectorAll('a.rateb-nav-link[href]');
+            if (!links.length) {
+                return;
+            }
+            if (typeof IntersectionObserver === 'function') {
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (en) {
+                        if (en.isIntersecting) {
+                            var a = en.target;
+                            try {
+                                var u = new URL(a.href, root.location.href);
+                                if (ADMIN_PATH_RE.test(u.pathname) && !POS_PATH_RE.test(u.pathname)) {
+                                    prefetchUrl(u.href);
+                                }
+                            } catch (e) { /* ignore */ }
+                            io.unobserve(a);
+                        }
+                    });
+                }, { rootMargin: '80px' });
+                links.forEach(function (a) { io.observe(a); });
+            } else {
+                Array.prototype.slice.call(links, 0, 12).forEach(function (a) {
+                    try {
+                        prefetchUrl(new URL(a.href, root.location.href).href);
+                    } catch (e2) { /* ignore */ }
+                });
+            }
+        } catch (e3) { /* ignore */ }
+    }
+
+    function updateActiveNav(href) {
+        try {
+            var path = new URL(href, root.location.href).pathname.replace(/\/+$/, '');
+            document.querySelectorAll('a.rateb-nav-link').forEach(function (a) {
+                var ap = '';
+                try {
+                    ap = new URL(a.href, root.location.href).pathname.replace(/\/+$/, '');
+                } catch (e) { return; }
+                var on = ap === path || (path.indexOf(ap) === 0 && ap.length > 10);
+                a.classList.toggle('active', on);
+            });
+        } catch (e2) { /* ignore */ }
+    }
+
+    function syncMeta(doc) {
+        var csrf = doc.querySelector('meta[name="rateb-csrf"]');
+        var local = document.querySelector('meta[name="rateb-csrf"]');
+        if (csrf && local) {
+            local.setAttribute('content', csrf.getAttribute('content') || '');
+        }
+        var title = doc.querySelector('title');
+        if (title) {
+            document.title = title.textContent || document.title;
+        }
+    }
+
+    function runLifecycle(name, detail) {
+        try {
+            var life = root.RatebModuleLifecycle;
+            if (life && typeof life[name] === 'function') {
+                life[name](detail || {});
+            }
+        } catch (e) { /* ignore */ }
+        try {
+            document.dispatchEvent(new CustomEvent('rateb:nav:' + name, { detail: detail || {} }));
+        } catch (e2) { /* ignore */ }
+    }
+
+    function loadNewScripts(doc) {
+        var chain = Promise.resolve();
+        var nodes = doc.querySelectorAll('script[src]');
+        nodes.forEach(function (s) {
+            var src = s.getAttribute('src');
+            if (!src) {
+                return;
+            }
+            var key = scriptKey(src);
+            if (loadedScripts[key]) {
+                return;
+            }
+            if (COMMON_SCRIPT_RE.test(key) || /erp-nav-instant/i.test(key)) {
+                loadedScripts[key] = true;
+                return;
+            }
+            chain = chain.then(function () {
+                return new Promise(function (resolve) {
+                    var el = document.createElement('script');
+                    el.src = src;
+                    el.defer = true;
+                    el.onload = el.onerror = function () {
+                        loadedScripts[key] = true;
+                        resolve();
+                    };
+                    (document.body || document.documentElement).appendChild(el);
+                });
+            });
+        });
+        return chain;
+    }
+
+    function reinitModuleUi() {
+        try {
+            if (root.RatebApp && typeof root.RatebApp.reinit === 'function') {
+                root.RatebApp.reinit();
+            }
+        } catch (e) { /* ignore */ }
+        try {
+            document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
+                if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
+                    return;
+                }
+                // module-page-stats listens for rateb:nav:enter
+            });
+        } catch (e2) { /* ignore */ }
+    }
+
+    function swapTo(href, opts) {
+        opts = opts || {};
+        if (navigating) {
+            return Promise.resolve(false);
+        }
+        navigating = true;
+        var t0 = performance.now();
+        runLifecycle('beforeLeave', { href: root.location.href, next: href });
+
+        return fetch(href, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'text/html',
+                'X-Rateb-Nav-Swap': '1'
+            }
+        }).then(function (res) {
+            if (!res || !res.ok) {
+                throw new Error('nav_fetch_failed');
+            }
+            return res.text().then(function (html) {
+                return { html: html, finalUrl: res.url || href };
+            });
+        }).then(function (pack) {
+            var doc = new DOMParser().parseFromString(pack.html, 'text/html');
+            if (!sameShell(doc)) {
+                throw new Error('shell_mismatch');
+            }
+            var nextMain = doc.querySelector('#rateb-main-content, main.rateb-content');
+            var curMain = document.querySelector('#rateb-main-content, main.rateb-content');
+            if (!nextMain || !curMain) {
+                throw new Error('missing_main');
+            }
+            curMain.innerHTML = nextMain.innerHTML;
+            syncMeta(doc);
+            updateActiveNav(pack.finalUrl);
+            if (!opts.replace && !opts.popstate) {
+                root.history.pushState({ ratebNav: 1 }, '', pack.finalUrl);
+            } else if (opts.replace) {
+                root.history.replaceState({ ratebNav: 1 }, '', pack.finalUrl);
+            }
+            lastHref = pack.finalUrl;
+            rememberExistingScripts();
+            return loadNewScripts(doc).then(function () {
+                runLifecycle('afterEnter', {
+                    href: pack.finalUrl,
+                    ms: Math.round(performance.now() - t0)
+                });
+                reinitModuleUi();
+                bindPrefetch(curMain);
+                // Keep ops cache hot with fresh HTML
+                if (pack.html && pack.html.length >= 20000) {
+                    postSw({ type: 'CACHE_ERP_OPS_PAGE', url: pack.finalUrl, html: pack.html });
+                }
+                try {
+                    performance.mark('rateb-nav-swap');
+                    console.info('[RATEB NAV]', Math.round(performance.now() - t0) + 'ms', pack.finalUrl);
+                } catch (eLog) { /* ignore */ }
+                return true;
+            });
+        }).catch(function (err) {
+            try {
+                console.warn('[RATEB NAV] fallback full load', err && err.message);
+            } catch (eW) { /* ignore */ }
+            root.location.href = href;
+            return false;
+        }).then(function (ok) {
+            navigating = false;
+            return ok;
+        });
+    }
+
+    function shouldIntercept(a, ev) {
+        if (!a || !a.href) {
+            return false;
+        }
+        if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+            return false;
+        }
+        if (a.target && a.target !== '' && a.target !== '_self') {
+            return false;
+        }
+        if (a.hasAttribute('download') || a.getAttribute('data-rateb-full-nav') === '1') {
+            return false;
+        }
+        try {
+            var u = new URL(a.href, root.location.href);
+            if (u.origin !== root.location.origin) {
+                return false;
+            }
+            if (!ADMIN_PATH_RE.test(u.pathname)) {
+                return false;
+            }
+            if (POS_PATH_RE.test(u.pathname)) {
+                return false;
+            }
+            if (u.pathname === root.location.pathname && u.search === root.location.search) {
+                return false;
+            }
+            if (!document.querySelector('#rateb-sidebar, .rateb-sidebar')) {
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function onClick(ev) {
+        var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+        if (!shouldIntercept(a, ev)) {
+            return;
+        }
+        ev.preventDefault();
+        swapTo(a.href);
+    }
+
+    function onPopState() {
+        if (!document.querySelector('#rateb-sidebar, .rateb-sidebar')) {
+            return;
+        }
+        swapTo(root.location.href, { popstate: true });
+    }
+
+    // Public lifecycle registry — modules register once
+    root.RatebModuleLifecycle = root.RatebModuleLifecycle || {
+        _hooks: { beforeLeave: [], afterEnter: [] },
+        on: function (ev, fn) {
+            if (this._hooks[ev]) {
+                this._hooks[ev].push(fn);
+            }
+        },
+        beforeLeave: function (detail) {
+            (this._hooks.beforeLeave || []).forEach(function (fn) {
+                try { fn(detail); } catch (e) { /* ignore */ }
+            });
+        },
+        afterEnter: function (detail) {
+            (this._hooks.afterEnter || []).forEach(function (fn) {
+                try { fn(detail); } catch (e) { /* ignore */ }
+            });
+        }
+    };
+
+    root.RatebNavInstant = {
+        prefetch: prefetchUrl,
+        navigate: swapTo,
+        bindPrefetch: bindPrefetch
+    };
+
+    function boot() {
+        rememberExistingScripts();
+        bindPrefetch(document);
+        document.addEventListener('click', onClick, true);
+        root.addEventListener('popstate', onPopState);
+        lastHref = root.location.href;
+        var idle = function () {
+            idlePrefetchVisible();
+        };
+        if (typeof root.requestIdleCallback === 'function') {
+            root.requestIdleCallback(idle, { timeout: 4000 });
+        } else {
+            setTimeout(idle, 2000);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+})(typeof window !== 'undefined' ? window : this);
