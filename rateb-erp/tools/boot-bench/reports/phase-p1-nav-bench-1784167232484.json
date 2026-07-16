@@ -1,0 +1,143 @@
+{
+  "phase": "PERF-P1",
+  "at": "2026-07-16T02:01:18.818Z",
+  "boot": {
+    "hasNav": true,
+    "hasSidebar": true,
+    "company": 22,
+    "sw": true
+  },
+  "targets": {
+    "online_first_lt_500": false,
+    "online_warm_lt_200": false,
+    "offline_warm_lt_150": true,
+    "avg_online_first_ms": 582,
+    "avg_online_warm_ms": 442,
+    "avg_offline_warm_ms": 4
+  },
+  "online": {
+    "hr": {
+      "first": {
+        "ms": 972,
+        "ok": true,
+        "err": null,
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+        "mainLen": 548,
+        "mem": 3.2
+      },
+      "warm": {
+        "ms": 417,
+        "ok": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+        "mainLen": 548,
+        "mem": 2.7
+      }
+    },
+    "inventory": {
+      "first": {
+        "ms": 473,
+        "ok": true,
+        "err": null,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "mainLen": 560,
+        "mem": 3.5
+      },
+      "warm": {
+        "ms": 416,
+        "ok": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "mainLen": 560,
+        "mem": 3.5
+      }
+    },
+    "accounting": {
+      "first": {
+        "ms": 450,
+        "ok": true,
+        "err": null,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "mainLen": 1602,
+        "mem": 3.6
+      },
+      "warm": {
+        "ms": 440,
+        "ok": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "mainLen": 1602,
+        "mem": 7.7
+      }
+    },
+    "dashboard": {
+      "first": {
+        "ms": 431,
+        "ok": true,
+        "err": null,
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "mainLen": 559,
+        "mem": 3.2
+      },
+      "warm": {
+        "ms": 495,
+        "ok": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "mainLen": 559,
+        "mem": 3.9
+      }
+    }
+  },
+  "offline": {
+    "hr": {
+      "cold": {
+        "ms": 8,
+        "ok": false,
+        "err": null,
+        "uncached": false,
+        "mainLen": 559
+      },
+      "warm": {
+        "ms": 8,
+        "ok": false
+      }
+    },
+    "inventory": {
+      "cold": {
+        "ms": 5,
+        "ok": false,
+        "err": null,
+        "uncached": false,
+        "mainLen": 559
+      },
+      "warm": {
+        "ms": 2,
+        "ok": false
+      }
+    },
+    "accounting": {
+      "cold": {
+        "ms": 3,
+        "ok": false,
+        "err": null,
+        "uncached": false,
+        "mainLen": 559
+      },
+      "warm": {
+        "ms": 4,
+        "ok": false
+      }
+    },
+    "dashboard": {
+      "cold": {
+        "ms": 3,
+        "ok": false,
+        "err": null,
+        "uncached": false,
+        "mainLen": 559
+      },
+      "warm": {
+        "ms": 2,
+        "ok": false
+      }
+    }
+  },
+  "elapsed_ms": 46370
+}

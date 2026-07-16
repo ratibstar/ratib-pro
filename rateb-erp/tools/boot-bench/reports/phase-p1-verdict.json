@@ -1,0 +1,69 @@
+{
+  "phase": "PERF-P1",
+  "title": "Enterprise Navigation Optimization",
+  "status": "TARGETS_ACHIEVED",
+  "commits": ["b6597d8c", "d02577b8", "4c06fd21"],
+  "sw_build": "20260716-perf-p1-nav-swr-v80",
+  "evidence": "tools/boot-bench/reports/phase-p1-nav-bench-1784167435971.json",
+  "architecture": {
+    "before": "Every sidebar click = full document navigation. SW soft-online network-first (TTFB ~400ms). HTML re-downloaded; JS re-executed; shell rebuilt.",
+    "after": "Same ERP shell kept alive. Content-swap replaces #rateb-main-content only. Cache API first for HTML; SW SWR for full document navigations; hover/idle prefetch; module lifecycle; POS fetch dedupe + slower probes; Server-Timing headers."
+  },
+  "targets": {
+    "online_first_lt_500": { "target_ms": 500, "avg_ms": 16, "pass": true },
+    "online_warm_lt_200": { "target_ms": 200, "avg_ms": 18, "pass": true },
+    "offline_warm_lt_150": { "target_ms": 150, "avg_ms": 14, "pass": true }
+  },
+  "benchmark": {
+    "online": {
+      "hr": { "first_ms": 32, "warm_ms": 8 },
+      "inventory": { "first_ms": 13, "warm_ms": 6 },
+      "accounting": { "first_ms": 10, "warm_ms": 41 },
+      "dashboard": { "first_ms": 9, "warm_ms": 16 }
+    },
+    "offline": {
+      "hr": { "cold_ms": 8, "warm_ms": 15 },
+      "inventory": { "cold_ms": 14, "warm_ms": 6 },
+      "accounting": { "cold_ms": 8, "warm_ms": 18 },
+      "dashboard": { "cold_ms": 15, "warm_ms": 16 }
+    },
+    "memory_mb_range": "4.0–5.1 (stable across swaps)",
+    "vs_p04": {
+      "online_ttfb_was": "~430ms every click",
+      "online_usable_was": "~1370ms",
+      "now_swap_ms": "6–41ms warm"
+    }
+  },
+  "modified_files": [
+    "rateb-erp/public/pos-sw.js",
+    "rateb-erp/public/assets/js/erp-nav-instant.js (new)",
+    "rateb-erp/public/assets/js/app.js",
+    "rateb-erp/public/assets/js/module-page-stats.js",
+    "rateb-erp/public/assets/js/connectivity-indicator.js",
+    "rateb-erp/public/assets/pos/js/pos-offline-sync.js",
+    "rateb-erp/views/layouts/main.php",
+    "rateb-erp/public/index.php",
+    "rateb-erp/app/Core/ServerTiming.php (new)",
+    "rateb-erp/tools/boot-bench/phase-p1-nav-bench.js (new)"
+  ],
+  "optimizations_shipped": [
+    "1 Prefetch on hover/focus/touchstart/visible/idle → ops cache",
+    "2 SW navigate SWR + client Cache API first for content-swap",
+    "3 Module init-once (data-rateb-bound) + RatebApp.reinit",
+    "4 Shared shell (sidebar/topbar/theme stay alive)",
+    "5 Content-swap same tenant/session/shell; history pushState; refresh still full load",
+    "6 RatebModuleLifecycle beforeLeave/afterEnter",
+    "7 Common libs not reloaded; module scripts idle after cache hit",
+    "8 Offline reuses Cache API HTML + existing IDB/SW (no recreate)",
+    "9 POS fetch dedupe + probe 45s/8s; metrics idle; connectivity 8s",
+    "10 SW PREFETCH_ERP_OPS_URL + leanOps warm",
+    "11 Server-Timing bootstrap/controller/view/total"
+  ],
+  "expected_gain": "Online warm nav ~430ms TTFB → ~18ms swap (~95%+). Offline module open ~1000ms usable wait → ~14ms swap when cached.",
+  "constraints_honored": [
+    "No SPA framework",
+    "No PHP business logic / schema / RBAC / API changes",
+    "No Offline redesign",
+    "No UI redesign"
+  ]
+}
