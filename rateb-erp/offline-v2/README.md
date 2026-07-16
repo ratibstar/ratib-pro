@@ -1,24 +1,23 @@
 # RATEB Offline V2
 
-Greenfield Offline V2 architecture. **Offline V1 is frozen and untouched.**
+**Architecture Freeze v2.1 — ACTIVE** (includes Identity).  
+**Architecture Freeze v2.1.1 — ACTIVE** (Inventory sole ownership of inventory state).
 
-## Architecture Freeze v2.1 — ACTIVE
-
-Platform foundation **includes Identity**. See:
+## Freeze docs
 
 - `docs/AF-2.1-ARCHITECTURE-FREEZE.md`
+- `docs/AF-2.1.1-INVENTORY-OWNERSHIP.md`
 - `docs/AF-2.1-DEPENDENCY-DIAGRAM.md`
 - `docs/AF-2.1-OWNERSHIP-MATRIX.md`
 - `docs/AF-2.1-SECURITY-BOUNDARY.md`
 
-ERP BusinessModules must consume Identity **only** via published `module.identity.*` APIs and must declare Identity as a dependency.
+## Modules
 
-## Current
-
-| Path | Role |
-|------|------|
-| `public/v2/js/business/identity-module.js` | Identity (Platform Foundation · FROZEN) |
+| Module | Path | Role |
+|--------|------|------|
+| Identity | `public/v2/js/business/identity-module.js` | Foundation · FROZEN |
+| Inventory | `public/v2/js/business/inventory-module.js` | Sole inventory SoT · FROZEN |
 
 Open: `/rateb-erp/public/v2/`
 
-Online ERP remains Authentication Authority. Do not start the next ERP module without Architecture Board GO.
+Procurement and other ERP modules may begin only after Architecture Board GO, and must call Inventory via published APIs only.

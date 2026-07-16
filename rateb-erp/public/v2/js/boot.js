@@ -1,5 +1,5 @@
 /*!
- * RATEB Offline V2 — Host boot (Phases 1–10 self-tests).
+ * RATEB Offline V2 — Host boot (Phases 1–11 self-tests).
  */
 (function (root) {
     'use strict';
@@ -235,6 +235,66 @@
         });
     }
 
+    function runInventorySelfTest() {
+        var invApi = root.RatebOfflineV2Inventory;
+        if (!invApi) {
+            setState('inventory-selftest', false, 'Inventory module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('inventory-version', invApi.version);
+        return invApi.runSelfTest().then(function (res) {
+            setState('inventory-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('inventory-evidence') && res.evidence) {
+                $('inventory-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
+    function runProcurementSelfTest() {
+        var procApi = root.RatebOfflineV2Procurement;
+        if (!procApi) {
+            setState('procurement-selftest', false, 'Procurement module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('procurement-version', procApi.version);
+        return procApi.runSelfTest().then(function (res) {
+            setState('procurement-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('procurement-evidence') && res.evidence) {
+                $('procurement-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
+    function runSalesSelfTest() {
+        var salesApi = root.RatebOfflineV2Sales;
+        if (!salesApi) {
+            setState('sales-selftest', false, 'Sales module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('sales-version', salesApi.version);
+        return salesApi.runSelfTest().then(function (res) {
+            setState('sales-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('sales-evidence') && res.evidence) {
+                $('sales-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
     function run() {
         var hci = root.RatebOfflineV2HCI;
         if (!hci) {
@@ -272,7 +332,7 @@
             return hci.requestPersistence();
         }).then(function (p) {
             setState('persist', !!p.ok, p.persisted ? 'persisted' : 'not persisted (may be browser policy)');
-            return hci.appendLog('phase10-host-boot');
+            return hci.appendLog('phase13-host-boot');
         }).then(function () {
             return registerSw();
         }).then(function (sw) {
@@ -287,19 +347,28 @@
                                 return runSdkSelfTest().then(function (sdkRes) {
                                     return runBusinessSelfTest().then(function (bmRes) {
                                         return runIdentitySelfTest().then(function (idRes) {
-                                            var ok = pmRes && pmRes.ok !== false &&
-                                                dbRes && dbRes.ok !== false &&
-                                                rtRes && rtRes.ok !== false &&
-                                                routerRes && routerRes.ok !== false &&
-                                                shellRes && shellRes.ok !== false &&
-                                                syncRes && syncRes.ok !== false &&
-                                                sdkRes && sdkRes.ok !== false &&
-                                                bmRes && bmRes.ok !== false &&
-                                                idRes && idRes.ok !== false;
-                                            setText('boot-status', ok
-                                                ? 'Phase 10 platform + Identity Module ready'
-                                                : 'Phase 10 self-test failed');
-                                            $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                            return runInventorySelfTest().then(function (invRes) {
+                                                return runProcurementSelfTest().then(function (procRes) {
+                                                    return runSalesSelfTest().then(function (salesRes) {
+                                                        var ok = pmRes && pmRes.ok !== false &&
+                                                            dbRes && dbRes.ok !== false &&
+                                                            rtRes && rtRes.ok !== false &&
+                                                            routerRes && routerRes.ok !== false &&
+                                                            shellRes && shellRes.ok !== false &&
+                                                            syncRes && syncRes.ok !== false &&
+                                                            sdkRes && sdkRes.ok !== false &&
+                                                            bmRes && bmRes.ok !== false &&
+                                                            idRes && idRes.ok !== false &&
+                                                            invRes && invRes.ok !== false &&
+                                                            procRes && procRes.ok !== false &&
+                                                            salesRes && salesRes.ok !== false;
+                                                        setText('boot-status', ok
+                                                            ? 'Phase 13 platform + Identity + Inventory + Procurement + Sales ready'
+                                                            : 'Phase 13 self-test failed');
+                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                    });
+                                                });
+                                            });
                                         });
                                     });
                                 });

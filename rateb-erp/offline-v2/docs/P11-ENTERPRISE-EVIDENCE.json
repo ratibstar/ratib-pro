@@ -1,0 +1,27 @@
+{
+  "phase": 11,
+  "module": "inventory",
+  "version": "1.0.0-phase11",
+  "dependencies": [{ "id": "identity", "version": ">=1.0.0" }],
+  "architecture_freeze": "2.1",
+  "artifacts": {
+    "module": "public/v2/js/business/inventory-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js"
+  },
+  "capabilities": ["warehouses", "items", "stock_posting", "fefo", "reservations", "valuation", "transfers_separate_balances"],
+  "forbidden": ["platform_edits", "identity_edits", "php_copy", "v1_copy", "identity_sql", "bins_as_present", "cost_layers_as_present"],
+  "verifications": {
+    "module_self_tests": "implemented",
+    "identity_integration": "implemented",
+    "runtime_router_shell_sync_db_pm_sdk": "implemented",
+    "security_af21": "implemented",
+    "zero_network": "implemented",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (implementation); operator Chromium gate",
+  "phase_gate": "GO — stop; no next ERP module"
+}

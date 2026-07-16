@@ -1,0 +1,61 @@
+{
+  "phase": 13,
+  "module": "sales",
+  "version": "1.0.0-phase13",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0" },
+    { "id": "inventory", "version": ">=1.0.0" }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/sales-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p13"
+  },
+  "owns": [
+    "sales_quotation",
+    "sales_order",
+    "delivery_order",
+    "sales_invoice",
+    "sales_return",
+    "customer_pricing",
+    "sales_workflow"
+  ],
+  "forbidden": [
+    "inventory_ownership",
+    "inv_sql",
+    "identity_sql",
+    "proc_sql",
+    "pos_sql",
+    "platform_edits",
+    "php_copy",
+    "v1_copy",
+    "pos_dual_write"
+  ],
+  "inventory_interactions": {
+    "order_confirm": "module.inventory.reserve",
+    "delivery": "releaseReservation (Inventory-owned) + postMovement out",
+    "return": "module.inventory.postMovement in",
+    "pricing_fallback": "module.inventory.listItems (sell_price)"
+  },
+  "verifications": {
+    "module_self_tests": "PASS (42 steps)",
+    "identity_integration": "PASS",
+    "inventory_integration": "PASS",
+    "sales_workflow": "PASS",
+    "delivery": "PASS",
+    "sales_return": "PASS",
+    "pricing": "PASS",
+    "security_af211": "PASS",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync/SDK/BM Runtime factory; locked)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (Sales BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

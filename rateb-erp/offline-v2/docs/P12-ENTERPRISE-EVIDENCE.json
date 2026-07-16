@@ -1,0 +1,59 @@
+{
+  "phase": 12,
+  "module": "procurement",
+  "version": "1.0.0-phase12",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0" },
+    { "id": "inventory", "version": ">=1.0.0" }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/procurement-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p12"
+  },
+  "owns": [
+    "purchase_request",
+    "rfq",
+    "supplier_quote",
+    "purchase_order",
+    "goods_receipt",
+    "landed_cost",
+    "approval_workflow"
+  ],
+  "forbidden": [
+    "inventory_balance_ownership",
+    "inv_sql",
+    "identity_sql",
+    "platform_edits",
+    "identity_edits",
+    "inventory_edits",
+    "php_copy",
+    "v1_copy"
+  ],
+  "inventory_interactions": {
+    "grn": "module.inventory.postMovement (movement_type=in)",
+    "landed_cost": "module.inventory.upsertItem (unit_cost valuation)",
+    "catalog_ensure": "module.inventory.upsertItem"
+  },
+  "verifications": {
+    "module_self_tests": "PASS (38 steps)",
+    "runtime_router_shell_sync_db_pm_sdk_presence": "PASS (in-module)",
+    "identity_integration": "PASS",
+    "inventory_integration": "PASS",
+    "procurement_workflow": "PASS",
+    "goods_receipt": "PASS",
+    "landed_cost": "PASS",
+    "security_af211": "PASS (refuse inv.* writes)",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync schema_v2 + Runtime factory SDK/BM; locked layers)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (Procurement BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

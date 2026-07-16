@@ -29,6 +29,8 @@
 | Identity diagnostics / health | — | **O** | **C** (observe events / public diag if exposed) | — | — |
 | `entity_row` `identity.*` | — | **O** | **X** direct SQL | **X** | **X** |
 | `vault.bin` identity use | — | **O** if used | **X** | **X** | **X** by ERP modules |
+| **Stock ledger / balances / batches / reservations / warehouses / valuation** | Online ERP (server) | **O** Inventory Module | **C** via `module.inventory.*` only | Events only — **never balances** | **X** |
+| `entity_row` `inv.*` | — | **O** Inventory | **X** direct SQL | **X** balance writes | **X** |
 
 ## 3. Platform layers (unchanged freeze)
 

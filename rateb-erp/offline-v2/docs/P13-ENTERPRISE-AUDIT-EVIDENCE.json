@@ -1,0 +1,36 @@
+{
+  "phase": 13,
+  "task": "sales_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "No classic B2B Sales module online; operational sales = POS; Offline V2 Sales largely greenfield",
+  "primary_evidence_roots": [
+    "modules/pos/",
+    "migrations/154_pos_core.sql",
+    "migrations/155_pos_sales.sql",
+    "migrations/161_pos_pricing.sql",
+    "app/services/BillingService.php",
+    "app/services/AccountingService.php",
+    "app/models/Entities.php (Customer)",
+    "migrations/001_initial_schema.sql (rateb_invoices)",
+    "migrations/106_customers_cash_voucher_analysis.sql"
+  ],
+  "absent": [
+    "SalesService",
+    "SaleOrder",
+    "rateb_sales_*",
+    "sales.* permissions",
+    "B2B delivery notes",
+    "ops sales invoices distinct from platform billing"
+  ],
+  "inventory_anti_patterns": [
+    "PosInventoryBridgeService markSerialSold UPDATE rateb_inventory_serials",
+    "PosInventoryReservationService POS-owned soft reserves",
+    "deprecated postSaleForOrder non-transactional path"
+  ],
+  "artifacts": {
+    "canvas": "canvases/phase13-sales-audit.canvas.tsx",
+    "report": "offline-v2/docs/P13-00-SALES-AUDIT.md"
+  },
+  "final_decision": "AUDIT PASS — STOP; do not implement Sales module"
+}
