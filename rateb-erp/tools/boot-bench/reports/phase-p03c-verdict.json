@@ -1,0 +1,46 @@
+{
+  "phase": "PERF-P0.3-C",
+  "commits": ["02d3aed5", "863c46e3", "5b84a610", "1a0c8055", "b11c7fb8"],
+  "sw_build": "20260716-perf-p03c-oa-shell-v74",
+  "root_cause": {
+    "primary": "pos-sw.js seedInlineOfflineShell() cache.put thin nav HTML (no scripts) under offline-shell.html — OA chain never ran",
+    "file": "rateb-erp/public/pos-sw.js",
+    "functions": ["seedInlineOfflineShell", "erpInlineShellResponse"],
+    "secondary": "offline-shell.html loadOfflineScript fell back to rateb-offline.js monolith which assigns RatebOffline WITHOUT ensure; second monolith hit skips re-exec → oa_bootstrap_missing",
+    "file_secondary": "rateb-erp/public/offline-shell.html",
+    "emit_site": {
+      "file": "rateb-erp/public/offline-shell.html",
+      "line": "~211-212",
+      "code": "Promise.reject(new Error('oa_bootstrap_missing'))",
+      "caller": "inline IIFE after loadOfflineScript('offline-bootstrap.js')",
+      "gate": "typeof window.RatebOffline.ensure !== 'function'"
+    },
+    "tertiary": "P0.1 offline tLong=2000 aborted plain bootstrap during slow SW match; bust alias → 503"
+  },
+  "timeline": [
+    "Browser → SW fetch offline-shell.html",
+    "SW served thin inline shell OR real shell",
+    "If thin: no scripts → silent dead / no OA",
+    "If real: tenant → (monolith fallback) → bootstrap → gate ensure",
+    "Monolith path: RatebOffline without ensure → oa_bootstrap_missing"
+  ],
+  "before": {
+    "oa_bootstrap_missing": true,
+    "hasEnsure": false,
+    "offline_startup_ms": 1299,
+    "note": "P0.1 improved startup but residual oa_bootstrap_missing"
+  },
+  "after": {
+    "oa_bootstrap_missing": false,
+    "hasEnsure": true,
+    "oa": true,
+    "hasLock": true,
+    "ensureOnce": true,
+    "bootstrap_ms": 216,
+    "shell_to_unlock_ms": 264,
+    "measured": "playwright diagnostic 2026-07-16 after v74 warm"
+  },
+  "ms_saved": "oa_bootstrap_missing eliminated; unlock path ~264ms when warm",
+  "enterprise_score_estimate": 54,
+  "stop": "P0.3-C complete — no P1"
+}
