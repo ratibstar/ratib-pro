@@ -14,6 +14,7 @@
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  TRUST BOUNDARY B — Identity Module (Platform Foundation)   │
+│  Local identity cache only — NOT an auth authority           │
 │  Owns: sealed · claims · RBAC snapshot · device · unlock     │
 │        meta · derived session · identity diagnostics         │
 │  APIs: module.identity.*                                     │
@@ -30,15 +31,16 @@
 ## 2. Hard security invariants
 
 1. **Online ERP is the only Authentication Authority.**
-2. **Identity never stores credentials** (passwords, hashes, cookies, sessions, tokens, TOTP, recovery/reset secrets).
-3. **Identity never authenticates against the server.**
-4. **Identity never generates, syncs, or exports credentials.**
-5. **Identity never exposes secrets** through SQLite dumps, OPFS, Sync outbox, logs, diagnostics, events, caches, or Package Manager artifacts.
-6. **No BusinessModule may bypass Identity** to read sealed identity, unlock metadata, RBAC snapshot storage, or identity-owned tables.
-7. **Direct OPFS access to identity storage is prohibited** for non-Identity modules.
-8. **Direct SQLite queries to `identity.*` entity types are prohibited** for non-Identity modules.
-9. **Sync Engine must never carry auth secrets**; Identity refuses credential sync.
-10. **Offline V1 remains zero-touch** and is not an Identity dependency.
+2. **Identity never stores credentials** — passwords, hashes, session cookies, bearer tokens, JWTs, TOTP secrets, WebAuthn server credentials, API tokens, or any authentication secret.
+3. **Identity is not an Authentication Authority** — it is a secure local identity cache fed only by online-produced, secret-free enrollment packages.
+4. **Identity never authenticates against the server.**
+5. **Identity never generates, syncs, or exports credentials.**
+6. **Identity never exposes secrets** through SQLite dumps, OPFS, Sync outbox, logs, diagnostics, events, caches, or Package Manager artifacts.
+7. **No BusinessModule may bypass Identity** to read sealed identity, unlock metadata, RBAC snapshot storage, or identity-owned tables.
+8. **Direct OPFS access to identity storage is prohibited** for non-Identity modules.
+9. **Direct SQLite queries to `identity.*` entity types are prohibited** for non-Identity modules.
+10. **Sync Engine must never carry auth secrets**; Identity refuses credential sync.
+11. **Offline V1 remains zero-touch** and is not an Identity dependency.
 
 ## 3. Allowed Identity operations (inside boundary B)
 
@@ -59,7 +61,7 @@
 | Parse sealed identity blobs | Yes — denied |
 | Read unlock_verifier / salt | Yes — denied |
 | Call Online ERP login/token mint from module | Yes — denied |
-| Put passwords/tokens on Sync outbox | Yes — denied |
+| Put passwords/tokens/JWTs/API tokens/WebAuthn creds on Sync outbox | Yes — denied |
 
 ## 5. Violation class
 

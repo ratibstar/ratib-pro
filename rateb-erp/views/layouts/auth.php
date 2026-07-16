@@ -49,5 +49,23 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
     </div>
     <script src="<?php echo rateb_bootstrap_js(); ?>"></script>
     <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
+    <script>
+    (function () {
+        try {
+            if (!('serviceWorker' in navigator)) return;
+            var purge = function () {
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'PURGE_ERP_AUTH_CACHE' });
+                }
+            };
+            purge();
+            navigator.serviceWorker.ready.then(function (reg) {
+                if (reg.active) {
+                    reg.active.postMessage({ type: 'PURGE_ERP_AUTH_CACHE' });
+                }
+            }).catch(function () {});
+        } catch (e) {}
+    })();
+    </script>
 </body>
 </html>

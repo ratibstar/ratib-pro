@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-perf-p1-nav-swr-v80';
+var SW_BUILD_ID = '20260716-auth-logout-cache-purge-v81';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -588,6 +588,34 @@ function isLogoutPath(pathname) {
     return /\/logout(\/|$)/i.test(String(pathname || ''));
 }
 
+/** Exact ERP dashboard (/…/admin) — must network-first so logout/login session matches HTML. */
+function isExactAdminDashboardPath(pathname) {
+    var p = String(pathname || '').replace(/\/+$/, '');
+    return /(^|\/)admin$/i.test(p);
+}
+
+/** Drop cached Admin HTML after logout/login so stale authenticated snapshots are not shown. */
+function purgeErpOpsAuthPages() {
+    var adminRe = /\/admin(\/|$)/i;
+    var cacheNames = [ERP_OPS_PAGE_CACHE, ERP_COEXIST_CACHE];
+    return Promise.all(cacheNames.map(function (cacheName) {
+        return caches.open(cacheName).then(function (cache) {
+            return cache.keys().then(function (keys) {
+                return Promise.all((keys || []).map(function (req) {
+                    try {
+                        var href = typeof req === 'string' ? req : (req.url || '');
+                        var u = new URL(href);
+                        if (adminRe.test(u.pathname)) {
+                            return cache.delete(req).catch(function () { return false; });
+                        }
+                    } catch (ePurge) { /* ignore */ }
+                    return null;
+                }));
+            });
+        }).catch(function () { return null; });
+    }));
+}
+
 function erpOfflineShellUrl() {
     try {
         return new URL(ERP_OFFLINE_SHELL, self.registration.scope).href;
@@ -1137,6 +1165,9 @@ function prefetchErpOpsUrl(href) {
  * @param {FetchEvent} [event]
  */
 function navigateErpCloudWithCacheSafety(request, url, event) {
+    if (isExactAdminDashboardPath(url.pathname)) {
+        return navigateAdminDashboardNetworkFirst(request, url, event);
+    }
     function fromCacheOrFallback() {
         return matchErpNavSnapshot(request, url).then(function (hit) {
             if (!hit) {
@@ -1197,6 +1228,39 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         }).catch(function () {
             return fromCacheOrFallback();
         });
+    });
+}
+
+/**
+ * Admin dashboard: network-first (like POS) — cache-first SWR showed logged-in UI after logout.
+ */
+function navigateAdminDashboardNetworkFirst(request, url, event) {
+    function fromCacheOrFallback() {
+        return matchErpNavSnapshot(request, url).then(function (hit) {
+            if (!hit) {
+                return neverFailNavigate(request, url);
+            }
+            return asNonRedirectedResponse(hit).then(function (clean) {
+                return withSoftOfflineCacheHeader(clean || hit);
+            });
+        }).catch(function () {
+            return neverFailNavigate(request, url);
+        });
+    }
+    return fetchNavigateNetwork(request, 4500).then(function (response) {
+        if (response && response.ok) {
+            var pageUrl = request.url || (url && url.href) || '';
+            var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+            }).catch(function () { return null; });
+            if (event && typeof event.waitUntil === 'function') {
+                event.waitUntil(store);
+            }
+            return response;
+        }
+        return fromCacheOrFallback();
+    }).catch(function () {
+        return fromCacheOrFallback();
     });
 }
 
@@ -3142,6 +3206,11 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'RELOAD_OPS_ALLOWLIST') {
         event.waitUntil(loadErpOpsAllowlist());
+        return;
+    }
+    if (data.type === 'PURGE_ERP_AUTH_CACHE') {
+        event.waitUntil(purgeErpOpsAuthPages());
+        return;
     }
 });
 
@@ -3162,7 +3231,13 @@ self.addEventListener('fetch', function (event) {
     // Assets/XHR still pass through online (unchanged cloud behavior).
     if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
         if (event.request.method === 'GET' && event.request.mode === 'navigate') {
-            if (isAuthPath(url.pathname) || isLogoutPath(url.pathname)) {
+            if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
+                event.respondWith(
+                    fetch(event.request).then(function (res) {
+                        event.waitUntil(purgeErpOpsAuthPages());
+                        return res;
+                    })
+                );
                 return;
             }
             if (isPosNavigation(url)) {
