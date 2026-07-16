@@ -1,0 +1,34 @@
+---
+description: When changing live PHP/JS/CSS, update cPanel fast deploy lists or rely on auto git-changed upload
+alwaysApply: true
+---
+
+# Deploy list on every production change
+
+Production deploys via GitHub Actions **fast mode** (`scripts/github-cpanel-fileman-deploy-core.py`), not full `git pull` on the server.
+
+## Automatic (preferred)
+
+Fast deploy **uploads any file changed in the commit** under these paths (if the file exists in the repo):
+
+- `includes/`, `pages/`, `control-panel/`, `js/`, `css/`, `api/`, `config/env/`, `public/`
+- Root: `.htaccess`, `index.php`, `ratib-profile-fix.php`
+
+No manual list edit needed for most edits in those folders.
+
+## Always sync every push (baseline)
+
+`FAST_FILES` in `scripts/github-cpanel-fileman-deploy-core.py` — keep `public/ratib-build.txt` **last**. Add here only files that must ship on **every** push even when unchanged (nav shell, home, sidebar, build marker).
+
+## cPanel git hook / manual full sync
+
+Also add the same paths to `CRITICAL_FILES` in `scripts/cpanel-deploy-sync.sh` when they are required for server-side `git pull` sync.
+
+## Do not auto-deploy
+
+- `Designed/` (unless user explicitly asks)
+- `.github/`, `.cursor/`, `archive/`, `node_modules/`, `*.md`, secrets (`.env`, `*secrets*`)
+
+## After changing deploy scripts
+
+Push to `main` and confirm the Actions deploy job is green.

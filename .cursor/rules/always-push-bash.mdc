@@ -1,0 +1,36 @@
+---
+description: Always بش after completed work — commit, push main, confirm GitHub Actions deploy green
+alwaysApply: true
+---
+
+# Always push (بش)
+
+After **every completed task** that changes the repo (code, config, deploy-related rules), finish with **بش** unless the user explicitly says not to push.
+
+## بش workflow (mandatory default)
+
+1. **Commit** — only when there are real changes; never empty commits; never commit secrets (`.env`, `*secrets*`).
+2. **Push** — `git push origin HEAD` (branch `main` unless user specifies another).
+3. **Deploy** — poll GitHub Actions until the latest run for that commit is **green** (`conclusion=success`).
+4. **Report** — give commit SHA, deploy URL/status, and what shipped.
+
+## When to skip push (exceptions only)
+
+- User explicitly says: no push / local only / don't commit.
+- Question-only or read-only task with **zero** file changes.
+- Push would require `force` to `main`/`master` — warn instead.
+
+## Commit rules (unchanged)
+
+- Do not amend unless user rules allow it.
+- Do not update git config.
+- Use clear commit messages (why, not just what).
+
+## Deploy context
+
+- Production deploy: GitHub Actions fast mode (`scripts/github-cpanel-fileman-deploy-core.py`).
+- Docs-only (`.md` under `offline-v2/docs/`) still get pushed; they may not auto-deploy — still بش.
+
+## User shorthand
+
+**بش** = commit + push + wait for deploy success. Treat it as the default close-out for every implementation phase.

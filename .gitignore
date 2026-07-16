@@ -55,6 +55,8 @@ cache/
 
 # Editor/system files
 .cursor/
+!.cursor/rules/
+!.cursor/rules/**
 .vscode/
 .DS_Store
 Thumbs.db

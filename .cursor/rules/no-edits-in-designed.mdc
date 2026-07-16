@@ -1,0 +1,12 @@
+---
+description: Never modify the Designed/ subtree unless the user explicitly requests it
+alwaysApply: true
+---
+
+# Designed folder is off-limits
+
+Do not create, edit, move, rename, or delete any file or folder under `Designed/` unless the user explicitly asks for changes **inside** `Designed/`.
+
+Main site, payments (N-Genius), and registration live outside `Designed/` — use `api/`, `config/`, `includes/`, `pages/`, `js/`, etc.
+
+If N-Genius or payment configuration is needed, use `config/env.php`, `config/ngenius.secrets.php` (from `config/ngenius.secrets.example.php`), project-root `.env` (see `env.ngenius.example`), or `define()` in `config/env/out_ratib_sa.php` — never `Designed/.env`.

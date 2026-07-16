@@ -1,0 +1,52 @@
+---
+description: Mandatory Identity auth boundary — Online ERP is sole Authentication Authority; Identity is local cache only
+alwaysApply: true
+---
+
+# Identity Authentication Boundary (Mandatory — Every ERP Module)
+
+**Include and enforce this constraint before implementing any Offline V2 ERP BusinessModule.**
+
+## Authentication Authority
+
+- **Online ERP** is the **only** Authentication Authority and single source of truth for user accounts and credentials.
+- **Identity Module** is **not** an authentication authority. It is a **secure local identity cache** synchronized with the Online ERP Authentication Authority.
+
+## Identity may store ONLY
+
+- Sealed Identity
+- Identity Claims
+- RBAC Snapshot
+- Device Trust State
+- Unlock Metadata
+
+## Identity MUST NEVER store
+
+- Passwords
+- Password Hashes
+- Session Cookies
+- Bearer Tokens
+- JWTs
+- TOTP Secrets
+- WebAuthn Server Credentials
+- API Tokens
+- Authentication Secrets of any kind
+
+## BusinessModule rules
+
+- Authenticate **only** through published `module.identity.*` APIs.
+- **Never** access Identity storage directly (`identity.*`, `vault.bin`, SQLite identity tables, OPFS identity paths).
+- **Never** bypass Identity, own authentication, or become an authentication authority.
+
+## Evidence requirement
+
+Every future ERP module charter / compliance / evidence pack must state:
+
+1. Dependency on `identity` (mandatory where applicable)
+2. Identity API usage only — no direct `identity.*` SQL or vault access
+3. No credential storage or sync
+4. Online ERP remains Authentication Authority
+
+Violations are **Category B Architecture Violations** — STOP and report Architecture Conflict.
+
+See also: `rateb-erp/offline-v2/docs/AF-2.1-SECURITY-BOUNDARY.md`
