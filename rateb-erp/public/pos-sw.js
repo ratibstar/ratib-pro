@@ -6,13 +6,15 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-perf-p01-idb-cache-v69';
+var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v70';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
 var REGISTER_CERT_META_PATH = '__rateb_pos_register_cert_meta__';
 var POS_SNAPSHOT_VERSION = 'oj-v1';
 var ERP_OFFLINE_SHELL = 'offline-shell.html';
+/** Last-resort inline nav shell — NEVER stored under offline-shell.html (PERF-P0.3-C). */
+var ERP_INLINE_SHELL_KEY = '__rateb_inline_offline_shell__';
 var ERP_OPS_ALLOWLIST_URL = 'assets/offline/ops-page-allowlist.json';
 var ERP_DEFERRED_POSTS_PREFIX = '__rateb_deferred_posts__/';
 var LAST_SHELL_WARM_AT = 0;
@@ -114,7 +116,7 @@ function protectedMinBytes(rel) {
         return 5000;
     }
     if (/offline-shell\.html$/i.test(r)) {
-        return 500;
+        return 8000;
     }
     if (/modules\//i.test(r)) {
         return 50;
@@ -140,6 +142,12 @@ function isAcceptableProtectedBody(rel, text) {
     }
     if (/identity missing from cache/i.test(t)) {
         return false;
+    }
+    // PERF-P0.3-C — reject thin inline shell masquerading as offline-shell.html.
+    if (/offline-shell\.html$/i.test(String(rel || '').split('?')[0])) {
+        if (t.indexOf('oa_bootstrap_missing') === -1 && t.indexOf('loadOfflineScript') === -1) {
+            return false;
+        }
     }
     return t.length >= protectedMinBytes(rel);
 }
@@ -588,6 +596,53 @@ function erpOfflineShellUrl() {
     }
 }
 
+function erpInlineShellKeyUrl() {
+    try {
+        return new URL(ERP_INLINE_SHELL_KEY, self.registration.scope).href;
+    } catch (e) {
+        return self.location.origin + '/rateb-erp/public/' + ERP_INLINE_SHELL_KEY;
+    }
+}
+
+/** PERF-P0.3-C — thin inline shell has no OA bootstrap scripts (causes oa_bootstrap_missing). */
+function isThinInlineOfflineShellResponse(res) {
+    if (!res || !res.headers) {
+        return false;
+    }
+    try {
+        if (String(res.headers.get('X-Rateb-Inline-Shell') || '') === '1') {
+            return true;
+        }
+        if (String(res.headers.get('X-Rateb-Coexist') || '') === 'pos-sw') {
+            return true;
+        }
+    } catch (eH) { /* ignore */ }
+    return false;
+}
+
+function rejectThinOfflineShellHit(res) {
+    if (!res) {
+        return Promise.resolve(null);
+    }
+    if (isThinInlineOfflineShellResponse(res)) {
+        return Promise.resolve(null);
+    }
+    return res.clone().text().then(function (text) {
+        var t = String(text || '');
+        if (t.indexOf('oa_bootstrap_missing') !== -1
+            || t.indexOf('loadOfflineScript') !== -1
+            || t.indexOf('offline-bootstrap.js') !== -1) {
+            return res;
+        }
+        if (t.length < 4000 && t.indexOf('وضع عدم الاتصال') !== -1 && t.indexOf('<script') === -1) {
+            return null;
+        }
+        return res;
+    }).catch(function () {
+        return res;
+    });
+}
+
 function erpInlineShellResponse() {
     var base = '/rateb-erp/public/';
     try {
@@ -641,19 +696,25 @@ function erpInlineShellResponse() {
             'Content-Type': 'text/html; charset=utf-8',
             'X-Rateb-Offline': '1',
             'X-Rateb-Coexist': 'pos-sw',
+            'X-Rateb-Inline-Shell': '1',
             'Cache-Control': 'no-store'
         }
     });
 }
 
-/** Always seed offline-shell into Cache API (no network required). */
+/**
+ * PERF-P0.3-C — seed LAST-RESORT inline shell under a private key only.
+ * Never cache.PUT under offline-shell.html (that poisoned OA bootstrap).
+ */
 function seedInlineOfflineShell() {
-    var key = erpOfflineShellUrl();
+    var key = erpInlineShellKeyUrl();
     var res = erpInlineShellResponse();
     return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
         return Promise.all([
             cache.put(key, res.clone()),
-            cache.put(ERP_OFFLINE_SHELL, res.clone()).catch(function () { return null; })
+            cache.put(ERP_INLINE_SHELL_KEY, res.clone()).catch(function () { return null; }),
+            cache.delete(erpOfflineShellUrl()).catch(function () { return null; }),
+            cache.delete(ERP_OFFLINE_SHELL).catch(function () { return null; })
         ]);
     }).catch(function () { return null; });
 }
@@ -1435,12 +1496,15 @@ function matchCachedAdminDashboard(url) {
 
 function matchOfflineShellOrInline(request) {
     var key = erpOfflineShellUrl();
-    return caches.match(key).then(function (hit) {
+    function look(res) {
+        return rejectThinOfflineShellHit(res);
+    }
+    return caches.match(key).then(look).then(function (hit) {
         if (hit) {
             return hit;
         }
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
-            return cache.match(key).then(function (cached) {
+            return cache.match(key).then(look).then(function (cached) {
                 if (cached) {
                     return cached;
                 }
@@ -1456,10 +1520,11 @@ function matchOfflineShellOrInline(request) {
                                 return found;
                             }
                             return caches.open(name).then(function (c) {
-                                return c.match(key);
+                                return c.match(key).then(look);
                             });
                         });
                     }, Promise.resolve(null)).then(function (found) {
+                        // Last resort: live Response only — do not re-poison offline-shell.html key.
                         return found || erpInlineShellResponse();
                     });
                 });
@@ -3019,6 +3084,21 @@ self.addEventListener('fetch', function (event) {
                     adminUrl = new URL(url.origin + '/rateb-erp/public/admin/');
                 }
                 return neverFailNavigate(event.request, adminUrl);
+            })
+        );
+        return;
+    }
+
+    // PERF-P0.3-C — offline-shell.html must serve the real OA HTML (never poisoned thin seed).
+    if (event.request.mode === 'navigate' && /\/offline-shell\.html$/i.test(url.pathname)) {
+        respondWithDocumentAndReleaseWarmGate(
+            event,
+            matchOfflineShellOrInline(event.request).then(function (res) {
+                return asNonRedirectedResponse(res).then(function (clean) {
+                    return clean || res || erpInlineShellResponse();
+                });
+            }).catch(function () {
+                return erpInlineShellResponse();
             })
         );
         return;
