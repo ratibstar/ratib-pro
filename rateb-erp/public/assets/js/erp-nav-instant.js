@@ -25,35 +25,38 @@
 
     function sameShell(doc) {
         try {
-            if (!doc.querySelector('#rateb-sidebar, .rateb-sidebar')) {
+            var side = doc.querySelector('#rateb-sidebar, aside.rateb-sidebar, .rateb-sidebar');
+            var main = doc.querySelector('#rateb-main-content, main.rateb-content');
+            if (!side || !main) {
                 return false;
             }
-            if (!doc.querySelector('main.rateb-content, #rateb-main-content')) {
+            if (doc.querySelector('body[data-rateb-uncached-page], [data-rateb-uncached-page="1"]')) {
                 return false;
             }
-            if (doc.querySelector('[data-rateb-login], #login-form, [data-rateb-uncached-page]')) {
+            if (doc.querySelector('#login-form, form#password-form, [data-rateb-login]')) {
                 return false;
             }
-            if (doc.querySelector('[data-pos-register], .rateb-pos-shell')) {
+            // POS register uses a different shell — never content-swap into it.
+            if (doc.body && /rateb-pos-shell/i.test(doc.body.className || '')) {
+                return false;
+            }
+            if (doc.querySelector('main#rateb-pos-app, [data-pos-register="1"]')) {
                 return false;
             }
             var cfg = shellCfg();
-            var remote = {};
+            var remoteCid = null;
             try {
                 var scripts = doc.querySelectorAll('script:not([src])');
                 for (var i = 0; i < scripts.length; i++) {
                     var t = scripts[i].textContent || '';
-                    var m = t.match(/__RATEB_ERP_SHELL_OFFLINE__\s*=\s*(\{[\s\S]*?\});/);
+                    var m = t.match(/company_id["']?\s*:\s*(\d+)/);
                     if (m) {
-                        remote = JSON.parse(m[1]);
+                        remoteCid = m[1];
                         break;
                     }
                 }
             } catch (eJ) { /* ignore */ }
-            if (cfg.company_id && remote.company_id && String(cfg.company_id) !== String(remote.company_id)) {
-                return false;
-            }
-            if (cfg.user_id && remote.user_id && String(cfg.user_id) !== String(remote.user_id)) {
+            if (cfg.company_id && remoteCid && String(cfg.company_id) !== String(remoteCid)) {
                 return false;
             }
             return true;
@@ -322,8 +325,17 @@
             });
         }).catch(function (err) {
             try {
-                console.warn('[RATEB NAV] fallback full load', err && err.message);
+                console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
+            // PERF-P1 — never hard-navigate when offline (destroys shell / causes ERR_FAILED).
+            var offline = false;
+            try {
+                offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            } catch (eOff) { /* ignore */ }
+            if (offline || (opts && opts.noHardNav)) {
+                navigating = false;
+                return false;
+            }
             root.location.href = href;
             return false;
         }).then(function (ok) {
