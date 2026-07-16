@@ -1809,6 +1809,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ((string) ($data['status'] ?? '') === 'active') {
             (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
         }
+        if (trim((string) $this->input('password', '')) !== '') {
+            (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
+        }
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -1849,6 +1852,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
         if ((string) ($data['status'] ?? '') === 'active') {
             (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+        }
+        if (trim((string) $this->input('password', '')) !== '') {
+            (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
         }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');

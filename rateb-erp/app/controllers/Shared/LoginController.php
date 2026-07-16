@@ -36,6 +36,8 @@ final class LoginController extends Controller
             IpRateLimiter::reset('erp_login_ip_' . md5($ip));
         }
 
+        (new AccountLockoutService())->unlockExpired();
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $pairToken = isset($_GET['barcode_pair'])
                 ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
