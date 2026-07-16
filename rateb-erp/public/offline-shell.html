@@ -176,18 +176,11 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
         tLong = 2000;
       }
     } catch (eT) { /* ignore */ }
+    // PERF-P0.3-C — do NOT fall back to rateb-offline monolith here.
+    // Monolith assigns RatebOffline without ensure; a second monoloith hit does not re-exec
+    // → oa_bootstrap_missing with bogus success. Fail loud on the real asset.
     return loadScript(plain, tLong).catch(function () {
       return loadScript(bust, tShort);
-    }).catch(function () {
-      /* Only fall back to monolith for bootstrap entry, not for every module. */
-      if (/offline-bootstrap\.js$/i.test(relPath) || /tenant-context\.js$/i.test(relPath)) {
-        return loadScript(base + 'assets/offline/rateb-offline.min.js', tShort).catch(function () {
-          return loadScript(base + 'assets/offline/rateb-offline.js?v=oid-20260713-lean', tShort);
-        }).catch(function () {
-          return loadScript(base + 'assets/offline/rateb-offline.js', tShort);
-        });
-      }
-      return Promise.reject(new Error('load_failed:' + plain));
     });
   }
 
@@ -198,12 +191,16 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     }
   }, 1200);
 
-  /* Phase OE: restore tenant identity BEFORE OA/modules/unlock hosts. */
+  /* Phase OE: restore tenant identity BEFORE OA/modules/unlock hosts.
+     PERF-P0.3-C — tenant restore is best-effort; never block OA bootstrap. */
   loadOfflineScript('assets/offline/erp-offline-tenant-context.js')
     .then(function () {
       if (window.RatebOfflineTenantContext && typeof window.RatebOfflineTenantContext.restore === 'function') {
         window.RatebOfflineTenantContext.restore();
       }
+    })
+    .catch(function () { /* tenant optional offline */ })
+    .then(function () {
       /* Phase OA: bootstrap → auth/rbac modules → shell hosts (same globals as monolith). */
       return loadOfflineScript('assets/offline/offline-bootstrap.js');
     })
@@ -211,7 +208,13 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
       if (!(window.RatebOffline && typeof window.RatebOffline.ensure === 'function')) {
         return Promise.reject(new Error('oa_bootstrap_missing'));
       }
-      return window.RatebOffline.ensure(['storage', 'auth', 'rbac']);
+      // PERF-P0.3-C — exactly once per shell load (bootstrap IIFE also guards __oaBootstrap).
+      if (window.__RATEB_OA_ENSURE_STARTED__) {
+        return Promise.resolve(window.__RATEB_OA_ENSURE_PROMISE__);
+      }
+      window.__RATEB_OA_ENSURE_STARTED__ = true;
+      window.__RATEB_OA_ENSURE_PROMISE__ = window.RatebOffline.ensure(['storage', 'auth', 'rbac']);
+      return window.__RATEB_OA_ENSURE_PROMISE__;
     })
     .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-auth.js'); })
     .then(function () { return loadOfflineScript('assets/offline/erp-offline-shell-rbac.js'); })
