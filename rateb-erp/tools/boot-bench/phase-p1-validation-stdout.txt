@@ -1,0 +1,126 @@
+﻿{
+  "out": "C:\\Users\\انا\\Documents\\ratibprogram\\rateb-erp\\tools\\boot-bench\\reports\\phase-p1-validation-1784168408017.json",
+  "verdict": {
+    "benchmark_measures": "In-page RatebNavInstant.navigate() after prefetch (not sidebar click)",
+    "real_user_path": "All measured clicks used content-swap",
+    "swap_clicks": 4,
+    "full_reload_clicks": 0,
+    "avg_real_click_wall_ms": 99,
+    "api_bench_ms": 34,
+    "gap_ms": 65
+  },
+  "comparison": [
+    {
+      "metric": "Navigation method",
+      "benchmark": "RatebNavInstant.navigate() API",
+      "real_browser": "content_swap, content_swap, content_swap, content_swap",
+      "difference": "same path",
+      "reason": "Content-swap used on real clicks",
+      "file": "public/assets/js/erp-nav-instant.js",
+      "line": "onClick / shouldIntercept"
+    },
+    {
+      "metric": "Online HR latency",
+      "benchmark": "16ms avg (API navigate after prefetch)",
+      "real_browser": "115ms wall",
+      "difference": "orders of magnitude if full reload",
+      "reason": "API measures in-page swap after cache warm; real click may trigger document navigation + DCL",
+      "file": "tools/boot-bench/phase-p1-nav-bench.js",
+      "line": "page.evaluate RatebNavInstant.navigate"
+    },
+    {
+      "metric": "Performance navigation entry",
+      "benchmark": "none (no document nav)",
+      "real_browser": "{\"type\":\"navigate\",\"transferSize\":0,\"decodedBodySize\":87294,\"workerStart\":10.599999994039536,\"startTime\":0,\"requestStart\":11.200000017881393,\"responseStart\":16.400000005960464,\"responseEnd\":18.80000001192093,\"domContentLoadedEventEnd\":162.80000001192093,\"loadEventEnd\":163.90000000596046,\"ttfb_ms\":5.2,\"dcl_ms\":162.8,\"load_ms\":163.9}",
+      "difference": "document Navigation Timing present",
+      "reason": "Navigation Timing only updates on full document loads",
+      "file": "browser PerformanceNavigationTiming",
+      "line": "n/a"
+    },
+    {
+      "metric": "beforeLeave / afterEnter",
+      "benchmark": "fired inside navigate()",
+      "real_browser": "hr: bl=1 ae=1 | inventory: bl=1 ae=1 | accounting: bl=1 ae=1 | procurement: bl=1 ae=1",
+      "difference": "If ae=0 on click → swap path NOT used",
+      "reason": "Lifecycle only runs in swapTo()",
+      "file": "erp-nav-instant.js",
+      "line": "runLifecycle"
+    },
+    {
+      "metric": "RatebApp.reinit",
+      "benchmark": "on afterEnter",
+      "real_browser": "hr:2, inventory:2, accounting:2, procurement:2",
+      "difference": "0 means swap/reinit path skipped",
+      "reason": "reinit wired to rateb:nav:afterEnter",
+      "file": "public/assets/js/app.js",
+      "line": "rateb:nav:afterEnter listener"
+    },
+    {
+      "metric": "Service Worker controlling",
+      "benchmark": "assumed v80",
+      "real_browser": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "difference": "ok",
+      "reason": "controller present",
+      "file": "pos-sw.js",
+      "line": "clients.claim"
+    },
+    {
+      "metric": "erp-nav-instant loaded",
+      "benchmark": "required",
+      "real_browser": "scriptTag=true global=true",
+      "difference": "present",
+      "reason": "ok",
+      "file": "views/layouts/main.php",
+      "line": "erp-nav-instant.js script tag"
+    },
+    {
+      "metric": "Offline real click",
+      "benchmark": "14ms API",
+      "real_browser": "61ms · content_swap",
+      "difference": "API≠click if classification full_document_navigation or ok false",
+      "reason": "Offline fetch/cache path or hard navigation",
+      "file": "erp-nav-instant.js",
+      "line": "fetchHtml / sameShell"
+    }
+  ],
+  "remainingTime": {
+    "slowest_click": "hr",
+    "wall_ms": 115,
+    "classification": "content_swap",
+    "breakdown": {
+      "ttfb_ms": 5.2,
+      "html_download_approx_ms": 2.4,
+      "parse_to_dcl_ms": 144,
+      "dcl_ms": 162.8,
+      "load_ms": 163.9,
+      "fcp_ms": 128,
+      "transferSize": 0
+    }
+  },
+  "swAfter": {
+    "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "waiting": null,
+    "hasNavInstant": true,
+    "scriptTagPresent": true,
+    "cachesInfo": [
+      {
+        "name": "rateb-erp-coexist-v34",
+        "keys": 264
+      },
+      {
+        "name": "rateb-erp-ops-allowlist-v34",
+        "keys": 1
+      },
+      {
+        "name": "rateb-erp-ops-pages-v34",
+        "keys": 187
+      }
+    ]
+  },
+  "apiBench": {
+    "ok": true,
+    "ms": 34,
+    "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22"
+  }
+}

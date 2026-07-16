@@ -1,0 +1,134 @@
+{
+  "phase": "PERF-P1-VALIDATION",
+  "mode": "EVIDENCE_ONLY_NO_FIXES",
+  "measured_at": "2026-07-16T02:20:00Z",
+  "evidence_raw": "tools/boot-bench/reports/phase-p1-validation-1784168408017.json",
+  "executive_verdict": {
+    "benchmark_wrong_metric": true,
+    "benchmark_measures": "RatebNavInstant.navigate() in page.evaluate AFTER prefetch — not a real sidebar <a> click",
+    "real_clicks_use_content_swap": true,
+    "real_clicks_full_reload": false,
+    "why_user_still_feels_slow": [
+      "Idle/visible prefetch fires parallel full-HTML network fetches (~85KB each) with TTFB 880–925ms and duration 1.7–2.1s (admin, profile, executive-dashboard) concurrent with first click",
+      "RatebApp.reinit runs TWICE per swap (duplicate listener path)",
+      "Cold first module without prior cache still requires network HTML inside swapTo (not measured as 16ms — 16ms is post-prefetch API)",
+      "Navigation Timing / FCP / DCL in traces are STALE from the last full document load — they do NOT reset on content-swap; attributing them to the click overstates click cost"
+    ]
+  },
+  "q1_navigation_mechanism": {
+    "real_sidebar_clicks": [
+      { "step": "hr", "classification": "content_swap", "window_load": false, "DOMContentLoaded_new": false, "pushState": 1, "location_changed": true, "navigationEvent": false, "beforeLeave": 1, "afterEnter": 1, "main_swapped": true, "wall_ms": 115 },
+      { "step": "inventory", "classification": "content_swap", "pushState": 1, "beforeLeave": 1, "afterEnter": 1, "wall_ms": 96 },
+      { "step": "accounting", "classification": "content_swap", "pushState": 1, "beforeLeave": 1, "afterEnter": 1, "wall_ms": 102 },
+      { "step": "procurement", "classification": "content_swap", "pushState": 1, "beforeLeave": 1, "afterEnter": 1, "wall_ms": 81 }
+    ],
+    "offline_hr": { "classification": "content_swap", "afterEnter_ms": 16, "fromCache": true, "wall_ms": 61 }
+  },
+  "q2_service_worker": {
+    "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "active": "same URL (query string still v52 registration)",
+    "waiting": null,
+    "build_id_from_network_file": "20260716-perf-p1-nav-swr-v80",
+    "cache_versions": {
+      "rateb-erp-ops-pages-v34": 187,
+      "rateb-erp-coexist-v34": 264,
+      "rateb-erp-ops-allowlist-v34": 1
+    },
+    "note": "Controlling scriptURL query is stale (?v=20260714-force-sw-v52) but file body is v80. Page IS controlled."
+  },
+  "q3_cache_vs_network": {
+    "content_swap_html": "offline afterEnter.fromCache=true — HTML from Cache API",
+    "first_click_parallel_network": [
+      { "url": "/admin", "duration_ms": 2146, "ttfb_ms": 895.4, "decoded": 85208, "delivery": "network" },
+      { "url": "/admin/ops/profile?company_id=22", "duration_ms": 1947, "ttfb_ms": 883.5, "decoded": 87507, "delivery": "network" },
+      { "url": "/admin/executive-dashboard", "duration_ms": 1769, "ttfb_ms": 925.4, "decoded": 85048, "delivery": "network" }
+    ],
+    "source": "idlePrefetchVisible / RatebNavInstant.prefetch — not the swapped document itself"
+  },
+  "q4_lifecycle": {
+    "RatebNavInstant_present": true,
+    "script_tag": true,
+    "beforeLeave": "1 per click",
+    "afterEnter": "1 per click",
+    "RatebApp.reinit": "2 per click (DUPLICATE)",
+    "rateb_main_content_swapped": true,
+    "whole_page_reloaded_on_module_click": false
+  },
+  "q5_performance_api_caveat": {
+    "warning": "PerformanceNavigationTiming / paint entries remain from the LAST full document load (e.g. /admin/). Content-swap does not create a new navigation entry. Using DCL/FCP from getEntriesByType('navigation') to time a sidebar click is INVALID.",
+    "valid_swap_timing": "afterEnter.detail.ms (offline HR: 16ms fromCache)"
+  },
+  "q6_network": {
+    "document_navigations_during_module_clicks": 0,
+    "harness_document_loads": 3,
+    "server_timing_header": null
+  },
+  "comparison_table": [
+    {
+      "Benchmark": "16ms online / 14ms offline",
+      "Real_browser": "API replicate 34ms; real sidebar click wall 81–115ms; offline click wall 61ms (swap internals 16ms)",
+      "Difference": "Benchmark ≠ real click wall; user-visible jank from parallel prefetch network (1.7–2.1s) overlapping first click",
+      "Reason": "Bench calls navigate() after prefetch; idlePrefetchVisible fetches many full admin HTML docs over network during first interaction",
+      "File": "public/assets/js/erp-nav-instant.js",
+      "Line": "idlePrefetchVisible / prefetchUrl / fetchHtml"
+    },
+    {
+      "Benchmark": "Assumes content-swap path",
+      "Real_browser": "content_swap confirmed (beforeLeave+afterEnter+pushState, no waitForNavigation)",
+      "Difference": "Path is correct — optimization NOT bypassed in this session",
+      "Reason": "RatebNavInstant onClick intercept works when script loaded",
+      "File": "public/assets/js/erp-nav-instant.js",
+      "Line": "onClick / shouldIntercept / swapTo"
+    },
+    {
+      "Benchmark": "Implies no full reload",
+      "Real_browser": "full_reload_clicks=0 on measured module clicks",
+      "Difference": "None for module clicks in this run",
+      "Reason": "preventDefault + pushState used",
+      "File": "erp-nav-instant.js",
+      "Line": "onClick preventDefault"
+    },
+    {
+      "Benchmark": "Silent on Navigation Timing",
+      "Real_browser": "Stale navigate entry (DCL 162ms / FCP from prior /admin/ load) still visible",
+      "Difference": "Misreading Timing as click cost inflates perceived click latency",
+      "Reason": "Content-swap is same-document; PerformanceNavigationTiming not reset",
+      "File": "browser Performance API",
+      "Line": "n/a"
+    },
+    {
+      "Benchmark": "SW v80 assumed controlling",
+      "Real_browser": "controller scriptURL ?v=20260714-force-sw-v52; body build v80",
+      "Difference": "Stale registration query string; build content is v80",
+      "Reason": "SW registered with old cache-bust query; update replaces body not URL",
+      "File": "pos-sw.js / registration site",
+      "Line": "navigator.serviceWorker.register"
+    },
+    {
+      "Benchmark": "No duplicate work claimed",
+      "Real_browser": "RatebApp.reinit ×2 per click",
+      "Difference": "+1 extra reinit",
+      "Reason": "Both RatebNavInstant.reinitModuleUi and app.js rateb:nav:afterEnter listener call reinit",
+      "File": "erp-nav-instant.js + app.js",
+      "Line": "reinitModuleUi / addEventListener rateb:nav:afterEnter"
+    },
+    {
+      "Benchmark": "Prefetch helps silently",
+      "Real_browser": "3× ~85KB HTML network fetches 1.7–2.1s during first HR click window",
+      "Difference": "Prefetch competes with interaction — feels like slow navigation",
+      "Reason": "idlePrefetchVisible IntersectionObserver fetches live network HTML for visible sidebar links",
+      "File": "public/assets/js/erp-nav-instant.js",
+      "Line": "idlePrefetchVisible → prefetchUrl → fetch()"
+    },
+    {
+      "Benchmark": "Server-Timing available",
+      "Real_browser": "server-timing header null on document responses",
+      "Difference": "Not observable in this trace",
+      "Reason": "Header absent (deploy/path/flush) or stripped",
+      "File": "app/Core/ServerTiming.php",
+      "Line": "flush()"
+    }
+  ],
+  "stop": true,
+  "no_fixes": true
+}

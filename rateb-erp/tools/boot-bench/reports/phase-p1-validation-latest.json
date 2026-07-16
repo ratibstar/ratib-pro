@@ -1,0 +1,981 @@
+{
+  "phase": "PERF-P1-VALIDATION",
+  "mode": "EVIDENCE_ONLY_NO_FIXES",
+  "at": "2026-07-16T02:21:12.745Z",
+  "apiBench": {
+    "ok": true,
+    "ms": 34,
+    "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22"
+  },
+  "swBefore": {
+    "registrations": 1,
+    "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "waiting": null,
+    "installing": null,
+    "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "build_from_network": "20260716-perf-p1-nav-swr-v80",
+    "hasNavInstant": true,
+    "hasSidebar": true,
+    "mainId": true
+  },
+  "swAfter": {
+    "controller": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "active": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+    "waiting": null,
+    "hasNavInstant": true,
+    "scriptTagPresent": true,
+    "cachesInfo": [
+      {
+        "name": "rateb-erp-coexist-v34",
+        "keys": 264
+      },
+      {
+        "name": "rateb-erp-ops-allowlist-v34",
+        "keys": 1
+      },
+      {
+        "name": "rateb-erp-ops-pages-v34",
+        "keys": 187
+      }
+    ]
+  },
+  "clickTrace": [
+    {
+      "id": "dashboard",
+      "note": "already_on_dashboard",
+      "snap": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/",
+        "hasNav": true,
+        "script": true
+      }
+    },
+    {
+      "id": "hr",
+      "wall_ms": 115,
+      "linkInfo": {
+        "found": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+        "text": "نظرة عامة",
+        "classes": "rateb-nav-link"
+      },
+      "beforeHref": "https://rateb.sa/rateb-erp/public/admin/",
+      "beforeMain": {
+        "htmlLen": 8758,
+        "textLen": 559,
+        "snippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع "
+      },
+      "navigationEventFired": false,
+      "after": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+        "hrefChanged": true,
+        "mainHtmlLen": 7348,
+        "mainTextLen": 534,
+        "mainSnippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع الرئيسي\n ك",
+        "p1v": {
+          "navType": "content_swap",
+          "beforeLeave": 1,
+          "afterEnter": 1,
+          "reinit": 2,
+          "pushStateCalls": 1,
+          "consoleNav": [],
+          "events": [
+            {
+              "t": 1995.5,
+              "type": "beforeLeave"
+            },
+            {
+              "t": 2038.300000011921,
+              "type": "pushStateCalls",
+              "args0": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22"
+            },
+            {
+              "t": 2038.800000011921,
+              "type": "afterEnter",
+              "detail": {
+                "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+                "ms": 44,
+                "fromCache": true
+              }
+            },
+            {
+              "t": 2038.800000011921,
+              "type": "RatebApp.reinit"
+            },
+            {
+              "t": 2038.9000000059605,
+              "type": "RatebApp.reinit"
+            }
+          ]
+        },
+        "contentSwap": true,
+        "fullReloadGuess": false,
+        "navTiming": {
+          "type": "navigate",
+          "transferSize": 0,
+          "decodedBodySize": 87294,
+          "workerStart": 10.599999994039536,
+          "startTime": 0,
+          "requestStart": 11.200000017881393,
+          "responseStart": 16.400000005960464,
+          "responseEnd": 18.80000001192093,
+          "domContentLoadedEventEnd": 162.80000001192093,
+          "loadEventEnd": 163.90000000596046,
+          "ttfb_ms": 5.2,
+          "dcl_ms": 162.8,
+          "load_ms": 163.9
+        },
+        "paints": {
+          "first-paint": 128,
+          "first-contentful-paint": 128
+        },
+        "lcp_ms": null,
+        "resources_top": [
+          {
+            "name": "/rateb-erp/public/admin",
+            "type": "fetch",
+            "duration": 2146,
+            "transferSize": 17133,
+            "decodedBodySize": 85208,
+            "delivery": "network",
+            "ttfb": 895.4
+          },
+          {
+            "name": "/rateb-erp/public/admin/ops/profile?company_id=22",
+            "type": "fetch",
+            "duration": 1947,
+            "transferSize": 17697,
+            "decodedBodySize": 87507,
+            "delivery": "network",
+            "ttfb": 883.5
+          },
+          {
+            "name": "/rateb-erp/public/admin/executive-dashboard",
+            "type": "fetch",
+            "duration": 1769,
+            "transferSize": 17045,
+            "decodedBodySize": 85048,
+            "delivery": "network",
+            "ttfb": 925.4
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-bulk-delete.js?v=20260714-force-sw-v52",
+            "type": "script",
+            "duration": 1,
+            "transferSize": 0,
+            "decodedBodySize": 2513,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.1
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/table-tools.js?v=20260714-force-sw-v52",
+            "type": "script",
+            "duration": 1,
+            "transferSize": 0,
+            "decodedBodySize": 9097,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.2
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+            "type": "script",
+            "duration": 1,
+            "transferSize": 0,
+            "decodedBodySize": 4571,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.2
+          },
+          {
+            "name": "/rateb-erp/public/assets/js/module-page-stats.js?v=20260714-force-sw-v52",
+            "type": "script",
+            "duration": 1,
+            "transferSize": 0,
+            "decodedBodySize": 3369,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.1
+          }
+        ],
+        "resources_network": 3,
+        "resources_cached": 4,
+        "hasNavInstant": true
+      },
+      "classification": "content_swap"
+    },
+    {
+      "id": "inventory",
+      "wall_ms": 96,
+      "linkInfo": {
+        "found": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "text": "المخزون",
+        "classes": "rateb-nav-link"
+      },
+      "beforeHref": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+      "beforeMain": {
+        "htmlLen": 7348,
+        "textLen": 534,
+        "snippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع "
+      },
+      "navigationEventFired": false,
+      "after": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "hrefChanged": true,
+        "mainHtmlLen": 22670,
+        "mainTextLen": 560,
+        "mainSnippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع الرئيسي\n ك",
+        "p1v": {
+          "navType": "content_swap",
+          "beforeLeave": 1,
+          "afterEnter": 1,
+          "reinit": 2,
+          "pushStateCalls": 1,
+          "consoleNav": [],
+          "events": [
+            {
+              "t": 3698.5999999940395,
+              "type": "beforeLeave"
+            },
+            {
+              "t": 3759.4000000059605,
+              "type": "pushStateCalls",
+              "args0": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22"
+            },
+            {
+              "t": 3771.5,
+              "type": "afterEnter",
+              "detail": {
+                "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+                "ms": 73,
+                "fromCache": true
+              }
+            },
+            {
+              "t": 3771.5,
+              "type": "RatebApp.reinit"
+            },
+            {
+              "t": 3771.7000000178814,
+              "type": "RatebApp.reinit"
+            }
+          ]
+        },
+        "contentSwap": true,
+        "fullReloadGuess": false,
+        "navTiming": {
+          "type": "navigate",
+          "transferSize": 0,
+          "decodedBodySize": 87294,
+          "workerStart": 10.599999994039536,
+          "startTime": 0,
+          "requestStart": 11.200000017881393,
+          "responseStart": 16.400000005960464,
+          "responseEnd": 18.80000001192093,
+          "domContentLoadedEventEnd": 162.80000001192093,
+          "loadEventEnd": 163.90000000596046,
+          "ttfb_ms": 5.2,
+          "dcl_ms": 162.8,
+          "load_ms": 163.9
+        },
+        "paints": {
+          "first-paint": 128,
+          "first-contentful-paint": 128
+        },
+        "lcp_ms": null,
+        "resources_top": [],
+        "resources_network": 0,
+        "resources_cached": 0,
+        "hasNavInstant": true
+      },
+      "classification": "content_swap"
+    },
+    {
+      "id": "accounting",
+      "wall_ms": 102,
+      "linkInfo": {
+        "found": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "text": "لوحة تحكم المحاسبة",
+        "classes": "rateb-nav-link"
+      },
+      "beforeHref": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+      "beforeMain": {
+        "htmlLen": 22670,
+        "textLen": 560,
+        "snippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع "
+      },
+      "navigationEventFired": false,
+      "after": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "hrefChanged": true,
+        "mainHtmlLen": 16367,
+        "mainTextLen": 1602,
+        "mainSnippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع الرئيسي\n ك",
+        "p1v": {
+          "navType": "content_swap",
+          "beforeLeave": 1,
+          "afterEnter": 1,
+          "reinit": 2,
+          "pushStateCalls": 1,
+          "consoleNav": [],
+          "events": [
+            {
+              "t": 5468.0999999940395,
+              "type": "beforeLeave"
+            },
+            {
+              "t": 5514.700000017881,
+              "type": "pushStateCalls",
+              "args0": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22"
+            },
+            {
+              "t": 5515.5999999940395,
+              "type": "afterEnter",
+              "detail": {
+                "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+                "ms": 48,
+                "fromCache": true
+              }
+            },
+            {
+              "t": 5515.5999999940395,
+              "type": "RatebApp.reinit"
+            },
+            {
+              "t": 5515.700000017881,
+              "type": "RatebApp.reinit"
+            }
+          ]
+        },
+        "contentSwap": true,
+        "fullReloadGuess": false,
+        "navTiming": {
+          "type": "navigate",
+          "transferSize": 0,
+          "decodedBodySize": 87294,
+          "workerStart": 10.599999994039536,
+          "startTime": 0,
+          "requestStart": 11.200000017881393,
+          "responseStart": 16.400000005960464,
+          "responseEnd": 18.80000001192093,
+          "domContentLoadedEventEnd": 162.80000001192093,
+          "loadEventEnd": 163.90000000596046,
+          "ttfb_ms": 5.2,
+          "dcl_ms": 162.8,
+          "load_ms": 163.9
+        },
+        "paints": {
+          "first-paint": 128,
+          "first-contentful-paint": 128
+        },
+        "lcp_ms": null,
+        "resources_top": [
+          {
+            "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+            "type": "link",
+            "duration": 108,
+            "transferSize": 4976,
+            "decodedBodySize": 25761,
+            "delivery": "network",
+            "ttfb": 105.1
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 22,
+            "transferSize": 0,
+            "decodedBodySize": 25761,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1.4
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/ar-typography.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 22,
+            "transferSize": 0,
+            "decodedBodySize": 2836,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.8
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/components.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 21,
+            "transferSize": 0,
+            "decodedBodySize": 35124,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 21,
+            "transferSize": 0,
+            "decodedBodySize": 4313,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.7
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 21,
+            "transferSize": 0,
+            "decodedBodySize": 3113,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 0.8
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 19,
+            "transferSize": 0,
+            "decodedBodySize": 232911,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1.2
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/fontawesome/6.5.2/css/all.min.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 19,
+            "transferSize": 0,
+            "decodedBodySize": 103009,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1.5
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/variables.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 18,
+            "transferSize": 0,
+            "decodedBodySize": 2590,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1.3
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/main.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 18,
+            "transferSize": 0,
+            "decodedBodySize": 9949,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/fonts/tajawal/tajawal.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 17,
+            "transferSize": 0,
+            "decodedBodySize": 559,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 1.2
+          },
+          {
+            "name": "/rateb-erp/public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 15,
+            "transferSize": 0,
+            "decodedBodySize": 232911,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 2.3
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dark.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 15,
+            "transferSize": 0,
+            "decodedBodySize": 4313,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 8
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/rtl.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 15,
+            "transferSize": 0,
+            "decodedBodySize": 3113,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 7.7
+          },
+          {
+            "name": "/rateb-erp/public/assets/css/dashboard.css?v=20260714-force-sw-v52",
+            "type": "fetch",
+            "duration": 15,
+            "transferSize": 0,
+            "decodedBodySize": 25761,
+            "delivery": "cache_or_sw_or_memory",
+            "ttfb": 7.1
+          }
+        ],
+        "resources_network": 1,
+        "resources_cached": 20,
+        "hasNavInstant": true
+      },
+      "classification": "content_swap"
+    },
+    {
+      "id": "procurement",
+      "wall_ms": 81,
+      "linkInfo": {
+        "found": true,
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+        "text": "طلبات الشراء\n1",
+        "classes": "rateb-nav-link"
+      },
+      "beforeHref": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+      "beforeMain": {
+        "htmlLen": 16367,
+        "textLen": 1602,
+        "snippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع "
+      },
+      "navigationEventFired": false,
+      "after": {
+        "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+        "hrefChanged": true,
+        "mainHtmlLen": 14826,
+        "mainTextLen": 656,
+        "mainSnippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع الرئيسي\n ك",
+        "p1v": {
+          "navType": "content_swap",
+          "beforeLeave": 1,
+          "afterEnter": 1,
+          "reinit": 2,
+          "pushStateCalls": 1,
+          "consoleNav": [],
+          "events": [
+            {
+              "t": 7222.9000000059605,
+              "type": "beforeLeave"
+            },
+            {
+              "t": 7270,
+              "type": "pushStateCalls",
+              "args0": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22"
+            },
+            {
+              "t": 7270.5999999940395,
+              "type": "afterEnter",
+              "detail": {
+                "href": "https://rateb.sa/rateb-erp/public/admin/ops/purchase-requests?company_id=22",
+                "ms": 48,
+                "fromCache": true
+              }
+            },
+            {
+              "t": 7270.5999999940395,
+              "type": "RatebApp.reinit"
+            },
+            {
+              "t": 7271.800000011921,
+              "type": "RatebApp.reinit"
+            }
+          ]
+        },
+        "contentSwap": true,
+        "fullReloadGuess": false,
+        "navTiming": {
+          "type": "navigate",
+          "transferSize": 0,
+          "decodedBodySize": 87294,
+          "workerStart": 10.599999994039536,
+          "startTime": 0,
+          "requestStart": 11.200000017881393,
+          "responseStart": 16.400000005960464,
+          "responseEnd": 18.80000001192093,
+          "domContentLoadedEventEnd": 162.80000001192093,
+          "loadEventEnd": 163.90000000596046,
+          "ttfb_ms": 5.2,
+          "dcl_ms": 162.8,
+          "load_ms": 163.9
+        },
+        "paints": {
+          "first-paint": 128,
+          "first-contentful-paint": 128
+        },
+        "lcp_ms": null,
+        "resources_top": [],
+        "resources_network": 0,
+        "resources_cached": 0,
+        "hasNavInstant": true
+      },
+      "classification": "content_swap"
+    }
+  ],
+  "offlineClick": {
+    "id": "hr",
+    "wall_ms": 61,
+    "linkInfo": {
+      "found": true,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+      "text": "نظرة عامة",
+      "classes": "rateb-nav-link"
+    },
+    "beforeHref": "https://rateb.sa/rateb-erp/public/admin/",
+    "beforeMain": {
+      "htmlLen": 8758,
+      "textLen": 559,
+      "snippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع "
+    },
+    "navigationEventFired": false,
+    "after": {
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+      "hrefChanged": true,
+      "mainHtmlLen": 5833,
+      "mainTextLen": 534,
+      "mainSnippet": "فلتر الفرع:\nكل الفروع (مقر رئيسي)\nالفرع الرئيسي\n ك",
+      "p1v": {
+        "navType": "content_swap",
+        "beforeLeave": 1,
+        "afterEnter": 1,
+        "reinit": 2,
+        "pushStateCalls": 1,
+        "consoleNav": [],
+        "events": [
+          {
+            "t": 17759.30000001192,
+            "type": "DOMContentLoaded",
+            "href": "https://rateb.sa/rateb-erp/public/admin/"
+          },
+          {
+            "t": 17833.40000000596,
+            "type": "window.load",
+            "href": "https://rateb.sa/rateb-erp/public/admin/"
+          },
+          {
+            "t": 19034.09999999404,
+            "type": "beforeLeave"
+          },
+          {
+            "t": 19049.09999999404,
+            "type": "pushStateCalls",
+            "args0": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22"
+          },
+          {
+            "t": 19049.70000001788,
+            "type": "afterEnter",
+            "detail": {
+              "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+              "ms": 16,
+              "fromCache": true
+            }
+          },
+          {
+            "t": 19049.70000001788,
+            "type": "RatebApp.reinit"
+          },
+          {
+            "t": 19049.80000001192,
+            "type": "RatebApp.reinit"
+          }
+        ]
+      },
+      "contentSwap": true,
+      "fullReloadGuess": false,
+      "navTiming": {
+        "type": "navigate",
+        "transferSize": 0,
+        "decodedBodySize": 85208,
+        "workerStart": 11.099999994039536,
+        "startTime": 0,
+        "requestStart": 11.599999994039536,
+        "responseStart": 16.80000001192093,
+        "responseEnd": 22,
+        "domContentLoadedEventEnd": 17759.40000000596,
+        "loadEventEnd": 17834.09999999404,
+        "ttfb_ms": 5.2,
+        "dcl_ms": 17759.4,
+        "load_ms": 17834.1
+      },
+      "paints": {
+        "first-paint": 17756,
+        "first-contentful-paint": 17756
+      },
+      "lcp_ms": null,
+      "resources_top": [
+        {
+          "name": "/rateb-erp/public/admin",
+          "type": "fetch",
+          "duration": 1447,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/ops/profile?company_id=22",
+          "type": "fetch",
+          "duration": 1212,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/executive-dashboard",
+          "type": "fetch",
+          "duration": 1031,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/oversight/workflows",
+          "type": "fetch",
+          "duration": 9,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/reports",
+          "type": "fetch",
+          "duration": 9,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/settings",
+          "type": "fetch",
+          "duration": 9,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/company-permissions",
+          "type": "fetch",
+          "duration": 5,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/agency-updates",
+          "type": "fetch",
+          "duration": 5,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/oversight/procurement",
+          "type": "fetch",
+          "duration": 5,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/oversight/rfq",
+          "type": "fetch",
+          "duration": 5,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/assets/js/rateb-date-inputs.js?v=20260714-force-sw-v52",
+          "type": "script",
+          "duration": 5,
+          "transferSize": 0,
+          "decodedBodySize": 4571,
+          "delivery": "cache_or_sw_or_memory",
+          "ttfb": 3.2
+        },
+        {
+          "name": "/rateb-erp/public/admin/oversight/companies-approvals",
+          "type": "fetch",
+          "duration": 4,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/ops/branch-dashboard",
+          "type": "fetch",
+          "duration": 4,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/ops/branch-financial",
+          "type": "fetch",
+          "duration": 4,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        },
+        {
+          "name": "/rateb-erp/public/admin/ops/branch-dashboard/reports",
+          "type": "fetch",
+          "duration": 4,
+          "transferSize": 0,
+          "decodedBodySize": 0,
+          "delivery": "empty",
+          "ttfb": null
+        }
+      ],
+      "resources_network": 0,
+      "resources_cached": 4,
+      "hasNavInstant": true
+    },
+    "classification": "content_swap"
+  },
+  "comparison": [
+    {
+      "metric": "Navigation method",
+      "benchmark": "RatebNavInstant.navigate() API",
+      "real_browser": "content_swap, content_swap, content_swap, content_swap",
+      "difference": "same path",
+      "reason": "Content-swap used on real clicks",
+      "file": "public/assets/js/erp-nav-instant.js",
+      "line": "onClick / shouldIntercept"
+    },
+    {
+      "metric": "Online HR latency",
+      "benchmark": "16ms avg (API navigate after prefetch)",
+      "real_browser": "115ms wall",
+      "difference": "orders of magnitude if full reload",
+      "reason": "API measures in-page swap after cache warm; real click may trigger document navigation + DCL",
+      "file": "tools/boot-bench/phase-p1-nav-bench.js",
+      "line": "page.evaluate RatebNavInstant.navigate"
+    },
+    {
+      "metric": "Performance navigation entry",
+      "benchmark": "none (no document nav)",
+      "real_browser": "{\"type\":\"navigate\",\"transferSize\":0,\"decodedBodySize\":87294,\"workerStart\":10.599999994039536,\"startTime\":0,\"requestStart\":11.200000017881393,\"responseStart\":16.400000005960464,\"responseEnd\":18.80000001192093,\"domContentLoadedEventEnd\":162.80000001192093,\"loadEventEnd\":163.90000000596046,\"ttfb_ms\":5.2,\"dcl_ms\":162.8,\"load_ms\":163.9}",
+      "difference": "document Navigation Timing present",
+      "reason": "Navigation Timing only updates on full document loads",
+      "file": "browser PerformanceNavigationTiming",
+      "line": "n/a"
+    },
+    {
+      "metric": "beforeLeave / afterEnter",
+      "benchmark": "fired inside navigate()",
+      "real_browser": "hr: bl=1 ae=1 | inventory: bl=1 ae=1 | accounting: bl=1 ae=1 | procurement: bl=1 ae=1",
+      "difference": "If ae=0 on click → swap path NOT used",
+      "reason": "Lifecycle only runs in swapTo()",
+      "file": "erp-nav-instant.js",
+      "line": "runLifecycle"
+    },
+    {
+      "metric": "RatebApp.reinit",
+      "benchmark": "on afterEnter",
+      "real_browser": "hr:2, inventory:2, accounting:2, procurement:2",
+      "difference": "0 means swap/reinit path skipped",
+      "reason": "reinit wired to rateb:nav:afterEnter",
+      "file": "public/assets/js/app.js",
+      "line": "rateb:nav:afterEnter listener"
+    },
+    {
+      "metric": "Service Worker controlling",
+      "benchmark": "assumed v80",
+      "real_browser": "https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260714-force-sw-v52",
+      "difference": "ok",
+      "reason": "controller present",
+      "file": "pos-sw.js",
+      "line": "clients.claim"
+    },
+    {
+      "metric": "erp-nav-instant loaded",
+      "benchmark": "required",
+      "real_browser": "scriptTag=true global=true",
+      "difference": "present",
+      "reason": "ok",
+      "file": "views/layouts/main.php",
+      "line": "erp-nav-instant.js script tag"
+    },
+    {
+      "metric": "Offline real click",
+      "benchmark": "14ms API",
+      "real_browser": "61ms · content_swap",
+      "difference": "API≠click if classification full_document_navigation or ok false",
+      "reason": "Offline fetch/cache path or hard navigation",
+      "file": "erp-nav-instant.js",
+      "line": "fetchHtml / sameShell"
+    }
+  ],
+  "remainingTime": {
+    "slowest_click": "hr",
+    "wall_ms": 115,
+    "classification": "content_swap",
+    "breakdown": {
+      "ttfb_ms": 5.2,
+      "html_download_approx_ms": 2.4,
+      "parse_to_dcl_ms": 144,
+      "dcl_ms": 162.8,
+      "load_ms": 163.9,
+      "fcp_ms": 128,
+      "transferSize": 0
+    }
+  },
+  "network_summary": {
+    "total_events": 579,
+    "document_navigations": 3,
+    "document_nav_samples": [
+      {
+        "kind": "response",
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromServiceWorker": false,
+        "xOffline": null,
+        "xOps": null,
+        "xSoft": null,
+        "cacheControl": "no-store, no-cache, must-revalidate, max-age=0",
+        "serverTiming": null,
+        "resourceType": "document",
+        "isNav": true,
+        "t": 1784168411110
+      },
+      {
+        "kind": "response",
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromServiceWorker": true,
+        "xOffline": "1",
+        "xOps": null,
+        "xSoft": null,
+        "cacheControl": null,
+        "serverTiming": null,
+        "resourceType": "document",
+        "isNav": true,
+        "t": 1784168444191
+      },
+      {
+        "kind": "response",
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "status": 200,
+        "fromServiceWorker": true,
+        "xOffline": null,
+        "xOps": "1",
+        "xSoft": null,
+        "cacheControl": "no-store, no-cache, must-revalidate, max-age=0",
+        "serverTiming": null,
+        "resourceType": "document",
+        "isNav": true,
+        "t": 1784168452896
+      }
+    ],
+    "from_sw_admin_docs": 2
+  },
+  "verdict": {
+    "benchmark_measures": "In-page RatebNavInstant.navigate() after prefetch (not sidebar click)",
+    "real_user_path": "All measured clicks used content-swap",
+    "swap_clicks": 4,
+    "full_reload_clicks": 0,
+    "avg_real_click_wall_ms": 99,
+    "api_bench_ms": 34,
+    "gap_ms": 65
+  },
+  "elapsed_ms": 64745
+}
