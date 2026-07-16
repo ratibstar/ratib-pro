@@ -264,6 +264,100 @@
         } catch (e2) { /* ignore */ }
     }
 
+    function openOpsCache() {
+        return root.caches ? root.caches.open('rateb-erp-ops-pages-v34') : Promise.reject(new Error('no_caches'));
+    }
+
+    function matchCachedHtml(href) {
+        if (!root.caches) {
+            return Promise.resolve(null);
+        }
+        var keys = [href];
+        try {
+            var u = new URL(href, root.location.href);
+            keys.push(u.origin + u.pathname);
+            keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
+            keys.push(u.origin + u.pathname.replace(/\/+$/, '') + '/');
+        } catch (e) { /* ignore */ }
+        return openOpsCache().then(function (cache) {
+            var chain = Promise.resolve(null);
+            keys.forEach(function (k) {
+                chain = chain.then(function (found) {
+                    return found || cache.match(k).then(function (hit) {
+                        return hit || cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                    });
+                });
+            });
+            return chain;
+        }).catch(function () {
+            return null;
+        });
+    }
+
+    function putHtmlLocally(href, html) {
+        if (!root.caches || !html || html.length < 20000) {
+            return Promise.resolve(false);
+        }
+        var keys = [href];
+        try {
+            var u = new URL(href, root.location.href);
+            keys.push(u.origin + u.pathname);
+            var bare = u.pathname.replace(/\/+$/, '');
+            keys.push(u.origin + bare);
+            keys.push(u.origin + bare + '/');
+        } catch (e) { /* ignore */ }
+        var body = html;
+        return openOpsCache().then(function (cache) {
+            return Promise.all(keys.map(function (k) {
+                return cache.put(k, new Response(body, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'X-Rateb-Ops-Page': '1'
+                    }
+                })).catch(function () { return null; });
+            })).then(function () { return true; });
+        }).catch(function () { return false; });
+    }
+
+    function fetchHtml(href) {
+        // PERF-P1 — Cache API first (SW SWR only applies to mode=navigate; content-swap uses fetch).
+        return matchCachedHtml(href).then(function (cached) {
+            if (cached) {
+                fetch(href, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
+                }).then(function (res) {
+                    if (!res || !res.ok) {
+                        return null;
+                    }
+                    return res.text().then(function (html) {
+                        if (html && html.length >= 20000) {
+                            putHtmlLocally(href, html);
+                            postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                        }
+                    });
+                }).catch(function () { /* ignore */ });
+                return cached.text().then(function (html) {
+                    return { html: html, finalUrl: href, fromCache: true };
+                });
+            }
+            return fetch(href, {
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
+            }).then(function (res) {
+                if (!res || !res.ok) {
+                    throw new Error('nav_fetch_failed');
+                }
+                return res.text().then(function (html) {
+                    putHtmlLocally(res.url || href, html);
+                    postSw({ type: 'CACHE_ERP_OPS_PAGE', url: res.url || href, html: html });
+                    return { html: html, finalUrl: res.url || href, fromCache: false };
+                });
+            });
+        });
+    }
+
     function swapTo(href, opts) {
         opts = opts || {};
         if (navigating) {
@@ -273,20 +367,7 @@
         var t0 = performance.now();
         runLifecycle('beforeLeave', { href: root.location.href, next: href });
 
-        return fetch(href, {
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'text/html',
-                'X-Rateb-Nav-Swap': '1'
-            }
-        }).then(function (res) {
-            if (!res || !res.ok) {
-                throw new Error('nav_fetch_failed');
-            }
-            return res.text().then(function (html) {
-                return { html: html, finalUrl: res.url || href };
-            });
-        }).then(function (pack) {
+        return fetchHtml(href).then(function (pack) {
             var doc = new DOMParser().parseFromString(pack.html, 'text/html');
             if (!sameShell(doc)) {
                 throw new Error('shell_mismatch');
@@ -306,28 +387,40 @@
             }
             lastHref = pack.finalUrl;
             rememberExistingScripts();
-            return loadNewScripts(doc).then(function () {
+            // Defer module script loads so paint wins (common libs already present).
+            var afterScripts = function () {
                 runLifecycle('afterEnter', {
                     href: pack.finalUrl,
-                    ms: Math.round(performance.now() - t0)
+                    ms: Math.round(performance.now() - t0),
+                    fromCache: !!pack.fromCache
                 });
                 reinitModuleUi();
                 bindPrefetch(curMain);
-                // Keep ops cache hot with fresh HTML
-                if (pack.html && pack.html.length >= 20000) {
+                if (pack.html && pack.html.length >= 20000 && !pack.fromCache) {
                     postSw({ type: 'CACHE_ERP_OPS_PAGE', url: pack.finalUrl, html: pack.html });
                 }
                 try {
                     performance.mark('rateb-nav-swap');
-                    console.info('[RATEB NAV]', Math.round(performance.now() - t0) + 'ms', pack.finalUrl);
+                    console.info('[RATEB NAV]', Math.round(performance.now() - t0) + 'ms',
+                        pack.fromCache ? 'cache' : 'network', pack.finalUrl);
                 } catch (eLog) { /* ignore */ }
                 return true;
-            });
+            };
+            if (pack.fromCache) {
+                // Instant path: schedule scripts idle
+                var done = afterScripts();
+                if (typeof root.requestIdleCallback === 'function') {
+                    root.requestIdleCallback(function () { loadNewScripts(doc); }, { timeout: 1500 });
+                } else {
+                    setTimeout(function () { loadNewScripts(doc); }, 0);
+                }
+                return Promise.resolve(done);
+            }
+            return loadNewScripts(doc).then(afterScripts);
         }).catch(function (err) {
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
-            // PERF-P1 — never hard-navigate when offline (destroys shell / causes ERR_FAILED).
             var offline = false;
             try {
                 offline = typeof navigator !== 'undefined' && navigator.onLine === false;
