@@ -8,13 +8,15 @@
     'use strict';
 
     var listeners = [];
-    // Never optimistic-online: Chrome + Service Worker often report onLine while Wi‑Fi is off.
+    // Start false until probe; do not emit false to UI on timeout while navigator.onLine
+    // (prefetch storms abort the probe and falsely show «غير متصل» while Wi‑Fi works).
     var online = false;
     var probeTimer = null;
     var probing = false;
     var probeUrl = null;
-    var intervals = { online: 12000, offline: 20000 };
-    var timeoutMs = 3500;
+    var failStreak = 0;
+    var intervals = { online: 12000, offline: 8000 };
+    var timeoutMs = 5000;
 
     function emit() {
         listeners.forEach(function (fn) {
@@ -59,8 +61,10 @@
             return Promise.resolve(online);
         }
         probing = true;
+        var timedOut = false;
         var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
         var timer = setTimeout(function () {
+            timedOut = true;
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
@@ -80,17 +84,20 @@
                 var h = String((self.location && self.location.hostname) || '');
                 if ((h === '127.0.0.1' || h === 'localhost' || h === '[::1]')
                     && typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    failStreak = 2;
                     setOnline(false);
                     return false;
                 }
             } catch (eLocal) { /* ignore */ }
             try {
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    failStreak = 2;
                     setOnline(false);
                     return false;
                 }
             } catch (eOff) { /* ignore */ }
             if (res && res.headers && String(res.headers.get('X-Rateb-Connectivity-Echo') || '') === '1') {
+                failStreak = 0;
                 setOnline(true);
                 return true;
             }
@@ -98,19 +105,36 @@
             // Reject SW/cache ghost responses: probes must not be served from Cache API.
             try {
                 if (res && res.headers && String(res.headers.get('X-Rateb-Offline') || '') === '1') {
+                    failStreak = 2;
                     setOnline(false);
                     return false;
                 }
             } catch (eHdr) { /* ignore */ }
             if (res) {
+                failStreak = 0;
                 setOnline(true);
                 return true;
             }
-            setOnline(false);
+            failStreak += 1;
+            if (failStreak >= 2) {
+                setOnline(false);
+            }
             return false;
-        }).catch(function () {
-            setOnline(false);
-            return false;
+        }).catch(function (err) {
+            var name = String((err && err.name) || '');
+            var msg = String((err && err.message) || err || '');
+            // Timeout/abort under load is ambiguous — do not flip to offline while browser says online.
+            if (timedOut || name === 'AbortError' || /abort/i.test(msg)) {
+                if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+                    return online;
+                }
+            }
+            failStreak += 1;
+            if (failStreak >= 2 || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+                setOnline(false);
+                return false;
+            }
+            return online;
         }).finally(function () {
             clearTimeout(timer);
             probing = false;
@@ -162,7 +186,7 @@
                 return function () {};
             }
             listeners.push(fn);
-            try { fn(online); } catch (e) { /* ignore */ }
+            // Do not push initial false — that forced the topbar to «غير متصل» before any probe.
             return function () {
                 listeners = listeners.filter(function (x) { return x !== fn; });
             };
@@ -172,9 +196,13 @@
                 // Do NOT optimistic-flip to online: Chrome + Service Worker often fires
                 // "online" after cache navigation while Wi‑Fi is still off.
                 window.addEventListener('online', function () {
+                    failStreak = 0;
                     probe();
                 });
-                window.addEventListener('offline', function () { setOnline(false); });
+                window.addEventListener('offline', function () {
+                    failStreak = 2;
+                    setOnline(false);
+                });
             }
             scheduleProbeLoop();
             return probe();

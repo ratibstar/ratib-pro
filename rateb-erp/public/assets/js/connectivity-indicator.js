@@ -7,12 +7,18 @@
  * fires "online" after cache hits while Wi‑Fi is still off. "متصل" requires a real probe.
  *
  * Local Branch Appliance (127.0.0.1): badge follows navigator.onLine (internet), not local PHP.
+ *
+ * FIX 2026-07-16 — Do NOT force "غير متصل" on boot when navigator.onLine is true.
+ * PERF-P0.3-A had applied(false) for 8s+ before first probe; under idlePrefetch storms the
+ * probe timed out and the badge stayed offline while Wi‑Fi worked and the page was live.
  */
 (function () {
     'use strict';
 
     var verifyTimer = null;
     var verifying = false;
+    var failStreak = 0;
+    var FAIL_NEED = 2;
 
     function el() {
         return document.querySelector('[data-rateb-connection-status]')
@@ -28,18 +34,23 @@
         }
     }
 
+    function browserSaysOffline() {
+        try {
+            return typeof navigator !== 'undefined' && navigator.onLine === false;
+        } catch (e) {
+            return false;
+        }
+    }
+
     function apply(online) {
         var node = el();
         if (!node) {
             return;
         }
-        // Chrome + SW often claim online while Wi‑Fi is still off.
         var on = !!online;
-        try {
-            if (on && typeof navigator !== 'undefined' && navigator.onLine === false) {
-                on = false;
-            }
-        } catch (eNav) { /* ignore */ }
+        if (on && browserSaysOffline()) {
+            on = false;
+        }
         var labelOn = node.getAttribute('data-label-online') || 'Online';
         var labelOff = node.getAttribute('data-label-offline') || 'Offline';
         var label = on ? labelOn : labelOff;
@@ -86,7 +97,7 @@
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-            }, 8000);
+        }, 8000);
         return fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
@@ -94,11 +105,9 @@
             headers: { Accept: 'application/json', 'X-Rateb-Connectivity': '1' },
             signal: ctrl ? ctrl.signal : undefined
         }).then(function (res) {
-            try {
-                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                    return false;
-                }
-            } catch (eOff) { /* ignore */ }
+            if (browserSaysOffline()) {
+                return false;
+            }
             try {
                 if (res && res.headers && String(res.headers.get('X-Rateb-Offline') || '') === '1') {
                     return false;
@@ -113,13 +122,18 @@
         });
     }
 
+    function markOfflineConfirmed() {
+        apply(false);
+        var c1 = window.RatebOfflineConnectivity;
+        if (c1 && typeof c1.setOnline === 'function') {
+            c1.setOnline(false);
+        }
+    }
+
     function verifyRealOnline() {
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            apply(false);
-            var c0 = window.RatebOfflineConnectivity;
-            if (c0 && typeof c0.setOnline === 'function') {
-                c0.setOnline(false);
-            }
+        if (browserSaysOffline()) {
+            failStreak = FAIL_NEED;
+            markOfflineConfirmed();
             return;
         }
         if (verifying) {
@@ -128,14 +142,17 @@
         verifying = true;
         networkProbe().then(function (ok) {
             if (ok) {
+                failStreak = 0;
                 apply(true);
                 return;
             }
-            // Probe failed = no reachable origin (navigator.onLine alone is unreliable).
-            apply(false);
-            var c1 = window.RatebOfflineConnectivity;
-            if (c1 && typeof c1.setOnline === 'function') {
-                c1.setOnline(false);
+            // Ambiguous: page may be live while probe times out under prefetch congestion.
+            failStreak += 1;
+            if (failStreak >= FAIL_NEED) {
+                markOfflineConfirmed();
+            } else if (!browserSaysOffline()) {
+                // Keep current optimistic online; retry soon.
+                scheduleVerify(2000);
             }
         }).finally(function () {
             verifying = false;
@@ -152,22 +169,21 @@
         }, delayMs || 0);
     }
 
-    /** PERF-P0.3-A — first cloud probe well after first paint + netQuiet window (~1.5s). */
+    /** First probe soon after paint — not 8s later (false "غير متصل" while net works). */
     function scheduleVerifyAfterPaint() {
         var run = function () {
             scheduleVerify(0);
         };
         var start = function () {
-            // Hard floor: do not let requestIdleCallback fire during dashboard charts / usable wait.
             setTimeout(function () {
                 try {
                     if (typeof window.requestIdleCallback === 'function') {
-                        window.requestIdleCallback(function () { run(); }, { timeout: 2000 });
+                        window.requestIdleCallback(function () { run(); }, { timeout: 1200 });
                         return;
                     }
                 } catch (eIdle) { /* ignore */ }
                 run();
-            }, 8000);
+            }, 600);
         };
         if (document.readyState === 'complete') {
             start();
@@ -177,39 +193,60 @@
     }
 
     function bootLocalAppliance() {
-        // Local PHP works without internet; badge = Wi‑Fi / internet only.
         function syncNav() {
-            apply(typeof navigator === 'undefined' || navigator.onLine !== false);
+            apply(!browserSaysOffline());
         }
         syncNav();
         window.addEventListener('online', syncNav);
         window.addEventListener('offline', function () { apply(false); });
         document.addEventListener('rateb-offline-connectivity', function (ev) {
             var detail = ev && ev.detail ? ev.detail : null;
-            // Prefer real navigator when offline — ignore false "online" from local probe.
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            if (browserSaysOffline()) {
                 apply(false);
                 return;
             }
             if (detail && typeof detail.online === 'boolean') {
-                apply(detail.online && navigator.onLine !== false);
+                apply(detail.online && !browserSaysOffline());
             }
         });
     }
 
+    function onConnectivityEvent(online) {
+        if (browserSaysOffline()) {
+            failStreak = FAIL_NEED;
+            apply(false);
+            return;
+        }
+        if (online) {
+            failStreak = 0;
+            scheduleVerify(0);
+            return;
+        }
+        // Soft "offline" from SDK while browser still has net → verify, do not flip badge yet.
+        failStreak += 1;
+        if (failStreak >= FAIL_NEED) {
+            apply(false);
+            return;
+        }
+        scheduleVerify(500);
+    }
+
     function bootCloud() {
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (browserSaysOffline()) {
             apply(false);
         } else {
-            // PERF-P0.3-A — optimistic offline until idle probe; avoid blocking first usable paint.
-            apply(false);
+            // Optimistic online (matches HTML default is-online). Probe confirms shortly.
+            apply(true);
             scheduleVerifyAfterPaint();
         }
 
         window.addEventListener('online', function () {
+            failStreak = 0;
+            apply(true);
             scheduleVerify(50);
         });
         window.addEventListener('offline', function () {
+            failStreak = FAIL_NEED;
             apply(false);
             var c = window.RatebOfflineConnectivity;
             if (c && typeof c.setOnline === 'function') {
@@ -222,35 +259,19 @@
             if (!detail || typeof detail.online !== 'boolean') {
                 return;
             }
-            if (detail.online && typeof navigator !== 'undefined' && navigator.onLine === false) {
-                apply(false);
-                return;
-            }
-            // «متصل» only after a real probe path — ignore optimistic true.
-            if (detail.online) {
-                scheduleVerify(0);
-                return;
-            }
-            apply(false);
+            onConnectivityEvent(detail.online);
         });
 
         var conn = window.RatebOfflineConnectivity;
         if (conn && typeof conn.subscribe === 'function') {
             conn.subscribe(function (online) {
-                if (online && typeof navigator !== 'undefined' && navigator.onLine === false) {
-                    apply(false);
-                    return;
-                }
-                if (online) {
-                    scheduleVerify(0);
-                    return;
-                }
-                apply(false);
+                // Initial subscribe often emits false before first probe — ignore if browser is online.
+                onConnectivityEvent(!!online);
             });
         }
 
         document.addEventListener('click', function () {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            if (browserSaysOffline()) {
                 apply(false);
                 var c2 = window.RatebOfflineConnectivity;
                 if (c2 && typeof c2.setOnline === 'function') {
@@ -258,6 +279,12 @@
                 }
             }
         }, true);
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible' && !browserSaysOffline()) {
+                scheduleVerify(100);
+            }
+        });
     }
 
     function boot() {
