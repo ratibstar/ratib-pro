@@ -1,0 +1,1048 @@
+﻿{
+    "ok": true,
+    "target": "GET /admin/",
+    "host": "rateb.sa",
+    "mode": "production_cli_replay",
+    "user": "admin@rateb.sa",
+    "user_id": 26,
+    "wall_ms": 200.193,
+    "request_total_ms": 199.952,
+    "sql_total": 121,
+    "sql_total_dur_ms": 108.078,
+    "included_files": 209,
+    "peak_memory_mb": 20,
+    "flame": [
+        {
+            "depth": 0,
+            "id": "request_total",
+            "label": "GET /admin/ complete lifecycle",
+            "dur_ms": 199.952,
+            "sql_count": 121,
+            "bar": "??????????"
+        },
+        {
+            "depth": 1,
+            "id": "bootstrap_file_require",
+            "label": "require Bootstrap.php",
+            "dur_ms": 0.325,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "bootstrap_init",
+            "label": "Bootstrap::init (full)",
+            "dur_ms": 47.775,
+            "sql_count": 0,
+            "bar": "??"
+        },
+        {
+            "depth": 2,
+            "id": "bootstrap_autoloader_register",
+            "label": "registerAutoloader + Request/Entities",
+            "dur_ms": 0.001,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "db_connect_trace_install",
+            "label": "Install tracing PDO (reconnect)",
+            "dur_ms": 1.821,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "session_auth_mint",
+            "label": "Auth::loginUser(admin@rateb.sa) + company 22",
+            "dur_ms": 2.981,
+            "sql_count": 4,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "middleware_branch_schema_cold",
+            "label": "rateb_ensure_erp_branch_schema (force cold)",
+            "dur_ms": 12.104,
+            "sql_count": 11,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "cache_clear_nav_badges",
+            "label": "Clear session nav count caches (simulate first paint)",
+            "dur_ms": 0.004,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "pos_module",
+            "label": "PosModule::init",
+            "dur_ms": 0.271,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "offline_module",
+            "label": "OfflineModule::init",
+            "dur_ms": 0.139,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "auth_bootstrap",
+            "label": "Auth::bootstrapFromSession",
+            "dur_ms": 5.081,
+            "sql_count": 4,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "routes_load",
+            "label": "require routes (web/marketing/cms/company/api/pos)",
+            "dur_ms": 5.073,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "middleware_erp_auth",
+            "label": "ErpAuthMiddleware::handle",
+            "dur_ms": 1.481,
+            "sql_count": 3,
+            "bar": "?"
+        },
+        {
+            "depth": 1,
+            "id": "controller_dashboard",
+            "label": "DashboardController::renderDashboard path",
+            "dur_ms": 122.385,
+            "sql_count": 99,
+            "bar": "??????"
+        },
+        {
+            "depth": 2,
+            "id": "controller_admin_build_lite",
+            "label": "DashboardService::adminBuildLite",
+            "dur_ms": 74.952,
+            "sql_count": 49,
+            "bar": "????"
+        },
+        {
+            "depth": 3,
+            "id": "controller_admin_metrics",
+            "label": "DashboardService::adminMetrics",
+            "dur_ms": 74.427,
+            "sql_count": 49,
+            "bar": "????"
+        },
+        {
+            "depth": 2,
+            "id": "csrf_token",
+            "label": "Csrf::token",
+            "dur_ms": 0.291,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 2,
+            "id": "view_render_total",
+            "label": "View::render admin/dashboard + layout main",
+            "dur_ms": 47.109,
+            "sql_count": 50,
+            "bar": "??"
+        },
+        {
+            "depth": 3,
+            "id": "view_dashboard",
+            "label": "include views/admin/dashboard.php",
+            "dur_ms": 1.296,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 3,
+            "id": "layout_oversight_counts",
+            "label": "rateb_oversight_menu_counts()",
+            "dur_ms": 0.004,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 3,
+            "id": "layout_cms_leads",
+            "label": "rateb_cms_new_leads_count()",
+            "dur_ms": 0.672,
+            "sql_count": 1,
+            "bar": "?"
+        },
+        {
+            "depth": 3,
+            "id": "language_translations",
+            "label": "Sample __(dashboard) + 20 keys via __()",
+            "dur_ms": 0.015,
+            "sql_count": 0,
+            "bar": "?"
+        },
+        {
+            "depth": 3,
+            "id": "layout_main",
+            "label": "include views/layouts/main.php (output buffering)",
+            "dur_ms": 45.099,
+            "sql_count": 49,
+            "bar": "??"
+        },
+        {
+            "depth": 1,
+            "id": "bootstrap_eager_requires_evidence",
+            "label": "Evidence: count eager Bootstrap bundles on disk",
+            "dur_ms": 0.449,
+            "sql_count": 0,
+            "bar": "?"
+        }
+    ],
+    "spans": [
+        {
+            "id": "request_total",
+            "parent": null,
+            "label": "GET /admin/ complete lifecycle",
+            "start_ms": 0.116799,
+            "end_ms": 200.068827,
+            "dur_ms": 199.952,
+            "sql_before": 0,
+            "sql_after": 121,
+            "sql_count": 121,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "controller_dashboard",
+            "parent": "request_total",
+            "label": "DashboardController::renderDashboard path",
+            "start_ms": 77.231102,
+            "end_ms": 199.615959,
+            "dur_ms": 122.385,
+            "sql_before": 22,
+            "sql_after": 121,
+            "sql_count": 99,
+            "meta": {
+                "portal": false,
+                "super_admin": true,
+                "platform_host": true
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "controller_admin_build_lite",
+            "parent": "controller_dashboard",
+            "label": "DashboardService::adminBuildLite",
+            "start_ms": 77.244302,
+            "end_ms": 152.196473,
+            "dur_ms": 74.952,
+            "sql_before": 22,
+            "sql_after": 71,
+            "sql_count": 49,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": true,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "controller_admin_metrics",
+            "parent": "controller_admin_build_lite",
+            "label": "DashboardService::adminMetrics",
+            "start_ms": 77.763151,
+            "end_ms": 152.190643,
+            "dur_ms": 74.427,
+            "sql_before": 22,
+            "sql_after": 71,
+            "sql_count": 49,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": true,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "bootstrap_init",
+            "parent": "request_total",
+            "label": "Bootstrap::init (full)",
+            "start_ms": 0.448758,
+            "end_ms": 48.224183,
+            "dur_ms": 47.775,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "meta": {
+                "included_files_delta": 141,
+                "included_files_total": 143
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "view_render_total",
+            "parent": "controller_dashboard",
+            "label": "View::render admin/dashboard + layout main",
+            "start_ms": 152.505452,
+            "end_ms": 199.614499,
+            "dur_ms": 47.109,
+            "sql_before": 71,
+            "sql_after": 121,
+            "sql_count": 50,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "layout_main",
+            "parent": "view_render_total",
+            "label": "include views/layouts/main.php (output buffering)",
+            "start_ms": 154.510595,
+            "end_ms": 199.609829,
+            "dur_ms": 45.099,
+            "sql_before": 72,
+            "sql_after": 121,
+            "sql_count": 49,
+            "meta": {
+                "html_bytes": 85207,
+                "oversight_pre": {
+                    "approvals": 4,
+                    "procurement": 0,
+                    "rfq": 0,
+                    "inventory": 0,
+                    "supplier_evaluations": 0,
+                    "company_pending": 4,
+                    "total": 8
+                },
+                "cms_leads": 22
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "middleware_branch_schema_cold",
+            "parent": "request_total",
+            "label": "rateb_ensure_erp_branch_schema (force cold)",
+            "start_ms": 53.036466,
+            "end_ms": 65.140875,
+            "dur_ms": 12.104,
+            "sql_before": 4,
+            "sql_after": 15,
+            "sql_count": 11,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "auth_bootstrap",
+            "parent": "request_total",
+            "label": "Auth::bootstrapFromSession",
+            "start_ms": 65.582092,
+            "end_ms": 70.663095,
+            "dur_ms": 5.081,
+            "sql_before": 15,
+            "sql_after": 19,
+            "sql_count": 4,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "routes_load",
+            "parent": "request_total",
+            "label": "require routes (web/marketing/cms/company/api/pos)",
+            "start_ms": 70.664875,
+            "end_ms": 75.737837,
+            "dur_ms": 5.073,
+            "sql_before": 19,
+            "sql_after": 19,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": true
+        },
+        {
+            "id": "session_auth_mint",
+            "parent": "request_total",
+            "label": "Auth::loginUser(admin@rateb.sa) + company 22",
+            "start_ms": 50.053447,
+            "end_ms": 53.034736,
+            "dur_ms": 2.981,
+            "sql_before": 0,
+            "sql_after": 4,
+            "sql_count": 4,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "db_connect_trace_install",
+            "parent": "request_total",
+            "label": "Install tracing PDO (reconnect)",
+            "start_ms": 48.230033,
+            "end_ms": 50.050727,
+            "dur_ms": 1.821,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "middleware_erp_auth",
+            "parent": "request_total",
+            "label": "ErpAuthMiddleware::handle",
+            "start_ms": 75.747287,
+            "end_ms": 77.228552,
+            "dur_ms": 1.481,
+            "sql_before": 19,
+            "sql_after": 22,
+            "sql_count": 3,
+            "meta": {
+                "ok": true
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "view_dashboard",
+            "parent": "view_render_total",
+            "label": "include views/admin/dashboard.php",
+            "start_ms": 152.507742,
+            "end_ms": 153.803748,
+            "dur_ms": 1.296,
+            "sql_before": 71,
+            "sql_after": 71,
+            "sql_count": 0,
+            "meta": {
+                "html_bytes": 7838
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "layout_cms_leads",
+            "parent": "view_render_total",
+            "label": "rateb_cms_new_leads_count()",
+            "start_ms": 153.817578,
+            "end_ms": 154.489235,
+            "dur_ms": 0.672,
+            "sql_before": 71,
+            "sql_after": 72,
+            "sql_count": 1,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "bootstrap_eager_requires_evidence",
+            "parent": "request_total",
+            "label": "Evidence: count eager Bootstrap bundles on disk",
+            "start_ms": 199.617589,
+            "end_ms": 200.066267,
+            "dur_ms": 0.449,
+            "sql_before": 121,
+            "sql_after": 121,
+            "sql_count": 0,
+            "meta": {
+                "bundle_count": 120,
+                "bytes_on_disk": 2340122,
+                "missing": 0,
+                "note": "Actual require cost is inside bootstrap_init; this span is metadata only"
+            },
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "bootstrap_file_require",
+            "parent": "request_total",
+            "label": "require Bootstrap.php",
+            "start_ms": 0.119949,
+            "end_ms": 0.445318,
+            "dur_ms": 0.325,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "csrf_token",
+            "parent": "controller_dashboard",
+            "label": "Csrf::token",
+            "start_ms": 152.200153,
+            "end_ms": 152.491582,
+            "dur_ms": 0.291,
+            "sql_before": 71,
+            "sql_after": 71,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "pos_module",
+            "parent": "request_total",
+            "label": "PosModule::init",
+            "start_ms": 65.168024,
+            "end_ms": 65.439503,
+            "dur_ms": 0.271,
+            "sql_before": 15,
+            "sql_after": 15,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "offline_module",
+            "parent": "request_total",
+            "label": "OfflineModule::init",
+            "start_ms": 65.441283,
+            "end_ms": 65.580622,
+            "dur_ms": 0.139,
+            "sql_before": 15,
+            "sql_after": 15,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "language_translations",
+            "parent": "view_render_total",
+            "label": "Sample __(dashboard) + 20 keys via __()",
+            "start_ms": 154.493505,
+            "end_ms": 154.508425,
+            "dur_ms": 0.015,
+            "sql_before": 72,
+            "sql_after": 72,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": true
+        },
+        {
+            "id": "cache_clear_nav_badges",
+            "parent": "request_total",
+            "label": "Clear session nav count caches (simulate first paint)",
+            "start_ms": 65.163184,
+            "end_ms": 65.166824,
+            "dur_ms": 0.004,
+            "sql_before": 15,
+            "sql_after": 15,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        },
+        {
+            "id": "layout_oversight_counts",
+            "parent": "view_render_total",
+            "label": "rateb_oversight_menu_counts()",
+            "start_ms": 153.811318,
+            "end_ms": 153.815118,
+            "dur_ms": 0.004,
+            "sql_before": 71,
+            "sql_after": 71,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": true,
+            "can_lazy_load": true
+        },
+        {
+            "id": "bootstrap_autoloader_register",
+            "parent": "bootstrap_init",
+            "label": "registerAutoloader + Request/Entities",
+            "start_ms": 0.450448,
+            "end_ms": 0.451258,
+            "dur_ms": 0.001,
+            "sql_before": 0,
+            "sql_after": 0,
+            "sql_count": 0,
+            "meta": [],
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false
+        }
+    ],
+    "sql_by_phase": {
+        "session_auth_mint": {
+            "count": 4,
+            "dur_ms": 0.9410000000000001
+        },
+        "middleware_branch_schema_cold": {
+            "count": 11,
+            "dur_ms": 10.781000000000002
+        },
+        "auth_bootstrap": {
+            "count": 4,
+            "dur_ms": 3.406
+        },
+        "middleware_erp_auth": {
+            "count": 3,
+            "dur_ms": 0.5900000000000001
+        },
+        "controller_admin_metrics": {
+            "count": 49,
+            "dur_ms": 62.26599999999999
+        },
+        "layout_cms_leads": {
+            "count": 1,
+            "dur_ms": 0.225
+        },
+        "layout_main": {
+            "count": 49,
+            "dur_ms": 29.869
+        }
+    },
+    "sql_slowest_20": [
+        {
+            "t_ms": 95.283,
+            "dur_ms": 11.346,
+            "sql": "ALTER TABLE rateb_journal_entries MODIFY status ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+            "caller": "AccountingService.php:947 RatebProfilePdo::exec",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "56e955ff082f1b0b19ba531cc2263893",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 106.276,
+            "dur_ms": 9.601,
+            "sql": "ALTER TABLE rateb_cash_vouchers MODIFY status ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
+            "caller": "AccountingService.php:947 RatebProfilePdo::exec",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "84ec9004e07ba37cc8a115ef3ead4c1e",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 140.97,
+            "dur_ms": 2.027,
+            "sql": "SHOW TABLES LIKE 'rateb_leave_requests'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "34a844514db3999399c8634cd455c464",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 135.698,
+            "dur_ms": 2.018,
+            "sql": "SHOW TABLES LIKE 'rateb_asset_depreciation'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "233ce7028fd8cfaa063b33e31c505c86",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 138.313,
+            "dur_ms": 1.952,
+            "sql": "SHOW TABLES LIKE 'rateb_contracts'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "e28dee25467e6acd9910257f4c212aaa",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 133.103,
+            "dur_ms": 1.886,
+            "sql": "SHOW TABLES LIKE 'rateb_warehouse_transfers'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "fd09121204f53fbf1d44a1780c882c79",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 108.17,
+            "dur_ms": 1.853,
+            "sql": "SHOW TABLES LIKE 'rateb_companies'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "e666d6cf1996617e88d28a4753bb69b4",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 122.312,
+            "dur_ms": 1.819,
+            "sql": "SHOW TABLES LIKE 'rateb_device_spare_parts'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "0b4ec973ecc7944fdfc0f5a966b8a259",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 119.991,
+            "dur_ms": 1.8,
+            "sql": "SHOW TABLES LIKE 'rateb_device_service_history'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "89da8582b38af2ed20c9848bbd9d5ce5",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 130.044,
+            "dur_ms": 1.768,
+            "sql": "SHOW TABLES LIKE 'rateb_cash_vouchers'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "0f2e103126f19a7b42d55fe49de700b0",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 111.013,
+            "dur_ms": 1.708,
+            "sql": "SHOW TABLES LIKE 'rateb_supplier_evaluations'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "d1b2326b1e887073cacc74177b3c74f5",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 115.245,
+            "dur_ms": 1.698,
+            "sql": "SHOW TABLES LIKE 'rateb_asset_maintenance'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "20fb25b6acf38e779206adfd79cb24a9",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 124.814,
+            "dur_ms": 1.667,
+            "sql": "SHOW TABLES LIKE 'rateb_inventory_audits'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "c22fef7474b394c47c450c8818a1920a",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 113.092,
+            "dur_ms": 1.66,
+            "sql": "SHOW TABLES LIKE 'rateb_contract_renewals'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "f054a3f37cd633e14d700410d2ba97fd",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 164.133,
+            "dur_ms": 1.66,
+            "sql": "SHOW TABLES LIKE 'rateb_purchase_requests'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "layout_main",
+            "fingerprint": "db3d4e8ca791ab4e5a12825642240ce8",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 127.032,
+            "dur_ms": 1.658,
+            "sql": "SHOW TABLES LIKE 'rateb_journal_entries'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "49843fdc00c133452df27119501bb708",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 117.564,
+            "dur_ms": 1.648,
+            "sql": "SHOW TABLES LIKE 'rateb_asset_assignments'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "6975660e05a3814dbf0004953e61c9b6",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 68.839,
+            "dur_ms": 1.639,
+            "sql": "SHOW TABLES LIKE 'rateb_branches'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "auth_bootstrap",
+            "fingerprint": "d0324888240bc50e799d8fff2875544a",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 174.068,
+            "dur_ms": 1.557,
+            "sql": "SHOW TABLES LIKE 'rateb_rfq'",
+            "caller": "Database.php:182 RatebProfilePdo::query",
+            "phase": "layout_main",
+            "fingerprint": "4e81e7f9073b7fb2d0026fa291ddb4f1",
+            "repeat_n": 1
+        },
+        {
+            "t_ms": 83.884,
+            "dur_ms": 1.491,
+            "sql": "SHOW COLUMNS FROM `rateb_journal_entries`",
+            "caller": "Database.php:129 RatebProfilePdo::query",
+            "phase": "controller_admin_metrics",
+            "fingerprint": "192df780de61ec3a380d9b2b79c0a4dc",
+            "repeat_n": 1
+        }
+    ],
+    "sql_repeated": [
+        {
+            "n": 20,
+            "sql": "SELECT DATABASE()",
+            "caller": "MigrationService.php:163 RatebProfilePdo::query"
+        },
+        {
+            "n": 5,
+            "sql": "SELECT * FROM rateb_users WHERE id = :id LIMIT 1",
+            "caller": "User.php:20 RatebProfileStmt::execute"
+        },
+        {
+            "n": 2,
+            "sql": "SELECT COUNT(*) FROM rateb_companies t WHERE 1=1 AND t.status = :st",
+            "caller": "ApprovalOversightService.php:575 RatebProfileStmt::execute"
+        }
+    ],
+    "top10_slowest_operations": [
+        {
+            "id": "controller_admin_build_lite",
+            "label": "DashboardService::adminBuildLite",
+            "dur_ms": 74.952,
+            "sql_count": 49,
+            "blocking": true,
+            "cacheable": true,
+            "repeated": true,
+            "can_defer": true,
+            "can_lazy_load": true,
+            "attribution": {
+                "file": "app/services/DashboardService.php",
+                "class": "Rateb\\App\\Services\\DashboardService",
+                "function": "adminBuildLite"
+            }
+        },
+        {
+            "id": "controller_admin_metrics",
+            "label": "DashboardService::adminMetrics",
+            "dur_ms": 74.427,
+            "sql_count": 49,
+            "blocking": true,
+            "cacheable": true,
+            "repeated": true,
+            "can_defer": true,
+            "can_lazy_load": true,
+            "attribution": null
+        },
+        {
+            "id": "bootstrap_init",
+            "label": "Bootstrap::init (full)",
+            "dur_ms": 47.775,
+            "sql_count": 0,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "app/Core/Bootstrap.php",
+                "class": "Rateb\\App\\Core\\Bootstrap",
+                "function": "init"
+            }
+        },
+        {
+            "id": "layout_main",
+            "label": "include views/layouts/main.php (output buffering)",
+            "dur_ms": 45.099,
+            "sql_count": 49,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "views/layouts/main.php",
+                "class": "(layout include)",
+                "function": "include main.php"
+            }
+        },
+        {
+            "id": "middleware_branch_schema_cold",
+            "label": "rateb_ensure_erp_branch_schema (force cold)",
+            "dur_ms": 12.104,
+            "sql_count": 11,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "app/services/MigrationService.php",
+                "class": "Rateb\\App\\Services\\MigrationService",
+                "function": "repairBranchOpsSchemaIfNeeded"
+            }
+        },
+        {
+            "id": "auth_bootstrap",
+            "label": "Auth::bootstrapFromSession",
+            "dur_ms": 5.081,
+            "sql_count": 4,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": true,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "app/Core/Auth.php",
+                "class": "Rateb\\App\\Core\\Auth",
+                "function": "bootstrapFromSession"
+            }
+        },
+        {
+            "id": "routes_load",
+            "label": "require routes (web/marketing/cms/company/api/pos)",
+            "dur_ms": 5.073,
+            "sql_count": 0,
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": true,
+            "attribution": {
+                "file": "routes/*.php via public/index.php",
+                "class": "(route registration)",
+                "function": "require routes"
+            }
+        },
+        {
+            "id": "middleware_erp_auth",
+            "label": "ErpAuthMiddleware::handle",
+            "dur_ms": 1.481,
+            "sql_count": 3,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "app/Core/Middleware/Middleware.php",
+                "class": "Rateb\\App\\Core\\Middleware\\ErpAuthMiddleware",
+                "function": "handle"
+            }
+        },
+        {
+            "id": "view_dashboard",
+            "label": "include views/admin/dashboard.php",
+            "dur_ms": 1.296,
+            "sql_count": 0,
+            "blocking": true,
+            "cacheable": false,
+            "repeated": false,
+            "can_defer": false,
+            "can_lazy_load": false,
+            "attribution": {
+                "file": "views/admin/dashboard.php",
+                "class": "(view)",
+                "function": "include"
+            }
+        },
+        {
+            "id": "layout_cms_leads",
+            "label": "rateb_cms_new_leads_count()",
+            "dur_ms": 0.672,
+            "sql_count": 1,
+            "blocking": true,
+            "cacheable": true,
+            "repeated": false,
+            "can_defer": true,
+            "can_lazy_load": true,
+            "attribution": null
+        }
+    ],
+    "single_biggest_bottleneck": {
+        "id": "controller_admin_build_lite",
+        "label": "DashboardService::adminBuildLite",
+        "dur_ms": 74.952,
+        "sql_count": 49,
+        "blocking": true,
+        "cacheable": true,
+        "can_defer": true,
+        "can_lazy_load": true,
+        "file": "app/services/DashboardService.php",
+        "class": "Rateb\\App\\Services\\DashboardService",
+        "function": "adminBuildLite"
+    },
+    "path_evidence": {
+        "route": "$router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class])",
+        "controller": "Rateb\\App\\Controllers\\Admin\\DashboardController::index ? renderDashboard",
+        "sa_platform_branch": "DashboardService::adminBuildLite + view admin/dashboard + layout main",
+        "note": "CLI replay mirrors public/index.php lifecycle; mint session + clear nav caches to approximate post-login first HTML"
+    }
+}

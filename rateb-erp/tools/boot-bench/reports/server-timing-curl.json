@@ -1,0 +1,117 @@
+﻿{
+    "cookie_user": "admin@rateb.sa",
+    "probes": [
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/",
+            "pass": 1,
+            "http": 200,
+            "ttfb_ms": 177.4,
+            "total_ms": 374.7,
+            "bytes": 85208,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/",
+            "pass": 2,
+            "http": 200,
+            "ttfb_ms": 132.5,
+            "total_ms": 283,
+            "bytes": 85208,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+            "pass": 1,
+            "http": 200,
+            "ttfb_ms": 137,
+            "total_ms": 289.7,
+            "bytes": 86400,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+            "pass": 2,
+            "http": 200,
+            "ttfb_ms": 144.7,
+            "total_ms": 302.8,
+            "bytes": 86400,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+            "pass": 1,
+            "http": 200,
+            "ttfb_ms": 172.2,
+            "total_ms": 326.6,
+            "bytes": 100555,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+            "pass": 2,
+            "http": 200,
+            "ttfb_ms": 174.3,
+            "total_ms": 327.6,
+            "bytes": 100555,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+            "pass": 1,
+            "http": 200,
+            "ttfb_ms": 152.3,
+            "total_ms": 302.1,
+            "bytes": 95064,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        },
+        {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+            "pass": 2,
+            "http": 200,
+            "ttfb_ms": 160.4,
+            "total_ms": 311,
+            "bytes": 95064,
+            "has_server_timing": false,
+            "has_x_rateb_st": false,
+            "header_lines": [
+                "HTTP/2 200",
+                "content-type: text/html; charset=UTF-8"
+            ]
+        }
+    ]
+}

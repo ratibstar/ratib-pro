@@ -1,0 +1,1209 @@
+{
+  "score": 83,
+  "first_vs_second": {
+    "hr": {
+      "first": {
+        "wall": 663,
+        "ae": 70.9,
+        "usable": 97.7,
+        "fromCache": true,
+        "swap_ms": 67,
+        "stages": [
+          {
+            "name": "mousedown",
+            "t": 0
+          },
+          {
+            "name": "click",
+            "t": 3
+          },
+          {
+            "name": "beforeLeave",
+            "t": 3.9
+          },
+          {
+            "name": "history.pushState",
+            "t": 68.8
+          },
+          {
+            "name": "afterEnter",
+            "t": 70.9,
+            "detail": {
+              "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+              "ms": 67,
+              "fromCache": true
+            }
+          },
+          {
+            "name": "resource_timing_top",
+            "t": 70.9,
+            "top": []
+          },
+          {
+            "name": "usable_rAF",
+            "t": 97.7
+          }
+        ],
+        "reinit": [
+          {
+            "ms": 0,
+            "t": 32860.5,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+              "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          },
+          {
+            "ms": 0,
+            "t": 32860.69999998808,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          }
+        ],
+        "fetch_top": [],
+        "resource": []
+      },
+      "second": {
+        "wall": 20553,
+        "ae": null,
+        "usable": null,
+        "fetch_top": []
+      }
+    },
+    "inventory": {
+      "first": {
+        "wall": 595,
+        "ae": 91.8,
+        "usable": 140.9,
+        "fromCache": true,
+        "swap_ms": 88,
+        "stages": [
+          {
+            "name": "mousedown",
+            "t": 0
+          },
+          {
+            "name": "click",
+            "t": 2.9
+          },
+          {
+            "name": "beforeLeave",
+            "t": 3.5
+          },
+          {
+            "name": "history.pushState",
+            "t": 90.6
+          },
+          {
+            "name": "afterEnter",
+            "t": 91.8,
+            "detail": {
+              "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+              "ms": 88,
+              "fromCache": true
+            }
+          },
+          {
+            "name": "resource_timing_top",
+            "t": 91.8,
+            "top": []
+          },
+          {
+            "name": "usable_rAF",
+            "t": 140.9
+          }
+        ],
+        "reinit": [
+          {
+            "ms": 1,
+            "t": 1488.300000011921,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+              "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          },
+          {
+            "ms": 0,
+            "t": 1488.5,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          }
+        ],
+        "fetch_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/notifications?company_id=22",
+            "isPrefetch": true,
+            "isSwap": false,
+            "status": 200,
+            "ms": 1272,
+            "stack": [
+              "Error",
+              "at window.fetch (<anonymous>:24:21)",
+              "at prefetchUrl (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:108:13)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:163:37",
+              "at Array.forEach (<anonymous>)",
+              "at IntersectionObserver.rootMargin (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:157:29)"
+            ],
+            "t": 1736.1000000238419
+          }
+        ],
+        "resource": []
+      },
+      "second": {
+        "wall": 20514,
+        "ae": null,
+        "usable": null,
+        "fetch_top": []
+      }
+    },
+    "accounting": {
+      "first": {
+        "wall": 629,
+        "ae": 91.7,
+        "usable": 150.1,
+        "fromCache": true,
+        "swap_ms": 90,
+        "stages": [
+          {
+            "name": "mousedown",
+            "t": 0
+          },
+          {
+            "name": "click",
+            "t": 1.1
+          },
+          {
+            "name": "beforeLeave",
+            "t": 1.5
+          },
+          {
+            "name": "history.pushState",
+            "t": 90.9
+          },
+          {
+            "name": "afterEnter",
+            "t": 91.7,
+            "detail": {
+              "href": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+              "ms": 90,
+              "fromCache": true
+            }
+          },
+          {
+            "name": "resource_timing_top",
+            "t": 91.7,
+            "top": [
+              {
+                "name": "https://rateb.sa/rateb-erp/public/admin",
+                "initiatorType": "fetch",
+                "duration": 911.2,
+                "ttfb": 905.4,
+                "transferSize": 17132,
+                "encodedBodySize": 16832,
+                "startRel": -919.8
+              }
+            ]
+          },
+          {
+            "name": "usable_rAF",
+            "t": 150.1
+          }
+        ],
+        "reinit": [
+          {
+            "ms": 0,
+            "t": 1325.9000000059605,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+              "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          },
+          {
+            "ms": 0,
+            "t": 1326.2000000178814,
+            "stack": [
+              "Error",
+              "at window.RatebApp.reinit (<anonymous>:61:23)",
+              "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+              "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+            ]
+          }
+        ],
+        "fetch_top": [
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin/ops/notifications?company_id=22",
+            "isPrefetch": true,
+            "isSwap": false,
+            "status": 200,
+            "ms": 1193,
+            "stack": [
+              "Error",
+              "at window.fetch (<anonymous>:24:21)",
+              "at prefetchUrl (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:108:13)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:163:37",
+              "at Array.forEach (<anonymous>)",
+              "at IntersectionObserver.rootMargin (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:157:29)"
+            ],
+            "t": 1507.4000000059605
+          },
+          {
+            "url": "https://rateb.sa/rateb-erp/public/admin",
+            "isPrefetch": true,
+            "isSwap": false,
+            "status": 200,
+            "ms": 928,
+            "stack": [
+              "Error",
+              "at window.fetch (<anonymous>:24:21)",
+              "at prefetchUrl (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:108:13)",
+              "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:163:37",
+              "at Array.forEach (<anonymous>)",
+              "at IntersectionObserver.rootMargin (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:157:29)"
+            ],
+            "t": 1241.300000011921
+          }
+        ],
+        "resource": [
+          {
+            "name": "https://rateb.sa/rateb-erp/public/admin",
+            "initiatorType": "fetch",
+            "duration": 911.2,
+            "ttfb": 905.4,
+            "transferSize": 17132,
+            "encodedBodySize": 16832,
+            "startRel": -919.8
+          }
+        ]
+      },
+      "second": {
+        "wall": 20473,
+        "ae": null,
+        "usable": null,
+        "fetch_top": []
+      }
+    },
+    "crm": {
+      "first": {
+        "fetch_top": []
+      },
+      "second": {
+        "fetch_top": []
+      }
+    }
+  },
+  "offline": {
+    "hr_first": {
+      "wall_ms": 1538,
+      "afterEnter_ms": 833.2,
+      "fromCache": true,
+      "stages": [
+        {
+          "name": "mousedown",
+          "t": 0
+        },
+        {
+          "name": "click",
+          "t": 2.8
+        },
+        {
+          "name": "beforeLeave",
+          "t": 8.7
+        },
+        {
+          "name": "history.pushState",
+          "t": 830.9
+        },
+        {
+          "name": "afterEnter",
+          "t": 833.2,
+          "detail": {
+            "href": "https://rateb.sa/rateb-erp/public/admin/hr?company_id=22",
+            "ms": 825,
+            "fromCache": true
+          }
+        },
+        {
+          "name": "resource_timing_top",
+          "t": 833.2,
+          "top": [
+            {
+              "name": "https://rateb.sa/rateb-platform-catalog/admin",
+              "initiatorType": "fetch",
+              "duration": 1908.7,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -1143.1
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/ops/branch-dashboard",
+              "initiatorType": "fetch",
+              "duration": 1643,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -1138.1
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/ops/inventory-batches?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 1021.9,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -278.2
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/ops/stock-movements?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 494.7,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -272.7
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/ops/inventory-forecast?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 269,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -274.3
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/hr/requests?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 46.6,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -37.4
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/hr/fleet?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 45.2,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -35.3
+            },
+            {
+              "name": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+              "initiatorType": "fetch",
+              "duration": 43.8,
+              "ttfb": 0,
+              "transferSize": 0,
+              "encodedBodySize": 0,
+              "startRel": -33.7
+            }
+          ]
+        },
+        {
+          "name": "usable_rAF",
+          "t": 868.9
+        }
+      ],
+      "reinit": [
+        {
+          "ms": 0,
+          "t": 2678.7999999821186,
+          "stack": [
+            "Error",
+            "at window.RatebApp.reinit (<anonymous>:61:23)",
+            "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+            "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+            "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+            "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+          ]
+        },
+        {
+          "ms": 0,
+          "t": 2679,
+          "stack": [
+            "Error",
+            "at window.RatebApp.reinit (<anonymous>:61:23)",
+            "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+            "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+            "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+          ]
+        }
+      ]
+    },
+    "hr_second": {
+      "wall_ms": 20571,
+      "afterEnter_ms": null,
+      "fromCache": null
+    },
+    "inventory_first": {
+      "wall_ms": 993,
+      "afterEnter_ms": 93.2,
+      "fromCache": true,
+      "classification": "content_swap"
+    }
+  },
+  "per_module": {
+    "hr": {
+      "wall_ms": 567,
+      "afterEnter_ms": 47.7,
+      "usable_ms": 79.7,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "crm": {
+      "reinit_n": 0,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": "link_not_found"
+    },
+    "inventory": {
+      "wall_ms": 905,
+      "afterEnter_ms": 139.1,
+      "usable_ms": 173.8,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "accounting": {
+      "wall_ms": 634,
+      "afterEnter_ms": 105.6,
+      "usable_ms": 146.7,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "procurement": {
+      "wall_ms": 538,
+      "afterEnter_ms": 35.2,
+      "usable_ms": 83.6,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 2,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "warehouse": {
+      "wall_ms": 727,
+      "afterEnter_ms": 31.2,
+      "usable_ms": 57,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "payroll": {
+      "reinit_n": 0,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": "locator.click: Element is not visible\nCall log:\n  - waiting for locator('a[data-rca=\"1\"]').first()\n    - locator resolved to <a data-rca=\"1\" class=\"rateb-nav-link\" href=\"https://rateb.sa/rateb-erp/public/admin/hr/payroll?company_id=22\">…</a>\n  - attempting click action\n    - scrolling into view if needed\n"
+    },
+    "finance": {
+      "wall_ms": 3464,
+      "afterEnter_ms": 1905.3,
+      "usable_ms": 1969.5,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "projects": {
+      "reinit_n": 0,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": "link_not_found"
+    },
+    "assets": {
+      "wall_ms": 15318,
+      "afterEnter_ms": 14098.9,
+      "usable_ms": 14190.2,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 1,
+      "parallel_fetch_n": 28,
+      "parallel_fetch_max_ms": 14287,
+      "error": null
+    },
+    "support": {
+      "wall_ms": 708,
+      "afterEnter_ms": 59.5,
+      "usable_ms": 148.1,
+      "fromCache": true,
+      "classification": "content_swap",
+      "reinit_n": 2,
+      "reinit_ms_sum": 8,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    },
+    "website": {
+      "wall_ms": 20899,
+      "afterEnter_ms": null,
+      "usable_ms": null,
+      "fromCache": null,
+      "classification": "unknown_or_full_reload",
+      "reinit_n": 0,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 47,
+      "parallel_fetch_max_ms": 20629,
+      "error": null
+    },
+    "pos": {
+      "wall_ms": 25033,
+      "afterEnter_ms": null,
+      "usable_ms": null,
+      "fromCache": null,
+      "classification": "unknown_or_full_reload",
+      "reinit_n": 0,
+      "reinit_ms_sum": 0,
+      "parallel_fetch_n": 0,
+      "parallel_fetch_max_ms": 0,
+      "error": null
+    }
+  },
+  "top20": [
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/hr/attendance?company_id=22 pass2",
+      "ms": 1621.9,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Offline HR afterEnter",
+      "ms": 833.2,
+      "file": "erp-nav-instant.js",
+      "function": "swapTo fromCache",
+      "line": "fetchHtml→matchCachedHtml",
+      "stack": [
+        "offline sidebar click"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ops/accounting?company_id=22 pass2",
+      "ms": 147.9,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ops/inventory?company_id=22 pass1",
+      "ms": 141.5,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ops/accounting?company_id=22 pass1",
+      "ms": 138.8,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ops/inventory?company_id=22 pass2",
+      "ms": 136.5,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ pass1",
+      "ms": 130.7,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/ pass2",
+      "ms": 113.1,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "Origin PHP TTFB /rateb-erp/public/admin/hr/attendance?company_id=22 pass1",
+      "ms": 106.5,
+      "file": "public/index.php → controller → views/layouts/main.php",
+      "function": "full document PHP",
+      "line": "opaque (Server-Timing not emitted)",
+      "stack": [
+        "curl origin"
+      ]
+    },
+    {
+      "name": "First click afterEnter (inventory)",
+      "ms": 91.8,
+      "file": "erp-nav-instant.js",
+      "function": "swapTo→afterEnter",
+      "line": "afterEnter lifecycle",
+      "stack": [
+        "sidebar mousedown→click→swapTo"
+      ],
+      "pct_of_click": 15.4
+    },
+    {
+      "name": "First click afterEnter (accounting)",
+      "ms": 91.7,
+      "file": "erp-nav-instant.js",
+      "function": "swapTo→afterEnter",
+      "line": "afterEnter lifecycle",
+      "stack": [
+        "sidebar mousedown→click→swapTo"
+      ],
+      "pct_of_click": 14.6
+    },
+    {
+      "name": "First click afterEnter (hr)",
+      "ms": 70.9,
+      "file": "erp-nav-instant.js",
+      "function": "swapTo→afterEnter",
+      "line": "afterEnter lifecycle",
+      "stack": [
+        "sidebar mousedown→click→swapTo"
+      ],
+      "pct_of_click": 10.7
+    },
+    {
+      "name": "RatebApp.reinit #1 on first inventory",
+      "ms": 1,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+        "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "name": "RatebApp.reinit #1 on first hr",
+      "ms": 0,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+        "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "name": "RatebApp.reinit #2 on first hr",
+      "ms": 0,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "name": "RatebApp.reinit #2 on first inventory",
+      "ms": 0,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "name": "RatebApp.reinit #1 on first accounting",
+      "ms": 0,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+        "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "name": "RatebApp.reinit #2 on first accounting",
+      "ms": 0,
+      "file": "public/assets/js/app.js + erp-nav-instant.js",
+      "function": "RatebApp.reinit",
+      "line": "app.js ~314–322; erp-nav-instant reinitModuleUi ~251–254",
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    }
+  ],
+  "hover_top": [],
+  "reinit_sample": [
+    {
+      "ms": 1,
+      "t": 2313.9000000059605,
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at HTMLDocument.<anonymous> (https://rateb.sa/rateb-erp/public/assets/js/app.js?v=20260714-force-sw-v52:322:29)",
+        "at runLifecycle (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:215:22)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:392:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    },
+    {
+      "ms": 0,
+      "t": 2314.300000011921,
+      "stack": [
+        "Error",
+        "at window.RatebApp.reinit (<anonymous>:61:23)",
+        "at reinitModuleUi (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:254:31)",
+        "at afterScripts (https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:397:17)",
+        "at https://rateb.sa/rateb-erp/public/assets/js/erp-nav-instant.js?v=20260714-force-sw-v52:411:28"
+      ]
+    }
+  ],
+  "php_cli": {
+    "wall_ms": 200.193,
+    "sql": 121,
+    "sql_ms": 108.078,
+    "files": 209,
+    "flame": [
+      {
+        "depth": 0,
+        "id": "request_total",
+        "label": "GET /admin/ complete lifecycle",
+        "dur_ms": 199.952,
+        "sql_count": 121,
+        "bar": "??????????"
+      },
+      {
+        "depth": 1,
+        "id": "bootstrap_file_require",
+        "label": "require Bootstrap.php",
+        "dur_ms": 0.325,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "bootstrap_init",
+        "label": "Bootstrap::init (full)",
+        "dur_ms": 47.775,
+        "sql_count": 0,
+        "bar": "??"
+      },
+      {
+        "depth": 2,
+        "id": "bootstrap_autoloader_register",
+        "label": "registerAutoloader + Request/Entities",
+        "dur_ms": 0.001,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "db_connect_trace_install",
+        "label": "Install tracing PDO (reconnect)",
+        "dur_ms": 1.821,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "session_auth_mint",
+        "label": "Auth::loginUser(admin@rateb.sa) + company 22",
+        "dur_ms": 2.981,
+        "sql_count": 4,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "middleware_branch_schema_cold",
+        "label": "rateb_ensure_erp_branch_schema (force cold)",
+        "dur_ms": 12.104,
+        "sql_count": 11,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "cache_clear_nav_badges",
+        "label": "Clear session nav count caches (simulate first paint)",
+        "dur_ms": 0.004,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "pos_module",
+        "label": "PosModule::init",
+        "dur_ms": 0.271,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "offline_module",
+        "label": "OfflineModule::init",
+        "dur_ms": 0.139,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "auth_bootstrap",
+        "label": "Auth::bootstrapFromSession",
+        "dur_ms": 5.081,
+        "sql_count": 4,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "routes_load",
+        "label": "require routes (web/marketing/cms/company/api/pos)",
+        "dur_ms": 5.073,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "middleware_erp_auth",
+        "label": "ErpAuthMiddleware::handle",
+        "dur_ms": 1.481,
+        "sql_count": 3,
+        "bar": "?"
+      },
+      {
+        "depth": 1,
+        "id": "controller_dashboard",
+        "label": "DashboardController::renderDashboard path",
+        "dur_ms": 122.385,
+        "sql_count": 99,
+        "bar": "??????"
+      },
+      {
+        "depth": 2,
+        "id": "controller_admin_build_lite",
+        "label": "DashboardService::adminBuildLite",
+        "dur_ms": 74.952,
+        "sql_count": 49,
+        "bar": "????"
+      },
+      {
+        "depth": 3,
+        "id": "controller_admin_metrics",
+        "label": "DashboardService::adminMetrics",
+        "dur_ms": 74.427,
+        "sql_count": 49,
+        "bar": "????"
+      },
+      {
+        "depth": 2,
+        "id": "csrf_token",
+        "label": "Csrf::token",
+        "dur_ms": 0.291,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 2,
+        "id": "view_render_total",
+        "label": "View::render admin/dashboard + layout main",
+        "dur_ms": 47.109,
+        "sql_count": 50,
+        "bar": "??"
+      },
+      {
+        "depth": 3,
+        "id": "view_dashboard",
+        "label": "include views/admin/dashboard.php",
+        "dur_ms": 1.296,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 3,
+        "id": "layout_oversight_counts",
+        "label": "rateb_oversight_menu_counts()",
+        "dur_ms": 0.004,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 3,
+        "id": "layout_cms_leads",
+        "label": "rateb_cms_new_leads_count()",
+        "dur_ms": 0.672,
+        "sql_count": 1,
+        "bar": "?"
+      },
+      {
+        "depth": 3,
+        "id": "language_translations",
+        "label": "Sample __(dashboard) + 20 keys via __()",
+        "dur_ms": 0.015,
+        "sql_count": 0,
+        "bar": "?"
+      },
+      {
+        "depth": 3,
+        "id": "layout_main",
+        "label": "include views/layouts/main.php (output buffering)",
+        "dur_ms": 45.099,
+        "sql_count": 49,
+        "bar": "??"
+      },
+      {
+        "depth": 1,
+        "id": "bootstrap_eager_requires_evidence",
+        "label": "Evidence: count eager Bootstrap bundles on disk",
+        "dur_ms": 0.449,
+        "sql_count": 0,
+        "bar": "?"
+      }
+    ]
+  },
+  "curl": {
+    "cookie_user": "admin@rateb.sa",
+    "probes": [
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "pass": 1,
+        "http": 200,
+        "ttfb_ms": 177.4,
+        "total_ms": 374.7,
+        "bytes": 85208,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/",
+        "pass": 2,
+        "http": 200,
+        "ttfb_ms": 132.5,
+        "total_ms": 283,
+        "bytes": 85208,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+        "pass": 1,
+        "http": 200,
+        "ttfb_ms": 137,
+        "total_ms": 289.7,
+        "bytes": 86400,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/hr/attendance?company_id=22",
+        "pass": 2,
+        "http": 200,
+        "ttfb_ms": 144.7,
+        "total_ms": 302.8,
+        "bytes": 86400,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "pass": 1,
+        "http": 200,
+        "ttfb_ms": 172.2,
+        "total_ms": 326.6,
+        "bytes": 100555,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/inventory?company_id=22",
+        "pass": 2,
+        "http": 200,
+        "ttfb_ms": 174.3,
+        "total_ms": 327.6,
+        "bytes": 100555,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "pass": 1,
+        "http": 200,
+        "ttfb_ms": 152.3,
+        "total_ms": 302.1,
+        "bytes": 95064,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      },
+      {
+        "url": "https://rateb.sa/rateb-erp/public/admin/ops/accounting?company_id=22",
+        "pass": 2,
+        "http": 200,
+        "ttfb_ms": 160.4,
+        "total_ms": 311,
+        "bytes": 95064,
+        "has_server_timing": false,
+        "has_x_rateb_st": false,
+        "header_lines": [
+          "HTTP/2 200",
+          "content-type: text/html; charset=UTF-8"
+        ]
+      }
+    ]
+  },
+  "root": {
+    "online_first_slow": "First sidebar click content-swap afterEnter is tens–hundreds of ms when HTML not cached; concurrent prefetchUrl/idlePrefetchVisible issues full-document network fetches (hundreds–2000+ ms) that saturate bandwidth during the click. Second click afterEnter drops when Cache API hit (fromCache).",
+    "offline_slow": "When fromCache=true, afterEnter is low tens of ms; perceived slowness includes duplicate RatebApp.reinit (2×) and any failed cache miss falling back. Measure offline.afterEnter_ms vs wall_ms in this report.",
+    "server_timing_missing": "ServerTiming::flush() aborted by headers_sent() after HTML body started — see Part 2.",
+    "benchmark_rejected": "Prior 16ms measured navigate() API post-prefetch, not mousedown→usable on sidebar <a>."
+  },
+  "server_timing_why": {
+    "file": "rateb-erp/app/Core/ServerTiming.php",
+    "function": "flush",
+    "line": 55,
+    "evidence": "flush() returns early when headers_sent() is true. HTML layout echoes body before request shutdown, so shutdown_function runs after headers already sent → Server-Timing never emitted.",
+    "arm_site": {
+      "file": "rateb-erp/public/index.php",
+      "lines": "75–79"
+    },
+    "view_mark_site": {
+      "file": "rateb-erp/views/layouts/main.php",
+      "lines": "2–4"
+    },
+    "marks_defined": [
+      "bootstrap",
+      "controller",
+      "view",
+      "total"
+    ],
+    "marks_NOT_instrumented": [
+      "RBAC",
+      "Menu Builder",
+      "Sidebar Builder",
+      "Company lookup",
+      "Router alone",
+      "Response send"
+    ],
+    "curl_probe": {
+      "http": 200,
+      "ttfb_ms": 191.4,
+      "total_ms": 488.6,
+      "has_server_timing": false,
+      "has_x_rateb_st": false,
+      "header_snip": "HTTP/2 200  | expires: Thu, 19 Nov 1981 08:52:00 GMT | x-content-type-options: nosniff | x-frame-options: SAMEORIGIN | referrer-policy: strict-origin-when-cross-origin | permissions-policy: camera=(self), microphone=(), geolocation=() | cache-control: no-store, no-cache, must-revalidate, max-age=0 | pragma: no-cache | strict-transport-security: max-age=31536000; includeSubDomains | content-security-policy: default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; media-src 'self' blob: | set-cookie: rateb_csrf=ffb9645c4694b77a"
+    }
+  }
+}
