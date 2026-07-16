@@ -687,6 +687,7 @@ return [
     'login_email' => 'اسم المستخدم أو البريد',
     'invalid_credentials' => 'بيانات الدخول غير صحيحة',
     'password_required' => 'كلمة المرور مطلوبة.',
+    'password_leave_blank_keep' => 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية.',
     'login_user_inactive' => 'هذا الحساب غير مفعّل. راجع مدير النظام.',
     'login_no_company' => 'الحساب غير مرتبط بشركة. عدّل المستخدم واختر الشركة.',
     'login_company_inactive' => 'شركة هذا الحساب غير نشطة.',

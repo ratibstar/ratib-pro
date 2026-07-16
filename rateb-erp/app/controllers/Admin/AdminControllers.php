@@ -1900,8 +1900,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     {
         $data = parent::collectData();
         $password = (string) $this->input('password', '');
+        unset($data['password'], $data['password_hash']);
         if ($password !== '') {
-            $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+            $this->model->applyPassword($data, $password);
         }
         $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
         $scopedCompanyId = $this->scopedCompanyId();

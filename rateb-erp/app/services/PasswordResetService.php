@@ -52,7 +52,12 @@ final class PasswordResetService
         }
 
         $userId = (int) $reset['user_id'];
-        (new User())->update($userId, ['password' => password_hash($newPassword, PASSWORD_DEFAULT)]);
+        $userModel = new User();
+        $patch = [];
+        $userModel->applyPassword($patch, $newPassword);
+        if ($patch !== []) {
+            $userModel->update($userId, $patch);
+        }
         $db->prepare('UPDATE rateb_password_resets SET used_at = NOW() WHERE id = :id')->execute(['id' => (int) $reset['id']]);
         \Rateb\App\Core\SessionManager::regenerate();
         return true;

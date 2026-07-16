@@ -10,7 +10,7 @@ final class User extends Model
     protected string $table = 'rateb_users';
     protected bool $tenantScoped = false;
     protected array $fillable = [
-        'company_id', 'name', 'email', 'password', 'phone', 'avatar_path',
+        'company_id', 'name', 'email', 'password', 'password_hash', 'phone', 'avatar_path',
         'is_super_admin', 'status', 'two_factor_secret', 'two_factor_enabled', 'locale', 'login_barcode',
     ];
 
@@ -136,7 +136,7 @@ final class User extends Model
      */
     private static function passwordMatches(array $user, string $password): bool
     {
-        foreach (['password', 'password_hash'] as $column) {
+        foreach (['password_hash', 'password'] as $column) {
             if (!array_key_exists($column, $user)) {
                 continue;
             }
@@ -147,6 +147,23 @@ final class User extends Model
         }
 
         return false;
+    }
+
+    /** Write bcrypt hash to every password column present in rateb_users (prod may use password_hash). */
+    public function applyPassword(array &$data, string $plainPassword): void
+    {
+        unset($data['password'], $data['password_hash']);
+        $plainPassword = (string) $plainPassword;
+        if ($plainPassword === '') {
+            return;
+        }
+        $hash = password_hash($plainPassword, PASSWORD_DEFAULT);
+        if ($this->tableHasColumn('password_hash')) {
+            $data['password_hash'] = $hash;
+        }
+        if ($this->tableHasColumn('password')) {
+            $data['password'] = $hash;
+        }
     }
 
     public function updateLastLogin(int $id): void

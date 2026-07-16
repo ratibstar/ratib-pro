@@ -687,6 +687,7 @@ return [
     'login_email' => 'Username or email',
     'invalid_credentials' => 'Invalid email or password',
     'password_required' => 'Password is required.',
+    'password_leave_blank_keep' => 'Leave blank to keep the current password.',
     'login_user_inactive' => 'This account is not active. Contact your administrator.',
     'login_no_company' => 'This account is not linked to a company. Edit the user and select a company.',
     'login_company_inactive' => 'This user\'s company is not active.',
