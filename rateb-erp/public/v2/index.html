@@ -9,6 +9,8 @@
   <title>RATEB Offline V2 — Host</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="../assets/pwa/erp-icon-192.png" sizes="192x192">
+  <link rel="modulepreload" href="./vendor/sqlite/index.mjs">
+  <link rel="preload" href="./vendor/sqlite/sqlite3.wasm" as="fetch" crossorigin>
   <link rel="stylesheet" href="./css/host.css">
   <link rel="stylesheet" href="./css/shell.css">
 </head>
