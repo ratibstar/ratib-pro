@@ -171,15 +171,21 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
     var bust = plain + (plain.indexOf('?') >= 0 ? '&' : '?') + 'v=20260713-offline-nav-guard';
     var tShort = 2000;
     var tLong = 8000;
+    var offline = false;
     try {
-      if (navigator.onLine === false) {
-        tLong = 2000;
-      }
+      offline = navigator.onLine === false;
     } catch (eT) { /* ignore */ }
+    if (offline) {
+      // PERF-P0.3-C — 2s was too aggressive: SW cache match can exceed it after activate,
+      // then bust alias returns 503 and surfaces a false load_failed.
+      tLong = 10000;
+      tShort = 4000;
+    }
     // PERF-P0.3-C — do NOT fall back to rateb-offline monolith here.
-    // Monolith assigns RatebOffline without ensure; a second monoloith hit does not re-exec
-    // → oa_bootstrap_missing with bogus success. Fail loud on the real asset.
-    return loadScript(plain, tLong).catch(function () {
+    return loadScript(plain, tLong).catch(function (errPlain) {
+      if (offline) {
+        return Promise.reject(errPlain);
+      }
       return loadScript(bust, tShort);
     });
   }
