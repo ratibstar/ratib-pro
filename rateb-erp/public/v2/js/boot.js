@@ -36,21 +36,73 @@
         });
     }
 
+    /**
+     * Phase Z: wait for SQLite runtime module without a 20s blind timeout.
+     * Polls ready event + RatebOfflineV2DB; probes vendor index.mjs once if slow.
+     */
     function whenDbReady() {
         if (root.RatebOfflineV2DB) {
             return Promise.resolve(root.RatebOfflineV2DB);
         }
         return new Promise(function (resolve) {
             var done = false;
+            var started = root.performance && performance.now ? performance.now() : Date.now();
+            var maxMs = 4000;
+            var probeStarted = false;
+
             function finish() {
                 if (done) {
                     return;
                 }
                 done = true;
+                root.removeEventListener('rateb-v2-db-ready', onReady);
                 resolve(root.RatebOfflineV2DB || null);
             }
-            root.addEventListener('rateb-v2-db-ready', finish, { once: true });
-            setTimeout(finish, 20000);
+
+            function onReady() {
+                finish();
+            }
+
+            function elapsed() {
+                return (root.performance && performance.now ? performance.now() : Date.now()) - started;
+            }
+
+            function probeVendorOnce() {
+                if (probeStarted || root.RatebOfflineV2DB) {
+                    return;
+                }
+                probeStarted = true;
+                var vendorUrl = new URL('vendor/sqlite/index.mjs', root.location.href).href;
+                root.fetch(vendorUrl, { method: 'HEAD', cache: 'no-cache', credentials: 'same-origin' })
+                    .then(function (res) {
+                        if (!res || !res.ok) {
+                            finish();
+                        }
+                    })
+                    .catch(function () {
+                        finish();
+                    });
+            }
+
+            root.addEventListener('rateb-v2-db-ready', onReady);
+
+            (function tick() {
+                if (done) {
+                    return;
+                }
+                if (root.RatebOfflineV2DB) {
+                    finish();
+                    return;
+                }
+                if (elapsed() >= 800) {
+                    probeVendorOnce();
+                }
+                if (elapsed() >= maxMs) {
+                    finish();
+                    return;
+                }
+                root.setTimeout(tick, 40);
+            })();
         });
     }
 
@@ -423,6 +475,23 @@
                 return runRuntimeSelfTest().then(function (rtRes) {
                     return runRouterSelfTest().then(function (routerRes) {
                         return runShellSelfTest().then(function (shellRes) {
+                            // Phase Z: Shell Ready as soon as shell self-test passes
+                            // (platform host usable; BM self-tests continue below).
+                            var shellOk = pmRes && pmRes.ok !== false &&
+                                dbRes && dbRes.ok !== false &&
+                                rtRes && rtRes.ok !== false &&
+                                routerRes && routerRes.ok !== false &&
+                                shellRes && shellRes.ok !== false;
+                            if (shellOk) {
+                                setText('boot-status', 'Shell Ready');
+                                $('boot-status').className = 'status pass';
+                                if (root.document && root.document.documentElement) {
+                                    root.document.documentElement.setAttribute('data-rateb-v2-shell-ready', '1');
+                                }
+                                root.dispatchEvent(new CustomEvent('rateb-v2-shell-ready', {
+                                    detail: { at: Date.now() }
+                                }));
+                            }
                             return runSyncSelfTest().then(function (syncRes) {
                                 return runSdkSelfTest().then(function (sdkRes) {
                                     return runBusinessSelfTest().then(function (bmRes) {
@@ -434,11 +503,7 @@
                                                             return runCrmSelfTest().then(function (crmRes) {
                                                                 return runHrSelfTest().then(function (hrRes) {
                                                                     return runMfgSelfTest().then(function (mfgRes) {
-                                                                        var ok = pmRes && pmRes.ok !== false &&
-                                                                            dbRes && dbRes.ok !== false &&
-                                                                            rtRes && rtRes.ok !== false &&
-                                                                            routerRes && routerRes.ok !== false &&
-                                                                            shellRes && shellRes.ok !== false &&
+                                                                        var ok = shellOk &&
                                                                             syncRes && syncRes.ok !== false &&
                                                                             sdkRes && sdkRes.ok !== false &&
                                                                             bmRes && bmRes.ok !== false &&
@@ -452,8 +517,10 @@
                                                                             mfgRes && mfgRes.ok !== false;
                                                                         setText('boot-status', ok
                                                                             ? 'Phase 17 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM + HR + Manufacturing ready'
-                                                                            : 'Phase 17 self-test failed');
-                                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                                            : (shellOk
+                                                                                ? 'Shell Ready — module self-test failed'
+                                                                                : 'Phase 17 self-test failed'));
+                                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : (shellOk ? 'pass' : 'fail'));
                                                                     });
                                                                 });
                                                             });

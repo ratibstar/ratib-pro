@@ -1,0 +1,16 @@
+# Offline V2 host — serve index.html for directory URL (SW scope + PWA start_url).
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^$ index.html [L]
+</IfModule>
+
+# SQLite WASM / ESM — correct MIME for Chromium OPFS VFS.
+<IfModule mod_mime.c>
+    AddType application/javascript .mjs
+    AddType application/wasm .wasm
+</IfModule>

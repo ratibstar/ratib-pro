@@ -1,0 +1,60 @@
+{
+  "phase": "Z",
+  "title": "Offline V2 Production Hardening",
+  "board_decision": "APPROVED",
+  "scope": "startup_reliability_and_deployment_only",
+  "architecture_freeze": true,
+  "identity_boundary": {
+    "online_erp_auth_authority": true,
+    "identity_may_store": [
+      "sealed_identity",
+      "identity_claims",
+      "rbac_snapshot",
+      "device_trust_state",
+      "unlock_metadata"
+    ],
+    "identity_must_never_store": [
+      "passwords",
+      "password_hashes",
+      "session_cookies",
+      "bearer_tokens",
+      "jwts",
+      "totp_secrets",
+      "webauthn_server_credentials",
+      "api_tokens",
+      "authentication_secrets"
+    ],
+    "violation_count": 0
+  },
+  "root_causes_fixed": [
+    "gitignore_vendor_excluded_v2_sqlite",
+    "sqlite_vendor_not_in_git_not_deployed",
+    "sw_cache_addAll_atomic_404",
+    "boot_whenDbReady_20s_timeout",
+    "wasm_deploy_as_text_risk"
+  ],
+  "artifacts": {
+    "vendor_sqlite": "rateb-erp/public/v2/vendor/sqlite/",
+    "required_files": [
+      "index.mjs",
+      "sqlite3.wasm",
+      "sqlite3-opfs-async-proxy.js",
+      "sqlite3-worker1.mjs"
+    ],
+    "sw": "rateb-erp/public/v2/sw.js",
+    "boot": "rateb-erp/public/v2/js/boot.js",
+    "htaccess": "rateb-erp/public/v2/.htaccess",
+    "deploy_binary_ext": ".wasm"
+  },
+  "success_criteria": {
+    "shell_ready_ms_max": 3000,
+    "shell_ready": "PASS",
+    "sqlite_runtime": "PASS",
+    "service_worker": "PASS",
+    "offline_cache": "PASS",
+    "http_404_runtime": "NONE",
+    "offline_v1_untouched": true
+  },
+  "enterprise_production_startup": "PENDING_PRODUCTION_GATE",
+  "notes": "Fill enterprise_production_startup=PASS after live HTTP 200 on vendor assets + fresh-profile Shell Ready <3s + offline reload."
+}

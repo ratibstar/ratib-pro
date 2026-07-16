@@ -19,6 +19,9 @@ node_modules/
 vendor/
 !rateb-erp/public/assets/vendor/
 !rateb-erp/public/assets/vendor/**
+# Offline V2 runtime SQLite WASM (required on production; not npm install)
+!rateb-erp/public/v2/vendor/
+!rateb-erp/public/v2/vendor/**
 dist/
 build/
 

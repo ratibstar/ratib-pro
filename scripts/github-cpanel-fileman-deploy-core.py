@@ -79,6 +79,8 @@ BINARY_EXTENSIONS = frozenset({
     ".ttf",
     ".eot",
     ".pdf",
+    # Offline V2 SQLite WASM runtime (corrupt if uploaded as text via save_file_content)
+    ".wasm",
 })
 
 
