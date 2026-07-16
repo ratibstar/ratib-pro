@@ -356,34 +356,44 @@
                 }
             };
 
-            return stageInstall('slot-a', installA).then(function (s1) {
-                note('stage_slot_a', s1.ok, s1.installId);
-                return verifySlot('slot-a').then(function (v1) {
-                    note('verify_slot_a', v1.ok, 'checked=' + v1.checked);
-                    return activate('slot-a').then(function (act1) {
-                        note('activate_slot_a', act1.ok, act1.slot);
-                        return stageInstall('slot-b', installB).then(function (s2) {
-                            note('stage_slot_b', s2.ok, s2.installId);
-                            return activate('slot-b').then(function (act2) {
-                                note('activate_slot_b', act2.ok, 'prev=' + act2.previousSlot);
-                                // Refuse staging into active slot
-                                return stageInstall('slot-b', installB).then(function () {
-                                    note('refuse_stage_active', false, 'should_have_thrown');
-                                }).catch(function (err) {
-                                    note('refuse_stage_active', /pm_cannot_stage_active_slot/.test(String(err && err.message)), String(err && err.message));
-                                }).then(function () {
-                                    return rollback().then(function (rb) {
-                                        note('rollback', rb.ok, 'to=' + rb.rolledBackTo);
-                                        return getActive().then(function (cur) {
-                                            note('active_after_rollback', cur.activeSlot === 'slot-a', JSON.stringify(cur));
-                                            // packages immutable: attempt overwrite must fail
-                                            return H.writeBytes(arts.a.path, utf8Encode('TAMPER'), {
-                                                packageIngest: true,
-                                                createIfAbsent: true
-                                            }).then(function (w) {
-                                                note('package_no_overwrite', !!w.skipped, 'skipped=' + w.skipped);
-                                            }).catch(function (err) {
-                                                note('package_no_overwrite', /hci_packages/.test(String(err && err.message)), String(err && err.message));
+            return getActive().then(function (cur) {
+                // Refresh-safe: never stageInstall into the currently active slot first.
+                // After a prior boot self-test, activeSlot is usually slot-a; staging slot-a
+                // again throws pm_cannot_stage_active_slot and blocks Shell Ready forever.
+                var slotPrimary = (cur && cur.activeSlot === 'slot-a') ? 'slot-b' : 'slot-a';
+                var slotSecondary = slotPrimary === 'slot-a' ? 'slot-b' : 'slot-a';
+                note('slot_plan', true, 'primary=' + slotPrimary + ' secondary=' + slotSecondary +
+                    ' wasActive=' + ((cur && cur.activeSlot) || 'none'));
+
+                return stageInstall(slotPrimary, installA).then(function (s1) {
+                    note('stage_slot_a', s1.ok, s1.installId + '@' + slotPrimary);
+                    return verifySlot(slotPrimary).then(function (v1) {
+                        note('verify_slot_a', v1.ok, 'checked=' + v1.checked);
+                        return activate(slotPrimary).then(function (act1) {
+                            note('activate_slot_a', act1.ok, act1.slot);
+                            return stageInstall(slotSecondary, installB).then(function (s2) {
+                                note('stage_slot_b', s2.ok, s2.installId + '@' + slotSecondary);
+                                return activate(slotSecondary).then(function (act2) {
+                                    note('activate_slot_b', act2.ok, 'prev=' + act2.previousSlot);
+                                    // Refuse staging into active slot
+                                    return stageInstall(slotSecondary, installB).then(function () {
+                                        note('refuse_stage_active', false, 'should_have_thrown');
+                                    }).catch(function (err) {
+                                        note('refuse_stage_active', /pm_cannot_stage_active_slot/.test(String(err && err.message)), String(err && err.message));
+                                    }).then(function () {
+                                        return rollback().then(function (rb) {
+                                            note('rollback', rb.ok, 'to=' + rb.rolledBackTo);
+                                            return getActive().then(function (cur2) {
+                                                note('active_after_rollback', cur2.activeSlot === slotPrimary, JSON.stringify(cur2));
+                                                // packages immutable: attempt overwrite must fail
+                                                return H.writeBytes(arts.a.path, utf8Encode('TAMPER'), {
+                                                    packageIngest: true,
+                                                    createIfAbsent: true
+                                                }).then(function (w) {
+                                                    note('package_no_overwrite', !!w.skipped, 'skipped=' + w.skipped);
+                                                }).catch(function (err) {
+                                                    note('package_no_overwrite', /hci_packages/.test(String(err && err.message)), String(err && err.message));
+                                                });
                                             });
                                         });
                                     });

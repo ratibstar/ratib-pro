@@ -1,0 +1,10 @@
+{
+  "schema": "rateb-offline-v2-artifact/1",
+  "type": "modules",
+  "id": "reference",
+  "version": "1.0.0",
+  "sha256": "c90561c03ccc269a88f12eff6b69a6f013b6af8b66535976af67c43e1272e710",
+  "size": 979,
+  "path": "packages/modules/reference__1.0.0__c90561c03ccc269a88f12eff6b69a6f013b6af8b66535976af67c43e1272e710.pkg",
+  "ingestedAt": "2026-07-16T20:18:53.222Z"
+}

@@ -15,7 +15,7 @@
  * Phase Z: resilient precache — one 404 must not invalidate the whole install.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-host-pz';
+var CACHE = 'rateb-offline-v2-host-pz2';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',

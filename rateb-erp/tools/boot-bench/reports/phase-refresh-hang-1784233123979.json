@@ -1,0 +1,210 @@
+{
+  "url": "https://rateb.sa/rateb-erp/public/v2/index.html",
+  "first_shell_ms": 4645,
+  "refresh_shell_ms": null,
+  "refresh_hang": true,
+  "afterFirst": {
+    "label": "after_first_load",
+    "boot": "Shell Ready",
+    "shellAttr": "1",
+    "hasDB": true,
+    "hasHCI": true,
+    "hasPM": true,
+    "hasRT": true,
+    "hasRouter": true,
+    "hasShell": true,
+    "readyState": "complete",
+    "navType": "navigate",
+    "marks": [
+      {
+        "name": "rateb-v2-boot-start",
+        "t": 3630
+      },
+      {
+        "name": "rateb-v2-layout-ensured",
+        "t": 3743
+      },
+      {
+        "name": "rateb-v2-layout-verified",
+        "t": 3761
+      },
+      {
+        "name": "rateb-v2-sw-registered",
+        "t": 3930
+      },
+      {
+        "name": "rateb-v2-db-selftest-done",
+        "t": 4071
+      },
+      {
+        "name": "rateb-v2-pm-selftest-done",
+        "t": 4220
+      },
+      {
+        "name": "rateb-v2-runtime-selftest-done",
+        "t": 4314
+      },
+      {
+        "name": "rateb-v2-router-selftest-done",
+        "t": 4462
+      },
+      {
+        "name": "rateb-v2-shell-ready",
+        "t": 4623
+      }
+    ],
+    "dbMode": "PASS — mode=hci-persist schema=2",
+    "layoutEnsure": "PASS — rateb-offline-v2",
+    "bodyTextLen": 4082
+  },
+  "refreshSnapEarly": {
+    "label": "reload_domcontentloaded",
+    "boot": "Booting…",
+    "shellAttr": null,
+    "hasDB": true,
+    "hasHCI": true,
+    "hasPM": true,
+    "hasRT": true,
+    "hasRouter": true,
+    "hasShell": true,
+    "readyState": "complete",
+    "navType": "reload",
+    "marks": [
+      {
+        "name": "rateb-v2-boot-start",
+        "t": 76
+      }
+    ],
+    "dbMode": "—",
+    "layoutEnsure": "—",
+    "bodyTextLen": 1349
+  },
+  "mid": {
+    "label": "reload_mid_or_done",
+    "boot": "Phase 17 self-test failed",
+    "shellAttr": null,
+    "hasDB": true,
+    "hasHCI": true,
+    "hasPM": true,
+    "hasRT": true,
+    "hasRouter": true,
+    "hasShell": true,
+    "readyState": "complete",
+    "navType": "reload",
+    "marks": [
+      {
+        "name": "rateb-v2-boot-start",
+        "t": 76
+      },
+      {
+        "name": "rateb-v2-layout-ensured",
+        "t": 127
+      },
+      {
+        "name": "rateb-v2-layout-verified",
+        "t": 152
+      },
+      {
+        "name": "rateb-v2-sw-registered",
+        "t": 153
+      },
+      {
+        "name": "rateb-v2-pm-selftest-done",
+        "t": 265
+      },
+      {
+        "name": "rateb-v2-db-selftest-done",
+        "t": 297
+      },
+      {
+        "name": "rateb-v2-runtime-selftest-done",
+        "t": 389
+      },
+      {
+        "name": "rateb-v2-router-selftest-done",
+        "t": 435
+      },
+      {
+        "name": "rateb-v2-shell-ready",
+        "t": 574
+      },
+      {
+        "name": "rateb-v2-post-shell-scripts-loaded",
+        "t": 901
+      }
+    ],
+    "dbMode": "PASS — mode=hci-persist schema=2",
+    "layoutEnsure": "PASS — rateb-offline-v2",
+    "bodyTextLen": 16262
+  },
+  "late": {
+    "label": "reload_late",
+    "boot": "Phase 17 self-test failed",
+    "shellAttr": null,
+    "hasDB": true,
+    "hasHCI": true,
+    "hasPM": true,
+    "hasRT": true,
+    "hasRouter": true,
+    "hasShell": true,
+    "readyState": "complete",
+    "navType": "reload",
+    "marks": [
+      {
+        "name": "rateb-v2-boot-start",
+        "t": 76
+      },
+      {
+        "name": "rateb-v2-layout-ensured",
+        "t": 127
+      },
+      {
+        "name": "rateb-v2-layout-verified",
+        "t": 152
+      },
+      {
+        "name": "rateb-v2-sw-registered",
+        "t": 153
+      },
+      {
+        "name": "rateb-v2-pm-selftest-done",
+        "t": 265
+      },
+      {
+        "name": "rateb-v2-db-selftest-done",
+        "t": 297
+      },
+      {
+        "name": "rateb-v2-runtime-selftest-done",
+        "t": 389
+      },
+      {
+        "name": "rateb-v2-router-selftest-done",
+        "t": 435
+      },
+      {
+        "name": "rateb-v2-shell-ready",
+        "t": 574
+      },
+      {
+        "name": "rateb-v2-post-shell-scripts-loaded",
+        "t": 901
+      }
+    ],
+    "dbMode": "PASS — mode=hci-persist schema=2",
+    "layoutEnsure": "PASS — rateb-offline-v2",
+    "bodyTextLen": 16262
+  },
+  "pageErrors": [],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+    },
+    {
+      "type": "error",
+      "text": "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+    }
+  ],
+  "pendingish_resources": []
+}

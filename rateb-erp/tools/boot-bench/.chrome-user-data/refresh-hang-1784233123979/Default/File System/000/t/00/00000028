@@ -1,0 +1,10 @@
+{
+  "schema": "rateb-offline-v2-artifact/1",
+  "type": "runtime",
+  "id": "core-runtime",
+  "version": "2.0.0",
+  "sha256": "3f179e7fa966bc2a2a95662a68a1305e2300831470750a396b260732849f6cc1",
+  "size": 21,
+  "path": "packages/runtime/core-runtime__2.0.0__3f179e7fa966bc2a2a95662a68a1305e2300831470750a396b260732849f6cc1.pkg",
+  "ingestedAt": "2026-07-16T20:18:49.597Z"
+}

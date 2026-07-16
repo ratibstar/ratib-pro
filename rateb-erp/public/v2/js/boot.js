@@ -546,11 +546,9 @@
                     mark('router-selftest-done');
                     return runShellSelfTest().then(function (shellRes) {
                         mark('shell-ready');
-                        // Phase Z: Shell Ready as soon as shell self-test passes
-                        // (platform host usable; BM self-tests continue below).
-                        // Offline: PM self-test may fail staging without network — do not block Shell Ready.
-                        var pmOkForShell = (pmRes && pmRes.ok !== false) ||
-                            (root.navigator && root.navigator.onLine === false && !!root.RatebOfflineV2PM);
+                        // Shell Ready gate: platform stack only. PM self-test mutates durable
+                        // active.json and must not block refresh (pm_cannot_stage_active_slot).
+                        var pmOkForShell = !!root.RatebOfflineV2PM;
                         var shellOk = pmOkForShell &&
                             dbRes && dbRes.ok !== false &&
                             rtRes && rtRes.ok !== false &&
