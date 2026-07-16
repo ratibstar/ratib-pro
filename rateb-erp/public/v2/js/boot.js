@@ -472,13 +472,9 @@
             });
         }
 
-        /** Phase Z: load post-shell platform + BM scripts only after Shell Ready. */
+        /** Phase Z: load ERP BusinessModules only after Shell Ready (keeps first paint lean). */
         function loadPostShellScripts() {
             var files = [
-                './js/sync/sync-engine.js',
-                './js/modules/module-sdk.js',
-                './js/business/business-module-framework.js',
-                './js/business/reference-module.js',
                 './js/business/identity-module.js',
                 './js/business/inventory-module.js',
                 './js/business/procurement-module.js',
