@@ -14,6 +14,15 @@ final class SessionManager
             }
         }
 
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            return '/rateb-erp/public';
+        }
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (preg_match('#(/rateb-erp/public)(?:/|$)#', $uri, $m)) {
+            return $m[1];
+        }
+
         return '/';
     }
 

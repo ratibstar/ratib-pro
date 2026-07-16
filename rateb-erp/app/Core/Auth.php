@@ -257,6 +257,7 @@ final class Auth
             (new AuditService())->log('logout', 'user', $userId);
         }
         SessionManager::destroy();
+        Csrf::clearCookie();
         TenantContext::setCompanyId(null);
         TenantContext::setSuperAdmin(false);
         \Rateb\App\Core\BranchContext::reset();

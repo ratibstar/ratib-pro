@@ -52,6 +52,17 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
     <script>
     (function () {
         try {
+            var p = window.location.pathname.replace(/\/+$/, '');
+            if (/\/admin$/i.test(p)) {
+                window.location.replace(<?php echo json_encode(rateb_list_url('login', ['err' => 'session']), JSON_UNESCAPED_SLASHES); ?>);
+                return;
+            }
+        } catch (eAdmin) {}
+    })();
+    </script>
+    <script>
+    (function () {
+        try {
             if (!('serviceWorker' in navigator)) return;
             var purge = function () {
                 if (navigator.serviceWorker.controller) {

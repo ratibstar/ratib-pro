@@ -39,16 +39,18 @@ final class Csrf
             return;
         }
         $secure = self::requestIsSecure();
-        if (PHP_VERSION_ID >= 70300) {
-            setcookie(self::COOKIE_NAME, '', [
-                'expires' => time() - 3600,
-                'path' => '/',
-                'secure' => $secure,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
-        } else {
-            setcookie(self::COOKIE_NAME, '', time() - 3600, '/', '', $secure, true);
+        foreach (SessionManager::cookiePathCandidates() as $path) {
+            if (PHP_VERSION_ID >= 70300) {
+                setcookie(self::COOKIE_NAME, '', [
+                    'expires' => time() - 3600,
+                    'path' => $path,
+                    'secure' => $secure,
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            } else {
+                setcookie(self::COOKIE_NAME, '', time() - 3600, $path, '', $secure, true);
+            }
         }
     }
 
@@ -58,16 +60,17 @@ final class Csrf
             return;
         }
         $secure = self::requestIsSecure();
+        $path = SessionManager::cookiePath();
         if (PHP_VERSION_ID >= 70300) {
             setcookie(self::COOKIE_NAME, $token, [
                 'expires' => 0,
-                'path' => '/',
+                'path' => $path,
                 'secure' => $secure,
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
         } else {
-            setcookie(self::COOKIE_NAME, $token, 0, '/', '', $secure, true);
+            setcookie(self::COOKIE_NAME, $token, 0, $path, '', $secure, true);
         }
     }
 

@@ -181,10 +181,10 @@ final class Bootstrap
         }
         $skipSession = (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)
             || (defined('RATEB_HEALTH_PROBE') && RATEB_HEALTH_PROBE);
+        self::loadConfig($basePath);
         if (!$skipSession) {
             SessionManager::start();
         }
-        self::loadConfig($basePath);
         // Parent .env / cloud defaults must not override branch serve.env (sync sink, sqlite path).
         if (is_file($branchServeBootstrap)) {
             BranchServeEnvBootstrap::apply($basePath, true);
@@ -381,8 +381,8 @@ final class Bootstrap
             }
         }
 
-        SessionManager::start();
         self::loadConfig($basePath);
+        SessionManager::start();
         if (is_file($branchServeBootstrap)) {
             BranchServeEnvBootstrap::apply($basePath, true);
         }

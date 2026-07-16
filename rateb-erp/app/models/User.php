@@ -53,7 +53,7 @@ final class User extends Model
             if ((string) ($user['status'] ?? '') !== 'active') {
                 continue;
             }
-            if (!password_verify($password, (string) ($user['password'] ?? ''))) {
+            if (!self::passwordMatches($user, $password)) {
                 continue;
             }
 
@@ -129,6 +129,24 @@ final class User extends Model
         );
 
         return $user ? [$user] : [];
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     */
+    private static function passwordMatches(array $user, string $password): bool
+    {
+        foreach (['password', 'password_hash'] as $column) {
+            if (!array_key_exists($column, $user)) {
+                continue;
+            }
+            $hash = (string) ($user[$column] ?? '');
+            if ($hash !== '' && password_verify($password, $hash)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function updateLastLogin(int $id): void
