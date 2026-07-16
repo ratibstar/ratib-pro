@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-session-cookie-path-v83';
+var SW_BUILD_ID = '20260716-admin-nav-timeout-v84';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3245,9 +3245,24 @@ self.addEventListener('fetch', function (event) {
                 );
                 return;
             }
-            // Online Admin navigations must bypass SW (no SWR). Otherwise fetch redirect
-            // to /login is painted at /admin URL and stale dashboard HTML survives logout.
+            // Soft-online admin: never bare-bypass Document fetch (Chrome tab spinner hangs
+            // forever when PHP/network stalls while navigator.onLine===true). Network-first
+            // with timeout → cached snapshot. Dashboard stays network-first (logout-safe);
+            // other admin paths use SWR via navigateErpCloudWithCacheSafety.
             if (isErpAdminPath(url.pathname) && !isPosNavigation(url)) {
+                respondWithDocumentAndReleaseWarmGate(
+                    event,
+                    navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
+                        try {
+                            return erpInlineShellResponse();
+                        } catch (eAdminFinal) {
+                            return new Response('Offline', {
+                                status: 200,
+                                headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                            });
+                        }
+                    })
+                );
                 return;
             }
             if (isPosNavigation(url)) {
