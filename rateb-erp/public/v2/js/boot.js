@@ -552,7 +552,10 @@
                         mark('shell-ready');
                         // Phase Z: Shell Ready as soon as shell self-test passes
                         // (platform host usable; BM self-tests continue below).
-                        var shellOk = pmRes && pmRes.ok !== false &&
+                        // Offline: PM self-test may fail staging without network — do not block Shell Ready.
+                        var pmOkForShell = (pmRes && pmRes.ok !== false) ||
+                            (root.navigator && root.navigator.onLine === false && !!root.RatebOfflineV2PM);
+                        var shellOk = pmOkForShell &&
                             dbRes && dbRes.ok !== false &&
                             rtRes && rtRes.ok !== false &&
                             routerRes && routerRes.ok !== false &&
