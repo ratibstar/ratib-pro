@@ -1,0 +1,344 @@
+{
+  "phase": "PERF-P3",
+  "title": "RATIB ERP Enterprise Offline Certification — Desktop-Grade Audit",
+  "mode": "READ_ONLY_NO_CODE_NO_PATCHES",
+  "at": "2026-07-16T06:03:00+03:00",
+  "certification_question": "What prevents RATIB ERP from behaving like a real installed desktop application?",
+  "certification_answer": "RATIB Offline is a Service-Worker cache overlay on a live PHP web app, not a sealed installed package. Boot, navigation, and survival still depend on (1) prior online warm of HTML/JS into Cache API, (2) Soft navigations that the SW can intercept, and (3) update/recovery code that can delete those caches. Hard Refresh offline, incomplete warm, SW install shell-delete, and nuclear live-escape all break the desktop contract. Identity in IndexedDB is stronger than the shell — the product can remember who you are while still failing to open the ERP UI.",
+  "scores": {
+    "enterprise_score": 31,
+    "desktop_erp_score": 22,
+    "offline_reliability": 35,
+    "installation_quality": 40,
+    "persistence": 45,
+    "update_safety": 24,
+    "cache_integrity": 33,
+    "recovery": 18,
+    "activation": 58,
+    "boot_independence": 28,
+    "navigation": 36,
+    "hard_refresh_survival": 25,
+    "browser_restart_survival": 55,
+    "sw_update_safety": 28,
+    "scale": "0–100 vs sealed desktop/offline-first ERP contract after one activation",
+    "pass_fail": "FAIL — not certifiable as desktop-grade Offline ERP"
+  },
+  "contract_checklist_after_one_activation": {
+    "browser_restart": "PARTIAL — identity survives; PIN required; UI needs Cache hits",
+    "laptop_reboot": "PARTIAL — same as browser restart",
+    "windows_restart": "PARTIAL — same",
+    "browser_crash": "PARTIAL — IDB survives; sessionStorage unlock lost",
+    "tab_crash": "PARTIAL — same tab group may keep sessionStorage",
+    "hard_refresh": "FAIL offline — SW bypassed; PASS online via network",
+    "service_worker_update": "FAIL risk — seedInlineOfflineShell may delete shell; skipWaiting immediate",
+    "network_loss": "PARTIAL — warm modules only",
+    "dns_failure": "PARTIAL — same as network loss if caches warm",
+    "server_completely_offline": "PARTIAL — same; FAIL if warm incomplete or nuclear purge ran"
+  },
+  "layer_findings": {
+    "1_sw_lifecycle": {
+      "install": "pos-sw.js:2901–2913 — skipWaiting + seedInlineOfflineShell",
+      "activate": "pos-sw.js:2916–2928 — clients.claim first, warm deferred",
+      "waiting": "main.php register sends SKIP_WAITING to waiting worker",
+      "skipWaiting": "immediate on install L2902 + message L2979",
+      "clientsClaim": "activate L2920 + message L2983",
+      "controllerchange": "intentionally NO reload (main.php ~754) — good",
+      "navigation_preload": "NOT USED — repo grep empty",
+      "navigation_fetch": "SWR / cache-first soft-offline; hard refresh bypasses",
+      "update_flow": "register updateViaCache none + reg.update; claim before protected warm complete"
+    },
+    "2_offline_shell": {
+      "can_boot_without_network": "ONLY if offline-shell.html + OA modules already in coexist Cache AND SW controls navigation",
+      "can_boot_without_any_fetch": "NO for first ensure() if scripts not already evaluated; loadScript injects src",
+      "inline_shell": "thin last-resort under private key — not full ERP",
+      "evidence": "PROTECTED_OFFLINE_RELS pos-sw.js:30–77; seedInlineOfflineShell:709–722; offline-bootstrap loadScript:120–168"
+    },
+    "3_cache_architecture": {
+      "permanent_should_be": ["coexist protected assets", "ops pages after install", "allowlist", "auth_vault IDB"],
+      "temporary_today": ["warm success markers in localStorage", "sessionStorage unlock"],
+      "critical_never_delete": ["offline-shell.html OA body", "PROTECTED modules", "auth_vault", "ops HTML for certified routes"],
+      "disposable": ["old pos-shell/assets version caches after migrate", "inline shell key"],
+      "problem": "Production treats critical caches as disposable via nuclear purge and install-time shell delete"
+    },
+    "4_offline_assets": {
+      "in_PROTECTED_list": "OA JS modules + offline-shell.html + allowlist JSON (~47 entries)",
+      "in_warm_asset_list_not_PROTECTED": "CSS theme stack, Bootstrap, FontAwesome, Tajawal, app.js, theme.js — pos-sw.js ~1748–1772",
+      "manifest": "public/manifest.webmanifest display:standalone; erp-pwa-install.js optional prompt",
+      "sqlite": "NONE — no sql.js/OPFS/wa-sqlite in product offline path; business data = HTML snapshots + IDB queue/cache stores",
+      "translations": "Primarily PHP __() on server-rendered HTML; offline sees last warmed HTML strings — no sealed locale pack in PROTECTED",
+      "gap": "UI chrome CSS/fonts not in PROTECTED critical set — soft-online path may skip SW asset caching"
+    },
+    "5_authentication": {
+      "device_activation": "online enroll → sync_meta + pending identity",
+      "pin": "PBKDF2 + AES-GCM vault in IndexedDB",
+      "unlock_after_restart": "required (sessionStorage TTL cleared) — acceptable for security",
+      "session_restore": "NOT automatic after browser restart without PIN",
+      "dual_uuid_bug": "offline-auth erp-* vs tenant-context dev_*",
+      "php_cookie": "online only — insufficient for offline"
+    },
+    "6_navigation": {
+      "every_module_after_restart_without_warm": "NO — only CERTIFIED_MODULE_RELS / warmed ops-pages + allowlist",
+      "full_warm_cap": "MAX_URLS=40 CONCURRENCY=1 — erp-offline-full-warm.js:8–10",
+      "allowlist_seed": "10 short paths ERP_OPS_PATHS_SEED pos-sw.js:363–374",
+      "wrong_html_fallback": "parent/any-admin substitution ~938–988"
+    },
+    "7_warm_process": {
+      "what_it_is": "Background fetch of Admin HTML + assets into Cache API after online visit",
+      "why_depends": "ERP UI is server-rendered PHP documents, not a local SPA package",
+      "permanent_installation": "NOT today — warm markers can clear on SW build bump; caches can be nuked; version rename orphans ops",
+      "can_become_install": "Yes architecturally if warm becomes sealed install package with migration, never-delete critical, and Offline Ready gate"
+    },
+    "8_update_strategy": {
+      "current": "skipWaiting + claim + optional migrate coexist; delete shell on install seed; no ops migrate; no rollback",
+      "enterprise_needed": "side-by-side new cache → verify hashes → atomic switch → keep N previous for rollback → never delete until verified",
+      "integrity_today": "isAcceptableProtectedBody min-bytes + stub heuristics (pos-sw.js:138–153) — not content hashes",
+      "rollback": "NONE"
+    },
+    "9_offline_integrity": {
+      "accidental_shell_delete": "YES — seedInlineOfflineShell",
+      "accidental_cache_wipe": "YES — purgeStaleOfflineAndReload / live-escape",
+      "accidental_identity_delete": "NO on SW update; YES on clear_vault logout / Clear Site Data",
+      "accidental_module_delete": "YES via nuclear purge; orphan via version bump"
+    },
+    "10_desktop_contract_comparison": {
+      "sap_gui_offline_field": "Local DB + explicit sync packages; refresh does not re-download app binary",
+      "dynamics_365_field_service": "Mobile offline profile downloads entity set; app binary separate from data",
+      "oracle_field_service": "Installed client + local data store; updates staged",
+      "odoo_pwa": "Still web/PWA — closer to RATIB but stronger when installed standalone + cache-first app shell",
+      "enterprise_pwa_standard": "App shell cache-first; never purge on recovery; update = new cache version; navigation always SW-controlled in installed window",
+      "ratib_gap": "App = live PHP pages cached opportunistically; recovery can purge; Hard Refresh leaves installed contract; warm ≠ install"
+    }
+  },
+  "issues": [
+    {
+      "severity": "Critical",
+      "id": "P3-C1",
+      "title": "Not an installed package — warm overlay on live PHP",
+      "file": "architecture (pos-sw.js + main.php + offline-bootstrap.js)",
+      "function": "N/A",
+      "line": "N/A",
+      "evidence": "Modules are full HTML documents in rateb-erp-ops-pages-v34; ensure() loads scripts by URL; warm MAX_URLS=40",
+      "impact": "Cannot guarantee every module after restart without prior warm; server-shaped UI forever",
+      "enterprise_recommendation": "Define Offline Install = immutable asset package + local data plane; warm becomes install step with Offline Ready certificate"
+    },
+    {
+      "severity": "Critical",
+      "id": "P3-C2",
+      "title": "Hard Refresh offline bypasses SW",
+      "file": "Browser; pos-sw.js has no hard-refresh handler",
+      "function": "document navigation cache:reload",
+      "line": "N/A",
+      "evidence": "Chrome Ctrl+Shift+R skips SW; navigationPreload unused (grep empty)",
+      "impact": "Server offline + Hard Refresh → interstitial; fails desktop contract",
+      "enterprise_recommendation": "Installed PWA window + soft-reload only; or custom titlebar reload that goes through SW"
+    },
+    {
+      "severity": "Critical",
+      "id": "P3-C3",
+      "title": "Install deletes offline-shell then aborts if offline",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "seedInlineOfflineShell",
+      "line": "709–722",
+      "evidence": "cache.delete(shellUrl); cache.delete(ERP_OFFLINE_SHELL); if offline return null",
+      "impact": "SW update while offline can destroy shell",
+      "enterprise_recommendation": "Additive put only; delete old after verify; offline = no-op on shell keys"
+    },
+    {
+      "severity": "Critical",
+      "id": "P3-C4",
+      "title": "Nuclear recovery destroys Offline ERP",
+      "file": "erp-shell-bootstrap.js; main.php; offline-shell.html",
+      "function": "purgeStaleOfflineAndReload / live-escape",
+      "line": "bootstrap 489–523; main.php 1220–1239",
+      "evidence": "unregister all SW + caches.delete(/^rateb-/)",
+      "impact": "Recovery path removes installation; violates 'only logout/revoke/user clear'",
+      "enterprise_recommendation": "Soft bypass navigation; never bulk-delete; debug flag only for nuclear"
+    },
+    {
+      "severity": "Critical",
+      "id": "P3-C5",
+      "title": "Boot not fetch-free — ensure() injects scripts",
+      "file": "offline-bootstrap.js",
+      "function": "loadScript / ensure",
+      "line": "120–168",
+      "evidence": "createElement('script'); s.src = url",
+      "impact": "Cache miss offline → SDK never boots",
+      "enterprise_recommendation": "Pre-bundle or Cache-only ensure; fail closed with Offline Ready=false"
+    },
+    {
+      "severity": "Critical",
+      "id": "P3-C6",
+      "title": "No local business database (SQLite/OPFS)",
+      "file": "repo offline stack",
+      "function": "N/A",
+      "line": "N/A",
+      "evidence": "No sql.js/OPFS/wa-sqlite; IDB = vault/queue/snapshots/HTML cache",
+      "impact": "Offline ERP is snapshot UI + form queue, not full transactional ERP data plane",
+      "enterprise_recommendation": "Desktop-grade requires local entity store + sync protocol; HTML cache alone is not ERP"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H1",
+      "title": "CSS/fonts/app.js not in PROTECTED critical set",
+      "file": "pos-sw.js",
+      "function": "PROTECTED_OFFLINE_RELS vs warm asset list",
+      "line": "PROTECTED 30–77; warm assets ~1748–1772",
+      "evidence": "Theme CSS/FA/Tajawal listed in warm helper but not PROTECTED_OFFLINE_RELS",
+      "impact": "Unstyled/broken chrome if warm incomplete; soft-online may skip asset SW path",
+      "enterprise_recommendation": "Promote chrome assets to PROTECTED; verify on Offline Ready"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H2",
+      "title": "Ops cache version orphan + no rollback",
+      "file": "pos-sw.js",
+      "function": "migrateActivateCaches",
+      "line": "2777–2791; ERP_OPS_PAGE_CACHE name L7",
+      "evidence": "Coexist migrated; ops-pages not; no previous-version rollback",
+      "impact": "Deploy can empty offline Admin until re-warm",
+      "enterprise_recommendation": "Migrate all critical caches; keep N versions; atomic switch"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H3",
+      "title": "skipWaiting + claim before warm complete",
+      "file": "pos-sw.js",
+      "function": "install/activate",
+      "line": "2902, 2920",
+      "evidence": "claim first; background warm after first document",
+      "impact": "Update race window",
+      "enterprise_recommendation": "Claim OK; never delete critical during race; Ready flag after verify"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H4",
+      "title": "Navigation incomplete without warm",
+      "file": "erp-offline-full-warm.js; pos-sw.js",
+      "function": "CERTIFIED_MODULE_RELS; ERP_OPS_PATHS_SEED",
+      "line": "warm 22–40; seed 363–374",
+      "evidence": "MAX_URLS 40; seed ~10 paths",
+      "impact": "Most ERP modules unavailable offline after restart if never visited/warmed",
+      "enterprise_recommendation": "Install profile downloads full module set; seed = full allowlist embedded in SW"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H5",
+      "title": "Dual device UUID",
+      "file": "offline-auth.js; erp-offline-tenant-context.js",
+      "function": "getDeviceId / deviceId",
+      "line": "auth ~285–297; tenant ~22–35",
+      "evidence": "erp- vs dev_ prefixes",
+      "impact": "Activation unlock failures after restart",
+      "enterprise_recommendation": "Single canonical device id"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H6",
+      "title": "Integrity = min bytes, not hashes",
+      "file": "pos-sw.js",
+      "function": "isAcceptableProtectedBody",
+      "line": "138–153",
+      "evidence": "length + stub string heuristics",
+      "impact": "Corrupt/partial assets can pass",
+      "enterprise_recommendation": "SHA-256 manifest in SW build; verify before activate switch"
+    },
+    {
+      "severity": "High",
+      "id": "P3-H7",
+      "title": "PWA install optional — not the required entry",
+      "file": "manifest.webmanifest; erp-pwa-install.js",
+      "function": "beforeinstallprompt",
+      "line": "manifest display standalone; install.js 57–60",
+      "evidence": "Users stay in normal browser tab; Hard Refresh available",
+      "impact": "Desktop contract optional, not enforced",
+      "enterprise_recommendation": "Field ops require installed standalone as supported mode"
+    },
+    {
+      "severity": "Medium",
+      "id": "P3-M1",
+      "title": "PIN unlock required after every browser restart",
+      "file": "offline-auth.js",
+      "function": "sessionStorage unlock TTL",
+      "line": "~307–388",
+      "evidence": "Unlock in sessionStorage only",
+      "impact": "Security OK; UX differs from always-on desktop session",
+      "enterprise_recommendation": "Keep PIN; document; optional biometric + longer policy for kiosk"
+    },
+    {
+      "severity": "Medium",
+      "id": "P3-M2",
+      "title": "Wrong HTML fallback on cache miss",
+      "file": "pos-sw.js",
+      "function": "erpOpsPageFallback",
+      "line": "~938–988",
+      "evidence": "parent list / any admin",
+      "impact": "Misleading offline UX",
+      "enterprise_recommendation": "Explicit uncached page only"
+    },
+    {
+      "severity": "Medium",
+      "id": "P3-M3",
+      "title": "No navigation.preload",
+      "file": "pos-sw.js",
+      "function": "N/A",
+      "line": "N/A",
+      "evidence": "grep navigationPreload empty",
+      "impact": "Missed parallelization; not root of Hard Refresh issue",
+      "enterprise_recommendation": "Optional optimization after cache-first shell"
+    },
+    {
+      "severity": "Medium",
+      "id": "P3-M4",
+      "title": "Translations not sealed",
+      "file": "PHP views + warmed HTML",
+      "function": "__()",
+      "line": "N/A",
+      "evidence": "Strings baked into cached HTML; no offline locale pack in PROTECTED",
+      "impact": "Locale switch offline limited",
+      "enterprise_recommendation": "Ship locale JSON in install package"
+    },
+    {
+      "severity": "Low",
+      "id": "P3-L1",
+      "title": "No controllerchange reload — positive",
+      "file": "main.php",
+      "function": "SW register",
+      "line": "~754",
+      "evidence": "Explicitly avoided",
+      "impact": "Avoids reload storms",
+      "enterprise_recommendation": "Keep"
+    },
+    {
+      "severity": "Low",
+      "id": "P3-L2",
+      "title": "No indexedDB.deleteDatabase in product",
+      "file": "repo",
+      "function": "N/A",
+      "line": "none",
+      "evidence": "P2 audit",
+      "impact": "Identity survives SW update",
+      "enterprise_recommendation": "Keep; never add silent DB wipe"
+    }
+  ],
+  "what_works_today": [
+    "Device enroll + PIN vault in IndexedDB across reboot",
+    "Soft F5 offline when caches warm",
+    "PWA manifest standalone available",
+    "Protected OA module list defined",
+    "Logout keep_vault preserves credentials",
+    "No controllerchange forced reload"
+  ],
+  "certification_gate_definition_recommended": {
+    "offline_ready_true_iff": [
+      "device status active in sync_meta",
+      "auth_vault sealed with PIN",
+      "all PROTECTED_OFFLINE_RELS + chrome CSS/fonts verified in Cache",
+      "full allowlist embedded and cached",
+      "certified module HTML set present with hashes",
+      "SW controlling client",
+      "nuclear purge paths disabled in production"
+    ]
+  },
+  "no_fixes_applied": true,
+  "related_prior_audit": "tools/boot-bench/reports/PERF-P2-OFFLINE-PERSISTENCE-AUDIT.json"
+}
