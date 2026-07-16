@@ -1,0 +1,26 @@
+REAL USER STARTUP TIMELINE (ms from Login click)
+============================================================
+00000000  marker | LOGIN_CLICK
+00000130  request | POST | /rateb-erp/public/login
+00000424  response | HTTP 302 | /rateb-erp/public/login
+00000424  request | GET | /rateb-erp/public/admin
+00000515  response | HTTP 301 | /rateb-erp/public/admin
+00000515  request | GET | /rateb-erp/public/admin/
+00001000  response | HTTP 200 | /rateb-erp/public/admin/
+00001009  navigate | /rateb-erp/public/admin/ | https://rateb.sa/rateb-erp/public/admin/
+00001222  request | GET | /rateb-erp/public/admin/api/dashboard-charts
+00001241  marker | AFTER_LOGIN_NAV | https://rateb.sa/rateb-erp/public/admin/
+00001248  marker | LOGIN_RESULT
+00001453  response | HTTP 200 | /rateb-erp/public/admin/api/dashboard-charts
+00003088  marker | DASHBOARD_USABLE
+00003094  marker | FINAL_STATE
+
+TOP GAPS (>=200ms)
+  +485ms  after request//rateb-erp/public/admin/ → response//rateb-erp/public/admin/
+  +294ms  after request//rateb-erp/public/login → response//rateb-erp/public/login
+  +269ms  after poll_usable/ → poll_usable/
+  +265ms  after poll_usable/ → poll_usable/
+  +263ms  after poll_usable/ → poll_usable/
+  +258ms  after poll_usable/ → poll_usable/
+  +254ms  after poll_usable/ → poll_usable/
+  +249ms  after response//rateb-erp/public/assets/js/charts.js?v=20260714-force-sw-v52 → poll_usable/

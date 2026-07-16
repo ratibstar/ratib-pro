@@ -1,0 +1,43 @@
+{
+  "phase": "PERF-P0.3",
+  "scope_implemented": "A_only",
+  "commits": ["5ed04318", "dcde1ffe"],
+  "measured_at": "2026-07-15T23:33:13Z",
+  "before": {
+    "login_to_usable_ms": 4629,
+    "source": "real-user-startup-1784045546795.json (usableAtMs 4621) / P0.2 corpus 4629",
+    "dashboard_usable_warm_ms": 1870,
+    "source_warm": "phase-post-ag-nav-1784058767886.json",
+    "company_find_x": 99,
+    "show_tables_cols_x": 27,
+    "oa_bootstrap_missing": true,
+    "probe_before_usable": true,
+    "css_cache_warm_before_usable": true,
+    "enterprise_score": 38
+  },
+  "after_A": {
+    "login_to_usable_ms": 3088,
+    "source": "real-user-startup-1784158393296.json",
+    "xhr_before_usable": ["dashboard-charts"],
+    "probe_before_usable": false,
+    "css_cache_warm_before_usable": false,
+    "first_contentful_paint_ms": 1064,
+    "admin_ttfb_ms": 485,
+    "login_post_ms": 294,
+    "company_find_x": 99,
+    "show_tables_cols_x": 27,
+    "oa_bootstrap_missing": "unchanged (not in A)",
+    "sql_saved": 0,
+    "memory_saved": "not_measured",
+    "ajax_deferred_before_usable": ["connectivity-probe", "css_CacheAPI_warm"],
+    "enterprise_score_estimate": 44
+  },
+  "delta": {
+    "login_usable_ms_saved": 1541,
+    "sql_saved": 0,
+    "memory_saved": null,
+    "ajax_before_usable_removed": 1
+  },
+  "not_implemented_pending_approval": ["B_company_memo", "C_unused", "D_schema_cache", "E_oa_bootstrap", "F_offline_thin_html"],
+  "stop": "P0.3 — do not continue to P1"
+}
