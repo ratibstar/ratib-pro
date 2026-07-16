@@ -1,0 +1,149 @@
+{
+  "phase": "P0.3-D",
+  "at": "2026-07-16T00:46:39.853Z",
+  "warmMsg": {
+    "ok": false,
+    "deferred": true,
+    "reason": "awaiting_first_document",
+    "build": "20260716-perf-p03c-oa-shell-v74",
+    "at": 1784162787407
+  },
+  "cacheAudit": {
+    "ops_keys": 22,
+    "hits": {
+      "dashboard": {
+        "hit": true,
+        "len": 83768,
+        "uncached": true
+      },
+      "hr": {
+        "hit": false,
+        "len": 0,
+        "uncached": false
+      },
+      "inventory": {
+        "hit": false,
+        "len": 0,
+        "uncached": false
+      }
+    }
+  },
+  "opens": [
+    {
+      "id": "dashboard",
+      "pass": 1,
+      "wall_ms": 85,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "bodyLen": 968,
+      "htmlLen": 84072,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "ttfb": 10,
+      "responseEnd": 13.799999982118607,
+      "domInteractive": 73.19999998807907,
+      "dcl": 77.19999998807907,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 87150,
+      "onLine": false
+    },
+    {
+      "id": "dashboard",
+      "pass": 2,
+      "wall_ms": 74,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "bodyLen": 968,
+      "htmlLen": 84072,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "ttfb": 6.200000017881393,
+      "responseEnd": 8.300000011920929,
+      "domInteractive": 61.70000001788139,
+      "dcl": 71,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 87150,
+      "onLine": false
+    },
+    {
+      "id": "hr",
+      "pass": 1,
+      "wall_ms": 55,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "bodyLen": 239,
+      "htmlLen": 1048,
+      "uncached": true,
+      "hasSidebar": false,
+      "title": "RATEB ERP — الصفحة غير محفوظة",
+      "ttfb": 37.60000002384186,
+      "responseEnd": 40.60000002384186,
+      "domInteractive": 46.30000001192093,
+      "dcl": 46.400000005960464,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 1244,
+      "onLine": false
+    },
+    {
+      "id": "hr",
+      "pass": 2,
+      "wall_ms": 46,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "bodyLen": 239,
+      "htmlLen": 1048,
+      "uncached": true,
+      "hasSidebar": false,
+      "title": "RATEB ERP — الصفحة غير محفوظة",
+      "ttfb": 30.30000001192093,
+      "responseEnd": 32.599999994039536,
+      "domInteractive": 38.5,
+      "dcl": 38.599999994039536,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 1244,
+      "onLine": false
+    },
+    {
+      "id": "inventory",
+      "pass": 1,
+      "wall_ms": 55,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "bodyLen": 239,
+      "htmlLen": 1048,
+      "uncached": true,
+      "hasSidebar": false,
+      "title": "RATEB ERP — الصفحة غير محفوظة",
+      "ttfb": 43.900000005960464,
+      "responseEnd": 45.20000001788139,
+      "domInteractive": 48.70000001788139,
+      "dcl": 48.70000001788139,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 1244,
+      "onLine": false
+    },
+    {
+      "id": "inventory",
+      "pass": 2,
+      "wall_ms": 38,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "bodyLen": 239,
+      "htmlLen": 1048,
+      "uncached": true,
+      "hasSidebar": false,
+      "title": "RATEB ERP — الصفحة غير محفوظة",
+      "ttfb": 29.19999998807907,
+      "responseEnd": 30.599999994039536,
+      "domInteractive": 34.400000005960464,
+      "dcl": 34.5,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 1244,
+      "onLine": false
+    }
+  ],
+  "swBuild": "err",
+  "elapsed_ms": 18716
+}

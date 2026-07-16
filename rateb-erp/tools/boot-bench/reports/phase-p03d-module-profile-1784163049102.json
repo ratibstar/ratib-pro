@@ -1,0 +1,1241 @@
+{
+  "phase": "P0.3-D",
+  "at": "2026-07-16T00:53:05.464Z",
+  "warmMsg": {
+    "ok": true,
+    "protected": {
+      "ok": true,
+      "missing": [],
+      "inventory": [
+        {
+          "rel": "offline-shell.html",
+          "ok": true,
+          "len": 10504
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js",
+          "ok": true,
+          "len": 8902
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js",
+          "ok": true,
+          "len": 17584
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js",
+          "ok": true,
+          "len": 388640
+        },
+        {
+          "rel": "assets/offline/rateb-offline.min.js",
+          "ok": true,
+          "len": 388640
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js",
+          "ok": true,
+          "len": 22556
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js",
+          "ok": true,
+          "len": 4038
+        },
+        {
+          "rel": "assets/offline/erp-shell-bootstrap.js",
+          "ok": true,
+          "len": 47134
+        },
+        {
+          "rel": "assets/offline/erp-offline-nav-guard.js",
+          "ok": true,
+          "len": 45562
+        },
+        {
+          "rel": "assets/offline/erp-offline-full-warm.js",
+          "ok": true,
+          "len": 42364
+        },
+        {
+          "rel": "assets/offline/ops-page-allowlist.json",
+          "ok": true,
+          "len": 11152
+        },
+        {
+          "rel": "assets/offline/modules/offline-storage.js",
+          "ok": true,
+          "len": 8007
+        },
+        {
+          "rel": "assets/offline/modules/offline-auth.js",
+          "ok": true,
+          "len": 52939
+        },
+        {
+          "rel": "assets/offline/modules/offline-rbac.js",
+          "ok": true,
+          "len": 17287
+        },
+        {
+          "rel": "assets/offline/modules/offline-core.js",
+          "ok": true,
+          "len": 1839
+        },
+        {
+          "rel": "assets/offline/modules/offline-crypto.js",
+          "ok": true,
+          "len": 44944
+        },
+        {
+          "rel": "assets/offline/modules/offline-sdk.js",
+          "ok": true,
+          "len": 28140
+        },
+        {
+          "rel": "assets/offline/modules/offline-queue.js",
+          "ok": true,
+          "len": 14488
+        },
+        {
+          "rel": "assets/offline/modules/offline-replay.js",
+          "ok": true,
+          "len": 3726
+        },
+        {
+          "rel": "assets/offline/modules/offline-sync.js",
+          "ok": true,
+          "len": 5306
+        },
+        {
+          "rel": "assets/offline/modules/offline-network.js",
+          "ok": true,
+          "len": 6539
+        },
+        {
+          "rel": "assets/offline/modules/offline-shell.js",
+          "ok": true,
+          "len": 32543
+        },
+        {
+          "rel": "assets/offline/modules/offline-forms.js",
+          "ok": true,
+          "len": 8382
+        },
+        {
+          "rel": "assets/offline/modules/offline-ops-forms.js",
+          "ok": true,
+          "len": 57278
+        },
+        {
+          "rel": "assets/offline/modules/offline-files.js",
+          "ok": true,
+          "len": 7305
+        },
+        {
+          "rel": "assets/offline/modules/offline-master-data.js",
+          "ok": true,
+          "len": 17956
+        },
+        {
+          "rel": "assets/offline/modules/offline-migrations.js",
+          "ok": true,
+          "len": 3964
+        },
+        {
+          "rel": "assets/offline/modules/offline-monitor.js",
+          "ok": true,
+          "len": 6901
+        },
+        {
+          "rel": "assets/offline/modules/offline-diagnostics.js",
+          "ok": true,
+          "len": 6905
+        },
+        {
+          "rel": "assets/offline/modules/offline-print.js",
+          "ok": true,
+          "len": 102
+        },
+        {
+          "rel": "assets/offline/modules/offline-pos.js",
+          "ok": true,
+          "len": 1421
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-hr.js",
+          "ok": true,
+          "len": 13501
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-inventory.js",
+          "ok": true,
+          "len": 5345
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-accounting.js",
+          "ok": true,
+          "len": 9198
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-procurement.js",
+          "ok": true,
+          "len": 6386
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-crm.js",
+          "ok": true,
+          "len": 7260
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+          "ok": true,
+          "len": 8841
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+          "ok": true,
+          "len": 3259
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-payroll.js",
+          "ok": true,
+          "len": 7423
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-assets.js",
+          "ok": true,
+          "len": 7638
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-projects.js",
+          "ok": true,
+          "len": 7217
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+          "ok": true,
+          "len": 8201
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-quality.js",
+          "ok": true,
+          "len": 7560
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-eproc.js",
+          "ok": true,
+          "len": 8606
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-approval.js",
+          "ok": true,
+          "len": 6003
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-bi.js",
+          "ok": true,
+          "len": 6593
+        }
+      ],
+      "cache": "rateb-erp-coexist-v34",
+      "build": "20260716-perf-p03d-ops-html-v75",
+      "at": 1784163165836,
+      "cached": [
+        {
+          "rel": "offline-shell.html",
+          "ok": true,
+          "len": 10504,
+          "url": "https://rateb.sa/rateb-erp/public/offline-shell.html"
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js",
+          "ok": true,
+          "len": 8902,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-tenant-context.js"
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js",
+          "ok": true,
+          "len": 17584,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.min.js",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.min.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js",
+          "ok": true,
+          "len": 22556,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-auth.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js",
+          "ok": true,
+          "len": 4038,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-rbac.js"
+        },
+        {
+          "rel": "assets/offline/erp-shell-bootstrap.js",
+          "ok": true,
+          "len": 47134,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-shell-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-nav-guard.js",
+          "ok": true,
+          "len": 45562,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-full-warm.js",
+          "ok": true,
+          "len": 42364,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-full-warm.js"
+        },
+        {
+          "rel": "assets/offline/ops-page-allowlist.json",
+          "ok": true,
+          "len": 11152,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/ops-page-allowlist.json"
+        },
+        {
+          "rel": "assets/offline/modules/offline-storage.js",
+          "ok": true,
+          "len": 8007,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-storage.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-auth.js",
+          "ok": true,
+          "len": 52939,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-auth.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-rbac.js",
+          "ok": true,
+          "len": 17287,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-rbac.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-core.js",
+          "ok": true,
+          "len": 1839,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-core.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-crypto.js",
+          "ok": true,
+          "len": 44944,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-crypto.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-sdk.js",
+          "ok": true,
+          "len": 28140,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-sdk.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-queue.js",
+          "ok": true,
+          "len": 14488,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-queue.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-replay.js",
+          "ok": true,
+          "len": 3726,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-replay.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-sync.js",
+          "ok": true,
+          "len": 5306,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-sync.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-network.js",
+          "ok": true,
+          "len": 6539,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-network.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-shell.js",
+          "ok": true,
+          "len": 32543,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-shell.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-forms.js",
+          "ok": true,
+          "len": 8382,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-forms.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-ops-forms.js",
+          "ok": true,
+          "len": 57278,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-ops-forms.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-files.js",
+          "ok": true,
+          "len": 7305,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-files.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-master-data.js",
+          "ok": true,
+          "len": 17956,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-master-data.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-migrations.js",
+          "ok": true,
+          "len": 3964,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-migrations.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-monitor.js",
+          "ok": true,
+          "len": 6901,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-monitor.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-diagnostics.js",
+          "ok": true,
+          "len": 6905,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-diagnostics.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-print.js",
+          "ok": true,
+          "len": 102,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-print.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-pos.js",
+          "ok": true,
+          "len": 1421,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-pos.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-hr.js",
+          "ok": true,
+          "len": 13501,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-hr.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-inventory.js",
+          "ok": true,
+          "len": 5345,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-inventory.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-accounting.js",
+          "ok": true,
+          "len": 9198,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-accounting.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-procurement.js",
+          "ok": true,
+          "len": 6386,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-procurement.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-crm.js",
+          "ok": true,
+          "len": 7260,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-crm.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+          "ok": true,
+          "len": 8841,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-recruitment.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+          "ok": true,
+          "len": 3259,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-warehouse.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-payroll.js",
+          "ok": true,
+          "len": 7423,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-payroll.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-assets.js",
+          "ok": true,
+          "len": 7638,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-assets.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-projects.js",
+          "ok": true,
+          "len": 7217,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-projects.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+          "ok": true,
+          "len": 8201,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-manufacturing.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-quality.js",
+          "ok": true,
+          "len": 7560,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-quality.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-eproc.js",
+          "ok": true,
+          "len": 8606,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-eproc.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-approval.js",
+          "ok": true,
+          "len": 6003,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-approval.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-bi.js",
+          "ok": true,
+          "len": 6593,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-bi.js"
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 17584,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js?v=oid-20260713-lean",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 8902,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-tenant-context.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 22556,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-auth.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 4038,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-rbac.js"
+        }
+      ]
+    },
+    "shell": {
+      "ok": true,
+      "missing": [],
+      "inventory": [
+        {
+          "rel": "offline-shell.html",
+          "ok": true,
+          "len": 10504
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js",
+          "ok": true,
+          "len": 8902
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js",
+          "ok": true,
+          "len": 17584
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js",
+          "ok": true,
+          "len": 388640
+        },
+        {
+          "rel": "assets/offline/rateb-offline.min.js",
+          "ok": true,
+          "len": 388640
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js",
+          "ok": true,
+          "len": 22556
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js",
+          "ok": true,
+          "len": 4038
+        },
+        {
+          "rel": "assets/offline/erp-shell-bootstrap.js",
+          "ok": true,
+          "len": 47134
+        },
+        {
+          "rel": "assets/offline/erp-offline-nav-guard.js",
+          "ok": true,
+          "len": 45562
+        },
+        {
+          "rel": "assets/offline/erp-offline-full-warm.js",
+          "ok": true,
+          "len": 42364
+        },
+        {
+          "rel": "assets/offline/ops-page-allowlist.json",
+          "ok": true,
+          "len": 11152
+        },
+        {
+          "rel": "assets/offline/modules/offline-storage.js",
+          "ok": true,
+          "len": 8007
+        },
+        {
+          "rel": "assets/offline/modules/offline-auth.js",
+          "ok": true,
+          "len": 52939
+        },
+        {
+          "rel": "assets/offline/modules/offline-rbac.js",
+          "ok": true,
+          "len": 17287
+        },
+        {
+          "rel": "assets/offline/modules/offline-core.js",
+          "ok": true,
+          "len": 1839
+        },
+        {
+          "rel": "assets/offline/modules/offline-crypto.js",
+          "ok": true,
+          "len": 44944
+        },
+        {
+          "rel": "assets/offline/modules/offline-sdk.js",
+          "ok": true,
+          "len": 28140
+        },
+        {
+          "rel": "assets/offline/modules/offline-queue.js",
+          "ok": true,
+          "len": 14488
+        },
+        {
+          "rel": "assets/offline/modules/offline-replay.js",
+          "ok": true,
+          "len": 3726
+        },
+        {
+          "rel": "assets/offline/modules/offline-sync.js",
+          "ok": true,
+          "len": 5306
+        },
+        {
+          "rel": "assets/offline/modules/offline-network.js",
+          "ok": true,
+          "len": 6539
+        },
+        {
+          "rel": "assets/offline/modules/offline-shell.js",
+          "ok": true,
+          "len": 32543
+        },
+        {
+          "rel": "assets/offline/modules/offline-forms.js",
+          "ok": true,
+          "len": 8382
+        },
+        {
+          "rel": "assets/offline/modules/offline-ops-forms.js",
+          "ok": true,
+          "len": 57278
+        },
+        {
+          "rel": "assets/offline/modules/offline-files.js",
+          "ok": true,
+          "len": 7305
+        },
+        {
+          "rel": "assets/offline/modules/offline-master-data.js",
+          "ok": true,
+          "len": 17956
+        },
+        {
+          "rel": "assets/offline/modules/offline-migrations.js",
+          "ok": true,
+          "len": 3964
+        },
+        {
+          "rel": "assets/offline/modules/offline-monitor.js",
+          "ok": true,
+          "len": 6901
+        },
+        {
+          "rel": "assets/offline/modules/offline-diagnostics.js",
+          "ok": true,
+          "len": 6905
+        },
+        {
+          "rel": "assets/offline/modules/offline-print.js",
+          "ok": true,
+          "len": 102
+        },
+        {
+          "rel": "assets/offline/modules/offline-pos.js",
+          "ok": true,
+          "len": 1421
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-hr.js",
+          "ok": true,
+          "len": 13501
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-inventory.js",
+          "ok": true,
+          "len": 5345
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-accounting.js",
+          "ok": true,
+          "len": 9198
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-procurement.js",
+          "ok": true,
+          "len": 6386
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-crm.js",
+          "ok": true,
+          "len": 7260
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+          "ok": true,
+          "len": 8841
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+          "ok": true,
+          "len": 3259
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-payroll.js",
+          "ok": true,
+          "len": 7423
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-assets.js",
+          "ok": true,
+          "len": 7638
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-projects.js",
+          "ok": true,
+          "len": 7217
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+          "ok": true,
+          "len": 8201
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-quality.js",
+          "ok": true,
+          "len": 7560
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-eproc.js",
+          "ok": true,
+          "len": 8606
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-approval.js",
+          "ok": true,
+          "len": 6003
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-bi.js",
+          "ok": true,
+          "len": 6593
+        }
+      ],
+      "cache": "rateb-erp-coexist-v34",
+      "build": "20260716-perf-p03d-ops-html-v75",
+      "at": 1784163172076,
+      "cached": [
+        {
+          "rel": "offline-shell.html",
+          "ok": true,
+          "len": 10504,
+          "url": "https://rateb.sa/rateb-erp/public/offline-shell.html"
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js",
+          "ok": true,
+          "len": 8902,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-tenant-context.js"
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js",
+          "ok": true,
+          "len": 17584,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.min.js",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.min.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js",
+          "ok": true,
+          "len": 22556,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-auth.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js",
+          "ok": true,
+          "len": 4038,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-rbac.js"
+        },
+        {
+          "rel": "assets/offline/erp-shell-bootstrap.js",
+          "ok": true,
+          "len": 47134,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-shell-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-nav-guard.js",
+          "ok": true,
+          "len": 45562,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-nav-guard.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-full-warm.js",
+          "ok": true,
+          "len": 42364,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-full-warm.js"
+        },
+        {
+          "rel": "assets/offline/ops-page-allowlist.json",
+          "ok": true,
+          "len": 11152,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/ops-page-allowlist.json"
+        },
+        {
+          "rel": "assets/offline/modules/offline-storage.js",
+          "ok": true,
+          "len": 8007,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-storage.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-auth.js",
+          "ok": true,
+          "len": 52939,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-auth.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-rbac.js",
+          "ok": true,
+          "len": 17287,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-rbac.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-core.js",
+          "ok": true,
+          "len": 1839,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-core.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-crypto.js",
+          "ok": true,
+          "len": 44944,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-crypto.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-sdk.js",
+          "ok": true,
+          "len": 28140,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-sdk.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-queue.js",
+          "ok": true,
+          "len": 14488,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-queue.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-replay.js",
+          "ok": true,
+          "len": 3726,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-replay.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-sync.js",
+          "ok": true,
+          "len": 5306,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-sync.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-network.js",
+          "ok": true,
+          "len": 6539,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-network.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-shell.js",
+          "ok": true,
+          "len": 32543,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-shell.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-forms.js",
+          "ok": true,
+          "len": 8382,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-forms.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-ops-forms.js",
+          "ok": true,
+          "len": 57278,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-ops-forms.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-files.js",
+          "ok": true,
+          "len": 7305,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-files.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-master-data.js",
+          "ok": true,
+          "len": 17956,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-master-data.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-migrations.js",
+          "ok": true,
+          "len": 3964,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-migrations.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-monitor.js",
+          "ok": true,
+          "len": 6901,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-monitor.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-diagnostics.js",
+          "ok": true,
+          "len": 6905,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-diagnostics.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-print.js",
+          "ok": true,
+          "len": 102,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-print.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-pos.js",
+          "ok": true,
+          "len": 1421,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-pos.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-hr.js",
+          "ok": true,
+          "len": 13501,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-hr.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-inventory.js",
+          "ok": true,
+          "len": 5345,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-inventory.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-accounting.js",
+          "ok": true,
+          "len": 9198,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-accounting.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-procurement.js",
+          "ok": true,
+          "len": 6386,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-procurement.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-crm.js",
+          "ok": true,
+          "len": 7260,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-crm.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-recruitment.js",
+          "ok": true,
+          "len": 8841,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-recruitment.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-warehouse.js",
+          "ok": true,
+          "len": 3259,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-warehouse.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-payroll.js",
+          "ok": true,
+          "len": 7423,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-payroll.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-assets.js",
+          "ok": true,
+          "len": 7638,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-assets.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-projects.js",
+          "ok": true,
+          "len": 7217,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-projects.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-manufacturing.js",
+          "ok": true,
+          "len": 8201,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-manufacturing.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-quality.js",
+          "ok": true,
+          "len": 7560,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-quality.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-eproc.js",
+          "ok": true,
+          "len": 8606,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-eproc.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-approval.js",
+          "ok": true,
+          "len": 6003,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-approval.js"
+        },
+        {
+          "rel": "assets/offline/modules/offline-adapter-bi.js",
+          "ok": true,
+          "len": 6593,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/modules/offline-adapter-bi.js"
+        },
+        {
+          "rel": "assets/offline/offline-bootstrap.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 17584,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/offline-bootstrap.js"
+        },
+        {
+          "rel": "assets/offline/rateb-offline.js?v=oid-20260713-lean",
+          "ok": true,
+          "len": 388640,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/rateb-offline.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-tenant-context.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 8902,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-tenant-context.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-auth.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 22556,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-auth.js"
+        },
+        {
+          "rel": "assets/offline/erp-offline-shell-rbac.js?v=20260713-offline-nav-guard",
+          "ok": true,
+          "len": 4038,
+          "url": "https://rateb.sa/rateb-erp/public/assets/offline/erp-offline-shell-rbac.js"
+        }
+      ]
+    },
+    "build": "20260716-perf-p03d-ops-html-v75",
+    "at": 1784163184067
+  },
+  "cacheAudit": {
+    "ops_keys": 164,
+    "hits": {
+      "dashboard": {
+        "hit": true,
+        "len": 84584,
+        "uncached": true
+      },
+      "hr": {
+        "hit": true,
+        "len": 82993,
+        "uncached": true
+      },
+      "inventory": {
+        "hit": true,
+        "len": 96835,
+        "uncached": true
+      }
+    }
+  },
+  "opens": [
+    {
+      "id": "dashboard",
+      "pass": 1,
+      "wall_ms": 168,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "bodyLen": 968,
+      "htmlLen": 85009,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "ttfb": 8.699999988079071,
+      "responseEnd": 11.899999976158142,
+      "domInteractive": 82.5,
+      "dcl": 163,
+      "fcp": 100,
+      "transferSize": 0,
+      "decodedBodySize": 87966,
+      "onLine": false
+    },
+    {
+      "id": "dashboard",
+      "pass": 2,
+      "wall_ms": 163,
+      "href": "https://rateb.sa/rateb-erp/public/admin/",
+      "bodyLen": 968,
+      "htmlLen": 85009,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "لوحة التحكم | نظام رتب ERP",
+      "ttfb": 6.5,
+      "responseEnd": 11.400000005960464,
+      "domInteractive": 111.5,
+      "dcl": 160.5,
+      "fcp": 120,
+      "transferSize": 0,
+      "decodedBodySize": 87966,
+      "onLine": false
+    },
+    {
+      "id": "hr",
+      "pass": 1,
+      "wall_ms": 164,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "bodyLen": 1123,
+      "htmlLen": 81760,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "الحضور والانصراف | نظام رتب ERP",
+      "ttfb": 6.0999999940395355,
+      "responseEnd": 8.799999982118607,
+      "domInteractive": 68.59999999403954,
+      "dcl": 161.2999999821186,
+      "fcp": 0,
+      "transferSize": 0,
+      "decodedBodySize": 86133,
+      "onLine": false
+    },
+    {
+      "id": "hr",
+      "pass": 2,
+      "wall_ms": 166,
+      "href": "https://rateb.sa/rateb-erp/public/admin/hr/attendance",
+      "bodyLen": 1123,
+      "htmlLen": 81760,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "الحضور والانصراف | نظام رتب ERP",
+      "ttfb": 4.9000000059604645,
+      "responseEnd": 7.5,
+      "domInteractive": 68.40000000596046,
+      "dcl": 163.5,
+      "fcp": 116,
+      "transferSize": 0,
+      "decodedBodySize": 86133,
+      "onLine": false
+    },
+    {
+      "id": "inventory",
+      "pass": 1,
+      "wall_ms": 267,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "bodyLen": 1052,
+      "htmlLen": 95583,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "المخزون | نظام رتب ERP",
+      "ttfb": 3.0999999940395355,
+      "responseEnd": 5.699999988079071,
+      "domInteractive": 72.2999999821186,
+      "dcl": 261.2999999821186,
+      "fcp": 88,
+      "transferSize": 0,
+      "decodedBodySize": 100288,
+      "onLine": false
+    },
+    {
+      "id": "inventory",
+      "pass": 2,
+      "wall_ms": 176,
+      "href": "https://rateb.sa/rateb-erp/public/admin/ops/inventory",
+      "bodyLen": 1052,
+      "htmlLen": 95583,
+      "uncached": false,
+      "hasSidebar": true,
+      "title": "المخزون | نظام رتب ERP",
+      "ttfb": 5.799999982118607,
+      "responseEnd": 7.5999999940395355,
+      "domInteractive": 92.7999999821186,
+      "dcl": 172.89999997615814,
+      "fcp": 100,
+      "transferSize": 0,
+      "decodedBodySize": 100288,
+      "onLine": false
+    }
+  ],
+  "swBuild": "err",
+  "elapsed_ms": 136375
+}

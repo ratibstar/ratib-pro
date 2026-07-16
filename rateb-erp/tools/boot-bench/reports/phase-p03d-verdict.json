@@ -1,0 +1,49 @@
+{
+  "phase": "PERF-P0.3-D",
+  "commit": "01a7fe4a",
+  "sw_build": "20260716-perf-p03d-ops-html-v75",
+  "root_cause": {
+    "primary": "Certified module HTML never entered ERP_OPS_PAGE_CACHE — WARM_ERP_OFFLINE_SHELL deferred on awaiting_first_document and leanOps was delayed 4s + 350ms gaps; offline miss → uncachedAdminBrowseResponse (~1KB)",
+    "file": "rateb-erp/public/pos-sw.js",
+    "functions": ["message WARM_ERP_OFFLINE_SHELL", "warmErpOfflineShell", "warmLeanOpsPages", "uncachedAdminBrowseResponse"],
+    "emit_thin": {
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "uncachedAdminBrowseResponse",
+      "line": "~1466"
+    },
+    "why_850ms": "OC open_ms 842–855ms measured wait for usable ERP UI on thin placeholder (bodyLen≈239, no sidebar). True Navigation Timing for thin HTML was ~50–188ms; the wall was miss→placeholder with no recovery, not DOM cost of 1KB."
+  },
+  "timeline": [
+    "Click module link",
+    "SW navigate (offline) → neverFailNavigate",
+    "erpOpsPageFallback MISS (no snapshot)",
+    "matchAnyCachedAdminPage MISS",
+    "uncachedAdminBrowseResponse (~1KB)",
+    "Harness/user waits for ERP chrome that never appears → ~850ms perceived"
+  ],
+  "before": {
+    "hr_html": 1244,
+    "inventory_html": 1244,
+    "hr_sidebar": false,
+    "open_ms_oc": [842, 855],
+    "hr_wall_domcontentloaded_ms": 55,
+    "usable_erp_ui": false
+  },
+  "after": {
+    "hr_html": 86133,
+    "inventory_html": 100288,
+    "hr_sidebar": true,
+    "hr_open_ms": [164, 166],
+    "inventory_open_ms": [267, 176],
+    "avg_module_open_ms": 193,
+    "dashboard_open_ms": [168, 163],
+    "usable_erp_ui": true,
+    "ops_keys": 164
+  },
+  "ms_saved": {
+    "vs_oc_850": 657,
+    "note": "850→~193 avg module open; recovered full ERP documents"
+  },
+  "enterprise_score_estimate": 62,
+  "stop": "P0.3-D complete — no P1"
+}

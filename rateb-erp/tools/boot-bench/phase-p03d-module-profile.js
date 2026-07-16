@@ -14,6 +14,7 @@ const BASE = process.env.RATEB_ERP_URL || 'https://rateb.sa/rateb-erp/public';
 const KEY = process.env.RATEB_SSH_KEY || 'C:\\Users\\Public\\ratib_da_deploy_runtime';
 const HOST = process.env.RATEB_SSH_HOST || 'admin@167.233.71.107';
 const OUT_DIR = path.join(__dirname, 'reports');
+const EXPECT_BUILD = '20260716-perf-p03d-ops-html-v75';
 const MODULES = [
   { id: 'dashboard', path: '/admin/' },
   { id: 'hr', path: '/admin/hr/attendance' },
@@ -57,6 +58,18 @@ function ssh(cmd) {
     secure: true,
   }]);
   const page = context.pages()[0] || await context.newPage();
+
+  // Wait for deployed SW build
+  for (let i = 0; i < 30; i++) {
+    const text = await page.evaluate(async (url) => {
+      try {
+        const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store' });
+        return await r.text();
+      } catch (e) { return ''; }
+    }, BASE + '/pos-sw.js');
+    if (text.indexOf(EXPECT_BUILD) !== -1) break;
+    await page.waitForTimeout(3000);
+  }
 
   // Online warm: admin + force shell warm message
   await page.goto(BASE + '/admin/', { waitUntil: 'domcontentloaded', timeout: 120000 });
