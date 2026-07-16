@@ -1,0 +1,45 @@
+{
+  "phase": 14,
+  "task": "accounting_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "Mature online GL module (AccountingService); Offline V2 Accounting must own journals/COA only and never inventory state",
+  "primary_evidence_roots": [
+    "app/services/AccountingService.php",
+    "app/services/AccountingDomainServices.php",
+    "app/services/AccountingEnterpriseServices.php",
+    "app/services/AccountingReportsService.php",
+    "app/services/AccountingDashboardService.php",
+    "app/controllers/Company/AccountingControllers.php",
+    "app/controllers/Company/AccountingPlatformControllers.php",
+    "modules/pos/app/Services/Bridge/PosAccountingBridgeService.php",
+    "migrations/004_accounting_access.sql",
+    "migrations/036_accounting_phase2.sql",
+    "migrations/182_accounting_platform_enterprise.sql",
+    "routes/modules/ops.php"
+  ],
+  "core_capabilities": [
+    "chart_of_accounts",
+    "journal_entries",
+    "createPostedEntry",
+    "fiscal_periods",
+    "cash_vouchers",
+    "cost_centers",
+    "trial_balance",
+    "balance_sheet",
+    "profit_and_loss",
+    "vat_report",
+    "ar_ap"
+  ],
+  "critical_risks": [
+    "double_inventory_gl_po_and_stock_movement",
+    "accounting_sql_reads_inventory_unit_cost",
+    "hardcoded_coa_codes",
+    "platform_ar_not_ops_sales"
+  ],
+  "artifacts": {
+    "canvas": "canvases/phase14-accounting-audit.canvas.tsx",
+    "report": "offline-v2/docs/P14-00-ACCOUNTING-AUDIT.md"
+  },
+  "final_decision": "AUDIT PASS — STOP; do not implement Accounting module"
+}
