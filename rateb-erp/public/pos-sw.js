@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v72';
+var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v73';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2959,11 +2959,12 @@ self.addEventListener('message', function (event) {
             } catch (eSrc) { /* ignore */ }
             return result;
         };
-        // Phase PF — page bootstrap must not start populate before first document wins.
-        if (!firstDocumentResponseCommitted) {
+        // PERF-P0.3-C — ENSURE force must populate identity NOW (before offline-shell scripts).
+        // Soft activate warm still waits for first document via armBackgroundWarmAfterFirstDocument.
+        if (!firstDocumentResponseCommitted && data.type !== 'ENSURE_PROTECTED_OFFLINE_CACHE') {
             armBackgroundWarmAfterFirstDocument({
                 reason: 'message_' + String(data.type || 'warm'),
-                force: true
+                force: !!data.force
             });
             reply({
                 ok: false,
@@ -2973,6 +2974,12 @@ self.addEventListener('message', function (event) {
                 at: Date.now()
             });
             return;
+        }
+        if (!firstDocumentResponseCommitted) {
+            armBackgroundWarmAfterFirstDocument({
+                reason: 'message_force_ensure',
+                force: true
+            });
         }
         event.waitUntil(
             ensureProtectedOfflineCache({ force: true }).then(function (result) {
