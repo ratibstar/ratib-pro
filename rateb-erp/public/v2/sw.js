@@ -46,7 +46,8 @@ var PRECACHE = [
     './css/shell.css',
     './vendor/sqlite/index.mjs',
     './vendor/sqlite/sqlite3.wasm',
-    './vendor/sqlite/sqlite3-opfs-async-proxy.js'
+    './vendor/sqlite/sqlite3-opfs-async-proxy.js',
+    './vendor/sqlite/sqlite3-worker1.mjs'
 ];
 
 function precacheUrl(cache, rel) {
@@ -149,11 +150,25 @@ self.addEventListener('fetch', function (event) {
     }
 
     event.respondWith(
-        caches.match(req).then(function (hit) {
-            return hit || fetch(req).then(function (res) {
+        caches.match(req, { ignoreSearch: true }).then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            return fetch(req).then(function (res) {
+                if (res && res.ok && req.method === 'GET') {
+                    var copy = res.clone();
+                    caches.open(CACHE).then(function (cache) {
+                        cache.put(req, copy);
+                    }).catch(function () { /* ignore */ });
+                }
                 return res;
             }).catch(function () {
-                return hit || Response.error();
+                if (req.destination === 'document' || req.mode === 'navigate') {
+                    return caches.match('./index.html');
+                }
+                return caches.match(req.url).then(function (again) {
+                    return again || Response.error();
+                });
             });
         })
     );
