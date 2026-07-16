@@ -1042,6 +1042,25 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   if (!('serviceWorker' in navigator) || !cfg.serviceWorker) return;
   var swUrl = String(cfg.serviceWorker);
   var scope = cfg.serviceWorkerScope ? String(cfg.serviceWorkerScope) : undefined;
+  function purgeErpAuthCache() {
+    try {
+      var msg = { type: 'PURGE_ERP_AUTH_CACHE' };
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage(msg);
+      }
+      navigator.serviceWorker.ready.then(function (reg) {
+        if (reg.active) {
+          reg.active.postMessage(msg);
+        }
+      }).catch(function () {});
+    } catch (ePurge) { /* ignore */ }
+  }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a.rateb-topbar-logout') : null;
+    if (a) {
+      purgeErpAuthCache();
+    }
+  }, true);
   var warmed = false;
   function warm(reg) {
     // Phase OH — idle shell + leanOps HTML snapshot warm (certified modules).

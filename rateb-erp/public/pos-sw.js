@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-auth-logout-cache-purge-v81';
+var SW_BUILD_ID = '20260716-admin-nav-network-only-v82';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -614,6 +614,11 @@ function purgeErpOpsAuthPages() {
             });
         }).catch(function () { return null; });
     }));
+}
+
+/** Any ERP /admin path (except POS register flows). */
+function isErpAdminPath(pathname) {
+    return /\/admin(\/|$)/i.test(String(pathname || ''));
 }
 
 function erpOfflineShellUrl() {
@@ -3238,6 +3243,11 @@ self.addEventListener('fetch', function (event) {
                         return res;
                     })
                 );
+                return;
+            }
+            // Online Admin navigations must bypass SW (no SWR). Otherwise fetch redirect
+            // to /login is painted at /admin URL and stale dashboard HTML survives logout.
+            if (isErpAdminPath(url.pathname) && !isPosNavigation(url)) {
                 return;
             }
             if (isPosNavigation(url)) {

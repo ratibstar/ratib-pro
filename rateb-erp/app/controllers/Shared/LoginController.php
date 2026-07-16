@@ -22,6 +22,10 @@ final class LoginController extends Controller
 {
     public function showLogin(): void
     {
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+        }
         if (Auth::check()) {
             Response::redirect(rateb_url(Auth::homePath()));
             return;

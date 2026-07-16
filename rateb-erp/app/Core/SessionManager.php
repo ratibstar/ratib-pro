@@ -5,6 +5,55 @@ namespace Rateb\App\Core;
 
 final class SessionManager
 {
+    public static function cookiePath(): string
+    {
+        if (function_exists('rateb_erp_app_prefix')) {
+            $p = rtrim((string) rateb_erp_app_prefix(), '/');
+            if ($p !== '') {
+                return $p;
+            }
+        }
+
+        return '/';
+    }
+
+    /** @return list<string> */
+    public static function cookiePathCandidates(): array
+    {
+        $paths = [self::cookiePath()];
+        if (!in_array('/', $paths, true)) {
+            $paths[] = '/';
+        }
+
+        return $paths;
+    }
+
+    private static function expireNamedCookie(string $name): void
+    {
+        $secure = self::requestIsSecure();
+        $domain = '';
+        $samesite = 'Lax';
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $params = session_get_cookie_params();
+            $domain = (string) ($params['domain'] ?? '');
+            $samesite = (string) ($params['samesite'] ?? 'Lax');
+        }
+        foreach (self::cookiePathCandidates() as $path) {
+            if (PHP_VERSION_ID >= 70300) {
+                setcookie($name, '', [
+                    'expires' => time() - 42000,
+                    'path' => $path,
+                    'domain' => $domain,
+                    'secure' => $secure,
+                    'httponly' => true,
+                    'samesite' => $samesite,
+                ]);
+            } else {
+                setcookie($name, '', time() - 42000, $path, $domain, $secure, true);
+            }
+        }
+    }
+
     public static function start(): void
     {
         if (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION) {
@@ -20,18 +69,19 @@ final class SessionManager
         session_name('rateb_erp');
         self::ensureSavePath();
         $secure = self::requestIsSecure();
+        $cookiePath = self::cookiePath();
 
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
                 'lifetime' => 0,
-                'path' => '/',
+                'path' => $cookiePath,
                 'domain' => '',
                 'secure' => $secure,
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
         } else {
-            session_set_cookie_params(0, '/', '', $secure, true);
+            session_set_cookie_params(0, $cookiePath, '', $secure, true);
         }
 
         session_start();
@@ -153,8 +203,7 @@ final class SessionManager
             return;
         }
         $_SESSION = [];
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        self::expireNamedCookie(session_name());
         session_destroy();
         session_name('rateb_erp');
         session_start();

@@ -90,9 +90,10 @@ final class RememberMeService
     private function setCookie(string $value, int $lifetime): void
     {
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        $path = \Rateb\App\Core\SessionManager::cookiePath();
         setcookie(self::COOKIE, $value, [
             'expires' => time() + $lifetime,
-            'path' => '/',
+            'path' => $path,
             'secure' => $secure,
             'httponly' => true,
             'samesite' => 'Lax',
@@ -102,12 +103,14 @@ final class RememberMeService
     private function clearCookie(): void
     {
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-        setcookie(self::COOKIE, '', [
-            'expires' => time() - 3600,
-            'path' => '/',
-            'secure' => $secure,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
+        foreach (\Rateb\App\Core\SessionManager::cookiePathCandidates() as $path) {
+            setcookie(self::COOKIE, '', [
+                'expires' => time() - 3600,
+                'path' => $path,
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
     }
 }
