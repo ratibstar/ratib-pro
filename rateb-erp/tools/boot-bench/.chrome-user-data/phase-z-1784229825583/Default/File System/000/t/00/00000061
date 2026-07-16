@@ -1,0 +1,9 @@
+{
+  "layout": "P1-00A",
+  "phase": 2,
+  "activeSlot": "slot-a",
+  "previousSlot": "slot-b",
+  "installId": "install-a-1784229827004",
+  "status": "active",
+  "updatedAt": "2026-07-16T19:23:47.234Z"
+}

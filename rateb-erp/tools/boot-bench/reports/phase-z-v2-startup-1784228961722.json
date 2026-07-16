@@ -1,0 +1,14 @@
+{
+  "phase": "Z",
+  "url": "https://rateb.sa/rateb-erp/public/v2/index.html",
+  "shell_ready_ms": 6856,
+  "shell_ready_lt_3000": false,
+  "boot_status": "Shell Ready",
+  "db_selftest": "PASS — mode=hci-persist schema=2",
+  "sw_check": "PASS — scope https://rateb.sa/rateb-erp/public/v2/",
+  "http_4xx_under_v2": [],
+  "offline_shell_ready_ms": null,
+  "offline_boot_status": "",
+  "sw_registrations": [],
+  "enterprise_production_startup": "FAIL"
+}

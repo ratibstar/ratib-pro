@@ -1,0 +1,65 @@
+{
+  "phase": "Z",
+  "url": "https://rateb.sa/rateb-erp/public/v2/index.html",
+  "shell_ready_ms": 1813,
+  "shell_ready_lt_3000": true,
+  "boot_status": "Shell Ready — module self-test failed",
+  "db_selftest": "PASS — mode=hci-persist schema=2",
+  "sw_check": "PASS — scope https://rateb.sa/rateb-erp/public/v2/",
+  "http_4xx_under_v2": [],
+  "performance_marks": [
+    {
+      "name": "rateb-v2-boot-start",
+      "startTime": 859
+    },
+    {
+      "name": "rateb-v2-layout-ensured",
+      "startTime": 969
+    },
+    {
+      "name": "rateb-v2-layout-verified",
+      "startTime": 980
+    },
+    {
+      "name": "rateb-v2-sw-registered",
+      "startTime": 1095
+    },
+    {
+      "name": "rateb-v2-db-selftest-done",
+      "startTime": 1218
+    },
+    {
+      "name": "rateb-v2-pm-selftest-done",
+      "startTime": 1431
+    },
+    {
+      "name": "rateb-v2-runtime-selftest-done",
+      "startTime": 1536
+    },
+    {
+      "name": "rateb-v2-router-selftest-done",
+      "startTime": 1673
+    },
+    {
+      "name": "rateb-v2-shell-ready",
+      "startTime": 1807
+    },
+    {
+      "name": "rateb-v2-post-shell-scripts-loaded",
+      "startTime": 1871
+    }
+  ],
+  "cache_keys": [
+    "rateb-offline-v2-host-pz"
+  ],
+  "offline_shell_ready_ms": null,
+  "offline_boot_status": "Phase 17 self-test failed",
+  "sw_registrations": [
+    {
+      "scope": "https://rateb.sa/rateb-erp/public/v2/",
+      "active": true,
+      "scriptURL": "https://rateb.sa/rateb-erp/public/v2/sw.js"
+    }
+  ],
+  "enterprise_production_startup": "FAIL"
+}

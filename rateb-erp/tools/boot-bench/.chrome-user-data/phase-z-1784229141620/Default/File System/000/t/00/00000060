@@ -1,0 +1,9 @@
+{
+  "id": "core-runtime",
+  "version": "1.0.0",
+  "sha256": "5ef7f03e99e6fc80df6f917c02fddc21e61353d1165e5f5b0eea6f0e8c616881",
+  "path": "packages/runtime/core-runtime__1.0.0__5ef7f03e99e6fc80df6f917c02fddc21e61353d1165e5f5b0eea6f0e8c616881.pkg",
+  "installId": "install-a-1784229145325",
+  "activatedFromSlot": "slot-a",
+  "activatedAt": "2026-07-16T19:12:25.472Z"
+}

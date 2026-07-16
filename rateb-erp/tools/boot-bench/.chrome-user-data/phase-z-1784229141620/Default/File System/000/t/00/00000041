@@ -1,0 +1,26 @@
+{
+  "schema": "rateb-offline-v2-install/1",
+  "installId": "install-a-1784229145325",
+  "version": "1.0.0",
+  "packages": {
+    "runtime": {
+      "id": "core-runtime",
+      "version": "1.0.0",
+      "sha256": "5ef7f03e99e6fc80df6f917c02fddc21e61353d1165e5f5b0eea6f0e8c616881",
+      "path": "packages/runtime/core-runtime__1.0.0__5ef7f03e99e6fc80df6f917c02fddc21e61353d1165e5f5b0eea6f0e8c616881.pkg"
+    },
+    "modules": [
+      {
+        "id": "demo-module",
+        "version": "1.0.0",
+        "sha256": "a988b2e23c4ffa44935a5017ce900a20053686056adc6ce76adfe0d62840949b",
+        "path": "packages/modules/demo-module__1.0.0__a988b2e23c4ffa44935a5017ce900a20053686056adc6ce76adfe0d62840949b.pkg"
+      }
+    ],
+    "language": [],
+    "assets": []
+  },
+  "slot": "slot-a",
+  "stagedAt": "2026-07-16T19:12:25.327Z",
+  "status": "staged"
+}

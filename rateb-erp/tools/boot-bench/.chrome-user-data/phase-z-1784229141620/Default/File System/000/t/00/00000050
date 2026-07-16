@@ -1,0 +1,19 @@
+{
+  "schema": "rateb-offline-v2-install/1",
+  "installId": "install-b-1784229145325",
+  "version": "2.0.0",
+  "packages": {
+    "runtime": {
+      "id": "core-runtime",
+      "version": "2.0.0",
+      "sha256": "3f179e7fa966bc2a2a95662a68a1305e2300831470750a396b260732849f6cc1",
+      "path": "packages/runtime/core-runtime__2.0.0__3f179e7fa966bc2a2a95662a68a1305e2300831470750a396b260732849f6cc1.pkg"
+    },
+    "modules": [],
+    "language": [],
+    "assets": []
+  },
+  "slot": "slot-b",
+  "stagedAt": "2026-07-16T19:12:25.407Z",
+  "status": "staged"
+}

@@ -1,0 +1,89 @@
+{
+  "phase": "Z",
+  "url": "https://rateb.sa/rateb-erp/public/v2/index.html",
+  "shell_ready_ms": 1828,
+  "shell_ready_lt_3000": true,
+  "boot_status": "Shell Ready — module self-test failed",
+  "db_selftest": "PASS — mode=hci-persist schema=2",
+  "sw_check": "PASS — scope https://rateb.sa/rateb-erp/public/v2/",
+  "checks": {
+    "boot-status": "Shell Ready — module self-test failed",
+    "pm-selftest": "PASS — steps=14",
+    "db-selftest": "PASS — mode=hci-persist schema=2",
+    "rt-selftest": "PASS — state=ready",
+    "router-selftest": "PASS — steps=17",
+    "shell-selftest": "PASS — steps=18",
+    "sw": "PASS — scope https://rateb.sa/rateb-erp/public/v2/",
+    "sync-selftest": "FAIL — failed",
+    "sdk-selftest": "FAIL — ping is not a function",
+    "bm-selftest": "FAIL — echo is not a function",
+    "sales-selftest": "PASS — steps=42",
+    "crm-selftest": "FAIL — failed",
+    "hr-selftest": "FAIL — failed",
+    "mfg-selftest": "PASS — steps=51"
+  },
+  "http_4xx_under_v2": [],
+  "performance_marks": [
+    {
+      "name": "rateb-v2-boot-start",
+      "startTime": 861
+    },
+    {
+      "name": "rateb-v2-layout-ensured",
+      "startTime": 971
+    },
+    {
+      "name": "rateb-v2-layout-verified",
+      "startTime": 983
+    },
+    {
+      "name": "rateb-v2-sw-registered",
+      "startTime": 1102
+    },
+    {
+      "name": "rateb-v2-db-selftest-done",
+      "startTime": 1220
+    },
+    {
+      "name": "rateb-v2-pm-selftest-done",
+      "startTime": 1446
+    },
+    {
+      "name": "rateb-v2-runtime-selftest-done",
+      "startTime": 1551
+    },
+    {
+      "name": "rateb-v2-router-selftest-done",
+      "startTime": 1687
+    },
+    {
+      "name": "rateb-v2-shell-ready",
+      "startTime": 1814
+    },
+    {
+      "name": "rateb-v2-post-shell-scripts-loaded",
+      "startTime": 1865
+    }
+  ],
+  "cache_keys": [
+    "rateb-offline-v2-host-pz"
+  ],
+  "offline_shell_ready_ms": 659,
+  "offline_boot_status": "Shell Ready",
+  "offline_checks": {
+    "pm-selftest": "FAIL — pm_cannot_stage_active_slot",
+    "db-selftest": "PASS — mode=hci-persist schema=2",
+    "rt-selftest": "PASS — state=ready",
+    "router-selftest": "PASS — steps=17",
+    "shell-selftest": "PASS — steps=18",
+    "sw": "PASS — scope https://rateb.sa/rateb-erp/public/v2/"
+  },
+  "sw_registrations": [
+    {
+      "scope": "https://rateb.sa/rateb-erp/public/v2/",
+      "active": true,
+      "scriptURL": "https://rateb.sa/rateb-erp/public/v2/sw.js"
+    }
+  ],
+  "enterprise_production_startup": "PASS"
+}
