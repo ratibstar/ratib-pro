@@ -1,0 +1,25 @@
+{
+  "phase": 3,
+  "layer": "L3 SQLite Runtime",
+  "hci_version": "1.2.0-phase3",
+  "db_api_version": "1.0.0-phase3",
+  "schema_target": 1,
+  "sqlite_path": "database/ratib.sqlite",
+  "vendor": "@sqlite.org/sqlite-wasm@3.53.0-build1",
+  "modes": ["opfs", "hci-persist"],
+  "apis": [
+    "open",
+    "close",
+    "migrate",
+    "exec",
+    "integrityCheck",
+    "checkpointPersist",
+    "backup",
+    "restore",
+    "syncInstallPointerFromActiveJson",
+    "runSelfTest"
+  ],
+  "forbidden": ["indexeddb_erp", "cache_api_business_data"],
+  "self_test": "RatebOfflineV2DB.runSelfTest() on /public/v2/",
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production"
+}

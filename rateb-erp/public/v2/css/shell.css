@@ -1,0 +1,227 @@
+/* RATEB Offline V2 — L6 UI Shell (Phase 6) · desktop-first */
+
+html[data-v2-theme="dark"] {
+  --v2-bg: #0a0c10;
+  --v2-panel: #12161e;
+  --v2-line: #2a3344;
+  --v2-fg: #e8eaed;
+  --v2-muted: #9aa3b2;
+  --v2-accent: #6ea8fe;
+  --v2-danger: #f07178;
+  --v2-ok: #3dd68c;
+}
+
+html[data-v2-theme="light"] {
+  --v2-bg: #f4f6f8;
+  --v2-panel: #ffffff;
+  --v2-line: #c5d0de;
+  --v2-fg: #1a1d24;
+  --v2-muted: #5b6575;
+  --v2-accent: #0b5ed7;
+  --v2-danger: #b02a37;
+  --v2-ok: #198754;
+}
+
+.v2-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--v2-line);
+  background: var(--v2-panel);
+  color: var(--v2-fg);
+}
+
+.v2-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-shell__brand {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 1.1rem;
+}
+
+.v2-shell__subtitle {
+  color: var(--v2-muted);
+  font-size: 0.8rem;
+}
+
+.v2-shell__header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.v2-shell__btn {
+  appearance: none;
+  border: 1px solid var(--v2-line);
+  background: transparent;
+  color: var(--v2-fg);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.v2-shell__btn--primary {
+  border-color: var(--v2-accent);
+  color: var(--v2-accent);
+}
+
+.v2-shell__body {
+  display: grid;
+  grid-template-columns: 13rem 1fr;
+  min-height: 14rem;
+}
+
+.v2-shell.is-sidebar-collapsed .v2-shell__body {
+  grid-template-columns: 0 1fr;
+}
+
+.v2-shell.is-sidebar-collapsed .v2-shell__sidebar {
+  overflow: hidden;
+  border-right-width: 0;
+  padding: 0;
+}
+
+.v2-shell__sidebar {
+  border-right: 1px solid var(--v2-line);
+  padding: 0.75rem 0.5rem;
+}
+
+.v2-shell__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.v2-nav-item {
+  appearance: none;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  color: var(--v2-fg);
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.v2-nav-item.is-active,
+.v2-nav-item:hover {
+  background: color-mix(in srgb, var(--v2-accent) 16%, transparent);
+}
+
+.v2-shell__workspace {
+  position: relative;
+  padding: 0.75rem;
+}
+
+.v2-shell__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--v2-panel) 80%, transparent);
+  z-index: 2;
+}
+
+.v2-shell__error {
+  border: 1px solid var(--v2-danger);
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.v2-shell__error-text {
+  margin: 0 0 0.5rem;
+  color: var(--v2-danger);
+}
+
+.v2-shell__footer {
+  border-top: 1px solid var(--v2-line);
+  padding: 0.5rem 1rem;
+  color: var(--v2-muted);
+  font-size: 0.8rem;
+}
+
+.v2-shell__toasts {
+  position: fixed;
+  inset-inline-end: 1rem;
+  inset-block-end: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.v2-toast {
+  pointer-events: auto;
+  min-width: 12rem;
+  max-width: 20rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--v2-line);
+  background: var(--v2-panel);
+  color: var(--v2-fg);
+  font-size: 0.85rem;
+}
+
+.v2-toast--warn { border-color: #d4a017; }
+.v2-toast--error { border-color: var(--v2-danger); }
+.v2-toast--info { border-color: var(--v2-accent); }
+
+.v2-shell__dialog-host {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.v2-shell__dialog {
+  width: min(26rem, calc(100vw - 2rem));
+  background: var(--v2-panel);
+  border: 1px solid var(--v2-line);
+  padding: 1rem;
+  color: var(--v2-fg);
+}
+
+.v2-shell__dialog-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.v2-shell__dialog-body {
+  margin: 0 0 1rem;
+  color: var(--v2-muted);
+}
+
+.v2-shell__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .v2-shell__body {
+    grid-template-columns: 1fr;
+  }
+
+  .v2-shell__sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--v2-line);
+  }
+
+  .v2-shell__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

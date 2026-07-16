@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f1117">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
+  <title>RATEB Offline V2 — Host</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="../assets/pwa/erp-icon-192.png" sizes="192x192">
+  <link rel="stylesheet" href="./css/host.css">
+  <link rel="stylesheet" href="./css/shell.css">
+</head>
+<body>
+  <div id="rateb-v2-shell-root" aria-label="Offline V2 application shell"></div>
+
+  <main>
+    <p class="brand">RATEB</p>
+    <p class="tag">Offline V2 · Phase 9 Business Module Framework · Installed Chromium PWA</p>
+    <p id="boot-status" class="status">Booting…</p>
+
+    <h2>Host checks (L0)</h2>
+    <dl>
+      <dt>HCI version</dt>
+      <dd id="hci-version">—</dd>
+      <dt>Layout</dt>
+      <dd id="layout-id">—</dd>
+      <dt>Secure context</dt>
+      <dd id="sec-context" class="check">—</dd>
+      <dt>Display mode</dt>
+      <dd id="installed" class="check">—</dd>
+      <dt>Reachability</dt>
+      <dd id="reachability">—</dd>
+      <dt>No admin PHP fetch</dt>
+      <dd id="no-php" class="check">—</dd>
+      <dt>ensureLayout</dt>
+      <dd id="layout-ensure" class="check">—</dd>
+      <dt>verifyLayout</dt>
+      <dd id="layout-verify" class="check">—</dd>
+      <dt>Quota</dt>
+      <dd id="quota">—</dd>
+      <dt>Persistence</dt>
+      <dd id="persist" class="check">—</dd>
+      <dt>V2 Service Worker</dt>
+      <dd id="sw" class="check">—</dd>
+    </dl>
+
+    <h2>Package Manager (L7)</h2>
+    <dl>
+      <dt>PM version</dt>
+      <dd id="pm-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="pm-selftest" class="check">—</dd>
+    </dl>
+    <pre id="pm-evidence" class="evidence" aria-label="Phase 2 evidence"></pre>
+
+    <h2>SQLite Runtime (L3)</h2>
+    <dl>
+      <dt>DB version</dt>
+      <dd id="db-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="db-selftest" class="check">—</dd>
+    </dl>
+    <pre id="db-evidence" class="evidence" aria-label="Phase 3 evidence"></pre>
+
+    <h2>Runtime Kernel (L1)</h2>
+    <dl>
+      <dt>Runtime version</dt>
+      <dd id="rt-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="rt-selftest" class="check">—</dd>
+    </dl>
+    <pre id="rt-evidence" class="evidence" aria-label="Phase 4 evidence"></pre>
+
+    <h2>SPA Router (L2)</h2>
+    <dl>
+      <dt>Router version</dt>
+      <dd id="router-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="router-selftest" class="check">—</dd>
+    </dl>
+    <pre id="router-evidence" class="evidence" aria-label="Phase 5 evidence"></pre>
+    <div id="rateb-v2-router-outlet" class="router-outlet" aria-live="polite"></div>
+
+    <h2>UI Shell (L6)</h2>
+    <dl>
+      <dt>Shell version</dt>
+      <dd id="shell-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="shell-selftest" class="check">—</dd>
+    </dl>
+    <pre id="shell-evidence" class="evidence" aria-label="Phase 6 evidence"></pre>
+
+    <h2>Sync Engine (L4)</h2>
+    <dl>
+      <dt>Sync version</dt>
+      <dd id="sync-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="sync-selftest" class="check">—</dd>
+    </dl>
+    <pre id="sync-evidence" class="evidence" aria-label="Phase 7 evidence"></pre>
+
+    <h2>Module SDK (L5)</h2>
+    <dl>
+      <dt>SDK version</dt>
+      <dd id="sdk-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="sdk-selftest" class="check">—</dd>
+    </dl>
+    <pre id="sdk-evidence" class="evidence" aria-label="Phase 8 evidence"></pre>
+
+    <h2>Business Modules (Phase 9)</h2>
+    <dl>
+      <dt>Framework version</dt>
+      <dd id="bm-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="bm-selftest" class="check">—</dd>
+    </dl>
+    <pre id="bm-evidence" class="evidence" aria-label="Phase 9 evidence"></pre>
+
+    <p class="note">
+      Phase 9 · Business Module Framework + ReferenceModule only · No ERP modules · No V1.
+    </p>
+  </main>
+  <script src="./js/hci.js"></script>
+  <script src="./js/package-manager.js"></script>
+  <script type="module" src="./js/db/sqlite-runtime.js"></script>
+  <script src="./js/runtime/runtime.js"></script>
+  <script src="./js/router/router.js"></script>
+  <script src="./js/ui/shell.js"></script>
+  <script src="./js/sync/sync-engine.js"></script>
+  <script src="./js/modules/module-sdk.js"></script>
+  <script src="./js/business/business-module-framework.js"></script>
+  <script src="./js/business/reference-module.js"></script>
+  <script src="./js/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* RATEB Offline V2 — Phase 1 host stub only */
+:root {
+  --bg0: #0a0c10;
+  --bg1: #12161e;
+  --fg: #e8eaed;
+  --muted: #9aa3b2;
+  --pass: #3dd68c;
+  --fail: #f07178;
+  --line: #2a3344;
+  --accent: #6ea8fe;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(ellipse at 20% 0%, #1a2740 0%, var(--bg0) 55%);
+  color: var(--fg);
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 3rem;
+}
+
+.brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.35rem;
+}
+
+.tag {
+  color: var(--muted);
+  margin: 0 0 1.75rem;
+  font-size: 0.95rem;
+}
+
+.status {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  background: var(--bg1);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.status.pass { border-color: var(--pass); color: var(--pass); }
+.status.fail { border-color: var(--fail); color: var(--fail); }
+
+h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+}
+
+dl {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+dt, dd {
+  margin: 0;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+dd {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.check.pass { color: var(--pass); }
+.check.fail { color: var(--fail); }
+
+.note {
+  margin-top: 1.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.note code { color: var(--accent); }
+
+.evidence {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  background: var(--bg1);
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.router-outlet {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  background: rgba(18, 22, 30, 0.7);
+  min-height: 4.5rem;
+}
+
+.router-outlet h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.router-outlet p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

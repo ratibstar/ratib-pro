@@ -1,0 +1,41 @@
+{
+  "phase": 8,
+  "layer": "L5 Module SDK",
+  "sdk_version": "1.0.0-phase8",
+  "manifest_schema": "rateb-offline-v2-module/1",
+  "artifacts": {
+    "api": "public/v2/js/modules/module-sdk.js",
+    "example_manifest": "public/v2/modules/module-manifest.example.json",
+    "router_api_extension": "public/v2/js/router/router.js#registerRoute,unregisterRoute",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "charter": "offline-v2/docs/P8-00-CHARTER.md",
+    "complete": "offline-v2/docs/P8-10-ENTERPRISE-COMPLETE.md",
+    "compliance": "offline-v2/docs/P8-ARCHITECTURE-COMPLIANCE.md",
+    "zero_touch": "offline-v2/docs/P8-ZERO-TOUCH-V1-PROOF.md",
+    "findings": "offline-v2/docs/P8-REMAINING-FINDINGS.md"
+  },
+  "apis": ["create", "start", "install", "initialize", "mount", "activate", "deactivate", "unmount", "disposeModule", "load", "unload", "runSelfTest"],
+  "lifecycle": ["install", "initialize", "mount", "activate", "deactivate", "unmount", "dispose"],
+  "forbidden": ["business_modules", "php_fetch", "domparser", "document_reload", "indexeddb_erp", "cache_api_business", "v1_touch"],
+  "zero_touch_v1": "PASS",
+  "category_b_violations": 0,
+  "self_test": "RatebOfflineV2Modules.runSelfTest() on /public/v2/",
+  "verifications": {
+    "module_sdk_self_tests": "implemented",
+    "runtime_integration": "implemented",
+    "router_integration": "implemented",
+    "shell_integration": "implemented",
+    "sync_integration": "implemented",
+    "package_manager_compat": "implemented",
+    "sqlite_compat": "implemented",
+    "lifecycle": "implemented",
+    "dependency_injection": "implemented",
+    "event_bus": "implemented",
+    "zero_touch_offline_v1": "PASS",
+    "architecture_compliance": "PASS"
+  },
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production",
+  "phase_gate": "GO — stop; do not start Phase 9"
+}

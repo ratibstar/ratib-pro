@@ -1,0 +1,42 @@
+{
+  "phase": 6,
+  "layer": "L6 UI Shell",
+  "shell_version": "1.0.0-phase6",
+  "artifacts": {
+    "api": "public/v2/js/ui/shell.js",
+    "css": "public/v2/css/shell.css",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "charter": "offline-v2/docs/P6-00-CHARTER.md",
+    "complete": "offline-v2/docs/P6-10-ENTERPRISE-COMPLETE.md",
+    "compliance": "offline-v2/docs/P6-ARCHITECTURE-COMPLIANCE.md",
+    "zero_touch": "offline-v2/docs/P6-ZERO-TOUCH-V1-PROOF.md",
+    "findings": "offline-v2/docs/P6-REMAINING-FINDINGS.md"
+  },
+  "apis": ["create", "mount", "unmount", "dispose", "theme", "toast", "dialog", "setLoading", "setError", "renderNav", "getLayoutState", "runSelfTest"],
+  "layout": ["header", "sidebar", "workspace", "footer"],
+  "hosts": ["toast", "dialog", "loading", "error"],
+  "integrations": {
+    "runtime": ["layerApi", "start", "services.register(shell)", "events.router:*"],
+    "router": ["create", "init", "listRoutes", "navigate", "dispose"],
+    "package_manager": "compat_present",
+    "sqlite": "compat_present_no_direct_use"
+  },
+  "forbidden": ["php_render", "html_snapshots", "domparser", "document_reload", "sw_ui_routing", "v1_ui", "l4_sync", "l5_module_sdk"],
+  "zero_touch_v1": "PASS",
+  "category_b_violations": 0,
+  "self_test": "RatebOfflineV2Shell.runSelfTest() on /public/v2/",
+  "verifications": {
+    "ui_shell_self_tests": "implemented",
+    "runtime_integration": "implemented",
+    "router_integration": "implemented",
+    "package_manager_compat": "implemented",
+    "sqlite_compat": "implemented",
+    "zero_network_rendering": "implemented",
+    "zero_touch_offline_v1": "PASS",
+    "architecture_compliance": "PASS"
+  },
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production",
+  "phase_gate": "GO — stop; do not start Phase 7"
+}

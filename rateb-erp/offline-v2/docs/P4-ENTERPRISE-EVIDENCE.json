@@ -1,0 +1,20 @@
+{
+  "phase": 4,
+  "layer": "L1 Runtime",
+  "runtime_version": "1.0.0-phase4",
+  "apis": [
+    "start",
+    "shutdown",
+    "getStatus",
+    "services",
+    "events",
+    "layerApi",
+    "loadActivePackage",
+    "runHealthChecks",
+    "runSelfTest"
+  ],
+  "storage": "HCI runtime/* only",
+  "forbidden": ["router", "ui_render", "sync_engine", "module_sdk", "v1_touch"],
+  "self_test": "RatebOfflineV2Runtime.runSelfTest() on /public/v2/",
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production"
+}

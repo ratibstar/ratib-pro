@@ -1,0 +1,25 @@
+{
+  "phase": 2,
+  "layer": "L7 Package Manager",
+  "hci_version": "1.1.0-phase2",
+  "pm_version": "1.0.0-phase2",
+  "layout": "P1-00A",
+  "apis": [
+    "ingestArtifact",
+    "stageInstall",
+    "verifySlot",
+    "activate",
+    "rollback",
+    "getActive",
+    "runSelfTest"
+  ],
+  "slots": ["slot-a", "slot-b", "slot-c"],
+  "rules": {
+    "packages_immutable": true,
+    "active_slot_immutable": true,
+    "hci_only": true,
+    "no_v1_touch": true
+  },
+  "self_test": "RatebOfflineV2PM.runSelfTest() on /public/v2/",
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production"
+}

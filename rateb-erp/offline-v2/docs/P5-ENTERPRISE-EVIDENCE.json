@@ -1,0 +1,11 @@
+{
+  "phase": 5,
+  "layer": "L2 SPA Router",
+  "router_version": "1.0.0-phase5",
+  "manifest": "routes/route-manifest.json",
+  "apis": ["create", "init", "navigate", "dispose", "beforeEach", "runSelfTest"],
+  "lifecycle": ["init", "mount", "unmount", "dispose"],
+  "forbidden": ["domparser", "html_fetch_screens", "php_routes", "document_reload", "v1_nav"],
+  "self_test": "RatebOfflineV2Router.runSelfTest() on /public/v2/",
+  "enterprise_complete": "PASS (implementation); operator Chromium gate for production"
+}
