@@ -1,0 +1,87 @@
+{
+  "phase": 16,
+  "task": "hr_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "Online HR is dual stack: ops /hr/* (employees, attendance, leave, legacy payroll) + Phase 23A /hrm/* enterprise HRMS + Phase 24A payroll peer; Offline V2 HR must own hr.* only, depend on identity, never inventory/sales/procurement/CRM/GL",
+  "primary_evidence_roots": [
+    "docs/PHASE_23A_HR_ONLINE.md",
+    "docs/PHASE_24A_PAYROLL_ONLINE.md",
+    "docs/PHASE_15A_RECRUITMENT_ONLINE.md",
+    "migrations/067_hr_tables.sql",
+    "migrations/074_hr_extended.sql",
+    "migrations/189_hr_platform_enterprise.sql",
+    "migrations/190_payroll_platform_enterprise.sql",
+    "migrations/181_recruitment_platform.sql",
+    "app/services/HrService.php",
+    "app/services/HumanResourcesDomainServices.php",
+    "app/services/HumanResourcesWorkflowService.php",
+    "app/services/EmployeeTimelineService.php",
+    "app/controllers/Company/HrControllers.php",
+    "routes/modules/ops.php",
+    "tests/hr/HrPhase23ATest.php",
+    "offline/docs/PHASE_4_HR_OFFLINE_REPORT.md",
+    "offline/docs/PHASE_23B_HUMAN_RESOURCES_OFFLINE.md"
+  ],
+  "out_of_scope": [
+    "offline_v1_hr_adapters_as_sot",
+    "offline_v2_hr_bm",
+    "payroll_bm_implementation",
+    "recruitment_ownership",
+    "eam_asset_assignment_ownership"
+  ],
+  "core_capabilities": [
+    "employees_ops_and_hrm",
+    "departments",
+    "positions_grades",
+    "organization",
+    "attendance",
+    "leave",
+    "training",
+    "performance",
+    "promotions_transfers",
+    "document_meta",
+    "timeline",
+    "hr_rbac"
+  ],
+  "gaps": [
+    "no_employment_contracts",
+    "no_onboarding_module",
+    "no_hire_bridge_from_recruitment",
+    "no_dedicated_overtime_in_ops_hr",
+    "no_hr_rest_api",
+    "no_hr_notifications",
+    "dual_employee_sot",
+    "dual_payroll_sot"
+  ],
+  "critical_risks": [
+    "dual_employee_sot_ops_vs_hrm",
+    "dual_payroll_sot",
+    "no_employment_contract_entity",
+    "no_recruitment_to_employee_bridge",
+    "salary_base_sensitivity"
+  ],
+  "missing_abstractions": [
+    "HrEmployeePort",
+    "HrWorkflowPort",
+    "AttendancePort",
+    "LeavePort",
+    "OrgDirectoryPort",
+    "PayrollLinkPort",
+    "IdentityLinkPort",
+    "DocumentMetaPort",
+    "TimelinePort",
+    "HireFromRecruitmentPort_optional"
+  ],
+  "recommended_deps": {
+    "mandatory": ["identity"],
+    "optional": ["accounting", "crm"],
+    "forbidden_ownership": ["inventory", "sales", "procurement", "crm_data", "accounting_gl", "authentication"]
+  },
+  "artifacts": {
+    "audit": "offline-v2/docs/P16-00-HR-AUDIT.md",
+    "evidence": "offline-v2/docs/P16-ENTERPRISE-AUDIT-EVIDENCE.json"
+  },
+  "phase_gate": "STOP — audit only; do not implement HR BusinessModule",
+  "final_decision": "PASS (audit complete)"
+}

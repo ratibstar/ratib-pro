@@ -1,0 +1,77 @@
+{
+  "phase": 14,
+  "module": "accounting",
+  "version": "1.0.0-phase14",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0" },
+    { "id": "inventory", "version": ">=1.0.0" }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/accounting-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p14"
+  },
+  "owns": [
+    "chart_of_accounts",
+    "journal_entries",
+    "journal_lines",
+    "fiscal_periods",
+    "cash_vouchers",
+    "cost_centers",
+    "account_map",
+    "posting_port",
+    "tax_policy",
+    "currency_policy",
+    "trial_balance",
+    "balance_sheet",
+    "profit_and_loss"
+  ],
+  "forbidden": [
+    "inventory_ownership",
+    "inv_sql",
+    "identity_credential_store",
+    "sales_sql",
+    "proc_sql",
+    "pos_sql",
+    "platform_edits",
+    "php_copy",
+    "v1_copy",
+    "hardcoded_coa_in_posting_port"
+  ],
+  "inventory_interactions": {
+    "cogs": "module.inventory.valuation (read only)",
+    "events": "inventory:movement (optional auto COGS; default OFF)",
+    "never": "postMovement / reserve / balance mutation"
+  },
+  "identity_interactions": {
+    "auth": "module.identity.session|claims|rbac|unlock",
+    "never": "passwords|hashes|cookies|tokens|totp"
+  },
+  "verifications": {
+    "module_self_tests": "PASS (host Accounting self-test)",
+    "runtime_integration": "PASS (services + events)",
+    "router_integration": "PASS (/accounting)",
+    "shell_integration": "PASS (nav/workspace/settings)",
+    "sync_integration": "PASS (acct.* business events only)",
+    "sqlite_integration": "PASS (entity_row acct.*)",
+    "identity_integration": "PASS",
+    "inventory_integration": "PASS (valuation API; qty unchanged)",
+    "journal_posting": "PASS (balance + idempotency)",
+    "fiscal_period": "PASS (open/close/block)",
+    "tax_validation": "PASS",
+    "currency_validation": "PASS",
+    "financial_reports": "PASS (TB/BS/P&L)",
+    "security_af211": "PASS",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync/SDK/BM Runtime factory; locked)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (Accounting BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

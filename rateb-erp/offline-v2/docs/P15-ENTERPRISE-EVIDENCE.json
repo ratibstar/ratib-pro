@@ -1,0 +1,65 @@
+{
+  "phase": 15,
+  "module": "crm",
+  "version": "1.0.0-phase15",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0", "required": true },
+    { "id": "sales", "required": false },
+    { "id": "accounting", "required": false }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/crm-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p15"
+  },
+  "owns": [
+    "leads",
+    "accounts",
+    "contacts",
+    "opportunities",
+    "pipeline",
+    "activities",
+    "tasks",
+    "meetings",
+    "campaigns",
+    "timeline",
+    "crm_settings",
+    "crm_diagnostics"
+  ],
+  "forbidden": [
+    "inventory_ownership",
+    "accounting_ownership",
+    "sales_document_ownership",
+    "procurement_ownership",
+    "foreign_module_sql",
+    "credential_store",
+    "php_copy",
+    "v1_copy",
+    "cms_copy",
+    "contact_center_copy"
+  ],
+  "verifications": {
+    "module_self_tests": "PASS (host CRM self-test)",
+    "runtime_integration": "PASS",
+    "router_integration": "PASS (/crm)",
+    "shell_integration": "PASS",
+    "sync_integration": "PASS (crm.* events only)",
+    "identity_integration": "PASS",
+    "optional_sales_integration": "PASS (linkCustomer via module.sales)",
+    "optional_accounting_integration": "PASS (detect only; never GL post)",
+    "timeline_validation": "PASS (append-only)",
+    "pipeline_validation": "PASS (stage machine won/lost)",
+    "permission_validation": "PASS (crm.* RBAC)",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync/SDK/BM Runtime factory; locked)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (CRM BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

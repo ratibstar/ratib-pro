@@ -1,0 +1,81 @@
+{
+  "phase": 15,
+  "task": "crm_audit",
+  "implementation": "NONE",
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "verdict": "Online CRM is Phase 17A foundation (leads/accounts/contacts/opportunities/pipeline/activities/campaigns/timeline); Offline V2 CRM must own crm.* only, depend on identity, never inventory/GL/sales state",
+  "primary_evidence_roots": [
+    "docs/PHASE_17A_CRM_ONLINE.md",
+    "migrations/183_crm_platform_enterprise.sql",
+    "app/models/CrmModels.php",
+    "app/services/CrmSupport.php",
+    "app/services/CrmWorkflowService.php",
+    "app/services/CrmTimelineService.php",
+    "app/services/CrmDomainServices.php",
+    "app/services/CrmActivityServices.php",
+    "app/controllers/Company/CrmControllers.php",
+    "routes/modules/ops.php",
+    "tests/crm/CrmPhase17ATest.php",
+    "offline/docs/PHASE_17B_CRM_OFFLINE.md"
+  ],
+  "out_of_scope": [
+    "offline_v1_crm_adapters",
+    "offline_v2_crm_bm",
+    "cms_leads",
+    "contact_center_rcc_crm",
+    "supplier_follow_up"
+  ],
+  "core_capabilities": [
+    "leads",
+    "opportunities",
+    "crm_accounts",
+    "contacts",
+    "activities",
+    "tasks",
+    "meetings",
+    "calls",
+    "pipeline",
+    "campaigns",
+    "timeline",
+    "assignments",
+    "lead_workflow",
+    "rbac_crm_star"
+  ],
+  "gaps": [
+    "no_crm_calendar",
+    "no_crm_reports",
+    "no_crm_notifications",
+    "no_rest_crm_api",
+    "no_sales_quote_bridge",
+    "no_accounting_gl_bridge",
+    "follow_up_is_activity_type_only",
+    "opportunity_status_bypass_risk"
+  ],
+  "critical_risks": [
+    "dual_crm_worlds_erp_vs_rcc_vs_cms",
+    "optional_customer_id_without_customer_link_port",
+    "no_sales_accounting_ports_on_won",
+    "opportunity_workflow_status_mutable_outside_stage_machine"
+  ],
+  "missing_abstractions": [
+    "CrmWritePort",
+    "CrmWorkflowPort",
+    "PipelinePort",
+    "TimelinePort",
+    "CustomerLinkPort",
+    "DirectoryPort",
+    "crm_domain_events",
+    "NotificationPort_optional"
+  ],
+  "recommended_deps": {
+    "mandatory": ["identity"],
+    "optional": ["sales", "accounting"],
+    "forbidden_ownership": ["inventory", "accounting_gl", "procurement", "sales_documents"]
+  },
+  "artifacts": {
+    "audit": "offline-v2/docs/P15-00-CRM-AUDIT.md",
+    "evidence": "offline-v2/docs/P15-ENTERPRISE-AUDIT-EVIDENCE.json"
+  },
+  "phase_gate": "STOP — audit only; do not implement CRM BusinessModule",
+  "final_decision": "PASS (audit complete)"
+}

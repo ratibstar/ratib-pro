@@ -17,7 +17,7 @@
 
   <main>
     <p class="brand">RATEB</p>
-    <p class="tag">Offline V2 · Phase 11 Inventory Module · Installed Chromium PWA</p>
+    <p class="tag">Offline V2 · Phase 15 CRM Module · Installed Chromium PWA</p>
     <p id="boot-status" class="status">Booting…</p>
 
     <h2>Host checks (L0)</h2>
@@ -155,8 +155,26 @@
     </dl>
     <pre id="sales-evidence" class="evidence" aria-label="Phase 13 evidence"></pre>
 
+    <h2>Accounting Module (Phase 14)</h2>
+    <dl>
+      <dt>Accounting version</dt>
+      <dd id="accounting-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="accounting-selftest" class="check">—</dd>
+    </dl>
+    <pre id="accounting-evidence" class="evidence" aria-label="Phase 14 evidence"></pre>
+
+    <h2>CRM Module (Phase 15)</h2>
+    <dl>
+      <dt>CRM version</dt>
+      <dd id="crm-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="crm-selftest" class="check">—</dd>
+    </dl>
+    <pre id="crm-evidence" class="evidence" aria-label="Phase 15 evidence"></pre>
+
     <p class="note">
-      Phase 13 Sales · B2B documents · Inventory via module.inventory.* · AF 2.1 / 2.1.1 · No POS SQL · No PHP · No V1.
+      Phase 15 CRM · Leads · Pipeline · Timeline · identity mandatory · sales/accounting optional APIs · AF 2.1 / 2.1.1 · No PHP · No V1.
     </p>
   </main>
   <script src="./js/hci.js"></script>
@@ -173,6 +191,8 @@
   <script src="./js/business/inventory-module.js"></script>
   <script src="./js/business/procurement-module.js"></script>
   <script src="./js/business/sales-module.js"></script>
+  <script src="./js/business/accounting-module.js"></script>
+  <script src="./js/business/crm-module.js"></script>
   <script src="./js/boot.js"></script>
 </body>
 </html>

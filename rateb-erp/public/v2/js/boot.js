@@ -295,6 +295,46 @@
         });
     }
 
+    function runAccountingSelfTest() {
+        var acctApi = root.RatebOfflineV2Accounting;
+        if (!acctApi) {
+            setState('accounting-selftest', false, 'Accounting module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('accounting-version', acctApi.version);
+        return acctApi.runSelfTest().then(function (res) {
+            setState('accounting-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('accounting-evidence') && res.evidence) {
+                $('accounting-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
+    function runCrmSelfTest() {
+        var crmApi = root.RatebOfflineV2Crm;
+        if (!crmApi) {
+            setState('crm-selftest', false, 'CRM module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('crm-version', crmApi.version);
+        return crmApi.runSelfTest().then(function (res) {
+            setState('crm-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('crm-evidence') && res.evidence) {
+                $('crm-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
     function run() {
         var hci = root.RatebOfflineV2HCI;
         if (!hci) {
@@ -332,7 +372,7 @@
             return hci.requestPersistence();
         }).then(function (p) {
             setState('persist', !!p.ok, p.persisted ? 'persisted' : 'not persisted (may be browser policy)');
-            return hci.appendLog('phase13-host-boot');
+            return hci.appendLog('phase15-host-boot');
         }).then(function () {
             return registerSw();
         }).then(function (sw) {
@@ -350,22 +390,28 @@
                                             return runInventorySelfTest().then(function (invRes) {
                                                 return runProcurementSelfTest().then(function (procRes) {
                                                     return runSalesSelfTest().then(function (salesRes) {
-                                                        var ok = pmRes && pmRes.ok !== false &&
-                                                            dbRes && dbRes.ok !== false &&
-                                                            rtRes && rtRes.ok !== false &&
-                                                            routerRes && routerRes.ok !== false &&
-                                                            shellRes && shellRes.ok !== false &&
-                                                            syncRes && syncRes.ok !== false &&
-                                                            sdkRes && sdkRes.ok !== false &&
-                                                            bmRes && bmRes.ok !== false &&
-                                                            idRes && idRes.ok !== false &&
-                                                            invRes && invRes.ok !== false &&
-                                                            procRes && procRes.ok !== false &&
-                                                            salesRes && salesRes.ok !== false;
-                                                        setText('boot-status', ok
-                                                            ? 'Phase 13 platform + Identity + Inventory + Procurement + Sales ready'
-                                                            : 'Phase 13 self-test failed');
-                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                        return runAccountingSelfTest().then(function (acctRes) {
+                                                            return runCrmSelfTest().then(function (crmRes) {
+                                                                var ok = pmRes && pmRes.ok !== false &&
+                                                                    dbRes && dbRes.ok !== false &&
+                                                                    rtRes && rtRes.ok !== false &&
+                                                                    routerRes && routerRes.ok !== false &&
+                                                                    shellRes && shellRes.ok !== false &&
+                                                                    syncRes && syncRes.ok !== false &&
+                                                                    sdkRes && sdkRes.ok !== false &&
+                                                                    bmRes && bmRes.ok !== false &&
+                                                                    idRes && idRes.ok !== false &&
+                                                                    invRes && invRes.ok !== false &&
+                                                                    procRes && procRes.ok !== false &&
+                                                                    salesRes && salesRes.ok !== false &&
+                                                                    acctRes && acctRes.ok !== false &&
+                                                                    crmRes && crmRes.ok !== false;
+                                                                setText('boot-status', ok
+                                                                    ? 'Phase 15 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM ready'
+                                                                    : 'Phase 15 self-test failed');
+                                                                $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                            });
+                                                        });
                                                     });
                                                 });
                                             });
