@@ -25,10 +25,32 @@ HTML → SW → HCI → Package Manager → SQLite → Runtime → Router → Sh
 |-----------|----------|
 | HTML + critical JS | &lt; 1s |
 | HCI layout ensure | hundreds of ms (OPFS) |
-| SW register | parallel-safe; install non-atomic |
+| SW register | background; install non-atomic |
 | SQLite module import + open | &lt; 1s when assets HTTP 200 |
 | Shell Ready signal | Immediately after shell self-test (before BM cascade) |
-| Blind DB wait | **Removed** (was 20s; now ≤4s fail-fast + vendor HEAD probe) |
+| Blind DB wait | **Removed** (was 20s; now ≤4s fail-fast + online-only vendor HEAD probe) |
+
+## Production measurement (2026-07-16, commit `af09d26f`)
+
+Fresh Chromium profile via `phase-z-v2-startup-gate.js`:
+
+| Metric | Value |
+|--------|-------|
+| Shell Ready | **1828 ms** (PASS &lt; 3000) |
+| Offline Shell Ready | **659 ms** |
+| SQLite Runtime | PASS (`hci-persist` schema=2) |
+| Service Worker | PASS (`rateb-offline-v2-host-pz`) |
+| HTTP 4xx under `/v2/` | none |
+| Enterprise Production Startup | **PASS** |
+
+### Performance marks (navigation start = 0)
+
+| Mark | ms |
+|------|-----|
+| boot-start | 861 |
+| layout-verified | 983 |
+| db-selftest-done | 1220 |
+| shell-ready | 1814 |
 
 ## Boot changes (orchestration only)
 

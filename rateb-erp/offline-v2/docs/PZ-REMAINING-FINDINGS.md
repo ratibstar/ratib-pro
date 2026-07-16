@@ -7,14 +7,14 @@
 - 20-second `whenDbReady` blind wait.
 - Risk of WASM corruption if uploaded as text via Fileman `save_file_content`.
 
-## Residual / follow-up (non-blocking for Shell Ready if assets 200)
+## Residual / follow-up (non-blocking for Shell Ready)
 
 | Finding | Severity | Notes |
 |---------|----------|-------|
-| Full Phase 17 BM self-test cascade still serial after Shell Ready | Low | Intentional host certification; does not block Shell Ready signal |
-| `/v2/` vs `/v2/index.html` | Low | Mitigated by `DirectoryIndex`; prefer explicit `index.html` in docs/manifest |
-| Large `index.mjs` (~578KB) via text upload | Low | Prefer monitor first deploy; switch to binary if Fileman truncates |
-| Stale SW clients | Low | New cache id `rateb-offline-v2-host-pz`; old `rateb-offline-v2-host-*` deleted on activate |
+| Sync / Module SDK / BM-framework host self-tests FAIL on some fresh profiles | Low | Shell Ready + SQLite + SW already PASS; not a startup blocker |
+| PM self-test fails offline (`pm_cannot_stage_active_slot`) | Low | Expected without network staging; Shell Ready allowed when PM API present |
+| Full Phase 17 BM self-test cascade still serial after Shell Ready | Low | Intentional host certification |
+| Stale SW clients | Low | Cache id `rateb-offline-v2-host-pz`; old `rateb-offline-v2-host-*` deleted on activate |
 | Offline V1 PWA vs Offline V2 host confusion (`/admin` blank) | Info | Different products; V1 not in Phase Z scope |
 
 ## Out of scope (architecture freeze)
@@ -26,3 +26,7 @@
 ## Category B
 
 None opened by Phase Z.
+
+## Enterprise gate
+
+**PASS** — production Shell Ready 1828 ms; offline Shell Ready 659 ms (`af09d26f`).

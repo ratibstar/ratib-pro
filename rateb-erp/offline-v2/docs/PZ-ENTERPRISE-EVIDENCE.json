@@ -31,7 +31,11 @@
     "sqlite_vendor_not_in_git_not_deployed",
     "sw_cache_addAll_atomic_404",
     "boot_whenDbReady_20s_timeout",
-    "wasm_deploy_as_text_risk"
+    "wasm_deploy_as_text_risk",
+    "serial_hci_quota_persist_before_sqlite",
+    "bm_scripts_blocking_first_shell_ready",
+    "offline_vendor_HEAD_abort",
+    "offline_pm_staging_blocked_shell_ready"
   ],
   "artifacts": {
     "vendor_sqlite": "rateb-erp/public/v2/vendor/sqlite/",
@@ -46,6 +50,19 @@
     "htaccess": "rateb-erp/public/v2/.htaccess",
     "deploy_binary_ext": ".wasm"
   },
+  "production_gate": {
+    "url": "https://rateb.sa/rateb-erp/public/v2/index.html",
+    "commit_sha": "af09d26f",
+    "measured_at": "2026-07-16",
+    "shell_ready_ms": 1828,
+    "shell_ready_lt_3000": true,
+    "offline_shell_ready_ms": 659,
+    "db_selftest": "PASS — mode=hci-persist schema=2",
+    "sw_check": "PASS",
+    "http_4xx_under_v2": [],
+    "cache_keys": ["rateb-offline-v2-host-pz"],
+    "tool": "rateb-erp/tools/boot-bench/phase-z-v2-startup-gate.js"
+  },
   "success_criteria": {
     "shell_ready_ms_max": 3000,
     "shell_ready": "PASS",
@@ -55,6 +72,9 @@
     "http_404_runtime": "NONE",
     "offline_v1_untouched": true
   },
-  "enterprise_production_startup": "PENDING_PRODUCTION_GATE",
-  "notes": "Fill enterprise_production_startup=PASS after live HTTP 200 on vendor assets + fresh-profile Shell Ready <3s + offline reload."
+  "enterprise_production_startup": "PASS",
+  "residual": [
+    "sync/sdk/bm host self-tests still FAIL on some fresh profiles (not a Shell Ready blocker)",
+    "PM self-test fails offline (pm_cannot_stage_active_slot) — Shell Ready allowed when PM API present"
+  ]
 }
