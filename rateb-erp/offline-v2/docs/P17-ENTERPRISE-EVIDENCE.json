@@ -1,0 +1,77 @@
+{
+  "phase": 17,
+  "module": "mfg",
+  "version": "1.0.0-phase17",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0", "required": true },
+    { "id": "inventory", "version": ">=1.0.0", "required": true },
+    { "id": "procurement", "required": false },
+    { "id": "sales", "required": false },
+    { "id": "accounting", "required": false }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/manufacturing-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p17"
+  },
+  "owns": [
+    "product",
+    "bom",
+    "routing",
+    "work_center",
+    "production_order",
+    "work_order",
+    "material_meta",
+    "fg_meta",
+    "capacity",
+    "quality",
+    "cost_meta",
+    "timeline",
+    "mfg_settings",
+    "mfg_diagnostics"
+  ],
+  "forbidden": [
+    "authentication_ownership",
+    "inventory_balance_ownership",
+    "accounting_gl_ownership",
+    "sales_ownership",
+    "procurement_ownership",
+    "crm_ownership",
+    "hr_ownership",
+    "foreign_module_sql",
+    "credential_store",
+    "mrp_explode_net_engine",
+    "php_copy",
+    "v1_copy"
+  ],
+  "inventory_ports": [
+    "module.inventory.postMovement",
+    "module.inventory.reserve",
+    "module.inventory.upsertItem",
+    "module.inventory.availableQty"
+  ],
+  "verifications": {
+    "module_self_tests": "PASS (host MFG self-test)",
+    "runtime_integration": "PASS",
+    "router_integration": "PASS (/mfg)",
+    "shell_integration": "PASS",
+    "sync_integration": "PASS (mfg.* events only)",
+    "identity_integration": "PASS",
+    "inventory_integration": "PASS (stock via published APIs only)",
+    "optional_peers": "PASS (probe only; never own)",
+    "timeline_validation": "PASS",
+    "workflow_validation": "PASS",
+    "no_mrp_engine": "PASS",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync/SDK/BM Runtime factory; locked)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (Manufacturing BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

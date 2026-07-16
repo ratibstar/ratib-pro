@@ -355,6 +355,26 @@
         });
     }
 
+    function runMfgSelfTest() {
+        var mfgApi = root.RatebOfflineV2Mfg;
+        if (!mfgApi) {
+            setState('mfg-selftest', false, 'Manufacturing module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('mfg-version', mfgApi.version);
+        return mfgApi.runSelfTest().then(function (res) {
+            setState('mfg-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('mfg-evidence') && res.evidence) {
+                $('mfg-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
     function run() {
         var hci = root.RatebOfflineV2HCI;
         if (!hci) {
@@ -392,7 +412,7 @@
             return hci.requestPersistence();
         }).then(function (p) {
             setState('persist', !!p.ok, p.persisted ? 'persisted' : 'not persisted (may be browser policy)');
-            return hci.appendLog('phase16-host-boot');
+            return hci.appendLog('phase17-host-boot');
         }).then(function () {
             return registerSw();
         }).then(function (sw) {
@@ -413,25 +433,28 @@
                                                         return runAccountingSelfTest().then(function (acctRes) {
                                                             return runCrmSelfTest().then(function (crmRes) {
                                                                 return runHrSelfTest().then(function (hrRes) {
-                                                                    var ok = pmRes && pmRes.ok !== false &&
-                                                                        dbRes && dbRes.ok !== false &&
-                                                                        rtRes && rtRes.ok !== false &&
-                                                                        routerRes && routerRes.ok !== false &&
-                                                                        shellRes && shellRes.ok !== false &&
-                                                                        syncRes && syncRes.ok !== false &&
-                                                                        sdkRes && sdkRes.ok !== false &&
-                                                                        bmRes && bmRes.ok !== false &&
-                                                                        idRes && idRes.ok !== false &&
-                                                                        invRes && invRes.ok !== false &&
-                                                                        procRes && procRes.ok !== false &&
-                                                                        salesRes && salesRes.ok !== false &&
-                                                                        acctRes && acctRes.ok !== false &&
-                                                                        crmRes && crmRes.ok !== false &&
-                                                                        hrRes && hrRes.ok !== false;
-                                                                    setText('boot-status', ok
-                                                                        ? 'Phase 16 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM + HR ready'
-                                                                        : 'Phase 16 self-test failed');
-                                                                    $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                                    return runMfgSelfTest().then(function (mfgRes) {
+                                                                        var ok = pmRes && pmRes.ok !== false &&
+                                                                            dbRes && dbRes.ok !== false &&
+                                                                            rtRes && rtRes.ok !== false &&
+                                                                            routerRes && routerRes.ok !== false &&
+                                                                            shellRes && shellRes.ok !== false &&
+                                                                            syncRes && syncRes.ok !== false &&
+                                                                            sdkRes && sdkRes.ok !== false &&
+                                                                            bmRes && bmRes.ok !== false &&
+                                                                            idRes && idRes.ok !== false &&
+                                                                            invRes && invRes.ok !== false &&
+                                                                            procRes && procRes.ok !== false &&
+                                                                            salesRes && salesRes.ok !== false &&
+                                                                            acctRes && acctRes.ok !== false &&
+                                                                            crmRes && crmRes.ok !== false &&
+                                                                            hrRes && hrRes.ok !== false &&
+                                                                            mfgRes && mfgRes.ok !== false;
+                                                                        setText('boot-status', ok
+                                                                            ? 'Phase 17 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM + HR + Manufacturing ready'
+                                                                            : 'Phase 17 self-test failed');
+                                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                                    });
                                                                 });
                                                             });
                                                         });
