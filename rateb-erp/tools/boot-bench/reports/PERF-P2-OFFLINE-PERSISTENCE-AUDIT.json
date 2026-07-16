@@ -1,0 +1,298 @@
+{
+  "phase": "PERF-P2",
+  "title": "RATIB ERP Enterprise Offline Persistence — Architecture Audit",
+  "mode": "READ_ONLY_NO_CODE_NO_PATCHES",
+  "at": "2026-07-16T05:57:00+03:00",
+  "goal": "Offline ERP must behave like an installed desktop app. Hard Refresh / restart / internet-off must not destroy Offline ERP. Only Logout, Device Revoke, or user Clear Site Data may remove it.",
+  "scores": {
+    "overall_offline_architecture": 42,
+    "hard_refresh_survival": 25,
+    "browser_restart_survival": 55,
+    "offline_boot": 48,
+    "cache_persistence": 38,
+    "session_persistence": 62,
+    "sw_update_safety": 28,
+    "score_scale": "0–100 evidence-based vs enterprise desktop-app contract",
+    "score_notes": {
+      "hard_refresh_survival": "Ctrl+Shift+R offline bypasses Service Worker (platform). Online hard refresh works via network. Soft F5 offline can survive if caches warm.",
+      "sw_update_safety": "install skipWaiting + seedInlineOfflineShell deletes offline-shell.html before offline fetch can restore; nuclear live-escape wipes all rateb-* caches.",
+      "session_persistence": "IDB auth_vault + localStorage survive restart; sessionStorage unlock TTL does not (PIN required after restart — acceptable policy).",
+      "cache_persistence": "Ops page version bumps orphan snapshots; nuclear purge destroys survival; coexist migrate exists but ops migrate does not."
+    }
+  },
+  "verdict": {
+    "meets_enterprise_desktop_contract": false,
+    "primary_blockers": [
+      "Hard Refresh offline cannot be served by SW (browser platform) — contract unmet without installable PWA / documented soft-reload UX",
+      "seedInlineOfflineShell deletes real offline-shell.html then aborts if offline — SW update can destroy shell",
+      "Nuclear purge paths (live-escape / purgeStaleOfflineAndReload) unregister SW + delete all rateb-* caches",
+      "RatebOffline.ensure() injects scripts from network/Cache — cold offline boot fails if protected warm incomplete",
+      "Ops-pages cache rename orphans Admin HTML until re-warm online"
+    ]
+  },
+  "architecture_snapshot": {
+    "authoritative_sw": "rateb-erp/public/pos-sw.js",
+    "sw_build_id": "20260716-perf-p1-nav-swr-v80",
+    "legacy_sw": "rateb-erp/public/rateb-offline-sw.js",
+    "caches": {
+      "rateb-pos-shell-v8": "POS register HTML",
+      "rateb-pos-assets-v8": "POS static assets",
+      "rateb-erp-coexist-v34": "offline-shell.html + protected identity JS/CSS",
+      "rateb-erp-ops-pages-v34": "Admin HTML snapshots",
+      "rateb-erp-ops-allowlist-v34": "ops allowlist JSON"
+    },
+    "identity": {
+      "durable": ["IndexedDB rateb_erp_offline.auth_vault", "sync_meta device status", "localStorage rateb_erp_device_uuid", "localStorage rateb_erp_offline_scope"],
+      "transient": ["sessionStorage unlock TTL", "sessionStorage warm claims", "PHP session cookie"]
+    }
+  },
+  "survival_matrix": {
+    "soft_F5_online": "Survives (network or SWR cache)",
+    "soft_F5_offline_warm": "Survives via SW cache / ops pages / shell",
+    "hard_refresh_CtrlShiftR_online": "Survives (document bypasses SW → live HTML)",
+    "hard_refresh_CtrlShiftR_offline": "FAILS — browser bypasses SW → Chrome interstitial",
+    "browser_restart_offline_enrolled": "Identity survives; PIN required; modules need Cache hit",
+    "internet_off_never_enrolled": "FAILS",
+    "sw_update_while_offline": "AT RISK — seedInlineOfflineShell may delete shell without restore",
+    "rateb_live_second_hop": "DESTROYS — unregister all SW + delete all rateb-* caches",
+    "logout_keep_vault": "Unlock cleared; vault kept",
+    "logout_clear_vault_or_user_clear_site_data": "Removes Offline ERP (allowed)"
+  },
+  "issues": [
+    {
+      "severity": "Critical",
+      "id": "P2-C1",
+      "title": "Hard Refresh offline bypasses Service Worker",
+      "file": "Browser platform (Chrome); no handler in pos-sw.js",
+      "function": "N/A — document navigation with cache:reload",
+      "line": "N/A",
+      "root_cause": "Ctrl+Shift+R forces network-only document load and skips the controlling Service Worker. Cached shell cannot answer that navigation.",
+      "impact": "Internet OFF + Hard Refresh → Chrome 'no connection' interstitial. Breaks desktop-app contract.",
+      "enterprise_recommendation": "Treat Hard Refresh offline as unsupported OR ship installable PWA window that never hard-refreshes; UX: soft reload button that goes through SW; document that only Soft Reload is the offline contract."
+    },
+    {
+      "severity": "Critical",
+      "id": "P2-C2",
+      "title": "seedInlineOfflineShell deletes offline-shell.html then aborts when offline",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "seedInlineOfflineShell",
+      "line": "709–722 (delete), 721–722 (offline abort)",
+      "root_cause": "On install, coexist cache deletes shellUrl/ERP_OFFLINE_SHELL before fetch. If isCloudBrowserOffline(), returns null without restoring OA shell.",
+      "impact": "SW update while offline can wipe the only real offline shell; user falls to thin inline shell or failure.",
+      "enterprise_recommendation": "Never delete shell until acceptable body is fetched and put. If offline, skip delete entirely. Versioned put alongside old shell (migrate, don't destroy)."
+    },
+    {
+      "severity": "Critical",
+      "id": "P2-C3",
+      "title": "Nuclear live-escape destroys all Offline ERP caches + unregisters SW",
+      "file": "rateb-erp/public/assets/offline/erp-shell-bootstrap.js; views/layouts/main.php; public/offline-shell.html",
+      "function": "purgeStaleOfflineAndReload; main.php live-escape; offline-shell.html escape",
+      "line": "erp-shell-bootstrap.js:489–523; main.php:1220–1239; offline-shell.html:~86–98",
+      "root_cause": "On rateb_live / rateb_force_live recovery when probe succeeds, code unregisters ALL service workers and caches.delete every key matching /^rateb-/i.",
+      "impact": "One recovery hop wipes shell, ops pages, allowlist, coexist. Offline ERP requires full online re-warm. Violates 'only logout/revoke/user clear' rule.",
+      "enterprise_recommendation": "Soft escape only: navigate with bypass query; never unregister; never bulk-delete caches. Nuclear purge only behind explicit debug flag."
+    },
+    {
+      "severity": "Critical",
+      "id": "P2-C4",
+      "title": "RatebOffline.ensure() depends on Cache/network script inject",
+      "file": "rateb-erp/public/assets/offline/offline-bootstrap.js",
+      "function": "ensure → ensureOne → loadScript",
+      "line": "120–168",
+      "root_cause": "Modular OA loads scripts via <script src>. No IndexedDB blob fallback. Offline boot requires PROTECTED assets already in Cache API.",
+      "impact": "Hard refresh / cold tab offline with incomplete warm → SDK never boots → no unlock/queue/nav.",
+      "enterprise_recommendation": "Gate 'Offline Ready' on protected warm complete; fallback to monolith rateb-offline.js already in PROTECTED list; never require network for ensure() after activation."
+    },
+    {
+      "severity": "Critical",
+      "id": "P2-C5",
+      "title": "Dual device-UUID generators",
+      "file": "offline-auth.js vs erp-offline-tenant-context.js",
+      "function": "getDeviceId",
+      "line": "offline-auth.js:~285–297 (erp-…); erp-offline-tenant-context.js:~22–35 (dev_…)",
+      "root_cause": "Two writers for rateb_erp_device_uuid with different prefixes; first writer wins.",
+      "impact": "Device enroll vs unlock mismatch → device_unknown after restart despite prior activation.",
+      "enterprise_recommendation": "Single canonical getDeviceId; migrate/alias existing keys; server bind one UUID."
+    },
+    {
+      "severity": "High",
+      "id": "P2-H1",
+      "title": "Ops-pages cache version bump orphans Admin HTML",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "migrateActivateCaches (no ops migrate)",
+      "line": "cache name ERP_OPS_PAGE_CACHE ~L7; migrateActivateCaches ~2777–2791",
+      "root_cause": "Coexist caches are migrated; ops-pages-* are neither migrated nor deleted on activate. New version name → empty ops cache until warm.",
+      "impact": "After deploy, offline module nav fails until online re-warm.",
+      "enterprise_recommendation": "Migrate rateb-erp-ops-pages-* like coexist; or keep stable cache name and content-hash entries."
+    },
+    {
+      "severity": "High",
+      "id": "P2-H2",
+      "title": "Immediate skipWaiting + clients.claim on every update",
+      "file": "rateb-erp/public/pos-sw.js; views/layouts/main.php",
+      "function": "install/activate; SKIP_WAITING / CLIENTS_CLAIM messages",
+      "line": "pos-sw.js:2902, 2920, 2978–2984; main.php:~756–804",
+      "root_cause": "New SW activates and claims before background warm finishes; install may have deleted shell.",
+      "impact": "Race: brief window where protected assets / shell missing after update.",
+      "enterprise_recommendation": "Claim OK for nav; never delete critical assets on install; warm must be idempotent and complete before advertising Offline Ready."
+    },
+    {
+      "severity": "High",
+      "id": "P2-H3",
+      "title": "Online enroll can defer PIN seal; unlock skipped while online",
+      "file": "erp-auth-bootstrap.js; offline-auth.js",
+      "function": "boot / requireUnlockIfNeeded",
+      "line": "erp-auth-bootstrap ~308–314 pending; offline-auth ~967–992 auto-unlock online",
+      "root_cause": "PIN seal deferred; online path marks unlocked without sealing vault.",
+      "impact": "Device not Offline-Ready until first offline PIN; pending LS loss → cold start fail.",
+      "enterprise_recommendation": "Require PIN seal before Offline Ready=true; surface readiness in UI."
+    },
+    {
+      "severity": "High",
+      "id": "P2-H4",
+      "title": "Allowlist seed too small on cache miss",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "loadErpOpsAllowlist / seed",
+      "line": "~362–455",
+      "root_cause": "If allowlist JSON not cached, tiny seed allowlist used.",
+      "impact": "Many modules fall through to uncached/shell offline after SW restart.",
+      "enterprise_recommendation": "Embed full production allowlist in SW build artifact."
+    },
+    {
+      "severity": "High",
+      "id": "P2-H5",
+      "title": "Parent-list / any-admin fallback can serve wrong HTML",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "erpOpsPageFallback / navigate cache chain",
+      "line": "~938–988",
+      "root_cause": "Cache miss substitutes parent list or any admin page.",
+      "impact": "Offline nav opens wrong page content under target URL.",
+      "enterprise_recommendation": "Prefer explicit uncached banner over wrong HTML; never silent rewrite."
+    },
+    {
+      "severity": "Medium",
+      "id": "P2-M1",
+      "title": "Unlock TTL only in sessionStorage",
+      "file": "rateb-erp/public/assets/offline/modules/offline-auth.js",
+      "function": "unlock session keys",
+      "line": "~307–388",
+      "root_cause": "By design unlock window is session-scoped.",
+      "impact": "Browser restart always requires PIN (acceptable); idle 15m also re-PIN.",
+      "enterprise_recommendation": "Document as policy; optional longer kiosk idle via config."
+    },
+    {
+      "severity": "Medium",
+      "id": "P2-M2",
+      "title": "Unversioned IndexedDB open race",
+      "file": "erp-offline-shell-auth.js vs offline-storage.js",
+      "function": "indexedDB.open",
+      "line": "shell-auth ~340 without version; storage opens DB_VERSION 2",
+      "root_cause": "Mixed open signatures on first cold start.",
+      "impact": "Possible upgrade race on first open.",
+      "enterprise_recommendation": "Always open via RatebOfflineSchema.openDatabase() with DB_VERSION."
+    },
+    {
+      "severity": "Medium",
+      "id": "P2-M3",
+      "title": "Pending identity plaintext in localStorage",
+      "file": "erp-auth-bootstrap.js",
+      "function": "pending identity store",
+      "line": "~220–231",
+      "root_cause": "Pre-PIN enroll package in LS.",
+      "impact": "Shared-device exposure before seal.",
+      "enterprise_recommendation": "Opaque server blob or encrypt-at-rest; TTL purge."
+    },
+    {
+      "severity": "Medium",
+      "id": "P2-M4",
+      "title": "Legacy rateb-offline-sw aggressive cache deletes",
+      "file": "rateb-erp/public/rateb-offline-sw.js",
+      "function": "activate",
+      "line": "~404–417",
+      "root_cause": "Deletes old rateb-erp-* versioned caches.",
+      "impact": "If dual-registered, can wipe ERP caches.",
+      "enterprise_recommendation": "Keep unregister-on-upgrade; remove legacy SW from production deploy."
+    },
+    {
+      "severity": "Medium",
+      "id": "P2-M5",
+      "title": "Soft-online SWR serves cache over network on normal F5",
+      "file": "rateb-erp/public/pos-sw.js",
+      "function": "navigateErpCloudWithCacheSafety",
+      "line": "~1139–1200; fetch gate ~3159–3190",
+      "root_cause": "Intentional soft-offline navigation.",
+      "impact": "Users see stale Admin after soft reload while online; confuse with hard-refresh expectations.",
+      "enterprise_recommendation": "Keep for offline UX; expose clear 'force live' without nuclear purge."
+    },
+    {
+      "severity": "Low",
+      "id": "P2-L1",
+      "title": "No controllerchange → reload (good)",
+      "file": "views/layouts/main.php",
+      "function": "SW register comments",
+      "line": "~754, ~1249",
+      "root_cause": "Explicitly avoided.",
+      "impact": "Positive — avoids reload storms.",
+      "enterprise_recommendation": "Keep."
+    },
+    {
+      "severity": "Low",
+      "id": "P2-L2",
+      "title": "Build bump clears warm markers only",
+      "file": "views/layouts/main.php",
+      "function": "soft SW build bump",
+      "line": "~698–726",
+      "root_cause": "Clears full-warm session markers; identity untouched.",
+      "impact": "Re-warm pressure after deploy; not identity wipe.",
+      "enterprise_recommendation": "Re-warm automatically without user action; keep identity."
+    },
+    {
+      "severity": "Low",
+      "id": "P2-L3",
+      "title": "Monolith vs modular OA drift",
+      "file": "rateb-offline.js vs modules/*",
+      "function": "duplicate connectivity/auth stacks",
+      "line": "N/A",
+      "root_cause": "Two codepaths.",
+      "impact": "Fixes may land in one path only.",
+      "enterprise_recommendation": "Single source of truth; generate monolith from modules."
+    }
+  ],
+  "destructive_surface_map": [
+    {"op": "cache.delete(offline-shell)", "file": "pos-sw.js", "line": "717–718", "when": "install seedInlineOfflineShell"},
+    {"op": "caches.delete(old pos shell/assets)", "file": "pos-sw.js", "line": "2784–2788", "when": "migrateActivateCaches"},
+    {"op": "caches.delete(/^rateb-/)", "file": "erp-shell-bootstrap.js", "line": "513–517", "when": "purgeStaleOfflineAndReload"},
+    {"op": "caches.delete(/^rateb-/)", "file": "main.php", "line": "1233–1236", "when": "live-escape second hop"},
+    {"op": "caches.delete(/^rateb-/)", "file": "offline-shell.html", "line": "~94", "when": "live-escape"},
+    {"op": "unregister all SW", "file": "erp-shell-bootstrap / main.php / offline-shell", "line": "see above", "when": "live-escape nuclear"},
+    {"op": "skipWaiting", "file": "pos-sw.js", "line": "2902, 2979", "when": "install / message"},
+    {"op": "clients.claim", "file": "pos-sw.js", "line": "2920, 2983", "when": "activate / message"},
+    {"op": "location.reload / replace", "file": "erp-shell-bootstrap, nav-guard, offline-shell", "line": "multiple", "when": "reconnect / purge finish"},
+    {"op": "NO controllerchange reload", "file": "main.php", "line": "754", "when": "intentional safe"},
+    {"op": "NO indexedDB.deleteDatabase", "file": "repo-wide", "line": "none found", "when": "good — vault survives SW update"}
+  ],
+  "what_survives_today": [
+    "IndexedDB auth_vault across hard refresh and browser restart",
+    "localStorage device UUID + offline scope",
+    "Soft F5 offline when ops/coexist caches warm",
+    "Logout keep_vault preserves PIN vault",
+    "No controllerchange forced reload"
+  ],
+  "what_does_not_meet_contract": [
+    "Hard Refresh with internet OFF",
+    "SW update while offline (shell delete)",
+    "rateb_live nuclear recovery",
+    "Cold offline boot without protected warm",
+    "Post-deploy ops-pages version orphan until re-warm"
+  ],
+  "enterprise_target_architecture_recommendations_no_code": [
+    "Define Offline Ready = enrolled + PIN sealed + protected assets warm + allowlist warm + min ops pages warm",
+    "Versioned cache migration for ALL critical caches (shell, coexist, ops, allowlist) — never delete before copy",
+    "Remove nuclear purge from production live-escape",
+    "ensure() local-only after activation (Cache or embedded blobs)",
+    "Single device UUID authority",
+    "Document Soft Reload as offline reload; Hard Refresh offline unsupported or PWA-window only",
+    "SW update must be additive; old shell retained until new shell verified"
+  ],
+  "no_fixes_applied": true
+}
