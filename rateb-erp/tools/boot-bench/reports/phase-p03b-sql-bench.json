@@ -1,0 +1,135 @@
+﻿{
+    "ok": true,
+    "phase": "X",
+    "target": "GET /admin/",
+    "before": {
+        "cli_html_ms": 251.172,
+        "cli_sql_total": 236,
+        "cli_sql_ms": 110.741,
+        "layout_sql": 154,
+        "company_find_repeats": 99,
+        "show_tables_layout": 27,
+        "information_schema_layout": 18,
+        "http_ttfb_ms": 573.034,
+        "http_ttfb_warm_ms": 547.581
+    },
+    "after": {
+        "cli_sql_total": 104,
+        "cli_sql_ms": 49.953,
+        "cli_html_ms": 95.2,
+        "admin_build_lite_ms": 54.418,
+        "admin_build_lite_sql": 47,
+        "layout_main_ms": 39.273,
+        "layout_sql": 50,
+        "company_find_repeats": 0,
+        "show_tables_total": 22,
+        "information_schema_total": 0,
+        "show_columns_total": 21,
+        "html_bytes": 85066,
+        "http_ttfb_ms": 156.298,
+        "http_ttfb_warm_ms": 158.871,
+        "http": {
+            "first": {
+                "code": 200,
+                "ttfb_ms": 156.298,
+                "total_ms": 312.498,
+                "bytes": 85067
+            },
+            "warm": {
+                "code": 200,
+                "ttfb_ms": 158.871,
+                "total_ms": 315.971,
+                "bytes": 85067
+            }
+        },
+        "auth_ms": 4.671,
+        "routes_ms": 11.16,
+        "memo_helpers_present": true
+    },
+    "delta": {
+        "sql_count_reduction_pct": 55.9,
+        "sql_ms_reduction_pct": 54.9,
+        "html_ms_reduction_pct": 62.1,
+        "layout_sql_reduction_pct": 67.5,
+        "company_find_reduction_pct": 100,
+        "ttfb_reduction_pct": 72.7,
+        "success_sql_50pct": true
+    },
+    "slowest_queries": [
+        {
+            "dur_ms": 1.478,
+            "sql": "SHOW TABLES LIKE 'rateb_companies'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.419,
+            "sql": "SHOW TABLES LIKE 'rateb_device_spare_parts'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.337,
+            "sql": "SHOW COLUMNS FROM `rateb_journal_entries`",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.33,
+            "sql": "SHOW TABLES LIKE 'rateb_rfq'",
+            "phase": "layout_main"
+        },
+        {
+            "dur_ms": 1.244,
+            "sql": "SHOW COLUMNS FROM `rateb_cash_vouchers`",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.236,
+            "sql": "SHOW TABLES LIKE 'rateb_device_service_history'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.235,
+            "sql": "SHOW TABLES LIKE 'rateb_supplier_evaluations'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.235,
+            "sql": "SHOW TABLES LIKE 'rateb_contract_renewals'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.228,
+            "sql": "SHOW TABLES LIKE 'rateb_asset_maintenance'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.213,
+            "sql": "SHOW TABLES LIKE 'rateb_journal_entries'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.197,
+            "sql": "SHOW TABLES LIKE 'rateb_inventory_audits'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.184,
+            "sql": "SHOW TABLES LIKE 'rateb_asset_assignments'",
+            "phase": "admin_build_lite"
+        },
+        {
+            "dur_ms": 1.145,
+            "sql": "SHOW TABLES LIKE 'rateb_purchase_requests'",
+            "phase": "layout_main"
+        },
+        {
+            "dur_ms": 1.141,
+            "sql": "SHOW TABLES LIKE 'rateb_purchase_orders'",
+            "phase": "layout_main"
+        },
+        {
+            "dur_ms": 0.975,
+            "sql": "SHOW COLUMNS FROM `rateb_purchase_requests` LIKE 'status'",
+            "phase": "layout_main"
+        }
+    ]
+}

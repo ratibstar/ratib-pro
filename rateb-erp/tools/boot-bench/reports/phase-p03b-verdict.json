@@ -1,0 +1,50 @@
+{
+  "phase": "PERF-P0.3-B",
+  "commit": "faa3536e",
+  "measured_at": "2026-07-16T00:12:00Z",
+  "read_findings": {
+    "company_hot_path": "views/partials/sidebar-nav.php → rateb_app_url → rateb_url_with_ops_company → rateb_resolve_ops_company_id → rateb_adopt_ops_company_id → rateb_ops_company_exists → Company::find",
+    "company_before_layout_repeats": 99,
+    "company_duplicate_pct_layout": "~99% (same company id re-SELECTed per ops link before resolved_set/exists memo)",
+    "memo_before_B": "rateb_ops_company_request_state exists+resolved already → 0 finds on live CLI before B; B wires Company::find rows into same bag so all callers share",
+    "schema_sources": [
+      "ApprovalOversightService::tableExists → SHOW TABLES (nav badges)",
+      "BranchService → SHOW TABLES/COLUMNS rateb_branches",
+      "AccountingService ensure* → SHOW COLUMNS LIKE…",
+      "ManagerApprovalSchema::probeColumn → SHOW COLUMNS LIKE…",
+      "AccountingSupport → information_schema",
+      "BiometricAuthService → SHOW TABLES + information_schema"
+    ]
+  },
+  "before_corpus": {
+    "company_find": 99,
+    "show_tables": 27,
+    "information_schema_layout": 18,
+    "show_columns_pre_B_live": 29,
+    "show_tables_pre_B_live": 22,
+    "login_usable_ms": 3088,
+    "enterprise_score": 44
+  },
+  "after": {
+    "company_find": 0,
+    "show_tables": 22,
+    "show_columns": 21,
+    "information_schema": 0,
+    "cli_sql_total": 104,
+    "cli_sql_ms": 49.953,
+    "login_usable_ms": 3006,
+    "admin_http_ttfb_ms": 156.298,
+    "memory": "not_measured_cli",
+    "enterprise_score_estimate": 49
+  },
+  "delta": {
+    "company_find_saved": 99,
+    "show_tables_vs_corpus": 5,
+    "show_columns_vs_pre_B_live": 8,
+    "information_schema_saved": 18,
+    "sql_queries_vs_corpus_236": 132,
+    "login_usable_ms_vs_p03a": 82,
+    "note": "Remaining 22 SHOW TABLES are unique oversight table probes (1× each), not duplicates."
+  },
+  "stop": "P0.3-B complete — no P1"
+}
