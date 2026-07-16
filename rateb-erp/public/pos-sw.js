@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-perf-p03c-oa-shell-v74';
+var SW_BUILD_ID = '20260716-perf-p03d-ops-html-v75';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -830,6 +830,12 @@ function erpOpsPageFallback(request, url) {
             return cache.match(url.origin + url.pathname, { ignoreSearch: true }).then(function (hit) {
                 if (hit) {
                     return hit;
+                }
+                // PERF-P0.3-D — offline miss: skip O(n) cache.keys() scan before thin placeholder.
+                // Exact/ignoreSearch candidates already failed; scanning all ops keys added
+                // hundreds of ms for ~1KB uncachedAdminBrowseResponse with no recovery.
+                if (isCloudBrowserOffline()) {
+                    return null;
                 }
                 var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
                 return cache.keys().then(function (keys) {
@@ -1730,8 +1736,9 @@ function warmErpOfflineShell(opts) {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
             return leanOps.reduce(function (chain, rel) {
                 return chain.then(function () {
+                    // PERF-P0.3-D — short gap (was 350ms × ~17 ≈ 6s) so certified HTML lands before offline.
                     return new Promise(function (resolve) {
-                        setTimeout(resolve, 350);
+                        setTimeout(resolve, 40);
                     }).then(function () {
                         var pageUrl = base + rel.replace(/^\//, '');
                         return fetch(pageUrl, {
@@ -1760,13 +1767,12 @@ function warmErpOfflineShell(opts) {
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // Stage HTML warm long after first paint so browsing stays snappy.
-                return new Promise(function (resolve) {
-                    setTimeout(function () {
-                        warmLeanOpsPages().then(function () {
-                            resolve(protectedResult);
-                        }).catch(function () { resolve(protectedResult); });
-                    }, 4000);
+                // PERF-P0.3-D — warm certified module HTML immediately (was delayed 4s).
+                // Deferred leanOps never finished before offline → uncachedAdminBrowseResponse ~1KB.
+                return warmLeanOpsPages().then(function () {
+                    return protectedResult;
+                }).catch(function () {
+                    return protectedResult;
                 });
             });
         }).then(function (result) {
@@ -2960,8 +2966,12 @@ self.addEventListener('message', function (event) {
             return result;
         };
         // PERF-P0.3-C — ENSURE force must populate identity NOW (before offline-shell scripts).
+        // PERF-P0.3-D — WARM must also run NOW: deferred WARM never stored certified module HTML
+        // (hr/attendance, ops/inventory) → offline uncachedAdminBrowseResponse ~1KB / “thin HTML”.
         // Soft activate warm still waits for first document via armBackgroundWarmAfterFirstDocument.
-        if (!firstDocumentResponseCommitted && data.type !== 'ENSURE_PROTECTED_OFFLINE_CACHE') {
+        if (!firstDocumentResponseCommitted
+            && data.type !== 'ENSURE_PROTECTED_OFFLINE_CACHE'
+            && data.type !== 'WARM_ERP_OFFLINE_SHELL') {
             armBackgroundWarmAfterFirstDocument({
                 reason: 'message_' + String(data.type || 'warm'),
                 force: !!data.force
@@ -2977,15 +2987,29 @@ self.addEventListener('message', function (event) {
         }
         if (!firstDocumentResponseCommitted) {
             armBackgroundWarmAfterFirstDocument({
-                reason: 'message_force_ensure',
+                reason: data.type === 'WARM_ERP_OFFLINE_SHELL'
+                    ? 'message_force_warm'
+                    : 'message_force_ensure',
                 force: true
             });
+            // Treat explicit WARM/ENSURE as the first-document release so leanOps can run.
+            firstDocumentResponseCommitted = true;
         }
         event.waitUntil(
             ensureProtectedOfflineCache({ force: true }).then(function (result) {
                 if (data.type === 'WARM_ERP_OFFLINE_SHELL') {
-                    // Non-protected CSS/ops warm after protected success (best effort).
-                    warmErpOfflineShell({ force: true }).catch(function () { return null; });
+                    // PERF-P0.3-D — await leanOps so ops-page cache holds real module HTML.
+                    return warmErpOfflineShell({ force: true }).then(function (shellResult) {
+                        return reply({
+                            ok: !!(result && result.ok),
+                            protected: result,
+                            shell: shellResult || null,
+                            build: SW_BUILD_ID,
+                            at: Date.now()
+                        });
+                    }).catch(function () {
+                        return reply(result);
+                    });
                 }
                 return reply(result);
             }).catch(function (err) {
