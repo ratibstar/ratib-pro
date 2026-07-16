@@ -13,7 +13,7 @@
  * - Network pass-through for anything else in scope
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-host-p9';
+var CACHE = 'rateb-offline-v2-host-p10';
 var PRECACHE = [
     './',
     './index.html',
@@ -28,6 +28,7 @@ var PRECACHE = [
     './js/modules/module-sdk.js',
     './js/business/business-module-framework.js',
     './js/business/reference-module.js',
+    './js/business/identity-module.js',
     './modules/module-manifest.example.json',
     './routes/route-manifest.json',
     './js/db/migrations.js',

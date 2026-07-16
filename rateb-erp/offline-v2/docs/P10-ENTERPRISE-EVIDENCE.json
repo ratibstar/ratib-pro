@@ -1,0 +1,31 @@
+{
+  "phase": 10,
+  "module": "identity",
+  "version": "1.0.0-phase10",
+  "authority": "online_erp",
+  "stores_credentials": false,
+  "artifacts": {
+    "module": "public/v2/js/business/identity-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "charter": "offline-v2/docs/P10-00-CHARTER.md",
+    "complete": "offline-v2/docs/P10-10-ENTERPRISE-COMPLETE.md",
+    "compliance": "offline-v2/docs/P10-ARCHITECTURE-COMPLIANCE.md",
+    "zero_touch": "offline-v2/docs/P10-ZERO-TOUCH-V1-PROOF.md",
+    "findings": "offline-v2/docs/P10-REMAINING-FINDINGS.md"
+  },
+  "may_store": ["sealed_identity", "claims", "rbac_snapshot", "device_trust", "unlock_metadata", "local_config", "derived_local_session", "security_metadata"],
+  "must_never_store": ["passwords", "password_hashes", "cookies", "php_sessions", "bearer_tokens", "api_tokens", "jwt", "totp_secrets", "recovery_codes", "reset_tokens"],
+  "verifications": {
+    "module_self_tests": "implemented",
+    "runtime_router_shell_sync_db_pm_sdk": "implemented",
+    "security_validation": "implemented",
+    "zero_network": "implemented",
+    "zero_touch_v1": "PASS",
+    "architecture_compliance": "PASS"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (implementation); operator Chromium gate",
+  "phase_gate": "GO — stop; no other ERP module"
+}

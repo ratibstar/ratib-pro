@@ -17,7 +17,7 @@
 
   <main>
     <p class="brand">RATEB</p>
-    <p class="tag">Offline V2 · Phase 9 Business Module Framework · Installed Chromium PWA</p>
+    <p class="tag">Offline V2 · Phase 10 Identity Module · Installed Chromium PWA</p>
     <p id="boot-status" class="status">Booting…</p>
 
     <h2>Host checks (L0)</h2>
@@ -119,8 +119,17 @@
     </dl>
     <pre id="bm-evidence" class="evidence" aria-label="Phase 9 evidence"></pre>
 
+    <h2>Identity Module (Phase 10)</h2>
+    <dl>
+      <dt>Identity version</dt>
+      <dd id="identity-version">—</dd>
+      <dt>Self-test</dt>
+      <dd id="identity-selftest" class="check">—</dd>
+    </dl>
+    <pre id="identity-evidence" class="evidence" aria-label="Phase 10 evidence"></pre>
+
     <p class="note">
-      Phase 9 · Business Module Framework + ReferenceModule only · No ERP modules · No V1.
+      Phase 10 Identity · Local unlock/claims/RBAC/device · Online ERP is Authentication Authority · No credential SoT.
     </p>
   </main>
   <script src="./js/hci.js"></script>
@@ -133,6 +142,7 @@
   <script src="./js/modules/module-sdk.js"></script>
   <script src="./js/business/business-module-framework.js"></script>
   <script src="./js/business/reference-module.js"></script>
+  <script src="./js/business/identity-module.js"></script>
   <script src="./js/boot.js"></script>
 </body>
 </html>
