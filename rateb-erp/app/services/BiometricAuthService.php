@@ -761,48 +761,12 @@ final class BiometricAuthService
 
     private function tableExists(string $table): bool
     {
-        static $cache = [];
-        if (array_key_exists($table, $cache)) {
-            return $cache[$table];
-        }
-
-        try {
-            $db = Database::connection();
-            $safeTable = str_replace('`', '', $table);
-            $stmt = $db->query('SHOW TABLES LIKE ' . $db->quote($safeTable));
-            $cache[$table] = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable) {
-            $cache[$table] = false;
-        }
-
-        return $cache[$table];
+        return Database::tableExists($table);
     }
 
     private function columnExists(string $table, string $column): bool
     {
-        static $cache = [];
-        $key = $table . '.' . $column;
-        if (array_key_exists($key, $cache)) {
-            return $cache[$key];
-        }
-
-        try {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c
-                 LIMIT 1'
-            );
-            $stmt->execute(['t' => $table, 'c' => $column]);
-            $cache[$key] = (bool) $stmt->fetchColumn();
-        } catch (\Throwable) {
-            $cache[$key] = false;
-        }
-
-        return $cache[$key];
+        return Database::liveTableHasColumn($table, $column);
     }
 
     private function publicErrorMessage(\Throwable $e): string

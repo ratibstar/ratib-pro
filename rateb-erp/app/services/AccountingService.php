@@ -918,11 +918,7 @@ final class AccountingService
         $pdo = Database::connection();
         foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
             try {
-                $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'submitted_for_approval_at'");
-                $has = $stmt !== false && $stmt->fetch() !== false;
-                if ($stmt instanceof \PDOStatement) {
-                    $stmt->closeCursor();
-                }
+                $has = Database::liveTableHasColumn($table, 'submitted_for_approval_at');
                 if (!$has) {
                     $pdo->exec(
                         "ALTER TABLE {$table} ADD COLUMN submitted_for_approval_at DATETIME NULL AFTER posted_at"
@@ -947,12 +943,8 @@ final class AccountingService
             'rateb_cash_vouchers' => "ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
         ] as $table => $enumDef) {
             try {
-                $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'status'");
-                if ($stmt !== false && $stmt->fetch() !== false) {
+                if (Database::liveTableHasColumn($table, 'status')) {
                     $pdo->exec("ALTER TABLE {$table} MODIFY status {$enumDef}");
-                }
-                if ($stmt instanceof \PDOStatement) {
-                    $stmt->closeCursor();
                 }
             } catch (\Throwable $e) {
                 // Host may block ALTER; migration 117 applies on deploy.
@@ -976,12 +968,7 @@ final class AccountingService
         foreach (['rateb_journal_entries', 'rateb_cash_vouchers'] as $table) {
             foreach ($columnDdls as $column => $ddl) {
                 try {
-                    $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE " . $pdo->quote($column));
-                    $has = $stmt !== false && $stmt->fetch() !== false;
-                    if ($stmt instanceof \PDOStatement) {
-                        $stmt->closeCursor();
-                    }
-                    if (!$has) {
+                    if (!Database::liveTableHasColumn($table, $column)) {
                         $pdo->exec("ALTER TABLE {$table} {$ddl}");
                     }
                 } catch (\Throwable $e) {
@@ -3031,18 +3018,8 @@ final class AccountingService
         if ($has !== null) {
             return $has;
         }
-        try {
-            $db = Database::connection();
-            $stmt = $db->query(
-                "SHOW COLUMNS FROM rateb_journal_lines LIKE 'cost_center_id'"
-            );
-            $has = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            $has = false;
-        }
+        $has = Database::liveTableHasColumn('rateb_journal_lines', 'cost_center_id');
+
         return $has;
     }
 

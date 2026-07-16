@@ -22,16 +22,8 @@ final class BranchService
         if (self::$branchesTableExists !== null) {
             return self::$branchesTableExists;
         }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query('SHOW TABLES LIKE \'rateb_branches\'');
-            self::$branchesTableExists = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            self::$branchesTableExists = false;
-        }
+        self::$branchesTableExists = \Rateb\App\Core\Database::tableExists('rateb_branches');
+
         return self::$branchesTableExists;
     }
 
@@ -40,16 +32,8 @@ final class BranchService
         if (self::$userBranchesTableExists !== null) {
             return self::$userBranchesTableExists;
         }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query('SHOW TABLES LIKE \'rateb_user_branches\'');
-            self::$userBranchesTableExists = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            self::$userBranchesTableExists = false;
-        }
+        self::$userBranchesTableExists = \Rateb\App\Core\Database::tableExists('rateb_user_branches');
+
         return self::$userBranchesTableExists;
     }
 
@@ -61,16 +45,8 @@ final class BranchService
         if (self::$branchesHaveIsMain !== null) {
             return self::$branchesHaveIsMain;
         }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query('SHOW COLUMNS FROM rateb_branches LIKE \'is_main\'');
-            self::$branchesHaveIsMain = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            self::$branchesHaveIsMain = false;
-        }
+        self::$branchesHaveIsMain = \Rateb\App\Core\Database::liveTableHasColumn('rateb_branches', 'is_main');
+
         return self::$branchesHaveIsMain;
     }
 
@@ -82,16 +58,8 @@ final class BranchService
         if (self::$branchesHaveArchive !== null) {
             return self::$branchesHaveArchive;
         }
-        try {
-            $pdo = \Rateb\App\Core\Database::connection();
-            $stmt = $pdo->query('SHOW COLUMNS FROM rateb_branches LIKE \'is_archived\'');
-            self::$branchesHaveArchive = $stmt !== false && $stmt->fetch() !== false;
-            if ($stmt instanceof \PDOStatement) {
-                $stmt->closeCursor();
-            }
-        } catch (\Throwable $e) {
-            self::$branchesHaveArchive = false;
-        }
+        self::$branchesHaveArchive = \Rateb\App\Core\Database::liveTableHasColumn('rateb_branches', 'is_archived');
+
         return self::$branchesHaveArchive;
     }
 

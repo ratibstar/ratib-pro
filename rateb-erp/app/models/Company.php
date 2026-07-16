@@ -14,6 +14,39 @@ final class Company extends Model
         'status', 'plan_id', 'storage_limit_mb', 'user_limit', 'modules', 'settings',
     ];
 
+    /**
+     * PERF-P0.3-B — wire Model::find into existing rateb_ops_company_request_state rows memo.
+     * No new cache layer; same request-scoped bag used by rateb_ops_company_exists().
+     */
+    public function find(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        if (function_exists('rateb_ops_company_request_state')) {
+            $state = &rateb_ops_company_request_state();
+            if (!isset($state['rows']) || !is_array($state['rows'])) {
+                $state['rows'] = [];
+            }
+            if (array_key_exists($id, $state['rows'])) {
+                return $state['rows'][$id];
+            }
+        }
+
+        $row = parent::find($id);
+
+        if (function_exists('rateb_ops_company_request_state')) {
+            $state = &rateb_ops_company_request_state();
+            if (!isset($state['rows']) || !is_array($state['rows'])) {
+                $state['rows'] = [];
+            }
+            $state['rows'][$id] = $row;
+            $state['exists'][$id] = is_array($row) && (int) ($row['id'] ?? 0) === $id;
+        }
+
+        return $row;
+    }
+
     public function findBySlug(string $slug): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM rateb_companies WHERE slug = :slug LIMIT 1');

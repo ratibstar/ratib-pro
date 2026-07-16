@@ -286,19 +286,6 @@ final class ManagerApprovalSchema
 
     private static function probeColumn(string $table, string $column): bool
     {
-        try {
-            $db = Database::connection();
-            $stmt = $db->query(
-                'SHOW COLUMNS FROM `' . $table . '` LIKE ' . $db->quote($column)
-            );
-            if ($stmt === false) {
-                return false;
-            }
-            $exists = $stmt->fetch() !== false;
-            $stmt->closeCursor();
-            return $exists;
-        } catch (\Throwable $e) {
-            return false;
-        }
+        return Database::liveTableHasColumn($table, $column);
     }
 }

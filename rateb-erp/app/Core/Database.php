@@ -151,6 +151,49 @@ final class Database
         return isset($map[$column]) || isset($map[strtolower($column)]);
     }
 
+    /**
+     * PERF-P0.3-B — table existence once per request (shared by oversight / Branch / biometric).
+     * No persistent / cross-request store — same request-static pattern as liveTableHasColumn.
+     */
+    public static function tableExists(string $table): bool
+    {
+        static $reqTables = [];
+        $safeTable = str_replace('`', '', $table);
+        if ($safeTable === '') {
+            return false;
+        }
+        if (array_key_exists($safeTable, $reqTables)) {
+            return $reqTables[$safeTable];
+        }
+        try {
+            $pdo = self::connection();
+            if (self::isSqlite()) {
+                $safeIdent = preg_replace('/[^a-zA-Z0-9_]/', '', $safeTable) ?? '';
+                if ($safeIdent === '') {
+                    $reqTables[$safeTable] = false;
+                } else {
+                    $stmt = $pdo->prepare(
+                        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :t LIMIT 1"
+                    );
+                    $stmt->execute(['t' => $safeIdent]);
+                    $reqTables[$safeTable] = $stmt->fetchColumn() !== false;
+                }
+            } else {
+                $stmt = $pdo->query('SHOW TABLES LIKE ' . $pdo->quote($safeTable));
+                if ($stmt === false) {
+                    $reqTables[$safeTable] = false;
+                } else {
+                    $reqTables[$safeTable] = $stmt->fetch() !== false;
+                    $stmt->closeCursor();
+                }
+            }
+        } catch (\Throwable $e) {
+            $reqTables[$safeTable] = false;
+        }
+
+        return $reqTables[$safeTable];
+    }
+
     /** Cached per database — uses SHOW COLUMNS on MySQL or PRAGMA on SQLite. */
     public static function tableHasColumn(string $table, string $column): bool
     {

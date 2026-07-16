@@ -9,9 +9,6 @@ use PDO;
 /** Cross-company pending approvals for admin oversight (مراقبة الإدارة). */
 final class ApprovalOversightService
 {
-    /** @var array<string, bool> Request-scoped table existence memo (not cross-request). */
-    private static array $tableExistsCache = [];
-
     /** Sources where reject is not supported from oversight UI. */
     public static function rejectDisabledSources(): array
     {
@@ -777,36 +774,7 @@ final class ApprovalOversightService
 
     private function tableExists(string $table): bool
     {
-        $safeTable = str_replace('`', '', $table);
-        if (array_key_exists($safeTable, self::$tableExistsCache)) {
-            return self::$tableExistsCache[$safeTable];
-        }
-        try {
-            $db = Database::connection();
-            if (Database::isSqlite()) {
-                $stmt = $db->prepare(
-                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :t LIMIT 1"
-                );
-                $stmt->execute(['t' => $safeTable]);
-                $exists = $stmt->fetchColumn() !== false;
-            } else {
-                $stmt = $db->query('SHOW TABLES LIKE ' . $db->quote($safeTable));
-                if ($stmt === false) {
-                    self::$tableExistsCache[$safeTable] = false;
-
-                    return false;
-                }
-                $exists = $stmt->fetch() !== false;
-                $stmt->closeCursor();
-            }
-            self::$tableExistsCache[$safeTable] = $exists;
-
-            return $exists;
-        } catch (\Throwable $e) {
-            self::$tableExistsCache[$safeTable] = false;
-
-            return false;
-        }
+        return Database::tableExists($table);
     }
 
     /** @return array<string, string> */

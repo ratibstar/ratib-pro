@@ -55,45 +55,12 @@ final class AccountingSupport
 
     public static function hasColumn(string $table, string $column): bool
     {
-        static $cache = [];
-        $key = $table . '.' . $column;
-        if (array_key_exists($key, $cache)) {
-            return $cache[$key];
-        }
-        try {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c LIMIT 1'
-            );
-            $stmt->execute(['t' => $table, 'c' => $column]);
-            $cache[$key] = (bool) $stmt->fetchColumn();
-        } catch (\Throwable $e) {
-            $cache[$key] = false;
-        }
-
-        return $cache[$key];
+        return Database::liveTableHasColumn($table, $column);
     }
 
     public static function tableExists(string $table): bool
     {
-        static $cache = [];
-        if (array_key_exists($table, $cache)) {
-            return $cache[$table];
-        }
-        try {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'SELECT 1 FROM INFORMATION_SCHEMA.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t LIMIT 1'
-            );
-            $stmt->execute(['t' => $table]);
-            $cache[$table] = (bool) $stmt->fetchColumn();
-        } catch (\Throwable $e) {
-            $cache[$table] = false;
-        }
-
-        return $cache[$table];
+        return Database::tableExists($table);
     }
 
     /**

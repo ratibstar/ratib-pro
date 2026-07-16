@@ -805,38 +805,12 @@ final class InterBranchTransferService
 
     private function tableExists(string $table): bool
     {
-        static $cache = [];
-        if (array_key_exists($table, $cache)) {
-            return $cache[$table];
-        }
-        try {
-            $stmt = Database::connection()->query("SHOW TABLES LIKE " . Database::connection()->quote($table));
-            $cache[$table] = $stmt !== false && $stmt->fetch() !== false;
-        } catch (\Throwable $e) {
-            $cache[$table] = false;
-        }
-        return $cache[$table];
+        return Database::tableExists($table);
     }
 
     private function columnExists(string $table, string $column): bool
     {
-        static $cache = [];
-        $key = $table . '.' . $column;
-        if (array_key_exists($key, $cache)) {
-            return $cache[$key];
-        }
-        try {
-            $db = Database::connection();
-            $stmt = $db->prepare(
-                'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c'
-            );
-            $stmt->execute(['t' => $table, 'c' => $column]);
-            $cache[$key] = ((int) $stmt->fetchColumn()) > 0;
-        } catch (\Throwable $e) {
-            $cache[$key] = false;
-        }
-        return $cache[$key];
+        return Database::liveTableHasColumn($table, $column);
     }
 
     private function enforceInterBranchLedgerMutable(int $companyId, string $entryDate, int $branchId): void

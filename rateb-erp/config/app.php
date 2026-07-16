@@ -2335,15 +2335,16 @@ if (!function_exists('rateb_sync_ops_session_to_company')) {
     }
 }
 
-/** Request-scoped ops-company memo (exists + resolved id). Not a cross-request cache. */
+/** Request-scoped ops-company memo (exists + rows + resolved id). Not a cross-request cache. */
 if (!function_exists('rateb_ops_company_request_state')) {
     /**
-     * @return array{exists: array<int, bool>, resolved: ?int, resolved_set: bool}
+     * @return array{exists: array<int, bool>, rows: array<int, ?array>, resolved: ?int, resolved_set: bool}
      */
     function &rateb_ops_company_request_state(): array
     {
         static $state = [
             'exists' => [],
+            'rows' => [],
             'resolved' => null,
             'resolved_set' => false,
         ];
@@ -2357,6 +2358,7 @@ if (!function_exists('rateb_ops_company_request_state_reset')) {
     {
         $state = &rateb_ops_company_request_state();
         $state['exists'] = [];
+        $state['rows'] = [];
         $state['resolved'] = null;
         $state['resolved_set'] = false;
     }
