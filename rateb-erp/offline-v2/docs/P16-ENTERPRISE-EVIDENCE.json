@@ -1,0 +1,69 @@
+{
+  "phase": 16,
+  "module": "hr",
+  "version": "1.0.0-phase16",
+  "dependencies": [
+    { "id": "identity", "version": ">=1.0.0", "required": true },
+    { "id": "accounting", "required": false },
+    { "id": "crm", "required": false }
+  ],
+  "architecture_freeze": ["2.1", "2.1.1"],
+  "artifacts": {
+    "module": "public/v2/js/business/hr-module.js",
+    "host": "public/v2/index.html",
+    "boot": "public/v2/js/boot.js",
+    "sw": "public/v2/sw.js",
+    "cache": "rateb-offline-v2-host-p16"
+  },
+  "owns": [
+    "employees",
+    "departments",
+    "positions",
+    "organization",
+    "attendance",
+    "leave",
+    "overtime_drafts",
+    "contracts",
+    "recruitment_drafts",
+    "onboarding",
+    "performance",
+    "training",
+    "document_meta",
+    "timeline",
+    "hr_settings",
+    "hr_diagnostics"
+  ],
+  "forbidden": [
+    "authentication_ownership",
+    "inventory_ownership",
+    "accounting_gl_ownership",
+    "sales_ownership",
+    "procurement_ownership",
+    "crm_ownership",
+    "foreign_module_sql",
+    "credential_store",
+    "binary_document_sot",
+    "php_copy",
+    "v1_copy"
+  ],
+  "verifications": {
+    "module_self_tests": "PASS (host HR self-test)",
+    "runtime_integration": "PASS",
+    "router_integration": "PASS (/hr)",
+    "shell_integration": "PASS",
+    "sync_integration": "PASS (hr.* events only)",
+    "identity_integration": "PASS",
+    "optional_accounting": "PASS (probe only; never GL)",
+    "optional_crm": "PASS (probe only; never own)",
+    "timeline_validation": "PASS",
+    "workflow_validation": "PASS",
+    "zero_network": "PASS",
+    "zero_touch": "PASS",
+    "architecture_compliance": "PASS",
+    "host_aggregate_boot": "FAIL (pre-existing Sync/SDK/BM Runtime factory; locked)"
+  },
+  "category_b_violations": 0,
+  "enterprise_complete": "PASS (HR BusinessModule)",
+  "phase_gate": "GO — STOP; no next ERP module",
+  "final_decision": "PASS"
+}

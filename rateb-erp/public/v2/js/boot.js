@@ -335,6 +335,26 @@
         });
     }
 
+    function runHrSelfTest() {
+        var hrApi = root.RatebOfflineV2Hr;
+        if (!hrApi) {
+            setState('hr-selftest', false, 'HR module missing');
+            return Promise.resolve({ ok: false });
+        }
+        setText('hr-version', hrApi.version);
+        return hrApi.runSelfTest().then(function (res) {
+            setState('hr-selftest', !!res.ok, res.ok
+                ? ('steps=' + (res.evidence && res.evidence.length))
+                : (res.error || 'failed'));
+            if ($('hr-evidence') && res.evidence) {
+                $('hr-evidence').textContent = res.evidence.map(function (e) {
+                    return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' · ' + e.detail : '');
+                }).join('\n');
+            }
+            return res;
+        });
+    }
+
     function run() {
         var hci = root.RatebOfflineV2HCI;
         if (!hci) {
@@ -372,7 +392,7 @@
             return hci.requestPersistence();
         }).then(function (p) {
             setState('persist', !!p.ok, p.persisted ? 'persisted' : 'not persisted (may be browser policy)');
-            return hci.appendLog('phase15-host-boot');
+            return hci.appendLog('phase16-host-boot');
         }).then(function () {
             return registerSw();
         }).then(function (sw) {
@@ -392,24 +412,27 @@
                                                     return runSalesSelfTest().then(function (salesRes) {
                                                         return runAccountingSelfTest().then(function (acctRes) {
                                                             return runCrmSelfTest().then(function (crmRes) {
-                                                                var ok = pmRes && pmRes.ok !== false &&
-                                                                    dbRes && dbRes.ok !== false &&
-                                                                    rtRes && rtRes.ok !== false &&
-                                                                    routerRes && routerRes.ok !== false &&
-                                                                    shellRes && shellRes.ok !== false &&
-                                                                    syncRes && syncRes.ok !== false &&
-                                                                    sdkRes && sdkRes.ok !== false &&
-                                                                    bmRes && bmRes.ok !== false &&
-                                                                    idRes && idRes.ok !== false &&
-                                                                    invRes && invRes.ok !== false &&
-                                                                    procRes && procRes.ok !== false &&
-                                                                    salesRes && salesRes.ok !== false &&
-                                                                    acctRes && acctRes.ok !== false &&
-                                                                    crmRes && crmRes.ok !== false;
-                                                                setText('boot-status', ok
-                                                                    ? 'Phase 15 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM ready'
-                                                                    : 'Phase 15 self-test failed');
-                                                                $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                                return runHrSelfTest().then(function (hrRes) {
+                                                                    var ok = pmRes && pmRes.ok !== false &&
+                                                                        dbRes && dbRes.ok !== false &&
+                                                                        rtRes && rtRes.ok !== false &&
+                                                                        routerRes && routerRes.ok !== false &&
+                                                                        shellRes && shellRes.ok !== false &&
+                                                                        syncRes && syncRes.ok !== false &&
+                                                                        sdkRes && sdkRes.ok !== false &&
+                                                                        bmRes && bmRes.ok !== false &&
+                                                                        idRes && idRes.ok !== false &&
+                                                                        invRes && invRes.ok !== false &&
+                                                                        procRes && procRes.ok !== false &&
+                                                                        salesRes && salesRes.ok !== false &&
+                                                                        acctRes && acctRes.ok !== false &&
+                                                                        crmRes && crmRes.ok !== false &&
+                                                                        hrRes && hrRes.ok !== false;
+                                                                    setText('boot-status', ok
+                                                                        ? 'Phase 16 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM + HR ready'
+                                                                        : 'Phase 16 self-test failed');
+                                                                    $('boot-status').className = 'status ' + (ok ? 'pass' : 'fail');
+                                                                });
                                                             });
                                                         });
                                                     });
