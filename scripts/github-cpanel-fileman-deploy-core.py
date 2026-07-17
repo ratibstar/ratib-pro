@@ -270,18 +270,24 @@ SECURITY_REMOTE_DELETE_FILES = [
     "rateb-chrome-bust.php",
 ]
 
-# Phase 2.1 moved SQLite vendor assets to the sole Admin-owned shared package.
-# Fast deploy uploads repository files but cannot infer deletions, so retire the
-# former V2-owned copies explicitly.
-EXTRACTION_REMOTE_DELETE_FILES = [
-    "rateb-erp/public/v2/vendor/sqlite/README.md",
-    "rateb-erp/public/v2/vendor/sqlite/index.d.mts",
-    "rateb-erp/public/v2/vendor/sqlite/index.mjs",
-    "rateb-erp/public/v2/vendor/sqlite/node.mjs",
-    "rateb-erp/public/v2/vendor/sqlite/sqlite3-opfs-async-proxy.js",
-    "rateb-erp/public/v2/vendor/sqlite/sqlite3-worker1.mjs",
-    "rateb-erp/public/v2/vendor/sqlite/sqlite3.wasm",
+# Phase 2.1 was rolled back after the production runtime regression gate failed.
+# Fast deploy cannot infer deleted repository files, so remove the aborted
+# Admin-owned extraction artifacts from the live tree.
+EXTRACTION_ROLLBACK_REMOTE_DELETE_FILES = [
+    "rateb-erp/public/assets/offline/shared/runtime/runtime.js",
+    "rateb-erp/public/assets/offline/shared/db/migrations.js",
+    "rateb-erp/public/assets/offline/shared/db/sqlite-runtime.js",
+    "rateb-erp/public/assets/offline/shared/identity/identity-module.js",
+    "rateb-erp/public/assets/offline/shared/sync/sync-engine.js",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/README.md",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/index.d.mts",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/index.mjs",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/node.mjs",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/sqlite3-opfs-async-proxy.js",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/sqlite3-worker1.mjs",
+    "rateb-erp/public/assets/offline/shared/vendor/sqlite/sqlite3.wasm",
 ]
+
 SECURITY_REMOTE_DELETE_FILES += [
     "rateb-erp/tools/boot-bench/" + name
     for name in (
@@ -1365,12 +1371,13 @@ def purge_security_retired_files(remote_base: str) -> None:
         api2_fileop_unlink(remote_path)
 
 
-def purge_extracted_v2_files(remote_base: str) -> None:
+def purge_aborted_extraction_files(remote_base: str) -> None:
     print(
-        f"extraction purge: removing {len(EXTRACTION_REMOTE_DELETE_FILES)} former V2-owned file(s)",
+        f"extraction rollback purge: removing "
+        f"{len(EXTRACTION_ROLLBACK_REMOTE_DELETE_FILES)} aborted shared file(s)",
         flush=True,
     )
-    for rel in EXTRACTION_REMOTE_DELETE_FILES:
+    for rel in EXTRACTION_ROLLBACK_REMOTE_DELETE_FILES:
         abs_dir = remote_dir(remote_base, rel)
         remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
         api2_fileop_unlink(remote_path)
@@ -1389,7 +1396,7 @@ def main() -> int:
         flush=True,
     )
     purge_security_retired_files(remote_base)
-    purge_extracted_v2_files(remote_base)
+    purge_aborted_extraction_files(remote_base)
     ok, fail, succeeded = run_uploads(files, remote_base, workers)
     print(
         f"\n========== Summary: ok={ok} fail={fail} total={total} "

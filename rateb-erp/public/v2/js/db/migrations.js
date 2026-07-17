@@ -1,5 +1,113 @@
 /*!
- * Compatibility stub — canonical owner:
- * /public/assets/offline/shared/db/migrations.js
+ * RATEB Offline V2 — L3 migration registry
+ * v1 foundation · v2 L4 sync engine tables (Phase 7)
  */
-export { MIGRATIONS } from '../../../assets/offline/shared/db/migrations.js';
+export var MIGRATIONS = [
+    {
+        version: 1,
+        name: 'phase3_foundation',
+        sql: [
+            'CREATE TABLE IF NOT EXISTS schema_migrations (',
+            '  version INTEGER PRIMARY KEY NOT NULL,',
+            '  name TEXT NOT NULL,',
+            '  applied_at TEXT NOT NULL',
+            ');',
+            'CREATE TABLE IF NOT EXISTS schema_meta (',
+            '  key TEXT PRIMARY KEY NOT NULL,',
+            '  value TEXT NOT NULL',
+            ');',
+            'CREATE TABLE IF NOT EXISTS v2_install_pointer (',
+            '  id INTEGER PRIMARY KEY CHECK (id = 1),',
+            '  active_slot TEXT,',
+            '  previous_slot TEXT,',
+            '  install_id TEXT,',
+            '  updated_at TEXT NOT NULL',
+            ');',
+            'CREATE TABLE IF NOT EXISTS sync_outbox (',
+            '  client_id TEXT PRIMARY KEY NOT NULL,',
+            '  module TEXT NOT NULL,',
+            '  action TEXT NOT NULL,',
+            '  payload_json TEXT NOT NULL,',
+            '  idempotency_key TEXT NOT NULL UNIQUE,',
+            '  status TEXT NOT NULL DEFAULT \'pending\',',
+            '  attempts INTEGER NOT NULL DEFAULT 0,',
+            '  available_at TEXT,',
+            '  created_at TEXT NOT NULL,',
+            '  updated_at TEXT NOT NULL',
+            ');',
+            'CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status, available_at);',
+            'CREATE TABLE IF NOT EXISTS sync_inbox (',
+            '  inbox_id TEXT PRIMARY KEY NOT NULL,',
+            '  entity_type TEXT NOT NULL,',
+            '  entity_id TEXT NOT NULL,',
+            '  version INTEGER,',
+            '  payload_json TEXT NOT NULL,',
+            '  cursor_key TEXT,',
+            '  applied INTEGER NOT NULL DEFAULT 0,',
+            '  received_at TEXT NOT NULL',
+            ');',
+            'CREATE INDEX IF NOT EXISTS idx_sync_inbox_applied ON sync_inbox(applied, received_at);',
+            'CREATE TABLE IF NOT EXISTS entity_row (',
+            '  entity_type TEXT NOT NULL,',
+            '  entity_id TEXT NOT NULL,',
+            '  version INTEGER NOT NULL DEFAULT 0,',
+            '  payload_json TEXT NOT NULL,',
+            '  updated_at TEXT NOT NULL,',
+            '  PRIMARY KEY (entity_type, entity_id)',
+            ');',
+            'CREATE INDEX IF NOT EXISTS idx_entity_row_updated ON entity_row(updated_at);',
+            'INSERT OR IGNORE INTO schema_meta(key, value) VALUES (\'schema_name\', \'rateb_offline_v2\');',
+            'INSERT OR IGNORE INTO schema_meta(key, value) VALUES (\'phase\', \'3\');'
+        ].join('\n')
+    },
+    {
+        version: 2,
+        name: 'phase7_sync_engine',
+        sql: [
+            'ALTER TABLE sync_outbox ADD COLUMN last_error TEXT;',
+            'ALTER TABLE sync_outbox ADD COLUMN base_version INTEGER NOT NULL DEFAULT 0;',
+            'CREATE TABLE IF NOT EXISTS sync_checkpoint (',
+            '  stream TEXT PRIMARY KEY NOT NULL,',
+            '  cursor_key TEXT NOT NULL,',
+            '  updated_at TEXT NOT NULL',
+            ');',
+            'CREATE TABLE IF NOT EXISTS sync_conflict (',
+            '  conflict_id TEXT PRIMARY KEY NOT NULL,',
+            '  entity_type TEXT NOT NULL,',
+            '  entity_id TEXT NOT NULL,',
+            '  local_version INTEGER NOT NULL,',
+            '  remote_version INTEGER NOT NULL,',
+            '  local_json TEXT NOT NULL,',
+            '  remote_json TEXT NOT NULL,',
+            '  strategy TEXT,',
+            '  status TEXT NOT NULL DEFAULT \'open\',',
+            '  created_at TEXT NOT NULL,',
+            '  resolved_at TEXT',
+            ');',
+            'CREATE INDEX IF NOT EXISTS idx_sync_conflict_status ON sync_conflict(status, created_at);',
+            'CREATE TABLE IF NOT EXISTS sync_audit (',
+            '  audit_id TEXT PRIMARY KEY NOT NULL,',
+            '  event TEXT NOT NULL,',
+            '  detail_json TEXT NOT NULL,',
+            '  created_at TEXT NOT NULL',
+            ');',
+            'CREATE INDEX IF NOT EXISTS idx_sync_audit_created ON sync_audit(created_at);',
+            'INSERT INTO schema_meta(key, value) VALUES (\'phase\', \'7\')',
+            '  ON CONFLICT(key) DO UPDATE SET value=excluded.value;'
+        ].join('\n')
+    },
+    {
+        version: 3,
+        name: 'px4_entity_company_isolation',
+        sql: [
+            'ALTER TABLE entity_row ADD COLUMN company_id INTEGER NOT NULL DEFAULT 0;',
+            'CREATE INDEX IF NOT EXISTS idx_entity_row_type_company ON entity_row(entity_type, company_id);',
+            'UPDATE entity_row SET company_id = CAST(json_extract(payload_json, \'$.company_id\') AS INTEGER)',
+            '  WHERE company_id = 0',
+            '    AND json_extract(payload_json, \'$.company_id\') IS NOT NULL',
+            '    AND CAST(json_extract(payload_json, \'$.company_id\') AS INTEGER) > 0;',
+            'INSERT INTO schema_meta(key, value) VALUES (\'phase\', \'px4\')',
+            '  ON CONFLICT(key) DO UPDATE SET value=excluded.value;'
+        ].join('\n')
+    }
+];
