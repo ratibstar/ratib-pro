@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260716-admin-nav-timeout-v84';
+var SW_BUILD_ID = '20260717-ops-cache-poison-guard-v85';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1080,6 +1080,68 @@ function withSoftOfflineCacheHeader(response) {
 }
 
 /**
+ * Shared ops-page HTML gate for put + serve. Reject empty/poisoned documents.
+ * @param {string} pageUrl
+ * @param {string} html
+ * @returns {boolean}
+ */
+function isValidErpOpsHtmlBody(pageUrl, html) {
+    var body = String(html || '');
+    if (body.trim() === '') {
+        return false;
+    }
+    // Explicit empty browser document (cache poison / consumed stream).
+    if (/^<!DOCTYPE\s+html>\s*<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())
+        || /^<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())) {
+        return false;
+    }
+    if (body.length < 20000
+        && !(/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
+            && body.length >= 2500
+            && /data-pos-register(?:\s|=|>)/i.test(body)
+            && !/data-pos-biometric-gate/i.test(body))) {
+        return false;
+    }
+    if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>|data-pos-biometric-gate/i.test(body.slice(0, 4000))) {
+        return false;
+    }
+    if (/data-rateb-login|id=["']login-form["']/i.test(body.slice(0, 4000))) {
+        return false;
+    }
+    if (/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
+        && !/data-pos-register(?:\s|=|>)/i.test(body)) {
+        return false;
+    }
+    if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body)) {
+        return false;
+    }
+    return true;
+}
+
+/** @param {string} pageUrl */
+function deletePoisonedErpOpsCacheEntries(pageUrl) {
+    var keys = [];
+    if (pageUrl) {
+        keys.push(String(pageUrl));
+    }
+    try {
+        var u = new URL(String(pageUrl || ''));
+        keys.push(u.origin + u.pathname);
+        if (u.search) {
+            keys.push(u.origin + u.pathname + u.search);
+        }
+        keys.push(u.origin + u.pathname + '/');
+    } catch (eKey) { /* ignore */ }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        return Promise.all(keys.map(function (key) {
+            return cache.delete(key).catch(function () { return false; });
+        }));
+    }).catch(function () {
+        return null;
+    });
+}
+
+/**
  * PERF-P1 — Put validated ERP HTML into ops-page cache (shared by warm + SWR + prefetch).
  * @param {Cache} opsCache
  * @param {string} pageUrl
@@ -1089,24 +1151,7 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
     // Phase OH — never put placeholders / login / thin stubs into ops page cache.
     return res.clone().text().then(function (html) {
         var body = String(html || '');
-        if (body.length < 20000
-            && !(/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
-                && body.length >= 2500
-                && /data-pos-register(?:\s|=|>)/i.test(body)
-                && !/data-pos-biometric-gate/i.test(body))) {
-            return null;
-        }
-        if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>|data-pos-biometric-gate/i.test(body.slice(0, 4000))) {
-            return null;
-        }
-        if (/data-rateb-login|id=["']login-form["']/i.test(body.slice(0, 4000))) {
-            return null;
-        }
-        if (/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
-            && !/data-pos-register(?:\s|=|>)/i.test(body)) {
-            return null;
-        }
-        if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body)) {
+        if (!isValidErpOpsHtmlBody(pageUrl, body)) {
             return null;
         }
         var bare = pageUrl;
@@ -1165,6 +1210,7 @@ function prefetchErpOpsUrl(href) {
 /**
  * Cloud soft-online ERP admin navigations — PERF-P1 stale-while-revalidate.
  * Cached HTML paints immediately; network refreshes ops cache in background.
+ * Poisoned/empty cache hits are deleted and never re-served.
  * @param {Request} request
  * @param {URL} url
  * @param {FetchEvent} [event]
@@ -1173,24 +1219,61 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
     if (isExactAdminDashboardPath(url.pathname)) {
         return navigateAdminDashboardNetworkFirst(request, url, event);
     }
-    function fromCacheOrFallback() {
+    var pageUrl = request.url || (url && url.href) || '';
+
+    function materializeValidatedHtml(html, sourceResponse) {
+        var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
+        try {
+            if (sourceResponse && sourceResponse.headers) {
+                sourceResponse.headers.forEach(function (v, k) { headers.set(k, v); });
+            }
+        } catch (eH) { /* ignore */ }
+        headers.set('X-Rateb-Ops-Page', '1');
+        return new Response(html, { status: 200, statusText: 'OK', headers: headers });
+    }
+
+    function fetchNetworkThenOfflineShell() {
+        return fetchNavigateNetwork(request, 4500).then(function (response) {
+            if (response && response.ok) {
+                var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                }).catch(function () { return null; });
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(store);
+                }
+                return response;
+            }
+            return neverFailNavigate(request, url);
+        }).catch(function () {
+            return neverFailNavigate(request, url);
+        });
+    }
+
+    function fromValidatedCacheOrOfflineShell() {
         return matchErpNavSnapshot(request, url).then(function (hit) {
             if (!hit) {
                 return neverFailNavigate(request, url);
             }
-            return asNonRedirectedResponse(hit).then(function (clean) {
-                return withSoftOfflineCacheHeader(clean || hit);
+            return hit.clone().text().then(function (html) {
+                if (isValidErpOpsHtmlBody(pageUrl, html)) {
+                    return withSoftOfflineCacheHeader(materializeValidatedHtml(html, hit));
+                }
+                return deletePoisonedErpOpsCacheEntries(pageUrl).then(function () {
+                    return neverFailNavigate(request, url);
+                });
+            }).catch(function () {
+                return neverFailNavigate(request, url);
             });
         }).catch(function () {
             return neverFailNavigate(request, url);
         });
     }
+
     function backgroundRevalidate() {
         return fetchNavigateNetwork(request, 4500).then(function (response) {
             if (!response || !response.ok) {
                 return null;
             }
-            var pageUrl = request.url || (url && url.href) || '';
             return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
                 return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone()).then(function () {
                     return response;
@@ -1200,39 +1283,43 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             return null;
         });
     }
+
     return matchErpNavSnapshot(request, url).then(function (hit) {
-        if (hit) {
-            // PERF-P1 — SWR: serve cache now, refresh in background.
-            if (event && typeof event.waitUntil === 'function') {
-                event.waitUntil(backgroundRevalidate());
-            } else {
-                backgroundRevalidate();
-            }
-            return asNonRedirectedResponse(hit).then(function (clean) {
-                return clean || hit;
-            });
+        if (!hit) {
+            return fetchNetworkThenOfflineShell();
         }
-        return fetchNavigateNetwork(request, 4500).then(function (response) {
-            if (response && response.ok) {
-                var pageUrl = request.url || (url && url.href) || '';
-                var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-                }).catch(function () { return null; });
+        return hit.clone().text().then(function (html) {
+            if (isValidErpOpsHtmlBody(pageUrl, html)) {
+                // PERF-P1 — SWR: serve validated cache now, refresh in background.
                 if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(store);
+                    event.waitUntil(backgroundRevalidate());
+                } else {
+                    backgroundRevalidate();
                 }
-                return response;
+                return withSoftOfflineCacheHeader(materializeValidatedHtml(html, hit));
             }
-            return fromCacheOrFallback();
+            // Poisoned/empty cache: delete, then network, else Offline Shell.
+            return deletePoisonedErpOpsCacheEntries(pageUrl).then(function () {
+                return fetchNavigateNetwork(request, 4500).then(function (response) {
+                    if (response && response.ok) {
+                        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                        }).catch(function () { return null; });
+                        if (event && typeof event.waitUntil === 'function') {
+                            event.waitUntil(store);
+                        }
+                        return response;
+                    }
+                    return fromValidatedCacheOrOfflineShell();
+                }).catch(function () {
+                    return fromValidatedCacheOrOfflineShell();
+                });
+            });
         }).catch(function () {
-            return fromCacheOrFallback();
+            return fetchNetworkThenOfflineShell();
         });
     }).catch(function () {
-        return fetchNavigateNetwork(request, 4500).then(function (response) {
-            return (response && response.ok) ? response : fromCacheOrFallback();
-        }).catch(function () {
-            return fromCacheOrFallback();
-        });
+        return fetchNetworkThenOfflineShell();
     });
 }
 
