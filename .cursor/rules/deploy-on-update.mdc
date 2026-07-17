@@ -7,6 +7,13 @@ alwaysApply: true
 
 Production deploys via GitHub Actions **fast mode** (`scripts/github-cpanel-fileman-deploy-core.py`), not full `git pull` on the server.
 
+## Orphan / integrity (PX-Deploy)
+
+Production managed trees must match Git HEAD. Fast rsync/Fileman uploads are followed by
+`scripts/deploy_integrity.py`: orphan delete + tree-hash verify. Deploy **fails** if orphans remain.
+
+See `scripts/PX-DEPLOY-PERMANENT-DEPLOYMENT-INTEGRITY.md`.
+
 ## Automatic (preferred)
 
 Fast deploy **uploads any file changed in the commit** under these paths (if the file exists in the repo):
