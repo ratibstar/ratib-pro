@@ -28,7 +28,6 @@ CRITICAL_FILES=(
   "includes/designed_bootstrap.php"
   "favicon.php"
   "erp-health.php"
-  "rateb-profile-fix.php"
   "pages/company-profile.php"
   "includes/rateb-php74-compat.php"
   "includes/rateb_html_global_ai_patch.php"

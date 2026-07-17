@@ -48,7 +48,6 @@ DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
     "index.php",
     "erp-health.php",
-    "rateb-profile-fix.php",
     "config/env.php",
     "config/accounting.php",
     "config/test-control-db.php",

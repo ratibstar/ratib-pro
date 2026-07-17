@@ -12,7 +12,7 @@ Production deploys via GitHub Actions **fast mode** (`scripts/github-cpanel-file
 Fast deploy **uploads any file changed in the commit** under these paths (if the file exists in the repo):
 
 - `includes/`, `pages/`, `control-panel/`, `js/`, `css/`, `api/`, `config/env/`, `public/`
-- Root: `.htaccess`, `index.php`, `ratib-profile-fix.php`
+- Root: `.htaccess`, `index.php`
 
 No manual list edit needed for most edits in those folders.
 

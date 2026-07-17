@@ -87,6 +87,9 @@ final class Px6SecurityHardeningTest
             'pages/tenant-test.php',
             'pages/deploy-root.php',
             'rateb-profile-check.php',
+            'rateb-profile-fix.php',
+            'rateb-deploy.php',
+            'RATEB-DEPLOY-NOW.php',
             'designed-status.php',
             'control-panel/fix-500.php',
         ];

@@ -26,7 +26,6 @@ FILES=(
   "includes/rateb-home-public-nav-sync.php"
   "includes/rateb-home-public-nav-bootstrap.php"
   "includes/rateb-home-public-footer.php"
-  "rateb-profile-fix.php"
 )
 
 ok=0
