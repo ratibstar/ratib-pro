@@ -695,7 +695,22 @@
 
         var total = document.createElement('span');
         total.className = 'rateb-pos__saved-total';
-        total.textContent = money(item.total || 0);
+        var amount = Number(item.total);
+        if (!isFinite(amount) || amount <= 0) {
+            amount = Number(item.totals && item.totals.total);
+        }
+        if (!isFinite(amount) || amount <= 0) {
+            // Recover display total from line payload when server zeroed demo prices.
+            var lines = item.lines || (item.totals && item.totals.lines) || [];
+            var sum = 0;
+            if (Array.isArray(lines)) {
+                lines.forEach(function (ln) {
+                    sum += Number(ln.line_total != null ? ln.line_total : (Number(ln.quantity || 0) * Number(ln.unit_price || 0)));
+                });
+            }
+            amount = sum;
+        }
+        total.textContent = money(amount || 0);
 
         meta.appendChild(title);
         meta.appendChild(total);

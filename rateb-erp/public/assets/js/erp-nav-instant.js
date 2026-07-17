@@ -425,11 +425,16 @@
             try {
                 offline = typeof navigator !== 'undefined' && navigator.onLine === false;
             } catch (eOff) { /* ignore */ }
-            if (offline || (opts && opts.noHardNav)) {
-                navigating = false;
-                return false;
+            // Offline: never swallow the click — let the SW serve a cached document.
+            // Returning false after preventDefault made sidebar links feel dead.
+            try {
+                root.location.assign(href);
+            } catch (eAssign) {
+                try {
+                    root.location.href = href;
+                } catch (eHref) { /* ignore */ }
             }
-            root.location.href = href;
+            navigating = false;
             return false;
         }).then(function (ok) {
             navigating = false;

@@ -28,12 +28,14 @@ class PosSellPriceService
         ?array $customer = null
     ): array {
         $productId = (int) ($line['product_id'] ?? 0);
+        $cartUnit = max(0, round((float) ($line['unit_price'] ?? 0), 2));
         if ($productId < 1 || $companyId < 1) {
-            return ['unit_price' => 0.0, 'price_source' => 'default', 'promotion_id' => null];
+            // Keep client/catalog price (demo SKUs, offline cart) instead of zeroing.
+            return ['unit_price' => $cartUnit, 'price_source' => 'cart', 'promotion_id' => null];
         }
 
         $manualOverride = !empty($line['price_override']) || (($line['price_source'] ?? '') === 'manual');
-        $manualPrice = (float) ($line['unit_price'] ?? 0);
+        $manualPrice = $cartUnit;
         if ($manualOverride && $manualPrice > 0) {
             return [
                 'unit_price' => round($manualPrice, 2),
@@ -60,7 +62,7 @@ class PosSellPriceService
         $groupId = (int) ($customer['price_group_id'] ?? 0);
         if ($groupId > 0) {
             $groupPrice = $this->bridge->groupPrice($productId, $groupId, $companyId);
-            if ($groupPrice !== null) {
+            if ($groupPrice !== null && (float) $groupPrice > 0) {
                 return [
                     'unit_price' => $groupPrice,
                     'price_source' => 'group',
@@ -71,7 +73,7 @@ class PosSellPriceService
 
         if ($branchId > 0) {
             $branchPrice = $this->bridge->branchPrice($productId, $branchId, $companyId);
-            if ($branchPrice !== null) {
+            if ($branchPrice !== null && (float) $branchPrice > 0) {
                 return [
                     'unit_price' => $branchPrice,
                     'price_source' => 'branch',
@@ -81,8 +83,17 @@ class PosSellPriceService
         }
 
         $base = $this->bridge->inventoryPriceBase($productId, $companyId);
+        $resolved = (float) ($base['price'] ?? 0);
+        // Demo / missing inventory rows often resolve to 0 — preserve cart unit price.
+        if ($resolved <= 0 && $cartUnit > 0) {
+            return [
+                'unit_price' => $cartUnit,
+                'price_source' => 'cart',
+                'promotion_id' => null,
+            ];
+        }
         return [
-            'unit_price' => (float) $base['price'],
+            'unit_price' => $resolved,
             'price_source' => ($base['sell_price'] ?? null) !== null && (float) ($base['sell_price'] ?? 0) > 0
                 ? 'default'
                 : 'cost_fallback',

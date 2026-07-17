@@ -120,7 +120,7 @@ final class PosSuspendService
         TenantContext::setCompanyId($companyId);
         $db = Database::connection();
         $stmt = $db->prepare(
-            'SELECT id, order_no, total, customer_id, notes, created_at
+            'SELECT id, order_no, total, customer_id, notes, created_at, suspended_payload
              FROM rateb_pos_orders
              WHERE company_id = :cid AND branch_id = :bid
                AND order_type = :ot AND status = :st
@@ -132,7 +132,38 @@ final class PosSuspendService
             'ot' => 'suspended',
             'st' => 'suspended',
         ]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            $total = (float) ($row['total'] ?? 0);
+            if ($total <= 0) {
+                $payload = json_decode((string) ($row['suspended_payload'] ?? ''), true);
+                if (is_array($payload)) {
+                    $fromTotals = (float) ($payload['totals']['total'] ?? 0);
+                    if ($fromTotals > 0) {
+                        $row['total'] = $fromTotals;
+                    } else {
+                        $sum = 0.0;
+                        foreach (($payload['lines'] ?? []) as $line) {
+                            if (!is_array($line)) {
+                                continue;
+                            }
+                            $lt = (float) ($line['line_total'] ?? 0);
+                            if ($lt > 0) {
+                                $sum += $lt;
+                            } else {
+                                $sum += max(0, (float) ($line['quantity'] ?? 0) * (float) ($line['unit_price'] ?? 0));
+                            }
+                        }
+                        if ($sum > 0) {
+                            $row['total'] = round($sum, 2);
+                        }
+                    }
+                }
+            }
+            unset($row['suspended_payload']);
+        }
+        unset($row);
+        return $rows;
     }
 
     /** @return array<string, mixed> */
