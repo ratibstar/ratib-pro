@@ -34,8 +34,6 @@
         statusHistory: 'crm.status_history',
         settings: 'crm.settings'
     };
-    var FORBIDDEN_PREFIXES = ['inv.', 'identity.', 'sales.', 'proc.', 'pos.', 'acct.'];
-
     var LEAD_TRANSITIONS = {
         new: ['contacted', 'qualified', 'archived'],
         contacted: ['qualified', 'proposal', 'lost', 'archived'],
@@ -62,61 +60,14 @@
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     }
 
-    function DocStore(db) {
-        this.db = db;
-    }
-
-    DocStore.prototype.put = function (entityType, entityId, payload, version) {
-        var t = String(entityType);
-        for (var i = 0; i < FORBIDDEN_PREFIXES.length; i++) {
-            if (t.indexOf(FORBIDDEN_PREFIXES[i]) === 0) {
-                return Promise.reject(new Error('crm_forbidden_storage:' + t));
-            }
-        }
-        if (t.indexOf('crm.') !== 0) {
-            return Promise.reject(new Error('crm_forbidden_storage:' + t));
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [t, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    DocStore.prototype.get = function (entityType, entityId) {
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return { version: Number(rows[0].version || 1), payload: JSON.parse(rows[0].payload_json) };
-        });
-    };
-
-    DocStore.prototype.list = function (entityType) {
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return { id: r.entity_id, version: Number(r.version || 1), payload: JSON.parse(r.payload_json) };
-            });
-        });
-    };
-
-    /** Append-only insert — rejects if row already exists (TimelinePort). */
-    DocStore.prototype.append = function (entityType, entityId, payload) {
-        var self = this;
-        return this.get(entityType, entityId).then(function (existing) {
+    function appendOwned(store, entityType, entityId, payload) {
+        return store.get(entityType, entityId, payload && payload.company_id).then(function (existing) {
             if (existing) {
                 return Promise.reject(new Error('crm_timeline_immutable:' + entityId));
             }
-            return self.put(entityType, entityId, payload, 1);
+            return store.put(entityType, entityId, payload, 1);
         });
-    };
+    }
 
     function CrmModule() {
         BusinessModule.call(this, {
@@ -174,21 +125,12 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new DocStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'crm.',
+                errorCode: 'crm_forbidden_storage'
+            });
             return self._store;
         });
-    };
-
-    CrmModule.prototype._svc = function (moduleId, name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('crm_runtime_missing');
-        }
-        var key = 'module.' + moduleId + '.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('crm_service_missing:' + key);
-        }
-        return rt.services.get(key);
     };
 
     CrmModule.prototype._hasService = function (moduleId, name) {
@@ -197,8 +139,7 @@
     };
 
     CrmModule.prototype._callIdentity = function (name, arg) {
-        var fn = this._svc('identity', name);
-        return Promise.resolve(typeof fn === 'function' ? fn(arg) : fn);
+        return this.callPublished('identity', name, arg);
     };
 
     /** Optional Sales API — never required for CRM core. */
@@ -206,14 +147,7 @@
         if (!this._hasService('sales', name)) {
             return Promise.reject(new Error('crm_sales_optional_inactive:' + name));
         }
-        var rt = root.RatebOfflineV2Runtime;
-        var biz = rt.services.tryGet('business');
-        var rec = biz && typeof biz.getModule === 'function' ? biz.getModule('sales') : null;
-        var mod = rec && rec.module;
-        if (!mod || typeof mod[name] !== 'function') {
-            return Promise.reject(new Error('crm_sales_api_missing:' + name));
-        }
-        return Promise.resolve(mod[name](arg));
+        return this.callPublished('sales', name, arg);
     };
 
     /** Optional Accounting probe — CRM must never post GL. */
@@ -281,7 +215,7 @@
         var rt = root.RatebOfflineV2Runtime;
         var sync = rt && rt.services && rt.services.tryGet('sync');
         if (!sync || typeof sync.enqueue !== 'function') {
-            return Promise.resolve({ ok: true, skipped: true });
+            return Promise.reject(new Error('sync_not_ready'));
         }
         if (String(entityType).indexOf('crm.') !== 0) {
             return Promise.reject(new Error('crm_sync_forbidden_entity'));
@@ -342,7 +276,7 @@
                 created_by: spec.created_by || null,
                 created_at: nowIso()
             };
-            return store.append(ET.timeline, id, row).then(function () {
+            return appendOwned(store, ET.timeline, id, row).then(function () {
                 self._emit('crm:timeline_recorded', { id: id, event_type: row.event_type });
                 return { ok: true, event: row };
             });
@@ -354,11 +288,8 @@
         filter = filter || {};
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.timeline).then(function (rows) {
+                return store.list(ET.timeline, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (e) {
-                        if (Number(e.company_id) !== Number(idCtx.company_id)) {
-                            return false;
-                        }
                         if (filter.lead_id && e.lead_id !== filter.lead_id) {
                             return false;
                         }
@@ -377,18 +308,24 @@
 
     CrmModule.prototype.refuseTimelineMutation = function () {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            var id = uid('tl-imut');
-            return store.append(ET.timeline, id, {
-                id: id,
-                company_id: 0,
-                event_type: 'probe',
-                created_at: nowIso()
-            }).then(function () {
-                return store.append(ET.timeline, id, { id: id, event_type: 'mutated' }).then(function () {
-                    return { ok: false };
-                }).catch(function (err) {
-                    return { ok: /timeline_immutable/i.test(String(err && err.message)) };
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                var id = uid('tl-imut');
+                return appendOwned(store, ET.timeline, id, {
+                    id: id,
+                    company_id: idCtx.company_id,
+                    event_type: 'probe',
+                    created_at: nowIso()
+                }).then(function () {
+                    return appendOwned(store, ET.timeline, id, {
+                        id: id,
+                        company_id: idCtx.company_id,
+                        event_type: 'mutated'
+                    }).then(function () {
+                        return { ok: false };
+                    }).catch(function (err) {
+                        return { ok: /timeline_immutable/i.test(String(err && err.message)) };
+                    });
                 });
             });
         });
@@ -432,10 +369,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.account).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (a) {
-                        return Number(a.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.account, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -469,10 +404,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.contact).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (c) {
-                        return Number(c.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.contact, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -511,7 +444,7 @@
                         : targetType === 'contact' ? ET.contact
                             : targetType === 'opportunity' ? ET.opportunity
                                 : ET.lead;
-                    return store.get(et, targetId).then(function (rec) {
+                    return store.get(et, targetId, idCtx.company_id).then(function (rec) {
                         if (!rec) {
                             throw new Error('crm_link_target_missing');
                         }
@@ -552,7 +485,7 @@
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
                 var id = spec.id || uid('lead');
-                return store.get(ET.lead, id).then(function (existing) {
+                return store.get(ET.lead, id, idCtx.company_id).then(function (existing) {
                     self._leadSeq += 1;
                     var leadNo = spec.lead_no || ('LD-' + ('0000' + self._leadSeq).slice(-4));
                     var row;
@@ -632,9 +565,9 @@
 
     CrmModule.prototype.getLead = function (leadId) {
         var self = this;
-        return this.requireIdentity().then(function () {
+        return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.lead, leadId).then(function (r) {
+                return store.get(ET.lead, leadId, idCtx.company_id).then(function (r) {
                     return r ? r.payload : null;
                 });
             });
@@ -645,10 +578,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.lead).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (l) {
-                        return Number(l.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.lead, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -661,7 +592,7 @@
         var self = this;
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.lead, leadId).then(function (rec) {
+                return store.get(ET.lead, leadId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('crm_lead_missing');
                     }
@@ -689,7 +620,7 @@
                         created_at: nowIso()
                     };
                     return store.put(ET.lead, leadId, lead, rec.version + 1).then(function () {
-                        return store.append(ET.statusHistory, histId, hist);
+                        return appendOwned(store, ET.statusHistory, histId, hist);
                     }).then(function () {
                         self._emit('crm:lead_transitioned', { id: leadId, from: from, to: to });
                         return self.recordTimeline({
@@ -726,7 +657,7 @@
                 throw new Error('crm_assign_forbidden');
             }
             return self._ensureStore().then(function (store) {
-                return store.get(ET.lead, spec.lead_id).then(function (rec) {
+                return store.get(ET.lead, spec.lead_id, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('crm_lead_missing');
                     }
@@ -840,10 +771,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.pipeline).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (p) {
-                        return Number(p.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.pipeline, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -853,10 +782,9 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.stage).then(function (rows) {
+                return store.list(ET.stage, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (s) {
-                        return Number(s.company_id) === Number(idCtx.company_id) &&
-                            (!pipelineId || s.pipeline_id === pipelineId);
+                        return !pipelineId || s.pipeline_id === pipelineId;
                     }).sort(function (a, b) {
                         return Number(a.sort_order) - Number(b.sort_order);
                     });
@@ -870,7 +798,7 @@
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
                 var pipeId = spec.pipeline_id || 'pipe-default';
-                return store.get(ET.pipeline, pipeId).then(function (pipeRec) {
+                return store.get(ET.pipeline, pipeId, idCtx.company_id).then(function (pipeRec) {
                     if (!pipeRec) {
                         throw new Error('crm_pipeline_missing');
                     }
@@ -932,8 +860,8 @@
             }
             return self._ensureStore().then(function (store) {
                 return Promise.all([
-                    store.get(ET.opportunity, opportunityId),
-                    store.get(ET.stage, stageId)
+                    store.get(ET.opportunity, opportunityId, idCtx.company_id),
+                    store.get(ET.stage, stageId, idCtx.company_id)
                 ]).then(function (parts) {
                     var oppRec = parts[0];
                     var stageRec = parts[1];
@@ -993,10 +921,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.opportunity).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (o) {
-                        return Number(o.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.opportunity, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -1092,7 +1018,7 @@
         var self = this;
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.task, taskId).then(function (rec) {
+                return store.get(ET.task, taskId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('crm_task_missing');
                     }
@@ -1180,10 +1106,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.campaign).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (c) {
-                        return Number(c.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.campaign, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -1350,7 +1274,7 @@
             var outlet = root.document.getElementById('rateb-v2-router-outlet') ||
                 root.document.body.appendChild(root.document.createElement('div'));
             outlet.id = outlet.id || 'rateb-v2-router-outlet-crm';
-            var manifestUrl = new URL('./routes/route-manifest.json', root.location.href).href;
+            var manifestUrl = new URL('./js/routes/route-manifest.json', root.location.href).href;
 
             return router.init({ outlet: outlet, startPath: '/', manifestUrl: manifestUrl }).then(function () {
                 return fw.start();

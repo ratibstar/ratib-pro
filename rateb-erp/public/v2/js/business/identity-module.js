@@ -704,10 +704,6 @@
                     return store.securityScan();
                 });
             });
-            self.subscribe('sync:enqueued', function () {
-                /* Monitor only — identity never enqueues credentials */
-                self.reportHealth('sync_watch', true, 'observed');
-            });
             self.reportHealth('initialize', true, 'services_ready');
         });
     };
@@ -871,17 +867,34 @@
                 note('activate', !!(act && act.ok), '');
                 note('event_ready', ready, '');
                 note('runtime_service', root.RatebOfflineV2Runtime.services.has('module.identity.session'), '');
-
+                var serviceHandle = root.RatebOfflineV2Runtime.services.get('module.identity.session');
+                note('service_handle_kind', !!(serviceHandle && serviceHandle.kind === 'module.service'),
+                    serviceHandle && serviceHandle.kind);
                 var pkg = createSyntheticEnrollment();
                 return mod.applyEnrollmentPackage(pkg);
             }).then(function (enrolled) {
                 note('enroll_apply', !!(enrolled && enrolled.ok), '');
                 return mod.setLocalUnlockPin('1357');
             }).then(function () {
+                /* PX4: read published session while locked — must not poison later reads. */
+                return root.RatebOfflineV2Business.invokePublished('identity', 'session');
+            }).then(function (beforeUnlock) {
+                note('published_session_before_unlock', !(beforeUnlock && beforeUnlock.unlocked),
+                    JSON.stringify(beforeUnlock));
                 return mod.unlock('1357');
             }).then(function (unlocked) {
                 note('unlock', !!(unlocked && unlocked.ok && unlocked.session && unlocked.session.unlocked), '');
                 note('session_derived', !!(unlocked.session.derived && unlocked.session.has_server_credentials === false), '');
+                return root.RatebOfflineV2Business.invokePublished('identity', 'session');
+            }).then(function (publishedSession) {
+                note('published_session_after_unlock', !!(publishedSession && publishedSession.unlocked),
+                    JSON.stringify(publishedSession));
+                note('published_session_fresh', !!(publishedSession && publishedSession.unlocked),
+                    'no_stale_singleton_cache');
+                return root.RatebOfflineV2Business.invokePublished('identity', 'rbac');
+            }).then(function (publishedRbac) {
+                note('published_rbac_fresh', !!(publishedRbac && publishedRbac.permissions &&
+                    publishedRbac.permissions.indexOf('dashboard.view') !== -1), '');
                 return mod.getClaims();
             }).then(function (claims) {
                 note('claims', !!(claims && claims.user_id === 42 && claims.company_id === 7), JSON.stringify(claims && { u: claims.user_id, c: claims.company_id }));
@@ -896,6 +909,10 @@
                 note('rbac_check', !!perm, '');
                 return mod.lock();
             }).then(function () {
+                return root.RatebOfflineV2Business.invokePublished('identity', 'session');
+            }).then(function (lockedPublished) {
+                note('published_session_after_lock', !(lockedPublished && lockedPublished.unlocked),
+                    JSON.stringify(lockedPublished));
                 return mod.getLocalSession();
             }).then(function (sess) {
                 note('lock', !(sess && sess.unlocked), JSON.stringify(sess));

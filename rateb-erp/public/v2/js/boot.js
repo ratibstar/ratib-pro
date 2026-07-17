@@ -505,7 +505,7 @@
                 accounting: true,
                 crm: true,
                 hr: true,
-                manufacturing: true
+                mfg: true
             };
             return supported[id] ? id : null;
         }
@@ -559,8 +559,29 @@
             });
 
             return Promise.all([pmPromise, dbPromise, platformPromise]).then(function (parts) {
-                mark('background-platform-done');
-                return { pm: parts[0], db: parts[1] };
+                var pm = parts[0];
+                var db = parts[1];
+                if (!db) {
+                    throw new Error('db_bootstrap_failed');
+                }
+                var syncApi = root.RatebOfflineV2Sync;
+                if (!syncApi || typeof syncApi.create !== 'function') {
+                    throw new Error('sync_bootstrap_failed');
+                }
+                /* PX4: Sync must be created and started before any BusinessModule writer runs. */
+                var sync = syncApi.create({ intervalMs: 60000 });
+                root.RatebOfflineV2ActiveSync = sync;
+                return sync.start({ intervalMs: 60000 }).then(function (started) {
+                    if (!runtime.services.has('sync')) {
+                        throw new Error('sync_not_registered');
+                    }
+                    mark('background-platform-done');
+                    ready('sync', {
+                        started: !!(started && started.ok),
+                        offline: !!(started && started.offline)
+                    });
+                    return { pm: pm, db: db, sync: sync };
+                });
             });
         }
 
@@ -579,7 +600,7 @@
                 accounting: ['identity', 'inventory'],
                 crm: ['identity'],
                 hr: ['identity'],
-                manufacturing: ['identity', 'inventory']
+                mfg: ['identity', 'inventory']
             };
             var order = (deps[activeId] || []).concat([activeId]);
             var globals = {
@@ -590,11 +611,21 @@
                 accounting: 'RatebOfflineV2Accounting',
                 crm: 'RatebOfflineV2Crm',
                 hr: 'RatebOfflineV2Hr',
-                manufacturing: 'RatebOfflineV2Mfg'
+                mfg: 'RatebOfflineV2Mfg'
+            };
+            var scripts = {
+                identity: 'identity-module.js',
+                inventory: 'inventory-module.js',
+                procurement: 'procurement-module.js',
+                sales: 'sales-module.js',
+                accounting: 'accounting-module.js',
+                crm: 'crm-module.js',
+                hr: 'hr-module.js',
+                mfg: 'manufacturing-module.js'
             };
 
             return Promise.all(order.map(function (id) {
-                return loadScript('./js/business/' + id + '-module.js');
+                return loadScript('./js/business/' + scripts[id]);
             })).then(function () {
                 var business = root.RatebOfflineV2Business;
                 if (!business || !business.create) {

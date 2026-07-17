@@ -95,5 +95,19 @@ export var MIGRATIONS = [
             'INSERT INTO schema_meta(key, value) VALUES (\'phase\', \'7\')',
             '  ON CONFLICT(key) DO UPDATE SET value=excluded.value;'
         ].join('\n')
+    },
+    {
+        version: 3,
+        name: 'px4_entity_company_isolation',
+        sql: [
+            'ALTER TABLE entity_row ADD COLUMN company_id INTEGER NOT NULL DEFAULT 0;',
+            'CREATE INDEX IF NOT EXISTS idx_entity_row_type_company ON entity_row(entity_type, company_id);',
+            'UPDATE entity_row SET company_id = CAST(json_extract(payload_json, \'$.company_id\') AS INTEGER)',
+            '  WHERE company_id = 0',
+            '    AND json_extract(payload_json, \'$.company_id\') IS NOT NULL',
+            '    AND CAST(json_extract(payload_json, \'$.company_id\') AS INTEGER) > 0;',
+            'INSERT INTO schema_meta(key, value) VALUES (\'phase\', \'px4\')',
+            '  ON CONFLICT(key) DO UPDATE SET value=excluded.value;'
+        ].join('\n')
     }
 ];

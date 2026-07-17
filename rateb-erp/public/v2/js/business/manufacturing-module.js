@@ -57,8 +57,6 @@
         timeline: 'mfg.timeline',
         statusHistory: 'mfg.status_history'
     };
-    var FORBIDDEN_PREFIXES = ['inv.', 'identity.', 'sales.', 'proc.', 'pos.', 'acct.', 'crm.', 'hr.'];
-
     var MASTER_TRANSITIONS = {
         draft: ['active', 'cancelled', 'archived'],
         active: ['obsolete', 'cancelled', 'archived'],
@@ -86,60 +84,14 @@
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     }
 
-    function DocStore(db) {
-        this.db = db;
-    }
-
-    DocStore.prototype.put = function (entityType, entityId, payload, version) {
-        var t = String(entityType);
-        for (var i = 0; i < FORBIDDEN_PREFIXES.length; i++) {
-            if (t.indexOf(FORBIDDEN_PREFIXES[i]) === 0) {
-                return Promise.reject(new Error('mfg_forbidden_storage:' + t));
-            }
-        }
-        if (t.indexOf('mfg.') !== 0) {
-            return Promise.reject(new Error('mfg_forbidden_storage:' + t));
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [t, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    DocStore.prototype.get = function (entityType, entityId) {
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return { version: Number(rows[0].version || 1), payload: JSON.parse(rows[0].payload_json) };
-        });
-    };
-
-    DocStore.prototype.list = function (entityType) {
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return { id: r.entity_id, version: Number(r.version || 1), payload: JSON.parse(r.payload_json) };
-            });
-        });
-    };
-
-    DocStore.prototype.append = function (entityType, entityId, payload) {
-        var self = this;
-        return this.get(entityType, entityId).then(function (existing) {
+    function appendOwned(store, entityType, entityId, payload) {
+        return store.get(entityType, entityId, payload && payload.company_id).then(function (existing) {
             if (existing) {
                 return Promise.reject(new Error('mfg_timeline_immutable:' + entityId));
             }
-            return self.put(entityType, entityId, payload, 1);
+            return store.put(entityType, entityId, payload, 1);
         });
-    };
+    }
 
     function MfgModule() {
         BusinessModule.call(this, {
@@ -205,21 +157,12 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new DocStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'mfg.',
+                errorCode: 'mfg_forbidden_storage'
+            });
             return self._store;
         });
-    };
-
-    MfgModule.prototype._svc = function (moduleId, name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('mfg_runtime_missing');
-        }
-        var key = 'module.' + moduleId + '.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('mfg_service_missing:' + key);
-        }
-        return rt.services.get(key);
     };
 
     MfgModule.prototype._hasService = function (moduleId, name) {
@@ -228,8 +171,7 @@
     };
 
     MfgModule.prototype._callIdentity = function (name, arg) {
-        var fn = this._svc('identity', name);
-        return Promise.resolve(typeof fn === 'function' ? fn(arg) : fn);
+        return this.callPublished('identity', name, arg);
     };
 
     MfgModule.prototype._callInventory = function (name, arg) {
@@ -240,17 +182,7 @@
         if (!rt.services.has('module.inventory.postMovement')) {
             return Promise.reject(new Error('mfg_inventory_inactive'));
         }
-        var key = 'module.inventory.' + name;
-        var biz = rt.services.tryGet('business');
-        var rec = biz && typeof biz.getModule === 'function' ? biz.getModule('inventory') : null;
-        var mod = rec && rec.module;
-        if (!mod || typeof mod[name] !== 'function') {
-            return Promise.reject(new Error('mfg_inventory_api_missing:' + name));
-        }
-        if (!rt.services.has(key)) {
-            return Promise.reject(new Error('mfg_service_missing:' + key));
-        }
-        return Promise.resolve(mod[name](arg));
+        return this.callPublished('inventory', name, arg);
     };
 
     MfgModule.prototype.requireIdentity = function () {
@@ -316,7 +248,7 @@
         var rt = root.RatebOfflineV2Runtime;
         var sync = rt && rt.services && rt.services.tryGet('sync');
         if (!sync || typeof sync.enqueue !== 'function') {
-            return Promise.resolve({ ok: true, skipped: true });
+            return Promise.reject(new Error('sync_not_ready'));
         }
         if (String(entityType).indexOf('mfg.') !== 0) {
             return Promise.reject(new Error('mfg_sync_forbidden_entity'));
@@ -369,7 +301,7 @@
                 created_by: spec.created_by || null,
                 created_at: nowIso()
             };
-            return store.append(ET.timeline, id, row).then(function () {
+            return appendOwned(store, ET.timeline, id, row).then(function () {
                 self._emit('mfg:timeline_recorded', { id: id });
                 return { ok: true, event: row };
             });
@@ -381,11 +313,8 @@
         filter = filter || {};
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.timeline).then(function (rows) {
+                return store.list(ET.timeline, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (e) {
-                        if (Number(e.company_id) !== Number(idCtx.company_id)) {
-                            return false;
-                        }
                         if (filter.production_order_id && e.production_order_id !== filter.production_order_id) {
                             return false;
                         }
@@ -456,9 +385,9 @@
 
     MfgModule.prototype.getBom = function (bomId) {
         var self = this;
-        return this.requireIdentity().then(function () {
+        return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.bom, bomId).then(function (r) {
+                return store.get(ET.bom, bomId, idCtx.company_id).then(function (r) {
                     return r ? r.payload : null;
                 });
             });
@@ -529,7 +458,7 @@
                 throw new Error('mfg_submit_forbidden');
             }
             return self._ensureStore().then(function (store) {
-                return store.get(entityType, entityId).then(function (rec) {
+                return store.get(entityType, entityId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('mfg_entity_missing:' + entityType);
                     }
@@ -547,7 +476,7 @@
                     row.updated_at = nowIso();
                     var histId = uid('sh');
                     return store.put(entityType, entityId, row, rec.version + 1).then(function () {
-                        return store.append(ET.statusHistory, histId, {
+                        return appendOwned(store, ET.statusHistory, histId, {
                             id: histId,
                             company_id: idCtx.company_id,
                             entity_type: entityType,
@@ -640,9 +569,9 @@
 
     MfgModule.prototype.getProductionOrder = function (poId) {
         var self = this;
-        return this.requireIdentity().then(function () {
+        return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.productionOrder, poId).then(function (r) {
+                return store.get(ET.productionOrder, poId, idCtx.company_id).then(function (r) {
                     return r ? r.payload : null;
                 });
             });
@@ -653,10 +582,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.productionOrder).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (p) {
-                        return Number(p.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.productionOrder, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -796,7 +723,7 @@
                 if (!poId || !(qty > 0)) {
                     throw new Error('mfg_fg_invalid');
                 }
-                return store.get(ET.productionOrder, poId).then(function (poRec) {
+                return store.get(ET.productionOrder, poId, idCtx.company_id).then(function (poRec) {
                     if (!poRec) {
                         throw new Error('mfg_po_missing');
                     }
@@ -863,7 +790,7 @@
                 var id = uid('scr');
                 var qty = Number(spec.qty || 0);
                 var poId = spec.production_order_id;
-                return store.get(ET.productionOrder, poId).then(function (poRec) {
+                return store.get(ET.productionOrder, poId, idCtx.company_id).then(function (poRec) {
                     if (!poRec) {
                         throw new Error('mfg_po_missing');
                     }
@@ -1134,7 +1061,7 @@
             var outlet = root.document.getElementById('rateb-v2-router-outlet') ||
                 root.document.body.appendChild(root.document.createElement('div'));
             outlet.id = outlet.id || 'rateb-v2-router-outlet-mfg';
-            var manifestUrl = new URL('./routes/route-manifest.json', root.location.href).href;
+            var manifestUrl = new URL('./js/routes/route-manifest.json', root.location.href).href;
 
             return router.init({ outlet: outlet, startPath: '/', manifestUrl: manifestUrl }).then(function () {
                 return fw.start();

@@ -39,8 +39,6 @@
         statusHistory: 'hr.status_history',
         settings: 'hr.settings'
     };
-    var FORBIDDEN_PREFIXES = ['inv.', 'identity.', 'sales.', 'proc.', 'pos.', 'acct.', 'crm.'];
-
     var EMP_TRANSITIONS = {
         draft: ['registered', 'archived'],
         registered: ['active', 'archived'],
@@ -101,60 +99,14 @@
         return ('0000' + n).slice(-4);
     }
 
-    function DocStore(db) {
-        this.db = db;
-    }
-
-    DocStore.prototype.put = function (entityType, entityId, payload, version) {
-        var t = String(entityType);
-        for (var i = 0; i < FORBIDDEN_PREFIXES.length; i++) {
-            if (t.indexOf(FORBIDDEN_PREFIXES[i]) === 0) {
-                return Promise.reject(new Error('hr_forbidden_storage:' + t));
-            }
-        }
-        if (t.indexOf('hr.') !== 0) {
-            return Promise.reject(new Error('hr_forbidden_storage:' + t));
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [t, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    DocStore.prototype.get = function (entityType, entityId) {
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return { version: Number(rows[0].version || 1), payload: JSON.parse(rows[0].payload_json) };
-        });
-    };
-
-    DocStore.prototype.list = function (entityType) {
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return { id: r.entity_id, version: Number(r.version || 1), payload: JSON.parse(r.payload_json) };
-            });
-        });
-    };
-
-    DocStore.prototype.append = function (entityType, entityId, payload) {
-        var self = this;
-        return this.get(entityType, entityId).then(function (existing) {
+    function appendOwned(store, entityType, entityId, payload) {
+        return store.get(entityType, entityId, payload && payload.company_id).then(function (existing) {
             if (existing) {
                 return Promise.reject(new Error('hr_timeline_immutable:' + entityId));
             }
-            return self.put(entityType, entityId, payload, 1);
+            return store.put(entityType, entityId, payload, 1);
         });
-    };
+    }
 
     function HrModule() {
         BusinessModule.call(this, {
@@ -213,21 +165,12 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new DocStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'hr.',
+                errorCode: 'hr_forbidden_storage'
+            });
             return self._store;
         });
-    };
-
-    HrModule.prototype._svc = function (moduleId, name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('hr_runtime_missing');
-        }
-        var key = 'module.' + moduleId + '.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('hr_service_missing:' + key);
-        }
-        return rt.services.get(key);
     };
 
     HrModule.prototype._hasService = function (moduleId, name) {
@@ -236,8 +179,7 @@
     };
 
     HrModule.prototype._callIdentity = function (name, arg) {
-        var fn = this._svc('identity', name);
-        return Promise.resolve(typeof fn === 'function' ? fn(arg) : fn);
+        return this.callPublished('identity', name, arg);
     };
 
     HrModule.prototype._accountingAvailable = function () {
@@ -313,7 +255,7 @@
         var rt = root.RatebOfflineV2Runtime;
         var sync = rt && rt.services && rt.services.tryGet('sync');
         if (!sync || typeof sync.enqueue !== 'function') {
-            return Promise.resolve({ ok: true, skipped: true });
+            return Promise.reject(new Error('sync_not_ready'));
         }
         if (String(entityType).indexOf('hr.') !== 0) {
             return Promise.reject(new Error('hr_sync_forbidden_entity'));
@@ -366,7 +308,7 @@
                 created_by: spec.created_by || null,
                 created_at: nowIso()
             };
-            return store.append(ET.timeline, id, row).then(function () {
+            return appendOwned(store, ET.timeline, id, row).then(function () {
                 self._emit('hr:timeline_recorded', { id: id, event_type: row.event_type });
                 return { ok: true, event: row };
             });
@@ -378,11 +320,8 @@
         filter = filter || {};
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.timeline).then(function (rows) {
+                return store.list(ET.timeline, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (e) {
-                        if (Number(e.company_id) !== Number(idCtx.company_id)) {
-                            return false;
-                        }
                         if (filter.employee_id && e.employee_id !== filter.employee_id) {
                             return false;
                         }
@@ -395,18 +334,24 @@
 
     HrModule.prototype.refuseTimelineMutation = function () {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            var id = uid('tl-imut');
-            return store.append(ET.timeline, id, {
-                id: id,
-                company_id: 0,
-                event_type: 'probe',
-                created_at: nowIso()
-            }).then(function () {
-                return store.append(ET.timeline, id, { id: id, event_type: 'mutated' }).then(function () {
-                    return { ok: false };
-                }).catch(function (err) {
-                    return { ok: /timeline_immutable/i.test(String(err && err.message)) };
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                var id = uid('tl-imut');
+                return appendOwned(store, ET.timeline, id, {
+                    id: id,
+                    company_id: idCtx.company_id,
+                    event_type: 'probe',
+                    created_at: nowIso()
+                }).then(function () {
+                    return appendOwned(store, ET.timeline, id, {
+                        id: id,
+                        company_id: idCtx.company_id,
+                        event_type: 'mutated'
+                    }).then(function () {
+                        return { ok: false };
+                    }).catch(function (err) {
+                        return { ok: /timeline_immutable/i.test(String(err && err.message)) };
+                    });
                 });
             });
         });
@@ -438,10 +383,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.department).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (d) {
-                        return Number(d.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.department, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -472,10 +415,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.position).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (p) {
-                        return Number(p.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.position, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -527,10 +468,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.orgUnit).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (o) {
-                        return Number(o.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.orgUnit, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -542,7 +481,7 @@
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
                 var id = spec.id || uid('emp');
-                return store.get(ET.employee, id).then(function (existing) {
+                return store.get(ET.employee, id, idCtx.company_id).then(function (existing) {
                     var row;
                     if (existing) {
                         row = existing.payload;
@@ -613,9 +552,9 @@
 
     HrModule.prototype.getEmployee = function (employeeId) {
         var self = this;
-        return this.requireIdentity().then(function () {
+        return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.employee, employeeId).then(function (r) {
+                return store.get(ET.employee, employeeId, idCtx.company_id).then(function (r) {
                     return r ? r.payload : null;
                 });
             });
@@ -626,10 +565,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.employee).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (e) {
-                        return Number(e.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.employee, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -639,7 +576,7 @@
         var self = this;
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.employee, employeeId).then(function (rec) {
+                return store.get(ET.employee, employeeId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('hr_employee_missing');
                     }
@@ -672,7 +609,7 @@
         var self = this;
         return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(entityType, entityId).then(function (rec) {
+                return store.get(entityType, entityId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('hr_entity_missing:' + entityType);
                     }
@@ -703,7 +640,7 @@
                         created_at: nowIso()
                     };
                     return store.put(entityType, entityId, row, rec.version + 1).then(function () {
-                        return store.append(ET.statusHistory, histId, hist);
+                        return appendOwned(store, ET.statusHistory, histId, hist);
                     }).then(function () {
                         var payload = { id: entityId, from: from, to: to };
                         self._emit(eventName, payload);
@@ -781,11 +718,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.attendance).then(function (rows) {
+                return store.list(ET.attendance, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (a) {
-                        if (Number(a.company_id) !== Number(idCtx.company_id)) {
-                            return false;
-                        }
                         if (employeeId && a.employee_id !== employeeId) {
                             return false;
                         }
@@ -871,7 +805,7 @@
                 throw new Error('hr_leave_oversee_forbidden');
             }
             return self._ensureStore().then(function (store) {
-                return store.get(ET.leaveRequest, leaveId).then(function (rec) {
+                return store.get(ET.leaveRequest, leaveId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('hr_leave_missing');
                     }
@@ -1367,7 +1301,7 @@
             var outlet = root.document.getElementById('rateb-v2-router-outlet') ||
                 root.document.body.appendChild(root.document.createElement('div'));
             outlet.id = outlet.id || 'rateb-v2-router-outlet-hr';
-            var manifestUrl = new URL('./routes/route-manifest.json', root.location.href).href;
+            var manifestUrl = new URL('./js/routes/route-manifest.json', root.location.href).href;
 
             return router.init({ outlet: outlet, startPath: '/', manifestUrl: manifestUrl }).then(function () {
                 return fw.start();

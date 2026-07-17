@@ -25,7 +25,6 @@
         ret: 'sales.return',
         approval: 'sales.approval'
     };
-    var FORBIDDEN_PREFIXES = ['inv.', 'identity.', 'proc.', 'pos.'];
     var DEFAULT_TAX_RATE = 0.15;
 
     function nowIso() {
@@ -35,48 +34,6 @@
     function uid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     }
-
-    function DocStore(db) {
-        this.db = db;
-    }
-
-    DocStore.prototype.put = function (entityType, entityId, payload, version) {
-        var t = String(entityType);
-        for (var i = 0; i < FORBIDDEN_PREFIXES.length; i++) {
-            if (t.indexOf(FORBIDDEN_PREFIXES[i]) === 0) {
-                return Promise.reject(new Error('sales_forbidden_storage:' + t));
-            }
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [t, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    DocStore.prototype.get = function (entityType, entityId) {
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return { version: Number(rows[0].version || 1), payload: JSON.parse(rows[0].payload_json) };
-        });
-    };
-
-    DocStore.prototype.list = function (entityType) {
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return { id: r.entity_id, version: Number(r.version || 1), payload: JSON.parse(r.payload_json) };
-            });
-        });
-    };
 
     function normalizeLines(lines) {
         return (Array.isArray(lines) ? lines : []).map(function (l) {
@@ -165,21 +122,12 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new DocStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'sales.',
+                errorCode: 'sales_forbidden_storage'
+            });
             return self._store;
         });
-    };
-
-    SalesModule.prototype._svc = function (moduleId, name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('sales_runtime_missing');
-        }
-        var key = 'module.' + moduleId + '.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('sales_service_missing:' + key);
-        }
-        return rt.services.get(key);
     };
 
     /**
@@ -195,22 +143,11 @@
         if (!rt.services.has('module.inventory.postMovement')) {
             return Promise.reject(new Error('sales_inventory_inactive'));
         }
-        var key = 'module.inventory.' + name;
-        var biz = rt.services.tryGet('business');
-        var rec = biz && typeof biz.getModule === 'function' ? biz.getModule('inventory') : null;
-        var mod = rec && rec.module;
-        if (!mod || typeof mod[name] !== 'function') {
-            return Promise.reject(new Error('sales_inventory_api_missing:' + name));
-        }
-        if (!rt.services.has(key) && name !== 'releaseReservation') {
-            return Promise.reject(new Error('sales_service_missing:' + key));
-        }
-        return Promise.resolve(mod[name](arg));
+        return this.callPublished('inventory', name, arg);
     };
 
     SalesModule.prototype._callIdentity = function (name, arg) {
-        var fn = this._svc('identity', name);
-        return Promise.resolve(typeof fn === 'function' ? fn(arg) : fn);
+        return this.callPublished('identity', name, arg);
     };
 
     SalesModule.prototype.requireIdentity = function () {
@@ -246,17 +183,21 @@
     SalesModule.prototype.refuseForbiddenStorage = function () {
         var self = this;
         return this._ensureStore().then(function (store) {
-            return store.put('inv.item', 'hack', { x: 1 }).then(function () {
-                return { ok: false };
-            }).catch(function (err) {
-                var a = /forbidden_storage/i.test(String(err && err.message));
-                return store.put('proc.po', 'hack', { x: 1 }).then(function () {
-                    return { ok: false };
-                }).catch(function (err2) {
-                    var b = /forbidden_storage/i.test(String(err2 && err2.message));
-                    return { ok: a && b };
+            var probes = ['inv.item', 'proc.po', 'acct.journal'];
+            var chain = Promise.resolve(true);
+            probes.forEach(function (entityType) {
+                chain = chain.then(function (ok) {
+                    if (!ok) {
+                        return false;
+                    }
+                    return store.put(entityType, 'hack', { company_id: 1 }).then(function () {
+                        return false;
+                    }).catch(function (err) {
+                        return /forbidden_storage/i.test(String(err && err.message));
+                    });
                 });
             });
+            return chain.then(function (ok) { return { ok: ok }; });
         });
     };
 
@@ -323,10 +264,8 @@
         var self = this;
         return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.price).then(function (rows) {
-                    var prices = rows.map(function (r) { return r.payload; }).filter(function (p) {
-                        return Number(p.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.price, idCtx.company_id).then(function (rows) {
+                    var prices = rows.map(function (r) { return r.payload; });
                     var hit = null;
                     prices.forEach(function (p) {
                         if (spec.customer_id && p.customer_id === spec.customer_id &&
@@ -406,9 +345,9 @@
 
     SalesModule.prototype.createOrderFromQuotation = function (quoteId) {
         var self = this;
-        return this._gate().then(function () {
+        return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.quote, quoteId).then(function (rec) {
+                return store.get(ET.quote, quoteId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('sales_quote_missing');
                     }
@@ -462,7 +401,7 @@
         var self = this;
         return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.order, orderId).then(function (rec) {
+                return store.get(ET.order, orderId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('sales_order_missing');
                     }
@@ -506,9 +445,9 @@
 
     SalesModule.prototype.getSalesOrder = function (orderId) {
         var self = this;
-        return this.requireIdentity().then(function () {
+        return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.order, orderId).then(function (r) {
+                return store.get(ET.order, orderId, idCtx.company_id).then(function (r) {
                     return r ? r.payload : null;
                 });
             });
@@ -519,10 +458,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.order).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (o) {
-                        return Number(o.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.order, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -539,7 +476,7 @@
 
         return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.order, orderId).then(function (ordRec) {
+                return store.get(ET.order, orderId, idCtx.company_id).then(function (ordRec) {
                     if (!ordRec) {
                         throw new Error('sales_order_missing');
                     }
@@ -646,7 +583,7 @@
         return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
                 var orderId = spec.order_id;
-                return store.get(ET.order, orderId).then(function (ordRec) {
+                return store.get(ET.order, orderId, idCtx.company_id).then(function (ordRec) {
                     if (!ordRec) {
                         throw new Error('sales_order_missing');
                     }
@@ -709,7 +646,7 @@
                 if (!orderId || !retLines.length) {
                     throw new Error('sales_return_invalid');
                 }
-                return store.get(ET.order, orderId).then(function (ordRec) {
+                return store.get(ET.order, orderId, idCtx.company_id).then(function (ordRec) {
                     if (!ordRec) {
                         throw new Error('sales_order_missing');
                     }
@@ -787,9 +724,9 @@
 
     SalesModule.prototype._transition = function (entityType, id, from, to) {
         var self = this;
-        return this._gate().then(function () {
+        return this._gate().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(entityType, id).then(function (rec) {
+                return store.get(entityType, id, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('sales_doc_missing');
                     }
@@ -926,7 +863,7 @@
             var outlet = root.document.getElementById('rateb-v2-router-outlet') ||
                 root.document.body.appendChild(root.document.createElement('div'));
             outlet.id = outlet.id || 'rateb-v2-router-outlet-sales';
-            var manifestUrl = new URL('./routes/route-manifest.json', root.location.href).href;
+            var manifestUrl = new URL('./js/routes/route-manifest.json', root.location.href).href;
 
             return router.init({ outlet: outlet, startPath: '/', manifestUrl: manifestUrl }).then(function () {
                 return fw.start();
@@ -958,7 +895,7 @@
                 note('runtime_service', root.RatebOfflineV2Runtime.services.has('module.sales.createDelivery'), '');
                 return sales.refuseForbiddenStorage();
             }).then(function (ref) {
-                note('af211_no_inv_proc_sql', !!(ref && ref.ok), '');
+                note('positive_prefix_rejects_foreign', !!(ref && ref.ok), 'inv./proc./acct.');
                 return inventory.upsertItem({
                     id: itemId,
                     item_code: 'WIDGET',

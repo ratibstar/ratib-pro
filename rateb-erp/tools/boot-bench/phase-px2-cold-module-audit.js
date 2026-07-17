@@ -22,8 +22,7 @@ const MODULES = [
   { id: 'accounting', route: '/accounting' },
   { id: 'crm', route: '/crm' },
   { id: 'hr', route: '/hr' },
-  // Boot selector is "manufacturing", while the published module route is "/mfg".
-  { id: 'manufacturing', trigger: '/manufacturing', route: '/mfg' },
+  { id: 'mfg', route: '/mfg' },
 ];
 
 function round(value) {

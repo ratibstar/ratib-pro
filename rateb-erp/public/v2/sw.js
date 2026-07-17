@@ -15,7 +15,7 @@
  * Phase Z: resilient precache — one 404 must not invalidate the whole install.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-host-perf1';
+var CACHE = 'rateb-offline-v2-host-px4';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -38,7 +38,6 @@ var PRECACHE = [
     './js/business/hr-module.js',
     './js/business/manufacturing-module.js',
     './modules/module-manifest.example.json',
-    './routes/route-manifest.json',
     './js/routes/route-manifest.json',
     './js/db/migrations.js',
     './js/db/sqlite-runtime.js',

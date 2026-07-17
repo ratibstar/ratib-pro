@@ -18,6 +18,166 @@
         return new Date().toISOString();
     }
 
+    var SERVICE_KIND = 'module.service';
+
+    /**
+     * Invoke a published module.<id>.<name> service.
+     * Service handles are plain objects { kind, invoke } so Runtime never treats them
+     * as singleton factories (which would cache stale session/claims/RBAC Promises).
+     */
+    function invokePublishedService(moduleId, name, args) {
+        var rt = root.RatebOfflineV2Runtime;
+        if (!rt || !rt.services) {
+            return Promise.reject(new Error('bm_runtime_missing'));
+        }
+        var key = 'module.' + moduleId + '.' + name;
+        if (!rt.services.has(key)) {
+            return Promise.reject(new Error('bm_service_missing:' + key));
+        }
+        var svc = rt.services.get(key);
+        if (svc && svc.kind === SERVICE_KIND && typeof svc.invoke === 'function') {
+            return Promise.resolve(svc.invoke.apply(null, args || []));
+        }
+        /* Pre-PX4 raw function registration (should not occur after exposeService wrap). */
+        if (typeof svc === 'function') {
+            return Promise.resolve(svc.apply(null, args || []));
+        }
+        return Promise.resolve(svc);
+    }
+
+    /**
+     * Shared owned-namespace document store with SQL company_id isolation.
+     * opts.ownedPrefix — required positive prefix (e.g. 'sales.')
+     * opts.errorCode — reject prefix for foreign writes
+     */
+    function createDocStore(db, opts) {
+        opts = opts || {};
+        var ownedPrefix = String(opts.ownedPrefix || '');
+        var errorCode = String(opts.errorCode || 'forbidden_storage');
+        if (!ownedPrefix) {
+            throw new Error('docstore_owned_prefix_required');
+        }
+        if (!db || typeof db.exec !== 'function') {
+            throw new Error('docstore_db_required');
+        }
+
+        function assertOwned(entityType) {
+            var t = String(entityType || '');
+            if (t.indexOf(ownedPrefix) !== 0) {
+                throw new Error(errorCode + ':' + t);
+            }
+            return t;
+        }
+
+        function requireCompanyId(companyId) {
+            var cid = Number(companyId);
+            if (!cid || cid < 1) {
+                throw new Error('tenant_company_required');
+            }
+            return cid;
+        }
+
+        return {
+            ownedPrefix: ownedPrefix,
+            put: function (entityType, entityId, payload, version) {
+                var t;
+                var companyId;
+                try {
+                    t = assertOwned(entityType);
+                    companyId = requireCompanyId(payload && payload.company_id);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+                return db.exec(
+                    'SELECT company_id FROM entity_row WHERE entity_type=? AND entity_id=?',
+                    [t, String(entityId)]
+                ).then(function (rows) {
+                    if (rows && rows[0]) {
+                        var existingCid = Number(rows[0].company_id || 0);
+                        if (existingCid > 0 && existingCid !== companyId) {
+                            return Promise.reject(new Error('tenant_entity_conflict'));
+                        }
+                    }
+                    return db.exec(
+                        'INSERT INTO entity_row(entity_type, entity_id, company_id, version, payload_json, updated_at) ' +
+                        'VALUES (?,?,?,?,?,?) ' +
+                        'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
+                        'company_id=excluded.company_id, version=excluded.version, ' +
+                        'payload_json=excluded.payload_json, updated_at=excluded.updated_at',
+                        [
+                            t,
+                            String(entityId),
+                            companyId,
+                            Number(version || 1),
+                            JSON.stringify(payload),
+                            nowIso()
+                        ]
+                    );
+                });
+            },
+            get: function (entityType, entityId, companyId) {
+                var t;
+                var cid;
+                try {
+                    t = assertOwned(entityType);
+                    cid = requireCompanyId(companyId);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+                return db.exec(
+                    'SELECT version, payload_json FROM entity_row ' +
+                    'WHERE entity_type=? AND entity_id=? AND company_id=?',
+                    [t, String(entityId), cid]
+                ).then(function (rows) {
+                    if (!rows || !rows[0]) {
+                        return null;
+                    }
+                    return {
+                        version: Number(rows[0].version || 1),
+                        payload: JSON.parse(rows[0].payload_json)
+                    };
+                });
+            },
+            list: function (entityType, companyId) {
+                var t;
+                var cid;
+                try {
+                    t = assertOwned(entityType);
+                    cid = requireCompanyId(companyId);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+                return db.exec(
+                    'SELECT entity_id, version, payload_json FROM entity_row ' +
+                    'WHERE entity_type=? AND company_id=? ORDER BY entity_id',
+                    [t, cid]
+                ).then(function (rows) {
+                    return (rows || []).map(function (r) {
+                        return {
+                            id: r.entity_id,
+                            version: Number(r.version || 1),
+                            payload: JSON.parse(r.payload_json)
+                        };
+                    });
+                });
+            },
+            remove: function (entityType, entityId, companyId) {
+                var t;
+                var cid;
+                try {
+                    t = assertOwned(entityType);
+                    cid = requireCompanyId(companyId);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
+                return db.exec(
+                    'DELETE FROM entity_row WHERE entity_type=? AND entity_id=? AND company_id=?',
+                    [t, String(entityId), cid]
+                );
+            }
+        };
+    }
+
     function parseVer(v) {
         var s = String(v || '0').replace(/^[^0-9]*/, '');
         var m = s.match(/(\d+)\.(\d+)\.(\d+)/);
@@ -172,13 +332,36 @@
         return this._health;
     };
 
+    /**
+     * Publish a module service. Functions are wrapped as non-factory handles so the
+     * Runtime locator never caches Promise results of zero-arg factory invocation.
+     * Callers must use callPublished() / handle.invoke(...).
+     */
     BusinessModule.prototype.exposeService = function (name, value) {
         if (!this.ctx) {
             throw new Error('bm_no_context');
         }
-        var key = this.ctx.registerService(name, value, { replace: true });
+        var registered = value;
+        if (typeof value === 'function') {
+            registered = {
+                kind: 'module.service',
+                invoke: function () {
+                    return value.apply(null, arguments);
+                }
+            };
+        }
+        var key = this.ctx.registerService(name, registered, { replace: true });
         this._services.push(key);
         return key;
+    };
+
+    /**
+     * Invoke a published module.<id>.<name> service with fresh resolution each call.
+     * AF 2.1: cross-module access only through published services — never live instances.
+     */
+    BusinessModule.prototype.callPublished = function (moduleId, name) {
+        var args = Array.prototype.slice.call(arguments, 2);
+        return invokePublishedService(moduleId, name, args);
     };
 
     BusinessModule.prototype.subscribe = function (eventName, handler) {
@@ -696,32 +879,36 @@
 
                 note('service_exposure', root.RatebOfflineV2Runtime.services.has('module.reference.echo'), '');
                 var echo = root.RatebOfflineV2Runtime.services.get('module.reference.echo');
-                note('service_invoke', typeof echo === 'function' && echo('x') === 'echo:x', echo && echo('x'));
+                note('service_handle', !!(echo && echo.kind === SERVICE_KIND), echo && echo.kind);
+                note('service_invoke', !!(echo && typeof echo.invoke === 'function' && echo.invoke('x') === 'echo:x'),
+                    echo && typeof echo.invoke === 'function' ? echo.invoke('x') : '');
+                return invokePublishedService('reference', 'echo', ['y']).then(function (echoed) {
+                    note('call_published', echoed === 'echo:y', echoed);
+                    return root.RatebOfflineV2Runtime.services.get('router').navigate('/reference').then(function (nav) {
+                        note('router_sample_page', !!(nav && nav.ok), nav && nav.path);
+                        note('event_subscription', eventSeen, '');
 
-                return root.RatebOfflineV2Runtime.services.get('router').navigate('/reference').then(function (nav) {
-                    note('router_sample_page', !!(nav && nav.ok), nav && nav.path);
-                    note('event_subscription', eventSeen, '');
-
-                    /* Fault isolation */
-                    var faulty = new BusinessModule({
-                        id: 'bm.faulty',
-                        version: '1.0.0',
-                        moduleKind: 'reference',
-                        permissions: ['ui.contribute', 'services.register'],
-                        routes: []
-                    });
-                    faulty.onActivate = function () {
-                        throw new Error('reference_intentional_fault');
-                    };
-                    return fw.register(faulty).then(function () {
-                        return fw.activate('bm.faulty').then(function () {
-                            note('fault_isolation', false, 'should_fail');
-                        }).catch(function () {
-                            var sdkMod = fw.getSdk().getModule('bm.faulty');
-                            note('fault_isolation', !!(sdkMod && sdkMod.state === 'faulted') || !fw.getSdk().getModule('bm.faulty'),
-                                sdkMod && sdkMod.state);
-                            return fw.getSdk().disposeModule('bm.faulty').catch(function () {
-                                return null;
+                        /* Fault isolation */
+                        var faulty = new BusinessModule({
+                            id: 'bm.faulty',
+                            version: '1.0.0',
+                            moduleKind: 'reference',
+                            permissions: ['ui.contribute', 'services.register'],
+                            routes: []
+                        });
+                        faulty.onActivate = function () {
+                            throw new Error('reference_intentional_fault');
+                        };
+                        return fw.register(faulty).then(function () {
+                            return fw.activate('bm.faulty').then(function () {
+                                note('fault_isolation', false, 'should_fail');
+                            }).catch(function () {
+                                var sdkMod = fw.getSdk().getModule('bm.faulty');
+                                note('fault_isolation', !!(sdkMod && sdkMod.state === 'faulted') || !fw.getSdk().getModule('bm.faulty'),
+                                    sdkMod && sdkMod.state);
+                                return fw.getSdk().disposeModule('bm.faulty').catch(function () {
+                                    return null;
+                                });
                             });
                         });
                     });
@@ -788,6 +975,11 @@
         BusinessModule: BusinessModule,
         createMetadata: createMetadata,
         validateMetadata: validateMetadata,
+        createDocStore: createDocStore,
+        invokePublished: function (moduleId, name) {
+            return invokePublishedService(moduleId, name, Array.prototype.slice.call(arguments, 2));
+        },
+        SERVICE_KIND: SERVICE_KIND,
         create: createFramework,
         runSelfTest: runSelfTest
     };

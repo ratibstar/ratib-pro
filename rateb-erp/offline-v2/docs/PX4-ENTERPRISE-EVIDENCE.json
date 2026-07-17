@@ -1,0 +1,22 @@
+{
+  "phase": "PX4",
+  "title": "Architecture Remediation",
+  "head_note": "See commit after بش",
+  "critical": {
+    "sync_lifecycle": "PASS — boot create+start before active modules; writers reject sync_not_ready",
+    "identity_freshness": "PASS — module.service handles + invokePublished; no singleton Promise cache"
+  },
+  "high": {
+    "mfg_id": "PASS — boot selector/activate mfg; route /mfg",
+    "sales_procurement_namespace": "PASS — createDocStore ownedPrefix sales./proc."
+  },
+  "medium": {
+    "published_apis": "PASS — callPublished only; no live getModule().module[name]",
+    "company_id_sql": "PASS — migration v3 + DocStore SQL filters",
+    "dedup": "PASS — single js/routes manifest; shared DocStore; sync:enqueued watcher removed"
+  },
+  "identity_boundary": "PRESERVED",
+  "offline_v1": "ZERO_TOUCH",
+  "architecture_v1_3_1": "N/A to Offline V2 — AF 2.1 binding preserved",
+  "regression": "tools/boot-bench/phase-px4-regression.js + module runSelfTest notes"
+}

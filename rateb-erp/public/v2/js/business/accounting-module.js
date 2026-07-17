@@ -26,7 +26,6 @@
         taxPolicy: 'acct.tax_policy',
         currencyPolicy: 'acct.currency_policy'
     };
-    var FORBIDDEN_PREFIXES = ['inv.', 'identity.', 'sales.', 'proc.', 'pos.'];
     var ACCOUNT_MAP_ID = 'default';
     var TAX_POLICY_ID = 'default';
     var CURRENCY_POLICY_ID = 'default';
@@ -71,51 +70,6 @@
     function round2(n) {
         return Math.round(Number(n || 0) * 100) / 100;
     }
-
-    function DocStore(db) {
-        this.db = db;
-    }
-
-    DocStore.prototype.put = function (entityType, entityId, payload, version) {
-        var t = String(entityType);
-        for (var i = 0; i < FORBIDDEN_PREFIXES.length; i++) {
-            if (t.indexOf(FORBIDDEN_PREFIXES[i]) === 0) {
-                return Promise.reject(new Error('accounting_forbidden_storage:' + t));
-            }
-        }
-        if (t.indexOf('acct.') !== 0) {
-            return Promise.reject(new Error('accounting_forbidden_storage:' + t));
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [t, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    DocStore.prototype.get = function (entityType, entityId) {
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return { version: Number(rows[0].version || 1), payload: JSON.parse(rows[0].payload_json) };
-        });
-    };
-
-    DocStore.prototype.list = function (entityType) {
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return { id: r.entity_id, version: Number(r.version || 1), payload: JSON.parse(r.payload_json) };
-            });
-        });
-    };
 
     function AccountingModule() {
         BusinessModule.call(this, {
@@ -172,21 +126,12 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new DocStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'acct.',
+                errorCode: 'accounting_forbidden_storage'
+            });
             return self._store;
         });
-    };
-
-    AccountingModule.prototype._svc = function (moduleId, name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('accounting_runtime_missing');
-        }
-        var key = 'module.' + moduleId + '.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('accounting_service_missing:' + key);
-        }
-        return rt.services.get(key);
     };
 
     AccountingModule.prototype._callInventory = function (name, arg) {
@@ -197,25 +142,11 @@
         if (!rt.services.has('module.inventory.valuation') && !rt.services.has('module.inventory.postMovement')) {
             return Promise.reject(new Error('accounting_inventory_inactive'));
         }
-        /* Published service is module.inventory.valuation; instance method is valuationReport. */
-        var methodName = name === 'valuation' ? 'valuationReport' : name;
-        var serviceName = name === 'valuationReport' ? 'valuation' : name;
-        var key = 'module.inventory.' + serviceName;
-        var biz = rt.services.tryGet('business');
-        var rec = biz && typeof biz.getModule === 'function' ? biz.getModule('inventory') : null;
-        var mod = rec && rec.module;
-        if (!mod || typeof mod[methodName] !== 'function') {
-            return Promise.reject(new Error('accounting_inventory_api_missing:' + name));
-        }
-        if (!rt.services.has(key)) {
-            return Promise.reject(new Error('accounting_service_missing:' + key));
-        }
-        return Promise.resolve(mod[methodName](arg));
+        return this.callPublished('inventory', name === 'valuationReport' ? 'valuation' : name, arg);
     };
 
     AccountingModule.prototype._callIdentity = function (name, arg) {
-        var fn = this._svc('identity', name);
-        return Promise.resolve(typeof fn === 'function' ? fn(arg) : fn);
+        return this.callPublished('identity', name, arg);
     };
 
     AccountingModule.prototype.requireIdentity = function () {
@@ -275,7 +206,7 @@
         var rt = root.RatebOfflineV2Runtime;
         var sync = rt && rt.services && rt.services.tryGet('sync');
         if (!sync || typeof sync.enqueue !== 'function') {
-            return Promise.resolve({ ok: true, skipped: true });
+            return Promise.reject(new Error('sync_not_ready'));
         }
         if (String(entityType).indexOf('acct.') !== 0) {
             return Promise.reject(new Error('accounting_sync_forbidden_entity'));
@@ -315,12 +246,14 @@
     /* ---------- AccountMap / Tax / Currency policies ---------- */
     AccountingModule.prototype.getAccountMap = function () {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            return store.get(ET.accountMap, ACCOUNT_MAP_ID).then(function (rec) {
-                if (rec && rec.payload && rec.payload.map) {
-                    return { ok: true, map: rec.payload.map, version: rec.version };
-                }
-                return { ok: true, map: Object.assign({}, DEFAULT_ACCOUNT_MAP), version: 0 };
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                return store.get(ET.accountMap, ACCOUNT_MAP_ID, idCtx.company_id).then(function (rec) {
+                    if (rec && rec.payload && rec.payload.map) {
+                        return { ok: true, map: rec.payload.map, version: rec.version };
+                    }
+                    return { ok: true, map: Object.assign({}, DEFAULT_ACCOUNT_MAP), version: 0 };
+                });
             });
         });
     };
@@ -356,22 +289,24 @@
 
     AccountingModule.prototype.getTaxPolicy = function () {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            return store.get(ET.taxPolicy, TAX_POLICY_ID).then(function (rec) {
-                if (rec && rec.payload) {
-                    return { ok: true, policy: rec.payload };
-                }
-                return {
-                    ok: true,
-                    policy: {
-                        id: TAX_POLICY_ID,
-                        default_rate: self.metadata.config.defaultTaxRate,
-                        tax_codes: {
-                            vat15: { rate: 0.15, name: 'VAT 15%' },
-                            exempt: { rate: 0, name: 'Exempt' }
-                        }
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                return store.get(ET.taxPolicy, TAX_POLICY_ID, idCtx.company_id).then(function (rec) {
+                    if (rec && rec.payload) {
+                        return { ok: true, policy: rec.payload };
                     }
-                };
+                    return {
+                        ok: true,
+                        policy: {
+                            id: TAX_POLICY_ID,
+                            default_rate: self.metadata.config.defaultTaxRate,
+                            tax_codes: {
+                                vat15: { rate: 0.15, name: 'VAT 15%' },
+                                exempt: { rate: 0, name: 'Exempt' }
+                            }
+                        }
+                    };
+                });
             });
         });
     };
@@ -399,19 +334,21 @@
 
     AccountingModule.prototype.getCurrencyPolicy = function () {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            return store.get(ET.currencyPolicy, CURRENCY_POLICY_ID).then(function (rec) {
-                if (rec && rec.payload) {
-                    return { ok: true, policy: rec.payload };
-                }
-                return {
-                    ok: true,
-                    policy: {
-                        id: CURRENCY_POLICY_ID,
-                        base_currency: self.metadata.config.defaultCurrency,
-                        rates: { SAR: 1, USD: 3.75, EUR: 4.1 }
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                return store.get(ET.currencyPolicy, CURRENCY_POLICY_ID, idCtx.company_id).then(function (rec) {
+                    if (rec && rec.payload) {
+                        return { ok: true, policy: rec.payload };
                     }
-                };
+                    return {
+                        ok: true,
+                        policy: {
+                            id: CURRENCY_POLICY_ID,
+                            base_currency: self.metadata.config.defaultCurrency,
+                            rates: { SAR: 1, USD: 3.75, EUR: 4.1 }
+                        }
+                    };
+                });
             });
         });
     };
@@ -503,10 +440,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.account).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (a) {
-                        return Number(a.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.account, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -556,10 +491,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.costCenter).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (c) {
-                        return Number(c.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.costCenter, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -594,9 +527,9 @@
 
     AccountingModule.prototype.closeFiscalPeriod = function (periodId) {
         var self = this;
-        return this._gate(true).then(function () {
+        return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.fiscal, periodId).then(function (rec) {
+                return store.get(ET.fiscal, periodId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('accounting_period_missing');
                     }
@@ -625,10 +558,8 @@
         var self = this;
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.fiscal).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (p) {
-                        return Number(p.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.fiscal, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -636,13 +567,10 @@
 
     AccountingModule.prototype._findOpenPeriod = function (store, companyId, entryDate) {
         var d = String(entryDate || '').slice(0, 10);
-        return store.list(ET.fiscal).then(function (rows) {
+        return store.list(ET.fiscal, companyId).then(function (rows) {
             var hit = null;
             rows.forEach(function (r) {
                 var p = r.payload;
-                if (Number(p.company_id) !== Number(companyId)) {
-                    return;
-                }
                 if (p.status !== 'open') {
                     return;
                 }
@@ -657,17 +585,19 @@
     /* ---------- PostingPort (sole GL writer) ---------- */
     AccountingModule.prototype.journalExistsForSource = function (sourceType, sourceId) {
         var self = this;
-        return this._ensureStore().then(function (store) {
-            return store.list(ET.journal).then(function (rows) {
-                var found = null;
-                rows.forEach(function (r) {
-                    var j = r.payload;
-                    if (j.source_type === sourceType && String(j.source_id) === String(sourceId) &&
-                        j.status === 'posted') {
-                        found = j;
-                    }
+        return this.requireIdentity().then(function (idCtx) {
+            return self._ensureStore().then(function (store) {
+                return store.list(ET.journal, idCtx.company_id).then(function (rows) {
+                    var found = null;
+                    rows.forEach(function (r) {
+                        var j = r.payload;
+                        if (j.source_type === sourceType && String(j.source_id) === String(sourceId) &&
+                            j.status === 'posted') {
+                            found = j;
+                        }
+                    });
+                    return found;
                 });
-                return found;
             });
         });
     };
@@ -765,7 +695,7 @@
                                 if (!l.account_code) {
                                     throw new Error('accounting_line_account_required');
                                 }
-                                return store.get(ET.account, l.account_code).then(function (acc) {
+                                return store.get(ET.account, l.account_code, idCtx.company_id).then(function (acc) {
                                     if (!acc || !acc.payload) {
                                         throw new Error('accounting_account_missing:' + l.account_code);
                                     }
@@ -824,9 +754,9 @@
 
     AccountingModule.prototype.postJournal = function (journalId) {
         var self = this;
-        return this._gate(true).then(function () {
+        return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.journal, journalId).then(function (rec) {
+                return store.get(ET.journal, journalId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('accounting_journal_missing');
                     }
@@ -851,9 +781,9 @@
 
     AccountingModule.prototype.voidJournal = function (journalId) {
         var self = this;
-        return this._gate(true).then(function () {
+        return this._gate(true).then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.journal, journalId).then(function (rec) {
+                return store.get(ET.journal, journalId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         throw new Error('accounting_journal_missing');
                     }
@@ -883,11 +813,8 @@
         filter = filter || {};
         return this.requireIdentity().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.journal).then(function (rows) {
+                return store.list(ET.journal, idCtx.company_id).then(function (rows) {
                     return rows.map(function (r) { return r.payload; }).filter(function (j) {
-                        if (Number(j.company_id) !== Number(idCtx.company_id)) {
-                            return false;
-                        }
                         if (filter.status && j.status !== filter.status) {
                             return false;
                         }
@@ -1347,7 +1274,7 @@
             var outlet = root.document.getElementById('rateb-v2-router-outlet') ||
                 root.document.body.appendChild(root.document.createElement('div'));
             outlet.id = outlet.id || 'rateb-v2-router-outlet-accounting';
-            var manifestUrl = new URL('./routes/route-manifest.json', root.location.href).href;
+            var manifestUrl = new URL('./js/routes/route-manifest.json', root.location.href).href;
 
             return router.init({ outlet: outlet, startPath: '/', manifestUrl: manifestUrl }).then(function () {
                 return fw.start();

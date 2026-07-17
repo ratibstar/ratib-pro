@@ -7,7 +7,7 @@
 import sqlite3InitModule from '../../vendor/sqlite/index.mjs';
 import { MIGRATIONS } from './migrations.js';
 
-var DB_VERSION_TARGET = 2;
+var DB_VERSION_TARGET = 3;
 var DB_API_VERSION = '1.0.0-phase3';
 
 function hci() {
@@ -307,11 +307,12 @@ function runSelfTest() {
         note('integrity', integ.ok, integ.ok ? 'ok' : 'fail');
 
         exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) ' +
-            'VALUES(?,?,?,?,?) ' +
+            'INSERT INTO entity_row(entity_type, entity_id, company_id, version, payload_json, updated_at) ' +
+            'VALUES(?,?,?,?,?,?) ' +
             'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            ['demo', 'row-1', 1, JSON.stringify({ hello: 'phase3' }), nowIso()]
+            'company_id=excluded.company_id, version=excluded.version, ' +
+            'payload_json=excluded.payload_json, updated_at=excluded.updated_at',
+            ['demo', 'row-1', 1, 1, JSON.stringify({ hello: 'phase3', company_id: 1 }), nowIso()]
         );
         var rows = exec('SELECT entity_id, payload_json FROM entity_row WHERE entity_type=?', ['demo']);
         note('crud', rows && rows.length === 1, rows && rows[0] ? rows[0].entity_id : '');

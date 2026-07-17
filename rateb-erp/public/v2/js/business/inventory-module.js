@@ -34,82 +34,6 @@
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     }
 
-    function InventoryStore(db) {
-        this.db = db;
-    }
-
-    function assertInventoryEntityType(entityType) {
-        if (String(entityType || '').indexOf('inv.') !== 0) {
-            throw new Error('inv_storage_namespace_forbidden');
-        }
-    }
-
-    InventoryStore.prototype.put = function (entityType, entityId, payload, version) {
-        try {
-            assertInventoryEntityType(entityType);
-        } catch (err) {
-            return Promise.reject(err);
-        }
-        return this.db.exec(
-            'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
-            'ON CONFLICT(entity_type, entity_id) DO UPDATE SET ' +
-            'version=excluded.version, payload_json=excluded.payload_json, updated_at=excluded.updated_at',
-            [entityType, String(entityId), Number(version || 1), JSON.stringify(payload), nowIso()]
-        );
-    };
-
-    InventoryStore.prototype.get = function (entityType, entityId) {
-        try {
-            assertInventoryEntityType(entityType);
-        } catch (err) {
-            return Promise.reject(err);
-        }
-        return this.db.exec(
-            'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        ).then(function (rows) {
-            if (!rows || !rows[0]) {
-                return null;
-            }
-            return {
-                version: Number(rows[0].version || 1),
-                payload: JSON.parse(rows[0].payload_json)
-            };
-        });
-    };
-
-    InventoryStore.prototype.list = function (entityType) {
-        try {
-            assertInventoryEntityType(entityType);
-        } catch (err) {
-            return Promise.reject(err);
-        }
-        return this.db.exec(
-            'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
-            [entityType]
-        ).then(function (rows) {
-            return (rows || []).map(function (r) {
-                return {
-                    id: r.entity_id,
-                    version: Number(r.version || 1),
-                    payload: JSON.parse(r.payload_json)
-                };
-            });
-        });
-    };
-
-    InventoryStore.prototype.remove = function (entityType, entityId) {
-        try {
-            assertInventoryEntityType(entityType);
-        } catch (err) {
-            return Promise.reject(err);
-        }
-        return this.db.exec(
-            'DELETE FROM entity_row WHERE entity_type=? AND entity_id=?',
-            [entityType, String(entityId)]
-        );
-    };
-
     function InventoryModule() {
         BusinessModule.call(this, {
             id: 'inventory',
@@ -159,36 +83,21 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new InventoryStore(db);
+            self._store = Business.createDocStore(db, {
+                ownedPrefix: 'inv.',
+                errorCode: 'inv_storage_namespace_forbidden'
+            });
             return self._store;
         });
     };
 
-    /** AF 2.1 — Identity via published services only */
-    InventoryModule.prototype._identityService = function (name) {
-        var rt = root.RatebOfflineV2Runtime;
-        if (!rt || !rt.services) {
-            throw new Error('inv_runtime_missing');
-        }
-        var key = 'module.identity.' + name;
-        if (!rt.services.has(key)) {
-            throw new Error('inv_identity_service_missing:' + name);
-        }
-        return rt.services.get(key);
-    };
-
     InventoryModule.prototype.requireIdentityContext = function () {
         var self = this;
-        return Promise.resolve().then(function () {
-            var sessionFn = self._identityService('session');
-            var claimsFn = self._identityService('claims');
-            var rbacFn = self._identityService('rbac');
-            return Promise.all([
-                typeof sessionFn === 'function' ? sessionFn() : sessionFn,
-                typeof claimsFn === 'function' ? claimsFn() : claimsFn,
-                typeof rbacFn === 'function' ? rbacFn() : rbacFn
-            ]);
-        }).then(function (parts) {
+        return Promise.all([
+            self.callPublished('identity', 'session'),
+            self.callPublished('identity', 'claims'),
+            self.callPublished('identity', 'rbac')
+        ]).then(function (parts) {
             var session = parts[0] || {};
             var claims = parts[1];
             var rbac = parts[2];
@@ -211,10 +120,7 @@
 
     InventoryModule.prototype.hasInventoryPermission = function (slug) {
         var self = this;
-        return Promise.resolve().then(function () {
-            var rbacFn = self._identityService('rbac');
-            return typeof rbacFn === 'function' ? rbacFn() : rbacFn;
-        }).then(function (rbac) {
+        return self.callPublished('identity', 'rbac').then(function (rbac) {
             var perms = (rbac && rbac.permissions) || [];
             return perms.indexOf(slug) !== -1 ||
                 perms.indexOf('inventory.manage') !== -1 ||
@@ -261,10 +167,8 @@
         var self = this;
         return this.requireIdentityContext().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.warehouse).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (w) {
-                        return Number(w.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.warehouse, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -278,7 +182,7 @@
             }
             return self._ensureStore().then(function (store) {
                 var id = spec.id || uid('item');
-                return store.get(ET.item, id).then(function (existing) {
+                return store.get(ET.item, id, idCtx.company_id).then(function (existing) {
                     var prev = existing && existing.payload ? existing.payload : null;
                     var row = {
                         id: id,
@@ -312,10 +216,8 @@
         var self = this;
         return this.requireIdentityContext().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.item).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (it) {
-                        return Number(it.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.item, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -357,16 +259,16 @@
         });
     };
 
-    InventoryModule.prototype._listBatchesForItem = function (store, inventoryId) {
-        return store.list(ET.batch).then(function (rows) {
+    InventoryModule.prototype._listBatchesForItem = function (store, inventoryId, companyId) {
+        return store.list(ET.batch, companyId).then(function (rows) {
             return rows.map(function (r) { return r.payload; }).filter(function (b) {
                 return b.inventory_id === inventoryId && Number(b.quantity) > 0;
             });
         });
     };
 
-    InventoryModule.prototype._consumeFefo = function (store, inventoryId, qty) {
-        return this._listBatchesForItem(store, inventoryId).then(function (batches) {
+    InventoryModule.prototype._consumeFefo = function (store, inventoryId, qty, companyId) {
+        return this._listBatchesForItem(store, inventoryId, companyId).then(function (batches) {
             batches.sort(function (a, b) {
                 var ea = a.expiry_date || '9999-99-99';
                 var eb = b.expiry_date || '9999-99-99';
@@ -436,7 +338,7 @@
                     return self._postTransfer(store, idCtx, spec);
                 }
                 var inventoryId = spec.inventory_id;
-                return store.get(ET.item, inventoryId).then(function (rec) {
+                return store.get(ET.item, inventoryId, idCtx.company_id).then(function (rec) {
                     if (!rec || !rec.payload) {
                         throw new Error('inv_item_missing');
                     }
@@ -472,12 +374,12 @@
                         }
                         newQty -= qty;
                         chain = chain.then(function () {
-                            return self._consumeFefo(store, inventoryId, qty).then(function (alloc) {
+                            return self._consumeFefo(store, inventoryId, qty, idCtx.company_id).then(function (alloc) {
                                 allocations = alloc;
                             }).catch(function (err) {
                                 /* If no batches exist, allow qty-only out (catalog without lots) */
                                 if (/insufficient_batch/i.test(String(err && err.message))) {
-                                    return self._listBatchesForItem(store, inventoryId).then(function (bs) {
+                                    return self._listBatchesForItem(store, inventoryId, idCtx.company_id).then(function (bs) {
                                         if (bs.length === 0) {
                                             allocations = [];
                                             return null;
@@ -572,11 +474,11 @@
 
     InventoryModule.prototype.availableQty = function (inventoryId) {
         var self = this;
-        return this.requireIdentityContext().then(function () {
+        return this.requireIdentityContext().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
                 return Promise.all([
-                    store.get(ET.item, inventoryId),
-                    store.list(ET.reservation)
+                    store.get(ET.item, inventoryId, idCtx.company_id),
+                    store.list(ET.reservation, idCtx.company_id)
                 ]).then(function (parts) {
                     var rec = parts[0];
                     if (!rec) {
@@ -637,9 +539,9 @@
 
     InventoryModule.prototype.releaseReservation = function (reservationId) {
         var self = this;
-        return this.requireIdentityContext().then(function () {
+        return this.requireIdentityContext().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.get(ET.reservation, reservationId).then(function (rec) {
+                return store.get(ET.reservation, reservationId, idCtx.company_id).then(function (rec) {
                     if (!rec) {
                         return { ok: false, error: 'missing' };
                     }
@@ -683,10 +585,8 @@
         var self = this;
         return this.requireIdentityContext().then(function (idCtx) {
             return self._ensureStore().then(function (store) {
-                return store.list(ET.movement).then(function (rows) {
-                    return rows.map(function (r) { return r.payload; }).filter(function (m) {
-                        return Number(m.company_id) === Number(idCtx.company_id);
-                    });
+                return store.list(ET.movement, idCtx.company_id).then(function (rows) {
+                    return rows.map(function (r) { return r.payload; });
                 });
             });
         });
@@ -702,6 +602,7 @@
             self.exposeService('postMovement', function (s) { return self.postMovement(s); });
             self.exposeService('availableQty', function (id) { return self.availableQty(id); });
             self.exposeService('reserve', function (s) { return self.reserve(s); });
+            self.exposeService('releaseReservation', function (id) { return self.releaseReservation(id); });
             self.exposeService('valuation', function () { return self.valuationReport(); });
             self.exposeService('listMovements', function () { return self.listMovements(); });
             self.reportHealth('initialize', true, 'stock_posting_ready');
