@@ -134,23 +134,19 @@ async function main() {
       }
     });
 
-    async function runModuleSelfTest(moduleHash, globalName, stepName) {
+    async function runModuleSelfTest(moduleHash, globalName, stepName, moduleId) {
       await page.goto(BASE + '#' + moduleHash, { waitUntil: 'domcontentloaded', timeout: 120000 });
       await page.waitForFunction(
         () => document.documentElement.getAttribute('data-rateb-v2-shell-ready') === '1',
         null,
         { timeout: 120000 }
       );
+      await page.waitForFunction(
+        (mid) => document.documentElement.getAttribute('data-rateb-v2-active-module') === mid,
+        moduleId,
+        { timeout: 180000 }
+      );
       const result = await page.evaluate(async (gName) => {
-        const sleep = (ms) => new Promise(function (r) { setTimeout(r, ms); });
-        for (var i = 0; i < 90; i++) {
-          if (window[gName] && window.RatebOfflineV2Runtime &&
-              window.RatebOfflineV2Runtime.services &&
-              window.RatebOfflineV2Runtime.services.has('sync')) {
-            break;
-          }
-          await sleep(1000);
-        }
         if (!window[gName] || typeof window[gName].runSelfTest !== 'function') {
           return { ok: false, error: gName + '_missing' };
         }
@@ -164,8 +160,8 @@ async function main() {
       return result;
     }
 
-    await runModuleSelfTest('/sales', 'RatebOfflineV2Sales', 'sales_runSelfTest');
-    await runModuleSelfTest('/procurement', 'RatebOfflineV2Procurement', 'procurement_runSelfTest');
+    await runModuleSelfTest('/sales', 'RatebOfflineV2Sales', 'sales_runSelfTest', 'sales');
+    await runModuleSelfTest('/procurement', 'RatebOfflineV2Procurement', 'procurement_runSelfTest', 'procurement');
 
     report.ok = evidence.every(function (e) { return e.ok; });
   } catch (err) {

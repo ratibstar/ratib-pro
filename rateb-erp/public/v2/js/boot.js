@@ -656,6 +656,9 @@
                     return null;
                 }).then(function () {
                     ready('active-module', { moduleId: activeId });
+                    try {
+                        root.document.documentElement.setAttribute('data-rateb-v2-active-module', activeId);
+                    } catch (eAttr) { /* ignore */ }
                     return { id: activeId, framework: fw, platform: platform };
                 });
             });
