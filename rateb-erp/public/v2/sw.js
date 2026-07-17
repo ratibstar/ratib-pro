@@ -15,7 +15,7 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-bootstrap-v2';
+var CACHE = 'rateb-offline-v2-bootstrap-v3';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -23,13 +23,16 @@ var PRECACHE = [
     './js/package-manager.js',
     './js/boot.js',
     './js/runtime/runtime.js',
+    '../assets/offline/shared/runtime/runtime.js',
     './js/router/router.js',
     './js/ui/shell.js',
     './js/sync/sync-engine.js',
+    '../assets/offline/shared/sync/sync-engine.js',
     './js/modules/module-sdk.js',
     './js/business/business-module-framework.js',
     './js/business/reference-module.js',
     './js/business/identity-module.js',
+    '../assets/offline/shared/identity/identity-module.js',
     './js/business/inventory-module.js',
     './js/business/procurement-module.js',
     './js/business/sales-module.js',
@@ -41,12 +44,14 @@ var PRECACHE = [
     './js/routes/route-manifest.json',
     './js/db/migrations.js',
     './js/db/sqlite-runtime.js',
+    '../assets/offline/shared/db/migrations.js',
+    '../assets/offline/shared/db/sqlite-runtime.js',
     './css/host.css',
     './css/shell.css',
-    './vendor/sqlite/index.mjs',
-    './vendor/sqlite/sqlite3.wasm',
-    './vendor/sqlite/sqlite3-opfs-async-proxy.js',
-    './vendor/sqlite/sqlite3-worker1.mjs'
+    '../assets/offline/shared/vendor/sqlite/index.mjs',
+    '../assets/offline/shared/vendor/sqlite/sqlite3.wasm',
+    '../assets/offline/shared/vendor/sqlite/sqlite3-opfs-async-proxy.js',
+    '../assets/offline/shared/vendor/sqlite/sqlite3-worker1.mjs'
 ];
 var APP_SHELL_URL = new URL('./index.html', self.registration.scope).href;
 
@@ -114,11 +119,13 @@ self.addEventListener('fetch', function (event) {
     var req = event.request;
     var url = new URL(req.url);
 
-    // Never handle requests outside this SW's scope path segment /v2/
+    // V2 controls its own shell plus Admin-owned shared infrastructure.
     if (url.origin !== self.location.origin) {
         return;
     }
-    if (url.pathname.indexOf('/v2/') === -1 && !/\/v2$/.test(url.pathname)) {
+    var isV2Asset = url.pathname.indexOf('/v2/') !== -1 || /\/v2$/.test(url.pathname);
+    var isAdminShared = url.pathname.indexOf('/assets/offline/shared/') !== -1;
+    if (!isV2Asset && !isAdminShared) {
         return;
     }
 

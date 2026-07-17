@@ -269,6 +269,19 @@ SECURITY_REMOTE_DELETE_FILES = [
     "api/agents/activate.php",
     "rateb-chrome-bust.php",
 ]
+
+# Phase 2.1 moved SQLite vendor assets to the sole Admin-owned shared package.
+# Fast deploy uploads repository files but cannot infer deletions, so retire the
+# former V2-owned copies explicitly.
+EXTRACTION_REMOTE_DELETE_FILES = [
+    "rateb-erp/public/v2/vendor/sqlite/README.md",
+    "rateb-erp/public/v2/vendor/sqlite/index.d.mts",
+    "rateb-erp/public/v2/vendor/sqlite/index.mjs",
+    "rateb-erp/public/v2/vendor/sqlite/node.mjs",
+    "rateb-erp/public/v2/vendor/sqlite/sqlite3-opfs-async-proxy.js",
+    "rateb-erp/public/v2/vendor/sqlite/sqlite3-worker1.mjs",
+    "rateb-erp/public/v2/vendor/sqlite/sqlite3.wasm",
+]
 SECURITY_REMOTE_DELETE_FILES += [
     "rateb-erp/tools/boot-bench/" + name
     for name in (
@@ -1352,6 +1365,17 @@ def purge_security_retired_files(remote_base: str) -> None:
         api2_fileop_unlink(remote_path)
 
 
+def purge_extracted_v2_files(remote_base: str) -> None:
+    print(
+        f"extraction purge: removing {len(EXTRACTION_REMOTE_DELETE_FILES)} former V2-owned file(s)",
+        flush=True,
+    )
+    for rel in EXTRACTION_REMOTE_DELETE_FILES:
+        abs_dir = remote_dir(remote_base, rel)
+        remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
+        api2_fileop_unlink(remote_path)
+
+
 def main() -> int:
     root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(os.path.join(root, ".."))
@@ -1365,6 +1389,7 @@ def main() -> int:
         flush=True,
     )
     purge_security_retired_files(remote_base)
+    purge_extracted_v2_files(remote_base)
     ok, fail, succeeded = run_uploads(files, remote_base, workers)
     print(
         f"\n========== Summary: ok={ok} fail={fail} total={total} "
