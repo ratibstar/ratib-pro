@@ -25,12 +25,73 @@
     }
 
     function registerSw() {
+        var expectedCache = 'rateb-offline-v2-bootstrap-v1';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
+
+        function waitForLatestWorker(reg) {
+            var candidate = reg.installing || reg.waiting;
+            if (!candidate) {
+                return root.navigator.serviceWorker.ready.then(function (readyReg) {
+                    return readyReg.active;
+                });
+            }
+            if (candidate.state === 'activated') {
+                return Promise.resolve(candidate);
+            }
+            return new Promise(function (resolve, reject) {
+                var timer = root.setTimeout(function () {
+                    reject(new Error('sw_activation_timeout'));
+                }, 15000);
+                candidate.addEventListener('statechange', function () {
+                    if (candidate.state === 'activated') {
+                        root.clearTimeout(timer);
+                        resolve(candidate);
+                    } else if (candidate.state === 'redundant') {
+                        root.clearTimeout(timer);
+                        reject(new Error('sw_install_redundant'));
+                    }
+                });
+            });
+        }
+
         var swUrl = new URL('sw.js', root.location.href).href;
-        return root.navigator.serviceWorker.register(swUrl, { scope: './' }).then(function (reg) {
-            return { ok: true, scope: reg.scope };
+        return root.navigator.serviceWorker.register(swUrl, {
+            scope: './',
+            updateViaCache: 'none'
+        }).then(function (reg) {
+            return waitForLatestWorker(reg).then(function (worker) {
+                if (!worker) {
+                    throw new Error('sw_active_worker_missing');
+                }
+                return new Promise(function (resolve, reject) {
+                    var channel = new MessageChannel();
+                    var timer = root.setTimeout(function () {
+                        reject(new Error('sw_precache_verify_timeout'));
+                    }, 10000);
+                    channel.port1.onmessage = function (event) {
+                        root.clearTimeout(timer);
+                        var result = event.data || {};
+                        if (!result.ok || result.cache !== expectedCache) {
+                            reject(new Error(
+                                'sw_precache_incomplete:' +
+                                (result.missing || []).join(',') +
+                                ':cache=' + (result.cache || 'none')
+                            ));
+                            return;
+                        }
+                        resolve({
+                            ok: true,
+                            scope: reg.scope,
+                            cache: result.cache,
+                            cached: result.cached,
+                            required: result.required
+                        });
+                    };
+                    worker.postMessage({ type: 'RATEB_V2_VERIFY_PRECACHE' }, [channel.port2]);
+                });
+            });
         }).catch(function (err) {
             return { ok: false, error: String(err && err.message ? err.message : err) };
         });
@@ -585,24 +646,23 @@
             });
         }
 
-        function initializeActiveModule(path, platform) {
-            var activeId = moduleFromPath(path);
-            if (!activeId) {
-                mark('active-module-none');
-                return Promise.resolve(null);
-            }
-
-            var deps = {
-                identity: [],
-                inventory: ['identity'],
-                procurement: ['identity', 'inventory'],
-                sales: ['identity', 'inventory'],
-                accounting: ['identity', 'inventory'],
-                crm: ['identity'],
-                hr: ['identity'],
-                mfg: ['identity', 'inventory']
-            };
-            var order = (deps[activeId] || []).concat([activeId]);
+        function initializeBusinessModules(path, platform) {
+            var requestedId = moduleFromPath(path);
+            /*
+             * Offline Bootstrap contract: every installed route is registered from
+             * precached code on first launch. Identity is always first and remains
+             * the sole published local-identity API boundary for BusinessModules.
+             */
+            var order = [
+                'identity',
+                'inventory',
+                'procurement',
+                'sales',
+                'accounting',
+                'crm',
+                'hr',
+                'mfg'
+            ];
             var globals = {
                 identity: 'RatebOfflineV2Identity',
                 inventory: 'RatebOfflineV2Inventory',
@@ -655,11 +715,21 @@
                     }
                     return null;
                 }).then(function () {
-                    ready('active-module', { moduleId: activeId });
+                    var activeId = requestedId || 'identity';
+                    ready('active-module', {
+                        moduleId: activeId,
+                        registeredModules: order.slice()
+                    });
                     try {
                         root.document.documentElement.setAttribute('data-rateb-v2-active-module', activeId);
+                        root.document.documentElement.setAttribute('data-rateb-v2-business-modules-ready', '1');
                     } catch (eAttr) { /* ignore */ }
-                    return { id: activeId, framework: fw, platform: platform };
+                    return {
+                        id: activeId,
+                        registeredModules: order.slice(),
+                        framework: fw,
+                        platform: platform
+                    };
                 });
             });
         }
@@ -707,6 +777,23 @@
         var path = requestedPath();
         var requestedModuleId = moduleFromPath(path);
         var routeSeen = false;
+        var swPromise = registerSw().then(function (sw) {
+            setState('sw', !!sw.ok, sw.ok
+                ? ('scope ' + sw.scope + ' · cached ' + sw.cached + '/' + sw.required)
+                : (sw.error || ''));
+            ready('sw', sw);
+            if (!sw.ok) {
+                root.document.documentElement.setAttribute('data-rateb-v2-precache-ready', '0');
+                throw new Error(sw.error || 'sw_offline_bootstrap_failed');
+            }
+            root.document.documentElement.setAttribute('data-rateb-v2-precache-ready', '1');
+            ready('precache', {
+                cache: sw.cache,
+                cached: sw.cached,
+                required: sw.required
+            });
+            return sw;
+        });
         if (runtime.events) {
             runtime.events.on('router:afterNavigate', function (payload) {
                 var actualPath = payload && payload.path ? payload.path : '/';
@@ -734,11 +821,6 @@
         root.document.documentElement.setAttribute('data-rateb-v2-interactive', '1');
         ready('interactive');
 
-        registerSw().then(function (sw) {
-            setState('sw', !!sw.ok, sw.ok ? ('scope ' + sw.scope) : (sw.error || ''));
-            ready('sw', sw);
-        });
-
         mountPromise.then(function () {
             ready('runtime', { state: runtime.getState() });
             ready('router');
@@ -756,12 +838,28 @@
 
             scheduleBackground(function () {
                 hciHousekeeping();
-                initializeStorageAndPlatform().then(function (platform) {
-                    return initializeActiveModule(path, platform).then(function () {
+                swPromise.then(function () {
+                    return initializeStorageAndPlatform();
+                }).then(function (platform) {
+                    return initializeBusinessModules(path, platform).then(function () {
                         runDeferredDiagnostics(platform);
                         mark('background-ready');
+                        root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
+                        ready('offline-bootstrap', {
+                            path: path,
+                            identity: true,
+                            sqlite: true,
+                            businessModules: true
+                        });
                     });
                 }).catch(function (err) {
+                    root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '0');
+                    setText('boot-status', 'Offline bootstrap failed: ' +
+                        String(err && err.message ? err.message : err));
+                    var failedStatus = $('boot-status');
+                    if (failedStatus) {
+                        failedStatus.className = 'status fail';
+                    }
                     try {
                         console.warn('[RATEB V2 PERF] background init', err && err.message);
                     } catch (eLog) { /* ignore */ }

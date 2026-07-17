@@ -12,10 +12,10 @@
  * - Precache V2 host static assets for zero-network host boot
  * - Network pass-through for anything else in scope
  *
- * Phase Z: resilient precache — one 404 must not invalidate the whole install.
+ * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-host-px4';
+var CACHE = 'rateb-offline-v2-bootstrap-v1';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -48,6 +48,7 @@ var PRECACHE = [
     './vendor/sqlite/sqlite3-opfs-async-proxy.js',
     './vendor/sqlite/sqlite3-worker1.mjs'
 ];
+var APP_SHELL_URL = new URL('./index.html', self.registration.scope).href;
 
 function precacheUrl(cache, rel) {
     var url;
@@ -73,25 +74,12 @@ function precacheAll(cache) {
         return precacheUrl(cache, rel);
     })).then(function (rows) {
         var failed = rows.filter(function (r) { return !r.ok; });
-        // Install succeeds when host shell + sqlite vendor are present.
-        var critical = [
-            './index.html',
-            './js/boot.js',
-            './js/hci.js',
-            './js/db/sqlite-runtime.js',
-            './vendor/sqlite/index.mjs',
-            './vendor/sqlite/sqlite3.wasm',
-            './vendor/sqlite/sqlite3-opfs-async-proxy.js'
-        ];
-        var criticalMiss = failed.filter(function (r) {
-            return critical.indexOf(r.rel) !== -1;
-        });
-        if (criticalMiss.length) {
-            throw new Error('v2_precache_critical_missing:' + criticalMiss.map(function (r) {
+        if (failed.length) {
+            throw new Error('v2_precache_required_missing:' + failed.map(function (r) {
                 return r.rel;
             }).join(','));
         }
-        return { ok: true, cached: rows.length - failed.length, failed: failed };
+        return { ok: true, cached: rows.length, failed: [] };
     });
 }
 
@@ -109,7 +97,9 @@ self.addEventListener('activate', function (event) {
     event.waitUntil(
         caches.keys().then(function (keys) {
             return Promise.all(keys.map(function (k) {
-                if (k !== CACHE && k.indexOf('rateb-offline-v2-host-') === 0) {
+                var owned = k.indexOf('rateb-offline-v2-host-') === 0 ||
+                    k.indexOf('rateb-offline-v2-bootstrap-') === 0;
+                if (k !== CACHE && owned) {
                     return caches.delete(k);
                 }
                 return null;
@@ -139,9 +129,19 @@ self.addEventListener('fetch', function (event) {
 
     if (req.mode === 'navigate') {
         event.respondWith(
-            caches.match('./index.html').then(function (hit) {
-                return hit || fetch(req).catch(function () {
-                    return caches.match('./index.html');
+            caches.open(CACHE).then(function (cache) {
+                return cache.match(APP_SHELL_URL).then(function (hit) {
+                    if (hit) {
+                        return hit;
+                    }
+                    return fetch(req).then(function (res) {
+                        if (!res || !res.ok) {
+                            throw new Error('v2_navigation_http_' + (res ? res.status : 0));
+                        }
+                        return cache.put(APP_SHELL_URL, res.clone()).then(function () {
+                            return res;
+                        });
+                    });
                 });
             })
         );
@@ -169,6 +169,43 @@ self.addEventListener('fetch', function (event) {
                     return again || Response.error();
                 });
             });
+        })
+    );
+});
+
+self.addEventListener('message', function (event) {
+    var data = event.data || {};
+    if (data.type !== 'RATEB_V2_VERIFY_PRECACHE') {
+        return;
+    }
+    var port = event.ports && event.ports[0];
+    event.waitUntil(
+        caches.open(CACHE).then(function (cache) {
+            return Promise.all(PRECACHE.map(function (rel) {
+                var url = new URL(rel, self.registration.scope).href;
+                return cache.match(url).then(function (hit) {
+                    return hit ? null : rel;
+                });
+            }));
+        }).then(function (rows) {
+            var missing = rows.filter(function (rel) { return !!rel; });
+            if (port) {
+                port.postMessage({
+                    ok: missing.length === 0,
+                    cache: CACHE,
+                    cached: PRECACHE.length - missing.length,
+                    required: PRECACHE.length,
+                    missing: missing
+                });
+            }
+        }).catch(function (err) {
+            if (port) {
+                port.postMessage({
+                    ok: false,
+                    cache: CACHE,
+                    error: String(err && err.message ? err.message : err)
+                });
+            }
         })
     );
 });

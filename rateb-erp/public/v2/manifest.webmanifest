@@ -3,7 +3,7 @@
   "short_name": "RATEB V2",
   "description": "RATEB Offline V2 — local host (Phase 1 L0). Sealed runtime packages come in later phases.",
   "id": "/rateb-erp/public/v2/",
-  "start_url": "./index.html",
+  "start_url": "./index.html#/identity",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
