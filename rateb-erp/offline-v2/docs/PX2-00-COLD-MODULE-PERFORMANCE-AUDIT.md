@@ -12,9 +12,30 @@
 - No passwords, password hashes, cookies, bearer tokens, JWTs, TOTP secrets,
   WebAuthn server credentials, API tokens, or authentication secrets were
   collected or introduced.
-- BusinessModules continue to use published `module.identity.*` APIs only.
+- BusinessModules continue to use published `module.identity.*` APIs only on
+  the normal route path.
 - The profiler records normalized SQL text only; bind values are deliberately
   excluded.
+
+## Architecture Conflict — Category B (report only)
+
+Lifecycle mapping found two Identity-boundary conflicts. They are **not**
+performance root causes and were **not** fixed in PX2.
+
+1. **Extra Identity entity classes.** `identity-module.js` stores
+   `identity.config`, `identity.local_session`, and `identity.security_meta`
+   in addition to the five allowed classes (sealed identity, claims, RBAC
+   snapshot, device trust, unlock metadata). No credential/secret storage was
+   observed; Online ERP remains Authentication Authority. Under the active
+   “Identity may store ONLY” rule, the additional entity classes are Category B.
+2. **Direct Identity SQL from Inventory helper.**
+   `InventoryStore.assertNoIdentityTouch()` executes
+   `SELECT … WHERE entity_type LIKE 'identity.%'`. That is direct Identity
+   storage access. It is not on the normal cold/warm route path, but it
+   violates the published-API-only rule for BusinessModules.
+
+Normal BusinessModule route code otherwise consumes Identity only through
+`module.identity.*` services.
 
 ## Executive finding
 
@@ -150,6 +171,10 @@ delay. The target module lifecycle and render are only a few milliseconds.
 - Largest shared cold cost: 133–246 ms in these runs.
 - Cold initialization loads/initializes SQLite WASM, opens `hci-persist`, reads
   persisted bytes, and ensures schema state.
+- Source inspection of `sqlite-runtime.js` shows the open path can also perform
+  two full database export/persist checkpoints (migration/open and install-
+  pointer sync). Cost grows with `ratib.sqlite` size even when no schema
+  migration is needed.
 - `db.open()` is invoked repeatedly:
   - boot background open;
   - Identity `_ensureStore`;
@@ -178,6 +203,11 @@ WHERE entity_type = ? AND entity_id = ?
   records; they are not proof of duplicate-row reads.
 - Because profiles are not enrolled, each target route stops at the Identity
   gate. No target-module list/timeline query executes in this evidence.
+- Source mapping shows that an enrolled warm revisit would still re-run route
+  `mount` SQL (Identity reads plus the module list/report query). Warm is
+  instant in this audit because activation/store/handler/`init` survive and
+  the Identity gate fails before module SQL — not because mount SQL is
+  memoized.
 
 ### Repository and cache creation
 
@@ -445,7 +475,10 @@ For successful modules:
 
 - SQLite + shell/platform account for most of the 304–460 ms cold time.
 - Target lifecycle and render are approximately 22–30 ms after DB Ready.
-- Actual SQL is only 2.6–4.2 ms.
+- Actual SQL is only 2.6–4.2 ms in unenrolled profiles.
 - Warm navigation is sub-millisecond because lifecycle objects remain alive.
+
+**Architecture Conflict status:** Category B Identity findings reported above;
+no remediation in this phase.
 
 **Phase PX2 status:** COMPLETE — audit only, no fixes implemented.

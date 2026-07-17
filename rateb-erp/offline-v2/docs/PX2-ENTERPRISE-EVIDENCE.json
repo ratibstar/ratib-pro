@@ -8,8 +8,22 @@
   "identity_boundary": {
     "online_erp_is_only_authentication_authority": true,
     "identity_stores_credentials": false,
-    "business_modules_use_module_identity_apis_only": true,
-    "profiler_collects_sql_bind_values": false
+    "business_modules_use_module_identity_apis_only_on_normal_route_path": true,
+    "profiler_collects_sql_bind_values": false,
+    "category_b_architecture_conflicts": [
+      {
+        "id": "PX2-AF21-IDENTITY-EXTRA-ENTITY-CLASSES",
+        "severity": "Category B",
+        "file": "rateb-erp/public/v2/js/business/identity-module.js",
+        "detail": "Stores identity.config, identity.local_session, and identity.security_meta beyond the five permitted Identity classes. No credential/secret storage observed."
+      },
+      {
+        "id": "PX2-AF21-INVENTORY-DIRECT-IDENTITY-SQL",
+        "severity": "Category B",
+        "file": "rateb-erp/public/v2/js/business/inventory-module.js",
+        "detail": "InventoryStore.assertNoIdentityTouch() selects entity_row WHERE entity_type LIKE 'identity.%'. Not on normal route path; still direct Identity storage access."
+      }
+    ]
   },
   "method": {
     "tool": "rateb-erp/tools/boot-bench/phase-px2-cold-module-audit.js",
@@ -146,7 +160,8 @@
     "identity_route_reads": 2,
     "other_successful_route_reads": 3,
     "bind_values_captured": false,
-    "interpretation": "session, claims, and RBAC are distinct records; target module queries are gated by missing enrollment"
+    "interpretation": "session, claims, and RBAC are distinct records; target module queries are gated by missing enrollment",
+    "warm_unenrolled_note": "Warm SQL was 0 for BusinessModules because Identity gate fails before module list/report queries. Enrolled warm revisits would still re-run route mount SQL; only activation/store/handler init are skipped."
   },
   "objects_surviving_warm_navigation": [
     "SQLite WASM runtime",
