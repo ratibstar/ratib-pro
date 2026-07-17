@@ -1,0 +1,95 @@
+{
+  "phase": "PX",
+  "title": "Offline V2 Performance Architecture Audit",
+  "status": "COMPLETE_AUDIT_ONLY",
+  "measured_at": "2026-07-17",
+  "commit_sha": "72e3d52f",
+  "architecture_freeze": true,
+  "identity_boundary": {
+    "online_erp_authentication_authority": true,
+    "identity_stores_credentials": false,
+    "business_modules_use_module_identity_apis_only": true
+  },
+  "tool": "rateb-erp/tools/boot-bench/phase-px-architecture-audit.js",
+  "raw_report": "rateb-erp/tools/boot-bench/reports/phase-px-architecture-audit.json",
+  "urls": {
+    "offline_v2": "https://rateb.sa/rateb-erp/public/v2/index.html",
+    "offline_v2_inventory": "https://rateb.sa/rateb-erp/public/v2/index.html#/inventory",
+    "online_login": "https://rateb.sa/login",
+    "online_admin": "https://rateb.sa/admin"
+  },
+  "comparison": {
+    "online_login_warm_fcp_ms": 228,
+    "online_login_warm_ttfb_ms": 131.8,
+    "online_login_cold_fcp_ms": 3664,
+    "online_login_cold_ttfb_ms": 3156.7,
+    "online_admin_unauthenticated_redirects_to_login": true,
+    "v2_home_warm_fcp_ms": 96,
+    "v2_home_warm_shell_ready_ms": 205.7,
+    "v2_inventory_warm_fcp_ms": 36,
+    "v2_inventory_warm_route_ready_ms": 123,
+    "v2_home_offline_shell_ready_ms": 85,
+    "v2_inventory_offline_route_ready_ms": 231.4
+  },
+  "layer_timings_warm_inventory_ms": {
+    "hci": 20,
+    "interactive": 20.8,
+    "sw": 23.2,
+    "runtime": 65.9,
+    "router": 65.9,
+    "shell": 65.9,
+    "pm": 75.2,
+    "sync_sdk_framework": 76,
+    "sqlite": 120.5,
+    "identity_inventory_route": 123,
+    "background_ready": 123.1
+  },
+  "cpu_profile": {
+    "long_tasks_warm_inventory": 0,
+    "long_task_total_ms_warm_inventory": 0,
+    "long_tasks_online_login_warm": 0,
+    "note": "No longtask entries in Chromium headless for warm runs; cost appears as async Promise/OPFS/WASM work under 50ms slices."
+  },
+  "storage": {
+    "indexeddb_used_for_v2_business_data": false,
+    "sqlite_mode": "hci-persist",
+    "storage_estimate_usage_bytes_warm_home": 3635499,
+    "opfs_probe_ok": true
+  },
+  "why_online_feels_faster": [
+    "SSR first paint is a complete product surface (brand + form)",
+    "Online pays no SQLite WASM / OPFS layout tax on the client",
+    "Online has no Runtime/Router/Shell/SDK/Business Framework boot chain",
+    "Offline first paint is host chrome; meaningful ERP content waits on Promise chains and enrollment state",
+    "Network latency was replaced by local platform work, not eliminated as total cost"
+  ],
+  "top_20_bottlenecks": [
+    "Runtime.start awaited inside Shell.mount",
+    "HCI ensureLayout serial OPFS",
+    "verifyLayout duplicate OPFS walk in health",
+    "loadActivePackage + SHA",
+    "Router manifest fetch before Shell Ready",
+    "SQLite WASM cold parse",
+    "SQLite hci-persist open/migrate",
+    "Identity then Inventory serial activate",
+    "Critical script parse chain",
+    "Eager Sync/SDK/Framework on Home",
+    "Eager PM on Home",
+    "Shell DOM rebuild over static skeleton",
+    "Enrollment-gated empty workspace perception",
+    "Cold origin TTFB",
+    "First-visit SW precache contention",
+    "Deep-link module script loads",
+    "Toast/loading UI noise",
+    "Event readiness cascade overhead",
+    "Duplicate readiness marks",
+    "Sparse builtin routes vs Online page density"
+  ],
+  "theoretical_optimum_installed": {
+    "first_paint_ms": "20-40",
+    "shell_ready_ms": "30-60",
+    "builtin_route_ms": "30-60",
+    "inventory_route_ms": "80-150"
+  },
+  "implementation": "OUT_OF_SCOPE_AUDIT_ONLY"
+}
