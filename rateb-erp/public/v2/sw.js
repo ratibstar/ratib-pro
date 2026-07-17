@@ -15,7 +15,7 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-bootstrap-v1';
+var CACHE = 'rateb-offline-v2-bootstrap-v2';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -181,14 +181,16 @@ self.addEventListener('message', function (event) {
     var port = event.ports && event.ports[0];
     event.waitUntil(
         caches.open(CACHE).then(function (cache) {
-            return Promise.all(PRECACHE.map(function (rel) {
+            return cache.keys();
+        }).then(function (requests) {
+            var cachedUrls = Object.create(null);
+            requests.forEach(function (request) {
+                cachedUrls[request.url] = true;
+            });
+            var missing = PRECACHE.filter(function (rel) {
                 var url = new URL(rel, self.registration.scope).href;
-                return cache.match(url).then(function (hit) {
-                    return hit ? null : rel;
-                });
-            }));
-        }).then(function (rows) {
-            var missing = rows.filter(function (rel) { return !!rel; });
+                return !cachedUrls[url];
+            });
             if (port) {
                 port.postMessage({
                     ok: missing.length === 0,
