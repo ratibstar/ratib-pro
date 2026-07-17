@@ -182,8 +182,8 @@ Only the two violating BusinessModules and PX2.1 evidence documents changed.
 | Sales self-test | PASS |
 | Accounting self-test | PASS |
 | Manufacturing self-test | PASS |
-| CRM self-test | Existing `workflow_denied_invalid` assertion failure; no Identity boundary failure |
-| HR self-test | Existing `workflow_denied_invalid` assertion failure; no Identity boundary failure |
+| CRM self-test | `workflow_denied_invalid` assertion failure observed; no Identity boundary failure |
+| HR self-test | `workflow_denied_invalid` assertion failure observed; no Identity boundary failure |
 
 The CRM/HR workflow assertions are outside PX2.1 and do not represent Category
 B Identity access. They were not modified.

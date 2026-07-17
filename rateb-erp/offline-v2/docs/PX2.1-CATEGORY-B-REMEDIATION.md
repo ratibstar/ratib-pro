@@ -170,6 +170,22 @@ Inventory self-test: PASS
 - Inventory CRUD/posting behavior passed.
 - No page errors.
 
+### Production validation
+
+Commit `42e734e3311c18217cd0d1e430d3ee5476dad33a` deployed successfully:
+
+`https://github.com/ratibstar/ratib-pro/actions/runs/29571775080`
+
+An isolated Chromium profile loaded the deployed production scripts with its
+Service Worker blocked, seeded the three legacy classes into browser-local
+SQLite, and activated Identity.
+
+- Post-migration types: `identity.unlock_meta` only.
+- Migrated policy: `4321 / 321 / 6543`.
+- Production Identity self-test: PASS.
+- Production Inventory self-test: PASS.
+- Page errors: 0.
+
 ## Outcome
 
 - Forbidden Identity classes: **0 active**

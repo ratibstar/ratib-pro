@@ -4,6 +4,12 @@
   "status": "PASS_CATEGORY_B_ZERO",
   "measured_at": "2026-07-17",
   "source_commit_before_remediation": "2eb52c90",
+  "remediation_commit": "42e734e3311c18217cd0d1e430d3ee5476dad33a",
+  "production_deploy": {
+    "status": "success",
+    "workflow_url": "https://github.com/ratibstar/ratib-pro/actions/runs/29571775080",
+    "url": "https://rateb.sa/rateb-erp/public/v2/index.html"
+  },
   "architecture_freeze": {
     "af_2_1": true,
     "af_2_1_1": true,
@@ -82,6 +88,26 @@
     ],
     "approved_types_only": true,
     "credential_entities": 0,
+    "result": "PASS"
+  },
+  "production_validation": {
+    "browser_profile": "isolated Chromium persistent profile with service worker blocked",
+    "legacy_rows_seeded_in_browser_local_sqlite": [
+      "identity.config",
+      "identity.local_session",
+      "identity.security_meta"
+    ],
+    "post_migration_entity_types": [
+      "identity.unlock_meta"
+    ],
+    "migrated_unlock_policy": {
+      "unlock_ttl_sec": 4321,
+      "idle_ttl_sec": 321,
+      "max_offline_sec": 6543
+    },
+    "identity_self_test": "PASS",
+    "inventory_self_test": "PASS",
+    "page_errors": 0,
     "result": "PASS"
   },
   "direct_access_audit": {
