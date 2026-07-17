@@ -135,29 +135,35 @@ async function main() {
     });
 
     async function runModuleSelfTest(moduleHash, globalName, stepName, moduleId) {
-      await page.goto(BASE + '#' + moduleHash, { waitUntil: 'domcontentloaded', timeout: 120000 });
-      await page.waitForFunction(
-        () => document.documentElement.getAttribute('data-rateb-v2-shell-ready') === '1',
-        null,
-        { timeout: 120000 }
-      );
-      await page.waitForFunction(
-        (mid) => document.documentElement.getAttribute('data-rateb-v2-active-module') === mid,
-        moduleId,
-        { timeout: 180000 }
-      );
-      const result = await page.evaluate(async (gName) => {
-        if (!window[gName] || typeof window[gName].runSelfTest !== 'function') {
-          return { ok: false, error: gName + '_missing' };
+      const context = await browser.newContext();
+      const modPage = await context.newPage();
+      try {
+        await modPage.goto(BASE + '#' + moduleHash, { waitUntil: 'domcontentloaded', timeout: 120000 });
+        await modPage.waitForFunction(
+          () => document.documentElement.getAttribute('data-rateb-v2-shell-ready') === '1',
+          null,
+          { timeout: 120000 }
+        );
+        await modPage.waitForFunction(
+          (mid) => document.documentElement.getAttribute('data-rateb-v2-active-module') === mid,
+          moduleId,
+          { timeout: 180000 }
+        );
+        const result = await modPage.evaluate(async (gName) => {
+          if (!window[gName] || typeof window[gName].runSelfTest !== 'function') {
+            return { ok: false, error: gName + '_missing' };
+          }
+          return window[gName].runSelfTest();
+        }, globalName);
+        if (result && result.ok) {
+          ok(evidence, stepName, 'ownedPrefix + company_id SQL');
+        } else {
+          fail(evidence, stepName, JSON.stringify(result && (result.failed || result.error || result)));
         }
-        return window[gName].runSelfTest();
-      }, globalName);
-      if (result && result.ok) {
-        ok(evidence, stepName, 'ownedPrefix + company_id SQL');
-      } else {
-        fail(evidence, stepName, JSON.stringify(result && (result.failed || result.error || result)));
+        return result;
+      } finally {
+        await context.close();
       }
-      return result;
     }
 
     await runModuleSelfTest('/sales', 'RatebOfflineV2Sales', 'sales_runSelfTest', 'sales');
