@@ -103,7 +103,7 @@ AFTER:   assets/offline/platform/.../impl.js  = sole implementation owner
 | **B4** | Identity needs Business FW | **M3** moves Identity + minimal `support/` FW required to publish `module.identity.*` in one unit (or FW micro-step immediately before Identity in same release train — still one rollbackable unit boundary). |
 | **B5** | Dual V1+V2 engines on Admin pages | **Deferred to Track B.** Track A does not boot platform Sync/Runtime inside Admin layouts. Offline V1 remains Admin production offline until cutover ADR. |
 | **B6** | No static `/public/admin` SPA | Platform package under `assets/offline/platform/` is the Admin-owned library home; ERP UI stays PHP MVC. |
-| **B7** | SW isolation | Track A updates **only** `public/v2/sw.js` precache entries to platform URLs as part of the same unit (migration host SW). Admin/`pos-sw.js` untouched until Track B. No production ERP SW freeze. |
+| **B7** | SW isolation | **Resolved for M1:** update **only** `public/v2/sw.js` (cache bump + precache platform Runtime/HCI; drop old owner paths). `pos-sw.js` / Admin SW / Offline V1 SW remain untouched. See [M1 SW amendment](./PHASE-M1-SW-MAINTENANCE-AMENDMENT.md). |
 | **B8** | Sync soft-coupled to Router/Shell | Sync unit contract: production path = DB + HCI + Runtime only; Router/Shell remain V2-host-only soft deps for self-tests, not Admin platform boot requirements. |
 
 ---
@@ -174,7 +174,7 @@ Each step = one PR/commit train → push → PX-Deploy green → PX4 green → n
 | Step | Unit | What transfers (atomic) | PX-Deploy | PX4 | Rollback |
 |------|------|-------------------------|-----------|-----|----------|
 | **M0** | Migration harness | Platform boot proof path under Admin-owned URL (empty/smoke only) + PX4 target updated to resolve platform; **no** infra move yet | must pass | harness smoke | revert M0 |
-| **M1** | Runtime + EventBus + ServiceLocator + **HCI** | Move implementation to `platform/runtime` + `platform/hci`; V2 stubs; update v2 boot/SW precache to platform URLs | must pass | Runtime/HCI init via stubs | revert M1 |
+| **M1** | Runtime + EventBus + ServiceLocator + **HCI** | Move to `platform/runtime` + `platform/hci`; V2 stubs; **V2 host `sw.js` only**: cache-name bump + precache platform Runtime/HCI + remove old owner paths from precache (see [M1 SW amendment](./PHASE-M1-SW-MAINTENANCE-AMENDMENT.md)). Forbidden: `pos-sw.js`, Admin, V1, SQLite/Identity/Sync | must pass | Runtime/HCI init via stubs on migration host | revert M1 |
 | **M2** | SQLite | Move `db/` + `vendor/sqlite/` together; stubs; SW precache | must pass | DB open + integrity | revert M2 |
 | **M3** | Identity (+ support FW as required) | Move Identity + minimal FW; publish `module.identity.*`; AF-2.1 scan | must pass | Identity init + service publish | revert M3 |
 | **M4** | Sync + Queue | Move sync-engine; single Queue; no Router/Shell hard dep for start | must pass | Sync start + enqueue smoke | revert M4 |
