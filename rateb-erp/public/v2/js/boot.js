@@ -433,25 +433,9 @@
 
     function run() {
         var hci = root.RatebOfflineV2HCI;
-        if (!hci) {
-            setText('boot-status', 'HCI missing');
-            return;
-        }
-
-        setText('hci-version', hci.version);
-        setText('layout-id', hci.layoutId);
-        setState('sec-context', hci.isSecureContext(), hci.isSecureContext() ? 'secure' : 'insecure');
-        setState('installed', true, hci.isInstalledDisplay() ? 'standalone/minimal-ui' : 'browser tab');
-
-        var reach = hci.getReachability();
-        setText('reachability', reach.online ? 'online (signal only)' : 'offline (boot must still succeed)');
-
-        var bootNet = performance.getEntriesByType
-            ? performance.getEntriesByType('resource').filter(function (r) {
-                return /\/admin(\/|$)/i.test(r.name) || /offline-shell/i.test(r.name);
-            })
-            : [];
-        setState('no-php', bootNet.length === 0, bootNet.length ? 'admin/offline-shell requested' : 'no admin PHP fetch');
+        var runtime = root.RatebOfflineV2Runtime;
+        var shellApi = root.RatebOfflineV2Shell;
+        var scriptLoads = Object.create(null);
 
         function mark(name) {
             try {
@@ -461,164 +445,300 @@
             } catch (eMark) { /* ignore */ }
         }
 
+        function ready(name, detail) {
+            mark(name + '-ready');
+            try {
+                root.dispatchEvent(new CustomEvent('rateb-v2-' + name + '-ready', {
+                    detail: Object.assign({ at: Date.now() }, detail || {})
+                }));
+            } catch (eEvent) { /* ignore */ }
+        }
+
         function loadScript(src) {
-            return new Promise(function (resolve, reject) {
+            var abs = new URL(src, root.location.href).href;
+            if (scriptLoads[abs]) {
+                return scriptLoads[abs];
+            }
+            scriptLoads[abs] = new Promise(function (resolve, reject) {
+                var existing = root.document.querySelector('script[src="' + abs + '"]');
+                if (existing) {
+                    resolve(abs);
+                    return;
+                }
                 var s = root.document.createElement('script');
-                s.src = src;
-                s.async = false;
-                s.onload = function () { resolve(src); };
+                s.src = abs;
+                s.async = true;
+                s.onload = function () { resolve(abs); };
                 s.onerror = function () { reject(new Error('script_load_failed:' + src)); };
                 root.document.body.appendChild(s);
             });
+            return scriptLoads[abs];
         }
 
-        /** Phase Z: load ERP BusinessModules only after Shell Ready (keeps first paint lean). */
-        function loadPostShellScripts() {
-            var files = [
-                './js/business/identity-module.js',
-                './js/business/inventory-module.js',
-                './js/business/procurement-module.js',
-                './js/business/sales-module.js',
-                './js/business/accounting-module.js',
-                './js/business/crm-module.js',
-                './js/business/hr-module.js',
-                './js/business/manufacturing-module.js'
-            ];
-            var chain = Promise.resolve();
-            files.forEach(function (src) {
-                chain = chain.then(function () {
-                    return loadScript(src);
-                });
-            });
-            return chain;
+        function scheduleBackground(fn) {
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(function () { fn(); }, { timeout: 1200 });
+            } else {
+                root.setTimeout(fn, 0);
+            }
         }
 
-        function hciHousekeepingNonBlocking() {
-            return hci.getQuota().then(function (q) {
-                if (q.ok) {
-                    setText('quota', 'usage ' + q.usage + ' / quota ' + q.quota);
-                } else {
-                    setText('quota', q.error || 'n/a');
+        function requestedPath() {
+            try {
+                var u = new URL(root.location.href);
+                if (u.hash && u.hash.indexOf('#/') === 0) {
+                    return u.hash.slice(1);
                 }
+                return u.searchParams.get('r') || '/';
+            } catch (e) {
+                return '/';
+            }
+        }
+
+        function moduleFromPath(path) {
+            var id = String(path || '/').replace(/^\/+/, '').split('/')[0];
+            var supported = {
+                identity: true,
+                inventory: true,
+                procurement: true,
+                sales: true,
+                accounting: true,
+                crm: true,
+                hr: true,
+                manufacturing: true
+            };
+            return supported[id] ? id : null;
+        }
+
+        function hciHousekeeping() {
+            return hci.getQuota().then(function (q) {
+                setText('quota', q.ok ? ('usage ' + q.usage + ' / quota ' + q.quota) : (q.error || 'n/a'));
                 return hci.requestPersistence();
             }).then(function (p) {
                 setState('persist', !!p.ok, p.persisted ? 'persisted' : 'not persisted (may be browser policy)');
-                return hci.appendLog('phase17-host-boot');
-            }).catch(function (err) {
+                return hci.appendLog('perf-host-boot');
+            }).catch(function () {
                 setText('quota', 'n/a');
-                setState('persist', false, String(err && err.message ? err.message : err));
+            });
+        }
+
+        function initializeStorageAndPlatform() {
+            mark('background-start');
+            var pmPromise = loadScript('./js/package-manager.js').then(function () {
+                if (root.RatebOfflineV2PM && runtime && runtime.services) {
+                    runtime.services.register('pm', root.RatebOfflineV2PM, { replace: true });
+                }
+                ready('pm');
+                return root.RatebOfflineV2PM;
+            });
+
+            var dbUrl = new URL('./js/db/sqlite-runtime.js', root.location.href).href;
+            var dbPromise = import(dbUrl).then(function (mod) {
+                var db = mod.default || root.RatebOfflineV2DB;
+                return db.open().then(function (opened) {
+                    if (runtime && runtime.services) {
+                        runtime.services.register('db', db, { replace: true });
+                    }
+                    setText('db-version', db.version);
+                    setState('db-selftest', true, 'open mode=' + opened.mode + ' schema=' + opened.schemaVersion);
+                    ready('db', { mode: opened.mode, schemaVersion: opened.schemaVersion });
+                    return db;
+                });
+            }).catch(function (err) {
+                setState('db-selftest', false, String(err && err.message ? err.message : err));
+                return null;
+            });
+
+            var platformPromise = Promise.all([
+                loadScript('./js/sync/sync-engine.js'),
+                loadScript('./js/modules/module-sdk.js'),
+                loadScript('./js/business/business-module-framework.js')
+            ]).then(function () {
+                ready('background-platform');
+                return true;
+            });
+
+            return Promise.all([pmPromise, dbPromise, platformPromise]).then(function (parts) {
+                mark('background-platform-done');
+                return { pm: parts[0], db: parts[1] };
+            });
+        }
+
+        function initializeActiveModule(path, platform) {
+            var activeId = moduleFromPath(path);
+            if (!activeId) {
+                mark('active-module-none');
+                return Promise.resolve(null);
+            }
+
+            var deps = {
+                identity: [],
+                inventory: ['identity'],
+                procurement: ['identity', 'inventory'],
+                sales: ['identity', 'inventory'],
+                accounting: ['identity', 'inventory'],
+                crm: ['identity'],
+                hr: ['identity'],
+                manufacturing: ['identity', 'inventory']
+            };
+            var order = (deps[activeId] || []).concat([activeId]);
+            var globals = {
+                identity: 'RatebOfflineV2Identity',
+                inventory: 'RatebOfflineV2Inventory',
+                procurement: 'RatebOfflineV2Procurement',
+                sales: 'RatebOfflineV2Sales',
+                accounting: 'RatebOfflineV2Accounting',
+                crm: 'RatebOfflineV2Crm',
+                hr: 'RatebOfflineV2Hr',
+                manufacturing: 'RatebOfflineV2Mfg'
+            };
+
+            return Promise.all(order.map(function (id) {
+                return loadScript('./js/business/' + id + '-module.js');
+            })).then(function () {
+                var business = root.RatebOfflineV2Business;
+                if (!business || !business.create) {
+                    throw new Error('business_framework_missing');
+                }
+                var fw = business.create();
+                root.RatebOfflineV2ActiveBusiness = fw;
+                return fw.start().then(function () {
+                    var chain = Promise.resolve();
+                    order.forEach(function (id) {
+                        chain = chain.then(function () {
+                            var api = root[globals[id]];
+                            if (!api || typeof api.create !== 'function') {
+                                throw new Error('module_factory_missing:' + id);
+                            }
+                            return fw.register(api.create()).then(function () {
+                                return fw.activate(id);
+                            });
+                        });
+                    });
+                    return chain;
+                }).then(function () {
+                    var appShell = root.RatebOfflineV2AppShell;
+                    var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
+                    if (router && typeof router.navigate === 'function') {
+                        return router.navigate(path, { replace: true });
+                    }
+                    return null;
+                }).then(function () {
+                    ready('active-module', { moduleId: activeId });
+                    return { id: activeId, framework: fw, platform: platform };
+                });
+            });
+        }
+
+        function runDeferredDiagnostics(platform) {
+            var diag = $('rateb-v2-diagnostics');
+            if (!diag) {
+                return;
+            }
+            try {
+                var u = new URL(root.location.href);
+                if (u.searchParams.get('diagnostics') !== '1') {
+                    return;
+                }
+            } catch (eUrl) {
+                return;
+            }
+            diag.hidden = false;
+            scheduleBackground(function () {
+                Promise.all([
+                    runtime.runHealthChecks().then(function (res) {
+                        setState('rt-selftest', !!res.ok, 'background health');
+                    }),
+                    platform.db ? platform.db.integrityCheck().then(function (res) {
+                        setState('db-selftest', !!res.ok, 'background integrity');
+                    }) : Promise.resolve(),
+                    platform.pm ? platform.pm.getActive().then(function (active) {
+                        setState('pm-selftest', true, 'active=' + (active.activeSlot || 'none'));
+                    }) : Promise.resolve()
+                ]).then(function () {
+                    mark('diagnostics-done');
+                }).catch(function () { /* diagnostics never block UI */ });
             });
         }
 
         mark('boot-start');
-        return hci.ensureLayout().then(function (layout) {
-            mark('layout-ensured');
-            setState('layout-ensure', !!layout.ok, layout.opfsRoot || '');
-            return hci.verifyLayout();
-        }).then(function (verify) {
-            mark('layout-verified');
-            setState('layout-verify', !!verify.ok, verify.ok ? 'P1-00A complete' : (verify.missing || []).join(', '));
+        if (!hci || !runtime || !shellApi || typeof shellApi.create !== 'function') {
+            setText('boot-status', 'Platform script missing');
+            return;
+        }
+        ready('hci', { version: hci.version });
+        setText('hci-version', hci.version);
+        setText('layout-id', hci.layoutId);
 
-            // Phase Z: do not serialize quota/persist/log ahead of PM + SQLite.
-            // Register SW in background so first-visit precache does not contend with WASM.
-            hciHousekeepingNonBlocking();
-            registerSw().then(function (sw) {
-                mark('sw-registered');
-                setState('sw', !!sw.ok, sw.ok ? ('scope ' + sw.scope) : (sw.error || ''));
+        var path = requestedPath();
+        var requestedModuleId = moduleFromPath(path);
+        var routeSeen = false;
+        if (runtime.events) {
+            runtime.events.on('router:afterNavigate', function (payload) {
+                var actualPath = payload && payload.path ? payload.path : '/';
+                if (requestedModuleId && actualPath !== path) {
+                    mark('bootstrap-route-ready');
+                    return;
+                }
+                if (routeSeen) {
+                    return;
+                }
+                routeSeen = true;
+                ready('route', {
+                    path: actualPath
+                });
+                root.document.documentElement.setAttribute('data-rateb-v2-route-ready', '1');
             });
+        }
 
-            return Promise.all([
-                runPmSelfTest().then(function (pmRes) {
-                    mark('pm-selftest-done');
-                    return pmRes;
-                }),
-                runDbSelfTest().then(function (dbRes) {
-                    mark('db-selftest-done');
-                    return dbRes;
-                })
-            ]);
-        }).then(function (pair) {
-            var pmRes = pair[0];
-            var dbRes = pair[1];
-            return runRuntimeSelfTest().then(function (rtRes) {
-                mark('runtime-selftest-done');
-                return runRouterSelfTest().then(function (routerRes) {
-                    mark('router-selftest-done');
-                    return runShellSelfTest().then(function (shellRes) {
-                        mark('shell-ready');
-                        // Shell Ready gate: platform stack only. PM self-test mutates durable
-                        // active.json and must not block refresh (pm_cannot_stage_active_slot).
-                        var pmOkForShell = !!root.RatebOfflineV2PM;
-                        var shellOk = pmOkForShell &&
-                            dbRes && dbRes.ok !== false &&
-                            rtRes && rtRes.ok !== false &&
-                            routerRes && routerRes.ok !== false &&
-                            shellRes && shellRes.ok !== false;
-                        if (shellOk) {
-                            setText('boot-status', 'Shell Ready');
-                            $('boot-status').className = 'status pass';
-                            if (root.document && root.document.documentElement) {
-                                root.document.documentElement.setAttribute('data-rateb-v2-shell-ready', '1');
-                            }
-                            root.dispatchEvent(new CustomEvent('rateb-v2-shell-ready', {
-                                detail: { at: Date.now() }
-                            }));
-                        }
-                        return loadPostShellScripts().then(function () {
-                            mark('post-shell-scripts-loaded');
-                            return runSyncSelfTest().then(function (syncRes) {
-                                return runSdkSelfTest().then(function (sdkRes) {
-                                    return runBusinessSelfTest().then(function (bmRes) {
-                                        return runIdentitySelfTest().then(function (idRes) {
-                                            return runInventorySelfTest().then(function (invRes) {
-                                                return runProcurementSelfTest().then(function (procRes) {
-                                                    return runSalesSelfTest().then(function (salesRes) {
-                                                        return runAccountingSelfTest().then(function (acctRes) {
-                                                            return runCrmSelfTest().then(function (crmRes) {
-                                                                return runHrSelfTest().then(function (hrRes) {
-                                                                    return runMfgSelfTest().then(function (mfgRes) {
-                                                                        var ok = shellOk &&
-                                                                            syncRes && syncRes.ok !== false &&
-                                                                            sdkRes && sdkRes.ok !== false &&
-                                                                            bmRes && bmRes.ok !== false &&
-                                                                            idRes && idRes.ok !== false &&
-                                                                            invRes && invRes.ok !== false &&
-                                                                            procRes && procRes.ok !== false &&
-                                                                            salesRes && salesRes.ok !== false &&
-                                                                            acctRes && acctRes.ok !== false &&
-                                                                            crmRes && crmRes.ok !== false &&
-                                                                            hrRes && hrRes.ok !== false &&
-                                                                            mfgRes && mfgRes.ok !== false;
-                                                                        setText('boot-status', ok
-                                                                            ? 'Phase 17 platform + Identity + Inventory + Procurement + Sales + Accounting + CRM + HR + Manufacturing ready'
-                                                                            : (shellOk
-                                                                                ? 'Shell Ready — module self-test failed'
-                                                                                : 'Phase 17 self-test failed'));
-                                                                        $('boot-status').className = 'status ' + (ok ? 'pass' : (shellOk ? 'pass' : 'fail'));
-                                                                    });
-                                                                });
-                                                            });
-                                                        });
-                                                    });
-                                                });
-                                            });
-                                        });
-                                    });
-                                });
-                            });
-                        }).catch(function (loadErr) {
-                            setText('boot-status', shellOk
-                                ? ('Shell Ready — post-shell load failed: ' + String(loadErr && loadErr.message ? loadErr.message : loadErr))
-                                : 'Phase 17 self-test failed');
-                            $('boot-status').className = 'status ' + (shellOk ? 'pass' : 'fail');
-                        });
+        var appShell = shellApi.create();
+        root.RatebOfflineV2AppShell = appShell;
+        var mountPromise = appShell.mount($('rateb-v2-shell-root'), {
+            startPath: path
+        });
+        mark('shell-rendered');
+        root.document.documentElement.setAttribute('data-rateb-v2-interactive', '1');
+        ready('interactive');
+
+        registerSw().then(function (sw) {
+            setState('sw', !!sw.ok, sw.ok ? ('scope ' + sw.scope) : (sw.error || ''));
+            ready('sw', sw);
+        });
+
+        mountPromise.then(function () {
+            ready('runtime', { state: runtime.getState() });
+            ready('router');
+            if (!routeSeen && !requestedModuleId) {
+                ready('route', { path: path });
+                root.document.documentElement.setAttribute('data-rateb-v2-route-ready', '1');
+            }
+            setText('boot-status', 'Shell Ready');
+            var status = $('boot-status');
+            if (status) {
+                status.className = 'status pass';
+            }
+            root.document.documentElement.setAttribute('data-rateb-v2-shell-ready', '1');
+            ready('shell', { path: path });
+
+            scheduleBackground(function () {
+                hciHousekeeping();
+                initializeStorageAndPlatform().then(function (platform) {
+                    return initializeActiveModule(path, platform).then(function () {
+                        runDeferredDiagnostics(platform);
+                        mark('background-ready');
                     });
+                }).catch(function (err) {
+                    try {
+                        console.warn('[RATEB V2 PERF] background init', err && err.message);
+                    } catch (eLog) { /* ignore */ }
                 });
             });
         }).catch(function (err) {
             setText('boot-status', 'Boot failed: ' + String(err && err.message ? err.message : err));
-            $('boot-status').className = 'status fail';
-            setState('layout-ensure', false, String(err && err.message ? err.message : err));
+            var status = $('boot-status');
+            if (status) {
+                status.className = 'status fail';
+            }
         });
     }
 

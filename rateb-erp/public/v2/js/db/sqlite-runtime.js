@@ -26,7 +26,8 @@ var state = {
     sqlite3: null,
     db: null,
     mode: null, // 'opfs' | 'hci-persist'
-    open: false
+    open: false,
+    opening: null
 };
 
 function initSqlite3() {
@@ -232,7 +233,10 @@ function open() {
     if (state.open) {
         return Promise.resolve({ ok: true, mode: state.mode, alreadyOpen: true });
     }
-    return hci().ensureLayout().then(function () {
+    if (state.opening) {
+        return state.opening;
+    }
+    state.opening = hci().ensureLayout().then(function () {
         return initSqlite3();
     }).then(function (sqlite3) {
         return openOpfs(sqlite3).catch(function () {
@@ -250,7 +254,14 @@ function open() {
                 path: hci().getSqliteRelPath()
             };
         });
+    }).then(function (result) {
+        state.opening = null;
+        return result;
+    }).catch(function (err) {
+        state.opening = null;
+        throw err;
     });
+    return state.opening;
 }
 
 function close() {
