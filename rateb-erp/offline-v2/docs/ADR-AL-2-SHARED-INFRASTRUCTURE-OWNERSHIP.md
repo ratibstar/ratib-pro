@@ -2,7 +2,7 @@
 
 **Status:** ACCEPTED  
 **Date:** 2026-07-17  
-**Related:** [ADR-AL-1 — Single ERP Frontend](./ADR-AL-1-SINGLE-ERP-FRONTEND.md)
+**Related:** [ADR-AL-1 — Single ERP Frontend](./ADR-AL-1-SINGLE-ERP-FRONTEND.md) · [Phase 2 Extraction](./PHASE-2-SHARED-INFRASTRUCTURE-EXTRACTION.md)
 
 ---
 
