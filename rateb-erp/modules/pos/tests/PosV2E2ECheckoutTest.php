@@ -161,7 +161,7 @@ final class PosV2E2ECheckoutTest
                 currency: 'SAR',
                 rtl: false,
                 featureFlags: new PosV2FeatureFlagsContext(true, 'retail', false, false, false),
-                permissions: ['pos.register', 'pos.payment.record', 'pos.discount.manage'],
+                permissions: ['pos.register', 'pos.sale.complete', 'pos.payment.record', 'pos.discount.manage'],
                 registerReady: true,
             ),
         );

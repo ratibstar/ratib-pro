@@ -302,6 +302,7 @@ final class PosV2IntegrationFixture
         $permissionSlugs = [
             'pos.view',
             'pos.register',
+            'pos.sale.complete',
             'pos.shift.open',
             'pos.shift.close',
             'pos.discount.manage',
