@@ -57,10 +57,33 @@
         }
 
         var swUrl = new URL('sw.js', root.location.href).href;
-        return root.navigator.serviceWorker.register(swUrl, {
-            scope: './',
-            updateViaCache: 'none'
-        }).then(function (reg) {
+        var scopeUrl = new URL('./', root.location.href).href;
+
+        function acquireRegistration() {
+            return root.navigator.serviceWorker.getRegistration(scopeUrl).then(function (existing) {
+                if (!existing) {
+                    return root.navigator.serviceWorker.register(swUrl, {
+                        scope: './',
+                        updateViaCache: 'none'
+                    });
+                }
+                /*
+                 * First offline launch must reuse the installed worker. Calling
+                 * register/update while offline can start a transient install pass
+                 * over the same cache and make verification race cache.put().
+                 */
+                if (root.navigator.onLine === false) {
+                    return existing;
+                }
+                return existing.update().then(function () {
+                    return existing;
+                }).catch(function () {
+                    return existing;
+                });
+            });
+        }
+
+        return acquireRegistration().then(function (reg) {
             return waitForLatestWorker(reg).then(function (worker) {
                 if (!worker) {
                     throw new Error('sw_active_worker_missing');
