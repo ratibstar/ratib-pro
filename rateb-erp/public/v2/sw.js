@@ -15,14 +15,14 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-bootstrap-v2';
+var CACHE = 'rateb-offline-v2-bootstrap-v3';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
-    './js/hci.js',
+    '../assets/offline/platform/hci/hci.js',
+    '../assets/offline/platform/runtime/runtime.js',
     './js/package-manager.js',
     './js/boot.js',
-    './js/runtime/runtime.js',
     './js/router/router.js',
     './js/ui/shell.js',
     './js/sync/sync-engine.js',
