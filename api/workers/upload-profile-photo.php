@@ -6,6 +6,7 @@
  * Some environments disallow mkdir/write under uploads/. When filesystem upload fails,
  * we fall back to storing a data URL in personal_photo_url (column extended to MEDIUMTEXT when needed).
  */
+require_once __DIR__ . '/../core/api-upload-security.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/response.php';
 
@@ -27,6 +28,8 @@ function rateb_ensure_personal_photo_column_mediumtext(PDO $conn): void
 }
 
 try {
+    requireApiUploadSecurity('workers', 'documents');
+
     if (empty($_POST['id']) || empty($_FILES['file'])) {
         throw new Exception('Worker ID and file are required');
     }
@@ -53,10 +56,7 @@ try {
         throw new Exception('Invalid image type. Allowed: JPG, PNG, WEBP');
     }
 
-    $ext = strtolower((string) pathinfo((string) $file['name'], PATHINFO_EXTENSION));
-    if ($ext === '') {
-        $ext = 'jpg';
-    }
+    $ext = rateb_safe_upload_extension((string) $file['tmp_name'], (string) $file['name'], ['jpg', 'jpeg', 'png', 'webp']);
 
     $db = Database::getInstance();
     $conn = $db->getConnection();

@@ -3,6 +3,7 @@
  * EN: Handles API endpoint/business logic in `api/workers/upload-document.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/upload-document.php`.
  */
+require_once __DIR__ . '/../core/api-upload-security.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/response.php';
 
@@ -10,6 +11,8 @@ require_once __DIR__ . '/../utils/response.php';
 error_log("====== UPLOAD-DOCUMENT.PHP START ======");
 
 try {
+    requireApiUploadSecurity('workers', 'documents');
+
     // Check if the required fields are provided
     if (empty($_POST['id']) || empty($_POST['document_type']) || empty($_FILES['file'])) {
         throw new Exception('Worker ID, document type and file are required');
@@ -51,8 +54,8 @@ try {
         mkdir($uploadDir, 0777, true);
     }
 
-    // Generate a unique filename
-    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    // Generate a unique filename with a server-enforced safe extension.
+    $fileExtension = rateb_safe_upload_extension((string) $file['tmp_name'], (string) $file['name'], ['jpg', 'jpeg', 'png', 'pdf']);
     $newFileName = $workerId . '_' . $documentType . '_' . time() . '.' . $fileExtension;
     $filePath = $uploadDir . $newFileName;
 

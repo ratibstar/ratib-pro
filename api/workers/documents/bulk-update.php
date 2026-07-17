@@ -3,10 +3,15 @@
  * EN: Handles API endpoint/business logic in `api/workers/documents/bulk-update.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/documents/bulk-update.php`.
  */
+require_once __DIR__ . '/../../core/api-permission-helper.php';
+require_once __DIR__ . '/../../core/api-mutation-security.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../utils/response.php';
 
 try {
+    enforceApiPermission('workers', 'documents');
+    requireApiMutationSecurity();
+
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (empty($data['ids']) || !is_array($data['ids']) || 

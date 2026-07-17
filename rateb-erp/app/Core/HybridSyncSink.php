@@ -91,6 +91,12 @@ final class HybridSyncSink
         if ($sql === '') {
             return ['status' => 'rejected', 'reason' => 'empty_sql'];
         }
+        if (!$this->isSafeStructuredSql($sql, $entity)) {
+            return ['status' => 'rejected', 'reason' => 'unsafe_sql'];
+        }
+        if (!is_array($params) || $params === []) {
+            return ['status' => 'rejected', 'reason' => 'params_required'];
+        }
 
         try {
             $pdo->beginTransaction();
@@ -98,12 +104,8 @@ final class HybridSyncSink
             $applySql = HybridSyncConfig::sinkMode() === 'mirror'
                 ? SqlDialectAdapter::toSqlite($sql)
                 : $sql;
-            if (is_array($params) && $params !== []) {
-                $st = $pdo->prepare($applySql);
-                $st->execute($this->normalizeParams($params));
-            } else {
-                $pdo->exec($applySql);
-            }
+            $st = $pdo->prepare($applySql);
+            $st->execute($this->normalizeParams($params));
             $this->markApplied($pdo, $idem, $uuid, $entity);
             $pdo->commit();
 
@@ -121,6 +123,25 @@ final class HybridSyncSink
 
             return ['status' => 'failed', 'reason' => $e->getMessage()];
         }
+    }
+
+    private function isSafeStructuredSql(string $sql, string $entity): bool
+    {
+        $normalized = trim(preg_replace('/\s+/', ' ', $sql) ?? '');
+        if ($normalized === '' || str_contains($normalized, ';')) {
+            return false;
+        }
+        if (preg_match('/\b(DROP|ALTER|CREATE|TRUNCATE|GRANT|REVOKE|ATTACH|DETACH|PRAGMA|REPLACE\s+INTO\s+sqlite_)\b/i', $normalized)) {
+            return false;
+        }
+        if (!preg_match('/^(INSERT|UPDATE|DELETE)\b/i', $normalized)) {
+            return false;
+        }
+        $safeEntity = preg_replace('/[^a-zA-Z0-9_]/', '', $entity) ?? '';
+        if ($safeEntity === '' || !preg_match('/\b' . preg_quote($safeEntity, '/') . '\b/', $normalized)) {
+            return false;
+        }
+        return (bool) preg_match('/\brateb_[a-zA-Z0-9_]+\b/', $normalized);
     }
 
     /** Pull changes after cursor (incremental). */

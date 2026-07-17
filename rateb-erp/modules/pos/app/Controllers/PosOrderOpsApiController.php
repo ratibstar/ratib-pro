@@ -202,6 +202,7 @@ final class PosOrderOpsApiController extends PosBaseController
     {
         $this->bootstrapPos();
         $this->guardPosPermission('pos.returns.manage', 'pos/returns');
+        $this->guardPosPermission('pos.sale.complete', 'pos/returns');
         $this->requireCsrf();
         $scope = $this->registerScope();
         $this->ensureShift($scope);

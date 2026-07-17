@@ -128,6 +128,9 @@ final class PosApiController extends PosBaseController
             $action = trim((string) ($item['action'] ?? ''));
             $permission = $permissionByAction[$action] ?? 'pos.sync.manage';
             $this->guardPosPermission($permission, 'pos/sync');
+            if ($action === 'process_exchange') {
+                $this->guardPosPermission('pos.sale.complete', 'pos/sync');
+            }
             $payload = is_array($item['payload'] ?? null) ? $item['payload'] : [];
             $scope = is_array($payload['scope'] ?? null) ? $payload['scope'] : [];
             $scope['user_id'] = $this->userId();

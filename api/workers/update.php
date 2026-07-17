@@ -3,11 +3,14 @@
  * EN: Handles API endpoint/business logic in `api/workers/update.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/update.php`.
  */
-require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../core/api-upload-security.php';
+require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../../includes/rateb_uploads_base.php';
 
 try {
+    requireApiUploadSecurity('workers', 'documents');
+
     if (empty($_FILES['document']) || empty($_POST['id']) || empty($_POST['document_type'])) {
         throw new Exception('Document file, worker ID and document type are required');
     }
@@ -34,8 +37,8 @@ try {
         throw new Exception('Failed to create upload directory');
     }
 
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    // Generate unique filename with a server-enforced safe extension.
+    $extension = rateb_safe_upload_extension((string) $file['tmp_name'], (string) $file['name'], ['jpg', 'jpeg', 'png', 'pdf']);
     $filename = uniqid() . '.' . $extension;
     $filepath = $uploadDir . $filename;
 

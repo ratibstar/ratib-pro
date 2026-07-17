@@ -298,6 +298,33 @@ try {
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
+try {
+    $mutationActions = [
+        'send_contact_notification',
+        'send_communication_notification',
+        'mark_notification_read',
+        'mark_notification_unread',
+        'bulk_mark_read',
+        'bulk_mark_unread',
+        'bulk_delete',
+        'update_notification_settings',
+        'delete_notification',
+    ];
+    if (in_array($action, $mutationActions, true)) {
+        enforceApiPermission('notifications', 'manage');
+        requireApiMutationSecurity();
+    } else {
+        enforceApiPermission('notifications', 'view');
+    }
+} catch (Throwable $e) {
+    ob_clean();
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit();
+}
+
 switch ($action) {
     case 'send_contact_notification':
         sendContactNotification($pdo);

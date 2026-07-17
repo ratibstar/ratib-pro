@@ -83,6 +83,12 @@ return [
         'documents' => 'export_reports',
         'export' => 'export_reports',
     ],
+    'settings' => [
+        'view' => 'manage_settings',
+        'history' => 'manage_settings',
+        'edit' => 'manage_settings',
+        'manage' => 'manage_settings',
+    ],
     'hr' => [
         'view' => 'view_hr_dashboard',
         'get' => 'view_employees',

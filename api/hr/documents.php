@@ -7,6 +7,8 @@ if (isset($_GET['control']) && (string)$_GET['control'] === '1') {
     session_name('rateb_control');
 }
 require_once __DIR__ . '/hr-api-bootstrap.inc.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 // Disable error display to prevent HTML output in JSON response
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -89,6 +91,14 @@ try {
 
     $action = $_GET['action'] ?? 'list';
     $id = $_GET['id'] ?? null;
+
+    $hrWriteActions = ['add', 'update', 'delete', 'approve', 'reject'];
+    if (in_array($action, $hrWriteActions, true)) {
+        enforceApiPermission('hr', 'edit');
+        requireApiMutationSecurity();
+    } else {
+        enforceApiPermission('hr', 'view');
+    }
 
     switch ($action) {
         case 'list':

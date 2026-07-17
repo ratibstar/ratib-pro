@@ -394,6 +394,20 @@ $isDirectAccess = (
 if ($isDirectAccess) {
     // Handle requests
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'GET') {
+        require_once __DIR__ . '/../core/api-permission-helper.php';
+        require_once __DIR__ . '/../core/api-mutation-security.php';
+        try {
+            $action = $_REQUEST['action'] ?? '';
+            if (in_array($action, ['delete_history', 'clear_history'], true)) {
+                enforceApiPermission('settings', 'edit');
+                requireApiMutationSecurity();
+            } else {
+                enforceApiPermission('settings', 'history');
+            }
+        } catch (Throwable $e) {
+            sendResponse(['success' => false, 'message' => $e->getMessage()], 403);
+        }
+
         // Start session silently
         if (session_status() === PHP_SESSION_NONE) {
             @session_start();

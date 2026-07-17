@@ -5,13 +5,16 @@
  */
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
+require_once __DIR__ . '/../core/api-upload-security.php';
 require_once __DIR__ . '/../../includes/config.php';
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+try {
+    requireApiUploadSecurity('workers', 'documents');
+} catch (Throwable $e) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     exit;
 }
 
@@ -76,8 +79,8 @@ try {
         @chmod($uploadDir, 0777);
     }
     
-    // Generate unique filename
-    $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    // Generate unique filename with a server-enforced safe extension.
+    $fileExtension = rateb_safe_upload_extension((string) $file['tmp_name'], (string) $file['name'], ['jpg', 'jpeg', 'png', 'gif', 'pdf']);
     $fileName = time() . '_' . $documentType . '_' . uniqid() . '.' . $fileExtension;
     $filePath = $uploadDir . $fileName;
     

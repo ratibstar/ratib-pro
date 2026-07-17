@@ -5,19 +5,17 @@
  */
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../../Utils/response.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 try {
+    enforceApiPermission('workers', 'update');
+    requireApiMutationSecurity();
+
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (empty($data['ids']) || !is_array($data['ids']) || empty($data['status'])) {
         throw new Exception('Worker IDs and status are required');
-
-require_once '../../includes/permission_middleware.php';
-
-// Check if user has permission to access this endpoint
-checkApiPermission('workers_edit');
-
-
     }
 
     $db = Database::getInstance();
@@ -50,7 +48,7 @@ checkApiPermission('workers_edit');
     $params = array_merge([$data['status']], $ids);
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
-
+    
     $affected = $stmt->rowCount();
     
     // Log history for each updated worker
@@ -61,16 +59,14 @@ checkApiPermission('workers_edit');
             foreach ($ids as $workerId) {
                 $oldWorker = null;
                 foreach ($oldWorkers as $worker) {
-                    if ($worker['id'] == $workerId) {
+                    if ((int) $worker['id'] === (int) $workerId) {
                         $oldWorker = $worker;
                         break;
                     }
                 }
-                
                 $newStmt = $conn->prepare("SELECT * FROM workers WHERE id = ?");
                 $newStmt->execute([$workerId]);
                 $newWorker = $newStmt->fetch(PDO::FETCH_ASSOC);
-                
                 if ($oldWorker && $newWorker) {
                     @logGlobalHistory('workers', $workerId, 'update', 'workers', $oldWorker, $newWorker);
                 }
@@ -78,19 +74,12 @@ checkApiPermission('workers_edit');
         }
     }
 
-    sendResponse([
-        'success' => true,
-        'message' => "$affected worker status(es) updated successfully",
-        'data' => [
-            'updated_count' => $affected,
-            'status' => $data['status']
-        ]
-    ]);
+    sendSuccessResponse([
+        'updated_count' => $affected,
+        'status' => $data['status']
+    ], "$affected worker status(es) updated successfully");
 
 } catch (Exception $e) {
-    sendResponse([
-        'success' => false,
-        'message' => $e->getMessage()
-    ], 500);
+    error_log('Update status error: ' . $e->getMessage());
+    sendErrorResponse($e->getMessage(), 500);
 }
-?> 

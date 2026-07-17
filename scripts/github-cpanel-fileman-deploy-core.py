@@ -262,6 +262,12 @@ SECURITY_REMOTE_DELETE_FILES = [
     "admin/dev/event-load-test.php",
     "admin/dev/event-retention.php",
     "admin/dev/validate-observability.php",
+    "api/upload-document.php",
+    "api/notifications/notifications.php",
+    "api/reports/reports-real.php",
+    "api/admin/backup_system.php",
+    "api/agents/activate.php",
+    "rateb-chrome-bust.php",
 ]
 SECURITY_REMOTE_DELETE_FILES += [
     "rateb-erp/tools/boot-bench/" + name

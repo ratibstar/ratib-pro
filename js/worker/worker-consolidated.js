@@ -15,6 +15,13 @@ window.toEnglishString = window.toEnglishString || function(val) {
 };
 window.toWesternNumerals = window.toWesternNumerals || window.toEnglishString;
 
+function ratebWorkerCsrfToken() {
+    return document.querySelector('meta[name="rateb-csrf-token"]')?.content
+        || document.querySelector('input[name="csrf_token"]')?.value
+        || document.querySelector('input[name="_csrf"]')?.value
+        || '';
+}
+
 // Debug Configuration - Set to false for production (shared across all worker files)
 window.DEBUG_MODE = window.DEBUG_MODE !== undefined ? window.DEBUG_MODE : false;
 const debug = {
@@ -1232,7 +1239,7 @@ class WorkerTable {
             
             // Call the actual API for bulk actions with cache busting
             const timestamp = Date.now();
-            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+            const csrfToken = ratebWorkerCsrfToken();
             const response = await fetch(`${this.baseUrl}/bulk-${action}.php?t=${timestamp}`, {
                 method: 'POST',
                 headers: {
@@ -2940,6 +2947,7 @@ async function uploadFile(file, documentType) {
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
         const response = await fetch(`${workersApi}/documents/upload.php`, {
             method: 'POST',
+            headers: { 'X-CSRF-Token': ratebWorkerCsrfToken() },
             body: formData,
             credentials: 'same-origin',
         });
@@ -3614,6 +3622,7 @@ window.uploadEmptyCvPhoto = async function(file) {
         formData.append('id', workerId);
         const response = await fetch(`${workersApi}/upload-profile-photo.php`, {
             method: 'POST',
+            headers: { 'X-CSRF-Token': ratebWorkerCsrfToken() },
             body: formData
         });
         const result = await response.json();
@@ -4721,6 +4730,7 @@ window.saveWorker = async function(event) {
                 const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
                 const uploadResponse = await fetch(`${workersApi}/upload-file.php`, {
                     method: 'POST',
+                    headers: { 'X-CSRF-Token': ratebWorkerCsrfToken() },
                     body: uploadFormData
                 });
                 
