@@ -3,13 +3,18 @@
 **Status:** BINDING · PERMANENT until superseded by an approved ADR  
 **Effective:** 2026-07-16  
 **Supersedes:** Architecture Freeze v2.0 (platform layers L0–L7 + Business Module Framework)  
-**Extends:** Phase 10 Identity Module (APPROVED) into Offline V2 Platform Foundation
+**Extends:** Phase 10 Identity Module (APPROVED) into Offline V2 Platform Foundation  
+**Product UI superseded by:** [ADR-AL-1 — Single ERP Frontend](./ADR-AL-1-SINGLE-ERP-FRONTEND.md) (2026-07-17)
+
+> **Architecture Lock (ADR-AL-1):** The only production ERP frontend is `/rateb-erp/public/admin/*`.  
+> `public/v2` (including router, UI shell, `index.html`, `sw.js`) must never be a production ERP frontend again — migration / shared-infra extraction / archive only.  
+> This freeze still binds **platform contracts** (Identity APIs, Runtime, Sync, Module SDK, security boundary) for extraction into Admin; it does **not** authorize a second ERP UI.
 
 ---
 
 ## 1. Purpose
 
-Architecture Freeze v2.1 locks the Offline V2 platform **including Identity** as foundation. All future ERP BusinessModules consume Identity only through published Identity Service APIs.
+Architecture Freeze v2.1 locks the Offline V2 platform **including Identity** as foundation. All future ERP BusinessModules consume Identity only through published Identity Service APIs. Product UI lives under Admin per ADR-AL-1.
 
 ## 2. Platform Foundation (frozen)
 
