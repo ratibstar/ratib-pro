@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 use Rateb\App\Pos\Application\V2\PosV2ResponseFactory;
 use Rateb\App\Pos\Domain\V2\Cart\PosV2CartScope;
+use Rateb\App\Pos\Domain\V2\Exceptions\PosV2ForbiddenException;
 use Rateb\App\Pos\Domain\V2\Payment\Exceptions\PosV2PaymentValidationException;
 use Rateb\App\Pos\Domain\V2\Payment\PosV2PaymentMethod;
 use Rateb\App\Pos\DTO\V2\Cart\CartResponse;
@@ -46,6 +47,7 @@ final class PosV2CheckoutTest
         $this->testPaymentNormalizerInsufficient();
         $this->testInitiateChargeUseCase();
         $this->testRecordPaymentUseCase();
+        $this->testCompleteSaleRejectsRegisterOnly();
         $this->testCompleteSaleRequiresIdempotency();
         $this->testCompleteSaleSuccess();
         $this->testCompleteSaleIdempotentResponse();
@@ -142,7 +144,7 @@ final class PosV2CheckoutTest
                 new PaymentValidator(),
                 new CheckoutTestCheckoutPort(new CheckoutTestCartPort()),
             ))->execute(
-                $this->requestContext(['pos.register']),
+                $this->requestContext(['pos.sale.complete']),
                 new CompleteSaleRequest(9, [], null, false, 0.15),
                 '',
             );
@@ -150,6 +152,24 @@ final class PosV2CheckoutTest
         } catch (PosV2PaymentValidationException $exception) {
             $ok = $exception->errorCode === 'IDEMPOTENCY_KEY_REQUIRED';
             $this->record('complete requires idempotency key', $ok, 'expected idempotency error');
+        }
+    }
+
+    private function testCompleteSaleRejectsRegisterOnly(): void
+    {
+        try {
+            (new CompleteSaleUseCase(
+                new PosV2CheckoutAccessValidator(),
+                new PaymentValidator(),
+                new CheckoutTestCheckoutPort(new CheckoutTestCartPort()),
+            ))->execute(
+                $this->requestContext(['pos.register']),
+                new CompleteSaleRequest(9, [], null, false, 0.15),
+                '33333333-3333-3333-3333-333333333333',
+            );
+            $this->record('complete sale rejects register-only permission', false, 'expected forbidden');
+        } catch (PosV2ForbiddenException) {
+            $this->record('complete sale rejects register-only permission', true, 'dedicated permission required');
         }
     }
 
@@ -185,7 +205,7 @@ final class PosV2CheckoutTest
             new PaymentValidator(),
             $checkoutPort,
         ))->execute(
-            $this->requestContext(['pos.register']),
+            $this->requestContext(['pos.sale.complete']),
             new CompleteSaleRequest(9, [], null, false, 0.15),
             '22222222-2222-2222-2222-222222222222',
         );

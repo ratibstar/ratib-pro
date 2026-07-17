@@ -23,12 +23,17 @@ $fullBase = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'htt
 if ($baseUrl) {
     $fullBase = rtrim($baseUrl, '/');
 }
+if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_csrf_token'])) {
+    $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+}
+$hrCsrfToken = (string) ($_SESSION['_csrf_token'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="rateb-csrf-token" content="<?php echo htmlspecialchars($hrCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">

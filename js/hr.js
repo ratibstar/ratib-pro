@@ -63,6 +63,16 @@ function hrApiUrl(pathFromApiHr) {
     return appendHRControlParam(getApiBase() + p);
 }
 
+function hrMutationHeaders(extra) {
+    const meta = document.querySelector('meta[name="rateb-csrf-token"]');
+    const token = meta ? String(meta.getAttribute('content') || '') : '';
+    const headers = Object.assign({}, extra || {});
+    if (token) {
+        headers['X-CSRF-Token'] = token;
+    }
+    return headers;
+}
+
 // Payroll form: make currency and employee selects searchable (moved from inline script)
 function initPayrollSearchableSelects() {
     function makeSelectSearchable(selectId) {
@@ -1255,10 +1265,10 @@ async function handleEmployeeSubmit(e) {
             
             const updateUrl = hrApiUrl(`/hr/employees.php?action=update&id=${employeeId}`);
             const updateResponse = await fetch(updateUrl, {
-                method: 'PUT',
-                headers: {
+                method: 'POST',
+                headers: hrMutationHeaders({
                     'Content-Type': 'application/json'
-                },
+                }),
                 body: JSON.stringify(updateData)
             });
             
@@ -1347,9 +1357,9 @@ async function handleEmployeeSubmit(e) {
         const response = await fetch(hrApiUrl('/hr/employees.php?action=add'), {
             method: 'POST',
             credentials: 'same-origin',
-            headers: {
+            headers: hrMutationHeaders({
                 'Content-Type': 'application/json',
-            },
+            }),
             body: JSON.stringify(data)
         });
         
@@ -2211,7 +2221,8 @@ async function deleteEmployee(id) {
     if (confirm('Are you sure you want to delete this employee?')) {
         try {
             const response = await fetch(hrApiUrl(`/hr/employees.php?action=delete&id=${id}`), {
-                method: 'DELETE'
+                method: 'POST',
+                headers: hrMutationHeaders()
             });
             
             const result = await response.json();
@@ -4203,7 +4214,10 @@ async function bulkDeleteEmployees() {
     let success = 0, failed = 0;
     for (const id of selectedIds) {
         try {
-            const res = await fetch(hrApiUrl(`/hr/employees.php?action=delete&id=${id}`), { method: 'DELETE' });
+            const res = await fetch(hrApiUrl(`/hr/employees.php?action=delete&id=${id}`), {
+                method: 'POST',
+                headers: hrMutationHeaders()
+            });
             const r = await res.json();
             if (r.success) success++; else failed++;
         } catch (_) { failed++; }
@@ -4231,8 +4245,8 @@ async function bulkSetEmployeeStatus(status) {
     for (const id of selectedIds) {
         try {
             const res = await fetch(hrApiUrl(`/hr/employees.php?action=update&id=${id}`), {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: hrMutationHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ status: status })
             });
             const r = await res.json();

@@ -7,6 +7,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosRegisterCartService;
 use Rateb\App\Pos\Services\PosSessionService;
+use Rateb\App\Pos\Services\PosTaxSettingsService;
 use Rateb\App\Services\BiometricAuthService;
 
 final class PosRegisterController extends PosBaseController
@@ -31,7 +32,9 @@ final class PosRegisterController extends PosBaseController
         $cart = new PosRegisterCartService();
         $lines = $cart->normalizeLines($session->getCartLines());
         $context = $contextService->snapshot();
-        $totals = $cart->totals($lines);
+        $branchId = (int) ($context['branch']['id'] ?? 0);
+        $taxRate = (new PosTaxSettingsService())->resolveRate($companyId, $branchId);
+        $totals = $cart->totals($lines, $companyId, $branchId, null, $taxRate);
         $registerConfig = $this->registerConfig($context, $session->snapshot(), $lines, $totals);
 
         $this->posView('register/index', [
@@ -58,6 +61,7 @@ final class PosRegisterController extends PosBaseController
             'csrf' => Csrf::token(),
             'companyId' => $this->companyId(),
             'userId' => $this->userId(),
+            'taxRate' => (float) ($totals['tax_rate'] ?? 0.15),
             'displayName' => (string) (\Rateb\App\Core\SessionManager::get('rateb_user_display')
                 ?? \Rateb\App\Core\SessionManager::get('rateb_user_email') ?? ''),
             'shiftId' => $shiftId,

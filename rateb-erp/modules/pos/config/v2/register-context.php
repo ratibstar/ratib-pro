@@ -18,6 +18,7 @@ return [
     'permission_slugs' => [
         'pos.view',
         'pos.register',
+        'pos.sale.complete',
         'pos.manage',
         'pos.shift.open',
         'pos.shift.close',

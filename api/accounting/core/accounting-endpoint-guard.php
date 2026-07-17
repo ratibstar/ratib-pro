@@ -58,16 +58,10 @@ if (!function_exists('accounting_endpoint_is_enterprise_admin')) {
 }
 
 if (!function_exists('accounting_require_diagnostic_access')) {
-    /**
-     * Diagnostics: non-production OR enterprise admin; otherwise 403.
-     */
+    /** Diagnostics always require authenticated enterprise-admin authorization. */
     function accounting_require_diagnostic_access(): void
     {
         accounting_endpoint_ensure_session();
-
-        if (!accounting_endpoint_is_production()) {
-            return;
-        }
 
         if (accounting_endpoint_is_enterprise_admin()) {
             return;
@@ -78,7 +72,7 @@ if (!function_exists('accounting_require_diagnostic_access')) {
         echo json_encode([
             'success' => false,
             'ok' => false,
-            'message' => 'Diagnostic endpoints are restricted in production.',
+            'message' => 'Diagnostic endpoints require enterprise-admin authorization.',
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -91,6 +85,14 @@ if (!function_exists('accounting_require_migration_access')) {
     function accounting_require_migration_access(): void
     {
         accounting_endpoint_ensure_session();
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            http_response_code(405);
+            header('Allow: POST');
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Method not allowed — POST required']);
+            exit;
+        }
 
         if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             if (empty($_SESSION['control_logged_in']) && empty($_SESSION['rateb_admin_id']) && empty($_SESSION['rateb_user_id'])) {
@@ -111,14 +113,17 @@ if (!function_exists('accounting_require_migration_access')) {
             exit;
         }
 
-        if (accounting_endpoint_is_production() && $_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? '');
-            if ($token !== '' && function_exists('validateCsrfToken') && !validateCsrfToken($token)) {
-                http_response_code(403);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
-                exit;
-            }
+        $token = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf'] ?? $_POST['csrf_token'] ?? '');
+        $stored = (string) ($_SESSION['_csrf_token'] ?? '');
+        $cookie = (string) ($_COOKIE['rateb_csrf'] ?? '');
+        $validCsrf = $token !== ''
+            && (($stored !== '' && hash_equals($stored, $token))
+                || ($cookie !== '' && hash_equals($cookie, $token)));
+        if (!$validCsrf) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Invalid or missing CSRF token']);
+            exit;
         }
     }
 }

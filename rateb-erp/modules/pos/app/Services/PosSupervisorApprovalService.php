@@ -5,7 +5,6 @@ namespace Rateb\App\Pos\Services;
 
 use Rateb\App\Core\Database;
 use Rateb\App\Core\SessionManager;
-use Rateb\App\Models\User;
 use Rateb\App\Services\AuthorizationService;
 
 /** Supervisor biometric approval — request/grant/consume single-use tokens (60s TTL). */
@@ -44,16 +43,24 @@ final class PosSupervisorApprovalService
         return (int) $db->lastInsertId();
     }
 
-    public function grantRequest(int $requestId, int $supervisorUserId, string $method = 'webauthn'): ?string
+    public function grantRequest(
+        int $requestId,
+        int $supervisorUserId,
+        int $companyId,
+        string $method = 'webauthn'
+    ): ?string
     {
         $this->ensureSchema();
-        if (!$this->userCanSupervise($supervisorUserId)) {
+        if ($companyId < 1 || !$this->userCanSupervise($supervisorUserId, $companyId)) {
             return null;
         }
 
         $db = Database::connection();
-        $req = $db->prepare('SELECT id, status FROM rateb_pos_approval_requests WHERE id = :id LIMIT 1');
-        $req->execute(['id' => $requestId]);
+        $req = $db->prepare(
+            'SELECT id, status FROM rateb_pos_approval_requests
+             WHERE id = :id AND company_id = :cid LIMIT 1'
+        );
+        $req->execute(['id' => $requestId, 'cid' => $companyId]);
         $row = $req->fetch(\PDO::FETCH_ASSOC);
         if (!$row || (string) ($row['status'] ?? '') !== 'pending') {
             return null;
@@ -75,15 +82,18 @@ final class PosSupervisorApprovalService
             'exp' => $expires,
         ]);
 
-        $upd = $db->prepare('UPDATE rateb_pos_approval_requests SET status = :st WHERE id = :id');
-        $upd->execute(['st' => 'granted', 'id' => $requestId]);
+        $upd = $db->prepare(
+            'UPDATE rateb_pos_approval_requests SET status = :st
+             WHERE id = :id AND company_id = :cid'
+        );
+        $upd->execute(['st' => 'granted', 'id' => $requestId, 'cid' => $companyId]);
 
         return $token;
     }
 
-    public function consumeToken(string $token, string $actionType): bool
+    public function consumeToken(string $token, string $actionType, int $companyId): bool
     {
-        if ($token === '') {
+        if ($token === '' || $companyId < 1) {
             return false;
         }
         $this->ensureSchema();
@@ -93,9 +103,9 @@ final class PosSupervisorApprovalService
             'SELECT g.id AS grant_id, g.request_id, g.expires_at, g.consumed_at, r.action_type, r.status
              FROM rateb_pos_approval_grants g
              INNER JOIN rateb_pos_approval_requests r ON r.id = g.request_id
-             WHERE g.token_hash = :hash LIMIT 1'
+             WHERE g.token_hash = :hash AND r.company_id = :cid LIMIT 1'
         );
-        $stmt->execute(['hash' => $hash]);
+        $stmt->execute(['hash' => $hash, 'cid' => $companyId]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$row) {
             return false;
@@ -109,11 +119,27 @@ final class PosSupervisorApprovalService
         if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
             return false;
         }
+        if ((string) ($row['status'] ?? '') !== 'granted') {
+            return false;
+        }
 
-        $db->prepare('UPDATE rateb_pos_approval_grants SET consumed_at = NOW() WHERE id = :id')
-            ->execute(['id' => (int) $row['grant_id']]);
-        $db->prepare('UPDATE rateb_pos_approval_requests SET status = :st, consumed_at = NOW() WHERE id = :id')
-            ->execute(['st' => 'consumed', 'id' => (int) $row['request_id']]);
+        $consume = $db->prepare(
+            'UPDATE rateb_pos_approval_grants SET consumed_at = NOW()
+             WHERE id = :id AND consumed_at IS NULL AND expires_at >= NOW()'
+        );
+        $consume->execute(['id' => (int) $row['grant_id']]);
+        if ($consume->rowCount() !== 1) {
+            return false;
+        }
+        $db->prepare(
+            'UPDATE rateb_pos_approval_requests SET status = :st, consumed_at = NOW()
+             WHERE id = :id AND company_id = :cid AND status = :granted'
+        )->execute([
+            'st' => 'consumed',
+            'id' => (int) $row['request_id'],
+            'cid' => $companyId,
+            'granted' => 'granted',
+        ]);
 
         return true;
     }
@@ -125,10 +151,10 @@ final class PosSupervisorApprovalService
         return trim($header);
     }
 
-    public function requireApprovalOrAbort(string $actionType): void
+    public function requireApprovalOrAbort(string $actionType, int $companyId): void
     {
         $token = $this->approvalTokenFromRequest();
-        if ($token === '' || !$this->consumeToken($token, $actionType)) {
+        if ($token === '' || !$this->consumeToken($token, $actionType, $companyId)) {
             \Rateb\App\Core\Response::json([
                 'ok' => false,
                 'error' => __('pos_supervisor_approval_required'),
@@ -138,9 +164,23 @@ final class PosSupervisorApprovalService
         }
     }
 
-    private function userCanSupervise(int $userId): bool
+    private function userCanSupervise(int $userId, int $companyId): bool
     {
-        if ($userId < 1) {
+        if ($userId < 1 || $companyId < 1) {
+            return false;
+        }
+        $stmt = Database::connection()->prepare(
+            'SELECT company_id, is_super_admin FROM rateb_users WHERE id = :uid LIMIT 1'
+        );
+        $stmt->execute(['uid' => $userId]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$user) {
+            return false;
+        }
+        if (!empty($user['is_super_admin'])) {
+            return true;
+        }
+        if ((int) ($user['company_id'] ?? 0) !== $companyId) {
             return false;
         }
         $authz = new AuthorizationService();
@@ -149,9 +189,8 @@ final class PosSupervisorApprovalService
             || $authz->userHasPermission($userId, 'pos.returns.manage')) {
             return true;
         }
-        $user = (new User())->find($userId);
 
-        return $user !== null && !empty($user['is_super_admin']);
+        return false;
     }
 
     private function ensureSchema(): void

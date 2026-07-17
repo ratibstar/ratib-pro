@@ -9,8 +9,8 @@
  * Reports, Contact, Notifications, Help & Learning Center progress, System Settings history.
  * KEEPS: users, roles, permissions (so you can still log in).
  *
- * GET ?action=clear_all_data&confirm=1 to execute.
- * GET ?action=clear_all_data&dry_run=1 to preview (no deletes).
+ * POST action=clear_all_data&confirm=1 to execute.
+ * POST action=clear_all_data&dry_run=1 to preview (no deletes).
  * Requires admin (role_id = 1).
  */
 
@@ -29,14 +29,28 @@ if (!isset($_SESSION['role_id']) || (int)$_SESSION['role_id'] !== 1) {
     exit;
 }
 
-$action = $_GET['action'] ?? '';
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    exit;
+}
+$csrf = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf'] ?? '');
+$storedCsrf = (string) ($_SESSION['_csrf_token'] ?? '');
+if ($csrf === '' || $storedCsrf === '' || !hash_equals($storedCsrf, $csrf)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid or missing CSRF token']);
+    exit;
+}
+
+$action = $_POST['action'] ?? '';
 if ($action !== 'clear_all_data') {
     echo json_encode(['success' => false, 'message' => 'Invalid action. Use action=clear_all_data']);
     exit;
 }
 
-$confirm = isset($_GET['confirm']) && $_GET['confirm'] === '1';
-$dryRun = isset($_GET['dry_run']) && $_GET['dry_run'] === '1';
+$confirm = isset($_POST['confirm']) && $_POST['confirm'] === '1';
+$dryRun = isset($_POST['dry_run']) && $_POST['dry_run'] === '1';
 
 if (!$confirm && !$dryRun) {
     echo json_encode([

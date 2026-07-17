@@ -325,6 +325,11 @@ abstract class Model
                 $tenantExplicitNull = true;
             } elseif (!empty($data[$this->tenantColumn])) {
                 $tenantValue = (int) $data[$this->tenantColumn];
+                $contextCompanyId = TenantContext::companyId();
+                if (!TenantContext::isSuperAdmin()
+                    && ($contextCompanyId === null || $contextCompanyId < 1 || $tenantValue !== $contextCompanyId)) {
+                    throw new \RuntimeException('Tenant mismatch for tenant-scoped create.');
+                }
             } else {
                 $companyId = TenantContext::companyId();
                 if ($companyId !== null && $companyId > 0) {
@@ -380,6 +385,16 @@ abstract class Model
 
     public function update(int $id, array $data): bool
     {
+        if ($this->tenantScoped && array_key_exists($this->tenantColumn, $data)) {
+            $requestedCompanyId = (int) ($data[$this->tenantColumn] ?? 0);
+            $contextCompanyId = (int) (TenantContext::companyId() ?? 0);
+            if ($requestedCompanyId < 1
+                || (!TenantContext::isSuperAdmin() && $requestedCompanyId !== $contextCompanyId)) {
+                throw new \RuntimeException('Tenant mismatch for tenant-scoped update.');
+            }
+            // Tenant ownership is immutable through generic writes.
+            unset($data[$this->tenantColumn]);
+        }
         $data = $this->filterFillable($data);
         if (empty($data)) {
             return false;

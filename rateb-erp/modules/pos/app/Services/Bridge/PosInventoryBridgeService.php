@@ -726,82 +726,31 @@ final class PosInventoryBridgeService
         }
     }
 
-    /**
-     * @deprecated Use postSaleForOrderInTransaction within checkout transaction.
-     * @param array<int, array<string, mixed>> $lines
-     */
-    public function postSaleForOrder(
-        int $orderId,
-        string $orderNo,
-        int $companyId,
-        ?int $warehouseId,
-        array $lines
-    ): void {
-        if ($orderId < 1 || $companyId < 1 || $lines === []) {
-            throw new \RuntimeException(__('invalid_request'));
-        }
-        TenantContext::setCompanyId($companyId);
-        foreach ($lines as $line) {
-            $invId = (int) ($line['product_id'] ?? 0);
-            $qty = (float) ($line['quantity'] ?? 0);
-            if ($invId < 1 || $qty <= 0) {
-                continue;
-            }
-            $whId = $warehouseId ?? (int) ($line['warehouse_id'] ?? 0);
-            $this->stockMovementService()->record([
-                'inventory_id' => $invId,
-                'warehouse_id' => $whId > 0 ? $whId : null,
-                'movement_type' => 'out',
-                'quantity' => $qty,
-                'reference_type' => 'pos_order',
-                'reference_id' => $orderId,
-                'notes' => 'POS sale ' . $orderNo,
-            ]);
-            $serialNo = trim((string) ($line['serial_no'] ?? ''));
-            if ($serialNo !== '') {
-                $this->markSerialSold($serialNo, $invId, $companyId, $orderId);
-            }
-        }
-    }
-
     private function lockSerialForCheckout(string $serialNo, int $inventoryId, int $companyId): void
     {
-        if (!$this->tableExists('rateb_inventory_serials')) {
-            return;
-        }
-        $db = Database::connection();
-        $stmt = $db->prepare(
-            'SELECT id FROM rateb_inventory_serials
-             WHERE company_id = :cid AND inventory_id = :iid AND serial_no = :sn AND status = :st
-             LIMIT 1 FOR UPDATE'
+        $this->workflowService()->lockSerialForUpdate(
+            $serialNo,
+            $inventoryId,
+            $companyId,
+            'available'
         );
-        $stmt->execute([
-            'cid' => $companyId,
-            'iid' => $inventoryId,
-            'sn' => $serialNo,
-            'st' => 'available',
-        ]);
-        if (!$stmt->fetchColumn()) {
-            throw new \RuntimeException(__('pos_serial_unavailable'));
-        }
     }
 
     private function markSerialSold(string $serialNo, int $inventoryId, int $companyId, int $orderId): void
     {
-        if (!$this->tableExists('rateb_inventory_serials')) {
+        $transition = $this->workflowService()->transitionSerialStatusInTransaction(
+            $serialNo,
+            $inventoryId,
+            $companyId,
+            'available',
+            'sold',
+            'pos_order',
+            $orderId
+        );
+        if ($transition === null) {
             return;
         }
-        $db = Database::connection();
-        $row = $this->lockSerialRow($serialNo, $inventoryId, $companyId, 'available');
-        $serialId = (int) ($row['id'] ?? 0);
-        $stmt = $db->prepare(
-            'UPDATE rateb_inventory_serials SET status = :sold, updated_at = NOW()
-             WHERE id = :id AND status = :avail'
-        );
-        $stmt->execute(['sold' => 'sold', 'id' => $serialId, 'avail' => 'available']);
-        if ($stmt->rowCount() < 1) {
-            throw new \RuntimeException(__('pos_serial_unavailable'));
-        }
+        $serialId = (int) $transition['id'];
         $this->recordSerialHistory(
             $companyId,
             $serialId,
@@ -828,20 +777,19 @@ final class PosInventoryBridgeService
         int $orderId,
         int $originalLineId = 0
     ): void {
-        if (!$this->tableExists('rateb_inventory_serials')) {
+        $transition = $this->workflowService()->transitionSerialStatusInTransaction(
+            $serialNo,
+            $inventoryId,
+            $companyId,
+            'sold',
+            'available',
+            'pos_return',
+            $orderId
+        );
+        if ($transition === null) {
             return;
         }
-        $db = Database::connection();
-        $row = $this->lockSerialRow($serialNo, $inventoryId, $companyId, 'sold');
-        $serialId = (int) ($row['id'] ?? 0);
-        $stmt = $db->prepare(
-            'UPDATE rateb_inventory_serials SET status = :avail, updated_at = NOW()
-             WHERE id = :id AND status = :sold'
-        );
-        $stmt->execute(['avail' => 'available', 'id' => $serialId, 'sold' => 'sold']);
-        if ($stmt->rowCount() < 1) {
-            throw new \RuntimeException(__('pos_serial_unavailable'));
-        }
+        $serialId = (int) $transition['id'];
         $this->recordSerialHistory(
             $companyId,
             $serialId,
@@ -860,28 +808,6 @@ final class PosInventoryBridgeService
             'original_line_id' => $originalLineId,
             'company_id' => $companyId,
         ]);
-    }
-
-    /** @return array<string, mixed> */
-    private function lockSerialRow(string $serialNo, int $inventoryId, int $companyId, string $status): array
-    {
-        $db = Database::connection();
-        $stmt = $db->prepare(
-            'SELECT id, serial_no, status FROM rateb_inventory_serials
-             WHERE company_id = :cid AND inventory_id = :iid AND serial_no = :sn AND status = :st
-             LIMIT 1 FOR UPDATE'
-        );
-        $stmt->execute([
-            'cid' => $companyId,
-            'iid' => $inventoryId,
-            'sn' => $serialNo,
-            'st' => $status,
-        ]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row) {
-            throw new \RuntimeException(__('pos_serial_unavailable'));
-        }
-        return $row;
     }
 
     /**

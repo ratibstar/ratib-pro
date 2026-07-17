@@ -60,7 +60,11 @@ final class PosApprovalApiController extends PosBaseController
             }
 
             $supervisorId = (int) ($finish['user_id'] ?? $this->userId());
-            $token = (new PosSupervisorApprovalService())->grantRequest($requestId, $supervisorId);
+            $token = (new PosSupervisorApprovalService())->grantRequest(
+                $requestId,
+                $supervisorId,
+                $this->companyId()
+            );
             if ($token === null) {
                 $this->json(['ok' => false, 'error' => __('access_denied')], 403);
                 return;
@@ -82,7 +86,7 @@ final class PosApprovalApiController extends PosBaseController
             $this->requireSessionCsrfOrAbort();
 
             $approval = new PosSupervisorApprovalService();
-            $approval->requireApprovalOrAbort('stock_adjustment');
+            $approval->requireApprovalOrAbort('stock_adjustment', $this->companyId());
 
             $body = $this->jsonBody();
             $inventoryId = (int) ($body['inventory_id'] ?? $body['product_id'] ?? 0);

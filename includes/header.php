@@ -19,6 +19,12 @@ if (PHP_VERSION_ID >= 70100 && is_file($companyProfileServicePath)) {
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(dirname(__FILE__)));
 }
+if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['_csrf_token'])) {
+    $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+}
+$ratebCsrfToken = session_status() === PHP_SESSION_ACTIVE
+    ? (string) ($_SESSION['_csrf_token'] ?? '')
+    : '';
 
 $fallbackCompanyName = defined('APP_NAME') ? (string) APP_NAME : '';
 $companyName = $fallbackCompanyName;
@@ -36,6 +42,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="rateb-csrf-token" content="<?php echo htmlspecialchars($ratebCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="password-manager" content="disabled">
     <meta name="google-password-manager" content="disabled">
     <title><?php echo (isset($pageTitle) ? $pageTitle : 'Default Title'); ?> | <?php echo htmlspecialchars(rateb_brand_full_title(), ENT_QUOTES, 'UTF-8'); ?></title>

@@ -43,6 +43,7 @@ final class PosApiController extends PosBaseController
         if ($items !== [] && !array_is_list($items)) {
             $items = [$items];
         }
+        $this->authorizeAndBindSyncItems($items);
         $companyId = $this->companyId();
         $service = new PosOfflineSyncService();
         $result = $service->pushQueue($items, [
@@ -104,5 +105,35 @@ final class PosApiController extends PosBaseController
     {
         $this->bootstrapPos();
         $this->json(['ok' => true, 'totals' => (new PosPricingService())->calculate([])]);
+    }
+
+    /** @param array<int, mixed> $items */
+    private function authorizeAndBindSyncItems(array &$items): void
+    {
+        $permissionByAction = [
+            'checkout' => 'pos.sale.complete',
+            'complete_sale' => 'pos.sale.complete',
+            'process_return' => 'pos.returns.manage',
+            'process_exchange' => 'pos.returns.manage',
+            'shift_open' => 'pos.shift.open',
+            'shift_close' => 'pos.shift.close',
+            'drawer_event' => 'pos.cash_drawer.manage',
+            'suspend' => 'pos.register',
+            'resume_suspended' => 'pos.register',
+        ];
+        foreach ($items as &$item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $action = trim((string) ($item['action'] ?? ''));
+            $permission = $permissionByAction[$action] ?? 'pos.sync.manage';
+            $this->guardPosPermission($permission, 'pos/sync');
+            $payload = is_array($item['payload'] ?? null) ? $item['payload'] : [];
+            $scope = is_array($payload['scope'] ?? null) ? $payload['scope'] : [];
+            $scope['user_id'] = $this->userId();
+            $payload['scope'] = $scope;
+            $item['payload'] = $payload;
+        }
+        unset($item);
     }
 }

@@ -62,6 +62,40 @@ function hr_api_enforce_employees_permission(string $action): void
     }
 }
 
+/** Employee mutations are POST-only and require a session-bound CSRF token. */
+function hr_api_require_employee_mutation_security(string $action): void
+{
+    if (in_array($action, ['list', 'get'], true)) {
+        return;
+    }
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        http_response_code(405);
+        header('Allow: POST');
+        header('Content-Type: application/json; charset=utf-8');
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        echo json_encode(['success' => false, 'message' => 'Method not allowed. POST required.']);
+        exit;
+    }
+    if (session_status() === PHP_SESSION_NONE) {
+        require_once __DIR__ . '/../core/rateb_api_session.inc.php';
+        rateb_api_pick_session_name();
+        session_start();
+    }
+    $token = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf'] ?? '');
+    $stored = (string) ($_SESSION['_csrf_token'] ?? '');
+    if ($token === '' || $stored === '' || !hash_equals($stored, $token)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        echo json_encode(['success' => false, 'message' => 'Invalid or missing CSRF token.']);
+        exit;
+    }
+}
+
 function hr_api_get_connection(): PDO
 {
     static $cached = null;

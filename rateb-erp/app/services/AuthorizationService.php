@@ -585,14 +585,14 @@ final class AuthorizationService
             return;
         }
         $bundles = [
-            'pos_cashier' => ['pos.view', 'pos.register', 'pos.shift.open'],
+            'pos_cashier' => ['pos.view', 'pos.register', 'pos.sale.complete', 'pos.shift.open'],
             'pos_supervisor' => [
-                'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
+                'pos.view', 'pos.register', 'pos.sale.complete', 'pos.shift.open', 'pos.shift.close',
                 'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
                 'pos.orders.view', 'pos.inventory.adjust', 'pos.supervisor.approve', 'pos.payment.record',
             ],
             'pos_manager' => [
-                'pos.view', 'pos.register', 'pos.shift.open', 'pos.shift.close',
+                'pos.view', 'pos.register', 'pos.sale.complete', 'pos.shift.open', 'pos.shift.close',
                 'pos.discount.manage', 'pos.returns.manage', 'pos.reports.view', 'pos.cash_drawer.manage',
                 'pos.orders.view', 'pos.terminals.manage', 'pos.settings.manage', 'pos.devices.manage', 'pos.sync.manage',
             ],

@@ -61,6 +61,7 @@ try {
 
     $action = $_GET['action'] ?? 'list';
     $id = $_GET['id'] ?? null;
+    hr_api_require_employee_mutation_security($action);
 
     switch ($action) {
         case 'list':
@@ -338,22 +339,6 @@ try {
             $stmt->execute();
             
             $newEmployeeId = $conn->lastInsertId();
-            
-            // Auto-create GL account (RATEB Pro HR only — not control-panel HR DB)
-            if (hr_api_writes_rateb_artifacts()) {
-                try {
-                    require_once __DIR__ . '/../accounting/entity-account-helper.php';
-                    $employeeName = $input['name'] ?? '';
-                    if ($employeeName && function_exists('ensureEntityAccount')) {
-                        $dbConn = isset($conn) ? $conn : ($GLOBALS['conn'] ?? null);
-                        if ($dbConn) {
-                            ensureEntityAccount($dbConn, 'hr', $newEmployeeId, $employeeName);
-                        }
-                    }
-                } catch (Throwable $e) {
-                    error_log("HR Employee add: ensureEntityAccount failed (non-fatal): " . $e->getMessage());
-                }
-            }
             
             // Get created employee for history
             $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");

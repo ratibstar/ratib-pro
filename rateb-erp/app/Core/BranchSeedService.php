@@ -255,6 +255,7 @@ final class BranchSeedService
             'pos.view',
             'pos.manage',
             'pos.register',
+            'pos.sale.complete',
             'pos.shift.open',
             'pos.shift.close',
             'pos.orders.view',

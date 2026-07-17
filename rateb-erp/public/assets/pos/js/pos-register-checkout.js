@@ -128,25 +128,47 @@
 
     function computeLocalPricing(state) {
         var subtotal = 0;
+        var lineDiscountTotal = 0;
         (state.lines || []).forEach(function (line) {
-            subtotal += Number(line.line_total || 0);
+            var qty = Math.max(0, Number(line.quantity || 0));
+            var unit = Math.max(0, Math.round(Number(line.unit_price || 0) * 100) / 100);
+            var gross = Math.round(qty * unit * 100) / 100;
+            var lineDiscount = Math.max(0, Number(line.discount_amount || 0));
+            if (lineDiscount <= 0) {
+                lineDiscount = Math.round(gross * Math.max(0, Number(line.discount_percent || 0)) / 100 * 100) / 100;
+            }
+            subtotal += gross;
+            lineDiscountTotal += Math.min(gross, Math.round(lineDiscount * 100) / 100);
         });
+        subtotal = Math.round(subtotal * 100) / 100;
+        lineDiscountTotal = Math.round(lineDiscountTotal * 100) / 100;
+        var netSubtotal = Math.max(0, Math.round((subtotal - lineDiscountTotal) * 100) / 100);
         var discType = invoiceDiscType ? invoiceDiscType.value : 'amount';
         var discVal = invoiceDiscValue ? Number(invoiceDiscValue.value || 0) : 0;
-        var discount = 0;
+        var invoiceDiscount = 0;
         if (discType === 'percent') {
-            discount = Math.round(subtotal * discVal / 100 * 100) / 100;
+            invoiceDiscount = Math.round(netSubtotal * discVal / 100 * 100) / 100;
         } else {
-            discount = discVal;
+            invoiceDiscount = discVal;
         }
-        discount = Math.min(discount, subtotal);
-        var afterDisc = Math.max(0, subtotal - discount);
-        var tax = Math.round(afterDisc * 0.15 * 100) / 100;
+        invoiceDiscount = Math.min(invoiceDiscount, netSubtotal);
+        var taxable = Math.max(0, Math.round((netSubtotal - invoiceDiscount) * 100) / 100);
+        var configuredTaxRate = Math.max(0, Math.min(1, Number(
+            config.taxRate != null
+                ? config.taxRate
+                : ((config.initialTotals && config.initialTotals.tax_rate) || 0.15)
+        )));
+        var tax = Math.round(taxable * configuredTaxRate * 100) / 100;
         return {
             subtotal: subtotal,
-            discount_total: discount,
+            line_discount_total: lineDiscountTotal,
+            net_subtotal: netSubtotal,
+            invoice_discount: invoiceDiscount,
+            discount_total: Math.round((lineDiscountTotal + invoiceDiscount) * 100) / 100,
+            taxable: taxable,
+            tax_rate: configuredTaxRate,
             tax: tax,
-            total: Math.round((afterDisc + tax) * 100) / 100
+            total: Math.round((taxable + tax) * 100) / 100
         };
     }
 
@@ -712,7 +734,7 @@
                     coupon_code: rewardsState.couponCode || '',
                     points_redeem: pointsInput ? Number(pointsInput.value || 0) : 0,
                     gift_receipt: !!window.RatebPosGiftReceipt,
-                    tax_rate: 0.15,
+                    tax_rate: computeLocalPricing(state).tax_rate,
                     scope: {
                         terminal_id: cfgScope.terminal_id || (cfgCtx.terminal && cfgCtx.terminal.id) || cfgSess.terminal_id || 0,
                         shift_id: cfgScope.shift_id || (cfgCtx.shift && cfgCtx.shift.id) || cfgSess.shift_id || config.shiftId || 0,
@@ -753,6 +775,7 @@
         body.set('customer', JSON.stringify(state.customer));
         body.set('payments', JSON.stringify(payments));
         body.set('invoice_discount', JSON.stringify(invoiceDiscount));
+        body.set('tax_rate', String(computeLocalPricing(state).tax_rate));
         if (rewardsState.couponCode) {
             body.set('coupon_code', rewardsState.couponCode);
         }

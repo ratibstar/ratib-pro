@@ -46,8 +46,15 @@ $hrJsFooter = [
     control_rateb_pro_asset_url('js/hr/countries-cities-handler.js'),
     control_rateb_pro_asset_url('js/hr/hr-page.js'),
 ];
+if (empty($_SESSION['_csrf_token'])) {
+    $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+}
+$hrCsrfToken = (string) $_SESSION['_csrf_token'];
 
 startControlLayout('HR Management', $additionalCSS, []);
+echo '<meta name="rateb-csrf-token" content="'
+    . htmlspecialchars($hrCsrfToken, ENT_QUOTES, 'UTF-8')
+    . '">';
 
 require_once dirname(__DIR__, 3) . '/includes/hr-dashboard-body.php';
 

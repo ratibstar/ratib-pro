@@ -61,10 +61,13 @@ final class PosOfflineReplayService
         $payments = is_array($inner['payments'] ?? null) ? $inner['payments'] : [];
         $invoiceDiscount = is_array($inner['invoice_discount'] ?? null) ? $inner['invoice_discount'] : [];
         $customer = is_array($inner['customer'] ?? null) ? $inner['customer'] : null;
-        $taxRate = (float) ($inner['tax_rate'] ?? 0.15);
         if ($lines === [] || $payments === []) {
             throw new \RuntimeException('empty_checkout_payload');
         }
+        $taxRate = (new PosTaxSettingsService())->resolveRate(
+            (int) ($scope['company_id'] ?? 0),
+            (int) ($scope['branch_id'] ?? 0)
+        );
         $scope['coupon_code'] = trim((string) ($inner['coupon_code'] ?? ''));
         $scope['points_redeem'] = (float) ($inner['points_redeem'] ?? 0);
 

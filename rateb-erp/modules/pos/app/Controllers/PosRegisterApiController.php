@@ -20,6 +20,7 @@ use Rateb\App\Pos\Services\PosReportService;
 use Rateb\App\Pos\Services\PosRewardService;
 use Rateb\App\Pos\Services\PosSellPriceService;
 use Rateb\App\Pos\Services\PosSessionService;
+use Rateb\App\Pos\Services\PosTaxSettingsService;
 
 /** Register JSON API — cart, inventory lookup, reservations (no order completion). */
 final class PosRegisterApiController extends PosBaseController
@@ -444,7 +445,10 @@ final class PosRegisterApiController extends PosBaseController
         $cart = new PosRegisterCartService();
         $normalized = $cart->normalizeLines($lines);
         $invoiceDiscount = $this->decodeJsonField($payload, 'invoice_discount');
-        $taxRate = (float) ($payload['tax_rate'] ?? 0.15);
+        $taxRate = (new PosTaxSettingsService())->resolveRate(
+            (int) $scope['company_id'],
+            (int) $scope['branch_id']
+        );
         try {
             (new PosDiscountGuardService())->assertManualDiscountAllowed($normalized, $invoiceDiscount);
         } catch (\Throwable $e) {
@@ -465,7 +469,7 @@ final class PosRegisterApiController extends PosBaseController
     public function checkout(): void
     {
         $this->bootstrapPos();
-        $this->guardPosView('pos/register');
+        $this->guardPosPermission('pos.sale.complete', 'pos/register');
         if (!Csrf::validate($_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
             $this->json(['ok' => false, 'error' => __('invalid_request')], 419);
             return;
@@ -485,7 +489,10 @@ final class PosRegisterApiController extends PosBaseController
         $lines = $this->decodeLines($payload);
         $payments = $this->decodePayments($payload);
         $invoiceDiscount = $this->decodeJsonField($payload, 'invoice_discount');
-        $taxRate = (float) ($payload['tax_rate'] ?? 0.15);
+        $taxRate = (new PosTaxSettingsService())->resolveRate(
+            (int) $scope['company_id'],
+            (int) $scope['branch_id']
+        );
         $customer = $this->resolveCustomer($payload) ?? $session->getCustomer();
         $scope['coupon_code'] = trim((string) ($payload['coupon_code'] ?? ''));
         $scope['points_redeem'] = (float) ($payload['points_redeem'] ?? 0);

@@ -21,13 +21,19 @@ final class PosRegisterCartService
      * @param array<int, array<string, mixed>> $lines
      * @param array<string, mixed>|null $customer
      */
-    public function totals(array $lines, int $companyId = 0, int $branchId = 0, ?array $customer = null): array
+    public function totals(
+        array $lines,
+        int $companyId = 0,
+        int $branchId = 0,
+        ?array $customer = null,
+        float $taxRate = 0.15
+    ): array
     {
         $normalized = $this->normalizeLines($lines);
         if ($companyId > 0 && $branchId > 0) {
             $normalized = $this->sellPrices->applyToLines($normalized, $companyId, $branchId, $customer);
         }
-        return $this->pricing->calculate($normalized);
+        return $this->pricing->calculate($normalized, [], $taxRate);
     }
 
     /**

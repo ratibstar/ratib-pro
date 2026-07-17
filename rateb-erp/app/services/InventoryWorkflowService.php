@@ -564,6 +564,107 @@ final class InventoryWorkflowService
         }
     }
 
+    /**
+     * Inventory-owned serial lock used by transactional consumers such as POS.
+     *
+     * @return array{id:int,serial_no:string,status:string}|null Null when serial storage is not installed.
+     */
+    public function lockSerialForUpdate(
+        string $serialNo,
+        int $inventoryId,
+        int $companyId,
+        string $expectedStatus
+    ): ?array {
+        $serialNo = trim($serialNo);
+        if ($serialNo === '' || $inventoryId < 1 || $companyId < 1 || $expectedStatus === '') {
+            throw new \InvalidArgumentException('Valid serial, inventory, company and status are required.');
+        }
+        if (!Database::tableExists('rateb_inventory_serials')) {
+            return null;
+        }
+        $db = Database::connection();
+        if (!$db->inTransaction()) {
+            throw new \RuntimeException('Serial lock requires an active database transaction.');
+        }
+        $contextCompanyId = (int) (TenantContext::companyId() ?? 0);
+        if (!TenantContext::isSuperAdmin() && $contextCompanyId !== $companyId) {
+            throw new \RuntimeException('Tenant mismatch for inventory serial operation.');
+        }
+        $lock = Database::isSqlite() ? '' : ' FOR UPDATE';
+        $stmt = $db->prepare(
+            'SELECT id, serial_no, status FROM rateb_inventory_serials
+             WHERE company_id = :cid AND inventory_id = :iid AND serial_no = :sn AND status = :st
+             LIMIT 1' . $lock
+        );
+        $stmt->execute([
+            'cid' => $companyId,
+            'iid' => $inventoryId,
+            'sn' => $serialNo,
+            'st' => $expectedStatus,
+        ]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new \RuntimeException(__('pos_serial_unavailable'));
+        }
+
+        return [
+            'id' => (int) $row['id'],
+            'serial_no' => (string) $row['serial_no'],
+            'status' => (string) $row['status'],
+        ];
+    }
+
+    /**
+     * Inventory public API: atomically transition a serial owned by the current tenant.
+     *
+     * @return array{id:int,serial_no:string,from_status:string,to_status:string}|null
+     */
+    public function transitionSerialStatusInTransaction(
+        string $serialNo,
+        int $inventoryId,
+        int $companyId,
+        string $expectedStatus,
+        string $newStatus,
+        string $referenceType,
+        int $referenceId
+    ): ?array {
+        $row = $this->lockSerialForUpdate($serialNo, $inventoryId, $companyId, $expectedStatus);
+        if ($row === null) {
+            return null;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'UPDATE rateb_inventory_serials
+             SET status = :new_status, updated_at = ' . (Database::isSqlite() ? "datetime('now')" : 'NOW()') . '
+             WHERE id = :id AND company_id = :cid AND status = :expected_status'
+        );
+        $stmt->execute([
+            'new_status' => $newStatus,
+            'id' => $row['id'],
+            'cid' => $companyId,
+            'expected_status' => $expectedStatus,
+        ]);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException(__('pos_serial_unavailable'));
+        }
+        (new AuditService())->log('inventory_serial_status_changed', 'inventory_serial', $row['id'], [
+            'company_id' => $companyId,
+            'inventory_id' => $inventoryId,
+            'serial_no' => $serialNo,
+            'from_status' => $expectedStatus,
+            'to_status' => $newStatus,
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
+        ]);
+
+        return [
+            'id' => $row['id'],
+            'serial_no' => $row['serial_no'],
+            'from_status' => $expectedStatus,
+            'to_status' => $newStatus,
+        ];
+    }
+
     /** FEFO batch consumption with row locks — for use inside caller transaction. */
     public function consumeBatchesInTransaction(int $inventoryId, float $quantity, string $method = 'fefo'): float
     {

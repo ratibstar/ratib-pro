@@ -20,9 +20,6 @@ final class PosV2CheckoutAccessValidator
         if (in_array('pos.sale.complete', $permissions, true)) {
             return;
         }
-        if (in_array('pos.register', $permissions, true)) {
-            return;
-        }
         if (in_array('pos.*', $permissions, true)) {
             return;
         }

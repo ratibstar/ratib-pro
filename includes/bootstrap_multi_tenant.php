@@ -20,7 +20,7 @@ if (defined('MULTI_TENANT_BOOTSTRAP_LOADED')) {
 define('MULTI_TENANT_BOOTSTRAP_LOADED', true);
 
 if (!defined('MULTI_TENANT_ENABLED')) {
-    define('MULTI_TENANT_ENABLED', false);
+    define('MULTI_TENANT_ENABLED', true);
 }
 
 if (MULTI_TENANT_ENABLED && isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {

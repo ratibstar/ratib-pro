@@ -1801,9 +1801,10 @@ if (isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {
     $conn = $GLOBALS['conn'];
 }
 
-// Multi-Tenant: set true when ready. Disabled to restore site.
+// Multi-tenant country isolation is mandatory in production and enabled by default.
 if (!defined('MULTI_TENANT_ENABLED')) {
-    define('MULTI_TENANT_ENABLED', false);
+    define('MULTI_TENANT_ENABLED', true);
 }
+require_once __DIR__ . '/bootstrap_multi_tenant.php';
 
 require_once __DIR__ . '/rateb_html_global_ai_patch.php';
