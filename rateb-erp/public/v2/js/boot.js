@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v3';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v4';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -160,7 +160,10 @@
                     return;
                 }
                 probeStarted = true;
-                var vendorUrl = new URL('vendor/sqlite/index.mjs', root.location.href).href;
+                var vendorUrl = new URL(
+                    '../assets/offline/platform/db/vendor/sqlite/index.mjs',
+                    root.location.href
+                ).href;
                 root.fetch(vendorUrl, { method: 'HEAD', cache: 'no-cache', credentials: 'same-origin' })
                     .then(function (res) {
                         if (res && (res.status === 404 || res.status === 0)) {
@@ -616,7 +619,10 @@
                 return root.RatebOfflineV2PM;
             });
 
-            var dbUrl = new URL('./js/db/sqlite-runtime.js', root.location.href).href;
+            var dbUrl = new URL(
+                '../assets/offline/platform/db/sqlite-runtime.js',
+                root.location.href
+            ).href;
             var dbPromise = import(dbUrl).then(function (mod) {
                 var db = mod.default || root.RatebOfflineV2DB;
                 return db.open().then(function (opened) {

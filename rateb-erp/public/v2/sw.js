@@ -15,7 +15,7 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-bootstrap-v3';
+var CACHE = 'rateb-offline-v2-bootstrap-v4';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -39,14 +39,14 @@ var PRECACHE = [
     './js/business/manufacturing-module.js',
     './modules/module-manifest.example.json',
     './js/routes/route-manifest.json',
-    './js/db/migrations.js',
-    './js/db/sqlite-runtime.js',
+    '../assets/offline/platform/db/migrations.js',
+    '../assets/offline/platform/db/sqlite-runtime.js',
+    '../assets/offline/platform/db/vendor/sqlite/index.mjs',
+    '../assets/offline/platform/db/vendor/sqlite/sqlite3.wasm',
+    '../assets/offline/platform/db/vendor/sqlite/sqlite3-opfs-async-proxy.js',
+    '../assets/offline/platform/db/vendor/sqlite/sqlite3-worker1.mjs',
     './css/host.css',
-    './css/shell.css',
-    './vendor/sqlite/index.mjs',
-    './vendor/sqlite/sqlite3.wasm',
-    './vendor/sqlite/sqlite3-opfs-async-proxy.js',
-    './vendor/sqlite/sqlite3-worker1.mjs'
+    './css/shell.css'
 ];
 var APP_SHELL_URL = new URL('./index.html', self.registration.scope).href;
 
