@@ -105,8 +105,8 @@ def fileman_home_rel(abs_dir: str, name: str) -> str:
     return f"{parent}/{name}" if parent else name
 
 
-def api2_fileop_unlink(home_rel_path: str) -> None:
-    """Remove an existing file so upload_files can replace corrupt bytes (overwrite alone is unreliable)."""
+def api2_fileop_unlink(home_rel_path: str, *, require_ok: bool = False) -> bool:
+    """Remove a remote file via cPanel Fileman. Returns True on API success."""
     host = os.environ["CPANEL_HOST"]
     port = os.environ.get("CPANEL_PORT", "2083")
     user = os.environ["CPANEL_USER"]
@@ -132,9 +132,26 @@ def api2_fileop_unlink(home_rel_path: str) -> None:
     )
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
-            json.loads(resp.read().decode("utf-8", errors="replace"))
-    except Exception:
-        pass
+            payload = json.loads(resp.read().decode("utf-8", errors="replace"))
+        # cPanel API2 often returns result:1 on success.
+        ok = True
+        if isinstance(payload, dict):
+            cpanelresult = payload.get("cpanelresult") or {}
+            data = cpanelresult.get("data")
+            if isinstance(data, list) and data:
+                row = data[0] if isinstance(data[0], dict) else {}
+                if "result" in row:
+                    ok = str(row.get("result")) in ("1", "true", "True")
+                if row.get("error") or row.get("reason"):
+                    ok = False
+        if require_ok and not ok:
+            raise RuntimeError(f"fileman_unlink_failed:{home_rel_path}:{payload}")
+        return ok
+    except Exception as exc:
+        if require_ok:
+            raise
+        # Best-effort for overwrite-before-upload paths.
+        return False
 
 
 def build_multipart_body(
@@ -1368,7 +1385,7 @@ def purge_security_retired_files(remote_base: str) -> None:
     for rel in SECURITY_REMOTE_DELETE_FILES:
         abs_dir = remote_dir(remote_base, rel)
         remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
-        api2_fileop_unlink(remote_path)
+        api2_fileop_unlink(remote_path, require_ok=False)
 
 
 def purge_aborted_extraction_files(remote_base: str) -> None:
@@ -1380,7 +1397,125 @@ def purge_aborted_extraction_files(remote_base: str) -> None:
     for rel in EXTRACTION_ROLLBACK_REMOTE_DELETE_FILES:
         abs_dir = remote_dir(remote_base, rel)
         remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
-        api2_fileop_unlink(remote_path)
+        # Absence is OK (already gone); API soft-fail allowed, integrity SSH gate verifies.
+        api2_fileop_unlink(remote_path, require_ok=False)
+
+
+def purge_commit_deleted_files(remote_base: str) -> list[str]:
+    """Delete paths removed in the current commit (rollback-safe for that SHA)."""
+    try:
+        from deploy_integrity import git_deleted_paths_for_sha, git_sha
+    except ImportError:
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        from deploy_integrity import git_deleted_paths_for_sha, git_sha
+
+    deleted = git_deleted_paths_for_sha(git_sha())
+    print(f"commit-deleted purge: {len(deleted)} path(s)", flush=True)
+    for rel in deleted:
+        if not is_auto_deploy_path(rel) and not rel.startswith("rateb-erp/public/"):
+            # Still purge managed public orphans introduced by reverted commits.
+            if not any(rel.startswith(p) for p in (
+                "rateb-erp/public/", "public/", "js/", "css/", "pages/", "api/", "includes/"
+            )):
+                continue
+        abs_dir = remote_dir(remote_base, rel)
+        remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
+        api2_fileop_unlink(remote_path, require_ok=False)
+    return deleted
+
+
+def run_px_deploy_integrity_gate(remote_base: str) -> int:
+    """
+    Mandatory PX-Deploy integrity. Requires SSH credentials (same as rsync path).
+    Fails the deployment if orphans remain or tree hashes diverge.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import deploy_integrity as integrity
+    import stat as statmod
+    import tempfile
+
+    creds = integrity.ssh_credentials_from_env()
+    if not creds:
+        print(
+            "::error::PX-Deploy integrity requires DEPLOY_SSH_HOST/USER/PRIVATE_KEY "
+            "on every backend (rsync and Fileman)",
+            flush=True,
+        )
+        return 1
+    host, user, port = creds
+    key = (
+        os.environ.get("DEPLOY_SSH_PRIVATE_KEY")
+        or os.environ.get("SSH_PRIVATE_KEY")
+        or ""
+    ).strip()
+    if "\\n" in key and "\n" not in key:
+        key = key.replace("\\n", "\n")
+    fd, key_path = tempfile.mkstemp(prefix="rateb-fileman-integrity-", suffix=".pem")
+    os.close(fd)
+    with open(key_path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(key)
+        if not key.endswith("\n"):
+            handle.write("\n")
+    os.chmod(key_path, statmod.S_IRUSR | statmod.S_IWUSR)
+    try:
+        # This module is the core; pass self for purge lists.
+        import sys as _sys
+        core = _sys.modules[__name__]
+        expected = integrity.build_expected_manifest()
+        force = integrity.explicit_purge_paths(core)
+        print(
+            f"PX-Deploy integrity (Fileman backend): expected={len(expected)} "
+            f"force_purge={len(force)} dest={remote_base}",
+            flush=True,
+        )
+        report = integrity.run_ssh_integrity(
+            key_path=key_path,
+            remote_base=remote_base.rstrip("/"),
+            host=host,
+            user=user,
+            port=port,
+            expected=expected,
+            force_delete=force,
+        )
+        heal = sorted(set(report.missing_expected) | {
+            row.get("path", "") for row in report.hash_mismatches if row.get("path")
+        })
+        heal = [p for p in heal if p and os.path.isfile(p)]
+        if heal and (report.missing_expected or report.hash_mismatches):
+            print(f"PX-Deploy integrity heal upload (Fileman): {len(heal)} file(s)", flush=True)
+            for rel in heal:
+                upload_one(rel, remote_base)
+            report = integrity.run_ssh_integrity(
+                key_path=key_path,
+                remote_base=remote_base.rstrip("/"),
+                host=host,
+                user=user,
+                port=port,
+                expected=expected,
+                force_delete=force,
+            )
+        integrity.write_report(report)
+        if not report.ok:
+            print("::error::PX-Deploy integrity failed on Fileman backend", flush=True)
+            for err in report.errors[:20]:
+                print(f"integrity_error: {err}", flush=True)
+            return 1
+        print(
+            "PX-Deploy integrity PASS "
+            f"tree_hash={report.local_tree_hash} "
+            f"orphans_removed={len(report.orphans_found)}",
+            flush=True,
+        )
+        return 0
+    finally:
+        try:
+            os.remove(key_path)
+        except OSError:
+            pass
 
 
 def main() -> int:
@@ -1397,6 +1532,7 @@ def main() -> int:
     )
     purge_security_retired_files(remote_base)
     purge_aborted_extraction_files(remote_base)
+    purge_commit_deleted_files(remote_base)
     ok, fail, succeeded = run_uploads(files, remote_base, workers)
     print(
         f"\n========== Summary: ok={ok} fail={fail} total={total} "
@@ -1420,7 +1556,7 @@ def main() -> int:
         return 1
 
     mirror_test_rateb_entry_files(succeeded)
-    return 0
+    return run_px_deploy_integrity_gate(remote_base)
 
 
 def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:

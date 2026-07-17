@@ -2,6 +2,9 @@
 """
 DirectAdmin / generic SSH deploy — same fast file list as cPanel Fileman deploy,
 but rsync over SSH (usually faster: one connection, delta transfer).
+
+PX-Deploy: after upload, orphan purge + tree-hash integrity are mandatory.
+Git HEAD is the single source of truth for managed production trees.
 """
 from __future__ import annotations
 
@@ -14,15 +17,23 @@ import sys
 import tempfile
 
 
-def _load_deploy_core():
+def _load_module(name: str, filename: str):
     here = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(here, "github-cpanel-fileman-deploy-core.py")
-    spec = importlib.util.spec_from_file_location("deploy_core", path)
+    path = os.path.join(here, filename)
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load deploy core: {path}")
+        raise RuntimeError(f"cannot load {filename}")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
     spec.loader.exec_module(mod)
     return mod
+
+
+def _load_deploy_core():
+    return _load_module("deploy_core", "github-cpanel-fileman-deploy-core.py")
+
+
+integrity = _load_module("deploy_integrity", "deploy_integrity.py")
 
 
 def _write_ssh_key() -> str:
@@ -157,18 +168,60 @@ def _rsync_files(core, files: list[str], remote_base: str, key_path: str) -> tup
             pass
 
 
-def _purge_security_retired_files(core, remote_base: str, key_path: str) -> None:
-    base = remote_base.rstrip("/")
-    targets = [
-        shlex.quote(f"{base}/{rel.lstrip('/')}")
-        for rel in core.SECURITY_REMOTE_DELETE_FILES
-    ]
-    proc = _ssh_run(key_path, "rm -f -- " + " ".join(targets))
-    if proc.returncode != 0:
-        raise RuntimeError(
-            "security purge failed: " + ((proc.stderr or proc.stdout or "unknown error").strip())
+def _run_integrity(core, remote_base: str, key_path: str) -> int:
+    host = os.environ.get("DEPLOY_SSH_HOST") or os.environ.get("SSH_HOST") or ""
+    user = os.environ.get("DEPLOY_SSH_USER") or os.environ.get("SSH_USER") or ""
+    port = os.environ.get("DEPLOY_SSH_PORT") or os.environ.get("SSH_PORT") or "22"
+    print("PX-Deploy integrity: building expected Git manifest", flush=True)
+    expected = integrity.build_expected_manifest()
+    force = integrity.explicit_purge_paths(core)
+    print(
+        f"PX-Deploy integrity: expected_files={len(expected)} "
+        f"force_purge={len(force)} dest={remote_base}",
+        flush=True,
+    )
+
+    report = integrity.run_ssh_integrity(
+        key_path=key_path,
+        remote_base=remote_base,
+        host=host,
+        user=user,
+        port=port,
+        expected=expected,
+        force_delete=force,
+    )
+
+    # Heal once: upload missing/mismatched expected files, then re-verify.
+    heal = sorted(set(report.missing_expected) | {
+        row.get("path", "") for row in report.hash_mismatches if row.get("path")
+    })
+    heal = [p for p in heal if p and os.path.isfile(p)]
+    if heal and (report.missing_expected or report.hash_mismatches):
+        print(f"PX-Deploy integrity heal upload: {len(heal)} file(s)", flush=True)
+        _rsync_files(core, heal, remote_base, key_path)
+        report = integrity.run_ssh_integrity(
+            key_path=key_path,
+            remote_base=remote_base,
+            host=host,
+            user=user,
+            port=port,
+            expected=expected,
+            force_delete=force,
         )
-    print(f"security purge: removed {len(targets)} retired HTTP script(s)", flush=True)
+
+    integrity.write_report(report)
+    if not report.ok:
+        print("::error::PX-Deploy integrity failed — orphan/hash mismatch", flush=True)
+        for err in report.errors[:20]:
+            print(f"integrity_error: {err}", flush=True)
+        return 1
+    print(
+        "PX-Deploy integrity PASS "
+        f"tree_hash={report.local_tree_hash} "
+        f"orphans_removed={len(report.orphans_found)}",
+        flush=True,
+    )
+    return 0
 
 
 def main() -> int:
@@ -193,7 +246,7 @@ def main() -> int:
     key_path = _write_ssh_key()
     try:
         _ensure_remote_dir(remote_base.rstrip("/"), key_path)
-        _purge_security_retired_files(core, remote_base, key_path)
+        # Upload first so expected Git files exist, then purge orphans + verify hashes.
         ok, fail = _rsync_files(core, files, remote_base, key_path)
         print(
             f"\n========== Summary: ok={ok} fail={fail} total={total} "
@@ -207,7 +260,7 @@ def main() -> int:
         if must_check:
             print(f"MUST_OK check skipped for rsync (uploaded {ok} paths in batch)", flush=True)
 
-        return 0
+        return _run_integrity(core, remote_base.rstrip("/"), key_path)
     finally:
         try:
             os.remove(key_path)

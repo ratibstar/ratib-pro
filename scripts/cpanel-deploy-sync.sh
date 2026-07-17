@@ -9,8 +9,10 @@ MARKER="$(tr -d '\r\n' < public/rateb-build.txt 2>/dev/null || echo unknown)"
 STAMP="deploy-$(date -u +%Y%m%dT%H%M%SZ)-${MARKER}"
 LOG="${HOME}/.rateb-deploy-log"
 PUBLIC_HTML="${RATEB_PUBLIC_HTML:-/home/admin/public_html}"
-# Do NOT use rsync --delete on live public_html unless explicitly enabled (can break the site).
+# PX-Deploy: do not use blind rsync --delete on entire public_html.
+# Managed-tree orphan removal + hash verify run via scripts/deploy_integrity.py.
 RATEB_RSYNC_DELETE="${RATEB_RSYNC_DELETE:-0}"
+RATEB_PX_DEPLOY_INTEGRITY="${RATEB_PX_DEPLOY_INTEGRITY:-1}"
 
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
@@ -324,6 +326,13 @@ for TARGET in "${TARGETS[@]}"; do
     TARGET_REAL="$(realpath "$TARGET" 2>/dev/null || echo "$TARGET")"
     if [ "$TARGET_REAL" = "$PUBLIC_REAL" ] || [ "$TARGET" = "$PUBLIC_HTML" ]; then
       PUBLIC_OK=1
+      if [ "$RATEB_PX_DEPLOY_INTEGRITY" = "1" ]; then
+        log "PX-Deploy integrity gate for ${TARGET}"
+        if ! DEPLOY_REMOTE_BASE="$TARGET" python3 "${ROOT}/scripts/px_deploy_integrity_cli.py"; then
+          log "ERROR PX-Deploy integrity failed for ${TARGET}"
+          exit 1
+        fi
+      fi
     fi
   fi
 done

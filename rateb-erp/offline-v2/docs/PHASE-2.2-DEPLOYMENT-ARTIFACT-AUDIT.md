@@ -311,8 +311,7 @@ Secondary note: even the Fileman unlink helper swallows all exceptions (`except 
 
 ---
 
-## Audit constraints honored
+## Follow-on
 
-- No application code changes in this phase beyond this evidence document.
-- No extraction, no moves, no deletions performed against production.
-- No fixes implemented.
+Permanent fix: [PX-Deploy — Permanent Deployment Integrity](../../../scripts/PX-DEPLOY-PERMANENT-DEPLOYMENT-INTEGRITY.md)
+
