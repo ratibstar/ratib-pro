@@ -301,22 +301,27 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 require_once __DIR__ . '/../core/api-permission-helper.php';
 require_once __DIR__ . '/../core/api-mutation-security.php';
 try {
-    $mutationActions = [
-        'send_contact_notification',
-        'send_communication_notification',
-        'mark_notification_read',
-        'mark_notification_unread',
-        'bulk_mark_read',
-        'bulk_mark_unread',
-        'bulk_delete',
-        'update_notification_settings',
-        'delete_notification',
-    ];
-    if (in_array($action, $mutationActions, true)) {
-        enforceApiPermission('notifications', 'manage');
+    if ($action === 'send_role_broadcast') {
+        enforceApiPermission('notifications', 'broadcast');
         requireApiMutationSecurity();
     } else {
-        enforceApiPermission('notifications', 'view');
+        $mutationActions = [
+            'send_contact_notification',
+            'send_communication_notification',
+            'mark_notification_read',
+            'mark_notification_unread',
+            'bulk_mark_read',
+            'bulk_mark_unread',
+            'bulk_delete',
+            'update_notification_settings',
+            'delete_notification',
+        ];
+        if (in_array($action, $mutationActions, true)) {
+            enforceApiPermission('notifications', 'manage');
+            requireApiMutationSecurity();
+        } else {
+            enforceApiPermission('notifications', 'view');
+        }
     }
 } catch (Throwable $e) {
     ob_clean();

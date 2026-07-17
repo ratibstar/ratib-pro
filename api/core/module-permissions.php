@@ -99,7 +99,9 @@ return [
         'update' => 'edit_employee',
         'edit' => 'edit_employee',
         'delete' => 'delete_employee',
+        'bulk-update' => 'edit_employee',
         'bulk_update' => 'edit_employee',
+        'bulk-delete' => 'delete_employee',
         'bulk_delete' => 'delete_employee'
     ],
     'employees' => [
@@ -305,7 +307,8 @@ return [
         'delete' => 'delete_notification',
         'bulk_update' => 'manage_notifications',
         'bulk_delete' => 'delete_notification',
-        'manage' => 'manage_notifications'
+        'manage' => 'manage_notifications',
+        'broadcast' => 'broadcast_notifications'
     ],
 ];
 

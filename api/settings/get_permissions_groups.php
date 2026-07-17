@@ -690,11 +690,12 @@ try {
                 ['id' => 'reply_to_message', 'name' => 'Reply to Message'],
                 ['id' => 'delete_message', 'name' => 'Delete Message']
             ]],
-            ['id' => 'notifications', 'name' => 'Notifications', 'count' => 4, 'permissions' => [
+            ['id' => 'notifications', 'name' => 'Notifications', 'count' => 5, 'permissions' => [
                 ['id' => 'view_notifications', 'name' => 'View Notifications'],
                 ['id' => 'create_notification', 'name' => 'Create Signal'],
                 ['id' => 'manage_notifications', 'name' => 'Manage Notifications'],
-                ['id' => 'delete_notification', 'name' => 'Delete Signal']
+                ['id' => 'delete_notification', 'name' => 'Delete Signal'],
+                ['id' => 'broadcast_notifications', 'name' => 'Broadcast Notifications']
             ]],
             ['id' => 'visa_management', 'name' => 'Visa Management', 'count' => 5, 'permissions' => [
                 ['id' => 'view_visas', 'name' => 'View Visas'],

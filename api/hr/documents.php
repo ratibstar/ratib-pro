@@ -92,9 +92,17 @@ try {
     $action = $_GET['action'] ?? 'list';
     $id = $_GET['id'] ?? null;
 
-    $hrWriteActions = ['add', 'update', 'delete', 'approve', 'reject'];
-    if (in_array($action, $hrWriteActions, true)) {
-        enforceApiPermission('hr', 'edit');
+    $hrWriteActions = [
+        'add' => 'add',
+        'update' => 'update',
+        'delete' => 'delete',
+        'bulk-update' => 'bulk-update',
+        'bulk-delete' => 'bulk-delete',
+        'approve' => 'edit',
+        'reject' => 'edit',
+    ];
+    if (isset($hrWriteActions[$action])) {
+        enforceApiPermission('hr', $hrWriteActions[$action]);
         requireApiMutationSecurity();
     } else {
         enforceApiPermission('hr', 'view');

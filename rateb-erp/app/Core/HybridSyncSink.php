@@ -91,20 +91,17 @@ final class HybridSyncSink
         if ($sql === '') {
             return ['status' => 'rejected', 'reason' => 'empty_sql'];
         }
-        if (!$this->isSafeStructuredSql($sql, $entity)) {
-            return ['status' => 'rejected', 'reason' => 'unsafe_sql'];
-        }
         if (!is_array($params) || $params === []) {
             return ['status' => 'rejected', 'reason' => 'params_required'];
+        }
+        $mutation = $this->compileMappedMutation($pdo, $sql, $entity, (string) ($row['operation'] ?? ''));
+        if ($mutation === null) {
+            return ['status' => 'rejected', 'reason' => 'unsafe_sql'];
         }
 
         try {
             $pdo->beginTransaction();
-            // Apply translated SQL for SQLite mirror; MySQL gets original dialect SQL.
-            $applySql = HybridSyncConfig::sinkMode() === 'mirror'
-                ? SqlDialectAdapter::toSqlite($sql)
-                : $sql;
-            $st = $pdo->prepare($applySql);
+            $st = $pdo->prepare($mutation);
             $st->execute($this->normalizeParams($params));
             $this->markApplied($pdo, $idem, $uuid, $entity);
             $pdo->commit();
@@ -125,23 +122,167 @@ final class HybridSyncSink
         }
     }
 
-    private function isSafeStructuredSql(string $sql, string $entity): bool
+    private function compileMappedMutation(PDO $pdo, string $sql, string $entity, string $operation): ?string
     {
         $normalized = trim(preg_replace('/\s+/', ' ', $sql) ?? '');
-        if ($normalized === '' || str_contains($normalized, ';')) {
-            return false;
+        if ($normalized === '' || str_contains($normalized, ';') || preg_match('/(?:--|#|\/\*)/', $normalized)) {
+            return null;
         }
-        if (preg_match('/\b(DROP|ALTER|CREATE|TRUNCATE|GRANT|REVOKE|ATTACH|DETACH|PRAGMA|REPLACE\s+INTO\s+sqlite_)\b/i', $normalized)) {
-            return false;
+        $table = $this->mappedTableForEntity($entity);
+        if ($table === null || !$this->tableExists($pdo, $table)) {
+            return null;
         }
-        if (!preg_match('/^(INSERT|UPDATE|DELETE)\b/i', $normalized)) {
-            return false;
+        $quotedTable = HybridSyncConfig::sinkMode() === 'mysql' ? "`{$table}`" : "\"{$table}\"";
+        $placeholder = '(?:\?|:[a-zA-Z_][a-zA-Z0-9_]*)';
+        $identifier = '[`"]?([a-zA-Z_][a-zA-Z0-9_]*)[`"]?';
+        $op = strtoupper(trim($operation));
+
+        if ($op === 'INSERT' && preg_match(
+            '/^INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+[`"]?([a-zA-Z_][a-zA-Z0-9_]*)[`"]?\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)$/i',
+            $normalized,
+            $match
+        )) {
+            if (strcasecmp($match[1], $table) !== 0) {
+                return null;
+            }
+            $columns = $this->parseMappedColumns($pdo, $table, $match[2]);
+            $values = array_map('trim', explode(',', $match[3]));
+            if ($columns === null || count($columns) !== count($values)) {
+                return null;
+            }
+            foreach ($values as $value) {
+                if (!preg_match('/^' . $placeholder . '$/', $value)) {
+                    return null;
+                }
+            }
+            $verb = stripos($normalized, 'INSERT OR IGNORE') === 0
+                ? (HybridSyncConfig::sinkMode() === 'mysql' ? 'INSERT IGNORE' : 'INSERT OR IGNORE')
+                : 'INSERT';
+
+            return $verb . ' INTO ' . $quotedTable . ' (' . implode(', ', $this->quoteColumns($columns)) . ')'
+                . ' VALUES (' . implode(', ', $values) . ')';
         }
-        $safeEntity = preg_replace('/[^a-zA-Z0-9_]/', '', $entity) ?? '';
-        if ($safeEntity === '' || !preg_match('/\b' . preg_quote($safeEntity, '/') . '\b/', $normalized)) {
-            return false;
+
+        if ($op === 'UPDATE' && preg_match(
+            '/^UPDATE\s+[`"]?([a-zA-Z_][a-zA-Z0-9_]*)[`"]?\s+SET\s+(.+?)\s+WHERE\s+(.+)$/i',
+            $normalized,
+            $match
+        )) {
+            if (strcasecmp($match[1], $table) !== 0) {
+                return null;
+            }
+            $sets = $this->compileAssignments($pdo, $table, $match[2], $placeholder, $identifier);
+            $where = $this->compileWhere($pdo, $table, $match[3], $placeholder, $identifier);
+
+            return $sets !== null && $where !== null
+                ? 'UPDATE ' . $quotedTable . ' SET ' . $sets . ' WHERE ' . $where
+                : null;
         }
-        return (bool) preg_match('/\brateb_[a-zA-Z0-9_]+\b/', $normalized);
+
+        if ($op === 'DELETE' && preg_match(
+            '/^DELETE\s+FROM\s+[`"]?([a-zA-Z_][a-zA-Z0-9_]*)[`"]?\s+WHERE\s+(.+)$/i',
+            $normalized,
+            $match
+        )) {
+            if (strcasecmp($match[1], $table) !== 0) {
+                return null;
+            }
+            $where = $this->compileWhere($pdo, $table, $match[2], $placeholder, $identifier);
+
+            return $where !== null ? 'DELETE FROM ' . $quotedTable . ' WHERE ' . $where : null;
+        }
+
+        return null;
+    }
+
+    private function mappedTableForEntity(string $entity): ?string
+    {
+        if (preg_match('/^rateb_[a-zA-Z0-9_]+$/', $entity)) {
+            return $entity;
+        }
+        if (HybridSyncConfig::sinkMode() === 'mirror' && preg_match('/^c[0-9]*_items$/', $entity)) {
+            return $entity;
+        }
+
+        return null;
+    }
+
+    /** @return list<string>|null */
+    private function parseMappedColumns(PDO $pdo, string $table, string $list): ?array
+    {
+        $known = $this->tableColumns($pdo, $table);
+        $columns = [];
+        foreach (explode(',', $list) as $raw) {
+            $column = trim($raw, " \t\n\r\0\x0B`\"");
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column) || !in_array($column, $known, true)) {
+                return null;
+            }
+            $columns[] = $column;
+        }
+
+        return $columns === [] ? null : $columns;
+    }
+
+    private function compileAssignments(PDO $pdo, string $table, string $sql, string $placeholder, string $identifier): ?string
+    {
+        $parts = [];
+        foreach (explode(',', $sql) as $assignment) {
+            if (!preg_match('/^' . $identifier . '\s*=\s*(' . $placeholder . ')$/', trim($assignment), $match)) {
+                return null;
+            }
+            if (!in_array($match[1], $this->tableColumns($pdo, $table), true)) {
+                return null;
+            }
+            $parts[] = $this->quoteColumn($match[1]) . ' = ' . $match[2];
+        }
+
+        return $parts === [] ? null : implode(', ', $parts);
+    }
+
+    private function compileWhere(PDO $pdo, string $table, string $sql, string $placeholder, string $identifier): ?string
+    {
+        $parts = preg_split('/\s+AND\s+/i', trim($sql)) ?: [];
+        $compiled = [];
+        foreach ($parts as $condition) {
+            if (!preg_match('/^' . $identifier . '\s*(=|!=|<>|<=|>=|<|>)\s*(' . $placeholder . ')$/', trim($condition), $match)) {
+                return null;
+            }
+            if (!in_array($match[1], $this->tableColumns($pdo, $table), true)) {
+                return null;
+            }
+            $compiled[] = $this->quoteColumn($match[1]) . ' ' . $match[2] . ' ' . $match[3];
+        }
+
+        return $compiled === [] ? null : implode(' AND ', $compiled);
+    }
+
+    /** @return list<string> */
+    private function tableColumns(PDO $pdo, string $table): array
+    {
+        if (HybridSyncConfig::sinkMode() === 'mysql') {
+            $statement = $pdo->prepare(
+                'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?'
+            );
+            $statement->execute([$table]);
+        } else {
+            $statement = $pdo->query('PRAGMA table_info("' . $table . '")');
+        }
+
+        return array_values(array_filter(array_map(
+            static fn (array $row): string => (string) ($row['column_name'] ?? $row['name'] ?? ''),
+            $statement->fetchAll(PDO::FETCH_ASSOC) ?: []
+        )));
+    }
+
+    /** @param list<string> $columns @return list<string> */
+    private function quoteColumns(array $columns): array
+    {
+        return array_map(fn (string $column): string => $this->quoteColumn($column), $columns);
+    }
+
+    private function quoteColumn(string $column): string
+    {
+        return HybridSyncConfig::sinkMode() === 'mysql' ? "`{$column}`" : "\"{$column}\"";
     }
 
     /** Pull changes after cursor (incremental). */
