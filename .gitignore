@@ -73,6 +73,8 @@ __pycache__/
 scripts/qa-manifest/sessions/regression-output.json
 scripts/qa-manifest/sessions/SAFE-QA-PROBE-*.json
 docs/v1.0.1/*-local-*.json
+rateb-erp/tools/boot-bench/.chrome-user-data/
+rateb-erp/tools/boot-bench/reports/*.json
 
 # Generated certification / ops reports (keep committed GA closeout docs)
 rateb-erp/docs/GA/go-live-operational-cert-*.json
