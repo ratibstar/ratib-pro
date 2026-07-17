@@ -28,7 +28,10 @@
         claims: 'identity.claims',
         rbac: 'identity.rbac',
         device: 'identity.device',
-        unlock: 'identity.unlock_meta',
+        unlock: 'identity.unlock_meta'
+    };
+    /* Cleanup-only names from the pre-AF 2.1.1 storage contract. */
+    var LEGACY_ENTITY = {
         config: 'identity.config',
         session: 'identity.local_session',
         security: 'identity.security_meta'
@@ -180,8 +183,63 @@
         });
     };
 
+    IdentityStore.prototype.migrateLegacyBoundaryRows = function () {
+        var self = this;
+        var legacyTypes = Object.keys(LEGACY_ENTITY).map(function (key) {
+            return LEGACY_ENTITY[key];
+        });
+        return this.db.exec(
+            'SELECT entity_type, payload_json FROM entity_row WHERE entity_type IN (?,?,?)',
+            legacyTypes
+        ).then(function (rows) {
+            if (!rows || rows.length === 0) {
+                return { ok: true, removed: 0, policy_migrated_to: null };
+            }
+            var configRow = rows.filter(function (row) {
+                return row.entity_type === LEGACY_ENTITY.config;
+            })[0];
+            var legacyConfig = configRow && configRow.payload_json
+                ? JSON.parse(configRow.payload_json)
+                : {};
+            assertNoSecrets(legacyConfig, 'legacy_identity_config');
+            return self.getUnlockMeta().then(function (current) {
+                var migrated = Object.assign({}, current || {});
+                var hasPolicy = false;
+                [
+                    ['unlockTtlSec', 'unlock_ttl_sec'],
+                    ['idleTtlSec', 'idle_ttl_sec'],
+                    ['maxOfflineSec', 'max_offline_sec']
+                ].forEach(function (mapping) {
+                    var value = legacyConfig[mapping[0]];
+                    if (value != null && migrated[mapping[1]] == null) {
+                        migrated[mapping[1]] = Number(value);
+                        hasPolicy = true;
+                    }
+                });
+                return hasPolicy ? self.putUnlockMeta(migrated) : null;
+            }).then(function () {
+                return self.db.exec(
+                    'DELETE FROM entity_row WHERE entity_type IN (?,?,?)',
+                    legacyTypes
+                );
+            }).then(function () {
+                if (typeof self.db.checkpointPersist === 'function') {
+                    return self.db.checkpointPersist();
+                }
+                return null;
+            }).then(function () {
+                return {
+                    ok: true,
+                    removed: rows.length,
+                    policy_migrated_to: ENTITY.unlock
+                };
+            });
+        });
+    };
+
     IdentityStore.prototype.clearAll = function () {
-        var types = Object.keys(ENTITY).map(function (k) { return ENTITY[k]; });
+        var types = Object.keys(ENTITY).map(function (k) { return ENTITY[k]; })
+            .concat(Object.keys(LEGACY_ENTITY).map(function (k) { return LEGACY_ENTITY[k]; }));
         var chain = Promise.resolve();
         var db = this.db;
         types.forEach(function (t) {
@@ -221,24 +279,6 @@
     };
     IdentityStore.prototype.getUnlockMeta = function () {
         return this._get(ENTITY.unlock);
-    };
-    IdentityStore.prototype.putConfig = function (cfg) {
-        return this._put(ENTITY.config, cfg);
-    };
-    IdentityStore.prototype.getConfig = function () {
-        return this._get(ENTITY.config);
-    };
-    IdentityStore.prototype.putSession = function (session) {
-        return this._put(ENTITY.session, session);
-    };
-    IdentityStore.prototype.getSession = function () {
-        return this._get(ENTITY.session);
-    };
-    IdentityStore.prototype.putSecurityMeta = function (meta) {
-        return this._put(ENTITY.security, meta);
-    };
-    IdentityStore.prototype.getSecurityMeta = function () {
-        return this._get(ENTITY.security);
     };
 
     IdentityStore.prototype.securityScan = function () {
@@ -303,6 +343,7 @@
         });
         this._store = null;
         this._memoryUnlocked = false;
+        this._session = { unlocked: false };
     }
 
     IdentityModule.prototype = Object.create(BusinessModule.prototype);
@@ -318,8 +359,11 @@
         }
         var self = this;
         return db.open().then(function () {
-            self._store = new IdentityStore(db);
-            return self._store;
+            var store = new IdentityStore(db);
+            return store.migrateLegacyBoundaryRows().then(function () {
+                self._store = store;
+                return store;
+            });
         });
     };
 
@@ -375,11 +419,6 @@
             assertNoSecrets(sealed, 'sealed');
 
             var policy = pkg.session_policy || {};
-            var cfg = Object.assign({}, self.metadata.config, {
-                unlockTtlSec: policy.unlock_ttl_sec || self.metadata.config.unlockTtlSec,
-                idleTtlSec: policy.idle_ttl_sec || self.metadata.config.idleTtlSec,
-                maxOfflineSec: policy.max_offline_sec || self.metadata.config.maxOfflineSec
-            });
 
             return store.putSealed(sealed).then(function () {
                 return store.putClaims(claims);
@@ -388,22 +427,21 @@
             }).then(function () {
                 return store.putDevice(device);
             }).then(function () {
-                return store.putConfig(cfg);
-            }).then(function () {
-                return store.putSecurityMeta({
-                    authority: 'online_erp',
-                    credential_storage: false,
-                    credential_sync: false,
-                    last_enroll_at: nowIso()
+                return store.getUnlockMeta().then(function (current) {
+                    return store.putUnlockMeta(Object.assign({}, current || {}, {
+                        unlock_ttl_sec: Number(policy.unlock_ttl_sec || self.metadata.config.unlockTtlSec),
+                        idle_ttl_sec: Number(policy.idle_ttl_sec || self.metadata.config.idleTtlSec),
+                        max_offline_sec: Number(policy.max_offline_sec || self.metadata.config.maxOfflineSec)
+                    }));
                 });
             }).then(function () {
                 /* Clear any prior derived session — must unlock again */
                 self._memoryUnlocked = false;
-                return store.putSession({
+                self._session = {
                     unlocked: false,
                     derived: true,
                     cleared_at: nowIso()
-                });
+                };
             }).then(function () {
                 if (self.ctx && self.ctx.events) {
                     self.ctx.events.emit('identity:enrolled', {
@@ -431,19 +469,21 @@
                 var salt = randomHex(16);
                 var iterations = (self.metadata.config.unlockIterations) || 120000;
                 return deriveUnlockVerifier(pin, salt, iterations).then(function (verifier) {
-                    var meta = {
-                        kind: 'local_unlock_verifier',
-                        /* Local unlock only — NOT a server password hash */
-                        algorithm: 'PBKDF2-SHA256',
-                        iterations: iterations,
-                        salt: salt,
-                        unlock_verifier: verifier,
-                        updated_at: nowIso()
-                    };
-                    assertNoSecrets({ kind: meta.kind, algorithm: meta.algorithm }, 'unlock_meta_keys');
-                    return store.putUnlockMeta(meta).then(function () {
-                        self.reportHealth('unlock_pin', true, 'set');
-                        return { ok: true };
+                    return store.getUnlockMeta().then(function (current) {
+                        var meta = Object.assign({}, current || {}, {
+                            kind: 'local_unlock_verifier',
+                            /* Local unlock only — NOT a server password hash */
+                            algorithm: 'PBKDF2-SHA256',
+                            iterations: iterations,
+                            salt: salt,
+                            unlock_verifier: verifier,
+                            updated_at: nowIso()
+                        });
+                        assertNoSecrets({ kind: meta.kind, algorithm: meta.algorithm }, 'unlock_meta_keys');
+                        return store.putUnlockMeta(meta).then(function () {
+                            self.reportHealth('unlock_pin', true, 'set');
+                            return { ok: true };
+                        });
                     });
                 });
             });
@@ -451,20 +491,16 @@
     };
 
     IdentityModule.prototype.lock = function () {
-        var self = this;
-        return this._ensureStore().then(function (store) {
-            self._memoryUnlocked = false;
-            return store.putSession({
-                unlocked: false,
-                derived: true,
-                locked_at: nowIso()
-            }).then(function () {
-                if (self.ctx && self.ctx.events) {
-                    self.ctx.events.emit('identity:locked', {});
-                }
-                return { ok: true };
-            });
-        });
+        this._memoryUnlocked = false;
+        this._session = {
+            unlocked: false,
+            derived: true,
+            locked_at: nowIso()
+        };
+        if (this.ctx && this.ctx.events) {
+            this.ctx.events.emit('identity:locked', {});
+        }
+        return Promise.resolve({ ok: true });
     };
 
     IdentityModule.prototype.unlock = function (pin) {
@@ -474,14 +510,12 @@
                 store.getUnlockMeta(),
                 store.getClaims(),
                 store.getDevice(),
-                store.getConfig(),
                 store.getSealed()
             ]).then(function (parts) {
                 var unlockMeta = parts[0];
                 var claims = parts[1];
                 var device = parts[2];
-                var cfg = parts[3] || self.metadata.config;
-                var sealed = parts[4];
+                var sealed = parts[3];
                 if (!claims || !sealed) {
                     throw new Error('identity_not_enrolled');
                 }
@@ -496,7 +530,8 @@
                         self.reportHealth('unlock', false, 'pin_mismatch');
                         throw new Error('identity_unlock_failed');
                     }
-                    var ttl = Number(cfg.unlockTtlSec || 28800) * 1000;
+                    var ttl = Number(unlockMeta.unlock_ttl_sec ||
+                        self.metadata.config.unlockTtlSec || 28800) * 1000;
                     var session = {
                         unlocked: true,
                         derived: true,
@@ -512,41 +547,35 @@
                     };
                     assertNoSecrets(session, 'local_session');
                     self._memoryUnlocked = true;
-                    return store.putSession(session).then(function () {
-                        if (self.ctx && self.ctx.events) {
-                            self.ctx.events.emit('identity:unlocked', {
-                                user_id: claims.user_id,
-                                company_id: claims.company_id
-                            });
-                        }
-                        self.reportHealth('unlock', true, 'ok');
-                        return { ok: true, session: session };
-                    });
+                    self._session = session;
+                    if (self.ctx && self.ctx.events) {
+                        self.ctx.events.emit('identity:unlocked', {
+                            user_id: claims.user_id,
+                            company_id: claims.company_id
+                        });
+                    }
+                    self.reportHealth('unlock', true, 'ok');
+                    return { ok: true, session: session };
                 });
             });
         });
     };
 
     IdentityModule.prototype.getLocalSession = function () {
-        var self = this;
-        return this._ensureStore().then(function (store) {
-            return store.getSession().then(function (session) {
-                if (!session || !session.unlocked) {
-                    return { unlocked: false };
-                }
-                if (session.expires_at && Date.parse(session.expires_at) < nowMs()) {
-                    self._memoryUnlocked = false;
-                    return store.putSession({
-                        unlocked: false,
-                        derived: true,
-                        expired_at: nowIso()
-                    }).then(function () {
-                        return { unlocked: false, reason: 'expired' };
-                    });
-                }
-                return session;
-            });
-        });
+        var session = this._session;
+        if (!session || !session.unlocked) {
+            return Promise.resolve({ unlocked: false });
+        }
+        if (session.expires_at && Date.parse(session.expires_at) < nowMs()) {
+            this._memoryUnlocked = false;
+            this._session = {
+                unlocked: false,
+                derived: true,
+                expired_at: nowIso()
+            };
+            return Promise.resolve({ unlocked: false, reason: 'expired' });
+        }
+        return Promise.resolve(Object.assign({}, session));
     };
 
     IdentityModule.prototype.getClaims = function () {

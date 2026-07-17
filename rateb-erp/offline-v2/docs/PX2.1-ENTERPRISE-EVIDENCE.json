@@ -1,0 +1,137 @@
+{
+  "phase": "PX2.1",
+  "title": "Category B Architecture Boundary Remediation",
+  "status": "PASS_CATEGORY_B_ZERO",
+  "measured_at": "2026-07-17",
+  "source_commit_before_remediation": "2eb52c90",
+  "architecture_freeze": {
+    "af_2_1": true,
+    "af_2_1_1": true,
+    "frozen_layers_modified": []
+  },
+  "authentication_boundary": {
+    "online_erp_only_authentication_authority": true,
+    "identity_authenticates_users": false,
+    "identity_stores_credentials": false,
+    "identity_syncs_credentials": false,
+    "business_modules_use_published_identity_apis": true
+  },
+  "remediated_findings": [
+    {
+      "id": "PX2-AF21-IDENTITY-EXTRA-ENTITY-CLASSES",
+      "before": [
+        "identity.config",
+        "identity.local_session",
+        "identity.security_meta"
+      ],
+      "classification": {
+        "identity.config": "unlock policy configuration",
+        "identity.local_session": "derived session state",
+        "identity.security_meta": "security diagnostics"
+      },
+      "after": {
+        "unlock_policy": "merged into identity.unlock_meta",
+        "derived_session": "memory only",
+        "security_diagnostics": "computed on demand, not persisted"
+      },
+      "legacy_cleanup": "migrate policy, delete all three legacy rows, checkpoint only when rows exist",
+      "result": "PASS"
+    },
+    {
+      "id": "PX2-AF21-INVENTORY-DIRECT-IDENTITY-SQL",
+      "before": "InventoryStore.assertNoIdentityTouch selected entity types matching identity.%",
+      "after": "helper removed; all InventoryStore operations require inv.* before db.exec",
+      "result": "PASS"
+    }
+  ],
+  "active_identity_storage_allowlist": [
+    "identity.sealed",
+    "identity.claims",
+    "identity.rbac",
+    "identity.device",
+    "identity.unlock_meta"
+  ],
+  "forbidden_identity_storage_classes_active": [],
+  "legacy_migration_test": {
+    "seeded": [
+      "identity.config",
+      "identity.local_session",
+      "identity.security_meta"
+    ],
+    "first_activation_types": [
+      "identity.unlock_meta"
+    ],
+    "types_after_db_close_and_reload": [
+      "identity.unlock_meta"
+    ],
+    "migrated_unlock_policy": {
+      "unlock_ttl_sec": 1234,
+      "idle_ttl_sec": 234,
+      "max_offline_sec": 3456
+    },
+    "cleanup_persisted": true,
+    "result": "PASS"
+  },
+  "synthetic_enrollment_storage_test": {
+    "entity_types": [
+      "identity.claims",
+      "identity.device",
+      "identity.rbac",
+      "identity.sealed",
+      "identity.unlock_meta"
+    ],
+    "approved_types_only": true,
+    "credential_entities": 0,
+    "result": "PASS"
+  },
+  "direct_access_audit": {
+    "non_identity_sql_reading_identity_entities": 0,
+    "non_identity_sql_writing_identity_entities": 0,
+    "inventory_direct_identity_sql": 0,
+    "business_module_vault_access": 0,
+    "business_module_identity_opfs_access": 0,
+    "business_module_identity_table_access": 0,
+    "negative_namespace_probes_reach_sql": false,
+    "result": "PASS"
+  },
+  "credential_audit": {
+    "passwords_stored": 0,
+    "online_password_hashes_stored": 0,
+    "session_cookies_stored": 0,
+    "bearer_tokens_stored": 0,
+    "jwts_stored": 0,
+    "totp_secrets_stored": 0,
+    "webauthn_server_credentials_stored": 0,
+    "api_tokens_stored": 0,
+    "authentication_secrets_stored": 0,
+    "note": "Local PBKDF2 unlock_verifier remains approved Unlock Metadata and is not an Online ERP password hash.",
+    "result": "PASS"
+  },
+  "validation": {
+    "javascript_syntax": "PASS",
+    "linter_errors": 0,
+    "git_diff_check": "PASS",
+    "identity_self_test": "PASS",
+    "inventory_self_test": "PASS",
+    "procurement_self_test": "PASS",
+    "sales_self_test": "PASS",
+    "accounting_self_test": "PASS",
+    "manufacturing_self_test": "PASS",
+    "crm_identity_boundary_checks": "PASS",
+    "hr_identity_boundary_checks": "PASS",
+    "page_errors_identity_inventory": 0,
+    "observed_non_boundary_self_test_findings": [
+      "CRM workflow_denied_invalid",
+      "HR workflow_denied_invalid"
+    ]
+  },
+  "dependency_graph": "rateb-erp/offline-v2/docs/PX2.1-DEPENDENCY-GRAPH.md",
+  "changed_business_modules": [
+    "rateb-erp/public/v2/js/business/identity-module.js",
+    "rateb-erp/public/v2/js/business/inventory-module.js"
+  ],
+  "category_b_violations_remaining": 0,
+  "decision": "PASS",
+  "px3_started": false,
+  "next_state": "WAIT_FOR_ARCHITECTURE_BOARD_APPROVAL"
+}

@@ -24,7 +24,6 @@
         batch: 'inv.batch',
         reservation: 'inv.reservation'
     };
-    var IDENTITY_ENTITY_PREFIX = 'identity.';
     var MOVEMENT_TYPES = { in: 'in', out: 'out', transfer: 'transfer', adjustment: 'adjustment' };
 
     function nowIso() {
@@ -39,9 +38,17 @@
         this.db = db;
     }
 
+    function assertInventoryEntityType(entityType) {
+        if (String(entityType || '').indexOf('inv.') !== 0) {
+            throw new Error('inv_storage_namespace_forbidden');
+        }
+    }
+
     InventoryStore.prototype.put = function (entityType, entityId, payload, version) {
-        if (String(entityType).indexOf(IDENTITY_ENTITY_PREFIX) === 0) {
-            return Promise.reject(new Error('inv_identity_storage_forbidden'));
+        try {
+            assertInventoryEntityType(entityType);
+        } catch (err) {
+            return Promise.reject(err);
         }
         return this.db.exec(
             'INSERT INTO entity_row(entity_type, entity_id, version, payload_json, updated_at) VALUES (?,?,?,?,?) ' +
@@ -52,6 +59,11 @@
     };
 
     InventoryStore.prototype.get = function (entityType, entityId) {
+        try {
+            assertInventoryEntityType(entityType);
+        } catch (err) {
+            return Promise.reject(err);
+        }
         return this.db.exec(
             'SELECT version, payload_json FROM entity_row WHERE entity_type=? AND entity_id=?',
             [entityType, String(entityId)]
@@ -67,6 +79,11 @@
     };
 
     InventoryStore.prototype.list = function (entityType) {
+        try {
+            assertInventoryEntityType(entityType);
+        } catch (err) {
+            return Promise.reject(err);
+        }
         return this.db.exec(
             'SELECT entity_id, version, payload_json FROM entity_row WHERE entity_type=? ORDER BY entity_id',
             [entityType]
@@ -82,20 +99,15 @@
     };
 
     InventoryStore.prototype.remove = function (entityType, entityId) {
+        try {
+            assertInventoryEntityType(entityType);
+        } catch (err) {
+            return Promise.reject(err);
+        }
         return this.db.exec(
             'DELETE FROM entity_row WHERE entity_type=? AND entity_id=?',
             [entityType, String(entityId)]
         );
-    };
-
-    InventoryStore.prototype.assertNoIdentityTouch = function () {
-        return this.db.exec(
-            "SELECT entity_type, COUNT(*) AS c FROM entity_row WHERE entity_type LIKE 'identity.%' GROUP BY entity_type"
-        ).then(function (rows) {
-            /* Presence of identity rows owned by Identity module is OK; Inventory must not WRITE them.
-               This probe only ensures InventoryStore.put rejects identity.* — verified by API tests. */
-            return { ok: true, identityRowsObserved: !!(rows && rows.length) };
-        });
     };
 
     function InventoryModule() {
@@ -212,10 +224,10 @@
 
     InventoryModule.prototype.refuseIdentityBypass = function () {
         return this._ensureStore().then(function (store) {
-            return store.put(IDENTITY_ENTITY_PREFIX + 'claims', 'hack', { x: 1 }).then(function () {
+            return store.put('foreign.claims', 'boundary-probe', { x: 1 }).then(function () {
                 return { ok: false };
             }).catch(function (err) {
-                return { ok: /identity_storage_forbidden/i.test(String(err && err.message)) };
+                return { ok: /storage_namespace_forbidden/i.test(String(err && err.message)) };
             });
         });
     };
