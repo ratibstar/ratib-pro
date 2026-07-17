@@ -22,7 +22,7 @@ Production Go-Live: Eligible
 
 ## Regression evidence
 
-- `php rateb-erp/tests/security/run-px6-security-tests.php` — 48/48 PASS.
+- `php rateb-erp/tests/security/run-px6-security-tests.php` — 49/49 PASS.
 - `php rateb-erp/modules/pos/tests/run-checkout-tests.php` — 11/11 PASS.
 - `php rateb-erp/modules/pos/tests/run-offline-sync-tests.php` — 42/42 PASS.
 - `php rateb-erp/modules/pos/tests/run-security-tests.php` — 5/5 PASS.

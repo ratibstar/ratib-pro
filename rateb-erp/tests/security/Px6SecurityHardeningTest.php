@@ -147,12 +147,20 @@ final class Px6SecurityHardeningTest
     private function testTenantIsolationDefaultsAndWrites(): void
     {
         $config = $this->read('includes/config.php');
+        $loader = $this->read('includes/TenantLoader.php');
         $model = $this->read('rateb-erp/app/Core/Model.php');
         $this->record(
             'country tenant isolation enabled by default',
             str_contains($config, "define('MULTI_TENANT_ENABLED', true)")
                 && str_contains($config, "require_once __DIR__ . '/bootstrap_multi_tenant.php'"),
             'bootstrap must run on every configured request'
+        );
+        $this->record(
+            'tenant resolver keeps apex public context explicit',
+            str_contains($loader, "'www.rateb.sa'")
+                && str_contains($loader, "define('COUNTRY_ID', 0)")
+                && str_contains($loader, 'Approved apex/development hosts'),
+            'only explicit global hosts may continue without a country tenant'
         );
         $this->record(
             'model create rejects tenant mismatch',

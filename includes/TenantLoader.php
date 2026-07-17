@@ -46,7 +46,7 @@ class TenantLoader
 
         // rateb.sa (main site) and localhost: use first active country
         $hostLower = strtolower($host);
-        $useFallback = in_array($hostLower, ['localhost', '127.0.0.1', 'rateb.sa'], true)
+        $useFallback = in_array($hostLower, ['localhost', '127.0.0.1', 'rateb.sa', 'www.rateb.sa'], true)
             || strpos($hostLower, '.local') !== false;
         if ($useFallback) {
             $country = self::resolveCountryFallback();
@@ -62,6 +62,11 @@ class TenantLoader
                 }
                 return;
             }
+            // Approved apex/development hosts may serve global public pages without a country tenant.
+            define('COUNTRY_ID', 0);
+            define('COUNTRY_CODE', '');
+            define('COUNTRY_NAME', '');
+            return;
         }
 
         // Try: 1) Match full domain, 2) Match subdomain as code
