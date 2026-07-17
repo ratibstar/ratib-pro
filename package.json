@@ -37,5 +37,6 @@
   "bugs": {
     "url": "https://github.com/ratibstar/ratib-pro/issues"
   },
-  "homepage": "https://github.com/ratibstar/ratib-pro#readme"
+  "homepage": "https://github.com/ratibstar/ratib-pro#readme",
+  "devDependencies": {}
 }
