@@ -1,6 +1,6 @@
 # Phase 2.1 — Extraction Abort and Rollback
 
-**Status:** ABORTED · ROLLED BACK
+**Status:** ABORTED · RUNTIME ROLLED BACK · REMOTE DUPLICATE PURGE BLOCKED
 **Date:** 2026-07-17
 **Binding:** ADR-AL-1, ADR-AL-2, AF-2.1
 
@@ -33,8 +33,32 @@ Commit `1b88339d` is reverted in full:
 - V2 Sync/Queue implementation restored.
 - V2 loader, bootstrap, and Service Worker wiring restored.
 - Admin-owned extraction files removed from the repository.
-- Production fast deploy explicitly purges the aborted shared files because it
+- Production fast deploy attempts to purge the aborted shared files because it
   cannot infer repository deletions.
+
+Production runtime behavior is restored. The post-rollback PX4 report passes:
+
+```text
+tools/boot-bench/reports/phase-px4-regression-1784316018510.json
+```
+
+### Remaining production blocker
+
+The file-manager unlink operation did not remove the deployed extraction copies.
+Cache-busted, `no-cache` requests still return HTTP 200 for:
+
+```text
+public/assets/offline/shared/runtime/runtime.js
+public/assets/offline/shared/db/sqlite-runtime.js
+public/assets/offline/shared/vendor/sqlite/index.mjs
+public/assets/offline/shared/identity/identity-module.js
+public/assets/offline/shared/sync/sync-engine.js
+```
+
+These are no longer repository-owned or referenced by V2, but their physical
+production copies remain. This is a duplicate-ownership deployment artifact, so
+the STOP gate remains active until an authenticated server-side deletion is
+verified.
 
 ## Ownership after rollback
 
@@ -42,7 +66,7 @@ The pre-Phase-2.1 ownership state is restored:
 
 ```text
 public/v2 = temporary canonical infrastructure owner pending a safer extraction
-Admin shared extraction package = absent
+Admin shared extraction package = absent from repository; stale production copies remain
 Offline V1 = unchanged
 Online ERP = unchanged Authentication Authority
 ```
@@ -63,7 +87,8 @@ Local per-move checks passed before deployment:
 Production PX4 failed after extraction, so local passes are insufficient to
 authorize the move.
 
-After rollback deployment, production regression must pass before closure.
+After rollback deployment, production regression passed. Closure remains
+blocked only by the verified stale production copies.
 
 ## Next attempt requirements
 
@@ -73,4 +98,6 @@ No further extraction is authorized by this report. A new authorization must:
 2. prove cross-scope Service Worker/cache behavior on the production origin;
 3. retain one canonical owner without relying on unverified forwarding;
 4. pass cold online, warm, and immediate-offline production regression before
-   declaring ownership transferred.
+   declaring ownership transferred;
+5. prove that old production owner files are deleted, not merely removed from
+   Git.
