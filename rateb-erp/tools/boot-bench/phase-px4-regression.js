@@ -134,29 +134,38 @@ async function main() {
       }
     });
 
-    const sales = await page.evaluate(async () => {
-      if (!window.RatebOfflineV2Sales) {
-        return { ok: false, error: 'sales_missing' };
+    async function runModuleSelfTest(moduleHash, globalName, stepName) {
+      await page.goto(BASE + '#' + moduleHash, { waitUntil: 'domcontentloaded', timeout: 120000 });
+      await page.waitForFunction(
+        () => document.documentElement.getAttribute('data-rateb-v2-shell-ready') === '1',
+        null,
+        { timeout: 120000 }
+      );
+      const result = await page.evaluate(async (gName) => {
+        const sleep = (ms) => new Promise(function (r) { setTimeout(r, ms); });
+        for (var i = 0; i < 90; i++) {
+          if (window[gName] && window.RatebOfflineV2Runtime &&
+              window.RatebOfflineV2Runtime.services &&
+              window.RatebOfflineV2Runtime.services.has('sync')) {
+            break;
+          }
+          await sleep(1000);
+        }
+        if (!window[gName] || typeof window[gName].runSelfTest !== 'function') {
+          return { ok: false, error: gName + '_missing' };
+        }
+        return window[gName].runSelfTest();
+      }, globalName);
+      if (result && result.ok) {
+        ok(evidence, stepName, 'ownedPrefix + company_id SQL');
+      } else {
+        fail(evidence, stepName, JSON.stringify(result && (result.failed || result.error || result)));
       }
-      return window.RatebOfflineV2Sales.runSelfTest();
-    });
-    if (sales && sales.ok) {
-      ok(evidence, 'sales_runSelfTest', 'ownedPrefix + company_id SQL');
-    } else {
-      fail(evidence, 'sales_runSelfTest', JSON.stringify(sales && (sales.failed || sales.error || sales)));
+      return result;
     }
 
-    const proc = await page.evaluate(async () => {
-      if (!window.RatebOfflineV2Procurement) {
-        return { ok: false, error: 'procurement_missing' };
-      }
-      return window.RatebOfflineV2Procurement.runSelfTest();
-    });
-    if (proc && proc.ok) {
-      ok(evidence, 'procurement_runSelfTest', 'ownedPrefix + company_id SQL');
-    } else {
-      fail(evidence, 'procurement_runSelfTest', JSON.stringify(proc && (proc.failed || proc.error || proc)));
-    }
+    await runModuleSelfTest('/sales', 'RatebOfflineV2Sales', 'sales_runSelfTest');
+    await runModuleSelfTest('/procurement', 'RatebOfflineV2Procurement', 'procurement_runSelfTest');
 
     report.ok = evidence.every(function (e) { return e.ok; });
   } catch (err) {
