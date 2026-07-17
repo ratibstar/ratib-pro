@@ -121,17 +121,6 @@ jobs:
           DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/domains/rateb.sa/public_html' }}
         run: bash scripts/run-rcc-realtime-hub.sh
 
-      - name: Purge LiteSpeed cache
-        if: steps.deploy.outcome == 'success'
-        run: |
-          SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
-          PURGE="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 15 --max-time 30 \
-            "${SITE}/pages/rateb-purge-cache.php?key=rateb-deploy-sync-2026" 2>/dev/null || echo 000)"
-          echo "litespeed_purge_http=${PURGE}"
-          if [ "$PURGE" != "302" ] && [ "$PURGE" != "200" ]; then
-            echo "::warning::LiteSpeed purge returned HTTP ${PURGE} — purge manually in cPanel if /home still shows old HTML"
-          fi
-
       - name: Run RATEB ERP enterprise certification
         if: steps.deploy.outcome == 'success'
         env:

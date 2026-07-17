@@ -18,7 +18,7 @@
     "pos_authoritative_tax_pricing": "PASS"
   },
   "tests": {
-    "px6_security": "49/49 PASS",
+    "px6_security": "80/80 PASS",
     "pos_checkout": "11/11 PASS",
     "pos_offline_sync": "42/42 PASS",
     "pos_security": "5/5 PASS",

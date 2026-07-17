@@ -7,22 +7,42 @@
  * Migrate control_* tables from admin_out (RATEB Pro DB) to control_panel_db.
  * Run once after 01_create_database.sql and 02_create_tables.sql.
  *
- * Usage: php 03_migrate_data.php
- *    or: https://rateb.sa/config/migrations/separate_control_panel_db/03_migrate_data.php (requires control login)
+ * CLI only:
+ *   php 03_migrate_data.php
  *
- * Set env vars or edit below:
- *   RATEB_DB_NAME (source) = admin_out
- *   CONTROL_PANEL_DB_NAME (dest) = control_panel_db
+ * Required env:
+ *   DB_HOST, DB_USER, DB_PASS
+ *   RATEB_DB_NAME (source) — default admin_out
+ *   CONTROL_PANEL_DB_NAME (dest) — default control_panel_db
+ *   DB_PORT (optional)
  */
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo "Forbidden. Run this migration from CLI only.\n";
+    exit(1);
+}
+
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', '1');
 
 $sourceDb = getenv('RATEB_DB_NAME') ?: 'admin_out';
-$destDb   = getenv('CONTROL_PANEL_DB_NAME') ?: 'control_panel_db';
-$host     = getenv('DB_HOST') ?: 'localhost';
-$port     = (int)(getenv('DB_PORT') ?: 3306);
-$user     = getenv('DB_USER') ?: 'admin_out';
-$pass     = getenv('DB_PASS') ?: '9s%BpMr1]dfb';
+$destDb = getenv('CONTROL_PANEL_DB_NAME') ?: 'control_panel_db';
+$host = getenv('DB_HOST') ?: '';
+$port = (int) (getenv('DB_PORT') ?: 3306);
+$user = getenv('DB_USER') ?: '';
+$pass = getenv('DB_PASS');
+if ($pass === false) {
+    $pass = '';
+}
+
+if ($host === '' || $user === '' || $pass === '') {
+    fwrite(STDERR, "Missing DB_HOST, DB_USER, or DB_PASS in the environment.\n");
+    exit(1);
+}
 
 $controlTables = [
     'control_countries',
@@ -54,19 +74,21 @@ try {
     $src = new mysqli($host, $user, $pass, $sourceDb, $port);
     $src->set_charset('utf8mb4');
 } catch (Throwable $e) {
-    die("Source DB connection failed: " . $e->getMessage() . "\n");
+    fwrite(STDERR, 'Source DB connection failed: ' . $e->getMessage() . "\n");
+    exit(1);
 }
 
 try {
     $dst = new mysqli($host, $user, $pass, $destDb, $port);
     $dst->set_charset('utf8mb4');
 } catch (Throwable $e) {
-    die("Dest DB connection failed: " . $e->getMessage() . "\n");
+    fwrite(STDERR, 'Dest DB connection failed: ' . $e->getMessage() . "\n");
+    exit(1);
 }
 
 $migrated = 0;
-$skipped  = 0;
-$errors   = [];
+$skipped = 0;
+$errors = [];
 
 foreach ($controlTables as $table) {
     $chk = $src->query("SHOW TABLES LIKE '$table'");
@@ -92,15 +114,15 @@ foreach ($controlTables as $table) {
         $colsDst[] = $row['Field'];
     }
     $common = array_intersect($colsSrc, $colsDst);
-    if (empty($common)) {
+    if ($common === []) {
         echo "  [SKIP] $table - no common columns\n";
         $skipped++;
         continue;
     }
     $colList = '`' . implode('`,`', $common) . '`';
-    $dst->query("SET FOREIGN_KEY_CHECKS = 0");
+    $dst->query('SET FOREIGN_KEY_CHECKS = 0');
     $dst->query("TRUNCATE TABLE `$table`");
-    $dst->query("SET FOREIGN_KEY_CHECKS = 1");
+    $dst->query('SET FOREIGN_KEY_CHECKS = 1');
     $res = $src->query("SELECT $colList FROM `$table`");
     if (!$res) {
         $errors[] = "$table: " . $src->error;
@@ -111,9 +133,9 @@ foreach ($controlTables as $table) {
         $vals = [];
         foreach ($common as $c) {
             $v = $row[$c];
-            $vals[] = ($v === null) ? 'NULL' : "'" . $dst->real_escape_string($v) . "'";
+            $vals[] = ($v === null) ? 'NULL' : "'" . $dst->real_escape_string((string) $v) . "'";
         }
-        $sql = "INSERT INTO `$table` ($colList) VALUES (" . implode(',', $vals) . ")";
+        $sql = "INSERT INTO `$table` ($colList) VALUES (" . implode(',', $vals) . ')';
         if ($dst->query($sql)) {
             $count++;
         }
@@ -125,9 +147,11 @@ foreach ($controlTables as $table) {
 $src->close();
 $dst->close();
 
-if (!empty($errors)) {
+if ($errors !== []) {
     echo "\nErrors:\n";
-    foreach ($errors as $e) echo "  $e\n";
+    foreach ($errors as $e) {
+        echo "  $e\n";
+    }
 }
 
 echo "\nDone. Migrated: $migrated tables. Skipped: $skipped.\n";

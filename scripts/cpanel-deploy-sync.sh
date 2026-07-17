@@ -86,7 +86,6 @@ CRITICAL_FILES=(
   "pages/home.php"
   "pages/about.php"
   "pages/company-profile.php"
-  "pages/deploy-root.php"
   "public/rateb-build.txt"
   "rateb-platform-catalog/.htaccess"
   "rateb-platform-catalog/public/index.php"

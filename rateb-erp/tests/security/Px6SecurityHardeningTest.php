@@ -57,14 +57,57 @@ final class Px6SecurityHardeningTest
             'config/migrations/grant_admin_full_access.php',
             'config/migrations/run_multi_tenant_migration.php',
             'config/migrations/clear_control_admins_keep_admin.php',
+            'config/migrations/check_rateb_pro_login.php',
             'pages/rateb-copy-from-repo.php',
             'pages/rateb-cms-rebrand-apply.php',
+            'pages/check-login.php',
+            'pages/rateb-reset-country-test-admin.php',
+            'pages/rateb-fix-status.php',
+            'pages/rateb-fix-perms.php',
+            'pages/rateb-perms-check.php',
+            'pages/rateb-sync-from-github.php',
+            'pages/rateb-profile-deploy.php',
+            'pages/rateb-purge-cache.php',
+            'pages/rateb-mysql-probe.php',
+            'pages/rateb-test-domain-probe.php',
+            'pages/rateb-check-all-country-dbs.php',
+            'pages/rateb-cms-db-check.php',
+            'pages/rateb-enterprise-brand-audit.php',
+            'pages/rateb-boot-trace.php',
+            'pages/rateb-build-check.php',
+            'pages/rateb-chrome-bust.php',
+            'pages/rateb-live-chrome-check.php',
+            'pages/rateb-nav-health.php',
+            'pages/rateb-url-audit.php',
+            'pages/rateb-rebrand-status.php',
+            'pages/rateb-which-page.php',
+            'pages/rateb-bootstrap-test-domain.php',
+            'pages/test-config.php',
+            'pages/test-error.php',
+            'pages/tenant-test.php',
+            'pages/deploy-root.php',
+            'rateb-profile-check.php',
+            'designed-status.php',
+            'control-panel/fix-500.php',
         ];
         foreach ($paths as $path) {
             $this->record('removed endpoint: ' . $path, !is_file($this->root . '/' . $path), 'must not be deployable');
         }
         $remainingFixes = glob($this->root . '/api/hr/fix*.php') ?: [];
         $this->record('no HTTP HR fix endpoints', $remainingFixes === [], implode(', ', $remainingFixes));
+
+        $migrate = $this->read('config/migrations/separate_control_panel_db/03_migrate_data.php');
+        $this->record(
+            'control DB migrate is CLI-only',
+            str_contains($migrate, "PHP_SAPI !== 'cli'") && !str_contains($migrate, "9s%BpMr1]dfb"),
+            'must reject HTTP and require env credentials'
+        );
+        $home = $this->read('pages/home.php');
+        $this->record(
+            'home has no hardcoded deploy sync key',
+            !str_contains($home, 'rateb-deploy-sync-2026'),
+            'shared deploy key must not be embeddable in marketing home'
+        );
     }
 
     private function testDedicatedCheckoutPermission(): void

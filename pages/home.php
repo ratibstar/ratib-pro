@@ -28,12 +28,7 @@ if (isset($_GET['rateb_mega_nav_fragment']) && (string) $_GET['rateb_mega_nav_fr
 
 // LiteSpeed caches bare /pages/home.php with old Profile → new-tab HTML. Require ?v= build marker.
 $ratebHomeSkipBuildBust = isset($_GET['rateb_deploy_probe'])
-    || (isset($_GET['rateb_mega_nav_fragment']) && (string) $_GET['rateb_mega_nav_fragment'] === '1')
-    || (
-        isset($_GET['rateb_purge_lscache'], $_GET['key'])
-        && (string) $_GET['rateb_purge_lscache'] === '1'
-        && hash_equals('rateb-deploy-sync-2026', (string) $_GET['key'])
-    );
+    || (isset($_GET['rateb_mega_nav_fragment']) && (string) $_GET['rateb_mega_nav_fragment'] === '1');
 if (!$ratebHomeSkipBuildBust) {
     $ratebIsRegisterCheckout = (isset($_GET['open']) && trim((string) $_GET['open']) === 'register')
         || (isset($_GET['plan']) && trim((string) $_GET['plan']) !== '');
@@ -120,16 +115,6 @@ if ($ratebOpenParam === 'about' || $ratebOpenParam === 'profile') {
     exit;
 }
 
-// Optional: /pages/home.php?rateb_purge_lscache=1&key=rateb-deploy-sync-2026 — ask LiteSpeed to purge this vhost cache.
-if (
-    isset($_GET['rateb_purge_lscache'], $_GET['key'])
-    && (string) $_GET['rateb_purge_lscache'] === '1'
-    && hash_equals('rateb-deploy-sync-2026', (string) $_GET['key'])
-    && !headers_sent()
-) {
-    header('X-LiteSpeed-Purge: *');
-    header('X-LiteSpeed-Cache-Control: no-cache');
-}
 // Always bust LiteSpeed page cache for marketing home (stale HTML had profile → new tab).
 if (!headers_sent()) {
     header('X-LiteSpeed-Cache-Control: no-cache', false);

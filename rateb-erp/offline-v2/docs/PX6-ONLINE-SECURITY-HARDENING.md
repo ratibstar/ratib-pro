@@ -9,6 +9,7 @@ Production Go-Live: Eligible
 ## Remediation evidence
 
 - Removed deployable setup, reset, seed, debug, test, and maintenance HTTP scripts that could create administrators, grant privileges, erase tenant data, mutate schemas, overwrite files, or disclose operational data.
+- Follow-up sweep removed remaining Critical browser ops tools: password-reset diagnostics, hardcoded `rateb-deploy-sync-2026` deploy/purge/chmod endpoints, MySQL/tenant probes, and root profile/status deploy scripts. Control-panel DB migrate is CLI-only and requires env credentials (no embedded DB password).
 - Protected the retained destructive admin reset with authenticated admin authorization, POST-only dispatch, and session-bound CSRF validation.
 - Protected Accounting migration endpoints with authenticated enterprise-admin authorization, POST-only dispatch, and mandatory CSRF validation.
 - Protected HR employee mutations with action authorization, POST-only dispatch, mandatory CSRF validation, and matching browser token propagation.
@@ -22,7 +23,7 @@ Production Go-Live: Eligible
 
 ## Regression evidence
 
-- `php rateb-erp/tests/security/run-px6-security-tests.php` — 49/49 PASS.
+- `php rateb-erp/tests/security/run-px6-security-tests.php` — 80/80 PASS.
 - `php rateb-erp/modules/pos/tests/run-checkout-tests.php` — 11/11 PASS.
 - `php rateb-erp/modules/pos/tests/run-offline-sync-tests.php` — 42/42 PASS.
 - `php rateb-erp/modules/pos/tests/run-security-tests.php` — 5/5 PASS.
