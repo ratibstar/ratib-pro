@@ -74,6 +74,59 @@
         }
     }
 
+    /** Soft badge OR hard offline — content-swap must not hang on a pending fetch. */
+    function isUiOffline() {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return true;
+            }
+        } catch (e0) { /* ignore */ }
+        try {
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) {
+                return true;
+            }
+        } catch (e1) { /* ignore */ }
+        try {
+            var conn = root.RatebOfflineConnectivity;
+            if (conn && typeof conn.isOnline === 'function' && conn.isOnline() === false) {
+                return true;
+            }
+        } catch (e2) { /* ignore */ }
+        return false;
+    }
+
+    function hardNavigate(href) {
+        try {
+            root.location.assign(href);
+        } catch (eAssign) {
+            try {
+                root.location.href = href;
+            } catch (eHref) { /* ignore */ }
+        }
+    }
+
+    function fetchWithTimeout(url, opts, ms) {
+        var timedOut = false;
+        var timer = null;
+        var timed = new Promise(function (_, reject) {
+            timer = setTimeout(function () {
+                timedOut = true;
+                reject(new Error('nav_fetch_timeout'));
+            }, typeof ms === 'number' ? ms : 2500);
+        });
+        var network = fetch(url, opts).then(function (res) {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            if (timedOut) {
+                throw new Error('nav_fetch_timeout');
+            }
+            return res;
+        });
+        return Promise.race([network, timed]);
+    }
+
     function rememberExistingScripts() {
         document.querySelectorAll('script[src]').forEach(function (s) {
             loadedScripts[scriptKey(s.src)] = true;
@@ -264,8 +317,26 @@
         } catch (e2) { /* ignore */ }
     }
 
-    function openOpsCache() {
-        return root.caches ? root.caches.open('rateb-erp-ops-pages-v34') : Promise.reject(new Error('no_caches'));
+    function openOpsCaches() {
+        if (!root.caches || typeof root.caches.keys !== 'function') {
+            return Promise.resolve([]);
+        }
+        return root.caches.keys().then(function (keys) {
+            var names = (keys || []).filter(function (k) {
+                return String(k).indexOf('rateb-erp-ops-pages-') === 0
+                    || String(k).indexOf('rateb-erp-coexist-') === 0;
+            });
+            if (names.indexOf('rateb-erp-ops-pages-v34') === -1) {
+                names.unshift('rateb-erp-ops-pages-v34');
+            }
+            return Promise.all(names.map(function (name) {
+                return root.caches.open(name).catch(function () { return null; });
+            })).then(function (opened) {
+                return opened.filter(Boolean);
+            });
+        }).catch(function () {
+            return [];
+        });
     }
 
     function matchCachedHtml(href) {
@@ -279,12 +350,14 @@
             keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
             keys.push(u.origin + u.pathname.replace(/\/+$/, '') + '/');
         } catch (e) { /* ignore */ }
-        return openOpsCache().then(function (cache) {
+        return openOpsCaches().then(function (cachesList) {
             var chain = Promise.resolve(null);
-            keys.forEach(function (k) {
-                chain = chain.then(function (found) {
-                    return found || cache.match(k).then(function (hit) {
-                        return hit || cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+            cachesList.forEach(function (cache) {
+                keys.forEach(function (k) {
+                    chain = chain.then(function (found) {
+                        return found || cache.match(k).then(function (hit) {
+                            return hit || cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                        });
                     });
                 });
             });
@@ -307,7 +380,7 @@
             keys.push(u.origin + bare + '/');
         } catch (e) { /* ignore */ }
         var body = html;
-        return openOpsCache().then(function (cache) {
+        return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
             return Promise.all(keys.map(function (k) {
                 return cache.put(k, new Response(body, {
                     status: 200,
@@ -324,28 +397,33 @@
         // PERF-P1 — Cache API first (SW SWR only applies to mode=navigate; content-swap uses fetch).
         return matchCachedHtml(href).then(function (cached) {
             if (cached) {
-                fetch(href, {
-                    credentials: 'same-origin',
-                    headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-                }).then(function (res) {
-                    if (!res || !res.ok) {
-                        return null;
-                    }
-                    return res.text().then(function (html) {
-                        if (html && html.length >= 20000) {
-                            putHtmlLocally(href, html);
-                            postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                if (!isUiOffline()) {
+                    fetchWithTimeout(href, {
+                        credentials: 'same-origin',
+                        headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
+                    }, 2500).then(function (res) {
+                        if (!res || !res.ok) {
+                            return null;
                         }
-                    });
-                }).catch(function () { /* ignore */ });
+                        return res.text().then(function (html) {
+                            if (html && html.length >= 20000) {
+                                putHtmlLocally(href, html);
+                                postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                            }
+                        });
+                    }).catch(function () { /* ignore */ });
+                }
                 return cached.text().then(function (html) {
                     return { html: html, finalUrl: href, fromCache: true };
                 });
             }
-            return fetch(href, {
+            if (isUiOffline()) {
+                throw new Error('nav_offline_no_cache');
+            }
+            return fetchWithTimeout(href, {
                 credentials: 'same-origin',
                 headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-            }).then(function (res) {
+            }, 2500).then(function (res) {
                 if (!res || !res.ok) {
                     throw new Error('nav_fetch_failed');
                 }
@@ -421,19 +499,7 @@
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
-            var offline = false;
-            try {
-                offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-            } catch (eOff) { /* ignore */ }
-            // Offline: never swallow the click — let the SW serve a cached document.
-            // Returning false after preventDefault made sidebar links feel dead.
-            try {
-                root.location.assign(href);
-            } catch (eAssign) {
-                try {
-                    root.location.href = href;
-                } catch (eHref) { /* ignore */ }
-            }
+            hardNavigate(href);
             navigating = false;
             return false;
         }).then(function (ok) {
@@ -481,6 +547,14 @@
     function onClick(ev) {
         var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
         if (!shouldIntercept(a, ev)) {
+            return;
+        }
+        // Soft/hard offline: never enter content-swap (fetch can hang while badge says offline).
+        // Full navigation lets the Service Worker serve the cached ops page.
+        if (isUiOffline()) {
+            // Do not preventDefault until we commit navigation — assign is synchronous intent.
+            ev.preventDefault();
+            hardNavigate(a.href);
             return;
         }
         ev.preventDefault();
