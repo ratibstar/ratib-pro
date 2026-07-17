@@ -4,6 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/admin/update_table_item.php`.
  */
 require_once '../../includes/config.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 header('Content-Type: application/json');
 
@@ -17,6 +18,7 @@ if (!isset($_SESSION['role_id']) || (int)$_SESSION['role_id'] !== 1) {
     echo json_encode(['success' => false, 'message' => 'Access denied']);
     exit;
 }
+requireApiMutationSecurity();
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
@@ -182,16 +184,34 @@ if (!$input || !isset($input['table']) || !isset($input['id']) || !isset($input[
             }
         }
         
-        // Build UPDATE query
+        $columnResult = $conn->query("SHOW COLUMNS FROM `{$table}`");
+        $allowedColumns = [];
+        while ($columnResult && ($column = $columnResult->fetch_assoc())) {
+            $allowedColumns[] = (string) ($column['Field'] ?? '');
+        }
+
+        // Build UPDATE query from actual schema identifiers; values stay parameterized.
         $set_clauses = [];
+        $values = [];
         foreach ($data as $key => $value) {
-            $set_clauses[] = "$key = '" . $conn->real_escape_string($value) . "'";
+            if (!is_string($key) || !in_array($key, $allowedColumns, true)) {
+                throw new InvalidArgumentException('Invalid column name.');
+            }
+            $set_clauses[] = "`{$key}` = ?";
+            $values[] = (string) $value;
         }
         $set_clause = implode(', ', $set_clauses);
-        
-        $query = "UPDATE $table SET $set_clause WHERE id = " . intval($id);
-    
-    if ($conn->query($query)) {
+
+        if ($set_clauses === []) {
+            throw new InvalidArgumentException('No fields to update.');
+        }
+        $query = "UPDATE `{$table}` SET {$set_clause} WHERE id = ?";
+        $values[] = (int) $id;
+        $types = str_repeat('s', count($values) - 1) . 'i';
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param($types, ...$values);
+
+    if ($stmt->execute()) {
         echo json_encode([
             'success' => true,
             'message' => 'Item updated successfully'

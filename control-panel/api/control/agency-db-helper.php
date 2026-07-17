@@ -246,9 +246,6 @@ function getAgencyDbConnection($agency, $countryId = 0) {
                 $alts[] = [$db, $dbHost, $dbUser, $dbPass];
             }
         }
-        if (defined('DB_NAME') && DB_NAME !== $dbName) {
-            $alts[] = [DB_NAME, defined('DB_HOST') ? DB_HOST : $dbHost, defined('DB_USER') ? DB_USER : $dbUser, defined('DB_PASS') ? DB_PASS : $dbPass];
-        }
         foreach ($alts as $a) {
             list($alt, $h, $u, $p) = $a;
             if ($alt === $dbName) continue;
@@ -260,28 +257,6 @@ function getAgencyDbConnection($agency, $countryId = 0) {
                 $cPass = $p;
                 break;
             }
-            $conn = null;
-        }
-    }
-    if (!$conn && defined('DB_NAME') && DB_NAME !== $dbName && $countryId > 0) {
-        $h1 = defined('DB_HOST') ? DB_HOST : 'localhost';
-        $p1 = defined('DB_PORT') ? (int) DB_PORT : 3306;
-        $u1 = defined('DB_USER') ? DB_USER : '';
-        $pw1 = defined('DB_PASS') ? DB_PASS : '';
-        $conn = rateb_mysqli_connect($h1, $u1, $pw1, DB_NAME, $p1);
-        $usedHost = $h1;
-        if (!$conn) {
-            $tryH = ($h1 === 'localhost') ? '127.0.0.1' : 'localhost';
-            $conn = rateb_mysqli_connect($tryH, $u1, $pw1, DB_NAME, $p1);
-            $usedHost = $tryH;
-        }
-        if ($conn) {
-            $dbName = DB_NAME;
-            $cHost = $usedHost;
-            $cPort = $p1;
-            $cUser = $u1;
-            $cPass = $pw1;
-        } else {
             $conn = null;
         }
     }

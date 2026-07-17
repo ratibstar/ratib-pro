@@ -168,6 +168,119 @@ def mime_for_filename(name: str) -> str:
     return guessed or "application/octet-stream"
 
 
+# Security-retired HTTP scripts must be removed from the live tree because fast deploy
+# uploads changed files but cannot infer repository deletions.
+SECURITY_REMOTE_DELETE_FILES = [
+    "fix_perms.php",
+    "config/setup-admin.php",
+    "pages/setup-admin.php",
+    "api/hr/fix-employees-only.php",
+    "api/hr/debug-query.php",
+    "RATEB-DEPLOY-NOW.php",
+    "rateb-deploy.php",
+    "rateb-profile-fix.php",
+    "rateb-profile-check.php",
+    "designed-status.php",
+    "control-panel/fix-500.php",
+    "control-panel/create_admin.php",
+    "control-panel/check_db.php",
+    "control-panel/diagnose.php",
+    "pages/check-login.php",
+    "pages/test-error.php",
+    "pages/test-config.php",
+    "pages/tenant-test.php",
+    "pages/deploy-root.php",
+    "pages/rateb-reset-country-test-admin.php",
+    "pages/rateb-fix-status.php",
+    "pages/rateb-fix-perms.php",
+    "pages/rateb-perms-check.php",
+    "pages/rateb-profile-deploy.php",
+    "pages/rateb-purge-cache.php",
+    "pages/rateb-sync-from-github.php",
+    "pages/rateb-mysql-probe.php",
+    "pages/rateb-test-domain-probe.php",
+    "pages/rateb-check-all-country-dbs.php",
+    "api/tenants/create.php",
+    "api/tenants/create-full.php",
+    "api/tenants/self-test.php",
+    "api/agents/add.php",
+    "api/visa-applications.php",
+    "api/visa-applications-simple.php",
+    "api/visa-applications-basic.php",
+    "api/settings/handler.php",
+    "api/migrations/add_password_plain_column.php",
+    "api/support-chat-health.php",
+    "api/rateb-payment-trace.php",
+    "api/diagnostics/tenant-isolation-self-test.php",
+    "api/diagnostics/rateb-site-content-status.php",
+    "api/diagnostics/rateb-home-deploy-probe.php",
+    "api/accounting/transactions/run-gaap-migration-safe.php",
+    "api/accounting/migrate-voucher-entry-approval.php",
+    "api/accounting/migrate-trial-balance-view.php",
+    "api/accounting/migrate-journal-entries-posting.php",
+    "api/accounting/migrate-invoice-payment-journal-entries.php",
+    "api/accounting/migrate-general-ledger.php",
+    "api/accounting/migrate-erp-gl-foundation.php",
+    "api/accounting/migrate-erp-audit-trail.php",
+    "api/accounting/migrate-accounts-enums.php",
+    "api/accounting/diagnostic-accounts.php",
+    "api/accounting/settings.php",
+    "control-panel/api/diagnostics/tenant-isolation-self-test.php",
+    "control-panel/api/diagnostic/tenant-isolation-self-test.php",
+    "control-panel/api/control/tenant-isolation-self-test.php",
+    "control-panel/api/control/rcc-migrate-run.php",
+    "control-panel/api/control/rateb-erp-migrate-run.php",
+    "control-panel/api/control/platform-catalog-migrate-run.php",
+    "control-panel/api/control/rcc-realtime-hub-run.php",
+    "control-panel/api/control/agencies-reset-erp-data.php",
+    "control-panel/api/control/agencies-erp-migrate.php",
+    "control-panel/api/control/agencies-bootstrap-from-reference.php",
+    "control-panel/pages/control/rateb-erp-migrate.php",
+    "control-panel/pages/control/contact-center-migrate.php",
+    "control-panel/pages/control/sync-test-domain.php",
+    "paypal-checkout/test.php",
+    "tap-payments/test-config.php",
+    "config/test-control-db.php",
+    "rateb-deploy-probe.php",
+    "public/run-accounting-phase5-migrate.php",
+    "public/run-accounting-phase4-migrate.php",
+    "public/run-accounting-event-store-migrate.php",
+    "public/run-accounting-schema-catchup.php",
+    "rateb-erp/public/run-migrations.php",
+    "rateb-platform-catalog/public/run-migrations.php",
+    "rateb-erp/public/restore-super-admins.php",
+    "rateb-erp/public/fix-erp-arabic.php",
+    "rateb-erp/public/fix-cms-arabic.php",
+    "rateb-erp/public/probe-router.php",
+    "rateb-erp/public/erp-security-cert.php",
+    "rateb-erp/public/enterprise-cert-run.php",
+    "rateb-erp/public/qa-manifest-resolve.php",
+    "rateb-erp/storage/deploy-migrate-token",
+    "rateb-erp/modules/pos/app/Services/PosDemoDataSetupService.php",
+    "ratib-contact-center/public/run-realtime-hub.php",
+    "admin/debug-dashboard.php",
+    "admin/dev/event-load-test.php",
+    "admin/dev/event-retention.php",
+    "admin/dev/validate-observability.php",
+]
+SECURITY_REMOTE_DELETE_FILES += [
+    "rateb-erp/tools/boot-bench/" + name
+    for name in (
+        "unlock-user.php", "phase-aa2-fresh-bench.php", "_aa2_fresh_worker.php",
+        "phase-aa2-measure.php", "analyze-admin-profile.php", "opcache-probe.php",
+        "phase-aa3-fresh-bench.php", "_aa3_fresh_worker.php", "mint-admin-cookie.php",
+        "phase-aa1-route-signature.php", "_ae_af_rateb_app_route.inc.php",
+        "phase-ae-ttfb-rootcause.php", "_ae_fpm_probe.php", "phase-p04-server-ttfb.php",
+        "phase-pa-pos-register-audit.php", "probe-boot.php", "profile-admin-get-deep.php",
+        "profile-admin-get.php", "_ad_resolve_routes.php", "remote-auth.php",
+        "_ae_ag_rateb_app_route.inc.php", "phase-ah-accounting-audit.php",
+        "phase-x-admin-sql-bench.php", "phase-ab-e2e-profile.php",
+        "phase-ac-infra-audit.php", "phase-ab-warm-pass.php",
+        "server-timing-probe.php", "render-shell.php",
+    )
+]
+
+
 # Always-sync core (ships every push even when unchanged) + build marker LAST.
 # Keep this list MINIMAL: only the public shell pieces that must never drift between
 # repo and server, plus the build marker. Everything else deploys automatically when it
@@ -209,7 +322,6 @@ FAST_FILES = [
     "control-panel/includes/control/contact-center-bridge.php",
     "control-panel/includes/control/contact-center-nav.php",
     "control-panel/pages/control/contact-center.php",
-    "control-panel/pages/control/contact-center-migrate.php",
     "control-panel/pages/control/contact-center-app.php",
     "control-panel/pages/control/contact-center-ops.php",
     "control-panel/pages/control/contact-center-supervisor.php",
@@ -327,6 +439,7 @@ FAST_FILES = [
     "rateb-platform-catalog/public/rateb-catalog-build.txt",
     "rateb-platform-catalog/bin/migrate.php",
     "rateb-platform-catalog/config/app.php",
+    "uploads/.htaccess",
     # Marketing build marker — MUST stay last.
     "public/rateb-build.txt",
 ]
@@ -1222,6 +1335,17 @@ def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, 
     return ok, fail, succeeded
 
 
+def purge_security_retired_files(remote_base: str) -> None:
+    print(
+        f"security purge: removing {len(SECURITY_REMOTE_DELETE_FILES)} retired HTTP script(s)",
+        flush=True,
+    )
+    for rel in SECURITY_REMOTE_DELETE_FILES:
+        abs_dir = remote_dir(remote_base, rel)
+        remote_path = fileman_home_rel(abs_dir, os.path.basename(rel))
+        api2_fileop_unlink(remote_path)
+
+
 def main() -> int:
     root = os.path.dirname(os.path.abspath(__file__))
     os.chdir(os.path.join(root, ".."))
@@ -1234,6 +1358,7 @@ def main() -> int:
         f"deploy mode={mode} files={total} parallel={workers} dest={remote_base}",
         flush=True,
     )
+    purge_security_retired_files(remote_base)
     ok, fail, succeeded = run_uploads(files, remote_base, workers)
     print(
         f"\n========== Summary: ok={ok} fail={fail} total={total} "
@@ -1256,7 +1381,6 @@ def main() -> int:
         )
         return 1
 
-    upload_erp_migrate_token(remote_base, succeeded)
     mirror_test_rateb_entry_files(succeeded)
     return 0
 
@@ -1294,29 +1418,6 @@ def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:
             "::warning::test.rateb.sa entry mirror had failures — run Control Panel → Sync test domain",
             flush=True,
         )
-
-
-def upload_erp_migrate_token(remote_base: str, succeeded: set[str]) -> None:
-    """Ship deploy auth token with the rateb-erp bundle (used by migrate HTTP endpoint)."""
-    if not os.environ.get("CPANEL_API_TOKEN"):
-        return
-    if not any(p.startswith("rateb-erp/") for p in succeeded):
-        return
-    token_path = "rateb-erp/storage/deploy-migrate-token"
-    try:
-        os.makedirs(os.path.dirname(token_path), exist_ok=True)
-        with open(token_path, "w", encoding="utf-8") as handle:
-            handle.write(os.environ["CPANEL_API_TOKEN"])
-        _rel, ok, err = upload_text_one(token_path, remote_base)
-        if ok:
-            print("erp migrate token: uploaded with deploy bundle", flush=True)
-        else:
-            print(f"::warning::erp migrate token upload failed: {err}", flush=True)
-    finally:
-        try:
-            os.remove(token_path)
-        except OSError:
-            pass
 
 
 if __name__ == "__main__":

@@ -14,7 +14,6 @@ final class DedicatedCompanySeedService
     /** Initial company admin for dedicated ERP (change after first login). */
     public const DEFAULT_LOGIN = 'admin';
     public const DEFAULT_EMAIL = 'admin@local';
-    public const DEFAULT_PASSWORD = '123456';
 
     /**
      * Seed exactly one company + admin user for a dedicated ERP database.
@@ -29,7 +28,7 @@ final class DedicatedCompanySeedService
     ): array {
         $email = self::DEFAULT_EMAIL;
         $contactName = self::DEFAULT_LOGIN;
-        $password = self::DEFAULT_PASSWORD;
+        $password = self::newInitialPassword();
 
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
@@ -103,7 +102,8 @@ final class DedicatedCompanySeedService
             );
         }
 
-        $hash = password_hash(self::DEFAULT_PASSWORD, PASSWORD_DEFAULT);
+        $initialPassword = self::newInitialPassword();
+        $hash = password_hash($initialPassword, PASSWORD_DEFAULT);
         if ($candidate !== null) {
             $userId = (int) ($candidate['id'] ?? 0);
             $userModel->query(
@@ -141,7 +141,7 @@ final class DedicatedCompanySeedService
                 $companyId,
                 self::DEFAULT_EMAIL,
                 self::DEFAULT_LOGIN,
-                self::DEFAULT_PASSWORD
+                $initialPassword
             );
         }
 
@@ -154,8 +154,13 @@ final class DedicatedCompanySeedService
             'user_id' => $userId,
             'admin_username' => self::DEFAULT_LOGIN,
             'admin_email' => self::DEFAULT_EMAIL,
-            'admin_password' => self::DEFAULT_PASSWORD,
+            'admin_password' => $initialPassword,
         ];
+    }
+
+    private static function newInitialPassword(): string
+    {
+        return bin2hex(random_bytes(16));
     }
 
     /**

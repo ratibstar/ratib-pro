@@ -1560,8 +1560,9 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                 }
             }
         }
-        $openAgencyContext = $singleUrlMode && $getControl && $getAgencyId > 0;
-        $apiAgencyContext = $singleUrlMode && $isApiReqTenant && $getAgencyId > 0;
+        $openAgencyContext = $singleUrlMode && $controlLoggedIn && $getControl && $getAgencyId > 0;
+        $apiAgencyContext = $singleUrlMode && ($sessionLoggedIn || $controlLoggedIn)
+            && $isApiReqTenant && $getAgencyId > 0;
 
         // Control "Open" passes ?control=1&agency_id=X — that must win over a stale session from another agency.
         // Otherwise the previous tenant's agency_id stays in $_SESSION and every Open keeps the wrong DB/users.

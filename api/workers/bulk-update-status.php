@@ -6,9 +6,11 @@
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 // Enforce permission for bulk updating workers
 enforceApiPermission('workers', 'bulk-update');
+requireApiMutationSecurity();
 
 try {
     // Get JSON data from request

@@ -4,6 +4,8 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/admin/add_user.php`.
  */
 require_once '../../includes/config.php';
+require_once '../../includes/permission_middleware.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 header('Content-Type: application/json');
 
@@ -31,6 +33,8 @@ try {
         echo json_encode(['success' => false, 'message' => 'Access denied. Admin privileges required.']);
         exit;
     }
+    checkApiPermission('users_create');
+    requireApiMutationSecurity();
     
     $username = trim($input['username'] ?? '');
     $password = $input['password'] ?? '';
@@ -45,13 +49,6 @@ try {
     // Validate input
     if (empty($username) || empty($password) || empty($email)) {
         echo json_encode(['success' => false, 'message' => 'Username, password, and email are required']);
-
-require_once '../../includes/permission_middleware.php';
-
-// Check if user has permission to access this endpoint
-checkApiPermission('users_create');
-
-
         exit;
     }
     

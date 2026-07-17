@@ -16,7 +16,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -27,6 +28,15 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+if ($action === 'export_data') {
+    enforceApiPermission('reports', 'export');
+    requireApiMutationSecurity();
+} elseif (in_array($action, ['clear_calculations', 'clear_reports_history'], true)) {
+    enforceApiPermission('reports', 'documents');
+    requireApiMutationSecurity();
+} else {
+    enforceApiPermission('reports', 'view');
+}
 
 try {
     switch ($action) {
@@ -48,14 +58,8 @@ try {
         case 'export_data':
             exportData();
             break;
-        case 'debug_table':
-            debugTable();
-            break;
         case 'clear_calculations':
             clearCalculations();
-            break;
-        case 'debug_global_history':
-            debugGlobalHistory();
             break;
         case 'clear_reports_history':
             clearReportsHistory();

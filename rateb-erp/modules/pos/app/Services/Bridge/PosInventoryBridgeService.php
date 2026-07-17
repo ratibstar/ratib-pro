@@ -30,10 +30,16 @@ final class PosInventoryBridgeService
     /** @param array<string, mixed> $data */
     public function recordMovement(array $data): int
     {
-        return 0;
+        $inventoryId = (int) ($data['inventory_id'] ?? 0);
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($inventoryId < 1 || $companyId < 1) {
+            throw new \InvalidArgumentException('Inventory and company scope are required.');
+        }
+        $this->lockInventoryRow($inventoryId, $companyId, false);
+        return $this->stockMovementService()->record($data);
     }
 
-    public function stockMovementService(): StockMovementService
+    private function stockMovementService(): StockMovementService
     {
         return new StockMovementService();
     }

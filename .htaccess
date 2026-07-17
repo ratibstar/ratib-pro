@@ -276,9 +276,6 @@ RewriteRule ^rateb-erp/?$ rateb-erp/public/admin [R=302,L]
 
 # RATEB ERP — utility scripts (legacy 301 may land on /erp-health.php etc.)
 RewriteRule ^erp-health\.php$ rateb-erp/public/erp-health.php [L,QSA]
-RewriteRule ^run-migrations\.php$ rateb-erp/public/run-migrations.php [L,QSA]
-RewriteRule ^fix-erp-arabic\.php$ rateb-erp/public/fix-erp-arabic.php [L,QSA]
-RewriteRule ^fix-cms-arabic\.php$ rateb-erp/public/fix-cms-arabic.php [L,QSA]
 
 # RATEB ERP — front controller (before site catch-all; pass path as ?route=)
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/ [NC]

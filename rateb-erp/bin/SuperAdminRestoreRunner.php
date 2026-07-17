@@ -7,9 +7,6 @@ declare(strict_types=1);
  */
 final class SuperAdminRestoreRunner
 {
-    /** Bcrypt for the standard dev/bootstrap password ("password") — change after login. */
-    public const DEFAULT_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
-
     /** @var list<array{email:string,name:string,locale:string}> */
     private const SUPER_ADMINS = [
         ['email' => 'admin@rateb.sa', 'name' => 'Super Admin', 'locale' => 'ar'],
@@ -141,6 +138,7 @@ final class SuperAdminRestoreRunner
     private function ensureSuperAdminUser(array $spec, int $roleId, bool $resetPasswordHashes): void
     {
         $email = $spec['email'];
+        $passwordHash = self::restorePasswordHash();
         $stmt = $this->db->prepare('SELECT id, is_super_admin, status FROM rateb_users WHERE email = :e LIMIT 1');
         $stmt->execute(['e' => $email]);
         $existing = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -153,7 +151,7 @@ final class SuperAdminRestoreRunner
             $ins->execute([
                 'name' => $spec['name'],
                 'email' => $email,
-                'pass' => self::DEFAULT_PASSWORD_HASH,
+                'pass' => $passwordHash,
                 'status' => 'active',
                 'locale' => $spec['locale'],
             ]);
@@ -180,7 +178,7 @@ final class SuperAdminRestoreRunner
             }
             if ($resetPasswordHashes) {
                 $pw = $this->db->prepare('UPDATE rateb_users SET password = :pass WHERE id = :id');
-                $pw->execute(['pass' => self::DEFAULT_PASSWORD_HASH, 'id' => $userId]);
+                $pw->execute(['pass' => $passwordHash, 'id' => $userId]);
                 $this->report['password_hashes_reset']++;
                 $this->report['actions'][] = 'reset password hash id=' . $userId . ' email=' . $email;
             }
@@ -198,5 +196,15 @@ final class SuperAdminRestoreRunner
             $this->report['role_mappings_restored']++;
             $this->report['actions'][] = 'linked user_id=' . $userId . ' role_id=' . $roleId;
         }
+    }
+
+    private static function restorePasswordHash(): string
+    {
+        $hash = trim((string) (getenv('RATEB_SUPER_ADMIN_RESTORE_PASSWORD_HASH') ?: ''));
+        $info = $hash !== '' ? password_get_info($hash) : ['algo' => null];
+        if (empty($info['algo'])) {
+            throw new \RuntimeException('RATEB_SUPER_ADMIN_RESTORE_PASSWORD_HASH must contain a valid password hash.');
+        }
+        return $hash;
     }
 }

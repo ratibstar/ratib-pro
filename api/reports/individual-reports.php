@@ -24,7 +24,8 @@ if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
 
 // Use the same config as reports.php (mysqli)
 try {
-require_once(__DIR__ . '/../../includes/config.php');
+    require_once(__DIR__ . '/../core/api-permission-helper.php');
+    require_once(__DIR__ . '/../core/api-mutation-security.php');
     require_once(__DIR__ . '/../../api/core/ApiResponse.php');
 } catch (Exception $e) {
     // Clean output buffer before sending JSON
@@ -126,6 +127,17 @@ class IndividualReportsAPI {
         $action = $_GET['action'] ?? '';
 
         try {
+            $documentMutations = ['upload_document', 'delete_document', 'generate_document'];
+            if (in_array($action, $documentMutations, true)) {
+                enforceApiPermission('reports', 'documents');
+                requireApiMutationSecurity();
+            } elseif ($action === 'export_report') {
+                enforceApiPermission('reports', 'export');
+                requireApiMutationSecurity();
+            } else {
+                enforceApiPermission('reports', 'view');
+            }
+
             // Check if database connection is available
             if (!$this->conn) {
                 echo ApiResponse::error('Database connection not available', 500);
@@ -787,6 +799,18 @@ class IndividualReportsAPI {
         }
 
         $origName = (string) ($_FILES['document_file']['name'] ?? 'upload');
+        $extension = strtolower((string) pathinfo($origName, PATHINFO_EXTENSION));
+        $allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg'];
+        if (!in_array($extension, $allowedExtensions, true)) {
+            echo ApiResponse::error('Unsupported document type', 400);
+            return;
+        }
+        $tmpPath = (string) ($_FILES['document_file']['tmp_name'] ?? '');
+        $detectedMime = function_exists('mime_content_type') ? (string) @mime_content_type($tmpPath) : '';
+        if ($detectedMime === 'text/x-php' || str_contains($detectedMime, 'php')) {
+            echo ApiResponse::error('Executable uploads are forbidden', 400);
+            return;
+        }
         $safeBase = preg_replace('/[^a-zA-Z0-9._-]+/', '_', basename($origName));
         if ($safeBase === '' || $safeBase === '_') {
             $safeBase = 'file.dat';

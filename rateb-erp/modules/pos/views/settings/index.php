@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 /** @var array<string, mixed> $context */
 /** @var list<array{url:string,title:string,hint:string}> $links */
-/** @var bool $canDemoSetup */
 $context = is_array($context ?? null) ? $context : [];
 $links = is_array($links ?? null) ? $links : [];
-$canDemoSetup = (bool) ($canDemoSetup ?? false);
 $terminal = is_array($context['terminal'] ?? null) ? $context['terminal'] : [];
 $shift = is_array($context['shift'] ?? null) ? $context['shift'] : null;
 $branch = is_array($context['branch'] ?? null) ? $context['branch'] : [];
@@ -95,16 +93,4 @@ $shiftStatus = $shift ? (string) ($shift['status'] ?? '') : '';
     </section>
     <?php endif; ?>
 
-    <?php if ($canDemoSetup): ?>
-    <section class="rateb-pos-settings__card rateb-pos-settings__card--muted">
-        <h2 class="rateb-pos-settings__h"><?php echo __('pos_demo_setup_title'); ?></h2>
-        <p class="rateb-pos-settings__hint"><?php echo __('pos_demo_setup_hint'); ?></p>
-        <form method="post" action="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($demoSetupUrl ?? '')); ?>">
-            <input type="hidden" name="_csrf" value="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($csrf ?? '')); ?>">
-            <button type="submit" class="rateb-pos-settings__btn">
-                <?php echo __('pos_demo_setup_action'); ?>
-            </button>
-        </form>
-    </section>
-    <?php endif; ?>
 </div>

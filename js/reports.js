@@ -559,7 +559,7 @@ function refreshReports() {
     loadCategoryData(currentCategory);
 }
 
-function exportReport() {
+async function exportReport() {
     const filters = getFilters();
     const params = new URLSearchParams({
         action: 'export_data',
@@ -567,8 +567,19 @@ function exportReport() {
         format: 'csv',
         ...filters
     });
-    
-    globalThis.location.href = `${getApiBase()}/reports/reports.php?${params}`;
+    const csrf = document.querySelector('meta[name="rateb-csrf-token"]')?.content || '';
+    const response = await fetch(`${getApiBase()}/reports/reports.php?${params}`, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf },
+    });
+    if (!response.ok) {
+        throw new Error('Report export failed');
+    }
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(await response.blob());
+    link.download = `report-${currentCategory}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function printReport() {

@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Phase AA.1 — capture route table signature for identity verification.
- * Usage:
- *   php tools/boot-bench/phase-aa1-route-signature.php legacy|loader
- */
 $mode = $argv[1] ?? 'loader';
 $root = dirname(__DIR__, 2);
 $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
@@ -13,7 +8,6 @@ $_SERVER['HTTPS'] = $_SERVER['HTTPS'] ?? 'on';
 $_SERVER['REQUEST_URI'] = $_SERVER['REQUEST_URI'] ?? '/rateb-erp/public/admin/';
 $_SERVER['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT'] ?? dirname($root);
 
-$t0 = hrtime(true);
 require $root . '/app/Core/Bootstrap.php';
 \Rateb\App\Core\Bootstrap::init($root);
 
@@ -30,14 +24,10 @@ if (is_file($offlineModule)) {
 \Rateb\App\Core\Auth::bootstrapFromSession();
 
 $router = new \Rateb\App\Core\Router();
-$memBefore = memory_get_usage(true);
-$regStart = hrtime(true);
-
 $loadedIds = [];
 $loadedFiles = [];
 
 if ($mode === 'legacy') {
-    // AA.3: same files/order as routes/manifest.php (direct require, no loader).
     $manifest = require RATEB_ROOT . '/routes/manifest.php';
     foreach ($manifest as $module) {
         $id = (string) ($module['id'] ?? '');
@@ -62,14 +52,9 @@ if ($mode === 'legacy') {
     $loadedFiles = \Rateb\App\Core\RouteModuleLoader::lastLoadedFiles();
 }
 
-$regMs = (hrtime(true) - $regStart) / 1e6;
-$wallMs = (hrtime(true) - $t0) / 1e6;
-$memAfter = memory_get_peak_usage(true);
-
 $ref = new ReflectionClass($router);
 $prop = $ref->getProperty('routes');
 $prop->setAccessible(true);
-/** @var list<array{method:string,pattern:string,handler:mixed,middleware:array}> $routes */
 $routes = $prop->getValue($router);
 
 $normalizeHandler = static function ($handler): string {
@@ -77,18 +62,14 @@ $normalizeHandler = static function ($handler): string {
         return 'Closure';
     }
     if (is_array($handler) && isset($handler[0], $handler[1])) {
-        $cls = is_object($handler[0]) ? get_class($handler[0]) : (string) $handler[0];
-        return $cls . '::' . (string) $handler[1];
+        $class = is_object($handler[0]) ? get_class($handler[0]) : (string) $handler[0];
+        return $class . '::' . (string) $handler[1];
     }
-    if (is_string($handler)) {
-        return $handler;
-    }
-    return gettype($handler);
+    return is_string($handler) ? $handler : gettype($handler);
 };
-
-$normalizeMw = static function (array $mw): array {
+$normalizeMiddleware = static function (array $middleware): array {
     $out = [];
-    foreach ($mw as $item) {
+    foreach ($middleware as $item) {
         if (is_string($item)) {
             $out[] = $item;
         } elseif (is_array($item) && isset($item[0])) {
@@ -100,34 +81,26 @@ $normalizeMw = static function (array $mw): array {
     return $out;
 };
 
-$sigs = [];
-foreach ($routes as $r) {
-    $sigs[] = [
-        'method' => (string) $r['method'],
-        'pattern' => (string) $r['pattern'],
-        'handler' => $normalizeHandler($r['handler']),
-        'middleware' => $normalizeMw($r['middleware'] ?? []),
+$signatures = [];
+foreach ($routes as $route) {
+    $signatures[] = [
+        'method' => (string) $route['method'],
+        'pattern' => (string) $route['pattern'],
+        'handler' => $normalizeHandler($route['handler']),
+        'middleware' => $normalizeMiddleware($route['middleware'] ?? []),
     ];
 }
 
-$canonical = json_encode($sigs, JSON_UNESCAPED_SLASHES);
+$canonical = json_encode($signatures, JSON_UNESCAPED_SLASHES);
 $hash = hash('sha256', (string) $canonical);
-
-$out = [
-    'mode' => $mode,
-    'ok' => true,
+$output = [
     'loaded_modules' => $loadedIds,
     'loaded_files' => $loadedFiles,
-    'route_count' => count($sigs),
-    'route_table_sha256' => $hash,
-    'registration_ms' => round($regMs, 3),
-    'bootstrap_wall_ms' => round($wallMs, 3),
-    'memory_bytes_before_routes' => $memBefore,
-    'memory_peak_bytes' => $memAfter,
-    'first_5' => array_slice($sigs, 0, 5),
+    'route_count' => count($signatures),
     'admin_matches' => array_values(array_filter(
-        $sigs,
-        static fn ($s) => $s['method'] === 'GET' && $s['pattern'] === '/admin'
+        $signatures,
+        static fn (array $signature): bool =>
+            $signature['method'] === 'GET' && $signature['pattern'] === '/admin'
     )),
 ];
 
@@ -135,18 +108,5 @@ $dir = __DIR__ . '/reports';
 if (!is_dir($dir)) {
     mkdir($dir, 0775, true);
 }
-$file = $dir . '/phase-aa1-' . $mode . '-' . date('Ymd-His') . '.json';
-file_put_contents($file, json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
-file_put_contents($dir . '/phase-aa1-' . $mode . '-latest.json', json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+file_put_contents($dir . '/phase-aa1-' . $mode . '-latest.json', json_encode($output, JSON_PRETTY_PRINT) . "\n");
 file_put_contents($dir . '/phase-aa1-' . $mode . '-routes.sha256', $hash . "\n");
-file_put_contents($dir . '/phase-aa1-' . $mode . '-routes.json', $canonical . "\n");
-
-echo json_encode([
-    'wrote' => $file,
-    'mode' => $mode,
-    'route_count' => count($sigs),
-    'route_table_sha256' => $hash,
-    'registration_ms' => $out['registration_ms'],
-    'memory_peak_bytes' => $memAfter,
-    'loaded_modules' => $loadedIds,
-], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";

@@ -10,7 +10,6 @@ require_once __DIR__ . '/../../api/control/agency-db-helper.php';
 final class ProProvisioningService
 {
     public const DEFAULT_LOGIN = 'admin';
-    public const DEFAULT_PASSWORD = '123456';
 
     /**
      * @param array<string, mixed> $agency
@@ -37,8 +36,9 @@ final class ProProvisioningService
 
         /** @var mysqli $conn */
         $conn = $dbc['conn'];
+        $initialPassword = self::initialPassword();
         rateb_ensure_minimal_rateb_pro_schema($conn);
-        self::ensureAdminUser($conn, $agencyId, $countryId);
+        self::ensureAdminUser($conn, $agencyId, $countryId, $initialPassword);
 
         $tenantId = self::ensureTenantLink($controlConn, $agency, $agencyId);
 
@@ -47,15 +47,24 @@ final class ProProvisioningService
             'db_name' => (string) ($dbc['db_name'] ?? $dbName),
             'tenant_id' => $tenantId,
             'admin_username' => self::DEFAULT_LOGIN,
-            'admin_password' => self::DEFAULT_PASSWORD,
+            'admin_password' => $initialPassword,
             'pro_status' => 'ready',
         ];
     }
 
-    private static function ensureAdminUser(mysqli $conn, int $agencyId, int $countryId): void
+    private static function initialPassword(): string
+    {
+        $password = trim((string) (getenv('RATEB_PRO_INITIAL_ADMIN_PASSWORD') ?: ''));
+        if (strlen($password) < 16) {
+            throw new RuntimeException('RATEB_PRO_INITIAL_ADMIN_PASSWORD must be configured with at least 16 characters.');
+        }
+        return $password;
+    }
+
+    private static function ensureAdminUser(mysqli $conn, int $agencyId, int $countryId, string $initialPassword): void
     {
         $username = self::DEFAULT_LOGIN;
-        $hash = password_hash(self::DEFAULT_PASSWORD, PASSWORD_BCRYPT, ['cost' => 10]);
+        $hash = password_hash($initialPassword, PASSWORD_BCRYPT, ['cost' => 10]);
 
         $res = @$conn->query("SHOW TABLES LIKE 'users'");
         if (!$res || $res->num_rows === 0) {

@@ -643,6 +643,13 @@ final class HrAttendanceBulkController extends Controller
             if ($eid < 1) {
                 continue;
             }
+            $ownedEmployee = $model->queryOne(
+                'SELECT id FROM rateb_employees WHERE id = :eid AND company_id = :cid LIMIT 1',
+                ['eid' => $eid, 'cid' => $companyId]
+            );
+            if (!$ownedEmployee) {
+                continue;
+            }
             $payload = [
                 'company_id' => $companyId,
                 'employee_id' => $eid,

@@ -3,7 +3,8 @@
  * EN: Handles API endpoint/business logic in `api/workers/bulk-pending.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/bulk-pending.php`.
  */
-require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 header('Content-Type: application/json');
 error_reporting(E_ALL);
@@ -11,6 +12,9 @@ ini_set('display_errors', 0); // Production: don't display errors
 ini_set('log_errors', 1);
 
 try {
+    enforceApiPermission('workers', 'bulk-update');
+    requireApiMutationSecurity();
+
     // Get JSON data
     $input = json_decode(file_get_contents('php://input'), true);
     

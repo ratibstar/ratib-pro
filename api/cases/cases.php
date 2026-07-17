@@ -135,62 +135,15 @@ try {
     error_log("CasesAPI: Using core Database class with getInstance()");
 }
 
-// Load permission helper with fallback
-// Check if permission helper dependencies exist first to avoid fatal errors
-$permHelperExists = file_exists($permHelperPath);
-$permHelperDepsExist = file_exists(__DIR__ . '/../../includes/config.php') && 
-                       file_exists(__DIR__ . '/../../includes/permission_middleware.php') &&
-                       file_exists(__DIR__ . '/../core/module-permissions.php');
-
-if ($permHelperExists && $permHelperDepsExist) {
-    try {
-        // Use @ to suppress warnings, we'll catch exceptions
-        @require_once $permHelperPath;
-        if (function_exists('enforceApiPermission')) {
-            error_log("CasesAPI: Permission helper loaded successfully");
-        } else {
-            throw new Exception('enforceApiPermission function not defined after require');
-        }
-    } catch (Exception $e) {
-        error_log("CasesAPI: Permission helper exception - " . $e->getMessage() . ", using fallback");
-if (!function_exists('enforceApiPermission')) {
-    function enforceApiPermission($module, $action) {
-                // Fallback: Allow all if permission helper fails
-                error_log("CasesAPI: Using fallback enforceApiPermission (Exception) - allowing access");
-                return;
-            }
-        }
-    } catch (Error $e) {
-        error_log("CasesAPI: Permission helper fatal error - " . $e->getMessage() . ", using fallback");
-        if (!function_exists('enforceApiPermission')) {
-            function enforceApiPermission($module, $action) {
-                // Fallback: Allow all if permission helper fails
-                error_log("CasesAPI: Using fallback enforceApiPermission (Error) - allowing access");
-                return;
-            }
-        }
-    } catch (Throwable $e) {
-        error_log("CasesAPI: Permission helper throwable - " . $e->getMessage() . ", using fallback");
-        if (!function_exists('enforceApiPermission')) {
-            function enforceApiPermission($module, $action) {
-                // Fallback: Allow all if permission helper fails
-                error_log("CasesAPI: Using fallback enforceApiPermission (Throwable) - allowing access");
-                return;
-            }
-        }
-    }
-} else {
-    error_log("CasesAPI: Permission helper or dependencies not found (helper: " . ($permHelperExists ? 'exists' : 'missing') . ", deps: " . ($permHelperDepsExist ? 'exist' : 'missing') . "), using fallback");
+// Permission enforcement is mandatory and fails closed.
+if (!is_file($permHelperPath)) {
+    throw new RuntimeException('Permission helper is unavailable.');
 }
-
-// Ensure enforceApiPermission function exists
+require_once $permHelperPath;
 if (!function_exists('enforceApiPermission')) {
-    function enforceApiPermission($module, $action) {
-        // Fallback: Allow all if permission helper is missing
-        // This allows the API to work even without proper permission setup
-        return;
-    }
+    throw new RuntimeException('Permission enforcement is unavailable.');
 }
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 class CasesAPI {
     private $conn;
@@ -263,6 +216,9 @@ class CasesAPI {
         $action = $_GET['action'] ?? '';
         
         try {
+            if ($method !== 'GET') {
+                requireApiMutationSecurity();
+            }
             $result = null;
             switch ($method) {
                 case 'GET':

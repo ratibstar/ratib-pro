@@ -15,7 +15,6 @@ final class BranchSeedService
     public const DEFAULT_LOGIN = 'admin';
     /** Must pass FILTER_VALIDATE_EMAIL (PHP rejects *.local). */
     public const DEFAULT_EMAIL = 'admin@branch.test';
-    public const DEFAULT_PASSWORD = '123456';
     public const DEFAULT_COMPANY = 'Branch Appliance';
 
     /** @return list<string> */
@@ -48,7 +47,8 @@ final class BranchSeedService
     public static function seedMinimalTenant(PDO $pdo, string $companyName = self::DEFAULT_COMPANY): array
     {
         $now = gmdate('Y-m-d H:i:s');
-        $hash = password_hash(self::DEFAULT_PASSWORD, PASSWORD_BCRYPT);
+        $initialPassword = bin2hex(random_bytes(16));
+        $hash = password_hash($initialPassword, PASSWORD_BCRYPT);
         $modulesJson = json_encode(self::applianceModules(), JSON_UNESCAPED_UNICODE);
 
         // Plan
@@ -214,7 +214,7 @@ final class BranchSeedService
             'user_id' => $userId,
             'branch_id' => $branchId,
             'email' => self::DEFAULT_EMAIL,
-            'password' => self::DEFAULT_PASSWORD,
+            'password' => $initialPassword,
         ];
     }
 

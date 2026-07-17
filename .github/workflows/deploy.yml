@@ -68,68 +68,15 @@ jobs:
             bash scripts/github-rsync-deploy.sh
           fi
 
-      - name: Run RATEB ERP migrations
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-        run: bash scripts/run-rateb-erp-migrations.sh
-
-      - name: Run RATEB Platform Catalog migrations
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
-          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
-          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
-          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/public_html' }}
-        run: bash scripts/run-rateb-platform-catalog-migrations.sh
-
-      - name: Restore super-admin auth if missing
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-          RATEB_RESTORE_SUPER_ADMINS_AUTO: "1"
-        run: bash scripts/run-restore-super-admins.sh
-
-      - name: Run RCC migrations
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RCC_MIGRATE_TOKEN: ${{ secrets.RCC_MIGRATE_TOKEN || secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-        run: bash scripts/run-rcc-migrations.sh
-
       - name: Start RCC Realtime Hub (WebSocket)
         if: steps.deploy.outcome == 'success'
         env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
           DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/domains/rateb.sa/public_html' }}
         run: bash scripts/run-rcc-realtime-hub.sh
-
-      - name: Run RATEB ERP enterprise certification
-        if: steps.deploy.outcome == 'success'
-        env:
-          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
-          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
-          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-          RATEB_ENTERPRISE_SEED: ${{ vars.RATEB_ENTERPRISE_SEED || '0' }}
-        run: bash scripts/run-rateb-erp-enterprise-cert.sh
 
       - name: Verify live site (~20s)
         if: steps.deploy.outcome == 'success'

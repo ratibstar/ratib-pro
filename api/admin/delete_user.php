@@ -4,6 +4,8 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/admin/delete_user.php`.
  */
 require_once '../../includes/config.php';
+require_once '../../includes/permission_middleware.php';
+require_once __DIR__ . '/../core/api-mutation-security.php';
 
 header('Content-Type: application/json');
 
@@ -17,19 +19,14 @@ if (!isset($_SESSION['role_id']) || $_SESSION['role_id'] != 1) {
     echo json_encode(['success' => false, 'message' => 'Access denied']);
     exit;
 }
+checkApiPermission('users_delete');
+requireApiMutationSecurity();
 
 try {
     $user_id = $_POST['user_id'] ?? null;
     
     if (!$user_id) {
         echo json_encode(['success' => false, 'message' => 'User ID is required']);
-
-require_once '../../includes/permission_middleware.php';
-
-// Check if user has permission to access this endpoint
-checkApiPermission('users_delete');
-
-
         exit;
     }
     

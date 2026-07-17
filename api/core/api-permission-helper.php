@@ -25,9 +25,16 @@ $MODULE_PERMISSIONS = require __DIR__ . '/module-permissions.php';
 function enforceApiPermission($module, $action) {
     global $MODULE_PERMISSIONS;
     
-    // Control panel admin bypass - control panel users are trusted
+    // Control sessions must carry explicit full-administrator authorization.
     if (!empty($_SESSION['control_logged_in'])) {
-        return;
+        $controlPermissions = $_SESSION['control_permissions'] ?? null;
+        $isFullControlAdmin = !empty($_SESSION['control_is_admin'])
+            || $controlPermissions === '*'
+            || (is_array($controlPermissions) && in_array('*', $controlPermissions, true));
+        if ($isFullControlAdmin) {
+            return;
+        }
+        throw new Exception('Access denied. Control administrator authorization required.');
     }
 
     // Check if user is logged in (real `users` row only)

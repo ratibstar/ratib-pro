@@ -1,0 +1,35 @@
+{
+    "loaded_modules": [
+        "auth",
+        "dashboard",
+        "platform",
+        "marketing",
+        "cms",
+        "ops",
+        "api",
+        "pos",
+        "pos_v2"
+    ],
+    "loaded_files": [
+        "routes\/modules\/auth.php",
+        "routes\/modules\/dashboard.php",
+        "routes\/modules\/platform.php",
+        "routes\/modules\/marketing.php",
+        "routes\/modules\/cms.php",
+        "routes\/modules\/ops.php",
+        "routes\/modules\/api.php",
+        "routes\/modules\/pos.php",
+        "modules\/pos\/routes\/pos-v2.php"
+    ],
+    "route_count": 2167,
+    "admin_matches": [
+        {
+            "method": "GET",
+            "pattern": "\/admin",
+            "handler": "Rateb\\App\\Controllers\\Admin\\DashboardController::index",
+            "middleware": [
+                "Rateb\\App\\Core\\Middleware\\ErpAuthMiddleware"
+            ]
+        }
+    ]
+}

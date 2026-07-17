@@ -81,7 +81,6 @@ $router->post($posApp('api/register/return'), [PosOrderOpsApiController::class, 
 $router->post($posApp('api/register/exchange'), [PosOrderOpsApiController::class, 'processExchange'], $returnsMw);
 
 $router->get($posApp('settings'), [PosSettingsController::class, 'index'], $posMw('pos/settings'));
-$router->post($posApp('settings/demo-setup'), [PosSettingsController::class, 'setupDemoData'], $posMw('pos/settings'));
 
 $devicesMw = rateb_erp_mw('pos');
 $router->get($posApp('devices'), [PosDevicesController::class, 'index'], $devicesMw);

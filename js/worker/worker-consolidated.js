@@ -1232,10 +1232,12 @@ class WorkerTable {
             
             // Call the actual API for bulk actions with cache busting
             const timestamp = Date.now();
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
             const response = await fetch(`${this.baseUrl}/bulk-${action}.php?t=${timestamp}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken,
                 },
                 body: JSON.stringify({ 
                     worker_ids: workerIds,

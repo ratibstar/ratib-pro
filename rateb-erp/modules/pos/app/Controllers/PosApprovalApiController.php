@@ -5,8 +5,8 @@ namespace Rateb\App\Pos\Controllers;
 
 use Rateb\App\Pos\Services\PosSessionService;
 use Rateb\App\Pos\Services\PosSupervisorApprovalService;
+use Rateb\App\Pos\Services\Bridge\PosInventoryBridgeService;
 use Rateb\App\Services\BiometricAuthService;
-use Rateb\App\Services\StockMovementService;
 
 final class PosApprovalApiController extends PosBaseController
 {
@@ -104,7 +104,7 @@ final class PosApprovalApiController extends PosBaseController
                 $warehouseId = (int) ($session['warehouse_id'] ?? 0);
             }
 
-            $movementId = (new StockMovementService())->record([
+            $movementId = (new PosInventoryBridgeService())->recordMovement([
                 'inventory_id' => $inventoryId,
                 'warehouse_id' => $warehouseId > 0 ? $warehouseId : null,
                 'movement_type' => 'adjustment',

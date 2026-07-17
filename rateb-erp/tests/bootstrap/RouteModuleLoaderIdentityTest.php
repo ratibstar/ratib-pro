@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 $root = dirname(__DIR__, 2);
 $php = PHP_BINARY;
-$script = $root . '/tools/boot-bench/phase-aa1-route-signature.php';
+$script = __DIR__ . '/RouteSignatureHelper.php';
 
 $run = static function (string $mode) use ($php, $script): array {
     $cmd = escapeshellarg($php) . ' ' . escapeshellarg($script) . ' ' . escapeshellarg($mode);

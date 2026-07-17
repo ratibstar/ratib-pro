@@ -8,6 +8,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+require_once __DIR__ . '/core/api-permission-helper.php';
+enforceApiPermission('workers', 'documents');
+
 require_once '../config/database.php';
 require_once '../Utils/response.php';
 
@@ -16,15 +19,6 @@ try {
         throw new Exception('Document ID is required');
     }
     
-    // Simple test to see if API is working
-    if ($_GET['id'] === 'test') {
-        sendResponse([
-            'success' => true,
-            'message' => 'API is working',
-            'test' => true
-        ]);
-    }
-
     $db = new Database();
     $conn = $db->getConnection();
 

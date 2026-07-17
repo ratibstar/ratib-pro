@@ -1,32 +1,10 @@
 #!/usr/bin/env python3
-"""Start RCC Realtime Hub on production after deploy (HTTP + optional SSH)."""
+"""Start RCC Realtime Hub on production through authenticated SSH only."""
 from __future__ import annotations
 
 import os
 import subprocess
 import sys
-import urllib.error
-import urllib.request
-
-
-def http_start(site: str, token: str, path: str) -> tuple[int, str]:
-    url = site.rstrip("/") + path
-    req = urllib.request.Request(
-        url,
-        data=b"",
-        method="POST",
-        headers={
-            "X-Rateb-Migrate-Token": token,
-            "Cache-Control": "no-cache",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return int(resp.status), resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as exc:
-        return int(exc.code), exc.read().decode("utf-8", errors="replace")
-    except Exception as exc:
-        return 0, str(exc)
 
 
 def ssh_start() -> tuple[int, str]:
@@ -91,31 +69,6 @@ def ssh_start() -> tuple[int, str]:
 
 
 def main() -> int:
-    site = os.environ.get("DEPLOY_SITE_URL") or os.environ.get("CPANEL_SITE_URL", "https://rateb.sa")
-    token = os.environ.get("RATEB_ERP_MIGRATE_TOKEN") or os.environ.get("CPANEL_API_TOKEN") or ""
-    if not token:
-        print("::warning::RCC Realtime Hub skipped — no migrate token", flush=True)
-        return 0
-
-    paths = [
-        "/control-panel/api/control/rcc-realtime-hub-run.php",
-        "/ratib-contact-center/public/run-realtime-hub.php",
-    ]
-    http_ok = False
-    for path in paths:
-        code, body = http_start(site, token, path)
-        print(f"--- HTTP {path} ({code}) ---", flush=True)
-        print(body, flush=True)
-        if "OK" in body and "running=yes" in body.replace(" ", ""):
-            http_ok = True
-            break
-        if code == 404:
-            continue
-
-    if http_ok:
-        print("RCC Realtime Hub started via HTTP", flush=True)
-        return 0
-
     code, body = ssh_start()
     if code:
         print(f"--- SSH start (exit {code}) ---", flush=True)

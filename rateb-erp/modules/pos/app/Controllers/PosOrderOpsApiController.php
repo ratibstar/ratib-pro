@@ -106,7 +106,7 @@ final class PosOrderOpsApiController extends PosBaseController
     public function convertQuote(array $params): void
     {
         $this->bootstrapPos();
-        $this->guardPosView('pos/register');
+        $this->guardPosPermission('pos.sale.complete', 'pos/register');
         $this->requireCsrf();
         $scope = $this->registerScope();
         $this->ensureShift($scope);

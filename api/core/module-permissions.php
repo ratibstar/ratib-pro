@@ -78,6 +78,11 @@ return [
         'bulk-delete' => 'delete_case',
         'bulk_delete' => 'delete_case'
     ],
+    'reports' => [
+        'view' => 'view_reports',
+        'documents' => 'export_reports',
+        'export' => 'export_reports',
+    ],
     'hr' => [
         'view' => 'view_hr_dashboard',
         'get' => 'view_employees',

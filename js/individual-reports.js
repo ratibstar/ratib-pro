@@ -295,13 +295,7 @@ class IndividualReports {
                     break;
                 case 'export-report':
                     if (window.individualReports && window.individualReports.currentEntity) {
-                        const params = new URLSearchParams({
-                            action: 'export_report',
-                            entity_type: window.individualReports.currentEntityType,
-                            entity_id: window.individualReports.currentEntity,
-                            format: 'csv'
-                        });
-                        window.location.href = `${getApiBase()}/reports/individual-reports.php?${params.toString()}`;
+                        exportIndividualReport();
                     } else {
                         alert('Please select an entity first');
                     }
@@ -1735,7 +1729,7 @@ function refreshIndividualReport() {
     }
 }
 
-function exportIndividualReport() {
+async function exportIndividualReport() {
     if (!window.individualReports || !window.individualReports.currentEntity) {
         alert('Please select an entity first');
         return;
@@ -1747,8 +1741,19 @@ function exportIndividualReport() {
         entity_id: window.individualReports.currentEntity,
         format: 'csv'
     });
-    
-    window.location.href = `${getApiBase()}/reports/individual-reports.php?${params.toString()}`;
+    const csrf = document.querySelector('meta[name="rateb-csrf-token"]')?.content || '';
+    const response = await fetch(`${getApiBase()}/reports/individual-reports.php?${params.toString()}`, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf },
+    });
+    if (!response.ok) {
+        throw new Error('Report export failed');
+    }
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(await response.blob());
+    link.download = `individual-report-${window.individualReports.currentEntity}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function printIndividualReport() {

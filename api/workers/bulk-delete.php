@@ -23,9 +23,11 @@ try {
     require_once __DIR__ . '/../core/Database.php';
     require_once __DIR__ . '/../core/ApiResponse.php';
     require_once __DIR__ . '/../core/api-permission-helper.php';
+    require_once __DIR__ . '/../core/api-mutation-security.php';
 
     // Enforce permission for bulk deleting workers
     enforceApiPermission('workers', 'bulk-delete');
+    requireApiMutationSecurity();
 
     // Get JSON data from request
     $data = json_decode(file_get_contents('php://input'), true);

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import shlex
 import stat
 import subprocess
 import sys
@@ -112,31 +113,6 @@ def _remote_dest(remote_base: str) -> str:
     return f"{user}@{host}:{base}"
 
 
-def _write_migrate_token(core, remote_base: str, files: list[str], key_path: str) -> None:
-    token = (
-        os.environ.get("RATEB_ERP_MIGRATE_TOKEN")
-        or os.environ.get("DEPLOY_MIGRATE_TOKEN")
-        or os.environ.get("CPANEL_API_TOKEN")
-        or ""
-    ).strip()
-    if not token:
-        return
-    if not any(p.startswith("rateb-erp/") for p in files):
-        return
-    token_path = "rateb-erp/storage/deploy-migrate-token"
-    os.makedirs(os.path.dirname(token_path), exist_ok=True)
-    try:
-        with open(token_path, "w", encoding="utf-8") as handle:
-            handle.write(token)
-        _rsync_files(core, [token_path], remote_base, key_path)
-        print("erp migrate token: uploaded with deploy bundle", flush=True)
-    finally:
-        try:
-            os.remove(token_path)
-        except OSError:
-            pass
-
-
 def _rsync_files(core, files: list[str], remote_base: str, key_path: str) -> tuple[int, int]:
     existing = [f for f in files if os.path.isfile(f)]
     missing = [f for f in files if f not in existing]
@@ -181,6 +157,20 @@ def _rsync_files(core, files: list[str], remote_base: str, key_path: str) -> tup
             pass
 
 
+def _purge_security_retired_files(core, remote_base: str, key_path: str) -> None:
+    base = remote_base.rstrip("/")
+    targets = [
+        shlex.quote(f"{base}/{rel.lstrip('/')}")
+        for rel in core.SECURITY_REMOTE_DELETE_FILES
+    ]
+    proc = _ssh_run(key_path, "rm -f -- " + " ".join(targets))
+    if proc.returncode != 0:
+        raise RuntimeError(
+            "security purge failed: " + ((proc.stderr or proc.stdout or "unknown error").strip())
+        )
+    print(f"security purge: removed {len(targets)} retired HTTP script(s)", flush=True)
+
+
 def main() -> int:
     core = _load_deploy_core()
     root = os.path.dirname(os.path.abspath(__file__))
@@ -203,6 +193,7 @@ def main() -> int:
     key_path = _write_ssh_key()
     try:
         _ensure_remote_dir(remote_base.rstrip("/"), key_path)
+        _purge_security_retired_files(core, remote_base, key_path)
         ok, fail = _rsync_files(core, files, remote_base, key_path)
         print(
             f"\n========== Summary: ok={ok} fail={fail} total={total} "
@@ -216,7 +207,6 @@ def main() -> int:
         if must_check:
             print(f"MUST_OK check skipped for rsync (uploaded {ok} paths in batch)", flush=True)
 
-        _write_migrate_token(core, remote_base, files, key_path)
         return 0
     finally:
         try:
