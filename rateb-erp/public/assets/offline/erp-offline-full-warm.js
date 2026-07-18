@@ -5,19 +5,20 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 40;
-    var CONCURRENCY = 1;
-    var GAP_MS = 1200;
+    var MAX_URLS = 64;
+    var CONCURRENCY = 3;
+    var GAP_MS = 200;
     var MIN_OK = 8;
-    var MIN_ERP_HTML_BYTES = 20000;
+    // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
+    var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v34';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Phase OH — bump TTL keys so stale "success" without module HTML does not skip.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v15';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v15';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v15';
+    // Phase OH — bump TTL keys so clients re-warm after offline speed parity.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v16';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v16';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v16';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -25,17 +26,32 @@
         'admin/hr',
         'admin/hr/attendance',
         'admin/hr/leaves',
+        'admin/hr/employees',
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/suppliers',
         'admin/ops/stock-movements',
+        'admin/ops/journal-entries',
+        'admin/ops/access-control',
+        'admin/ops/access-control/matrix',
+        'admin/ops/accounting',
+        'admin/ops/accounting/platform',
         'admin/ops/pos/register',
+        'admin/accounting',
         'admin/companies',
         'admin/company-permissions',
         'admin/agency-updates',
         'admin/profile',
+        'admin/notifications',
+        'admin/users',
+        'admin/branches',
+        'admin/customers',
+        'admin/cms',
+        'admin/executive-dashboard',
+        'admin/reports',
+        'admin/cfo',
         'admin/oversight/approvals'
     ];
     var deadWarmUrls = {};
@@ -758,6 +774,7 @@
             'assets/offline/ops-page-allowlist.json',
             'offline-shell.html',
             'connectivity-probe.json',
+            'assets/css/critical-shell.css',
             'assets/css/variables.css',
             'assets/css/main.css',
             'assets/css/components.css',
@@ -913,12 +930,21 @@
                 root.location.origin + publicBase() + 'admin/ops/accounting/platform',
                 root.location.origin + publicBase() + 'admin/ops/accounting',
                 root.location.origin + publicBase() + 'admin/accounting',
+                root.location.origin + publicBase() + 'admin/ops/journal-entries',
                 root.location.origin + publicBase() + 'admin/ops/purchase-requests',
                 root.location.origin + publicBase() + 'admin/ops/inventory',
                 root.location.origin + publicBase() + 'admin/ops/warehouses',
                 root.location.origin + publicBase() + 'admin/hr/attendance',
                 root.location.origin + publicBase() + 'admin/ops/suppliers',
                 root.location.origin + publicBase() + 'admin/hr/employees',
+                root.location.origin + publicBase() + 'admin/notifications',
+                root.location.origin + publicBase() + 'admin/users',
+                root.location.origin + publicBase() + 'admin/branches',
+                root.location.origin + publicBase() + 'admin/customers',
+                root.location.origin + publicBase() + 'admin/cms',
+                root.location.origin + publicBase() + 'admin/executive-dashboard',
+                root.location.origin + publicBase() + 'admin/reports',
+                root.location.origin + publicBase() + 'admin/cfo',
                 root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
                 root.location.origin + publicBase() + 'admin/oversight/approvals',
                 root.location.origin + publicBase() + 'admin/companies'
@@ -937,7 +963,7 @@
                 try {
                     console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
                 } catch (eLog) { /* ignore */ }
-                return runQueue(list, { signal: signal }).then(function (pageStats) {
+                return runQueue(list, { concurrency: 3, gapMs: 200, signal: signal }).then(function (pageStats) {
                     return {
                         total: (assetStats.total || 0) + (pageStats.total || 0),
                         ok: (assetStats.ok || 0) + (pageStats.ok || 0),

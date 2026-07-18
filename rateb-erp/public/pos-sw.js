@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260717-ops-cache-poison-guard-v85';
+var SW_BUILD_ID = '20260718-offline-speed-parity-v86';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1059,12 +1059,20 @@ function matchErpNavSnapshot(request, url) {
 
 function withSoftOfflineCacheHeader(response) {
     if (!response) {
-        return response;
+        return Promise.resolve(response);
     }
     try {
         var headers = new Headers(response.headers || {});
         headers.set('X-Rateb-Soft-Offline-Nav', '1');
         headers.set('X-Rateb-Offline', headers.get('X-Rateb-Offline') || '1');
+        // PERF — reuse body stream; avoid full arrayBuffer clone on every offline paint.
+        if (response.body) {
+            return Promise.resolve(new Response(response.body, {
+                status: response.status || 200,
+                statusText: response.statusText || 'OK',
+                headers: headers
+            }));
+        }
         return response.clone().arrayBuffer().then(function (buf) {
             return new Response(buf, {
                 status: response.status || 200,
@@ -1077,6 +1085,22 @@ function withSoftOfflineCacheHeader(response) {
     } catch (e) {
         return Promise.resolve(response);
     }
+}
+
+/** Strip ephemeral offline toast so it cannot poison Cache API HTML (false toast while online). */
+function scrubEphemeralOfflineNotes(html) {
+    var body = String(html || '');
+    if (body.indexOf('أوفلاين:') === -1 && body.indexOf('data-rateb-ephemeral-offline-note') === -1) {
+        return body;
+    }
+    try {
+        body = body.replace(/<div[^>]*data-rateb-ephemeral-offline-note[^>]*>[\s\S]*?<\/div>/gi, '');
+        body = body.replace(
+            /<div[^>]*style=["'][^"']*z-index:\s*99998[^"']*["'][^>]*>[\s\S]*?أوفلاين:[\s\S]*?<\/div>/gi,
+            ''
+        );
+    } catch (eScrub) { /* ignore */ }
+    return body;
 }
 
 /**
@@ -1095,12 +1119,16 @@ function isValidErpOpsHtmlBody(pageUrl, html) {
         || /^<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())) {
         return false;
     }
-    if (body.length < 20000
-        && !(/\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
-            && body.length >= 2500
-            && /data-pos-register(?:\s|=|>)/i.test(body)
-            && !/data-pos-biometric-gate/i.test(body))) {
-        return false;
+    var hasShell = /rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body);
+    var isPosReg = /\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
+        && body.length >= 2500
+        && /data-pos-register(?:\s|=|>)/i.test(body)
+        && !/data-pos-biometric-gate/i.test(body);
+    // Lean admin shells (e.g. companies) often land ~8–20KB — do not reject as thin stubs.
+    if (body.length < 20000 && !isPosReg) {
+        if (!(hasShell && body.length >= 8000)) {
+            return false;
+        }
     }
     if (/data-rateb-uncached-page|الصفحة غير محفوظة|<title>\s*POS Offline\s*<\/title>|data-pos-biometric-gate/i.test(body.slice(0, 4000))) {
         return false;
@@ -1112,7 +1140,7 @@ function isValidErpOpsHtmlBody(pageUrl, html) {
         && !/data-pos-register(?:\s|=|>)/i.test(body)) {
         return false;
     }
-    if (!/rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body)) {
+    if (!hasShell) {
         return false;
     }
     return true;
@@ -1150,7 +1178,7 @@ function deletePoisonedErpOpsCacheEntries(pageUrl) {
 function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
     // Phase OH — never put placeholders / login / thin stubs into ops page cache.
     return res.clone().text().then(function (html) {
-        var body = String(html || '');
+        var body = scrubEphemeralOfflineNotes(String(html || ''));
         if (!isValidErpOpsHtmlBody(pageUrl, body)) {
             return null;
         }
@@ -1229,10 +1257,14 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             }
         } catch (eH) { /* ignore */ }
         headers.set('X-Rateb-Ops-Page', '1');
-        return new Response(html, { status: 200, statusText: 'OK', headers: headers });
+        return new Response(scrubEphemeralOfflineNotes(html), { status: 200, statusText: 'OK', headers: headers });
     }
 
     function fetchNetworkThenOfflineShell() {
+        // Offline: skip network wait — go straight to cache/shell.
+        if (isCloudBrowserOffline()) {
+            return fromValidatedCacheOrOfflineShell();
+        }
         return fetchNavigateNetwork(request, 4500).then(function (response) {
             if (response && response.ok) {
                 var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
@@ -1901,6 +1933,7 @@ function warmErpOfflineShell(opts) {
         base + 'assets/offline/erp-offline-shell-rbac.js',
         base + 'assets/offline/erp-shell-bootstrap.js',
         base + 'assets/offline/ops-page-allowlist.json',
+        base + 'assets/css/critical-shell.css',
         base + 'assets/css/variables.css',
         base + 'assets/css/main.css',
         base + 'assets/css/components.css',
@@ -1934,17 +1967,31 @@ function warmErpOfflineShell(opts) {
         'admin/companies',
         'admin/oversight/approvals',
         'admin/profile',
+        'admin/notifications',
         'admin/hr',
         'admin/hr/attendance',
         'admin/hr/leaves',
+        'admin/hr/employees',
         'admin/ops',
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
+        'admin/ops/suppliers',
+        'admin/ops/journal-entries',
+        'admin/ops/access-control',
+        'admin/ops/access-control/matrix',
         'admin/accounting',
         'admin/ops/accounting',
-        'admin/ops/pos/register'
+        'admin/ops/accounting/platform',
+        'admin/ops/pos/register',
+        'admin/users',
+        'admin/branches',
+        'admin/customers',
+        'admin/cms',
+        'admin/executive-dashboard',
+        'admin/reports',
+        'admin/cfo'
     ];
     function cacheUrlList(cache, list) {
         return list.reduce(function (chain, key) {
@@ -1976,33 +2023,36 @@ function warmErpOfflineShell(opts) {
     }
     function warmLeanOpsPages() {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-            return leanOps.reduce(function (chain, rel) {
-                return chain.then(function () {
-                    // PERF-P0.3-D — short gap (was 350ms × ~17 ≈ 6s) so certified HTML lands before offline.
-                    return new Promise(function (resolve) {
-                        setTimeout(resolve, 40);
-                    }).then(function () {
-                        var pageUrl = base + rel.replace(/^\//, '');
-                        return fetch(pageUrl, {
-                            credentials: 'same-origin',
-                            cache: 'no-cache',
-                            redirect: 'follow',
-                            headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-                        }).then(function (res) {
-                            if (!res || !res.ok || res.status !== 200) {
+            var idx = 0;
+            var concurrency = 3;
+            function pumpBatch() {
+                if (idx >= leanOps.length) {
+                    return Promise.resolve();
+                }
+                var batch = leanOps.slice(idx, idx + concurrency);
+                idx += concurrency;
+                return Promise.all(batch.map(function (rel) {
+                    var pageUrl = base + rel.replace(/^\//, '');
+                    return fetch(pageUrl, {
+                        credentials: 'same-origin',
+                        cache: 'no-cache',
+                        redirect: 'follow',
+                        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+                    }).then(function (res) {
+                        if (!res || !res.ok || res.status !== 200) {
+                            return null;
+                        }
+                        try {
+                            var finalPath = new URL(res.url).pathname || '';
+                            if (/\/(login|logout|password)\b/i.test(finalPath)) {
                                 return null;
                             }
-                            try {
-                                var finalPath = new URL(res.url).pathname || '';
-                                if (/\/(login|logout|password)\b/i.test(finalPath)) {
-                                    return null;
-                                }
-                            } catch (eFin) { /* ignore */ }
-                            return putOpsHtml(opsCache, pageUrl, res);
-                        }).catch(function () { return null; });
-                    });
-                });
-            }, Promise.resolve());
+                        } catch (eFin) { /* ignore */ }
+                        return putOpsHtml(opsCache, pageUrl, res);
+                    }).catch(function () { return null; });
+                })).then(pumpBatch);
+            }
+            return pumpBatch();
         });
     }
     // Phase OD — protected OA/identity assets first; fail closed (do not mark warm done).
