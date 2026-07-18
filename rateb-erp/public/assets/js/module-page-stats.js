@@ -1,15 +1,16 @@
 (function () {
     'use strict';
 
-    function escapeHtml(s) {
-        var d = document.createElement('div');
-        d.textContent = s == null ? '' : String(s);
-        return d.innerHTML;
-    }
+    /** PERF-P4: metrics are progressive enhancement — never gate perceived page load.
+     * Fail-soft at 400ms so skeleton clears <500ms after afterEnter (acceptance).
+     * Fetch may continue and upgrade — / placeholders; silent retry uses SILENT_RETRY_MS.
+     */
+    var FAILSOFT_MS = 400;
+    var SILENT_RETRY_MS = 8000;
 
     function renderStrip(container, metrics) {
         if (!metrics || !metrics.length) {
-            container.remove();
+            renderPlaceholder(container);
             return;
         }
         var strip = document.createElement('div');
@@ -41,46 +42,130 @@
         container.innerHTML = '';
         container.appendChild(strip);
         container.classList.remove('is-loading');
+        container.setAttribute('data-rateb-metrics-ready', '1');
     }
 
-    function loadMetrics(container) {
-        var url = container.getAttribute('data-module-metrics-url');
-        if (!url) {
+    /** Lightweight placeholder: remove skeleton / is-loading; show em dashes. */
+    function renderPlaceholder(container) {
+        if (!container || !container.isConnected) {
             return;
         }
+        if (container.getAttribute('data-rateb-metrics-ready') === '1') {
+            container.classList.remove('is-loading');
+            return;
+        }
+        var count = 5;
+        try {
+            var sk = container.querySelectorAll('.cm-strip__item, .cm-strip__item--skeleton');
+            if (sk && sk.length) {
+                count = sk.length;
+            }
+        } catch (eCnt) { /* default 5 */ }
+        var strip = document.createElement('div');
+        strip.className = 'cm-strip';
+        strip.setAttribute('aria-label', container.getAttribute('data-metrics-label') || 'Metrics');
+        strip.setAttribute('data-metrics-placeholder', '1');
+        var i;
+        for (i = 0; i < count; i++) {
+            var item = document.createElement('article');
+            item.className = 'cm-strip__item';
+            item.setAttribute('data-tone', 'blue');
+            var lbl = document.createElement('span');
+            lbl.className = 'cm-strip__lbl';
+            lbl.textContent = '\u00a0';
+            var val = document.createElement('span');
+            val.className = 'cm-strip__val';
+            val.textContent = '\u2014';
+            item.appendChild(lbl);
+            item.appendChild(val);
+            strip.appendChild(item);
+        }
+        container.innerHTML = '';
+        container.appendChild(strip);
+        container.classList.remove('is-loading');
+    }
+
+    function scheduleSilentRetry(container) {
+        if (!container || container.getAttribute('data-rateb-metrics-retry') === '1') {
+            return;
+        }
+        container.setAttribute('data-rateb-metrics-retry', '1');
+        setTimeout(function () {
+            if (!container.isConnected) {
+                return;
+            }
+            if (container.getAttribute('data-rateb-metrics-ready') === '1') {
+                return;
+            }
+            container.removeAttribute('data-rateb-metrics-inflight');
+            loadMetrics(container, { silent: true });
+        }, SILENT_RETRY_MS);
+    }
+
+    function loadMetrics(container, opts) {
+        opts = opts || {};
+        var url = container.getAttribute('data-module-metrics-url');
+        if (!url) {
+            renderPlaceholder(container);
+            return;
+        }
+        if (container.getAttribute('data-rateb-metrics-inflight') === '1') {
+            return;
+        }
+        container.setAttribute('data-rateb-metrics-inflight', '1');
+
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                container.remove();
+                renderPlaceholder(container);
+                container.removeAttribute('data-rateb-metrics-inflight');
+                scheduleSilentRetry(container);
                 return;
             }
         } catch (eOff) { /* continue */ }
+
+        var settled = false;
+        var failSoft = setTimeout(function () {
+            if (settled) {
+                return;
+            }
+            // Keep page feeling finished; fetch may still resolve and upgrade values.
+            renderPlaceholder(container);
+        }, FAILSOFT_MS);
+
         fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-            .then(function (res) { return res.json(); })
+            .then(function (res) {
+                return res.json();
+            })
             .then(function (data) {
-                if (!data || !data.ok) {
-                    container.remove();
+                settled = true;
+                clearTimeout(failSoft);
+                container.removeAttribute('data-rateb-metrics-inflight');
+                if (data && data.ok && data.metrics && data.metrics.length) {
+                    renderStrip(container, data.metrics);
                     return;
                 }
-                renderStrip(container, data.metrics || []);
+                renderPlaceholder(container);
+                scheduleSilentRetry(container);
             })
             .catch(function () {
-                container.remove();
+                settled = true;
+                clearTimeout(failSoft);
+                container.removeAttribute('data-rateb-metrics-inflight');
+                renderPlaceholder(container);
+                scheduleSilentRetry(container);
             });
     }
 
+    /**
+     * PERF-P4: start immediately on afterEnter / boot — no afterInteraction, no idle queue.
+     */
     function boot() {
         document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
-            if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
+            if (el.getAttribute('data-rateb-metrics-bound') === '1') {
                 return;
             }
-            el.setAttribute('data-rateb-metrics-loaded', '1');
-            // PERF-P1 — defer metrics so navigation paints first.
-            var run = function () { loadMetrics(el); };
-            if (typeof requestIdleCallback === 'function') {
-                requestIdleCallback(run, { timeout: 2500 });
-            } else {
-                setTimeout(run, 800);
-            }
+            el.setAttribute('data-rateb-metrics-bound', '1');
+            loadMetrics(el);
         });
     }
 

@@ -635,6 +635,8 @@ $ratebCriticalScripts = [
     rateb_asset('js/theme.js'),
     rateb_asset('js/app.js'),
     rateb_asset('js/erp-nav-instant.js'),
+    // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
+    rateb_asset('js/module-page-stats.js'),
 ];
 $ratebIdleScripts = [
     rateb_bootstrap_js(),
@@ -651,9 +653,6 @@ if (!empty($layoutAssets['tableTools'])) {
 }
 if (!empty($layoutAssets['dateInputs'])) {
     $ratebIdleScripts[] = rateb_asset('js/rateb-date-inputs.js');
-}
-if (!empty($deferModulePageMetrics)) {
-    $ratebIdleScripts[] = rateb_asset('js/module-page-stats.js');
 }
 if (!empty($layoutAssets['formHybrid'])) {
     $ratebIdleScripts[] = rateb_asset('js/form-hybrid.js');
