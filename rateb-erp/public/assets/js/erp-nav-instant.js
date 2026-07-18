@@ -17,6 +17,9 @@
     var loadedScripts = Object.create(null);
     var navigating = false;
     var prefetchSeen = Object.create(null);
+    var prefetchQueue = [];
+    var prefetchInFlight = 0;
+    var PREFETCH_MAX_PARALLEL = 1;
     var lastHref = '';
 
     function shellCfg() {
@@ -150,28 +153,42 @@
         return Promise.resolve();
     }
 
+    function runPrefetchQueue() {
+        while (prefetchInFlight < PREFETCH_MAX_PARALLEL && prefetchQueue.length) {
+            var href = prefetchQueue.shift();
+            prefetchInFlight += 1;
+            postSw({ type: 'PREFETCH_ERP_OPS_URL', url: href });
+            try {
+                fetch(href, {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'text/html', 'X-Rateb-Prefetch': '1' }
+                }).then(function (res) {
+                    if (!res || !res.ok) {
+                        return null;
+                    }
+                    return res.text().then(function (html) {
+                        if (html && html.length >= 20000) {
+                            postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                        }
+                    });
+                }).catch(function () { /* ignore */ }).then(function () {
+                    prefetchInFlight = Math.max(0, prefetchInFlight - 1);
+                    runPrefetchQueue();
+                });
+            } catch (e2) {
+                prefetchInFlight = Math.max(0, prefetchInFlight - 1);
+            }
+        }
+    }
+
     function prefetchUrl(href) {
         if (!href || prefetchSeen[href]) {
             return;
         }
         prefetchSeen[href] = true;
-        postSw({ type: 'PREFETCH_ERP_OPS_URL', url: href });
-        // Also warm browser HTTP cache / SW fetch path
-        try {
-            fetch(href, {
-                credentials: 'same-origin',
-                headers: { Accept: 'text/html', 'X-Rateb-Prefetch': '1' }
-            }).then(function (res) {
-                if (!res || !res.ok) {
-                    return null;
-                }
-                return res.text().then(function (html) {
-                    if (html && html.length >= 20000) {
-                        postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
-                    }
-                });
-            }).catch(function () { /* ignore */ });
-        } catch (e2) { /* ignore */ }
+        /* PERF-P1: serialize prefetches so they do not stampede PHP. */
+        prefetchQueue.push(href);
+        runPrefetchQueue();
     }
 
     function bindPrefetch(rootEl) {
@@ -205,29 +222,40 @@
             if (!links.length) {
                 return;
             }
-            if (typeof IntersectionObserver === 'function') {
-                var io = new IntersectionObserver(function (entries) {
-                    entries.forEach(function (en) {
-                        if (en.isIntersecting) {
-                            var a = en.target;
-                            try {
-                                var u = new URL(a.href, root.location.href);
-                                if (ADMIN_PATH_RE.test(u.pathname) && !POS_PATH_RE.test(u.pathname)) {
-                                    prefetchUrl(u.href);
-                                }
-                            } catch (e) { /* ignore */ }
-                            io.unobserve(a);
-                        }
+            /* PERF-P1: do not prefetch during first paint — wait for idle + 3s. */
+            var startPrefetch = function () {
+                if (typeof IntersectionObserver === 'function') {
+                    var io = new IntersectionObserver(function (entries) {
+                        entries.forEach(function (en) {
+                            if (en.isIntersecting) {
+                                var a = en.target;
+                                try {
+                                    var u = new URL(a.href, root.location.href);
+                                    if (ADMIN_PATH_RE.test(u.pathname) && !POS_PATH_RE.test(u.pathname)) {
+                                        prefetchUrl(u.href);
+                                    }
+                                } catch (e) { /* ignore */ }
+                                io.unobserve(a);
+                            }
+                        });
+                    }, { rootMargin: '80px' });
+                    links.forEach(function (a) { io.observe(a); });
+                } else {
+                    Array.prototype.slice.call(links, 0, 4).forEach(function (a) {
+                        try {
+                            prefetchUrl(new URL(a.href, root.location.href).href);
+                        } catch (e2) { /* ignore */ }
                     });
-                }, { rootMargin: '80px' });
-                links.forEach(function (a) { io.observe(a); });
-            } else {
-                Array.prototype.slice.call(links, 0, 12).forEach(function (a) {
-                    try {
-                        prefetchUrl(new URL(a.href, root.location.href).href);
-                    } catch (e2) { /* ignore */ }
-                });
-            }
+                }
+            };
+            var kick = function () {
+                if (window.requestIdleCallback) {
+                    window.requestIdleCallback(startPrefetch, { timeout: 8000 });
+                } else {
+                    startPrefetch();
+                }
+            };
+            setTimeout(kick, 3000);
         } catch (e3) { /* ignore */ }
     }
 

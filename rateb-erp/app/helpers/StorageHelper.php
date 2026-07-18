@@ -103,6 +103,11 @@ final class StorageHelper
 
     public static function ensureStorageTree(string $basePath): void
     {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
         if (!defined('RATEB_STORAGE_PATH')) {
             define('RATEB_STORAGE_PATH', rtrim(str_replace('\\', '/', $basePath), '/') . '/storage');
         }

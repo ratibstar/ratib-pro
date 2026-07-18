@@ -44,141 +44,17 @@ final class Bootstrap
 
         self::registerAutoloader($basePath);
         self::registerSiteAppAutoloader();
+        /* PERF-P1: Request helper used before route dispatch; keep explicit. */
         $requestHelper = $basePath . '/app/helpers/Request.php';
         if (is_file($requestHelper)) {
             require_once $requestHelper;
         }
-        $entities = $basePath . '/app/models/Entities.php';
-        if (is_file($entities)) {
-            require_once $entities;
-        }
-        foreach ([
-            '/app/controllers/CrudController.php',
-            '/app/helpers/LineItems.php',
-            '/app/services/AuditService.php',
-            '/app/controllers/Admin/AdminControllers.php',
-            '/app/controllers/Admin/AutomationControllers.php',
-            '/app/controllers/Admin/BusinessControllers.php',
-            '/app/controllers/Admin/ExtendedControllers.php',
-            '/app/controllers/Admin/AccountingControllers.php',
-            '/app/controllers/Admin/CmsControllers.php',
-            '/app/controllers/Marketing/MarketingController.php',
-            '/app/models/CmsModels.php',
-            '/app/models/HrModels.php',
-            '/app/models/RecruitmentModels.php',
-            '/app/models/AccountingPlatformModels.php',
-            '/app/models/CrmModels.php',
-            '/app/models/ProjectModels.php',
-            '/app/models/EamModels.php',
-            '/app/models/ApprovalModels.php',
-            '/app/models/EprocModels.php',
-            '/app/models/MfgModels.php',
-            '/app/models/HrmModels.php',
-            '/app/services/HrService.php',
-            '/app/services/RecruitmentSupport.php',
-            '/app/services/CandidateService.php',
-            '/app/services/RecruitmentWorkflowService.php',
-            '/app/services/RecruitmentTimelineService.php',
-            '/app/services/RecruitmentAgencyService.php',
-            '/app/services/VisaService.php',
-            '/app/services/MedicalService.php',
-            '/app/services/RecruitmentContractService.php',
-            '/app/services/InterviewService.php',
-            '/app/services/AssignmentService.php',
-            '/app/services/AccountingSupport.php',
-            '/app/services/AccountingDomainServices.php',
-            '/app/services/AccountingEnterpriseServices.php',
-            '/app/services/CrmSupport.php',
-            '/app/services/CrmWorkflowService.php',
-            '/app/services/CrmTimelineService.php',
-            '/app/services/CrmDomainServices.php',
-            '/app/services/CrmActivityServices.php',
-            '/app/services/ProjectSupport.php',
-            '/app/services/ProjectWorkflowService.php',
-            '/app/services/ProjectTimelineService.php',
-            '/app/services/ProjectDomainServices.php',
-            '/app/services/ProjectActivityServices.php',
-            '/app/services/AssetSupport.php',
-            '/app/services/AssetWorkflowService.php',
-            '/app/services/AssetTimelineService.php',
-            '/app/services/AssetDomainServices.php',
-            '/app/services/AssetActivityServices.php',
-            '/app/services/ApprovalSupport.php',
-            '/app/services/ApprovalWorkflowService.php',
-            '/app/services/ApprovalTimelineService.php',
-            '/app/services/ApprovalDomainServices.php',
-            '/app/services/ProcurementEnterpriseSupport.php',
-            '/app/services/ProcurementWorkflowService.php',
-            '/app/services/ProcurementTimelineService.php',
-            '/app/services/ProcurementEnterpriseDomainServices.php',
-            '/app/services/ManufacturingSupport.php',
-            '/app/services/ManufacturingWorkflowService.php',
-            '/app/services/ManufacturingTimelineService.php',
-            '/app/services/ManufacturingDomainServices.php',
-            '/app/services/HumanResourcesSupport.php',
-            '/app/services/HumanResourcesWorkflowService.php',
-            '/app/services/EmployeeTimelineService.php',
-            '/app/services/HumanResourcesDomainServices.php',
-            '/app/services/PayrollSupport.php',
-            '/app/services/PayrollWorkflowService.php',
-            '/app/services/PayrollTimelineService.php',
-            '/app/services/PayrollDomainServices.php',
-            '/app/models/PayrollModels.php',
-            '/app/services/QualitySupport.php',
-            '/app/services/QualityWorkflowService.php',
-            '/app/services/QualityTimelineService.php',
-            '/app/services/QualityDomainServices.php',
-            '/app/models/QualityModels.php',
-            '/app/services/DocumentManagementSupport.php',
-            '/app/services/DocumentWorkflowService.php',
-            '/app/services/DocumentTimelineService.php',
-            '/app/services/DocumentManagementDomainServices.php',
-            '/app/models/DocumentManagementModels.php',
-            '/app/controllers/Company/DocumentManagementControllers.php',
-            '/app/services/BusinessIntelligenceSupport.php',
-            '/app/services/BusinessIntelligenceWorkflowService.php',
-            '/app/services/BiTimelineService.php',
-            '/app/services/BusinessIntelligenceDomainServices.php',
-            '/app/models/BusinessIntelligenceModels.php',
-            '/app/controllers/Company/BusinessIntelligenceControllers.php',
-            '/app/controllers/Company/CompanyControllers.php',
-            '/app/controllers/Company/HrControllers.php',
-            '/app/controllers/Company/HrExtendedControllers.php',
-            '/app/controllers/Company/RecruitmentControllers.php',
-            '/app/controllers/Company/ExtendedControllers.php',
-            '/app/controllers/Company/AccountingControllers.php',
-            '/app/controllers/Company/AccountingPlatformControllers.php',
-            '/app/controllers/Company/CrmControllers.php',
-            '/app/controllers/Company/WebsiteControllers.php',
-            '/app/controllers/Company/ProjectControllers.php',
-            '/app/controllers/Company/AssetPlatformControllers.php',
-            '/app/controllers/Company/ApprovalPlatformControllers.php',
-            '/app/controllers/Company/ProcurementEnterpriseControllers.php',
-            '/app/controllers/Company/ManufacturingControllers.php',
-            '/app/controllers/Company/HumanResourcesControllers.php',
-            '/app/controllers/Company/PayrollControllers.php',
-            '/app/controllers/Company/QualityControllers.php',
-            '/app/controllers/Company/BranchControllers.php',
-            '/app/controllers/Company/BusinessControllers.php',
-            '/app/controllers/Company/OfflineDevicesController.php',
-            '/app/controllers/Shared/PasswordResetController.php',
-            '/app/controllers/Shared/LoginController.php',
-            '/app/controllers/Api/ApiController.php',
-            '/app/Core/Router.php',
-            '/app/Core/View.php',
-            '/app/Core/Response.php',
-            '/app/Core/Middleware/Middleware.php',
-            '/app/services/MigrationService.php',
-            '/app/services/LegacyHomeContentService.php',
-            '/app/services/PlanLimitService.php',
-            '/app/services/AccountingService.php',
-            '/app/services/BillingService.php',
-        ] as $bundle) {
-            $f = $basePath . $bundle;
-            if (is_file($f)) {
-                require_once $f;
-            }
-        }
+        /*
+         * PERF-P1 — Stop eager require_once of 100+ controller/model/service bags.
+         * Multi-class bags resolve via app/Core/generated-classmap.php;
+         * single-class files resolve via PSR-4 autoload below.
+         * Business logic unchanged: classes still load on first use.
+         */
         $skipSession = (defined('RATEB_ENV_NO_SESSION') && RATEB_ENV_NO_SESSION)
             || (defined('RATEB_HEALTH_PROBE') && RATEB_HEALTH_PROBE);
         self::loadConfig($basePath);
@@ -435,7 +311,27 @@ final class Bootstrap
 
     private static function registerAutoloader(string $basePath): void
     {
-        spl_autoload_register(static function (string $class) use ($basePath): void {
+        static $registered = false;
+        if ($registered) {
+            return;
+        }
+        $registered = true;
+
+        $classmapFile = $basePath . '/app/Core/generated-classmap.php';
+        $classmap = is_file($classmapFile) ? require $classmapFile : [];
+        if (!is_array($classmap)) {
+            $classmap = [];
+        }
+
+        spl_autoload_register(static function (string $class) use ($basePath, $classmap): void {
+            if (isset($classmap[$class])) {
+                $mapped = $basePath . $classmap[$class];
+                if (is_file($mapped)) {
+                    require_once $mapped;
+                    return;
+                }
+            }
+
             $prefix = 'Rateb\\App\\';
             if (strpos($class, $prefix) !== 0) {
                 return;
@@ -473,27 +369,35 @@ final class Bootstrap
         return self::matchPathSegment($dir, $classFile, false);
     }
 
+    /** PERF-P1: cache scandir results per directory for the request. */
     private static function matchPathSegment(string $parent, string $name, bool $directory): ?string
     {
         if (!is_dir($parent)) {
             return null;
         }
 
+        static $dirCache = [];
+        if (!isset($dirCache[$parent])) {
+            $entries = [];
+            foreach (scandir($parent) ?: [] as $entry) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                $entries[strtolower($entry)] = $entry;
+            }
+            $dirCache[$parent] = $entries;
+        }
+
         $target = strtolower($name);
-        foreach (scandir($parent) ?: [] as $entry) {
-            if ($entry === '.' || $entry === '..') {
-                continue;
-            }
-            if (strtolower($entry) !== $target) {
-                continue;
-            }
-            $full = $parent . '/' . $entry;
-            if ($directory && is_dir($full)) {
-                return $full;
-            }
-            if (!$directory && is_file($full)) {
-                return $full;
-            }
+        if (!isset($dirCache[$parent][$target])) {
+            return null;
+        }
+        $full = $parent . '/' . $dirCache[$parent][$target];
+        if ($directory && is_dir($full)) {
+            return $full;
+        }
+        if (!$directory && is_file($full)) {
+            return $full;
         }
 
         return null;

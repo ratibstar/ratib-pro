@@ -1341,9 +1341,9 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
       }
     } catch (e0) {}
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(function () { chain(0); }, { timeout: 4000 });
+      window.requestIdleCallback(function () { chain(0); }, { timeout: 12000 });
     } else {
-      setTimeout(function () { chain(0); }, 1200);
+      setTimeout(function () { chain(0); }, 5000);
     }
   }
   if (document.readyState === 'complete') kick();
