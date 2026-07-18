@@ -1359,6 +1359,13 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       }
       if (cacheLiveAdminPage._busy) return;
       cacheLiveAdminPage._busy = true;
+      // Strip ephemeral offline toast so Cache API HTML never shows it while online later.
+      try {
+        Array.prototype.forEach.call(
+          document.querySelectorAll('[data-rateb-ephemeral-offline-note]'),
+          function (n) { if (n && n.parentNode) { n.parentNode.removeChild(n); } }
+        );
+      } catch (eScrub) { /* ignore */ }
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
       cacheLiveAdminPage._busy = false;
       if (html.length < 500 || html.length > 800000) return;
@@ -1446,6 +1453,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     if (navigator.onLine === false && isAdminPath(location.pathname) && !isOfflineShellUi()) {
       var note = document.createElement('div');
       note.setAttribute('role', 'status');
+      note.setAttribute('data-rateb-ephemeral-offline-note', '1');
       note.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99998;max-width:18rem;padding:8px 12px;'
         + 'background:#7f1d1d;color:#fee2e2;font:12px/1.4 system-ui,sans-serif;border-radius:8px';
       note.textContent = 'أوفلاين: تظهر آخر نسخة محفوظة من الصفحة (الجداول من وقت آخر زيارة متصلة).';
