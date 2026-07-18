@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-f5-instant-paint-v90';
+var SW_BUILD_ID = '20260718-offline-instant-v91';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -876,49 +876,8 @@ function erpOpsPageFallback(request, url) {
             if (!url || !url.pathname) {
                 return null;
             }
-            // Query-string / trailing-slash variants of the same ops page (?company_id=).
-            return cache.match(url.origin + url.pathname, { ignoreSearch: true }).then(function (hit) {
-                if (hit) {
-                    return hit;
-                }
-                // Soft-online: never O(n) keys scan (F5 regression).
-                // Offline: deep scan — exact keys often miss after warm/alias differences.
-                if (!isCloudBrowserOffline()) {
-                    return null;
-                }
-                var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
-                var wantAlt = '';
-                if (/\/admin\/ops\//i.test(want)) {
-                    wantAlt = want.replace(/\/admin\/ops\//i, '/admin/');
-                } else if (/\/admin\//i.test(want)) {
-                    wantAlt = want.replace(/\/admin\//i, '/admin/ops/');
-                }
-                return cache.keys().then(function (keys) {
-                    var best = null;
-                    for (var i = 0; i < (keys || []).length; i++) {
-                        try {
-                            var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
-                            var ku = new URL(href);
-                            var got = String(ku.pathname || '').replace(/\/+$/, '').toLowerCase();
-                            if (got === want || (wantAlt && got === wantAlt)) {
-                                var wantCid = '';
-                                var gotCid = '';
-                                try {
-                                    wantCid = String(url.searchParams.get('company_id') || '');
-                                    gotCid = String(ku.searchParams.get('company_id') || '');
-                                } catch (eCid) { /* ignore */ }
-                                if (wantCid && gotCid && wantCid === gotCid) {
-                                    return cache.match(keys[i]);
-                                }
-                                if (!best) {
-                                    best = keys[i];
-                                }
-                            }
-                        } catch (e3) { /* ignore */ }
-                    }
-                    return best ? cache.match(best) : null;
-                });
-            });
+            // Query-string variants (?company_id=) — ignoreSearch is enough; never cache.keys().
+            return cache.match(url.origin + url.pathname, { ignoreSearch: true });
         });
     }).catch(function () {
         return null;
@@ -990,37 +949,22 @@ function parentAdminListUrl(url) {
  * @param {URL} [url]
  */
 function erpAdminOfflineFallback(request, url) {
-    // Always serve *something* after a failed network navigation (never Chrome ERR_FAILED).
-    // CRITICAL: never return dashboard HTML under a different path — that made create/edit
-    // and sidebar clicks look like "everything goes back to لوحة التحكم".
-    var tryOps = erpOpsPageFallback(request, url);
-    return tryOps.then(function (opsHit) {
-        if (opsHit) {
-            return opsHit;
+    // Instant exact match only — never cache.keys() / multi-version walks on navigate.
+    return matchSoftOnlineExactCache(request, url).then(function (hit) {
+        if (hit) {
+            return hit;
         }
-        return matchAnyCachedAdminPage(request, url).then(function (any) {
-            if (any) {
-                return any;
-            }
-            // Edit/show deep links: prefer the cached list page (companies-approvals, suppliers…).
-            var parent = parentAdminListUrl(url);
-            if (parent) {
-                return matchAnyCachedAdminPage(null, parent).then(function (listHit) {
-                    if (listHit) {
-                        return listHit;
-                    }
-                    return finishUncached(url);
-                });
-            }
-            return finishUncached(url);
-        });
+        var parent = parentAdminListUrl(url);
+        if (parent) {
+            return matchSoftOnlineExactCache(null, parent).then(function (listHit) {
+                if (listHit) {
+                    return listHit;
+                }
+                return finishUncached(url);
+            });
+        }
+        return finishUncached(url);
     }).catch(function () {
-        try {
-            var pathNorm2 = String((url && url.pathname) || '').replace(/\/+$/, '');
-            if (/(^|\/)admin$/i.test(pathNorm2)) {
-                return matchOfflineShellOrInline(request);
-            }
-        } catch (eC) { /* ignore */ }
         try {
             return uncachedAdminBrowseResponse(url);
         } catch (eU) {
@@ -1035,7 +979,7 @@ function erpAdminOfflineFallback(request, url) {
         } catch (eP) { /* ignore */ }
         if (/(^|\/)admin$/i.test(pathNorm)) {
             return matchCachedAdminDashboard(u).then(function (dash) {
-                return dash || matchOfflineShellOrInline(request);
+                return dash || uncachedAdminBrowseResponse(u);
             });
         }
         return uncachedAdminBrowseResponse(u);
@@ -1238,7 +1182,10 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
     });
 }
 
-/** Soft-online only: few exact keys in current ops cache — never keys()/old-cache walks. */
+/**
+ * Instant ops-page match (online + offline navigate).
+ * Few explicit keys + ignoreSearch — never cache.keys() / old-cache walks.
+ */
 function matchSoftOnlineExactCache(request, url) {
     var keys = [];
     try {
@@ -1249,10 +1196,30 @@ function matchSoftOnlineExactCache(request, url) {
     try {
         if (url) {
             keys.push(url.origin + url.pathname);
+            if (url.search) {
+                keys.push(url.origin + url.pathname + url.search);
+            }
             var bare = String(url.pathname || '').replace(/\/+$/, '');
             if (bare) {
                 keys.push(url.origin + bare);
                 keys.push(url.origin + bare + '/');
+                if (url.search) {
+                    keys.push(url.origin + bare + url.search);
+                }
+            }
+            var p = String(url.pathname || '');
+            if (/\/admin\/ops\//i.test(p)) {
+                var p2 = p.replace(/\/admin\/ops\//i, '/admin/');
+                keys.push(url.origin + p2, url.origin + p2.replace(/\/+$/, ''));
+                if (url.search) {
+                    keys.push(url.origin + p2 + url.search);
+                }
+            } else if (/\/admin\/(?!ops\/)/i.test(p) && !/(^|\/)admin$/i.test(p.replace(/\/+$/, ''))) {
+                var p3 = p.replace(/\/admin\//i, '/admin/ops/');
+                keys.push(url.origin + p3, url.origin + p3.replace(/\/+$/, ''));
+                if (url.search) {
+                    keys.push(url.origin + p3 + url.search);
+                }
             }
         }
     } catch (e1) { /* ignore */ }
@@ -1349,16 +1316,16 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return response;
     }
 
-    // True offline: deep cache match / shell only (no network wait).
+    // True offline: instant exact cache only (no deep scans). Miss → clear uncached page.
     if (isCloudBrowserOffline()) {
-        return matchErpNavSnapshot(request, url).then(function (hit) {
+        return matchSoftOnlineExactCache(request, url).then(function (hit) {
             var served = serveCachedFast(hit, true);
             if (served) {
                 return served;
             }
-            return neverFailNavigate(request, url);
+            return uncachedAdminBrowseResponse(url);
         }).catch(function () {
-            return neverFailNavigate(request, url);
+            return uncachedAdminBrowseResponse(url);
         });
     }
 
@@ -1812,29 +1779,7 @@ function matchAnyCachedAdminPage(request, url) {
             if (hit) {
                 return hit;
             }
-            return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn).then(function (hit2) {
-                if (hit2) {
-                    return hit2;
-                }
-                // Soft-online: skip old-cache walk (F5 lag). Offline: search previous ops versions.
-                if (!isCloudBrowserOffline()) {
-                    return null;
-                }
-                return caches.keys().then(function (names) {
-                    var opsNames = (names || []).filter(function (n) {
-                        return String(n).indexOf('rateb-erp-ops-pages-') === 0
-                            && String(n) !== ERP_OPS_PAGE_CACHE;
-                    });
-                    return opsNames.reduce(function (chain, name) {
-                        return chain.then(function (found) {
-                            if (found) {
-                                return found;
-                            }
-                            return caches.open(name).then(matchKeysIn);
-                        });
-                    }, Promise.resolve(null));
-                });
-            });
+            return caches.open(ERP_COEXIST_CACHE).then(matchKeysIn);
         });
     }).catch(function () {
         return null;
@@ -2025,6 +1970,7 @@ function warmErpOfflineShell(opts) {
         'admin/oversight/approvals',
         'admin/profile',
         'admin/notifications',
+        'admin/ops/notifications',
         'admin/hr',
         'admin/hr/attendance',
         'admin/hr/leaves',
@@ -2083,6 +2029,8 @@ function warmErpOfflineShell(opts) {
         'admin',
         'admin/',
         'admin/companies',
+        'admin/ops/notifications',
+        'admin/notifications',
         'admin/ops/pos/register',
         'admin/accounting',
         'admin/ops/accounting',
@@ -2238,24 +2186,8 @@ function matchErpOfflineCached(request, url) {
                 if (hit2) {
                     return hit2;
                 }
-                return cache.match(pathnameKey, { ignoreSearch: true }).then(function (hit3) {
-                    if (hit3) {
-                        return hit3;
-                    }
-                    return cache.keys().then(function (keys) {
-                        var limit = Math.min(keys.length, 80);
-                        for (var i = 0; i < limit; i++) {
-                            try {
-                                var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
-                                var ku = new URL(href);
-                                if (ku.pathname === url.pathname) {
-                                    return cache.match(keys[i]);
-                                }
-                            } catch (e1) { /* ignore */ }
-                        }
-                        return null;
-                    });
-                });
+                // ignoreSearch only — never cache.keys() (was multi-second offline lag).
+                return cache.match(pathnameKey, { ignoreSearch: true });
             });
         });
     }
@@ -2263,8 +2195,7 @@ function matchErpOfflineCached(request, url) {
     var preferredNames = [
         ERP_COEXIST_CACHE,
         ASSET_CACHE,
-        SHELL_CACHE,
-        ERP_OPS_PAGE_CACHE
+        SHELL_CACHE
     ];
 
     function searchNames(names) {
@@ -2280,21 +2211,8 @@ function matchErpOfflineCached(request, url) {
         }, Promise.resolve(null));
     }
 
-    return searchNames(preferredNames).then(function (hit) {
-        if (hit) {
-            return remember(hit);
-        }
-        return caches.keys().then(function (names) {
-            var rest = (names || []).filter(function (n) {
-                var s = String(n);
-                if (preferredNames.indexOf(s) !== -1) {
-                    return false;
-                }
-                return s.indexOf('rateb-') === 0;
-            });
-            return searchNames(rest);
-        }).then(remember);
-    }).catch(function () {
+    // Preferred caches only — never enumerate every rateb-* cache on the critical path.
+    return searchNames(preferredNames).then(remember).catch(function () {
         return null;
     });
 }
@@ -3444,64 +3362,69 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Phase OK.1 — Soft-offline fix:
-    // Do NOT pass Document navigations to the bare network when navigator.onLine===true.
-    // Cached ERP snapshots must win; otherwise network with timeout → cache/placeholder.
-    // Assets/XHR still pass through online (unchanged cloud behavior).
-    if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
-        if (event.request.method === 'GET' && event.request.mode === 'navigate') {
-            if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
-                event.respondWith(
-                    fetch(event.request).then(function (res) {
-                        event.waitUntil(purgeErpOpsAuthPages());
-                        return res;
-                    })
-                );
-                return;
-            }
-            // Soft-online admin: never bare-bypass Document fetch (Chrome tab spinner hangs
-            // forever when PHP/network stalls while navigator.onLine===true).
-            // All admin paths use SWR via navigateErpCloudWithCacheSafety (logout purges cache).
-            if (isErpAdminPath(url.pathname) && !isPosNavigation(url)) {
+    // Cloud document navigations (ONLINE + OFFLINE):
+    // Previously offline skipped this block and fell into neverFailNavigate + cache.keys()
+    // scans → multi-second black screens. Always use the fast navigate helpers.
+    if (!isLocalApplianceOrigin()
+        && event.request.method === 'GET'
+        && event.request.mode === 'navigate') {
+        if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
+            if (isCloudBrowserOffline()) {
                 respondWithDocumentAndReleaseWarmGate(
                     event,
-                    navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
-                        try {
-                            return erpInlineShellResponse();
-                        } catch (eAdminFinal) {
-                            return new Response('Offline', {
-                                status: 200,
-                                headers: { 'Content-Type': 'text/html; charset=utf-8' }
-                            });
-                        }
+                    neverFailNavigate(event.request, url).catch(function () {
+                        return erpInlineShellResponse();
                     })
                 );
                 return;
             }
-            if (isPosNavigation(url)) {
-                respondWithDocumentAndReleaseWarmGate(
-                    event,
-                    navigatePosCloudWithCacheSafety(event.request, url).catch(function () {
-                        return shellFallback(event.request);
-                    })
-                );
-                return;
-            }
+            event.respondWith(
+                fetch(event.request).then(function (res) {
+                    event.waitUntil(purgeErpOpsAuthPages());
+                    return res;
+                })
+            );
+            return;
+        }
+        if (isPosNavigation(url)) {
+            respondWithDocumentAndReleaseWarmGate(
+                event,
+                (isCloudBrowserOffline()
+                    ? shellFallback(event.request)
+                    : navigatePosCloudWithCacheSafety(event.request, url)
+                ).catch(function () {
+                    return shellFallback(event.request);
+                })
+            );
+            return;
+        }
+        if (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname)) {
             respondWithDocumentAndReleaseWarmGate(
                 event,
                 navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
                     try {
+                        return uncachedAdminBrowseResponse(url);
+                    } catch (eAdminFinal) {
                         return erpInlineShellResponse();
-                    } catch (eFinal) {
-                        return new Response('Offline', {
-                            status: 200,
-                            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-                        });
                     }
                 })
             );
             return;
         }
+        // Soft-online non-admin: still use cache safety. Offline non-admin: fast fallback.
+        if (!isCloudBrowserOffline()) {
+            respondWithDocumentAndReleaseWarmGate(
+                event,
+                navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
+                    return erpInlineShellResponse();
+                })
+            );
+            return;
+        }
+    }
+
+    // Soft-online non-navigate: pass through to network (assets/XHR).
+    if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
         return;
     }
 
@@ -3585,10 +3508,11 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
-    // Smart coexist OFFLINE only (online returns earlier in this fetch handler).
+    // Residual offline navigations (non-admin) — admin/POS already handled above.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
         && !isAuthPath(url.pathname)
+        && !isErpAdminPath(url.pathname)
         && !isApiRequest(url)) {
         respondWithDocumentAndReleaseWarmGate(
             event,

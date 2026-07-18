@@ -16,9 +16,9 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Phase OH — bump TTL keys so clients re-warm after offline speed parity.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v17';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v17';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v17';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v18';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v18';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v18';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -45,6 +45,7 @@
         'admin/agency-updates',
         'admin/profile',
         'admin/notifications',
+        'admin/ops/notifications',
         'admin/users',
         'admin/branches',
         'admin/customers',
