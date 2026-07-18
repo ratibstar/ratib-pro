@@ -324,9 +324,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
     <?php
-    /* PERF-P3: critical shell CSS only blocking; everything else preload→stylesheet swap. */
-    $ratebCriticalCssPath = RATEB_ROOT . '/public/assets/css/critical-shell.css';
-    $ratebCriticalCss = is_file($ratebCriticalCssPath) ? (string) file_get_contents($ratebCriticalCssPath) : '';
+    /* PERF-P3: one tiny blocking shell stylesheet (cached); everything else preload→swap. */
     $ratebThemeDarkCss = rateb_asset('css/dark.css');
     $ratebThemeLightCss = rateb_asset('css/light.css');
     $ratebAsyncStyles = [
@@ -347,11 +345,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     }
     $ratebAsyncStyles[] = rateb_tajawal_font_rest_css();
     ?>
-    <?php if ($ratebCriticalCss !== '') { ?>
-    <style id="rateb-critical-shell"><?php echo $ratebCriticalCss; ?></style>
-    <?php } else { ?>
-    <link href="<?php echo rateb_asset('css/critical-shell.css'); ?>" rel="stylesheet">
-    <?php } ?>
+    <link id="rateb-critical-shell" href="<?php echo rateb_asset('css/critical-shell.css'); ?>" rel="stylesheet">
     <link rel="preload" href="<?php echo rateb_vendor_asset('fonts/tajawal/tajawal-400.woff2'); ?>" as="font" type="font/woff2" crossorigin>
     <script>
     (function () {
