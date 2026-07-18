@@ -1,0 +1,25 @@
+--- /usr/local/directadmin/data/users/admin/php/php-fpm83.conf (before)
++++ /usr/local/directadmin/data/users/admin/php/php-fpm83.conf (after P3)
+@@
+ [admin]
+ user = $pool
+ group = $pool
+ listen = /usr/local/php83/sockets/$pool.sock
+ listen.owner = $pool
+ listen.group = access
+ listen.mode = 660
+-pm = ondemand
+-pm.max_children = 10
+-pm.process_idle_timeout = 20
+-pm.max_requests = 500
++pm = dynamic
++pm.max_children = 15
++pm.start_servers = 2
++pm.min_spare_servers = 1
++pm.max_spare_servers = 4
++pm.max_requests = 500
+ security.limit_extensions = .php .inc .phtml
+ php_admin_value[sendmail_path] = /usr/sbin/sendmail -t -i -f admin@rateb.sa
+ php_value[session.save_path] = /home/admin/tmp
+ php_admin_value[open_basedir] = /home/admin/:/tmp/:/var/tmp/:/opt/alt/php83/usr/share/pear/:/dev/urandom:/usr/local/php83/lib/:/usr/local/php83/lib/:/usr/local/lib/php/
+ php_admin_value[mail.log] = /home/admin/.php/php-mail.log
