@@ -350,14 +350,21 @@
     }
 
     function bindPrefetch(rootEl) {
-        var scope = rootEl || document;
-        scope.querySelectorAll('a.rateb-nav-link[href], a[href*="/admin"]').forEach(function (a) {
+        // Prefer sidebar / swapped main only — never whole-document a[href*="/admin"].
+        var scope = rootEl;
+        if (!scope || scope === document) {
+            scope = document.getElementById('rateb-sidebar') || document;
+        }
+        scope.querySelectorAll('a.rateb-nav-link[href]').forEach(function (a) {
             if (a.__ratebPrefetchBound) {
                 return;
             }
             a.__ratebPrefetchBound = true;
             var go = function () {
                 try {
+                    if (document.visibilityState && document.visibilityState !== 'visible') {
+                        return;
+                    }
                     var u = new URL(a.href, root.location.href);
                     if (u.origin !== root.location.origin) {
                         return;
@@ -379,13 +386,18 @@
         try {
             /* PERF-P3: unlock deferred paths only after idle; prefetch current module first. */
             var unlockAndPrefetch = function () {
+                try {
+                    if (document.visibilityState && document.visibilityState !== 'visible') {
+                        return;
+                    }
+                } catch (eVis) { /* ignore */ }
                 idlePrefetchUnlocked = true;
-                var links = document.querySelectorAll('a.rateb-nav-link[href]');
+                var side = document.getElementById('rateb-sidebar') || document;
+                var links = side.querySelectorAll('a.rateb-nav-link[href]');
                 if (!links.length) {
                     return;
                 }
                 var currentFirst = [];
-                var deferred = [];
                 Array.prototype.forEach.call(links, function (a) {
                     try {
                         var u = new URL(a.href, root.location.href);
@@ -393,32 +405,27 @@
                             return;
                         }
                         if (isDeferredPrefetchPath(u.pathname)) {
-                            deferred.push(u.href);
-                        } else if (isCurrentModuleHref(u.href)) {
+                            return;
+                        }
+                        if (isCurrentModuleHref(u.href)) {
                             currentFirst.push(u.href);
                         }
                     } catch (e) { /* ignore */ }
                 });
-                /* Current module only (max a few); deferred paths one-at-a-time later via queue. */
-                currentFirst.slice(0, 2).forEach(function (href) {
+                /* At most one auto-prefetch; hover covers the rest (less network contention). */
+                currentFirst.slice(0, 1).forEach(function (href) {
                     prefetchUrl(href, { force: false });
-                });
-                /* Stagger deferred (dashboard/profile/notifications/admin) — still 1 concurrent. */
-                deferred.slice(0, 3).forEach(function (href, i) {
-                    setTimeout(function () {
-                        prefetchUrl(href, { allowOther: true });
-                    }, 4000 + i * 2500);
                 });
             };
             var kick = function () {
                 if (window.requestIdleCallback) {
-                    window.requestIdleCallback(unlockAndPrefetch, { timeout: 15000 });
+                    window.requestIdleCallback(unlockAndPrefetch, { timeout: 20000 });
                 } else {
-                    setTimeout(unlockAndPrefetch, 8000);
+                    setTimeout(unlockAndPrefetch, 12000);
                 }
             };
-            /* Do not start before 5s after boot — first paint / navigation quiet. */
-            setTimeout(kick, 5000);
+            /* Quiet window after first paint / early navigation. */
+            setTimeout(kick, 12000);
         } catch (e3) { /* ignore */ }
     }
 
@@ -461,17 +468,13 @@
     }
 
     function reinitModuleUi() {
-        try {
-            if (root.RatebApp && typeof root.RatebApp.reinit === 'function') {
-                root.RatebApp.reinit();
-            }
-        } catch (e) { /* ignore */ }
+        // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
         try {
             document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
                 if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
                     return;
                 }
-                // module-page-stats listens for rateb:nav:enter
+                // module-page-stats listens for rateb:nav:enter / afterEnter
             });
         } catch (e2) { /* ignore */ }
     }
@@ -820,7 +823,7 @@
 
     function boot() {
         rememberExistingScripts();
-        bindPrefetch(document);
+        bindPrefetch(document.getElementById('rateb-sidebar') || document);
         document.addEventListener('click', onClick, true);
         root.addEventListener('popstate', onPopState);
         lastHref = root.location.href;

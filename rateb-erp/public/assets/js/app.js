@@ -86,7 +86,14 @@
     }
 
     function initPermissionMatrix() {
+        if (!document.querySelector('[data-matrix-select-all], [data-matrix-select-none], [data-matrix-col], [data-matrix-module]')) {
+            return;
+        }
         document.querySelectorAll('[data-matrix-select-all]').forEach(function (btn) {
+            if (btn.getAttribute('data-rateb-bound') === '1') {
+                return;
+            }
+            btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
                 var scope = btn.closest('form') || document;
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
@@ -96,6 +103,10 @@
         });
 
         document.querySelectorAll('[data-matrix-select-none]').forEach(function (btn) {
+            if (btn.getAttribute('data-rateb-bound') === '1') {
+                return;
+            }
+            btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
                 var scope = btn.closest('form') || document;
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
@@ -105,6 +116,10 @@
         });
 
         document.querySelectorAll('[data-matrix-col]').forEach(function (btn) {
+            if (btn.getAttribute('data-rateb-bound') === '1') {
+                return;
+            }
+            btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
                 var scope = btn.closest('form') || document;
                 var roleId = btn.getAttribute('data-matrix-col');
@@ -117,6 +132,10 @@
         });
 
         document.querySelectorAll('[data-matrix-module]').forEach(function (btn) {
+            if (btn.getAttribute('data-rateb-bound') === '1') {
+                return;
+            }
+            btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
                 var scope = btn.closest('form') || document;
                 var mod = btn.getAttribute('data-matrix-module');

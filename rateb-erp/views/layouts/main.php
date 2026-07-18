@@ -1350,8 +1350,20 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       // Never cache SaaS entitlements pages — stale HTML hides saves.
       if (/\/admin\/company-permissions/i.test(location.pathname)) return;
       if (!window.caches) return;
+      var main = document.querySelector('#rateb-main-content, main.rateb-content');
+      var fp = location.href + '|' + (document.title || '') + '|' + (main ? main.innerHTML.length : 0);
+      var now = Date.now();
+      // Skip repeat full-document serialize (outerHTML is a main-thread hitch).
+      if (cacheLiveAdminPage._fp === fp && (now - (cacheLiveAdminPage._at || 0)) < 600000) {
+        return;
+      }
+      if (cacheLiveAdminPage._busy) return;
+      cacheLiveAdminPage._busy = true;
       var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      if (html.length < 500 || html.length > 2500000) return;
+      cacheLiveAdminPage._busy = false;
+      if (html.length < 500 || html.length > 800000) return;
+      cacheLiveAdminPage._fp = fp;
+      cacheLiveAdminPage._at = now;
       var cacheNames = [
         (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v34',
         'rateb-erp-coexist-v34'
@@ -1409,22 +1421,25 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
               }).catch(function () {});
             });
           }, 3000);
-        }, 4000);
+        }, 8000);
       }
-    } catch (eCache) { /* ignore */ }
+    } catch (eCache) {
+      cacheLiveAdminPage._busy = false;
+    }
   }
   function scheduleCacheLiveAdminPage() {
-    ratebIdle(function () { cacheLiveAdminPage(); }, 3000);
+    ratebIdle(function () { cacheLiveAdminPage(); }, 5000);
   }
-  // PERF-P0.3-A — start after load+2s so charts/probe quiet (~1.5s) can clear first.
+  // Start later so charts/probe/prefetch quiet first.
   if (document.readyState === 'complete') {
-    setTimeout(scheduleCacheLiveAdminPage, 2000);
+    setTimeout(scheduleCacheLiveAdminPage, 8000);
   } else {
-    window.addEventListener('load', function () { setTimeout(scheduleCacheLiveAdminPage, 2000); }, { once: true });
+    window.addEventListener('load', function () { setTimeout(scheduleCacheLiveAdminPage, 8000); }, { once: true });
   }
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
-      ratebIdle(function () { cacheLiveAdminPage(); }, 4000);
+      // Debounced: cacheLiveAdminPage itself no-ops within 10 min if fingerprint unchanged.
+      ratebIdle(function () { cacheLiveAdminPage(); }, 8000);
     }
   });
   try {
