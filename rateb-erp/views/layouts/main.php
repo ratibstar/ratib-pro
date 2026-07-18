@@ -672,7 +672,7 @@ if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
 }
 foreach ($ratebCriticalScripts as $ratebCritSrc) {
-    echo '<script src="' . htmlspecialchars($ratebCritSrc, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+    /* listed for post-DCL inject — do not emit defer (defer delays DCL). */
 }
 $deferAssetScripts = [];
 // Chart.js + charts.js strictly after first paint / idle (dashboard widgets).
@@ -685,18 +685,29 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
 ?>
 <script>
 (function () {
+  /* PERF-P3: critical JS AFTER DOMContentLoaded so DCL is not blocked by defer scripts. */
+  var critical = <?php echo json_encode(array_values($ratebCriticalScripts), JSON_UNESCAPED_SLASHES); ?>;
   var idleQueue = <?php echo json_encode(array_values($ratebIdleScripts), JSON_UNESCAPED_SLASHES); ?>;
   var chartQueue = <?php echo json_encode(array_values($deferAssetScripts), JSON_UNESCAPED_SLASHES); ?>;
   function inject(src, next) {
     var s = document.createElement('script');
     s.src = src;
-    s.defer = true;
     s.onload = s.onerror = function () { if (next) next(); };
-    document.body.appendChild(s);
+    document.head.appendChild(s);
   }
   function chain(list, i, done) {
     if (i >= list.length) { if (done) done(); return; }
     inject(list[i], function () { chain(list, i + 1, done); });
+  }
+  function loadCritical() {
+    chain(critical, 0, function () {
+      try { window.dispatchEvent(new Event('rateb-critical-js-ready')); } catch (e) {}
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadCritical, { once: true });
+  } else {
+    loadCritical();
   }
   function afterInteraction(fn) {
     var ran = false;
@@ -720,7 +731,6 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
   }
   afterInteraction(function () {
     chain(idleQueue, 0, function () {
-      /* Charts / widgets only after idle scripts — never on critical path. */
       if (chartQueue.length) {
         if (window.requestIdleCallback) {
           window.requestIdleCallback(function () { chain(chartQueue, 0); }, { timeout: 6000 });

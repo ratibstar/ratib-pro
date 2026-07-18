@@ -35,7 +35,7 @@ function r1(n) {
     headless: true,
     executablePath: CHROME,
     args: ['--disable-dev-shm-usage', '--enable-precise-memory-info'],
-    serviceWorkers: 'allow',
+    serviceWorkers: 'block',
     locale: 'ar-SA',
     viewport: { width: 1440, height: 900 },
   });
