@@ -158,7 +158,15 @@
         } catch (eHydrate) { /* ignore */ }
         try {
             if (window.RatebNavInstant && typeof window.RatebNavInstant.bindPrefetch === 'function') {
-                window.RatebNavInstant.bindPrefetch(body);
+                var bodyRef = body;
+                var bind = function () {
+                    window.RatebNavInstant.bindPrefetch(bodyRef);
+                };
+                if (typeof window.requestIdleCallback === 'function') {
+                    window.requestIdleCallback(bind, { timeout: 1200 });
+                } else {
+                    setTimeout(bind, 0);
+                }
             }
         } catch (eBind) { /* ignore */ }
     }
@@ -169,10 +177,10 @@
             return;
         }
         var side = document.getElementById('rateb-sidebar');
-        if (!side || side.getAttribute('data-rateb-nav-delegated') === '2') {
+        if (!side || side.getAttribute('data-rateb-nav-delegated') === '3') {
             return;
         }
-        side.setAttribute('data-rateb-nav-delegated', '2');
+        side.setAttribute('data-rateb-nav-delegated', '3');
         side.addEventListener('click', function (ev) {
             if (ev.target && ev.target.closest && ev.target.closest('a[href]')) {
                 return;

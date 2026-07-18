@@ -116,7 +116,7 @@ body.rateb-app {
     transition: transform 0.2s ease;
 }
 
-.rateb-nav-group.is-open .rateb-nav-group-chevron {
+.rateb-nav-group.is-open > .rateb-nav-group-toggle .rateb-nav-group-chevron {
     transform: rotate(180deg);
 }
 
@@ -125,8 +125,27 @@ body.rateb-app {
     padding: 0.1rem 0 0.35rem;
 }
 
-.rateb-nav-group.is-open .rateb-nav-group-body {
+.rateb-nav-group.is-open > .rateb-nav-group-body {
     display: block;
+}
+
+/* PWA install: never cover the fixed sidebar (RTL = inline-start). */
+.rateb-erp-pwa-install {
+    position: fixed;
+    z-index: 900;
+    inset-inline-start: calc(268px + 1rem);
+    inset-inline-end: 1rem;
+    bottom: 1rem;
+    max-width: 22rem;
+    width: auto;
+    pointer-events: auto;
+}
+
+@media (max-width: 991px) {
+    .rateb-erp-pwa-install {
+        inset-inline: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
 }
 
 .rateb-nav-group-body .rateb-nav-link {

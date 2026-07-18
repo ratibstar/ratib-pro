@@ -543,6 +543,21 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 <script>
 /* Sidebar toggles: single delegated binder (stable vs double-bind / late app.js). */
 (function () {
+  function schedulePrefetchBind(body) {
+    var run = function () {
+      try {
+        if (window.RatebNavInstant && typeof window.RatebNavInstant.bindPrefetch === 'function') {
+          window.RatebNavInstant.bindPrefetch(body);
+        }
+      } catch (eBind) { /* ignore */ }
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(run, { timeout: 1200 });
+    } else {
+      setTimeout(run, 0);
+    }
+  }
+
   function hydrateNavLazy(group) {
     if (!group) return;
     var body = group.querySelector('.rateb-nav-group-body, .rateb-nav-subgroup-body');
@@ -560,11 +575,23 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       body.appendChild(tpl.content.cloneNode(true));
       tpl.remove();
     } catch (eHydrate) { /* ignore */ }
-    try {
-      if (window.RatebNavInstant && typeof window.RatebNavInstant.bindPrefetch === 'function') {
-        window.RatebNavInstant.bindPrefetch(body);
-      }
-    } catch (eBind) { /* ignore */ }
+    schedulePrefetchBind(body);
+  }
+
+  function closeSiblingGroups(group) {
+    var parent = group.parentElement;
+    if (!parent) return;
+    var isSub = group.classList.contains('rateb-nav-subgroup');
+    var kids = parent.children;
+    for (var i = 0; i < kids.length; i++) {
+      var sib = kids[i];
+      if (sib === group || !sib.getAttribute || sib.getAttribute('data-nav-group') === null) continue;
+      if (isSub !== sib.classList.contains('rateb-nav-subgroup')) continue;
+      if (!sib.classList.contains('is-open')) continue;
+      sib.classList.remove('is-open');
+      var t = sib.querySelector(':scope > [data-nav-group-toggle]');
+      if (t) t.setAttribute('aria-expanded', 'false');
+    }
   }
 
   function onSidebarClick(ev) {
@@ -584,7 +611,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     // Capture + stop: prevent legacy per-button handlers from toggling twice (open→close).
     try { ev.stopImmediatePropagation(); } catch (eStop) { /* ignore */ }
     var willOpen = !group.classList.contains('is-open');
-    if (willOpen) hydrateNavLazy(group);
+    if (willOpen) {
+      closeSiblingGroups(group);
+      hydrateNavLazy(group);
+    }
     var open = group.classList.toggle('is-open');
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
@@ -592,9 +622,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   function ensure() {
     var side = document.getElementById('rateb-sidebar');
     if (!side) return false;
-    // v2 = capture + stopImmediatePropagation (defeats legacy per-button double-toggle)
-    if (side.getAttribute('data-rateb-nav-delegated') === '2') return true;
-    side.setAttribute('data-rateb-nav-delegated', '2');
+    // v3 = accordion siblings + deferred prefetch bind (rebind if upgrading from v2)
+    if (side.getAttribute('data-rateb-nav-delegated') === '3') return true;
+    if (window.__RATEB_SIDEBAR_CLICK__) {
+      try { side.removeEventListener('click', window.__RATEB_SIDEBAR_CLICK__, true); } catch (eRm) { /* ignore */ }
+    }
+    window.__RATEB_SIDEBAR_CLICK__ = onSidebarClick;
+    side.setAttribute('data-rateb-nav-delegated', '3');
     side.addEventListener('click', onSidebarClick, true);
     return true;
   }
