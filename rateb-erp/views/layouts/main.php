@@ -613,10 +613,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     var willOpen = !group.classList.contains('is-open');
     if (willOpen) {
       closeSiblingGroups(group);
+      group.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
       hydrateNavLazy(group);
+    } else {
+      group.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
     }
-    var open = group.classList.toggle('is-open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   function ensure() {

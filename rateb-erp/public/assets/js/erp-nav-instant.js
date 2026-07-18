@@ -463,18 +463,57 @@
             keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
             keys.push(u.origin + u.pathname.replace(/\/+$/, '') + '/');
         } catch (e) { /* ignore */ }
+        // Dedupe keys
+        var seen = Object.create(null);
+        keys = keys.filter(function (k) {
+            if (!k || seen[k]) {
+                return false;
+            }
+            seen[k] = true;
+            return true;
+        });
         return openOpsCaches().then(function (cachesList) {
-            var chain = Promise.resolve(null);
+            if (!cachesList.length) {
+                return null;
+            }
+            var attempts = [];
             cachesList.forEach(function (cache) {
                 keys.forEach(function (k) {
-                    chain = chain.then(function (found) {
-                        return found || cache.match(k).then(function (hit) {
-                            return hit || cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                        });
+                    attempts.push(
+                        cache.match(k).then(function (hit) {
+                            if (hit) {
+                                return hit;
+                            }
+                            return cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                        }).catch(function () { return null; })
+                    );
+                });
+            });
+            // First hit wins (parallel); avoid sequential cache.match chains.
+            return new Promise(function (resolve) {
+                var pending = attempts.length;
+                if (!pending) {
+                    resolve(null);
+                    return;
+                }
+                var done = false;
+                attempts.forEach(function (p) {
+                    p.then(function (hit) {
+                        if (done) {
+                            return;
+                        }
+                        if (hit) {
+                            done = true;
+                            resolve(hit);
+                            return;
+                        }
+                        pending -= 1;
+                        if (pending === 0) {
+                            resolve(null);
+                        }
                     });
                 });
             });
-            return chain;
         }).catch(function () {
             return null;
         });
@@ -506,46 +545,44 @@
         }).catch(function () { return false; });
     }
 
+    function fetchNetworkHtml(href) {
+        return fetchWithTimeout(href, {
+            credentials: 'same-origin',
+            headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
+        }, 1500).then(function (res) {
+            if (!res || !res.ok) {
+                throw new Error('nav_fetch_failed');
+            }
+            return res.text().then(function (html) {
+                putHtmlLocally(res.url || href, html);
+                postSw({ type: 'CACHE_ERP_OPS_PAGE', url: res.url || href, html: html });
+                return { html: html, finalUrl: res.url || href, fromCache: false };
+            });
+        });
+    }
+
     function fetchHtml(href) {
-        // PERF-P1 — Cache API first (SW SWR only applies to mode=navigate; content-swap uses fetch).
+        // Start network immediately (parallel with Cache API) — sequential cache-then-network
+        // could burn 2–4s on miss + slow fetch + script wait.
+        var networkPromise = null;
+        if (!isUiOffline()) {
+            networkPromise = fetchNetworkHtml(href);
+        }
+
         return matchCachedHtml(href).then(function (cached) {
             if (cached) {
-                if (!isUiOffline()) {
-                    fetchWithTimeout(href, {
-                        credentials: 'same-origin',
-                        headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-                    }, 2500).then(function (res) {
-                        if (!res || !res.ok) {
-                            return null;
-                        }
-                        return res.text().then(function (html) {
-                            if (html && html.length >= 20000) {
-                                putHtmlLocally(href, html);
-                                postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
-                            }
-                        });
-                    }).catch(function () { /* ignore */ });
+                // Background revalidate; do not block paint on network.
+                if (networkPromise) {
+                    networkPromise.catch(function () { /* ignore */ });
                 }
                 return cached.text().then(function (html) {
                     return { html: html, finalUrl: href, fromCache: true };
                 });
             }
-            if (isUiOffline()) {
+            if (!networkPromise) {
                 throw new Error('nav_offline_no_cache');
             }
-            return fetchWithTimeout(href, {
-                credentials: 'same-origin',
-                headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-            }, 2500).then(function (res) {
-                if (!res || !res.ok) {
-                    throw new Error('nav_fetch_failed');
-                }
-                return res.text().then(function (html) {
-                    putHtmlLocally(res.url || href, html);
-                    postSw({ type: 'CACHE_ERP_OPS_PAGE', url: res.url || href, html: html });
-                    return { html: html, finalUrl: res.url || href, fromCache: false };
-                });
-            });
+            return networkPromise;
         });
     }
 
@@ -617,7 +654,14 @@
                 }
                 return Promise.resolve(done);
             }
-            return loadNewScripts(doc).then(afterScripts);
+            // Network path: paint immediately; do not wait on module scripts (was 1–3s).
+            var painted = afterScripts();
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(function () { loadNewScripts(doc); }, { timeout: 1500 });
+            } else {
+                setTimeout(function () { loadNewScripts(doc); }, 0);
+            }
+            return Promise.resolve(painted);
         }).catch(function (err) {
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
