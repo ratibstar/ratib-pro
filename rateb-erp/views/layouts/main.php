@@ -540,6 +540,50 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php } ?>
         </nav>
     </aside>
+<script>
+/* Sidebar toggles: bind immediately after aside parse — before app.js (fixes first-click race). */
+(function () {
+  function hydrateNavLazy(group) {
+    if (!group) return;
+    var body = group.querySelector('.rateb-nav-group-body, .rateb-nav-subgroup-body');
+    if (!body) return;
+    var tpl = null;
+    var kids = body.children;
+    for (var i = 0; i < kids.length; i++) {
+      if (kids[i].tagName === 'TEMPLATE' && kids[i].getAttribute('data-rateb-nav-lazy') !== null) {
+        tpl = kids[i];
+        break;
+      }
+    }
+    if (!tpl) return;
+    try {
+      body.appendChild(tpl.content.cloneNode(true));
+      tpl.remove();
+    } catch (eHydrate) { /* ignore */ }
+    try {
+      if (window.RatebNavInstant && typeof window.RatebNavInstant.bindPrefetch === 'function') {
+        window.RatebNavInstant.bindPrefetch(body);
+      }
+    } catch (eBind) { /* ignore */ }
+  }
+  function bindSidebarNavGroups() {
+    var side = document.getElementById('rateb-sidebar');
+    if (!side || side.getAttribute('data-rateb-nav-delegated') === '1') return;
+    side.setAttribute('data-rateb-nav-delegated', '1');
+    side.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
+      if (!btn || !side.contains(btn)) return;
+      var group = btn.closest('[data-nav-group]');
+      if (!group) return;
+      var willOpen = !group.classList.contains('is-open');
+      if (willOpen) hydrateNavLazy(group);
+      var open = group.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+  bindSidebarNavGroups();
+})();
+</script>
     <div class="rateb-main">
         <header class="rateb-topbar">
             <div class="d-flex align-items-center gap-3">
@@ -563,7 +607,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="<?php echo __('theme_auto'); ?>"><i class="fas fa-circle-half-stroke"></i></button>
                 </div>
-                <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" title="<?php echo __('logout'); ?>">
+                <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" data-rateb-full-nav="1" title="<?php echo __('logout'); ?>">
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
                 </a>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">

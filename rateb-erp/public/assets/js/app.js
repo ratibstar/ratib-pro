@@ -160,19 +160,31 @@
     }
 
     function initSidebarNavGroups() {
-        document.querySelectorAll('[data-nav-group-toggle]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var group = btn.closest('[data-nav-group]');
-                if (!group) {
-                    return;
-                }
-                var willOpen = !group.classList.contains('is-open');
-                if (willOpen) {
-                    hydrateNavLazy(group);
-                }
-                var open = group.classList.toggle('is-open');
-                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-            });
+        // Early inline binder in main.php already attaches one delegated listener.
+        // Keep a safety net if that script was stripped or sidebar was re-mounted.
+        var side = document.getElementById('rateb-sidebar');
+        if (!side) {
+            return;
+        }
+        if (side.getAttribute('data-rateb-nav-delegated') === '1') {
+            return;
+        }
+        side.setAttribute('data-rateb-nav-delegated', '1');
+        side.addEventListener('click', function (ev) {
+            var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
+            if (!btn || !side.contains(btn)) {
+                return;
+            }
+            var group = btn.closest('[data-nav-group]');
+            if (!group) {
+                return;
+            }
+            var willOpen = !group.classList.contains('is-open');
+            if (willOpen) {
+                hydrateNavLazy(group);
+            }
+            var open = group.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
     }
 

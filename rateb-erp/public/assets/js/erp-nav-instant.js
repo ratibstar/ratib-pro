@@ -645,6 +645,10 @@
             if (POS_PATH_RE.test(u.pathname)) {
                 return false;
             }
+            // Full document navigation required (session end / auth pages).
+            if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+                return false;
+            }
             if (u.pathname === root.location.pathname && u.search === root.location.search) {
                 return false;
             }
