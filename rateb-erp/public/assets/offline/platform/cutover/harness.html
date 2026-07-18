@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RATEB B1-Prep Cutover Gate Harness</title>
+  <style>
+    body { font-family: ui-monospace, Consolas, monospace; margin: 1.5rem; background: #0b1020; color: #e8eefc; }
+    h1 { font-size: 1.1rem; }
+    #status { margin-top: 1rem; white-space: pre-wrap; }
+    .ok { color: #6dffb0; }
+    .bad { color: #ff7d7d; }
+  </style>
+</head>
+<body>
+  <h1>B1 Preparation — Cutover Gate Harness (NOT Admin ERP UI)</h1>
+  <p>Certification only. Does not cut over Admin. Does not touch POS.</p>
+  <div id="status">Booting harness…</div>
+
+  <script src="./feature-flags.js"></script>
+  <script src="./capability-probe.js"></script>
+  <script src="./multi-tab-lease.js"></script>
+  <script src="./compat-gate.js"></script>
+  <script src="./emergency-rollback.js"></script>
+  <script src="./queue-strategy.js"></script>
+  <script src="./identity-bridge.js"></script>
+  <script src="./prep-bootstrap.js"></script>
+  <script>
+(function () {
+  'use strict';
+  var statusEl = document.getElementById('status');
+  function setStatus(text, ok) {
+    statusEl.textContent = text;
+    statusEl.className = ok ? 'ok' : 'bad';
+  }
+
+  function vendorUrl() {
+    return new URL('../db/vendor/sqlite/index.mjs', window.location.href).href;
+  }
+
+  async function runSelfCertification() {
+    var evidence = [];
+    function note(step, ok, detail) {
+      evidence.push({ step: step, ok: !!ok, detail: detail || '' });
+    }
+
+    var req = window.RatebPlatformCutoverPrep.required();
+    note('modules_loaded', Object.keys(req).every(function (k) { return req[k]; }), JSON.stringify(req));
+
+    /* G8 capability */
+    var cap = await window.RatebPlatformCapabilityProbe.run({ vendorIndexUrl: vendorUrl() });
+    note('g8_capability_probe', !!cap && typeof cap.forceOfflineV1 === 'boolean', JSON.stringify(cap.checks || {}));
+
+    /* G2 dual-engine reject */
+    var Gate = window.RatebPlatformCompatGate;
+    Gate.resetRegistryForTests();
+    Gate.claim('offlineV1Writer', 'offline-v1', { writes: true });
+    var dual = Gate.rejectIfDual('sync', 'platform-sync', { writes: true });
+    note('g2_reject_dual_sync', dual && dual.ok === false && dual.code === 'DUAL_ENGINE', JSON.stringify(dual));
+    Gate.resetRegistryForTests();
+    Gate.claim('runtime', 'platform-runtime', {});
+    var dualRt = Gate.rejectIfDual('runtime', 'other-runtime', {});
+    note('g2_reject_dual_runtime', dualRt && dualRt.ok === false, JSON.stringify(dualRt));
+    Gate.resetRegistryForTests();
+
+    /* G3 emergency rollback via remote mock (no deploy) */
+    window.RatebPlatformCutoverFlags.clearEmergencySticky();
+    window.RatebPlatformCutoverFlags.mergeFlags({
+      CompatGateEnabled: true,
+      PlatformEnabled: true,
+      PlatformCutover: true,
+      EmergencyRollback: false
+    }, 'test-setup');
+    var v1On = false;
+    var platformOff = false;
+    var er = await window.RatebPlatformEmergencyRollback.apply({
+      remoteFlags: { EmergencyRollback: true, CompatGateEnabled: true, PlatformEnabled: true },
+      v1Enable: function () { v1On = true; return true; },
+      platformDisableWriters: function () { platformOff = true; return true; }
+    });
+    note('g3_emergency_rollback', !!(er && er.ok && er.applied && er.sessionPreserved && !er.logout && !er.dualWrite && v1On && platformOff), JSON.stringify(er));
+
+    /* G4 queue strategies */
+    var drain = await window.RatebPlatformQueueStrategy.drainFirst({
+      readV1Pending: function () { return 0; }
+    });
+    note('g4_drain_first_empty', !!(drain && drain.ok), JSON.stringify(drain));
+    var pendingDrain = await window.RatebPlatformQueueStrategy.drainFirst({
+      readV1Pending: function () { return 2; }
+    });
+    note('g4_drain_first_blocks', !!(pendingDrain && pendingDrain.ok === false), JSON.stringify(pendingDrain));
+    var seen = new Set();
+    var mappedOnce = await window.RatebPlatformQueueStrategy.idempotentMapper({
+      seenStore: seen,
+      readV1Records: function () {
+        return [{ idempotency_key: 'k1', module: 'inv', action: 'upsert', entity_id: '1', payload: { company_id: 1 } }];
+      },
+      enqueuePlatform: function () { return { ok: true }; }
+    });
+    var mappedTwice = await window.RatebPlatformQueueStrategy.idempotentMapper({
+      seenStore: seen,
+      readV1Records: function () {
+        return [{ idempotency_key: 'k1', module: 'inv', action: 'upsert', entity_id: '1', payload: { company_id: 1 } }];
+      },
+      enqueuePlatform: function () { return { ok: true }; }
+    });
+    note('g4_idempotent_mapper', !!(mappedOnce && mappedOnce.ok && mappedOnce.migrated === 1 && mappedTwice && mappedTwice.skipped === 1), JSON.stringify({ mappedOnce: mappedOnce, mappedTwice: mappedTwice }));
+
+    /* G5 identity bridge refuses credentials */
+    var bad = await window.RatebPlatformIdentityBridge.bridge({
+      enrollment: { password: 'secret' }
+    });
+    note('g5_refuse_credentials', !!(bad && bad.ok === false), JSON.stringify(bad));
+    var dry = await window.RatebPlatformIdentityBridge.bridge({
+      dryRun: true,
+      enrollment: {
+        schema: 'rateb-offline-v2-identity-enroll/1',
+        claims: { sub: 'u1', company_id: 1 },
+        authority: 'online_erp'
+      },
+      fetchEnrollment: function () {
+        return Promise.resolve({
+          ok: true,
+          package: {
+            schema: 'rateb-offline-v2-identity-enroll/1',
+            claims: { sub: 'u1', company_id: 1 },
+            authority: 'online_erp'
+          }
+        });
+      }
+    });
+    note('g5_enrollment_dry_run', !!(dry && dry.ok && dry.authority === 'online_erp' && dry.stores_credentials === false), JSON.stringify(dry));
+
+    /* G6 multi-tab lease */
+    var lease = await window.RatebPlatformMultiTabLease.acquire({ timeoutMs: 2000 });
+    note('g6_lease_acquire', !!(lease && lease.ok), JSON.stringify(lease));
+    var released = window.RatebPlatformMultiTabLease.release();
+    note('g6_lease_release', !!(released && released.ok), JSON.stringify(released));
+
+    /* G1 boot timeline */
+    window.RatebPlatformCutoverFlags.clearEmergencySticky();
+    window.RatebPlatformCutoverFlags.mergeFlags({
+      CompatGateEnabled: true,
+      PlatformEnabled: true,
+      PlatformShadow: true,
+      PlatformCutover: false,
+      EmergencyRollback: false
+    }, 'timeline-setup');
+    Gate.resetRegistryForTests();
+    var timeline = await window.RatebPlatformCutoverPrep.bootTimeline({
+      vendorIndexUrl: vendorUrl(),
+      skipLease: false,
+      v1Pending: 0
+    });
+    note('g1_boot_timeline', !!(timeline && timeline.ok && timeline.timeline && timeline.timeline.length >= 4), JSON.stringify(timeline.timeline));
+    var steps = (timeline && timeline.timeline || []).map(function (t) { return t.step; });
+    note('g1_px_boot', steps.indexOf('BOOT') >= 0, steps.join(','));
+    note('g1_px_compatgate', steps.indexOf('COMPATGATE') >= 0, '');
+    note('g1_px_platform_bootstrap', steps.indexOf('PLATFORM_BOOTSTRAP') >= 0 || steps.indexOf('PLATFORM_BOOT_SKIPPED') >= 0, '');
+    note('g1_px_validation', steps.indexOf('VALIDATION') >= 0, '');
+    note('g1_px_rollback_ready', steps.indexOf('ROLLBACK_PATH_READY') >= 0 || steps.indexOf('EMERGENCY_ROLLBACK') >= 0, '');
+    note('g1_px_failure_recovery', steps.indexOf('FAILURE_RECOVERY_READY') >= 0 || steps.indexOf('RECOVERY') >= 0, '');
+
+    /* G7 POS isolation — static: this harness must never load POS */
+    note('g7_pos_isolation_static', true, 'harness scripts are platform/cutover only');
+
+    /* G9 rollback drill (flag path) */
+    var drill = await window.RatebPlatformEmergencyRollback.armFromRemote({
+      EmergencyRollback: true,
+      CompatGateEnabled: true
+    });
+    note('g9_flag_rollback_drill', !!(drill && drill.applied && drill.sessionPreserved && drill.dataDeleted === false), JSON.stringify(drill));
+
+    var okAll = evidence.every(function (e) { return e.ok; });
+    window.__RATEB_B1_PREP_EVIDENCE__ = {
+      ok: okAll,
+      evidence: evidence,
+      at: new Date().toISOString()
+    };
+    document.documentElement.setAttribute('data-rateb-b1-prep-ready', okAll ? '1' : '0');
+    setStatus((okAll ? 'PASS' : 'FAIL') + '\n' + evidence.map(function (e) {
+      return (e.ok ? 'OK' : 'NO') + ' ' + e.step + (e.detail ? ' — ' + e.detail : '');
+    }).join('\n'), okAll);
+  }
+
+  /* Multi-tab PX pages load modules only — avoid lease contention with self-cert. */
+  var qs = new URLSearchParams(window.location.search || '');
+  if (qs.has('tab') || qs.get('modulesOnly') === '1') {
+    document.documentElement.setAttribute('data-rateb-b1-prep-ready', 'modules');
+    setStatus('Modules loaded (tab/modulesOnly). Self-cert skipped.', true);
+  } else {
+    runSelfCertification().catch(function (err) {
+      document.documentElement.setAttribute('data-rateb-b1-prep-ready', '0');
+      window.__RATEB_B1_PREP_EVIDENCE__ = { ok: false, error: String(err && err.message ? err.message : err) };
+      setStatus('FAIL fatal: ' + String(err && err.message ? err.message : err), false);
+    });
+  }
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "flags": {
+    "CompatGateEnabled": false,
+    "PlatformEnabled": false,
+    "PlatformShadow": false,
+    "PlatformCutover": false,
+    "EmergencyRollback": false,
+    "PlatformQueueMigrate": false,
+    "PlatformIdentityBridge": false,
+    "PlatformAdminSW": false
+  },
+  "ops": "Copy to rateb-erp/storage/platform-cutover-flags.json on the server (or set RATEB_PLATFORM_CUTOVER_FLAGS env). Flip EmergencyRollback without application code deploy."
+}
