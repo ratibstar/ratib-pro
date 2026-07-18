@@ -313,7 +313,21 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     })();
     </script>
     <?php } ?>
-    <script src="<?php echo rateb_asset('js/rateb-console-quiet.js'); ?>" defer></script>
+    <?php /* PERF-P3: console-quiet after DCL — defer in <head> delays DOMContentLoaded */ ?>
+    <script>
+    (function () {
+      function loadQuiet() {
+        var s = document.createElement('script');
+        s.src = <?php echo json_encode(rateb_asset('js/rateb-console-quiet.js'), JSON_UNESCAPED_SLASHES); ?>;
+        document.head.appendChild(s);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadQuiet, { once: true });
+      } else {
+        loadQuiet();
+      }
+    })();
+    </script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
     <link rel="manifest" href="<?php echo rateb_public_url('manifest.webmanifest'); ?>">
