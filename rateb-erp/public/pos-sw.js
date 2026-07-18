@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-offline-cache-hit-v89';
+var SW_BUILD_ID = '20260718-f5-instant-paint-v90';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1210,28 +1210,18 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
         if (!isValidErpOpsHtmlBody(pageUrl, body)) {
             return null;
         }
-        var putKeys = [];
+        // Keep puts lean (2–3 keys) — many aliases locked Cache API and black-screened F5.
+        var putKeys = [pageUrl];
         try {
             var u = new URL(pageUrl);
-            var bare = u.origin + u.pathname;
-            putKeys.push(pageUrl, bare, bare.replace(/\/+$/, ''), bare.replace(/\/+$/, '') + '/');
-            var path = String(u.pathname || '');
-            if (/\/admin\/ops\//i.test(path)) {
-                var alt = u.origin + path.replace(/\/admin\/ops\//i, '/admin/');
-                putKeys.push(alt, alt.replace(/\/+$/, ''), alt.replace(/\/+$/, '') + '/');
-            } else if (/\/admin\/(?!ops\/)/i.test(path) && !/(^|\/)admin$/i.test(path.replace(/\/+$/, ''))) {
-                var alt2 = u.origin + path.replace(/\/admin\//i, '/admin/ops/');
-                putKeys.push(alt2, alt2.replace(/\/+$/, ''), alt2.replace(/\/+$/, '') + '/');
+            var bare = u.origin + u.pathname.replace(/\/+$/, '');
+            if (bare && putKeys.indexOf(bare) === -1) {
+                putKeys.push(bare);
             }
-        } catch (e5) {
-            putKeys.push(pageUrl);
-        }
-        var uniqPuts = [];
-        putKeys.forEach(function (k) {
-            if (k && uniqPuts.indexOf(k) === -1) {
-                uniqPuts.push(k);
+            if (bare && putKeys.indexOf(bare + '/') === -1) {
+                putKeys.push(bare + '/');
             }
-        });
+        } catch (e5) { /* ignore */ }
         var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
         try {
             res.headers.forEach(function (v, k) { headers.set(k, v); });
@@ -1240,9 +1230,51 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
         var materialize = function () {
             return new Response(body, { status: 200, statusText: 'OK', headers: new Headers(headers) });
         };
-        return Promise.all(uniqPuts.map(function (key) {
+        return Promise.all(putKeys.map(function (key) {
             return opsCache.put(key, materialize()).catch(function () { return null; });
         }));
+    }).catch(function () {
+        return null;
+    });
+}
+
+/** Soft-online only: few exact keys in current ops cache — never keys()/old-cache walks. */
+function matchSoftOnlineExactCache(request, url) {
+    var keys = [];
+    try {
+        if (request && request.url) {
+            keys.push(request.url);
+        }
+    } catch (e0) { /* ignore */ }
+    try {
+        if (url) {
+            keys.push(url.origin + url.pathname);
+            var bare = String(url.pathname || '').replace(/\/+$/, '');
+            if (bare) {
+                keys.push(url.origin + bare);
+                keys.push(url.origin + bare + '/');
+            }
+        }
+    } catch (e1) { /* ignore */ }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        var chain = Promise.resolve(null);
+        keys.forEach(function (key) {
+            if (!key) {
+                return;
+            }
+            chain = chain.then(function (found) {
+                return found || cache.match(key);
+            });
+        });
+        return chain.then(function (found) {
+            if (found) {
+                return found;
+            }
+            if (!url || !url.pathname) {
+                return null;
+            }
+            return cache.match(url.origin + url.pathname, { ignoreSearch: true });
+        });
     }).catch(function () {
         return null;
     });
@@ -1303,9 +1335,14 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         if (!response || !response.ok) {
             return null;
         }
-        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-        }).catch(function () { return null; });
+        // Defer cache write so it cannot contend with this navigation's respondWith.
+        var store = new Promise(function (resolve) {
+            setTimeout(function () {
+                caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                }).catch(function () { return null; }).then(resolve);
+            }, 0);
+        });
         if (event && typeof event.waitUntil === 'function') {
             event.waitUntil(store);
         }
@@ -1325,61 +1362,80 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         });
     }
 
-    // Soft-online FAST F5:
-    // - Start network immediately (900ms budget, not 4.5s).
-    // - Exact cache match in parallel (no keys() scans).
-    // - Prefer live HTML; if network is slow, paint cache after 200ms.
-    var networkP = fetchNavigateNetwork(request, 900).then(storeLive).catch(function () {
+    // Soft-online INSTANT F5:
+    // - Exact cache from t=0 (no 200ms delay, no deep scans).
+    // - Network in parallel (600ms budget).
+    // - Hard ceiling 700ms → shell/placeholder (never indefinite black).
+    var networkP = fetchNavigateNetwork(request, 600).then(storeLive).catch(function () {
         return null;
     });
-    var cacheP = matchErpNavSnapshot(request, url).catch(function () {
+    var cacheP = matchSoftOnlineExactCache(request, url).catch(function () {
         return null;
     });
 
     return new Promise(function (resolve) {
         var settled = false;
-        var cacheTimer = setTimeout(function () {
-            cacheP.then(function (hit) {
-                if (settled) {
-                    return;
-                }
-                var served = serveCachedFast(hit, false);
-                if (!served) {
-                    return;
-                }
-                settled = true;
-                Promise.resolve(served).then(resolve);
-                // Keep network going to refresh cache, but do not block paint.
+        function finish(res) {
+            if (settled || !res) {
+                return false;
+            }
+            settled = true;
+            Promise.resolve(res).then(resolve);
+            return true;
+        }
+
+        // Paint cached snapshot immediately when present.
+        cacheP.then(function (hit) {
+            var served = serveCachedFast(hit, false);
+            if (served && finish(served)) {
                 if (event && typeof event.waitUntil === 'function') {
                     event.waitUntil(networkP.then(function () { return null; }));
                 }
-            });
-        }, 200);
+            }
+        });
 
         networkP.then(function (response) {
+            if (response) {
+                finish(response);
+                return;
+            }
             if (settled) {
                 return;
             }
-            if (response) {
-                settled = true;
-                clearTimeout(cacheTimer);
-                resolve(response);
-                return;
-            }
-            clearTimeout(cacheTimer);
             cacheP.then(function (hit) {
                 if (settled) {
                     return;
                 }
-                settled = true;
                 var served = serveCachedFast(hit, false);
                 if (served) {
-                    Promise.resolve(served).then(resolve);
+                    finish(served);
                     return;
                 }
-                neverFailNavigate(request, url).then(resolve);
+                neverFailNavigate(request, url).then(function (fallback) {
+                    finish(fallback);
+                });
             });
         });
+
+        // Absolute ceiling — black screen must not exceed ~700ms.
+        setTimeout(function () {
+            if (settled) {
+                return;
+            }
+            cacheP.then(function (hit) {
+                if (settled) {
+                    return;
+                }
+                var served = serveCachedFast(hit, false);
+                if (served) {
+                    finish(served);
+                    return;
+                }
+                neverFailNavigate(request, url).then(function (fallback) {
+                    finish(fallback);
+                });
+            });
+        }, 700);
     });
 }
 
@@ -2076,16 +2132,17 @@ function warmErpOfflineShell(opts) {
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // Await critical HTML so offline has real pages; rest warms in background.
-                return warmLeanOpsList(leanOpsCritical, 80).then(function () {
-                    var rest = leanOps.filter(function (rel) {
-                        return leanOpsCritical.indexOf(rel) === -1;
-                    });
-                    warmLeanOpsList(rest, 220).catch(function () { return null; });
-                    return protectedResult;
-                }).catch(function () {
-                    return protectedResult;
-                });
+                // Never await HTML warm here — Cache API puts blocked F5 (black screen).
+                // Start after a delay so the user's current navigation finishes first.
+                setTimeout(function () {
+                    warmLeanOpsList(leanOpsCritical, 100).then(function () {
+                        var rest = leanOps.filter(function (rel) {
+                            return leanOpsCritical.indexOf(rel) === -1;
+                        });
+                        return warmLeanOpsList(rest, 250);
+                    }).catch(function () { return null; });
+                }, 3000);
+                return protectedResult;
             });
         }).then(function (result) {
             LAST_SHELL_WARM_AT = Date.now();
