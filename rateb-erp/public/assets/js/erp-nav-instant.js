@@ -167,15 +167,38 @@
     }
 
     function fetchWithTimeout(url, opts, ms) {
+        opts = opts || {};
         var timedOut = false;
         var timer = null;
+        var ctrl = null;
+        var fetchOpts = opts;
+        try {
+            if (typeof AbortController !== 'undefined' && !opts.signal) {
+                ctrl = new AbortController();
+                fetchOpts = {};
+                for (var k in opts) {
+                    if (Object.prototype.hasOwnProperty.call(opts, k)) {
+                        fetchOpts[k] = opts[k];
+                    }
+                }
+                fetchOpts.signal = ctrl.signal;
+            }
+        } catch (eCtrl) {
+            fetchOpts = opts;
+            ctrl = null;
+        }
         var timed = new Promise(function (_, reject) {
             timer = setTimeout(function () {
                 timedOut = true;
+                try {
+                    if (ctrl) {
+                        ctrl.abort();
+                    }
+                } catch (eAb) { /* ignore */ }
                 reject(new Error('nav_fetch_timeout'));
-            }, typeof ms === 'number' ? ms : 2500);
+            }, typeof ms === 'number' ? ms : 2000);
         });
-        var network = fetch(url, opts).then(function (res) {
+        var network = fetch(url, fetchOpts).then(function (res) {
             if (timer) {
                 clearTimeout(timer);
             }
@@ -184,7 +207,62 @@
             }
             return res;
         });
-        return Promise.race([network, timed]);
+        var raced = Promise.race([network, timed]);
+        raced._ratebAbort = function () {
+            try {
+                if (ctrl) {
+                    ctrl.abort();
+                }
+            } catch (e2) { /* ignore */ }
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+        return raced;
+    }
+
+    function loadNewScripts(doc) {
+        var nodes = doc.querySelectorAll('script[src]');
+        var tasks = [];
+        Array.prototype.forEach.call(nodes, function (s) {
+            var src = s.getAttribute('src');
+            if (!src) {
+                return;
+            }
+            var key = scriptKey(src);
+            if (loadedScripts[key]) {
+                return;
+            }
+            if (COMMON_SCRIPT_RE.test(key) || /erp-nav-instant/i.test(key)) {
+                loadedScripts[key] = true;
+                return;
+            }
+            tasks.push(new Promise(function (resolve) {
+                var el = document.createElement('script');
+                el.src = src;
+                el.async = true;
+                el.onload = el.onerror = function () {
+                    loadedScripts[key] = true;
+                    resolve();
+                };
+                (document.body || document.documentElement).appendChild(el);
+            }));
+        });
+        return tasks.length ? Promise.all(tasks) : Promise.resolve();
+    }
+
+    function scheduleModuleScripts(doc) {
+        // Paint first; start module scripts on next task (not idle — keeps forms interactive).
+        var kick = function () {
+            try {
+                loadNewScripts(doc);
+            } catch (eLoad) { /* ignore */ }
+        };
+        if (typeof root.setTimeout === 'function') {
+            root.setTimeout(kick, 0);
+        } else {
+            kick();
+        }
     }
 
     function rememberExistingScripts() {
@@ -382,38 +460,6 @@
         } catch (e2) { /* ignore */ }
     }
 
-    function loadNewScripts(doc) {
-        var chain = Promise.resolve();
-        var nodes = doc.querySelectorAll('script[src]');
-        nodes.forEach(function (s) {
-            var src = s.getAttribute('src');
-            if (!src) {
-                return;
-            }
-            var key = scriptKey(src);
-            if (loadedScripts[key]) {
-                return;
-            }
-            if (COMMON_SCRIPT_RE.test(key) || /erp-nav-instant/i.test(key)) {
-                loadedScripts[key] = true;
-                return;
-            }
-            chain = chain.then(function () {
-                return new Promise(function (resolve) {
-                    var el = document.createElement('script');
-                    el.src = src;
-                    el.defer = true;
-                    el.onload = el.onerror = function () {
-                        loadedScripts[key] = true;
-                        resolve();
-                    };
-                    (document.body || document.documentElement).appendChild(el);
-                });
-            });
-        });
-        return chain;
-    }
-
     function reinitModuleUi() {
         try {
             if (root.RatebApp && typeof root.RatebApp.reinit === 'function') {
@@ -546,10 +592,11 @@
     }
 
     function fetchNetworkHtml(href) {
-        return fetchWithTimeout(href, {
+        var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-        }, 1500).then(function (res) {
+        }, 2000);
+        var packed = raw.then(function (res) {
             if (!res || !res.ok) {
                 throw new Error('nav_fetch_failed');
             }
@@ -559,11 +606,13 @@
                 return { html: html, finalUrl: res.url || href, fromCache: false };
             });
         });
+        packed._ratebAbort = raw._ratebAbort;
+        return packed;
     }
 
     function fetchHtml(href) {
-        // Start network immediately (parallel with Cache API) — sequential cache-then-network
-        // could burn 2–4s on miss + slow fetch + script wait.
+        // Parallel cache + network. On cache hit: abort network and idle-revalidate
+        // so paint is not competing with a duplicate HTML download.
         var networkPromise = null;
         if (!isUiOffline()) {
             networkPromise = fetchNetworkHtml(href);
@@ -571,9 +620,16 @@
 
         return matchCachedHtml(href).then(function (cached) {
             if (cached) {
-                // Background revalidate; do not block paint on network.
-                if (networkPromise) {
-                    networkPromise.catch(function () { /* ignore */ });
+                if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
+                    try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
+                }
+                var revalidate = function () {
+                    fetchNetworkHtml(href).catch(function () { /* ignore */ });
+                };
+                if (typeof root.requestIdleCallback === 'function') {
+                    root.requestIdleCallback(revalidate, { timeout: 6000 });
+                } else {
+                    root.setTimeout(revalidate, 2500);
                 }
                 return cached.text().then(function (html) {
                     return { html: html, finalUrl: href, fromCache: true };
@@ -645,22 +701,13 @@
                 return true;
             };
             if (pack.fromCache) {
-                // Instant path: schedule scripts idle
                 var done = afterScripts();
-                if (typeof root.requestIdleCallback === 'function') {
-                    root.requestIdleCallback(function () { loadNewScripts(doc); }, { timeout: 1500 });
-                } else {
-                    setTimeout(function () { loadNewScripts(doc); }, 0);
-                }
+                scheduleModuleScripts(doc);
                 return Promise.resolve(done);
             }
-            // Network path: paint immediately; do not wait on module scripts (was 1–3s).
+            // Network path: paint immediately; module scripts next task (parallel).
             var painted = afterScripts();
-            if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(function () { loadNewScripts(doc); }, { timeout: 1500 });
-            } else {
-                setTimeout(function () { loadNewScripts(doc); }, 0);
-            }
+            scheduleModuleScripts(doc);
             return Promise.resolve(painted);
         }).catch(function (err) {
             try {

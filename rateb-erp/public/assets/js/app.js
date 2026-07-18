@@ -200,10 +200,35 @@
             try { ev.stopImmediatePropagation(); } catch (eStop) { /* ignore */ }
             var willOpen = !group.classList.contains('is-open');
             if (willOpen) {
+                var parent = group.parentElement;
+                if (parent) {
+                    var isSub = group.classList.contains('rateb-nav-subgroup');
+                    var kids = parent.children;
+                    for (var i = 0; i < kids.length; i++) {
+                        var sib = kids[i];
+                        if (sib === group || !sib.getAttribute || sib.getAttribute('data-nav-group') === null) {
+                            continue;
+                        }
+                        if (isSub !== sib.classList.contains('rateb-nav-subgroup')) {
+                            continue;
+                        }
+                        if (!sib.classList.contains('is-open')) {
+                            continue;
+                        }
+                        sib.classList.remove('is-open');
+                        var t = sib.querySelector(':scope > [data-nav-group-toggle]');
+                        if (t) {
+                            t.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                }
+                group.classList.add('is-open');
+                btn.setAttribute('aria-expanded', 'true');
                 hydrateNavLazy(group);
+            } else {
+                group.classList.remove('is-open');
+                btn.setAttribute('aria-expanded', 'false');
             }
-            var open = group.classList.toggle('is-open');
-            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
         }, true);
     }
 

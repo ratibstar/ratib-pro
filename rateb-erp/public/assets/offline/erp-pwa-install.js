@@ -38,7 +38,7 @@
         // Keep out of the fixed sidebar hit-zone (RTL sidebar is inline-start).
         // Inline styles are a fallback; .rateb-erp-pwa-install in CSS owns layout.
         bar.style.cssText = 'position:fixed;z-index:900;inset-inline-start:calc(268px + 1rem);'
-            + 'inset-inline-end:1rem;bottom:1rem;max-width:22rem;width:auto;'
+            + 'inset-inline-end:1rem;bottom:max(1rem,env(safe-area-inset-bottom,0px));max-width:22rem;width:auto;'
             + 'padding:0.85rem 1rem;border-radius:0.75rem;background:#161b22;color:#e8eaed;'
             + 'box-shadow:0 8px 28px rgba(0,0,0,.35);font:14px/1.4 system-ui,sans-serif;';
         bar.innerHTML = '<div style="margin-bottom:.65rem">تثبيت RATEB ERP كتطبيق</div>'

@@ -135,7 +135,7 @@ body.rateb-app {
     z-index: 900;
     inset-inline-start: calc(268px + 1rem);
     inset-inline-end: 1rem;
-    bottom: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
     max-width: 22rem;
     width: auto;
     pointer-events: auto;
@@ -145,6 +145,7 @@ body.rateb-app {
     .rateb-erp-pwa-install {
         inset-inline: 1rem;
         max-width: calc(100vw - 2rem);
+        bottom: max(1rem, env(safe-area-inset-bottom, 0px));
     }
 }
 
