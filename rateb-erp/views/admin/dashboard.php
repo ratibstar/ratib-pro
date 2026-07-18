@@ -61,7 +61,9 @@ $rankRows = array_map(static fn ($r) => [
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
 <!-- rateb-dashboard-v5-charts -->
-<div class="cm cm--wide" data-cm-dash="v5c"<?php
+<div class="cm cm--wide" data-cm-dash="v5c"
+     data-rateb-chartjs="<?php echo Rateb\App\Core\View::escape(rateb_chartjs('4.4.3')); ?>"
+     data-rateb-charts="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/charts.js')); ?>"<?php
 if (!empty($dashboardChartsUrl)) {
     echo ' data-charts-url="' . Rateb\App\Core\View::escape((string) $dashboardChartsUrl) . '"';
 }
