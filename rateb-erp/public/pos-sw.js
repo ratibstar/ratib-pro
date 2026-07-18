@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-offline-speed-parity-v86';
+var SW_BUILD_ID = '20260718-f5-device-activate-v87';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1244,9 +1244,8 @@ function prefetchErpOpsUrl(href) {
  * @param {FetchEvent} [event]
  */
 function navigateErpCloudWithCacheSafety(request, url, event) {
-    if (isExactAdminDashboardPath(url.pathname)) {
-        return navigateAdminDashboardNetworkFirst(request, url, event);
-    }
+    // Dashboard uses the same SWR path as other admin pages.
+    // Logout/login already purgeErpOpsAuthPages() — network-first made F5 paint black for up to 4.5s.
     var pageUrl = request.url || (url && url.href) || '';
 
     function materializeValidatedHtml(html, sourceResponse) {
@@ -1356,36 +1355,10 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
 }
 
 /**
- * Admin dashboard: network-first (like POS) — cache-first SWR showed logged-in UI after logout.
+ * Admin dashboard helper kept for callers — delegates to SWR (logout purge keeps session safe).
  */
 function navigateAdminDashboardNetworkFirst(request, url, event) {
-    function fromCacheOrFallback() {
-        return matchErpNavSnapshot(request, url).then(function (hit) {
-            if (!hit) {
-                return neverFailNavigate(request, url);
-            }
-            return asNonRedirectedResponse(hit).then(function (clean) {
-                return withSoftOfflineCacheHeader(clean || hit);
-            });
-        }).catch(function () {
-            return neverFailNavigate(request, url);
-        });
-    }
-    return fetchNavigateNetwork(request, 4500).then(function (response) {
-        if (response && response.ok) {
-            var pageUrl = request.url || (url && url.href) || '';
-            var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-            }).catch(function () { return null; });
-            if (event && typeof event.waitUntil === 'function') {
-                event.waitUntil(store);
-            }
-            return response;
-        }
-        return fromCacheOrFallback();
-    }).catch(function () {
-        return fromCacheOrFallback();
-    });
+    return navigateErpCloudWithCacheSafety(request, url, event);
 }
 
 /** Certified POS shell only — never treat bio-required placeholder as a snapshot hit. */
@@ -1419,19 +1392,53 @@ function navigatePosCloudWithCacheSafety(request, url) {
             return hit || shellFallback(shellReq);
         });
     }
-    return fetchNavigateNetwork(request, 4000).then(function (response) {
-        if (response && response.ok) {
-            if (!isBiometricGatePath(url.pathname)) {
-                try {
-                    var forShell = response.clone();
-                    putShell(request, forShell).catch(function () { return null; });
-                } catch (ePin) { /* ignore */ }
-            }
-            return response;
+    function pinLiveResponse(response) {
+        if (response && response.ok && !isBiometricGatePath(url.pathname)) {
+            try {
+                putShell(request, response.clone()).catch(function () { return null; });
+            } catch (ePin) { /* ignore */ }
         }
-        return fromCacheOrFallback();
+        return response;
+    }
+    // Prefer live HTML (CSRF), but paint certified shell after 300ms so F5 is not a black screen.
+    return matchCertifiedPosShellSnapshot(shellReq).then(function (cachedShell) {
+        var networkP = fetchNavigateNetwork(request, 4000).then(function (response) {
+            if (response && response.ok) {
+                return pinLiveResponse(response);
+            }
+            return null;
+        }).catch(function () {
+            return null;
+        });
+        if (!cachedShell) {
+            return networkP.then(function (response) {
+                return response || fromCacheOrFallback();
+            });
+        }
+        return new Promise(function (resolve) {
+            var settled = false;
+            var timer = setTimeout(function () {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                resolve(withSoftOfflineCacheHeader(cachedShell));
+            }, 300);
+            networkP.then(function (response) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                clearTimeout(timer);
+                if (response) {
+                    resolve(response);
+                    return;
+                }
+                resolve(withSoftOfflineCacheHeader(cachedShell));
+            });
+        });
     }).catch(function () {
-        return fromCacheOrFallback();
+        return fetchNavigateNetwork(request, 4000).then(pinLiveResponse).catch(fromCacheOrFallback);
     });
 }
 
@@ -3383,9 +3390,8 @@ self.addEventListener('fetch', function (event) {
                 return;
             }
             // Soft-online admin: never bare-bypass Document fetch (Chrome tab spinner hangs
-            // forever when PHP/network stalls while navigator.onLine===true). Network-first
-            // with timeout → cached snapshot. Dashboard stays network-first (logout-safe);
-            // other admin paths use SWR via navigateErpCloudWithCacheSafety.
+            // forever when PHP/network stalls while navigator.onLine===true).
+            // All admin paths use SWR via navigateErpCloudWithCacheSafety (logout purges cache).
             if (isErpAdminPath(url.pathname) && !isPosNavigation(url)) {
                 respondWithDocumentAndReleaseWarmGate(
                     event,

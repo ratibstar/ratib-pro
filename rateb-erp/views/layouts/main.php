@@ -1450,14 +1450,37 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     }
   });
   try {
+    function removeEphemeralOfflineNote() {
+      Array.prototype.forEach.call(
+        document.querySelectorAll('[data-rateb-ephemeral-offline-note]'),
+        function (n) { if (n && n.parentNode) { n.parentNode.removeChild(n); } }
+      );
+    }
+    // Drop poisoned toast from cached HTML whenever we are (or become) online.
+    if (navigator.onLine !== false) {
+      removeEphemeralOfflineNote();
+    }
+    window.addEventListener('online', removeEphemeralOfflineNote);
+    // Debounce: only show after we stay offline briefly (avoids flash during F5 reconnect).
     if (navigator.onLine === false && isAdminPath(location.pathname) && !isOfflineShellUi()) {
-      var note = document.createElement('div');
-      note.setAttribute('role', 'status');
-      note.setAttribute('data-rateb-ephemeral-offline-note', '1');
-      note.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99998;max-width:18rem;padding:8px 12px;'
-        + 'background:#7f1d1d;color:#fee2e2;font:12px/1.4 system-ui,sans-serif;border-radius:8px';
-      note.textContent = 'أوفلاين: تظهر آخر نسخة محفوظة من الصفحة (الجداول من وقت آخر زيارة متصلة).';
-      document.body.appendChild(note);
+      setTimeout(function () {
+        try {
+          if (navigator.onLine !== false) {
+            removeEphemeralOfflineNote();
+            return;
+          }
+          if (document.querySelector('[data-rateb-ephemeral-offline-note]')) {
+            return;
+          }
+          var note = document.createElement('div');
+          note.setAttribute('role', 'status');
+          note.setAttribute('data-rateb-ephemeral-offline-note', '1');
+          note.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99998;max-width:18rem;padding:8px 12px;'
+            + 'background:#7f1d1d;color:#fee2e2;font:12px/1.4 system-ui,sans-serif;border-radius:8px';
+          note.textContent = 'أوفلاين: تظهر آخر نسخة محفوظة من الصفحة (الجداول من وقت آخر زيارة متصلة).';
+          document.body.appendChild(note);
+        } catch (eShow) { /* ignore */ }
+      }, 900);
     }
   } catch (eNote) {}
   try {

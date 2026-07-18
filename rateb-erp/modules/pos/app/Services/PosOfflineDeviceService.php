@@ -59,7 +59,9 @@ final class PosOfflineDeviceService
         $now = date('Y-m-d H:i:s');
 
         if ($existing === null) {
-            $rowId = $model->create([
+            $autoActive = $this->registrarCanAutoActivate($userId);
+            $status = $autoActive ? OfflineDevice::STATUS_ACTIVE : OfflineDevice::STATUS_PENDING;
+            $create = [
                 'company_id' => $companyId,
                 'branch_id' => $branchId,
                 'device_id' => $deviceId,
@@ -67,13 +69,27 @@ final class PosOfflineDeviceService
                 'label' => $label !== '' ? $label : null,
                 'meta_json' => $metaJson,
                 'last_seen_at' => $now,
-                'status' => OfflineDevice::STATUS_PENDING,
-            ]);
+                'status' => $status,
+            ];
+            if ($autoActive) {
+                $create['activated_by'] = $userId;
+                $create['activated_at'] = $now;
+                $create['approved_by'] = $userId;
+            }
+            $rowId = $model->create($create);
             $this->audit->log('pos_device_register', 'offline_device', $rowId, [
                 'device_id' => $deviceId,
                 'branch_id' => $branchId,
-                'status' => OfflineDevice::STATUS_PENDING,
+                'status' => $status,
+                'auto_activated' => $autoActive,
             ]);
+            if ($autoActive) {
+                $this->audit->log('pos_device_activate', 'offline_device', $rowId, [
+                    'device_id' => $deviceId,
+                    'branch_id' => $branchId,
+                    'auto' => true,
+                ]);
+            }
             $device = $model->find($rowId);
 
             return [
@@ -99,16 +115,33 @@ final class PosOfflineDeviceService
             $patch['meta_json'] = $metaJson;
         }
 
-        // Revoked / inactive devices must wait for admin again.
+        $autoActive = $this->registrarCanAutoActivate($userId);
+        // Revoked / inactive devices must wait for admin again (unless registrar can manage devices).
         if (in_array($status, [OfflineDevice::STATUS_REVOKED, OfflineDevice::STATUS_INACTIVE], true)) {
-            $patch['status'] = OfflineDevice::STATUS_PENDING;
-            $patch['activated_by'] = null;
-            $patch['activated_at'] = null;
-            $patch['approved_by'] = null;
-            $status = OfflineDevice::STATUS_PENDING;
+            if ($autoActive) {
+                $patch['status'] = OfflineDevice::STATUS_ACTIVE;
+                $patch['activated_by'] = $userId;
+                $patch['activated_at'] = $now;
+                $patch['approved_by'] = $userId;
+                $status = OfflineDevice::STATUS_ACTIVE;
+            } else {
+                $patch['status'] = OfflineDevice::STATUS_PENDING;
+                $patch['activated_by'] = null;
+                $patch['activated_at'] = null;
+                $patch['approved_by'] = null;
+                $status = OfflineDevice::STATUS_PENDING;
+            }
         } elseif ($status !== OfflineDevice::STATUS_ACTIVE) {
-            $patch['status'] = OfflineDevice::STATUS_PENDING;
-            $status = OfflineDevice::STATUS_PENDING;
+            if ($autoActive) {
+                $patch['status'] = OfflineDevice::STATUS_ACTIVE;
+                $patch['activated_by'] = $userId;
+                $patch['activated_at'] = $now;
+                $patch['approved_by'] = $userId;
+                $status = OfflineDevice::STATUS_ACTIVE;
+            } else {
+                $patch['status'] = OfflineDevice::STATUS_PENDING;
+                $status = OfflineDevice::STATUS_PENDING;
+            }
         }
 
         $model->update($id, $patch);
@@ -117,7 +150,16 @@ final class PosOfflineDeviceService
             'branch_id' => $branchId,
             'status' => $status,
             'refreshed' => true,
+            'auto_activated' => $autoActive && $status === OfflineDevice::STATUS_ACTIVE,
         ]);
+        if ($autoActive && $status === OfflineDevice::STATUS_ACTIVE
+            && (string) ($existing['status'] ?? '') !== OfflineDevice::STATUS_ACTIVE) {
+            $this->audit->log('pos_device_activate', 'offline_device', $id, [
+                'device_id' => $deviceId,
+                'branch_id' => $branchId,
+                'auto' => true,
+            ]);
+        }
         $device = $model->find($id);
 
         return [
@@ -125,6 +167,22 @@ final class PosOfflineDeviceService
             'device' => $this->publicDevice($device ?? $existing),
             'created' => false,
         ];
+    }
+
+    /** Managers / super-admins may activate their own POS device on register (no pending wait). */
+    private function registrarCanAutoActivate(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (!function_exists('rateb_can')) {
+            return false;
+        }
+
+        return rateb_can('pos.devices.manage') || rateb_can('pos.settings.manage');
     }
 
     /**

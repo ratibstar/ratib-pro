@@ -719,21 +719,27 @@
         ensureSessionBanner();
 
         var online = navigator.onLine !== false;
-        if (online) {
-            registerDeviceOnline().then(function () {
-                return heartbeatOnline();
-            });
-            // Fresh server session — clear stale reauth flag when CSRF present.
-            if (csrf()) {
-                clearSessionNeedsReauth();
-            }
+        // Fresh server session — clear stale reauth flag when CSRF present.
+        if (online && csrf()) {
+            clearSessionNeedsReauth();
         }
 
-        return needsLockScreen().then(function (need) {
-            if (need) {
-                return showOverlay();
-            }
-            return null;
+        // Register/heartbeat first so auto-activated devices clear the inactive banner before lock UI.
+        var boot = online
+            ? registerDeviceOnline().then(function () {
+                return heartbeatOnline();
+            }).catch(function () {
+                return null;
+            })
+            : Promise.resolve(null);
+
+        return boot.then(function () {
+            return needsLockScreen().then(function (need) {
+                if (need) {
+                    return showOverlay();
+                }
+                return null;
+            });
         }).catch(function () {
             return null;
         });
