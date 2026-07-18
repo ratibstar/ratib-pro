@@ -112,7 +112,9 @@ Rateb\App\Core\View::partial('dashboard/head');
 <div class="alert alert-warning mb-3 py-2 small"><?php echo __('accounting_select_company_hint'); ?></div>
 <?php } ?>
 
-<div class="cm cm--wide" data-cm-dash="v5c">
+<div class="cm cm--wide" data-cm-dash="v5c"
+     data-rateb-chartjs="<?php echo Rateb\App\Core\View::escape(rateb_chartjs('4.4.3')); ?>"
+     data-rateb-charts="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/charts.js')); ?>">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
         'tag' => __('accounting'),

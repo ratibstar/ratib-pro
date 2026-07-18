@@ -534,103 +534,117 @@
 
         var colors = chartColors();
         var pal = palette(colors);
+        var queue = [];
 
-        var revenueEl = document.getElementById('chart-revenue');
-        if (revenueEl && revenueEl.dataset.labels) {
-            deferInit(revenueEl, function () {
-                initLineChart(revenueEl, colors, pal, chartLabel(revenueEl, 'Revenue'), revenueEl.dataset.values, 'primary');
+        function enqueue(el, fn) {
+            if (!el) {
+                return;
+            }
+            if (!(el.dataset && (el.dataset.labels || hasLabels(el)))) {
+                return;
+            }
+            queue.push(function () {
+                try {
+                    if (charts[el.id]) {
+                        try {
+                            charts[el.id].destroy();
+                        } catch (eDes) { /* ignore */ }
+                        delete charts[el.id];
+                    }
+                } catch (e0) { /* ignore */ }
+                try {
+                    fn();
+                } catch (e1) { /* ignore */ }
             });
         }
 
-        var companyEl = document.getElementById('chart-companies');
-        if (companyEl && hasLabels(companyEl)) {
-            deferInit(companyEl, function () {
-                initBarChart(companyEl, colors, pal, chartLabel(companyEl, 'Companies'));
-            });
-        }
+        enqueue(document.getElementById('chart-revenue'), function () {
+            var el = document.getElementById('chart-revenue');
+            initLineChart(el, colors, pal, chartLabel(el, 'Revenue'), el.dataset.values, 'primary');
+        });
+        enqueue(document.getElementById('chart-companies'), function () {
+            var el = document.getElementById('chart-companies');
+            initBarChart(el, colors, pal, chartLabel(el, 'Companies'));
+        });
+        enqueue(document.getElementById('chart-subscriptions'), function () {
+            var el = document.getElementById('chart-subscriptions');
+            initBarChart(el, colors, pal, chartLabel(el, 'Subscriptions'));
+        });
+        enqueue(document.getElementById('chart-users'), function () {
+            var el = document.getElementById('chart-users');
+            initBarChart(el, colors, pal, chartLabel(el, 'Users'));
+        });
+        enqueue(document.getElementById('chart-acct-revenue'), function () {
+            var el = document.getElementById('chart-acct-revenue');
+            initBarChart(el, colors, pal, chartLabel(el, 'Revenue'));
+        });
+        enqueue(document.getElementById('chart-acct-expenses'), function () {
+            var el = document.getElementById('chart-acct-expenses');
+            initBarChart(el, colors, pal, chartLabel(el, 'Expenses'));
+        });
+        enqueue(document.getElementById('chart-acct-arap'), function () {
+            initDoughnut(document.getElementById('chart-acct-arap'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-revenue-expenses'), function () {
+            initDualLineChart(document.getElementById('chart-revenue-expenses'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-expense-breakdown'), function () {
+            initDoughnut(document.getElementById('chart-expense-breakdown'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-company-status'), function () {
+            initDoughnut(document.getElementById('chart-company-status'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-platform-overview'), function () {
+            initMultiLineChart(document.getElementById('chart-platform-overview'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-plan-distribution'), function () {
+            var el = document.getElementById('chart-plan-distribution');
+            initBarChart(el, colors, pal, chartLabel(el, 'Plans'));
+        });
+        enqueue(document.getElementById('chart-subscription-status'), function () {
+            initDoughnut(document.getElementById('chart-subscription-status'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-login-activity'), function () {
+            initStackedBarChart(document.getElementById('chart-login-activity'), colors, pal);
+        });
+        enqueue(document.getElementById('chart-top-companies'), function () {
+            var el = document.getElementById('chart-top-companies');
+            initHorizontalBarChart(el, colors, pal, chartLabel(el, 'Users'));
+        });
+        enqueue(document.getElementById('chart-top-customers'), function () {
+            var el = document.getElementById('chart-top-customers');
+            initHorizontalBarChart(el, colors, pal, chartLabel(el, 'Total'));
+        });
+        enqueue(document.getElementById('chart-top-items'), function () {
+            var el = document.getElementById('chart-top-items');
+            initHorizontalBarChart(el, colors, pal, chartLabel(el, 'Total'));
+        });
+        enqueue(document.getElementById('chart-journal-activity'), function () {
+            var el = document.getElementById('chart-journal-activity');
+            initBarChart(el, colors, pal, chartLabel(el, 'Entries'));
+        });
 
-        var subEl = document.getElementById('chart-subscriptions');
-        if (subEl && subEl.dataset.labels) {
-            deferInit(subEl, function () {
-                initBarChart(subEl, colors, pal, chartLabel(subEl, 'Subscriptions'));
-            });
-        }
-
-        var usersEl = document.getElementById('chart-users');
-        if (usersEl && usersEl.dataset.labels) {
-            deferInit(usersEl, function () {
-                initBarChart(usersEl, colors, pal, chartLabel(usersEl, 'Users'));
-            });
-        }
-
-        var acctRevEl = document.getElementById('chart-acct-revenue');
-        if (acctRevEl && acctRevEl.dataset.labels) {
-            initBarChart(acctRevEl, colors, pal, chartLabel(acctRevEl, 'Revenue'));
-        }
-
-        var acctExpEl = document.getElementById('chart-acct-expenses');
-        if (acctExpEl && acctExpEl.dataset.labels) {
-            initBarChart(acctExpEl, colors, pal, chartLabel(acctExpEl, 'Expenses'));
-        }
-
-        var acctArApEl = document.getElementById('chart-acct-arap');
-        if (acctArApEl && acctArApEl.dataset.labels) {
-            initDoughnut(acctArApEl, colors, pal);
-        }
-
-        var revExpEl = document.getElementById('chart-revenue-expenses');
-        if (revExpEl && revExpEl.dataset.labels) {
-            initDualLineChart(revExpEl, colors, pal);
-        }
-
-        var expBdEl = document.getElementById('chart-expense-breakdown');
-        if (expBdEl && expBdEl.dataset.labels) {
-            initDoughnut(expBdEl, colors, pal);
-        }
-
-        var statusEl = document.getElementById('chart-company-status');
-        if (statusEl && statusEl.dataset.labels) {
-            initDoughnut(statusEl, colors, pal);
-        }
-
-        var overviewEl = document.getElementById('chart-platform-overview');
-        if (overviewEl && overviewEl.dataset.labels) {
-            initMultiLineChart(overviewEl, colors, pal);
-        }
-
-        var planEl = document.getElementById('chart-plan-distribution');
-        if (planEl && planEl.dataset.labels) {
-            initBarChart(planEl, colors, pal, chartLabel(planEl, 'Plans'));
-        }
-
-        var subStatEl = document.getElementById('chart-subscription-status');
-        if (subStatEl && subStatEl.dataset.labels) {
-            initDoughnut(subStatEl, colors, pal);
-        }
-
-        var loginEl = document.getElementById('chart-login-activity');
-        if (loginEl && loginEl.dataset.labels) {
-            initStackedBarChart(loginEl, colors, pal);
-        }
-
-        var topCoEl = document.getElementById('chart-top-companies');
-        if (topCoEl && topCoEl.dataset.labels) {
-            initHorizontalBarChart(topCoEl, colors, pal, chartLabel(topCoEl, 'Users'));
-        }
-
-        var topCustEl = document.getElementById('chart-top-customers');
-        if (topCustEl && topCustEl.dataset.labels) {
-            initHorizontalBarChart(topCustEl, colors, pal, chartLabel(topCustEl, 'Total'));
-        }
-
-        var topItemsEl = document.getElementById('chart-top-items');
-        if (topItemsEl && topItemsEl.dataset.labels) {
-            initHorizontalBarChart(topItemsEl, colors, pal, chartLabel(topItemsEl, 'Total'));
-        }
-
-        var journalEl = document.getElementById('chart-journal-activity');
-        if (journalEl && journalEl.dataset.labels) {
-            initBarChart(journalEl, colors, pal, chartLabel(journalEl, 'Entries'));
+        // One chart per animation frame — keeps accounting tabs clickable while charts paint.
+        var i = 0;
+        var pump = function () {
+            if (i >= queue.length) {
+                return;
+            }
+            queue[i++]();
+            if (i < queue.length) {
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(pump);
+                } else {
+                    setTimeout(pump, 0);
+                }
+            }
+        };
+        if (queue.length) {
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(pump);
+            } else {
+                setTimeout(pump, 0);
+            }
         }
     }
 
@@ -659,5 +673,19 @@
 
     window.ratebChartsBoot = initAll;
 
-    document.addEventListener('DOMContentLoaded', initAll);
+    function bootChartsWhenReady() {
+        // Yield so first paint / clicks are not blocked by Chart.js mount storm.
+        var go = function () {
+            setTimeout(initAll, 0);
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', go, { once: true });
+        } else {
+            go();
+        }
+    }
+    bootChartsWhenReady();
+    document.addEventListener('rateb:nav:afterEnter', function () {
+        setTimeout(initAll, 0);
+    });
 })();

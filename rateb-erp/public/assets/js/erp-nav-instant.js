@@ -103,22 +103,8 @@
             if (doc.querySelector('main#rateb-pos-app, [data-pos-register="1"]')) {
                 return false;
             }
-            var cfg = shellCfg();
-            var remoteCid = null;
-            try {
-                var scripts = doc.querySelectorAll('script:not([src])');
-                for (var i = 0; i < scripts.length; i++) {
-                    var t = scripts[i].textContent || '';
-                    var m = t.match(/company_id["']?\s*:\s*(\d+)/);
-                    if (m) {
-                        remoteCid = m[1];
-                        break;
-                    }
-                }
-            } catch (eJ) { /* ignore */ }
-            if (cfg.company_id && remoteCid && String(cfg.company_id) !== String(remoteCid)) {
-                return false;
-            }
+            // Do NOT compare company_id across inline scripts — first match is fragile and
+            // forces hardNavigate (full reload / spinner) when switching companies via soft-nav.
             return true;
         } catch (e) {
             return false;
@@ -467,6 +453,51 @@
         } catch (e2) { /* ignore */ }
     }
 
+    function ensureDashboardCharts() {
+        var rootDash = document.querySelector('[data-cm-dash][data-rateb-chartjs], [data-cm-dash="v5c"]');
+        if (!rootDash || !document.querySelector('canvas[id^="chart-"]')) {
+            return;
+        }
+        var boot = function () {
+            try {
+                if (typeof root.ratebChartsBoot === 'function') {
+                    root.ratebChartsBoot();
+                }
+            } catch (eBoot) { /* ignore */ }
+        };
+        if (typeof root.Chart !== 'undefined' && typeof root.ratebChartsBoot === 'function') {
+            root.setTimeout(boot, 0);
+            return;
+        }
+        var chartjs = rootDash.getAttribute('data-rateb-chartjs') || '';
+        var charts = rootDash.getAttribute('data-rateb-charts') || '';
+        if (!chartjs || !charts) {
+            return;
+        }
+        var load = function (src) {
+            return new Promise(function (resolve) {
+                var key = scriptKey(src);
+                if (loadedScripts[key]) {
+                    resolve();
+                    return;
+                }
+                var el = document.createElement('script');
+                el.src = src;
+                el.async = true;
+                el.onload = el.onerror = function () {
+                    loadedScripts[key] = true;
+                    resolve();
+                };
+                (document.body || document.documentElement).appendChild(el);
+            });
+        };
+        load(chartjs).then(function () {
+            return load(charts);
+        }).then(function () {
+            root.setTimeout(boot, 0);
+        });
+    }
+
     function reinitModuleUi() {
         // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
         try {
@@ -477,6 +508,7 @@
                 // module-page-stats listens for rateb:nav:enter / afterEnter
             });
         } catch (e2) { /* ignore */ }
+        ensureDashboardCharts();
     }
 
     function openOpsCaches() {
