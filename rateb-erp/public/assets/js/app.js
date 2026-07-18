@@ -309,7 +309,12 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function bootAppUi() {
+        if (document.documentElement.getAttribute('data-rateb-app-ui-booted') === '1') {
+            return;
+        }
+        document.documentElement.setAttribute('data-rateb-app-ui-booted', '1');
+
         var toggle = document.getElementById('rateb-sidebar-toggle');
         var sidebar = document.getElementById('rateb-sidebar');
         if (toggle && sidebar) {
@@ -341,7 +346,14 @@
         initPermissionMatrix();
         initSidebarNavGroups();
         initCoaFullTree();
-    });
+    }
+
+    /* PERF-P3 late-load fix: app.js may inject after DOMContentLoaded — still boot UI. */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootAppUi);
+    } else {
+        bootAppUi();
+    }
 
     // PERF-P1 — re-bind content widgets after content-swap (never re-bind sidebar).
     window.RatebApp = window.RatebApp || {};
