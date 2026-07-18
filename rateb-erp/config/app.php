@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260718-perf-p1-v53');
+define('RATEB_ASSET_BUILD', '20260718-perf-p3-v54');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -847,6 +847,14 @@ if (!function_exists('rateb_bootstrap_js')) {
 if (!function_exists('rateb_fontawesome_css')) {
     function rateb_fontawesome_css(): string
     {
+        /* PERF-P3: shell subset (~5KB) for Admin chrome; full pack optional via rateb_fontawesome_full_css(). */
+        return rateb_vendor_asset('fontawesome/6.5.2/css/shell.min.css');
+    }
+}
+
+if (!function_exists('rateb_fontawesome_full_css')) {
+    function rateb_fontawesome_full_css(): string
+    {
         return rateb_vendor_asset('fontawesome/6.5.2/css/all.min.css');
     }
 }
@@ -863,7 +871,15 @@ if (!function_exists('rateb_chartjs')) {
 if (!function_exists('rateb_tajawal_font_css')) {
     function rateb_tajawal_font_css(): string
     {
-        return rateb_vendor_asset('fonts/tajawal/tajawal.css');
+        /* PERF-P3: critical weight (400) only; rest via rateb_tajawal_font_rest_css(). */
+        return rateb_vendor_asset('fonts/tajawal/tajawal-critical.css');
+    }
+}
+
+if (!function_exists('rateb_tajawal_font_rest_css')) {
+    function rateb_tajawal_font_rest_css(): string
+    {
+        return rateb_vendor_asset('fonts/tajawal/tajawal-rest.css');
     }
 }
 

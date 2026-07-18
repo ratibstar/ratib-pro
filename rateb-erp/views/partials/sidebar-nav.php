@@ -56,7 +56,14 @@ $renderNavGroup = static function (
     echo '<i class="fas fa-chevron-down rateb-nav-group-chevron" aria-hidden="true"></i>';
     echo '</button>';
     echo '<div class="rateb-nav-group-body">';
-    $renderBody();
+    /* PERF-P3: collapsed groups keep markup in <template> until first open (smaller first DOM). */
+    if ($hasActive) {
+        $renderBody();
+    } else {
+        echo '<template data-rateb-nav-lazy>';
+        $renderBody();
+        echo '</template>';
+    }
     echo '</div></div>';
 };
 
@@ -145,8 +152,16 @@ $adminSection = static function (
         }
         echo '<i class="fas fa-chevron-down rateb-nav-subgroup-chevron" aria-hidden="true"></i>';
         echo '</button><div class="rateb-nav-subgroup-body">';
-        foreach ($subGroup['links'] as $link) {
-            $renderAdminLink($link);
+        if ($subOpen) {
+            foreach ($subGroup['links'] as $link) {
+                $renderAdminLink($link);
+            }
+        } else {
+            echo '<template data-rateb-nav-lazy>';
+            foreach ($subGroup['links'] as $link) {
+                $renderAdminLink($link);
+            }
+            echo '</template>';
         }
         echo '</div></div>';
     };

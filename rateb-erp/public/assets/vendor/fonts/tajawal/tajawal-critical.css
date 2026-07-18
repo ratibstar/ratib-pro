@@ -1,0 +1,8 @@
+/* PERF-P3 — Tajawal critical weight only (400). Extra weights load after idle. */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('tajawal-400.woff2') format('woff2');
+}

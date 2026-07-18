@@ -1,7 +1,8 @@
 /**
- * PERF-P1 — Instant ERP navigation (content-swap + prefetch).
+ * PERF-P3 — Instant ERP navigation (content-swap + gated prefetch).
  * Same tenant/session/shell only. Full reload fallback otherwise.
- * Keeps sidebar/topbar/theme/RBAC shell alive; swaps main.rateb-content.
+ * Prefetch: current module only until idle; never dashboard/profile/notifications/admin early.
+ * Max 1 concurrent prefetch request.
  */
 (function (root) {
     'use strict';
@@ -20,7 +21,63 @@
     var prefetchQueue = [];
     var prefetchInFlight = 0;
     var PREFETCH_MAX_PARALLEL = 1;
+    var idlePrefetchUnlocked = false;
     var lastHref = '';
+
+    /** Paths blocked until browser idle (PERF-P3). */
+    function isDeferredPrefetchPath(pathname) {
+        var p = String(pathname || '').replace(/\/+$/, '') || '/';
+        if (/\/admin\/?$/.test(p) || /\/admin$/.test(p)) {
+            return true;
+        }
+        if (/\/admin\/ops\/profile(\/|$)/i.test(p) || /\/admin\/profile(\/|$)/i.test(p)) {
+            return true;
+        }
+        if (/\/admin\/ops\/notifications(\/|$)/i.test(p) || /\/admin\/notifications(\/|$)/i.test(p)) {
+            return true;
+        }
+        // Bare platform catalog /admin siblings that are not module pages
+        if (/\/rateb-platform-catalog\/admin\/?$/i.test(p)) {
+            return true;
+        }
+        return false;
+    }
+
+    function currentModulePrefix() {
+        try {
+            var path = root.location.pathname.replace(/\/+$/, '');
+            var m = path.match(/(\/admin(?:\/(?:ops|hr|crm|recruitment|eproc|oversight|cms|companies)[^/]*)?)/i);
+            if (m) {
+                return m[1];
+            }
+        } catch (e) { /* ignore */ }
+        return '/admin';
+    }
+
+    function isCurrentModuleHref(href) {
+        try {
+            var u = new URL(href, root.location.href);
+            var prefix = currentModulePrefix();
+            var path = u.pathname.replace(/\/+$/, '');
+            if (isDeferredPrefetchPath(path) && !idlePrefetchUnlocked) {
+                return false;
+            }
+            if (path === prefix || path.indexOf(prefix + '/') === 0) {
+                return true;
+            }
+            // Same leaf module segment (e.g. /admin/hr/* while on /admin/hr/attendance)
+            var parts = prefix.split('/').filter(Boolean);
+            if (parts.length >= 2) {
+                var leaf = '/' + parts.slice(0, 3).join('/');
+                if (path === leaf || path.indexOf(leaf + '/') === 0) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (e2) {
+            return false;
+        }
+    }
 
     function shellCfg() {
         return root.__RATEB_ERP_SHELL_OFFLINE__ || {};
@@ -181,12 +238,35 @@
         }
     }
 
-    function prefetchUrl(href) {
+    function prefetchUrl(href, opts) {
         if (!href || prefetchSeen[href]) {
             return;
         }
+        opts = opts || {};
+        try {
+            var u = new URL(href, root.location.href);
+            if (u.origin !== root.location.origin) {
+                return;
+            }
+            if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+                return;
+            }
+            if (!opts.force) {
+                if (!idlePrefetchUnlocked) {
+                    if (isDeferredPrefetchPath(u.pathname) || !isCurrentModuleHref(href)) {
+                        return;
+                    }
+                } else if (isDeferredPrefetchPath(u.pathname)) {
+                    // Idle unlocked: still only one concurrent; allow deferred paths once.
+                } else if (!isCurrentModuleHref(href) && !opts.allowOther) {
+                    return;
+                }
+            }
+        } catch (eGate) {
+            return;
+        }
         prefetchSeen[href] = true;
-        /* PERF-P1: serialize prefetches so they do not stampede PHP. */
+        /* PERF-P3: max 1 concurrent prefetch. */
         prefetchQueue.push(href);
         runPrefetchQueue();
     }
@@ -207,6 +287,7 @@
                     if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
                         return;
                     }
+                    /* Hover intent: only current module until idle unlock. */
                     prefetchUrl(u.href);
                 } catch (e) { /* ignore */ }
             };
@@ -218,44 +299,48 @@
 
     function idlePrefetchVisible() {
         try {
-            var links = document.querySelectorAll('a.rateb-nav-link[href]');
-            if (!links.length) {
-                return;
-            }
-            /* PERF-P1: do not prefetch during first paint — wait for idle + 3s. */
-            var startPrefetch = function () {
-                if (typeof IntersectionObserver === 'function') {
-                    var io = new IntersectionObserver(function (entries) {
-                        entries.forEach(function (en) {
-                            if (en.isIntersecting) {
-                                var a = en.target;
-                                try {
-                                    var u = new URL(a.href, root.location.href);
-                                    if (ADMIN_PATH_RE.test(u.pathname) && !POS_PATH_RE.test(u.pathname)) {
-                                        prefetchUrl(u.href);
-                                    }
-                                } catch (e) { /* ignore */ }
-                                io.unobserve(a);
-                            }
-                        });
-                    }, { rootMargin: '80px' });
-                    links.forEach(function (a) { io.observe(a); });
-                } else {
-                    Array.prototype.slice.call(links, 0, 4).forEach(function (a) {
-                        try {
-                            prefetchUrl(new URL(a.href, root.location.href).href);
-                        } catch (e2) { /* ignore */ }
-                    });
+            /* PERF-P3: unlock deferred paths only after idle; prefetch current module first. */
+            var unlockAndPrefetch = function () {
+                idlePrefetchUnlocked = true;
+                var links = document.querySelectorAll('a.rateb-nav-link[href]');
+                if (!links.length) {
+                    return;
                 }
+                var currentFirst = [];
+                var deferred = [];
+                Array.prototype.forEach.call(links, function (a) {
+                    try {
+                        var u = new URL(a.href, root.location.href);
+                        if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+                            return;
+                        }
+                        if (isDeferredPrefetchPath(u.pathname)) {
+                            deferred.push(u.href);
+                        } else if (isCurrentModuleHref(u.href)) {
+                            currentFirst.push(u.href);
+                        }
+                    } catch (e) { /* ignore */ }
+                });
+                /* Current module only (max a few); deferred paths one-at-a-time later via queue. */
+                currentFirst.slice(0, 2).forEach(function (href) {
+                    prefetchUrl(href, { force: false });
+                });
+                /* Stagger deferred (dashboard/profile/notifications/admin) — still 1 concurrent. */
+                deferred.slice(0, 3).forEach(function (href, i) {
+                    setTimeout(function () {
+                        prefetchUrl(href, { allowOther: true });
+                    }, 4000 + i * 2500);
+                });
             };
             var kick = function () {
                 if (window.requestIdleCallback) {
-                    window.requestIdleCallback(startPrefetch, { timeout: 8000 });
+                    window.requestIdleCallback(unlockAndPrefetch, { timeout: 15000 });
                 } else {
-                    startPrefetch();
+                    setTimeout(unlockAndPrefetch, 8000);
                 }
             };
-            setTimeout(kick, 3000);
+            /* Do not start before 5s after boot — first paint / navigation quiet. */
+            setTimeout(kick, 5000);
         } catch (e3) { /* ignore */ }
     }
 
@@ -628,14 +713,8 @@
         document.addEventListener('click', onClick, true);
         root.addEventListener('popstate', onPopState);
         lastHref = root.location.href;
-        var idle = function () {
-            idlePrefetchVisible();
-        };
-        if (typeof root.requestIdleCallback === 'function') {
-            root.requestIdleCallback(idle, { timeout: 4000 });
-        } else {
-            setTimeout(idle, 2000);
-        }
+        /* PERF-P3 — idlePrefetchVisible self-delays; do not race first paint. */
+        idlePrefetchVisible();
     }
 
     if (document.readyState === 'loading') {

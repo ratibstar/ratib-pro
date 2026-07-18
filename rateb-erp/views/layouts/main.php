@@ -323,39 +323,82 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
-    <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet"></noscript>
-    <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
-    <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
     <?php
+    /* PERF-P3: critical shell CSS only blocking; everything else preload→stylesheet swap. */
+    $ratebCriticalCssPath = RATEB_ROOT . '/public/assets/css/critical-shell.css';
+    $ratebCriticalCss = is_file($ratebCriticalCssPath) ? (string) file_get_contents($ratebCriticalCssPath) : '';
     $ratebThemeDarkCss = rateb_asset('css/dark.css');
     $ratebThemeLightCss = rateb_asset('css/light.css');
+    $ratebAsyncStyles = [
+        rateb_tajawal_font_css(),
+        rateb_bootstrap_css(),
+        rateb_asset('css/variables.css'),
+        rateb_asset('css/main.css'),
+        rateb_asset('css/components.css'),
+        $ratebThemeDarkCss,
+        rateb_asset('css/rtl.css'),
+        rateb_fontawesome_css(),
+    ];
+    if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) {
+        $ratebAsyncStyles[] = rateb_asset('css/dashboard.css');
+    }
+    if ($dir === 'rtl') {
+        $ratebAsyncStyles[] = rateb_asset('css/ar-typography.css');
+    }
+    $ratebAsyncStyles[] = rateb_tajawal_font_rest_css();
     ?>
-    <link id="rateb-theme-css" href="<?php echo $ratebThemeDarkCss; ?>" rel="stylesheet"
-          data-dark-href="<?php echo Rateb\App\Core\View::escape($ratebThemeDarkCss); ?>"
-          data-light-href="<?php echo Rateb\App\Core\View::escape($ratebThemeLightCss); ?>">
+    <?php if ($ratebCriticalCss !== '') { ?>
+    <style id="rateb-critical-shell"><?php echo $ratebCriticalCss; ?></style>
+    <?php } else { ?>
+    <link href="<?php echo rateb_asset('css/critical-shell.css'); ?>" rel="stylesheet">
+    <?php } ?>
+    <link rel="preload" href="<?php echo rateb_vendor_asset('fonts/tajawal/tajawal-400.woff2'); ?>" as="font" type="font/woff2" crossorigin>
     <script>
     (function () {
-        try {
-            var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
-            var link = document.getElementById('rateb-theme-css');
-            if (link && bs === 'light') {
-                link.href = link.getAttribute('data-light-href') || link.href;
-            }
-        } catch (e) {}
+      /* PERF-P3: preload → stylesheet swap (non-blocking). */
+      var sheets = <?php echo json_encode(array_values(array_filter($ratebAsyncStyles, static function ($h) use ($ratebThemeDarkCss, $ratebThemeLightCss) {
+          return $h !== $ratebThemeDarkCss && $h !== $ratebThemeLightCss;
+      })), JSON_UNESCAPED_SLASHES); ?>;
+      var themeDark = <?php echo json_encode($ratebThemeDarkCss, JSON_UNESCAPED_SLASHES); ?>;
+      var themeLight = <?php echo json_encode($ratebThemeLightCss, JSON_UNESCAPED_SLASHES); ?>;
+      var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
+      function swapIn(href, id) {
+        if (!href) return;
+        var link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'style';
+        link.href = href;
+        if (id) {
+          link.id = id;
+          link.setAttribute('data-dark-href', themeDark);
+          link.setAttribute('data-light-href', themeLight);
+        }
+        link.onload = function () {
+          link.onload = null;
+          link.rel = 'stylesheet';
+        };
+        document.head.appendChild(link);
+        setTimeout(function () {
+          if (link.rel === 'preload') {
+            link.rel = 'stylesheet';
+          }
+        }, 3000);
+      }
+      swapIn(bs === 'light' ? themeLight : themeDark, 'rateb-theme-css');
+      sheets.forEach(function (href) { swapIn(href); });
     })();
     </script>
-    <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
-    <?php if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) { ?>
-    <link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="<?php echo rateb_asset('css/dashboard.css'); ?>" rel="stylesheet"></noscript>
-    <?php } ?>
+    <noscript>
+      <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
+      <link href="<?php echo $ratebThemeDarkCss; ?>" rel="stylesheet">
+      <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
+    </noscript>
     <?php if ($dir === 'rtl') { ?>
-    <link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet"></noscript>
     <style id="rateb-rtl-ar-fix">html[dir="rtl"] .rateb-app,html[dir="rtl"] .rateb-app *,html[dir="rtl"] body.rateb-app *{text-transform:none!important;letter-spacing:normal!important;font-feature-settings:normal!important}</style>
     <?php } ?>
     <script>
@@ -578,47 +621,61 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 </div>
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
-<script src="<?php echo rateb_bootstrap_js(); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/theme.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/connectivity-indicator.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/lang.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/rateb-modal.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/rateb-confirm.js'); ?>" defer></script>
-<?php if (!empty($layoutAssets['bulkDelete'])) { ?>
-<script src="<?php echo rateb_asset('js/rateb-bulk-delete.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['tableTools'])) { ?>
-<script src="<?php echo rateb_asset('js/table-tools.js'); ?>" defer></script>
-<?php } ?>
-<script src="<?php echo rateb_asset('js/app.js'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/erp-nav-instant.js'); ?>" defer></script>
-<?php if (!empty($layoutAssets['dateInputs'])) { ?>
-<script src="<?php echo rateb_asset('js/rateb-date-inputs.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($deferModulePageMetrics)) { ?>
-<script src="<?php echo rateb_asset('js/module-page-stats.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['formHybrid'])) { ?>
-<script src="<?php echo rateb_asset('js/form-hybrid.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['fiscalYear'])) { ?>
-<script src="<?php echo rateb_asset('js/form-fiscal-year.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['lineItems'])) { ?>
-<script src="<?php echo rateb_asset('js/line-items.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['inventoryBatch'])) { ?>
-<script src="<?php echo rateb_asset('js/inventory-batch-form.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['contractRenewal'])) { ?>
-<script src="<?php echo rateb_asset('js/contract-renewal-form.js'); ?>" defer></script>
-<?php } ?>
-<?php if (!empty($layoutAssets['cmsAdmin'])) { ?>
-<script src="<?php echo rateb_asset('js/cms-admin.js'); ?>" defer></script>
-<?php } ?>
 <?php
+/* PERF-P3: critical-path scripts only before paint settles; rest after interaction/idle. */
+$ratebCriticalScripts = [
+    rateb_asset('js/theme.js'),
+    rateb_asset('js/app.js'),
+    rateb_asset('js/erp-nav-instant.js'),
+];
+$ratebIdleScripts = [
+    rateb_bootstrap_js(),
+    rateb_asset('js/connectivity-indicator.js'),
+    rateb_asset('js/lang.js'),
+    rateb_asset('js/rateb-modal.js'),
+    rateb_asset('js/rateb-confirm.js'),
+];
+if (!empty($layoutAssets['bulkDelete'])) {
+    $ratebIdleScripts[] = rateb_asset('js/rateb-bulk-delete.js');
+}
+if (!empty($layoutAssets['tableTools'])) {
+    $ratebIdleScripts[] = rateb_asset('js/table-tools.js');
+}
+if (!empty($layoutAssets['dateInputs'])) {
+    $ratebIdleScripts[] = rateb_asset('js/rateb-date-inputs.js');
+}
+if (!empty($deferModulePageMetrics)) {
+    $ratebIdleScripts[] = rateb_asset('js/module-page-stats.js');
+}
+if (!empty($layoutAssets['formHybrid'])) {
+    $ratebIdleScripts[] = rateb_asset('js/form-hybrid.js');
+}
+if (!empty($layoutAssets['fiscalYear'])) {
+    $ratebIdleScripts[] = rateb_asset('js/form-fiscal-year.js');
+}
+if (!empty($layoutAssets['lineItems'])) {
+    $ratebIdleScripts[] = rateb_asset('js/line-items.js');
+}
+if (!empty($layoutAssets['inventoryBatch'])) {
+    $ratebIdleScripts[] = rateb_asset('js/inventory-batch-form.js');
+}
+if (!empty($layoutAssets['contractRenewal'])) {
+    $ratebIdleScripts[] = rateb_asset('js/contract-renewal-form.js');
+}
+if (!empty($layoutAssets['cmsAdmin'])) {
+    $ratebIdleScripts[] = rateb_asset('js/cms-admin.js');
+}
+if ($approvalsOversightJs) {
+    $ratebIdleScripts[] = rateb_asset('js/approvals-oversight.js');
+}
+if ($navActive('admin/agency-updates')) {
+    $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
+}
+foreach ($ratebCriticalScripts as $ratebCritSrc) {
+    echo '<script src="' . htmlspecialchars($ratebCritSrc, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+}
 $deferAssetScripts = [];
-// Chart.js (~200KB) after first paint — then charts.js from defer list.
+// Chart.js + charts.js strictly after first paint / idle (dashboard widgets).
 if (!empty($layoutAssets['charts'])) {
     $deferAssetScripts[] = rateb_chartjs('4.4.3');
 }
@@ -626,44 +683,55 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     $deferAssetScripts[] = rateb_asset('js/' . $deferFile);
 }
 ?>
-<?php if ($deferAssetScripts !== []) { ?>
 <script>
 (function () {
-    var queue = <?php echo json_encode($deferAssetScripts, JSON_UNESCAPED_SLASHES); ?>;
-    var idx = 0;
-    function loadNext() {
-        if (idx >= queue.length) {
-            return;
-        }
-        var s = document.createElement('script');
-        s.src = queue[idx++];
-        s.defer = true;
-        s.onload = loadNext;
-        s.onerror = loadNext;
-        document.body.appendChild(s);
-    }
-    function start() {
+  var idleQueue = <?php echo json_encode(array_values($ratebIdleScripts), JSON_UNESCAPED_SLASHES); ?>;
+  var chartQueue = <?php echo json_encode(array_values($deferAssetScripts), JSON_UNESCAPED_SLASHES); ?>;
+  function inject(src, next) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.defer = true;
+    s.onload = s.onerror = function () { if (next) next(); };
+    document.body.appendChild(s);
+  }
+  function chain(list, i, done) {
+    if (i >= list.length) { if (done) done(); return; }
+    inject(list[i], function () { chain(list, i + 1, done); });
+  }
+  function afterInteraction(fn) {
+    var ran = false;
+    var go = function () {
+      if (ran) return;
+      ran = true;
+      fn();
+    };
+    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (ev) {
+      window.addEventListener(ev, go, { once: true, passive: true });
+    });
+    var idleStart = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(go, { timeout: 4000 });
+      } else {
+        setTimeout(go, 1200);
+      }
+    };
+    if (document.readyState === 'complete') idleStart();
+    else window.addEventListener('load', idleStart, { once: true });
+  }
+  afterInteraction(function () {
+    chain(idleQueue, 0, function () {
+      /* Charts / widgets only after idle scripts — never on critical path. */
+      if (chartQueue.length) {
         if (window.requestIdleCallback) {
-            window.requestIdleCallback(loadNext, { timeout: 1800 });
+          window.requestIdleCallback(function () { chain(chartQueue, 0); }, { timeout: 6000 });
         } else {
-            setTimeout(loadNext, 200);
+          setTimeout(function () { chain(chartQueue, 0); }, 800);
         }
-    }
-    if (document.readyState === 'complete') {
-        start();
-    } else {
-        window.addEventListener('load', start, { once: true });
-    }
+      }
+    });
+  });
 })();
-</script>
-<?php } ?>
-<?php if ($approvalsOversightJs) { ?>
-<script src="<?php echo rateb_asset('js/approvals-oversight.js'); ?>" defer></script>
-<?php } ?>
-<?php if ($navActive('admin/agency-updates')) { ?>
-<script src="<?php echo rateb_asset('js/agency-updates.js'); ?>" defer></script>
-<?php } ?>
-<?php
+</script><?php
 $ratebOfflineFlagSvc = class_exists(\Rateb\App\Offline\Services\OfflineFeatureFlagService::class)
     ? new \Rateb\App\Offline\Services\OfflineFeatureFlagService()
     : null;
@@ -929,7 +997,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>"></script>
+<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>" defer></script>
 <?php
         $ratebOfflineLazyScripts = [];
         if (!empty($_GET['rateb_offline_debug'])) {
@@ -984,14 +1052,17 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     var kick = function () {
       try {
         if (navigator.onLine === false) {
-          setTimeout(fn, 0);
+          /* Offline: still post-paint but ASAP for SDK. */
+          setTimeout(fn, 50);
           return;
         }
       } catch (e0) {}
+      /* PERF-P3: do not start Offline SDK warm-path assets on first paint.
+       * Delay online SDK boot until idle after load (timeout 8s). */
       if (window.requestIdleCallback) {
-        window.requestIdleCallback(fn, { timeout: 2200 });
+        window.requestIdleCallback(fn, { timeout: 8000 });
       } else {
-        setTimeout(fn, 900);
+        setTimeout(fn, 2500);
       }
     };
     if (document.readyState === 'complete') {
@@ -1035,7 +1106,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     ],
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>"></script>
+<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>" defer></script>
 <script>
 (function () {
   var cfg = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
@@ -1320,34 +1391,72 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 </script>
 <script>
 (function () {
-  /* Defer warm + nav-guard until after interactive (still available offline ASAP). */
-  var urls = [
-    <?php echo json_encode(rateb_asset('offline/erp-offline-full-warm.js'), JSON_UNESCAPED_SLASHES); ?>,
-    <?php echo json_encode(rateb_asset('offline/erp-offline-nav-guard.js'), JSON_UNESCAPED_SLASHES); ?>
-  ];
-  function chain(i) {
-    if (i >= urls.length) return;
+  /* PERF-P3: do NOT load full-warm during first online page.
+   * Inject only after: requestIdleCallback AND min 20s AND user still active.
+   * nav-guard can load earlier (idle) — it does not warm assets. */
+  var warmUrl = <?php echo json_encode(rateb_asset('offline/erp-offline-full-warm.js'), JSON_UNESCAPED_SLASHES); ?>;
+  var guardUrl = <?php echo json_encode(rateb_asset('offline/erp-offline-nav-guard.js'), JSON_UNESCAPED_SLASHES); ?>;
+  function inject(src) {
     var s = document.createElement('script');
-    s.src = urls[i];
-    s.async = false;
-    s.onload = s.onerror = function () { chain(i + 1); };
+    s.src = src;
+    s.async = true;
     (document.body || document.documentElement).appendChild(s);
   }
-  function kick() {
+  function userActive() {
     try {
-      if (navigator.onLine === false) {
-        setTimeout(function () { chain(0); }, 0);
-        return;
-      }
-    } catch (e0) {}
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(function () { chain(0); }, { timeout: 12000 });
-    } else {
-      setTimeout(function () { chain(0); }, 5000);
-    }
+      if (document.visibilityState && document.visibilityState !== 'visible') return false;
+      var last = window.__RATEB_LAST_USER_ACTIVITY__;
+      if (typeof last === 'number' && (Date.now() - last) > 120000) return false;
+    } catch (e) {}
+    return true;
   }
-  if (document.readyState === 'complete') kick();
-  else window.addEventListener('load', kick, { once: true });
+  function bindActivity() {
+    if (window.__RATEB_ACTIVITY_BOUND__) return;
+    window.__RATEB_ACTIVITY_BOUND__ = true;
+    var mark = function () { window.__RATEB_LAST_USER_ACTIVITY__ = Date.now(); };
+    mark();
+    ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+      document.addEventListener(ev, mark, { passive: true, capture: true });
+    });
+  }
+  function loadGuard() {
+    inject(guardUrl);
+  }
+  function loadWarm() {
+    if (!userActive()) return;
+    try {
+      if (navigator.onLine === false) return;
+    } catch (e0) {}
+    inject(warmUrl);
+  }
+  bindActivity();
+  function afterLoad(fn) {
+    if (document.readyState === 'complete') fn();
+    else window.addEventListener('load', fn, { once: true });
+  }
+  afterLoad(function () {
+    /* nav-guard: idle, not on critical path */
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(loadGuard, { timeout: 10000 });
+    } else {
+      setTimeout(loadGuard, 3000);
+    }
+    /* full-warm: idle + 20s + still active */
+    var scheduleWarm = function () {
+      setTimeout(function () {
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(loadWarm, { timeout: 30000 });
+        } else {
+          loadWarm();
+        }
+      }, 20000);
+    };
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(scheduleWarm, { timeout: 60000 });
+    } else {
+      setTimeout(scheduleWarm, 5000);
+    }
+  });
 })();
 </script>
 <?php } ?>

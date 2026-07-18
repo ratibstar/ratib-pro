@@ -1003,13 +1003,48 @@
             });
         } catch (eOff) { /* ignore */ }
 
-        // Phase OH — idle auto-warm of certified module HTML while online on Admin.
+        // Phase OH / PERF-P3 — idle auto-warm ONLY after idle + 20s + user still active.
+        // Must not compete with first online page paint or early navigation.
+        function userStillActive() {
+            try {
+                if (document.visibilityState && document.visibilityState !== 'visible') {
+                    return false;
+                }
+            } catch (eV) { /* ignore */ }
+            try {
+                var last = root.__RATEB_LAST_USER_ACTIVITY__;
+                if (typeof last === 'number' && (Date.now() - last) > 120000) {
+                    return false;
+                }
+            } catch (eA) { /* ignore */ }
+            return true;
+        }
+
+        function trackActivity() {
+            try {
+                if (root.__RATEB_ACTIVITY_BOUND__) {
+                    return;
+                }
+                root.__RATEB_ACTIVITY_BOUND__ = true;
+                var mark = function () {
+                    root.__RATEB_LAST_USER_ACTIVITY__ = Date.now();
+                };
+                mark();
+                ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
+                    root.document.addEventListener(ev, mark, { passive: true, capture: true });
+                });
+            } catch (eT) { /* ignore */ }
+        }
+
         function kickIdle() {
             try {
                 if (!/\/admin(\/|$)/i.test(String(root.location.pathname || ''))) {
                     return;
                 }
                 if (isBrowserOffline()) {
+                    return;
+                }
+                if (!userStillActive()) {
                     return;
                 }
                 run(false);
@@ -1026,12 +1061,20 @@
             }
             return;
         }
-        // Idle auto-warm — delay so first Admin paint is not fighting page warm for bandwidth.
+        trackActivity();
+        // PERF-P3: requestIdleCallback AND minimum 20s AND user still active.
         var idleKick = function () {
+            var afterIdle = function () {
+                setTimeout(function () {
+                    if (userStillActive()) {
+                        kickIdle();
+                    }
+                }, 20000);
+            };
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(function () { setTimeout(kickIdle, 20000); }, { timeout: 45000 });
+                root.requestIdleCallback(afterIdle, { timeout: 60000 });
             } else {
-                setTimeout(kickIdle, 30000);
+                setTimeout(afterIdle, 25000);
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -1039,7 +1082,7 @@
         } else if (root.addEventListener) {
             root.addEventListener('load', idleKick, { once: true });
         } else {
-            setTimeout(idleKick, 8000);
+            setTimeout(idleKick, 30000);
         }
     }
 

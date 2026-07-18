@@ -129,12 +129,46 @@
         });
     }
 
+    function hydrateNavLazy(group) {
+        if (!group) {
+            return;
+        }
+        var body = group.querySelector('.rateb-nav-group-body, .rateb-nav-subgroup-body');
+        if (!body) {
+            return;
+        }
+        var tpl = null;
+        var kids = body.children;
+        for (var i = 0; i < kids.length; i++) {
+            if (kids[i].tagName === 'TEMPLATE' && kids[i].getAttribute('data-rateb-nav-lazy') !== null) {
+                tpl = kids[i];
+                break;
+            }
+        }
+        if (!tpl) {
+            return;
+        }
+        try {
+            body.appendChild(tpl.content.cloneNode(true));
+            tpl.remove();
+        } catch (eHydrate) { /* ignore */ }
+        try {
+            if (window.RatebNavInstant && typeof window.RatebNavInstant.bindPrefetch === 'function') {
+                window.RatebNavInstant.bindPrefetch(body);
+            }
+        } catch (eBind) { /* ignore */ }
+    }
+
     function initSidebarNavGroups() {
         document.querySelectorAll('[data-nav-group-toggle]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var group = btn.closest('[data-nav-group]');
                 if (!group) {
                     return;
+                }
+                var willOpen = !group.classList.contains('is-open');
+                if (willOpen) {
+                    hydrateNavLazy(group);
                 }
                 var open = group.classList.toggle('is-open');
                 btn.setAttribute('aria-expanded', open ? 'true' : 'false');

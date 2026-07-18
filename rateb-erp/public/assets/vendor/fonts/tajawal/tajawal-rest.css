@@ -1,0 +1,15 @@
+/* PERF-P3 — Tajawal remaining weights (idle load). */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('tajawal-500.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('tajawal-700.woff2') format('woff2');
+}

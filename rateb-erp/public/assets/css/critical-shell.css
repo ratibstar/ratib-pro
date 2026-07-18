@@ -1,0 +1,53 @@
+/**
+ * PERF-P3 — Above-the-fold Admin shell only (inline / single blocking sheet).
+ * Full theme CSS loads via preload→stylesheet swap after first paint.
+ */
+:root,[data-theme="dark"]{
+  --rateb-primary:#3b82f6;--rateb-primary-dark:#2563eb;--rateb-accent:#2dd4bf;
+  --rateb-danger:#f87171;--rateb-warning:#fbbf24;--rateb-success:#34d399;
+  --rateb-bg:#0b1120;--rateb-surface:#151f32;--rateb-surface-elevated:#1c2940;
+  --rateb-sidebar:#070d18;--rateb-sidebar-text:#cbd5e1;--rateb-sidebar-active:#1e293b;
+  --rateb-text:#e2e8f0;--rateb-text-muted:#94a3b8;--rateb-border:#2a3a52;
+  --rateb-shadow:0 8px 32px rgba(0,0,0,.45);--rateb-radius:12px;
+  --rateb-font:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,"IBM Plex Sans Arabic",sans-serif;
+}
+[data-theme="light"]{
+  --rateb-primary:#2563eb;--rateb-primary-dark:#1d4ed8;--rateb-accent:#0ea5e9;
+  --rateb-bg:#cce0f5;--rateb-surface:#e3effc;--rateb-surface-elevated:#eef5fd;
+  --rateb-sidebar:#1a3354;--rateb-sidebar-text:#dbeafe;--rateb-sidebar-active:#2a4f7a;
+  --rateb-text:#1a3354;--rateb-text-muted:#4a6b94;--rateb-border:#b8cfe8;
+  --rateb-shadow:0 4px 24px rgba(30,58,95,.12);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body.rateb-app{margin:0;font-family:var(--rateb-font);background:var(--rateb-bg);color:var(--rateb-text);min-height:100vh}
+.rateb-wrapper{display:flex;min-height:100vh;width:100%;overflow-x:hidden}
+.rateb-sidebar{width:268px;background:var(--rateb-sidebar);color:var(--rateb-sidebar-text);flex-shrink:0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;overflow-x:hidden;z-index:1000;border-right:1px solid rgba(255,255,255,.06)}
+.rateb-sidebar nav{padding:.35rem 0 1.25rem}
+.rateb-sidebar-brand{padding:1.25rem;font-size:1.25rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
+.rateb-sidebar-brand i{color:var(--rateb-accent)}
+.rateb-nav-group{margin:.12rem .4rem}
+.rateb-nav-group-toggle,.rateb-nav-subgroup-toggle{display:flex;align-items:center;gap:.55rem;width:100%;padding:.55rem .7rem;border:none;border-radius:8px;background:transparent;color:var(--rateb-sidebar-text);font-size:.82rem;font-weight:600;text-align:start;cursor:pointer}
+.rateb-nav-group-body,.rateb-nav-subgroup-body{display:none}
+.rateb-nav-group.is-open>.rateb-nav-group-body,.rateb-nav-subgroup.is-open>.rateb-nav-subgroup-body{display:block}
+.rateb-nav-link{display:flex;align-items:center;gap:.65rem;padding:.55rem 1.15rem;margin:.1rem .5rem;border-radius:8px;color:var(--rateb-sidebar-text);text-decoration:none;font-size:.92rem;border-left:3px solid transparent}
+.rateb-nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.rateb-nav-link.active{background:var(--rateb-sidebar-active);color:#fff;border-left-color:var(--rateb-accent)}
+.rateb-nav-link i{width:1.15rem;flex-shrink:0;text-align:center}
+.rateb-nav-link span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rateb-main{flex:1 1 auto;margin-left:268px;width:calc(100% - 268px);max-width:calc(100% - 268px);display:flex;flex-direction:column;min-width:0}
+.rateb-topbar{background:var(--rateb-surface);border-bottom:1px solid var(--rateb-border);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:900}
+.rateb-content{padding:1.5rem}
+.rateb-card,.rateb-widget{background:var(--rateb-surface);border:1px solid var(--rateb-border);border-radius:var(--rateb-radius);box-shadow:var(--rateb-shadow)}
+.rateb-card-header{padding:1rem 1.25rem;border-bottom:1px solid var(--rateb-border);font-weight:600}
+.rateb-card-body{padding:1.25rem}
+[dir="rtl"] .rateb-sidebar{left:auto;right:0;border-right:none;border-left:1px solid rgba(255,255,255,.06)}
+[dir="rtl"] .rateb-main{margin-left:0;margin-right:268px}
+[dir="rtl"] .rateb-nav-link{border-left:none;border-right:3px solid transparent}
+[dir="rtl"] .rateb-nav-link.active{border-right-color:var(--rateb-accent)}
+@media (max-width:991.98px){
+  .rateb-sidebar{transform:translateX(-100%)}
+  [dir="rtl"] .rateb-sidebar{transform:translateX(100%)}
+  .rateb-sidebar.show,.rateb-sidebar.open{transform:translateX(0)}
+  .rateb-main{margin-left:0;margin-right:0;width:100%;max-width:100%}
+}
