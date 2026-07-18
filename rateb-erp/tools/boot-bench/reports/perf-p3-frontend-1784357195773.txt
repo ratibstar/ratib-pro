@@ -1,0 +1,16 @@
+PERF-P3 MEASURE
+assetBuild=20260718-perf-p3-v55
+METRIC	COLD	WARM	TARGET
+DCL	940.1	197.1	<500 / <180
+FCP	1200	208	<550 / <180
+LCP	?	?	—
+CLS	0	0	—
+LongTasks	84	0	—
+JS decoded KB	202	434.3	—
+CSS blocking count/ms	0/0	0/0	0 blocking ideal
+DOM nodes	345	347	—
+Sidebar HTML bytes	32572	32572	—
+Sidebar HR ms	cold=317	warm=64	<100 warm
+FE DCL (excl dns+connect)	607.8	197.1
+DCL after responseStart	234	52.7
+criteria	{"cold_dcl_lt_500":false,"cold_fcp_lt_550":false,"warm_dcl_lt_180":false,"warm_fcp_lt_180":false,"sidebar_lt_100":true}
