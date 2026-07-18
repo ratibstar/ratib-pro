@@ -555,6 +555,16 @@
             return Promise.resolve(false);
         }
         navigating = true;
+        var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
+        // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
+        var unlockTimer = root.setTimeout(function () {
+            if (navigating && swapTo._gen === navGen) {
+                navigating = false;
+                try {
+                    console.warn('[RATEB NAV] unlock stuck navigating');
+                } catch (eU) { /* ignore */ }
+            }
+        }, 8000);
         var t0 = performance.now();
         runLifecycle('beforeLeave', { href: root.location.href, next: href });
 
@@ -616,6 +626,7 @@
             navigating = false;
             return false;
         }).then(function (ok) {
+            root.clearTimeout(unlockTimer);
             navigating = false;
             return ok;
         });
@@ -664,6 +675,11 @@
     function onClick(ev) {
         var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
         if (!shouldIntercept(a, ev)) {
+            return;
+        }
+        // If a prior soft-nav is still in flight, do NOT eat this click (was leaving Dashboard dead).
+        if (navigating) {
+            hardNavigate(a.href);
             return;
         }
         // Soft/hard offline: never enter content-swap (fetch can hang while badge says offline).

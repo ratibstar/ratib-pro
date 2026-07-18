@@ -568,14 +568,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   }
 
   function onSidebarClick(ev) {
+    // Never interfere with real nav links (Dashboard, companies, …).
+    if (ev.target && ev.target.closest && ev.target.closest('a[href]')) {
+      return;
+    }
     // One toggle per event — survives duplicate listeners (old app.js + inline).
     if (ev.__ratebNavToggleHandled) return;
     var side = document.getElementById('rateb-sidebar');
     if (!side) return;
     var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
     if (!btn || !side.contains(btn)) return;
-    // Ignore clicks that originated on a nav link inside an open body.
-    if (ev.target.closest && ev.target.closest('a.rateb-nav-link')) return;
     var group = btn.closest('[data-nav-group]');
     if (!group) return;
     ev.__ratebNavToggleHandled = true;

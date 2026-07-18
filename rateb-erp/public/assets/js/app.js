@@ -174,14 +174,14 @@
         }
         side.setAttribute('data-rateb-nav-delegated', '2');
         side.addEventListener('click', function (ev) {
+            if (ev.target && ev.target.closest && ev.target.closest('a[href]')) {
+                return;
+            }
             if (ev.__ratebNavToggleHandled) {
                 return;
             }
             var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
             if (!btn || !side.contains(btn)) {
-                return;
-            }
-            if (ev.target.closest && ev.target.closest('a.rateb-nav-link')) {
                 return;
             }
             var group = btn.closest('[data-nav-group]');
