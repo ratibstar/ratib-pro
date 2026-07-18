@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-f5-speed-fix-v88';
+var SW_BUILD_ID = '20260718-offline-cache-hit-v89';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -837,6 +837,23 @@ function erpOpsPageFallback(request, url) {
             } else if (bare) {
                 candidates.push(url.origin + bare + '/');
             }
+            // admin/ops/* ↔ admin/* aliases (offline often opens one while cache has the other).
+            var p = String(url.pathname || '');
+            if (/\/admin\/ops\//i.test(p)) {
+                var p2 = p.replace(/\/admin\/ops\//i, '/admin/');
+                candidates.push(url.origin + p2);
+                candidates.push(url.origin + p2.replace(/\/+$/, ''));
+                if (url.search) {
+                    candidates.push(url.origin + p2 + url.search);
+                }
+            } else if (/\/admin\/(?!ops\/)/i.test(p) && !/(^|\/)admin$/i.test(p.replace(/\/+$/, ''))) {
+                var p3 = p.replace(/\/admin\//i, '/admin/ops/');
+                candidates.push(url.origin + p3);
+                candidates.push(url.origin + p3.replace(/\/+$/, ''));
+                if (url.search) {
+                    candidates.push(url.origin + p3 + url.search);
+                }
+            }
         }
     } catch (e2) { /* ignore */ }
     return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
@@ -864,9 +881,43 @@ function erpOpsPageFallback(request, url) {
                 if (hit) {
                     return hit;
                 }
-                // Never O(n) cache.keys() on soft-online navigate — that made F5 multi-second.
-                // Offline: also skip (exact/ignoreSearch already tried); thin placeholder is fine.
-                return null;
+                // Soft-online: never O(n) keys scan (F5 regression).
+                // Offline: deep scan — exact keys often miss after warm/alias differences.
+                if (!isCloudBrowserOffline()) {
+                    return null;
+                }
+                var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
+                var wantAlt = '';
+                if (/\/admin\/ops\//i.test(want)) {
+                    wantAlt = want.replace(/\/admin\/ops\//i, '/admin/');
+                } else if (/\/admin\//i.test(want)) {
+                    wantAlt = want.replace(/\/admin\//i, '/admin/ops/');
+                }
+                return cache.keys().then(function (keys) {
+                    var best = null;
+                    for (var i = 0; i < (keys || []).length; i++) {
+                        try {
+                            var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
+                            var ku = new URL(href);
+                            var got = String(ku.pathname || '').replace(/\/+$/, '').toLowerCase();
+                            if (got === want || (wantAlt && got === wantAlt)) {
+                                var wantCid = '';
+                                var gotCid = '';
+                                try {
+                                    wantCid = String(url.searchParams.get('company_id') || '');
+                                    gotCid = String(ku.searchParams.get('company_id') || '');
+                                } catch (eCid) { /* ignore */ }
+                                if (wantCid && gotCid && wantCid === gotCid) {
+                                    return cache.match(keys[i]);
+                                }
+                                if (!best) {
+                                    best = keys[i];
+                                }
+                            }
+                        } catch (e3) { /* ignore */ }
+                    }
+                    return best ? cache.match(best) : null;
+                });
             });
         });
     }).catch(function () {
@@ -1159,11 +1210,28 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
         if (!isValidErpOpsHtmlBody(pageUrl, body)) {
             return null;
         }
-        var bare = pageUrl;
+        var putKeys = [];
         try {
             var u = new URL(pageUrl);
-            bare = u.origin + u.pathname;
-        } catch (e5) { /* ignore */ }
+            var bare = u.origin + u.pathname;
+            putKeys.push(pageUrl, bare, bare.replace(/\/+$/, ''), bare.replace(/\/+$/, '') + '/');
+            var path = String(u.pathname || '');
+            if (/\/admin\/ops\//i.test(path)) {
+                var alt = u.origin + path.replace(/\/admin\/ops\//i, '/admin/');
+                putKeys.push(alt, alt.replace(/\/+$/, ''), alt.replace(/\/+$/, '') + '/');
+            } else if (/\/admin\/(?!ops\/)/i.test(path) && !/(^|\/)admin$/i.test(path.replace(/\/+$/, ''))) {
+                var alt2 = u.origin + path.replace(/\/admin\//i, '/admin/ops/');
+                putKeys.push(alt2, alt2.replace(/\/+$/, ''), alt2.replace(/\/+$/, '') + '/');
+            }
+        } catch (e5) {
+            putKeys.push(pageUrl);
+        }
+        var uniqPuts = [];
+        putKeys.forEach(function (k) {
+            if (k && uniqPuts.indexOf(k) === -1) {
+                uniqPuts.push(k);
+            }
+        });
         var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
         try {
             res.headers.forEach(function (v, k) { headers.set(k, v); });
@@ -1172,10 +1240,9 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
         var materialize = function () {
             return new Response(body, { status: 200, statusText: 'OK', headers: new Headers(headers) });
         };
-        return Promise.all([
-            opsCache.put(pageUrl, materialize()).catch(function () { return null; }),
-            opsCache.put(bare, materialize()).catch(function () { return null; })
-        ]);
+        return Promise.all(uniqPuts.map(function (key) {
+            return opsCache.put(key, materialize()).catch(function () { return null; });
+        }));
     }).catch(function () {
         return null;
     });
@@ -1223,12 +1290,13 @@ function prefetchErpOpsUrl(href) {
 function navigateErpCloudWithCacheSafety(request, url, event) {
     var pageUrl = request.url || (url && url.href) || '';
 
-    function serveCachedFast(hit) {
+    function serveCachedFast(hit, offlineMode) {
         if (!hit) {
             return null;
         }
         // Put path already validated — stream clone; never .text() on F5 critical path.
-        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+        // Offline stamps X-Rateb-Offline; soft-online does not (avoids false offline UI).
+        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: !offlineMode });
     }
 
     function storeLive(response) {
@@ -1244,10 +1312,10 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return response;
     }
 
-    // True offline: cache / shell only (no network wait).
+    // True offline: deep cache match / shell only (no network wait).
     if (isCloudBrowserOffline()) {
         return matchErpNavSnapshot(request, url).then(function (hit) {
-            var served = serveCachedFast(hit);
+            var served = serveCachedFast(hit, true);
             if (served) {
                 return served;
             }
@@ -1275,7 +1343,7 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 if (settled) {
                     return;
                 }
-                var served = serveCachedFast(hit);
+                var served = serveCachedFast(hit, false);
                 if (!served) {
                     return;
                 }
@@ -1304,7 +1372,7 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     return;
                 }
                 settled = true;
-                var served = serveCachedFast(hit);
+                var served = serveCachedFast(hit, false);
                 if (served) {
                     Promise.resolve(served).then(resolve);
                     return;
@@ -1692,8 +1760,24 @@ function matchAnyCachedAdminPage(request, url) {
                 if (hit2) {
                     return hit2;
                 }
-                // Never walk every old ops-page cache version on navigate (was multi-second F5 lag).
-                return null;
+                // Soft-online: skip old-cache walk (F5 lag). Offline: search previous ops versions.
+                if (!isCloudBrowserOffline()) {
+                    return null;
+                }
+                return caches.keys().then(function (names) {
+                    var opsNames = (names || []).filter(function (n) {
+                        return String(n).indexOf('rateb-erp-ops-pages-') === 0
+                            && String(n) !== ERP_OPS_PAGE_CACHE;
+                    });
+                    return opsNames.reduce(function (chain, name) {
+                        return chain.then(function (found) {
+                            if (found) {
+                                return found;
+                            }
+                            return caches.open(name).then(matchKeysIn);
+                        });
+                    }, Promise.resolve(null));
+                });
             });
         });
     }).catch(function () {
@@ -1938,15 +2022,28 @@ function warmErpOfflineShell(opts) {
     function putOpsHtml(opsCache, pageUrl, res) {
         return putErpOpsHtmlResponse(opsCache, pageUrl, res);
     }
-    function warmLeanOpsPages() {
+    // Critical pages must land in cache before offline — await these only.
+    var leanOpsCritical = [
+        'admin',
+        'admin/',
+        'admin/companies',
+        'admin/ops/pos/register',
+        'admin/accounting',
+        'admin/ops/accounting',
+        'admin/hr',
+        'admin/ops/inventory',
+        'admin/ops/access-control',
+        'admin/oversight/approvals'
+    ];
+    function warmLeanOpsList(list, gapMs) {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
             var idx = 0;
-            // Serial + gap — never compete with user F5 / soft-nav (concurrency 3 starved PHP).
+            var gap = typeof gapMs === 'number' ? gapMs : 120;
             function pumpOne() {
-                if (idx >= leanOps.length) {
+                if (idx >= list.length) {
                     return Promise.resolve();
                 }
-                var rel = leanOps[idx++];
+                var rel = list[idx++];
                 var pageUrl = base + rel.replace(/^\//, '');
                 return fetch(pageUrl, {
                     credentials: 'same-origin',
@@ -1968,7 +2065,7 @@ function warmErpOfflineShell(opts) {
                     return null;
                 }).then(function () {
                     return new Promise(function (resolve) {
-                        setTimeout(resolve, 180);
+                        setTimeout(resolve, gap);
                     }).then(pumpOne);
                 });
             }
@@ -1979,9 +2076,16 @@ function warmErpOfflineShell(opts) {
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // Do NOT await leanOps — awaiting blocked SW + starved F5. Background only.
-                warmLeanOpsPages().catch(function () { return null; });
-                return protectedResult;
+                // Await critical HTML so offline has real pages; rest warms in background.
+                return warmLeanOpsList(leanOpsCritical, 80).then(function () {
+                    var rest = leanOps.filter(function (rel) {
+                        return leanOpsCritical.indexOf(rel) === -1;
+                    });
+                    warmLeanOpsList(rest, 220).catch(function () { return null; });
+                    return protectedResult;
+                }).catch(function () {
+                    return protectedResult;
+                });
             });
         }).then(function (result) {
             LAST_SHELL_WARM_AT = Date.now();
