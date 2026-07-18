@@ -1,0 +1,132 @@
+FULL FRONTEND PERFORMANCE AUDIT
+===============================
+At: 2026-07-18T06:31:39.374Z
+URL: https://rateb.sa/rateb-erp/public/admin/
+
+COLD: usable=30ms dcl_wall=1058ms
+NavTiming: TTFB=321.4 DCL=1053.3 Load=1056.1 FCP=1136 LCP=null CLS=0.0021
+WARM usable=19ms
+Lighthouse score=0.98 TBT=0 ms LCP=0.8 s
+
+TOP 20 BOTTLENECKS (>=5ms)
+-------------------------
+#1 [P0] 1523.1ms (save~761.6ms) area=17
+  SW controller present
+  file: /rateb-erp/public/pos-sw.js?v=20260718-perf-p1-v53
+  fn:   controllerchange
+  evid: scriptURL
+
+#2 [P0] 1056.1ms (save~2.8ms) area=1
+  window.load (cold Admin)
+  file: views/layouts/main.php + dashboard view
+  fn:   layout render / sidebar HTML
+  evid: PerformanceNavigationTiming.loadEventEnd
+
+#3 [P0] 1053.3ms (save~730.9ms) area=1
+  DOMContentLoaded (cold Admin)
+  file: views/layouts/main.php + dashboard view
+  fn:   layout render / sidebar HTML
+  evid: PerformanceNavigationTiming.domContentLoadedEventEnd
+
+#4 [P0] 1052.2ms (save~347.9ms) area=9
+  Sidebar first visible
+  file: views/layouts/main.php
+  fn:   aside.rateb-sidebar render
+  evid: MutationObserver sidebarAt
+
+#5 [P0] 847.7ms (save~423.9ms) area=7
+  Lighthouse LCP
+  file: views/layouts/main.php
+  fn:   LCP element
+  evid: Lighthouse / Performance LCP
+
+#6 [P0] 847.7ms (save~423.9ms) area=1
+  Lighthouse FCP
+  file: views/layouts/main.php
+  fn:   first contentful paint
+  evid: Lighthouse FCP
+
+#7 [P0] 805.1ms (save~805.1ms) area=17
+  Service Worker ready
+  file: /rateb-erp/public/pos-sw.js?v=20260718-perf-p1-v53
+  fn:   navigator.serviceWorker.ready / register
+  evid: controllerAt=1523.1
+
+#8 [P0] 578.2ms (save~578.2ms) area=12
+  document.fonts.ready
+  file: views/layouts/main.php
+  fn:   rateb_tajawal_font_css()
+  evid: document.fonts.ready size=13
+
+#9 [P1] 475ms (save~475ms) area=11
+  Fetch/XHR after first paint (sum)
+  file: public/assets/js/* + module APIs
+  fn:   post-paint fetch
+  evid: count=2
+
+#10 [P1] 373ms (save~373ms) area=11
+  Post-FP fetch: public/admin
+  file: views/layouts/main.php + dashboard view
+  fn:   layout render / sidebar HTML
+  evid: start=4152.6
+
+#11 [P1] 371.5ms (save~371.5ms) area=11
+  Post-FP XHR RT: public/admin
+  file: views/layouts/main.php + dashboard view
+  fn:   layout render / sidebar HTML
+  evid: ResourceTiming after FP
+
+#12 [P1] 347.9ms (save~15ms) area=7
+  DOM size cost proxy (nodes=802)
+  file: views/layouts/main.php
+  fn:   sidebar nav markup loop
+  evid: domNodes=802 sidebarBytes=31956
+
+#13 [P1] 322.6ms (save~322.6ms) area=2
+  Script resource: bootstrap.bundle.min.js
+  file: public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js
+  fn:   Bootstrap bundle parse/eval
+  evid: ResourceTiming duration start=713.8
+
+#14 [P1] 322.6ms (save~80ms) area=15
+  Deferred scripts critical-path max (13 tags)
+  file: views/layouts/main.php
+  fn:   script defer tags at layout bottom
+  evid: deferred count=13
+
+#15 [P1] 317.2ms (save~317.2ms) area=2
+  Script resource: erp-nav-instant.js
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / navigate / afterEnter
+  evid: ResourceTiming duration start=714.2
+
+#16 [P1] 317ms (save~317ms) area=2
+  Script resource: rateb-confirm.js
+  file: public/assets/js/rateb-confirm.js
+  fn:   confirm helpers
+  evid: ResourceTiming duration start=714.1
+
+#17 [P1] 316.9ms (save~316.9ms) area=2
+  Script resource: erp-pwa-install.js
+  file: public/assets/offline/erp-pwa-install.js
+  fn:   install prompt bind
+  evid: ResourceTiming duration start=714.3
+
+#18 [P1] 316.9ms (save~316.9ms) area=18
+  Offline bootstrap asset: erp-pwa-install.js
+  file: public/assets/offline/erp-pwa-install.js
+  fn:   install prompt bind
+  evid: offline script ResourceTiming
+
+#19 [P1] 316.6ms (save~316.6ms) area=2
+  Script resource: app.js
+  file: public/assets/js/app.js
+  fn:   RatebApp.init / reinit
+  evid: ResourceTiming duration start=714.2
+
+#20 [P1] 314.1ms (save~157.1ms) area=4
+  CSS resource: all.min.css
+  file: views/layouts/main.php + Font Awesome CSS/webfonts
+  fn:   rateb_fontawesome_css()
+  evid: ResourceTiming renderBlocking=non-blocking
+

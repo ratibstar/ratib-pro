@@ -1,0 +1,144 @@
+FULL FRONTEND PERFORMANCE AUDIT (remeasured)
+============================================
+2026-07-18T06:35:40.233Z
+
+COLD NavTiming: TTFB=341.8 connect=339.9 htmlProcess=306.7 DCL=1048.7 FCP=1120
+WARM NavTiming: TTFB=144.1 DCL=214.2 FCP=220
+LH score=0.98 TBT=0 ms LCP=0.8 s bootup=0.0 s
+LongTasks cold sum=75 CLS=0.002 icons=198 listeners=557 defer=13
+IDB opens=[] SW ready=815.6
+
+SIDEBAR CLICKS
+  hr cold: 499ms {"dur":372.6,"transfer":17026,"decoded":84539,"fromCache":false}
+  hr warm: 59ms {}
+  inventory cold: 274ms {"dur":143.2,"transfer":20780,"decoded":101144,"fromCache":false}
+  inventory warm: 127ms {}
+  accounting cold: 376ms {"dur":189.4,"transfer":18662,"decoded":95651,"fromCache":false}
+  accounting warm: 149ms {}
+
+TOP 20 FRONTEND BOTTLENECKS (>=5ms, durations only)
+------------------------------------------------
+#1 [P0] 1216.7ms save~200ms area=19
+  Lighthouse main-thread work
+  file: js
+  fn:   n/a
+  evid: LH mainthread-work-breakdown
+
+#2 [P0] 902.8ms save~902.8ms area=11
+  Post-FP fetch sum
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / prefetchUrl / navigate
+  evid: count=5
+
+#3 [P0] 837.5ms save~837.5ms area=7
+  Lighthouse LCP
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: LH LCP
+
+#4 [P0] 834.5ms save~834.5ms area=17
+  Cold−Warm DCL delta (cache/SW benefit already present on warm)
+  file: public/pos-sw.js
+  fn:   serviceWorker.register / activate
+  evid: cold.dcl - warm.dcl
+
+#5 [P0] 815.6ms save~100ms area=17
+  SW ready latency
+  file: public/pos-sw.js
+  fn:   serviceWorker.register / activate
+  evid: https://rateb.sa/rateb-erp/public/pos-sw.js?v=20260718-perf-p1-v53
+
+#6 [P0] 686ms save~200ms area=15
+  Deferred script waterfall span (13 defer tags)
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: deferCount=13
+
+#7 [P0] 576.5ms save~576.5ms area=12
+  document.fonts.ready wait
+  file: views/layouts/main.php + vendor/fonts/tajawal
+  fn:   rateb_tajawal_font_css()
+  evid: FontFaceSet.ready
+
+#8 [P0] 499ms save~399.2ms area=9
+  Sidebar nav COLD → hr usable
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / prefetchUrl / navigate
+  evid: {"dur":372.6,"transfer":17026,"decoded":84539,"fromCache":false}
+
+#9 [P0] 417.2ms save~417.2ms area=1
+  FCP after responseStart (frontend render)
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: FCP - responseStart
+
+#10 [P0] 376ms save~300.8ms area=9
+  Sidebar nav COLD → accounting usable
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / prefetchUrl / navigate
+  evid: {"dur":189.4,"transfer":18662,"decoded":95651,"fromCache":false}
+
+#11 [P0] 373.9ms save~373.9ms area=11
+  Post-FP fetch: public/admin
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: start=4172.1
+
+#12 [P0] 318.8ms save~23ms area=2
+  Script transfer wall: bootstrap.bundle.min.js
+  file: public/assets/vendor/bootstrap/5.3.3/bootstrap.bundle.min.js
+  fn:   parse/compile/eval
+  evid: decoded=80721
+
+#13 [P0] 312.7ms save~218.9ms area=13
+  Font Awesome CSS
+  file: views/layouts/main.php + vendor/fontawesome
+  fn:   rateb_fontawesome_css()
+  evid: media=print onload trick; still competes
+
+#14 [P0] 306.7ms save~306.7ms area=7
+  HTML parse → domInteractive
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: domInteractive - responseStart
+
+#15 [P0] 303.1ms save~303.1ms area=11
+  idlePrefetch Admin HTML (ResourceTiming sum)
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / prefetchUrl / navigate
+  evid: prefetch docs=2
+
+#16 [P1] 274ms save~219.2ms area=9
+  Sidebar nav COLD → inventory usable
+  file: public/assets/js/erp-nav-instant.js
+  fn:   idlePrefetchVisible / prefetchUrl / navigate
+  evid: {"dur":143.2,"transfer":20780,"decoded":101144,"fromCache":false}
+
+#17 [P1] 220.3ms save~220.3ms area=12
+  Font file: fa-solid-900.woff2
+  file: views/layouts/main.php + vendor/fontawesome
+  fn:   rateb_fontawesome_css()
+  evid: woff2
+
+#18 [P1] 207.4ms save~207.4ms area=4
+  Render-blocking CSS chain (responseStart→last blocking CSS end)
+  file: public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css
+  fn:   render-blocking CSS parse
+  evid: blockCssEnd=910.2
+
+#19 [P1] 196.7ms save~196.7ms area=4
+  Blocking CSS download+wait: bootstrap.rtl.min.css
+  file: public/assets/vendor/bootstrap/5.3.3/bootstrap.rtl.min.css
+  fn:   render-blocking CSS parse
+  evid: renderBlocking=blocking
+
+#20 [P1] 163.6ms save~163.6ms area=11
+  Post-FP fetch: ops/profile
+  file: views/layouts/main.php
+  fn:   layout + sidebar HTML
+  evid: start=4812.4
+
+
+NETWORK CONTEXT (measured from auditor; not patch targets)
+- 341.8ms Document TTFB (client-observed; includes RTT)
+- 339.9ms Client TCP+TLS connect (auditor→origin)
