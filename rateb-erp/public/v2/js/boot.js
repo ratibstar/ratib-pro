@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v4';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v5';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -642,7 +642,7 @@
             var platformPromise = Promise.all([
                 loadScript('./js/sync/sync-engine.js'),
                 loadScript('./js/modules/module-sdk.js'),
-                loadScript('./js/business/business-module-framework.js')
+                loadScript('../assets/offline/platform/support/business-module-framework.js')
             ]).then(function () {
                 ready('background-platform');
                 return true;
@@ -703,18 +703,18 @@
                 mfg: 'RatebOfflineV2Mfg'
             };
             var scripts = {
-                identity: 'identity-module.js',
-                inventory: 'inventory-module.js',
-                procurement: 'procurement-module.js',
-                sales: 'sales-module.js',
-                accounting: 'accounting-module.js',
-                crm: 'crm-module.js',
-                hr: 'hr-module.js',
-                mfg: 'manufacturing-module.js'
+                identity: '../assets/offline/platform/identity/identity-module.js',
+                inventory: './js/business/inventory-module.js',
+                procurement: './js/business/procurement-module.js',
+                sales: './js/business/sales-module.js',
+                accounting: './js/business/accounting-module.js',
+                crm: './js/business/crm-module.js',
+                hr: './js/business/hr-module.js',
+                mfg: './js/business/manufacturing-module.js'
             };
 
             return Promise.all(order.map(function (id) {
-                return loadScript('./js/business/' + scripts[id]);
+                return loadScript(scripts[id]);
             })).then(function () {
                 var business = root.RatebOfflineV2Business;
                 if (!business || !business.create) {
