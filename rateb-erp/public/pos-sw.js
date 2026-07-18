@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-f5-device-activate-v87';
+var SW_BUILD_ID = '20260718-f5-speed-fix-v88';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -864,39 +864,9 @@ function erpOpsPageFallback(request, url) {
                 if (hit) {
                     return hit;
                 }
-                // PERF-P0.3-D — offline miss: skip O(n) cache.keys() scan before thin placeholder.
-                // Exact/ignoreSearch candidates already failed; scanning all ops keys added
-                // hundreds of ms for ~1KB uncachedAdminBrowseResponse with no recovery.
-                if (isCloudBrowserOffline()) {
-                    return null;
-                }
-                var want = String(url.pathname || '').replace(/\/+$/, '').toLowerCase();
-                return cache.keys().then(function (keys) {
-                    var best = null;
-                    for (var i = 0; i < (keys || []).length; i++) {
-                        try {
-                            var href = typeof keys[i] === 'string' ? keys[i] : keys[i].url;
-                            var ku = new URL(href);
-                            var got = String(ku.pathname || '').replace(/\/+$/, '').toLowerCase();
-                            if (got === want) {
-                                // Prefer same company_id when present.
-                                var wantCid = '';
-                                var gotCid = '';
-                                try {
-                                    wantCid = String(url.searchParams.get('company_id') || '');
-                                    gotCid = String(ku.searchParams.get('company_id') || '');
-                                } catch (eCid) { /* ignore */ }
-                                if (wantCid && gotCid && wantCid === gotCid) {
-                                    return cache.match(keys[i]);
-                                }
-                                if (!best) {
-                                    best = keys[i];
-                                }
-                            }
-                        } catch (e3) { /* ignore */ }
-                    }
-                    return best ? cache.match(best) : null;
-                });
+                // Never O(n) cache.keys() on soft-online navigate — that made F5 multi-second.
+                // Offline: also skip (exact/ignoreSearch already tried); thin placeholder is fine.
+                return null;
             });
         });
     }).catch(function () {
@@ -1057,14 +1027,21 @@ function matchErpNavSnapshot(request, url) {
     });
 }
 
-function withSoftOfflineCacheHeader(response) {
+/**
+ * @param {Response} response
+ * @param {{softOnly?: boolean}} [opts] softOnly=true → do not stamp X-Rateb-Offline (soft-online SWR)
+ */
+function withSoftOfflineCacheHeader(response, opts) {
     if (!response) {
         return Promise.resolve(response);
     }
+    opts = opts || {};
     try {
         var headers = new Headers(response.headers || {});
         headers.set('X-Rateb-Soft-Offline-Nav', '1');
-        headers.set('X-Rateb-Offline', headers.get('X-Rateb-Offline') || '1');
+        if (!opts.softOnly) {
+            headers.set('X-Rateb-Offline', headers.get('X-Rateb-Offline') || '1');
+        }
         // PERF — reuse body stream; avoid full arrayBuffer clone on every offline paint.
         if (response.body) {
             return Promise.resolve(new Response(response.body, {
@@ -1244,113 +1221,97 @@ function prefetchErpOpsUrl(href) {
  * @param {FetchEvent} [event]
  */
 function navigateErpCloudWithCacheSafety(request, url, event) {
-    // Dashboard uses the same SWR path as other admin pages.
-    // Logout/login already purgeErpOpsAuthPages() — network-first made F5 paint black for up to 4.5s.
     var pageUrl = request.url || (url && url.href) || '';
 
-    function materializeValidatedHtml(html, sourceResponse) {
-        var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
-        try {
-            if (sourceResponse && sourceResponse.headers) {
-                sourceResponse.headers.forEach(function (v, k) { headers.set(k, v); });
-            }
-        } catch (eH) { /* ignore */ }
-        headers.set('X-Rateb-Ops-Page', '1');
-        return new Response(scrubEphemeralOfflineNotes(html), { status: 200, statusText: 'OK', headers: headers });
-    }
-
-    function fetchNetworkThenOfflineShell() {
-        // Offline: skip network wait — go straight to cache/shell.
-        if (isCloudBrowserOffline()) {
-            return fromValidatedCacheOrOfflineShell();
-        }
-        return fetchNavigateNetwork(request, 4500).then(function (response) {
-            if (response && response.ok) {
-                var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-                }).catch(function () { return null; });
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(store);
-                }
-                return response;
-            }
-            return neverFailNavigate(request, url);
-        }).catch(function () {
-            return neverFailNavigate(request, url);
-        });
-    }
-
-    function fromValidatedCacheOrOfflineShell() {
-        return matchErpNavSnapshot(request, url).then(function (hit) {
-            if (!hit) {
-                return neverFailNavigate(request, url);
-            }
-            return hit.clone().text().then(function (html) {
-                if (isValidErpOpsHtmlBody(pageUrl, html)) {
-                    return withSoftOfflineCacheHeader(materializeValidatedHtml(html, hit));
-                }
-                return deletePoisonedErpOpsCacheEntries(pageUrl).then(function () {
-                    return neverFailNavigate(request, url);
-                });
-            }).catch(function () {
-                return neverFailNavigate(request, url);
-            });
-        }).catch(function () {
-            return neverFailNavigate(request, url);
-        });
-    }
-
-    function backgroundRevalidate() {
-        return fetchNavigateNetwork(request, 4500).then(function (response) {
-            if (!response || !response.ok) {
-                return null;
-            }
-            return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone()).then(function () {
-                    return response;
-                });
-            });
-        }).catch(function () {
-            return null;
-        });
-    }
-
-    return matchErpNavSnapshot(request, url).then(function (hit) {
+    function serveCachedFast(hit) {
         if (!hit) {
-            return fetchNetworkThenOfflineShell();
+            return null;
         }
-        return hit.clone().text().then(function (html) {
-            if (isValidErpOpsHtmlBody(pageUrl, html)) {
-                // PERF-P1 — SWR: serve validated cache now, refresh in background.
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(backgroundRevalidate());
-                } else {
-                    backgroundRevalidate();
-                }
-                return withSoftOfflineCacheHeader(materializeValidatedHtml(html, hit));
+        // Put path already validated — stream clone; never .text() on F5 critical path.
+        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+    }
+
+    function storeLive(response) {
+        if (!response || !response.ok) {
+            return null;
+        }
+        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+        }).catch(function () { return null; });
+        if (event && typeof event.waitUntil === 'function') {
+            event.waitUntil(store);
+        }
+        return response;
+    }
+
+    // True offline: cache / shell only (no network wait).
+    if (isCloudBrowserOffline()) {
+        return matchErpNavSnapshot(request, url).then(function (hit) {
+            var served = serveCachedFast(hit);
+            if (served) {
+                return served;
             }
-            // Poisoned/empty cache: delete, then network, else Offline Shell.
-            return deletePoisonedErpOpsCacheEntries(pageUrl).then(function () {
-                return fetchNavigateNetwork(request, 4500).then(function (response) {
-                    if (response && response.ok) {
-                        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-                        }).catch(function () { return null; });
-                        if (event && typeof event.waitUntil === 'function') {
-                            event.waitUntil(store);
-                        }
-                        return response;
-                    }
-                    return fromValidatedCacheOrOfflineShell();
-                }).catch(function () {
-                    return fromValidatedCacheOrOfflineShell();
-                });
-            });
+            return neverFailNavigate(request, url);
         }).catch(function () {
-            return fetchNetworkThenOfflineShell();
+            return neverFailNavigate(request, url);
         });
-    }).catch(function () {
-        return fetchNetworkThenOfflineShell();
+    }
+
+    // Soft-online FAST F5:
+    // - Start network immediately (900ms budget, not 4.5s).
+    // - Exact cache match in parallel (no keys() scans).
+    // - Prefer live HTML; if network is slow, paint cache after 200ms.
+    var networkP = fetchNavigateNetwork(request, 900).then(storeLive).catch(function () {
+        return null;
+    });
+    var cacheP = matchErpNavSnapshot(request, url).catch(function () {
+        return null;
+    });
+
+    return new Promise(function (resolve) {
+        var settled = false;
+        var cacheTimer = setTimeout(function () {
+            cacheP.then(function (hit) {
+                if (settled) {
+                    return;
+                }
+                var served = serveCachedFast(hit);
+                if (!served) {
+                    return;
+                }
+                settled = true;
+                Promise.resolve(served).then(resolve);
+                // Keep network going to refresh cache, but do not block paint.
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(networkP.then(function () { return null; }));
+                }
+            });
+        }, 200);
+
+        networkP.then(function (response) {
+            if (settled) {
+                return;
+            }
+            if (response) {
+                settled = true;
+                clearTimeout(cacheTimer);
+                resolve(response);
+                return;
+            }
+            clearTimeout(cacheTimer);
+            cacheP.then(function (hit) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                var served = serveCachedFast(hit);
+                if (served) {
+                    Promise.resolve(served).then(resolve);
+                    return;
+                }
+                neverFailNavigate(request, url).then(resolve);
+            });
+        });
     });
 }
 
@@ -1392,53 +1353,19 @@ function navigatePosCloudWithCacheSafety(request, url) {
             return hit || shellFallback(shellReq);
         });
     }
-    function pinLiveResponse(response) {
-        if (response && response.ok && !isBiometricGatePath(url.pathname)) {
-            try {
-                putShell(request, response.clone()).catch(function () { return null; });
-            } catch (ePin) { /* ignore */ }
-        }
-        return response;
-    }
-    // Prefer live HTML (CSRF), but paint certified shell after 300ms so F5 is not a black screen.
-    return matchCertifiedPosShellSnapshot(shellReq).then(function (cachedShell) {
-        var networkP = fetchNavigateNetwork(request, 4000).then(function (response) {
-            if (response && response.ok) {
-                return pinLiveResponse(response);
+    // Network-first with short budget (CSRF-safe); cache only if network is slow/fails.
+    return fetchNavigateNetwork(request, 1200).then(function (response) {
+        if (response && response.ok) {
+            if (!isBiometricGatePath(url.pathname)) {
+                try {
+                    putShell(request, response.clone()).catch(function () { return null; });
+                } catch (ePin) { /* ignore */ }
             }
-            return null;
-        }).catch(function () {
-            return null;
-        });
-        if (!cachedShell) {
-            return networkP.then(function (response) {
-                return response || fromCacheOrFallback();
-            });
+            return response;
         }
-        return new Promise(function (resolve) {
-            var settled = false;
-            var timer = setTimeout(function () {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                resolve(withSoftOfflineCacheHeader(cachedShell));
-            }, 300);
-            networkP.then(function (response) {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                clearTimeout(timer);
-                if (response) {
-                    resolve(response);
-                    return;
-                }
-                resolve(withSoftOfflineCacheHeader(cachedShell));
-            });
-        });
+        return fromCacheOrFallback();
     }).catch(function () {
-        return fetchNavigateNetwork(request, 4000).then(pinLiveResponse).catch(fromCacheOrFallback);
+        return fromCacheOrFallback();
     });
 }
 
@@ -1765,25 +1692,8 @@ function matchAnyCachedAdminPage(request, url) {
                 if (hit2) {
                     return hit2;
                 }
-                // Offline: skip scanning every old cache version (was multi-second lag / spin).
-                if (isCloudBrowserOffline()) {
-                    return null;
-                }
-                // Also search previous ops-page cache versions (avoid empty after cache rename).
-                return caches.keys().then(function (names) {
-                    var opsNames = (names || []).filter(function (n) {
-                        return String(n).indexOf('rateb-erp-ops-pages-') === 0
-                            && String(n) !== ERP_OPS_PAGE_CACHE;
-                    });
-                    return opsNames.reduce(function (chain, name) {
-                        return chain.then(function (found) {
-                            if (found) {
-                                return found;
-                            }
-                            return caches.open(name).then(matchKeysIn);
-                        });
-                    }, Promise.resolve(null));
-                });
+                // Never walk every old ops-page cache version on navigate (was multi-second F5 lag).
+                return null;
             });
         });
     }).catch(function () {
@@ -2031,48 +1941,47 @@ function warmErpOfflineShell(opts) {
     function warmLeanOpsPages() {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
             var idx = 0;
-            var concurrency = 3;
-            function pumpBatch() {
+            // Serial + gap — never compete with user F5 / soft-nav (concurrency 3 starved PHP).
+            function pumpOne() {
                 if (idx >= leanOps.length) {
                     return Promise.resolve();
                 }
-                var batch = leanOps.slice(idx, idx + concurrency);
-                idx += concurrency;
-                return Promise.all(batch.map(function (rel) {
-                    var pageUrl = base + rel.replace(/^\//, '');
-                    return fetch(pageUrl, {
-                        credentials: 'same-origin',
-                        cache: 'no-cache',
-                        redirect: 'follow',
-                        headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
-                    }).then(function (res) {
-                        if (!res || !res.ok || res.status !== 200) {
+                var rel = leanOps[idx++];
+                var pageUrl = base + rel.replace(/^\//, '');
+                return fetch(pageUrl, {
+                    credentials: 'same-origin',
+                    cache: 'no-cache',
+                    redirect: 'follow',
+                    headers: { Accept: 'text/html', 'X-Rateb-Shell-Warm': '1' }
+                }).then(function (res) {
+                    if (!res || !res.ok || res.status !== 200) {
+                        return null;
+                    }
+                    try {
+                        var finalPath = new URL(res.url).pathname || '';
+                        if (/\/(login|logout|password)\b/i.test(finalPath)) {
                             return null;
                         }
-                        try {
-                            var finalPath = new URL(res.url).pathname || '';
-                            if (/\/(login|logout|password)\b/i.test(finalPath)) {
-                                return null;
-                            }
-                        } catch (eFin) { /* ignore */ }
-                        return putOpsHtml(opsCache, pageUrl, res);
-                    }).catch(function () { return null; });
-                })).then(pumpBatch);
+                    } catch (eFin) { /* ignore */ }
+                    return putOpsHtml(opsCache, pageUrl, res);
+                }).catch(function () {
+                    return null;
+                }).then(function () {
+                    return new Promise(function (resolve) {
+                        setTimeout(resolve, 180);
+                    }).then(pumpOne);
+                });
             }
-            return pumpBatch();
+            return pumpOne();
         });
     }
     // Phase OD — protected OA/identity assets first; fail closed (do not mark warm done).
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // PERF-P0.3-D — warm certified module HTML immediately (was delayed 4s).
-                // Deferred leanOps never finished before offline → uncachedAdminBrowseResponse ~1KB.
-                return warmLeanOpsPages().then(function () {
-                    return protectedResult;
-                }).catch(function () {
-                    return protectedResult;
-                });
+                // Do NOT await leanOps — awaiting blocked SW + starved F5. Background only.
+                warmLeanOpsPages().catch(function () { return null; });
+                return protectedResult;
             });
         }).then(function (result) {
             LAST_SHELL_WARM_AT = Date.now();

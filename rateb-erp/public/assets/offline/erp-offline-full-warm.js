@@ -5,9 +5,9 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 64;
-    var CONCURRENCY = 3;
-    var GAP_MS = 200;
+    var MAX_URLS = 48;
+    var CONCURRENCY = 1;
+    var GAP_MS = 450;
     var MIN_OK = 8;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
@@ -963,7 +963,7 @@
                 try {
                     console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
                 } catch (eLog) { /* ignore */ }
-                return runQueue(list, { concurrency: 3, gapMs: 200, signal: signal }).then(function (pageStats) {
+                return runQueue(list, { concurrency: 1, gapMs: 450, signal: signal }).then(function (pageStats) {
                     return {
                         total: (assetStats.total || 0) + (pageStats.total || 0),
                         ok: (assetStats.ok || 0) + (pageStats.ok || 0),
