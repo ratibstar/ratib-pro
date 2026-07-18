@@ -130,6 +130,10 @@
     }
 
     function hydrateNavLazy(group) {
+        if (window.RatebSidebarNav && typeof window.RatebSidebarNav.hydrate === 'function') {
+            window.RatebSidebarNav.hydrate(group);
+            return;
+        }
         if (!group) {
             return;
         }
@@ -160,32 +164,39 @@
     }
 
     function initSidebarNavGroups() {
-        // Early inline binder in main.php already attaches one delegated listener.
-        // Keep a safety net if that script was stripped or sidebar was re-mounted.
+        if (window.RatebSidebarNav && typeof window.RatebSidebarNav.ensure === 'function') {
+            window.RatebSidebarNav.ensure();
+            return;
+        }
         var side = document.getElementById('rateb-sidebar');
-        if (!side) {
+        if (!side || side.getAttribute('data-rateb-nav-delegated') === '2') {
             return;
         }
-        if (side.getAttribute('data-rateb-nav-delegated') === '1') {
-            return;
-        }
-        side.setAttribute('data-rateb-nav-delegated', '1');
+        side.setAttribute('data-rateb-nav-delegated', '2');
         side.addEventListener('click', function (ev) {
+            if (ev.__ratebNavToggleHandled) {
+                return;
+            }
             var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
             if (!btn || !side.contains(btn)) {
+                return;
+            }
+            if (ev.target.closest && ev.target.closest('a.rateb-nav-link')) {
                 return;
             }
             var group = btn.closest('[data-nav-group]');
             if (!group) {
                 return;
             }
+            ev.__ratebNavToggleHandled = true;
+            try { ev.stopImmediatePropagation(); } catch (eStop) { /* ignore */ }
             var willOpen = !group.classList.contains('is-open');
             if (willOpen) {
                 hydrateNavLazy(group);
             }
             var open = group.classList.toggle('is-open');
             btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
+        }, true);
     }
 
     function initTableSearch() {

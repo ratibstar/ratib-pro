@@ -541,14 +541,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         </nav>
     </aside>
 <script>
-/* Sidebar toggles: bind immediately after aside parse — before app.js (fixes first-click race). */
+/* Sidebar toggles: single delegated binder (stable vs double-bind / late app.js). */
 (function () {
   function hydrateNavLazy(group) {
     if (!group) return;
     var body = group.querySelector('.rateb-nav-group-body, .rateb-nav-subgroup-body');
     if (!body) return;
-    var tpl = null;
     var kids = body.children;
+    var tpl = null;
     for (var i = 0; i < kids.length; i++) {
       if (kids[i].tagName === 'TEMPLATE' && kids[i].getAttribute('data-rateb-nav-lazy') !== null) {
         tpl = kids[i];
@@ -566,22 +566,45 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       }
     } catch (eBind) { /* ignore */ }
   }
-  function bindSidebarNavGroups() {
+
+  function onSidebarClick(ev) {
+    // One toggle per event — survives duplicate listeners (old app.js + inline).
+    if (ev.__ratebNavToggleHandled) return;
     var side = document.getElementById('rateb-sidebar');
-    if (!side || side.getAttribute('data-rateb-nav-delegated') === '1') return;
-    side.setAttribute('data-rateb-nav-delegated', '1');
-    side.addEventListener('click', function (ev) {
-      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
-      if (!btn || !side.contains(btn)) return;
-      var group = btn.closest('[data-nav-group]');
-      if (!group) return;
-      var willOpen = !group.classList.contains('is-open');
-      if (willOpen) hydrateNavLazy(group);
-      var open = group.classList.toggle('is-open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
+    if (!side) return;
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
+    if (!btn || !side.contains(btn)) return;
+    // Ignore clicks that originated on a nav link inside an open body.
+    if (ev.target.closest && ev.target.closest('a.rateb-nav-link')) return;
+    var group = btn.closest('[data-nav-group]');
+    if (!group) return;
+    ev.__ratebNavToggleHandled = true;
+    // Capture + stop: prevent legacy per-button handlers from toggling twice (open→close).
+    try { ev.stopImmediatePropagation(); } catch (eStop) { /* ignore */ }
+    var willOpen = !group.classList.contains('is-open');
+    if (willOpen) hydrateNavLazy(group);
+    var open = group.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
-  bindSidebarNavGroups();
+
+  function ensure() {
+    var side = document.getElementById('rateb-sidebar');
+    if (!side) return false;
+    // v2 = capture + stopImmediatePropagation (defeats legacy per-button double-toggle)
+    if (side.getAttribute('data-rateb-nav-delegated') === '2') return true;
+    side.setAttribute('data-rateb-nav-delegated', '2');
+    side.addEventListener('click', onSidebarClick, true);
+    return true;
+  }
+
+  window.RatebSidebarNav = {
+    ensure: ensure,
+    hydrate: hydrateNavLazy
+  };
+  ensure();
+  document.addEventListener('rateb:nav:afterEnter', function () {
+    try { ensure(); } catch (e) { /* ignore */ }
+  });
 })();
 </script>
     <div class="rateb-main">
@@ -610,6 +633,25 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" data-rateb-full-nav="1" title="<?php echo __('logout'); ?>">
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
                 </a>
+<script>
+(function () {
+  /* Always-on logout: full navigation (stable vs stale soft-nav in memory). */
+  if (window.__RATEB_LOGOUT_FULL_NAV__) return;
+  window.__RATEB_LOGOUT_FULL_NAV__ = 1;
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a.rateb-topbar-logout') : null;
+    if (!a) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'PURGE_ERP_AUTH_CACHE' });
+      }
+    } catch (ePurge) { /* ignore */ }
+    try { window.location.assign(a.href); } catch (eGo) { window.location.href = a.href; }
+  }, true);
+})();
+</script>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
                     <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
                     <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
@@ -1189,8 +1231,15 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   }
   document.addEventListener('click', function (ev) {
     var a = ev.target && ev.target.closest ? ev.target.closest('a.rateb-topbar-logout') : null;
-    if (a) {
-      purgeErpAuthCache();
+    if (!a) return;
+    // Always full navigation — defeats stale in-memory soft-nav from before deploy.
+    purgeErpAuthCache();
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    try {
+      window.location.assign(a.href);
+    } catch (eGo) {
+      window.location.href = a.href;
     }
   }, true);
   var warmed = false;
