@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v5';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v6';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -640,7 +640,7 @@
             });
 
             var platformPromise = Promise.all([
-                loadScript('./js/sync/sync-engine.js'),
+                loadScript('../assets/offline/platform/sync/sync-engine.js'),
                 loadScript('./js/modules/module-sdk.js'),
                 loadScript('../assets/offline/platform/support/business-module-framework.js')
             ]).then(function () {
