@@ -274,7 +274,16 @@
         return Promise.resolve();
     }
 
+    function clearPrefetchQueue() {
+        prefetchQueue = [];
+    }
+
     function runPrefetchQueue() {
+        // Offline: never start hanging HTML fetches (starves every click).
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            clearPrefetchQueue();
+            return;
+        }
         while (prefetchInFlight < PREFETCH_MAX_PARALLEL && prefetchQueue.length) {
             var href = prefetchQueue.shift();
             prefetchInFlight += 1;
@@ -294,6 +303,10 @@
                     });
                 }).catch(function () { /* ignore */ }).then(function () {
                     prefetchInFlight = Math.max(0, prefetchInFlight - 1);
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                        clearPrefetchQueue();
+                        return;
+                    }
                     runPrefetchQueue();
                 });
             } catch (e2) {
@@ -304,6 +317,9 @@
 
     function prefetchUrl(href, opts) {
         if (!href || prefetchSeen[href]) {
+            return;
+        }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             return;
         }
         opts = opts || {};
@@ -512,22 +528,15 @@
     }
 
     function openOpsCaches() {
-        if (!root.caches || typeof root.caches.keys !== 'function') {
+        if (!root.caches) {
             return Promise.resolve([]);
         }
-        return root.caches.keys().then(function (keys) {
-            var names = (keys || []).filter(function (k) {
-                return String(k).indexOf('rateb-erp-ops-pages-') === 0
-                    || String(k).indexOf('rateb-erp-coexist-') === 0;
-            });
-            if (names.indexOf('rateb-erp-ops-pages-v34') === -1) {
-                names.unshift('rateb-erp-ops-pages-v34');
-            }
-            return Promise.all(names.map(function (name) {
-                return root.caches.open(name).catch(function () { return null; });
-            })).then(function (opened) {
-                return opened.filter(Boolean);
-            });
+        // Fixed names only — caches.keys() scans every rateb-* bucket and stalls offline clicks.
+        var names = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v34'];
+        return Promise.all(names.map(function (name) {
+            return root.caches.open(name).catch(function () { return null; });
+        })).then(function (opened) {
+            return opened.filter(Boolean);
         }).catch(function () {
             return [];
         });
@@ -658,13 +667,19 @@
                 if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
                     try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
                 }
-                var revalidate = function () {
-                    fetchNetworkHtml(href).catch(function () { /* ignore */ });
-                };
-                if (typeof root.requestIdleCallback === 'function') {
-                    root.requestIdleCallback(revalidate, { timeout: 6000 });
-                } else {
-                    root.setTimeout(revalidate, 2500);
+                // Never revalidate while offline — hanging fetch stalls the next click.
+                if (!isUiOffline()) {
+                    var revalidate = function () {
+                        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                            return;
+                        }
+                        fetchNetworkHtml(href).catch(function () { /* ignore */ });
+                    };
+                    if (typeof root.requestIdleCallback === 'function') {
+                        root.requestIdleCallback(revalidate, { timeout: 6000 });
+                    } else {
+                        root.setTimeout(revalidate, 2500);
+                    }
                 }
                 return cached.text().then(function (html) {
                     return { html: html, finalUrl: href, fromCache: true };
@@ -685,6 +700,8 @@
         navigating = true;
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
+        // Offline cache lookup must fail-fast — 8s lock made every click feel frozen.
+        var unlockMs = isUiOffline() ? 1200 : 8000;
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
@@ -692,7 +709,7 @@
                     console.warn('[RATEB NAV] unlock stuck navigating');
                 } catch (eU) { /* ignore */ }
             }
-        }, 8000);
+        }, unlockMs);
         var t0 = performance.now();
         runLifecycle('beforeLeave', { href: root.location.href, next: href });
 
@@ -748,6 +765,28 @@
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
+            // Offline: never hardNavigate (full reload is multi-second). Stay put + toast.
+            if (isUiOffline()) {
+                try {
+                    var t = document.getElementById('rateb-offline-nav-toast');
+                    if (!t && document.body) {
+                        t = document.createElement('div');
+                        t.id = 'rateb-offline-nav-toast';
+                        t.className = 'is-err';
+                        t.setAttribute('role', 'status');
+                        t.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
+                            + 'background:#7f1d1d;color:#fecaca;padding:.65rem 1rem;border-radius:8px;'
+                            + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center';
+                        document.body.appendChild(t);
+                    }
+                    if (t) {
+                        t.textContent = 'الصفحة غير محفوظة أوفلاين — افتحها مرة وأنت متصل.';
+                        t.hidden = false;
+                    }
+                } catch (eT) { /* ignore */ }
+                navigating = false;
+                return false;
+            }
             hardNavigate(href);
             navigating = false;
             return false;
@@ -803,19 +842,15 @@
         if (!shouldIntercept(a, ev)) {
             return;
         }
-        // If a prior soft-nav is still in flight, do NOT eat this click (was leaving Dashboard dead).
+        // If a prior soft-nav is still in flight, do NOT stack full reloads offline.
         if (navigating) {
+            if (isUiOffline()) {
+                return;
+            }
             hardNavigate(a.href);
             return;
         }
-        // Soft/hard offline: never enter content-swap (fetch can hang while badge says offline).
-        // Full navigation lets the Service Worker serve the cached ops page.
-        if (isUiOffline()) {
-            // Do not preventDefault until we commit navigation — assign is synchronous intent.
-            ev.preventDefault();
-            hardNavigate(a.href);
-            return;
-        }
+        // Offline: cache-only content-swap (instant). Full reload was multi-second per click.
         ev.preventDefault();
         swapTo(a.href);
     }
@@ -858,9 +893,14 @@
         bindPrefetch(document.getElementById('rateb-sidebar') || document);
         document.addEventListener('click', onClick, true);
         root.addEventListener('popstate', onPopState);
+        root.addEventListener('offline', function () {
+            clearPrefetchQueue();
+        });
         lastHref = root.location.href;
         /* PERF-P3 — idlePrefetchVisible self-delays; do not race first paint. */
-        idlePrefetchVisible();
+        if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+            idlePrefetchVisible();
+        }
     }
 
     if (document.readyState === 'loading') {
