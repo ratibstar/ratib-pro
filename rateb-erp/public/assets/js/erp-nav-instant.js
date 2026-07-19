@@ -726,8 +726,9 @@
     }
 
     function fetchNetworkHtml(href) {
-        // Dashboard: short timeout — SW used to stall soft-nav for minutes after F5.
-        var timeoutMs = isBareAdminHref(href) ? 900 : 2000;
+        // Generous timeout: SW no longer kills soft-nav at 700ms; PHP pages can
+        // be 1–3s cold. Cache race still paints instantly when a snapshot exists.
+        var timeoutMs = isBareAdminHref(href) ? 4000 : 8000;
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -911,7 +912,7 @@
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
-        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 1200 : 2800);
+        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 4500 : 9000);
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
@@ -1111,6 +1112,7 @@
                 }
             } catch (eSame) { /* continue */ }
             ev.preventDefault();
+            try { ev.stopImmediatePropagation(); } catch (eSip) { /* ignore */ }
             if (navigating) {
                 pendingNavHref = btnHref;
                 return;
@@ -1121,6 +1123,7 @@
         var href = navHrefOf(a);
         if (navigating) {
             ev.preventDefault();
+            try { ev.stopImmediatePropagation(); } catch (eSip2) { /* ignore */ }
             pendingNavHref = href;
             if (!onClick._unlockKick) {
                 onClick._unlockKick = root.setTimeout(function () {
@@ -1134,6 +1137,7 @@
             return;
         }
         ev.preventDefault();
+        try { ev.stopImmediatePropagation(); } catch (eSip3) { /* ignore */ }
         swapTo(href);
     }
 
@@ -1179,6 +1183,7 @@
 
     function boot() {
         rememberExistingScripts();
+        cleanupSoftNavUiArtifacts();
         bindPrefetch(document.getElementById('rateb-sidebar') || document);
         document.addEventListener('click', onClick, true);
         window.__RATEB_NAV_READY__ = true;

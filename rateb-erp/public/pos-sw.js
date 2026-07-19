@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-no-nav-alter-v103';
+var SW_BUILD_ID = '20260720-softnav-passthrough-v89';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3719,9 +3719,10 @@ self.addEventListener('fetch', function (event) {
         }
     }
 
-    // Soft-nav content-swap / prefetch HTML.
-    // Bare /admin (لوحة التحكم): NEVER respondWith — SW Cache API stalls with many
-    // tabs caused multi-minute black navigations after F5. Let the page fetch hit network.
+    // Soft-nav / prefetch HTML: ALWAYS passthrough.
+    // Page soft-nav already races Cache API (matchCachedHtml). A SW 700ms ceiling
+    // returned empty 504 and made sidebar icons look dead after F5 until a full
+    // navigation warmed something. Never respondWith these — let fetch hit origin.
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
         && event.request.mode !== 'navigate'
@@ -3735,34 +3736,6 @@ self.addEventListener('fetch', function (event) {
                 + String(event.request.headers.get('X-Rateb-Prefetch') || '');
         } catch (eSwapHdr) { /* ignore */ }
         if (swapFlag.indexOf('1') !== -1) {
-            var bareSwap = String(url.pathname || '').replace(/\/+$/, '');
-            if (/\/admin$/i.test(bareSwap)) {
-                return; // passthrough — page soft-nav talks to origin directly
-            }
-            respondWithDocumentAndReleaseWarmGate(
-                event,
-                Promise.race([
-                    softNavAdminHtml(event.request, url, event).catch(function () {
-                        return fetchNavigateNetwork(event.request, 800).catch(function () {
-                            return null;
-                        });
-                    }),
-                    new Promise(function (resolve) {
-                        setTimeout(function () {
-                            resolve(new Response('', {
-                                status: 504,
-                                statusText: 'soft-nav-timeout',
-                                headers: { 'Content-Type': 'text/plain', 'X-Rateb-Soft-Nav-Miss': '1' }
-                            }));
-                        }, 700);
-                    })
-                ]).then(function (res) {
-                    return res || new Response('', {
-                        status: 504,
-                        headers: { 'Content-Type': 'text/plain', 'X-Rateb-Soft-Nav-Miss': '1' }
-                    });
-                })
-            );
             return;
         }
     }

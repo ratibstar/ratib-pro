@@ -747,7 +747,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           return;
         }
         ev.preventDefault();
-        if (!window.__RATEB_NAV_READY__) {
+        try { ev.stopPropagation(); } catch (eSp) { /* ignore */ }
+        // Always drive navigation here — do not rely on document-capture listener
+        // order (another capture handler can swallow the event before soft-nav).
+        if (window.RatebNavInstant && typeof window.RatebNavInstant.navigate === 'function'
+            && window.__RATEB_NAV_READY__) {
+          window.RatebNavInstant.navigate(u.href);
+        } else {
           window.__RATEB_PENDING_NAV__ = u.href;
         }
       } catch (eNav) { /* ignore */ }
