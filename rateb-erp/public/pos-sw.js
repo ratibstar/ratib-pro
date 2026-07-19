@@ -1477,7 +1477,8 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 if (settled) {
                     return;
                 }
-                cacheP.then(function (hit) {
+                // Never await a hanging cacheP (was 40–60s black).
+                Promise.race([cacheP, Promise.resolve(null)]).then(function (hit) {
                     if (settled) {
                         return;
                     }
@@ -1485,18 +1486,23 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     try {
                         bare = String((url && url.pathname) || '').replace(/\/+$/, '');
                     } catch (eB) { /* ignore */ }
-                    var dashP = /\/admin$/i.test(bare)
-                        ? matchCachedAdminDashboard(url).catch(function () { return null; })
-                        : Promise.resolve(null);
-                    dashP.then(function (dash) {
+                    var served = serveCachedFast(hit, false);
+                    if (served) {
+                        finish(served);
+                        return;
+                    }
+                    if (!/\/admin$/i.test(bare)) {
+                        finish(uncachedAdminBrowseResponse(url));
+                        return;
+                    }
+                    Promise.race([
+                        matchCachedAdminDashboard(url).catch(function () { return null; }),
+                        new Promise(function (r) { setTimeout(function () { r(null); }, 50); })
+                    ]).then(function (dash) {
                         if (settled) {
                             return;
                         }
-                        finish(
-                            serveCachedFast(hit, false)
-                            || serveCachedFast(dash, false)
-                            || uncachedAdminBrowseResponse(url)
-                        );
+                        finish(serveCachedFast(dash, false) || uncachedAdminBrowseResponse(url));
                     });
                 });
             }, 700);
