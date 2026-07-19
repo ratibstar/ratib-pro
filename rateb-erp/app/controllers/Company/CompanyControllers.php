@@ -2286,11 +2286,9 @@ final class NotificationsController extends Controller
 {
     public function index(): void
     {
-        $userId = (int) SessionManager::get('rateb_user_id');
-        $model = new \Rateb\App\Models\Notification();
-        $items = $model->query(
-            'SELECT * FROM rateb_notifications WHERE user_id = :uid OR company_id = :cid ORDER BY id DESC LIMIT 50',
-            ['uid' => $userId, 'cid' => (int) SessionManager::get('rateb_company_id')]
+        $items = (new \Rateb\App\Services\NotificationService())->listForUser(
+            (int) SessionManager::get('rateb_user_id'),
+            (int) SessionManager::get('rateb_company_id')
         );
         $this->view('company/notifications/index', [
             'title' => __('notifications'),

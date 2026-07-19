@@ -658,11 +658,7 @@ final class HrAttendanceBulkController extends Controller
                 'check_out' => trim((string) ($checkOut[$employeeId] ?? '17:00')) ?: '17:00:00',
                 'status' => 'present',
             ];
-            $existing = $model->queryOne(
-                "SELECT id FROM rateb_attendance_records
-                 WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d LIMIT 1",
-                ['cid' => $companyId, 'eid' => $eid, 'd' => $date]
-            );
+            $existing = (new HrService())->findAttendanceByEmployeeDate($companyId, $eid, $date);
             if ($existing) {
                 $model->update((int) $existing['id'], $payload);
             } else {

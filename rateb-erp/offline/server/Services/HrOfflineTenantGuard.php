@@ -9,6 +9,7 @@ use Rateb\App\Models\AttendanceRecord;
 use Rateb\App\Models\Employee;
 use Rateb\App\Models\LeaveRequest;
 use Rateb\App\Models\LeaveType;
+use Rateb\App\Services\HrService;
 
 /**
  * Tenant + branch isolation checks for HR offline replay.
@@ -105,6 +106,8 @@ final class HrOfflineTenantGuard
     }
 
     /**
+     * Delegates to HrService after offline schema guard (behavior unchanged).
+     *
      * @return array<string, mixed>|null
      */
     public function findAttendanceByEmployeeDate(int $companyId, int $employeeId, string $date): ?array
@@ -116,11 +119,6 @@ final class HrOfflineTenantGuard
             return null;
         }
 
-        return (new AttendanceRecord())->queryOne(
-            'SELECT * FROM rateb_attendance_records
-             WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d
-             LIMIT 1',
-            ['cid' => $companyId, 'eid' => $employeeId, 'd' => $date]
-        );
+        return (new HrService())->findAttendanceByEmployeeDate($companyId, $employeeId, $date);
     }
 }

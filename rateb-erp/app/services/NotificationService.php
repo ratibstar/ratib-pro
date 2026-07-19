@@ -39,6 +39,19 @@ final class NotificationService
         ]);
     }
 
+    /**
+     * Admin shell notification list (exact filter/order/limit from former NotificationsController).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForUser(int $userId, int $companyId): array
+    {
+        return (new Notification())->query(
+            'SELECT * FROM rateb_notifications WHERE user_id = :uid OR company_id = :cid ORDER BY id DESC LIMIT 50',
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+    }
+
     public function markRead(int $id, int $userId): bool
     {
         $companyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id') ?? 0);

@@ -344,6 +344,26 @@ final class HrService
         ];
     }
 
+    /**
+     * Single reusable lookup for one employee's attendance on a calendar date.
+     * SQL matches Offline HrOfflineTenantGuard (canonical predicate).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findAttendanceByEmployeeDate(int $companyId, int $employeeId, string $date): ?array
+    {
+        if ($companyId < 1 || $employeeId < 1 || $date === '') {
+            return null;
+        }
+
+        return (new AttendanceRecord())->queryOne(
+            'SELECT * FROM rateb_attendance_records
+             WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d
+             LIMIT 1',
+            ['cid' => $companyId, 'eid' => $employeeId, 'd' => $date]
+        );
+    }
+
     /** @return array<string, mixed>|null */
     public function employeeProfile(int $employeeId): ?array
     {
@@ -565,11 +585,7 @@ final class HrService
         }
         while ($cursor <= $endTs) {
             $date = date('Y-m-d', $cursor);
-            $exists = $attModel->queryOne(
-                'SELECT id FROM rateb_attendance_records
-                 WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d LIMIT 1',
-                ['cid' => $companyId, 'eid' => $employeeId, 'd' => $date]
-            );
+            $exists = $this->findAttendanceByEmployeeDate($companyId, $employeeId, $date);
             if (!$exists) {
                 $attModel->create([
                     'company_id' => $companyId,
@@ -649,11 +665,7 @@ final class HrService
             if ($employeeId < 1) {
                 continue;
             }
-            $existing = $attModel->queryOne(
-                'SELECT id, status FROM rateb_attendance_records
-                 WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d LIMIT 1',
-                ['cid' => $companyId, 'eid' => $employeeId, 'd' => $holidayDate]
-            );
+            $existing = $this->findAttendanceByEmployeeDate($companyId, $employeeId, $holidayDate);
             if ($existing && in_array((string) ($existing['status'] ?? ''), ['present', 'late'], true)) {
                 continue;
             }
