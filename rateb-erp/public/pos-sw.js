@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-offline-system-speed-v94';
+var SW_BUILD_ID = '20260719-mobile-apps-online-v95';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1279,6 +1279,46 @@ function prefetchErpOpsUrl(href) {
 }
 
 /**
+ * Platform admin tools that must hit the live ERP when the tab is online.
+ * Never substitute the «الصفحة غير محفوظة أوفلاين» shell over a real network
+ * response (404/302/500) — that UI is only for true offline cache misses.
+ */
+function isOnlineOnlyPlatformAdminPath(pathname) {
+    var p = String(pathname || '');
+    return /\/admin\/mobile-apps(?:\/|$)/i.test(p)
+        || /\/admin\/hr-mobile(?:\/|$)/i.test(p)
+        || /\/admin\/settings(?:\/|$)/i.test(p);
+}
+
+/**
+ * Like fetchNavigateNetwork, but when online returns the HTTP response even if
+ * !ok (so Chrome paints login/404/ERP error instead of a fake offline page).
+ */
+function fetchNavigateNetworkPassthrough(request, timeoutMs) {
+    if (isLocalApplianceOrigin()) {
+        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+            return res || Promise.reject(new Error('empty-response'));
+        });
+    }
+    if (isCloudBrowserOffline()) {
+        return Promise.reject(new Error('offline'));
+    }
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
+    var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
+        if (!response) {
+            return Promise.reject(new Error('empty-response'));
+        }
+        return response;
+    });
+    var timed = new Promise(function (_resolve, reject) {
+        setTimeout(function () {
+            reject(new Error('navigate-timeout'));
+        }, ms);
+    });
+    return Promise.race([network, timed]);
+}
+
+/**
  * Cloud soft-online ERP admin navigations — PERF-P1 stale-while-revalidate.
  * Cached HTML paints immediately; network refreshes ops cache in background.
  * Poisoned/empty cache hits are deleted and never re-served.
@@ -1288,6 +1328,48 @@ function prefetchErpOpsUrl(href) {
  */
 function navigateErpCloudWithCacheSafety(request, url, event) {
     var pageUrl = request.url || (url && url.href) || '';
+
+    // Online-only platform management: always prefer live ERP (no fake offline shell).
+    if (!isCloudBrowserOffline() && isOnlineOnlyPlatformAdminPath(url && url.pathname)) {
+        return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+            if (response && response.ok) {
+                var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                }).catch(function () { return null; });
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(store);
+                }
+            }
+            return response;
+        }).catch(function () {
+            return matchSoftOnlineExactCache(request, url).then(function (hit) {
+                if (hit) {
+                    return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+                }
+                // Still online but network failed — retry once with longer wait, else real error page.
+                return fetchNavigateNetworkPassthrough(request, 12000).catch(function () {
+                    return new Response(
+                        '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                        + '<title>RATEB ERP</title></head><body style="font-family:system-ui;background:#0f1117;color:#e8eaed;padding:2rem;text-align:center">'
+                        + '<h1>تعذّر الاتصال بالخادم</h1>'
+                        + '<p>أنت متصل، لكن الصفحة لم تُحمَّل. حدّث الصفحة أو عد لاحقاً.</p>'
+                        + '<p><a style="color:#8ab4ff" href="javascript:location.reload()">تحديث</a>'
+                        + ' · <a style="color:#8ab4ff" href="' + String(new URL('admin/', self.registration.scope).href).replace(/"/g, '') + '">لوحة التحكم</a></p>'
+                        + '</body></html>',
+                        {
+                            status: 503,
+                            headers: {
+                                'Content-Type': 'text/html; charset=utf-8',
+                                'Cache-Control': 'no-store',
+                                'X-Rateb-Online-Error': '1'
+                            }
+                        }
+                    );
+                });
+            });
+        });
+    }
 
     function serveCachedFast(hit, offlineMode) {
         if (!hit) {
