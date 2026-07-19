@@ -444,6 +444,12 @@
                     if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
                         return;
                     }
+                    /* Hover لوحة التحكم: always warm — soft-nav must match F5 cache hit. */
+                    var bare = String(u.pathname || '').replace(/\/+$/, '');
+                    if (/\/admin$/i.test(bare)) {
+                        prefetchUrl(u.href, { force: true });
+                        return;
+                    }
                     /* Hover intent: only current module until idle unlock. */
                     prefetchUrl(u.href);
                 } catch (e) { /* ignore */ }
@@ -469,12 +475,18 @@
                 if (!links.length) {
                     return;
                 }
+                // Warm لوحة التحكم once — soft-nav was cold while F5 used SW navigate cache.
+                var dashHref = '';
                 var currentFirst = [];
                 Array.prototype.forEach.call(links, function (a) {
                     try {
                         var u = new URL(a.href, root.location.href);
                         if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
                             return;
+                        }
+                        var bare = String(u.pathname || '').replace(/\/+$/, '');
+                        if (/\/admin$/i.test(bare) && !dashHref) {
+                            dashHref = u.href;
                         }
                         if (isDeferredPrefetchPath(u.pathname)) {
                             return;
@@ -484,7 +496,10 @@
                         }
                     } catch (e) { /* ignore */ }
                 });
-                /* At most one auto-prefetch; hover covers the rest (less network contention). */
+                if (dashHref) {
+                    prefetchUrl(dashHref, { force: true });
+                }
+                /* At most one auto-prefetch besides dashboard; hover covers the rest. */
                 currentFirst.slice(0, 1).forEach(function (href) {
                     prefetchUrl(href, { force: false });
                 });
@@ -753,43 +768,28 @@
     }
 
     function fetchHtml(href) {
-        // Parallel cache + network. On cache hit: abort network and idle-revalidate
-        // so paint is not competing with a duplicate HTML download.
+        // TRUE race: Cache API fan-out must NOT gate the network/SW response.
+        // Old chain awaited matchCachedHtml before returning networkPromise — that made
+        // لوحة التحكم soft-nav wait seconds while F5 painted from SW navigate cache.
         var networkPromise = null;
         if (!isUiOffline()) {
             networkPromise = fetchNetworkHtml(href);
         }
 
-        var cacheLookup = matchCachedHtml(href).then(function (cached) {
-            if (cached) {
-                if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
-                    try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
-                }
-                // Never revalidate while offline — hanging fetch stalls the next click.
-                if (!isUiOffline()) {
-                    var revalidate = function () {
-                        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                            return;
-                        }
-                        fetchNetworkHtml(href).catch(function () { /* ignore */ });
-                    };
-                    if (typeof root.requestIdleCallback === 'function') {
-                        root.requestIdleCallback(revalidate, { timeout: 6000 });
-                    } else {
-                        root.setTimeout(revalidate, 2500);
-                    }
-                }
-                return cached.text().then(function (html) {
-                    return { html: html, finalUrl: href, fromCache: true };
-                });
+        var cachePromise = matchCachedHtml(href).then(function (cached) {
+            if (!cached) {
+                return null;
             }
-            if (!networkPromise) {
-                throw new Error('nav_offline_no_cache');
-            }
-            return networkPromise;
+            return cached.text().then(function (html) {
+                if (!html || html.length < 200) {
+                    return null;
+                }
+                return { html: html, finalUrl: href, fromCache: true };
+            });
+        }).catch(function () {
+            return null;
         });
 
-        // Hard ceiling online + offline so Cache API stalls cannot leave navigating=true forever.
         var ceilingMs = isUiOffline() ? 350 : 2500;
         return new Promise(function (resolve, reject) {
             var settled = false;
@@ -803,21 +803,79 @@
                 }
                 reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
             }, ceilingMs);
-            cacheLookup.then(function (pack) {
-                if (settled) {
+
+            function win(pack) {
+                if (settled || !pack || !pack.html) {
                     return;
                 }
                 settled = true;
                 root.clearTimeout(timer);
+                if (pack.fromCache && networkPromise && typeof networkPromise._ratebAbort === 'function') {
+                    try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
+                    if (!isUiOffline()) {
+                        var revalidate = function () {
+                            try {
+                                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                                    return;
+                                }
+                            } catch (eOff) { return; }
+                            fetchNetworkHtml(href).catch(function () { /* ignore */ });
+                        };
+                        if (typeof root.requestIdleCallback === 'function') {
+                            root.requestIdleCallback(revalidate, { timeout: 6000 });
+                        } else {
+                            root.setTimeout(revalidate, 2500);
+                        }
+                    }
+                }
                 resolve(pack);
-            }, function (err) {
+            }
+
+            function failIfBothDone(cachePack, netErr) {
                 if (settled) {
                     return;
                 }
-                settled = true;
-                root.clearTimeout(timer);
-                reject(err);
+                // Wait until cache settled; if network already failed and cache empty → reject.
+                if (cachePack === null && netErr && !networkPromise) {
+                    settled = true;
+                    root.clearTimeout(timer);
+                    reject(netErr || new Error('nav_offline_no_cache'));
+                }
+            }
+
+            cachePromise.then(function (pack) {
+                if (pack) {
+                    win(pack);
+                    return;
+                }
+                // Cache miss: if network already failed, reject; else wait for network/ceiling.
+                if (!networkPromise) {
+                    if (!settled) {
+                        settled = true;
+                        root.clearTimeout(timer);
+                        reject(new Error('nav_offline_no_cache'));
+                    }
+                }
             });
+
+            if (networkPromise) {
+                networkPromise.then(function (pack) {
+                    win(pack);
+                }, function (err) {
+                    cachePromise.then(function (pack) {
+                        if (pack) {
+                            win(pack);
+                            return;
+                        }
+                        if (!settled) {
+                            settled = true;
+                            root.clearTimeout(timer);
+                            reject(err || new Error('nav_fetch_failed'));
+                        }
+                    });
+                    failIfBothDone(null, err);
+                });
+            }
         });
     }
 
@@ -997,7 +1055,8 @@
             if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
                 return false;
             }
-            if (u.pathname === root.location.pathname && u.search === root.location.search) {
+            if (u.pathname.replace(/\/+$/, '') === root.location.pathname.replace(/\/+$/, '')
+                && u.search === root.location.search) {
                 return false;
             }
             if (!document.querySelector('#rateb-sidebar, .rateb-sidebar')) {

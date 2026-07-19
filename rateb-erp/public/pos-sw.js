@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-mobile-apps-online-v95';
+var SW_BUILD_ID = '20260719-dashboard-softnav-v96';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1523,6 +1523,71 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
  */
 function navigateAdminDashboardNetworkFirst(request, url, event) {
     return navigateErpCloudWithCacheSafety(request, url, event);
+}
+
+/**
+ * Soft-nav (X-Rateb-Nav-Swap) / prefetch HTML — cache-first like F5 navigate.
+ * Soft-online used to passthrough these fetches → cold network while Ctrl+F5 was instant.
+ * Never return uncached dark shell here (triggers soft-nav shell_mismatch → hardNavigate → black).
+ */
+function softNavAdminHtml(request, url, event) {
+    var pageUrl = request.url || (url && url.href) || '';
+
+    function storeLive(response) {
+        if (!response || !response.ok) {
+            return response;
+        }
+        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+        }).catch(function () { return null; });
+        if (event && typeof event.waitUntil === 'function') {
+            event.waitUntil(store);
+        }
+        return response;
+    }
+
+    function fromCache() {
+        return matchSoftOnlineExactCache(request, url).then(function (hit) {
+            if (hit) {
+                return hit;
+            }
+            var bare = String((url && url.pathname) || '').replace(/\/+$/, '');
+            if (/\/admin$/i.test(bare)) {
+                return matchCachedAdminDashboard(url);
+            }
+            return null;
+        }).catch(function () {
+            return null;
+        });
+    }
+
+    if (isCloudBrowserOffline()) {
+        return fromCache().then(function (hit) {
+            if (hit) {
+                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: false });
+            }
+            return Promise.reject(new Error('soft-nav-offline-miss'));
+        });
+    }
+
+    var networkP = fetchNavigateNetwork(request, 2000).then(storeLive).catch(function () {
+        return null;
+    });
+
+    return fromCache().then(function (hit) {
+        if (hit) {
+            if (event && typeof event.waitUntil === 'function') {
+                event.waitUntil(networkP.then(function () { return null; }));
+            }
+            return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+        }
+        return networkP.then(function (response) {
+            if (response) {
+                return response;
+            }
+            return Promise.reject(new Error('soft-nav-miss'));
+        });
+    });
 }
 
 /** Certified POS shell only — never treat bio-required placeholder as a snapshot hit. */
@@ -3530,6 +3595,29 @@ self.addEventListener('fetch', function (event) {
                 navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
                     return erpInlineShellResponse();
                 })
+            );
+            return;
+        }
+    }
+
+    // Soft-nav content-swap / prefetch HTML: same cache-first as navigate (لوحة التحكم).
+    // Soft-online used to fall through to network passthrough → multi-second cold fetch.
+    if (!isLocalApplianceOrigin()
+        && event.request.method === 'GET'
+        && event.request.mode !== 'navigate'
+        && (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname))
+        && !isLogoutPath(url.pathname)
+        && !isAuthPath(url.pathname)
+        && !isPosNavigation(url)) {
+        var swapFlag = '';
+        try {
+            swapFlag = String(event.request.headers.get('X-Rateb-Nav-Swap') || '')
+                + String(event.request.headers.get('X-Rateb-Prefetch') || '');
+        } catch (eSwapHdr) { /* ignore */ }
+        if (swapFlag.indexOf('1') !== -1) {
+            respondWithDocumentAndReleaseWarmGate(
+                event,
+                softNavAdminHtml(event.request, url, event)
             );
             return;
         }
