@@ -28,6 +28,7 @@ use Rateb\App\Controllers\Admin\AccessControlController;
 use Rateb\App\Controllers\Admin\AgencyUpdatesController;
 use Rateb\App\Controllers\Admin\AccountingControlController;
 use Rateb\App\Controllers\Admin\AccountingDashboardController;
+use Rateb\App\Controllers\Admin\HrMobileDevController;
 use Rateb\App\Controllers\Admin\ChartOfAccountsController;
 use Rateb\App\Controllers\Admin\AdminApprovalsController;
 use Rateb\App\Controllers\Admin\AdminWorkflowsController;
@@ -69,6 +70,9 @@ $router->post('/admin/agency-updates/link', [AgencyUpdatesController::class, 'li
 $router->post('/admin/agency-updates/sync-files', [AgencyUpdatesController::class, 'syncFiles'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/agency-updates/restore-admin', [AgencyUpdatesController::class, 'restoreAdmin'], rateb_platform_oversight_mw('companies.manage'));
 $router->post('/admin/agency-updates/reset-data', [AgencyUpdatesController::class, 'resetData'], rateb_platform_oversight_mw('companies.manage'));
+
+$router->get('/admin/hr-mobile', [HrMobileDevController::class, 'console'], rateb_admin_mw());
+$router->get('/admin/hr-mobile/health', [HrMobileDevController::class, 'health'], rateb_admin_mw());
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
 $router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));

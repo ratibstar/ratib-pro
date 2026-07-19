@@ -600,6 +600,52 @@ if (!function_exists('rateb_is_production')) {
     }
 }
 
+if (!function_exists('rateb_hr_mobile_dev_config')) {
+    /**
+     * HR Mobile development console config (env-only). Never used for HR business rules.
+     *
+     * @return array{enabled:bool,web_url:string,api_base:string,build:string,environment:string,app_debug:bool}
+     */
+    function rateb_hr_mobile_dev_config(): array
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        $file = RATEB_ROOT . '/config/hr-mobile-dev.php';
+        if (!is_file($file)) {
+            $cached = [
+                'enabled' => false,
+                'web_url' => '',
+                'api_base' => '',
+                'build' => 'dev',
+                'environment' => 'unknown',
+                'app_debug' => false,
+            ];
+            return $cached;
+        }
+        /** @var callable(): array $loader */
+        $loader = require $file;
+        $cached = is_callable($loader) ? $loader() : [
+            'enabled' => false,
+            'web_url' => '',
+            'api_base' => '',
+            'build' => 'dev',
+            'environment' => 'unknown',
+            'app_debug' => false,
+        ];
+        return $cached;
+    }
+}
+
+if (!function_exists('rateb_hr_mobile_dev_console_enabled')) {
+    /** True only for non-production + (APP_ENV development|local|dev OR APP_DEBUG). */
+    function rateb_hr_mobile_dev_console_enabled(): bool
+    {
+        return (bool) (rateb_hr_mobile_dev_config()['enabled'] ?? false);
+    }
+}
+
 if (!function_exists('rateb_is_local_appliance_host')) {
     /** Loopback / Branch Appliance PHP built-in server (not cloud). */
     function rateb_is_local_appliance_host(?string $host = null): bool
