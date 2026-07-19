@@ -50,7 +50,7 @@ $renderHrLink = static function (array $item) use ($hrRouteActive): void {
     $active = $hrRouteActive($route) ? ' active' : '';
     $url = rateb_url_with_ops_company(rateb_app_route($route));
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($route) : 0;
-    echo '<a href="' . Rateb\App\Core\View::escape($url) . '" class="rateb-nav-link' . $active . '">';
+    echo '<a href="' . Rateb\App\Core\View::escape($url) . '" data-rateb-href="' . Rateb\App\Core\View::escape($url) . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     echo '<i class="fas ' . Rateb\App\Core\View::escape((string) ($item['icon'] ?? 'fa-circle')) . '"></i>';
     echo '<span>' . Rateb\App\Core\View::escape(__((string) ($item['label'] ?? ''))) . '</span>';
     if ($badge > 0) {

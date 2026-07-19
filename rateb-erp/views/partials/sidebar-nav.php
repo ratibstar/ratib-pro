@@ -24,7 +24,7 @@ $opsLink = static function (
     $route = rateb_app_route($resourcePath);
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
-    echo '<a href="' . rateb_app_url($resourcePath) . '" class="rateb-nav-link' . $active . '">';
+    echo '<a href="' . rateb_app_url($resourcePath) . '" data-rateb-href="' . rateb_app_url($resourcePath) . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
     if ($badge > 0) {
         echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';
@@ -121,7 +121,7 @@ $adminSection = static function (
         $active = $navActive($link[0]) ? ' active' : '';
         $badge = (int) ($linkBadges[$link[0]] ?? 0);
         $linkClass = $linkBadgeClass !== '' ? $linkBadgeClass : $badgeClass;
-        echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+        echo '<a href="' . rateb_url($link[0]) . '" data-rateb-href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
         echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
         if ($badge > 0) {
             $cls = 'rateb-nav-badge';

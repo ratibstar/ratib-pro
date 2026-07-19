@@ -1002,13 +1002,34 @@
         }, 0);
     }
 
+    function navHrefOf(a) {
+        if (!a) {
+            return '';
+        }
+        try {
+            var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+            if (!raw || raw === '#' || raw.indexOf('javascript:') === 0) {
+                return '';
+            }
+            return new URL(raw, root.location.href).href;
+        } catch (eH) {
+            return a.href || '';
+        }
+    }
+
     function shouldIntercept(a, ev) {
-        if (!a || !a.href) {
+        if (!a) {
             return false;
         }
-        if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+        var href = navHrefOf(a);
+        if (!href) {
             return false;
         }
+        if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+            return false;
+        }
+        // Ignore defaultPrevented — onclick="return false" / early guards set it;
+        // we still soft-navigate.
         if (a.target && a.target !== '' && a.target !== '_self') {
             return false;
         }
@@ -1016,7 +1037,7 @@
             return false;
         }
         try {
-            var u = new URL(a.href, root.location.href);
+            var u = new URL(href, root.location.href);
             if (u.origin !== root.location.origin) {
                 return false;
             }
@@ -1044,15 +1065,15 @@
     }
 
     function onClick(ev) {
-        var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+        var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
         if (!shouldIntercept(a, ev)) {
             return;
         }
+        var href = navHrefOf(a);
         // If a prior soft-nav is still in flight, queue latest intent (never freeze sidebar).
-        // Online used to hardNavigate here — that caused multi-second full reloads mid-swap.
         if (navigating) {
             ev.preventDefault();
-            pendingNavHref = a.href;
+            pendingNavHref = href;
             if (!onClick._unlockKick) {
                 onClick._unlockKick = root.setTimeout(function () {
                     onClick._unlockKick = null;
@@ -1065,7 +1086,7 @@
             return;
         }
         ev.preventDefault();
-        swapTo(a.href);
+        swapTo(href);
     }
 
     function onPopState() {

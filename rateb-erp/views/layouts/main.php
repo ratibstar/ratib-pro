@@ -124,11 +124,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (window.__RATEB_NAV_READY__) {
                     return;
                 }
-                if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
                     return;
                 }
-                var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
-                if (!a || !a.href) {
+                var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
+                if (!a) {
                     return;
                 }
                 if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
@@ -137,7 +137,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (a.target && a.target !== '' && a.target !== '_self') {
                     return;
                 }
-                var u = new URL(a.href, location.href);
+                var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+                if (!raw || raw === '#' || String(raw).indexOf('javascript:') === 0) {
+                    return;
+                }
+                var u = new URL(raw, location.href);
                 if (u.origin !== location.origin) {
                     return;
                 }
@@ -541,17 +545,17 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
             <?php if (rateb_nav_can('dashboard.view', 'dashboard')) { ?>
-            <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>" data-rateb-soft-nav="1">
+            <a href="<?php echo rateb_url('admin'); ?>" data-rateb-href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>" data-rateb-soft-nav="1" onclick="return false;">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
             <?php if (rateb_nav_can('mobile_apps.view')) { ?>
-            <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>">
+            <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" data-rateb-href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>" onclick="return false;">
                 <i class="fas fa-mobile-alt"></i><span><?php echo __('mobile_apps_nav'); ?></span>
             </a>
             <?php } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
-            <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>">
+            <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" data-rateb-href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>" onclick="return false;">
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
             </a>
             <?php } ?>
@@ -612,7 +616,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php if (rateb_is_super_admin()) { ?>
             <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
-            <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
+            <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" data-rateb-href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>" onclick="return false;">
                 <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
             </a>
             <?php } ?>
@@ -710,10 +714,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 
   function onSidebarClick(ev) {
     // Soft-nav ONLY for Admin links — never allow browser full navigation (black tab).
-    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
     if (a) {
       try {
-        if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+        if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
           return;
         }
         if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
@@ -722,7 +726,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         if (a.target && a.target !== '' && a.target !== '_self') {
           return;
         }
-        var u = new URL(a.href, location.href);
+        var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+        var u = new URL(raw, location.href);
         if (u.origin !== location.origin || !/\/admin(\/|$)/i.test(u.pathname)) {
           return;
         }
@@ -732,10 +737,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
           return;
         }
-        // Always cancel native navigation (black full reload). Soft-nav document
-        // handler runs in capture before this; only queue when soft-nav not ready yet.
         ev.preventDefault();
-        if (!window.__RATEB_NAV_READY__) {
+        if (window.__RATEB_NAV_READY__ && window.RatebNavInstant && typeof window.RatebNavInstant.navigate === 'function') {
+          // Document capture may already be navigating; call only if not ready path.
+        } else {
           window.__RATEB_PENDING_NAV__ = u.href;
         }
       } catch (eNav) { /* ignore */ }
@@ -1102,23 +1107,8 @@ if (!$ratebLocalAppliance) {
       sessionStorage.removeItem('rateb_sw_reloaded');
       sessionStorage.removeItem('rateb_sw_shell_warm_v46');
     } catch (e1) {}
-    /* One-shot live reload so SW-cached HTML (without early-nav-guard) is replaced. */
-    try {
-      var bustKey = 'rateb_html_bust_' + NEED;
-      if (!sessionStorage.getItem(bustKey)) {
-        sessionStorage.setItem(bustKey, '1');
-        setTimeout(function () {
-          try {
-            var u = new URL(location.href);
-            u.searchParams.set('rateb_live', '1');
-            u.searchParams.set('_rb', NEED);
-            location.replace(u.href);
-          } catch (eGo) {
-            location.reload();
-          }
-        }, 400);
-      }
-    } catch (eBust) {}
+    /* Do NOT location.reload here — that blanked the tab for minutes after F5
+     * while SW negotiate a fresh document (user saw black after refresh / لوحة التحكم). */
   }
   window.__RATEB_ASSET_BUILD__ = NEED;
   // Stale SW: soft update only — never forced reload (startup spin loops).
@@ -1138,29 +1128,8 @@ if (!$ratebLocalAppliance) {
           }
         });
       }).catch(function () {});
-      /* After HTML cache bust SW activates, reload once into fresh network HTML. */
-      var __ratebCcOnce = false;
-      navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (__ratebCcOnce) return;
-        var ck = 'rateb_cc_reload_' + NEED;
-        try {
-          if (sessionStorage.getItem(ck)) return;
-          sessionStorage.setItem(ck, '1');
-        } catch (eCk) { /* ignore */ }
-        __ratebCcOnce = true;
-        try {
-          location.reload();
-        } catch (eRl) { /* ignore */ }
-      });
-      navigator.serviceWorker.addEventListener('message', function (ev) {
-        try {
-          if (!ev || !ev.data || ev.data.type !== 'RATEB_HTML_CACHE_BUST') return;
-          var mk = 'rateb_msg_bust_' + String(ev.data.build || NEED);
-          if (sessionStorage.getItem(mk)) return;
-          sessionStorage.setItem(mk, '1');
-          location.reload();
-        } catch (eMsg) { /* ignore */ }
-      });
+      /* Never auto-reload on controllerchange / cache-bust messages — that caused
+       * the black /admin tab after F5 (document unload while SW fetch hung). */
     }
   } catch (eForce) {}
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });
