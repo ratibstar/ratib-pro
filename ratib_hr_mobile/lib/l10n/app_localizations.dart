@@ -75,6 +75,18 @@ class AppLocalizations {
       'loginEmployeeUnbound': 'لا يوجد موظف مرتبط بهذا الحساب',
       'loginEmployeeAmbiguous': 'أكثر من موظف مرتبط بهذا الحساب',
       'signOut': 'تسجيل الخروج',
+      'homeLoading': 'جاري تحميل لوحة الموظف…',
+      'homeLoadFailed': 'تعذر تحميل الرئيسية',
+      'homeRetry': 'إعادة المحاولة',
+      'homeTodayAttendance': 'حضور اليوم',
+      'homeLeaveBalance': 'رصيد الإجازات',
+      'homeRecentNotifications': 'أحدث الإشعارات',
+      'homeQuickActions': 'إجراءات سريعة',
+      'homeNoAttendanceToday': 'لا يوجد سجل حضور لهذا اليوم',
+      'homeNoLeaveBalances': 'لا توجد أرصدة إجازات',
+      'homeNoNotifications': 'لا توجد إشعارات',
+      'homeEntitled': 'المستحق',
+      'homeUsed': 'المستخدم',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -125,6 +137,18 @@ class AppLocalizations {
       'loginEmployeeUnbound': 'No employee is linked to this account',
       'loginEmployeeAmbiguous': 'Multiple employees are linked to this account',
       'signOut': 'Sign out',
+      'homeLoading': 'Loading employee home…',
+      'homeLoadFailed': 'Could not load home',
+      'homeRetry': 'Retry',
+      'homeTodayAttendance': "Today's attendance",
+      'homeLeaveBalance': 'Leave balance',
+      'homeRecentNotifications': 'Recent notifications',
+      'homeQuickActions': 'Quick actions',
+      'homeNoAttendanceToday': 'No attendance record for today',
+      'homeNoLeaveBalances': 'No leave balances',
+      'homeNoNotifications': 'No notifications',
+      'homeEntitled': 'Entitled',
+      'homeUsed': 'Used',
     },
   };
 
@@ -181,6 +205,18 @@ class AppLocalizations {
   String get loginEmployeeUnbound => _t('loginEmployeeUnbound');
   String get loginEmployeeAmbiguous => _t('loginEmployeeAmbiguous');
   String get signOut => _t('signOut');
+  String get homeLoading => _t('homeLoading');
+  String get homeLoadFailed => _t('homeLoadFailed');
+  String get homeRetry => _t('homeRetry');
+  String get homeTodayAttendance => _t('homeTodayAttendance');
+  String get homeLeaveBalance => _t('homeLeaveBalance');
+  String get homeRecentNotifications => _t('homeRecentNotifications');
+  String get homeQuickActions => _t('homeQuickActions');
+  String get homeNoAttendanceToday => _t('homeNoAttendanceToday');
+  String get homeNoLeaveBalances => _t('homeNoLeaveBalances');
+  String get homeNoNotifications => _t('homeNoNotifications');
+  String get homeEntitled => _t('homeEntitled');
+  String get homeUsed => _t('homeUsed');
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,4 @@
-/// Dependency injection — Phase 1 auth + Phase 2 MePort.
+/// Dependency injection — Phase 1–3 ESS ports.
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
@@ -10,6 +10,9 @@ abstract final class AppLocator {
   static MePort? _me;
   static SecureTokenStore? _tokenStore;
   static ErrorMapper? _errors;
+  static AttendancePort? _attendance;
+  static LeavePort? _leave;
+  static NotificationPort? _notifications;
 
   static Never _notRegistered(String name) {
     throw StateError(
@@ -36,6 +39,16 @@ abstract final class AppLocator {
     _me = me;
   }
 
+  static void registerPhase3({
+    required AttendancePort attendance,
+    required LeavePort leave,
+    required NotificationPort notifications,
+  }) {
+    _attendance = attendance;
+    _leave = leave;
+    _notifications = notifications;
+  }
+
   static AppEnvironment get environment =>
       _environment ?? _notRegistered('environment');
 
@@ -50,9 +63,10 @@ abstract final class AppLocator {
 
   static ErrorMapper get errors => _errors ?? _notRegistered('errors');
 
-  static AttendancePort get attendance => _notRegistered('attendance');
+  static AttendancePort get attendance =>
+      _attendance ?? _notRegistered('attendance');
 
-  static LeavePort get leave => _notRegistered('leave');
+  static LeavePort get leave => _leave ?? _notRegistered('leave');
 
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
@@ -64,7 +78,8 @@ abstract final class AppLocator {
 
   static DocumentsPort get documents => _notRegistered('documents');
 
-  static NotificationPort get notifications => _notRegistered('notifications');
+  static NotificationPort get notifications =>
+      _notifications ?? _notRegistered('notifications');
 
   static ApprovalPort get approvals => _notRegistered('approvals');
 

@@ -29,5 +29,17 @@
   "phase0Subtitle": "Single source of truth: RATIB ERP",
   "language": "Language",
   "arabic": "العربية",
-  "english": "English"
+  "english": "English",
+  "homeLoading": "Loading employee home…",
+  "homeLoadFailed": "Could not load home",
+  "homeRetry": "Retry",
+  "homeTodayAttendance": "Today's attendance",
+  "homeLeaveBalance": "Leave balance",
+  "homeRecentNotifications": "Recent notifications",
+  "homeQuickActions": "Quick actions",
+  "homeNoAttendanceToday": "No attendance record for today",
+  "homeNoLeaveBalances": "No leave balances",
+  "homeNoNotifications": "No notifications",
+  "homeEntitled": "Entitled",
+  "homeUsed": "Used"
 }

@@ -29,5 +29,17 @@
   "phase0Subtitle": "المصدر الوحيد للحقيقة: نظام راتب ERP",
   "language": "اللغة",
   "arabic": "العربية",
-  "english": "English"
+  "english": "English",
+  "homeLoading": "جاري تحميل لوحة الموظف…",
+  "homeLoadFailed": "تعذر تحميل الرئيسية",
+  "homeRetry": "إعادة المحاولة",
+  "homeTodayAttendance": "حضور اليوم",
+  "homeLeaveBalance": "رصيد الإجازات",
+  "homeRecentNotifications": "أحدث الإشعارات",
+  "homeQuickActions": "إجراءات سريعة",
+  "homeNoAttendanceToday": "لا يوجد سجل حضور لهذا اليوم",
+  "homeNoLeaveBalances": "لا توجد أرصدة إجازات",
+  "homeNoNotifications": "لا توجد إشعارات",
+  "homeEntitled": "المستحق",
+  "homeUsed": "المستخدم"
 }

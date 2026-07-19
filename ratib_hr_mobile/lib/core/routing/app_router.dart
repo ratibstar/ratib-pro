@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
+import 'package:ratib_hr_mobile/features/home/home_page.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/login_page.dart';
 import 'package:ratib_hr_mobile/shared/widgets/ess_shell.dart';
@@ -62,9 +63,7 @@ abstract final class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.home,
-                  builder: (context, state) => const Phase0PlaceholderPage(
-                    titleKey: Phase0TitleKey.home,
-                  ),
+                  builder: (context, state) => const HomePage(),
                 ),
               ],
             ),
