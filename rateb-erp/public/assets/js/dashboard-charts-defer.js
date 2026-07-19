@@ -1,8 +1,11 @@
 /**
  * Hydrate admin dashboard charts after lite HTML paint.
+ * Also re-runs on soft-nav (rateb:nav:afterEnter) — script tags in swapped HTML do not re-execute.
  */
 (function () {
     'use strict';
+
+    var bootGen = 0;
 
     function setJsonAttr(el, name, value) {
         if (!el) {
@@ -62,52 +65,115 @@
         setJsonAttr(loginEl, 'data-failed', nums(login, 'failed_total'));
     }
 
-    function boot() {
-        var root = document.querySelector('[data-cm-dash="v5c"]');
-        var url = root && root.getAttribute('data-charts-url');
-        if (!url) {
-            return;
-        }
+    function paintCharts() {
         try {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                return;
-            }
-            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-            if (badge && badge.classList.contains('is-offline')) {
-                return;
-            }
-        } catch (eOff) { /* continue */ }
-        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        // Offline/soft-offline: never hold a 20s hung charts fetch.
-        var timer = setTimeout(function () {
-            if (ctrl) {
-                try { ctrl.abort(); } catch (e) { /* ignore */ }
-            }
-        }, 1500);
-        fetch(url, {
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json' },
-            signal: ctrl ? ctrl.signal : undefined
-        }).then(function (res) {
-            return res.json();
-        }).then(function (data) {
-            if (!data || !data.ok) {
-                return;
-            }
-            applyCharts(data.charts || {});
             if (typeof window.ratebChartsBoot === 'function') {
                 window.ratebChartsBoot();
             } else if (typeof window.ratebChartInitPane === 'function') {
                 window.ratebChartInitPane(document);
             }
-        }).catch(function () { /* ignore */ }).finally(function () {
-            clearTimeout(timer);
+        } catch (ePaint) { /* ignore */ }
+    }
+
+    function loadChartLibs(rootEl) {
+        return new Promise(function (resolve) {
+            if (typeof window.Chart !== 'undefined' && typeof window.ratebChartsBoot === 'function') {
+                resolve();
+                return;
+            }
+            var chartjs = rootEl.getAttribute('data-rateb-chartjs') || '';
+            var charts = rootEl.getAttribute('data-rateb-charts') || '';
+            if (!chartjs || !charts) {
+                resolve();
+                return;
+            }
+            var load = function (src) {
+                return new Promise(function (res) {
+                    if (!src) {
+                        res();
+                        return;
+                    }
+                    var exists = document.querySelector('script[src="' + src.replace(/"/g, '') + '"]');
+                    if (exists && typeof window.Chart !== 'undefined' && src.indexOf('chart') !== -1) {
+                        res();
+                        return;
+                    }
+                    if (typeof window.ratebChartsBoot === 'function' && src.indexOf('charts.js') !== -1) {
+                        res();
+                        return;
+                    }
+                    var el = document.createElement('script');
+                    el.src = src;
+                    el.async = true;
+                    el.onload = el.onerror = function () { res(); };
+                    (document.body || document.documentElement).appendChild(el);
+                });
+            };
+            load(chartjs).then(function () { return load(charts); }).then(resolve);
         });
     }
+
+    function boot() {
+        var root = document.querySelector('[data-cm-dash="v5c"]');
+        if (!root || !document.querySelector('canvas[id^="chart-"]')) {
+            return;
+        }
+        var myGen = ++bootGen;
+        var url = root.getAttribute('data-charts-url');
+
+        loadChartLibs(root).then(function () {
+            if (myGen !== bootGen) {
+                return;
+            }
+            // Paint whatever labels are already on the canvas (lite HTML), then refresh from API.
+            paintCharts();
+            if (!url) {
+                return;
+            }
+            try {
+                if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    return;
+                }
+                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+                if (badge && badge.classList.contains('is-offline')) {
+                    return;
+                }
+            } catch (eOff) { /* continue */ }
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timer = setTimeout(function () {
+                if (ctrl) {
+                    try { ctrl.abort(); } catch (e) { /* ignore */ }
+                }
+            }, 2500);
+            fetch(url, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+                signal: ctrl ? ctrl.signal : undefined
+            }).then(function (res) {
+                return res.json();
+            }).then(function (data) {
+                if (myGen !== bootGen) {
+                    return;
+                }
+                if (!data || !data.ok) {
+                    return;
+                }
+                applyCharts(data.charts || {});
+                paintCharts();
+            }).catch(function () { /* ignore */ }).finally(function () {
+                clearTimeout(timer);
+            });
+        });
+    }
+
+    window.ratebDashboardChartsBoot = boot;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot, { once: true });
     } else {
         boot();
     }
+    document.addEventListener('rateb:nav:afterEnter', function () {
+        setTimeout(boot, 0);
+    });
 })();

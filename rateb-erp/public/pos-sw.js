@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-dashboard-passthrough-v101';
+var SW_BUILD_ID = '20260719-dash-fast-paint-v102';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1439,16 +1439,67 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return null;
     });
     if (hardReload) {
-        // Ctrl+F5 must hit network — cache-first here re-served weeks-old HTML without
-        // early-nav-guard and locked users into black لوحة التحكم navigations.
-        return networkP.then(function (response) {
-            if (response) {
-                return response;
+        // Paint cache within 700ms — never wait on a hung network (was ~40s black after F5).
+        return new Promise(function (resolve) {
+            var settled = false;
+            function finish(res) {
+                if (settled || !res) {
+                    return false;
+                }
+                settled = true;
+                resolve(res);
+                return true;
             }
-            return cacheP.then(function (hit) {
+            cacheP.then(function (hit) {
                 var served = serveCachedFast(hit, false);
-                return served || uncachedAdminBrowseResponse(url);
+                if (served && finish(served)) {
+                    if (event && typeof event.waitUntil === 'function') {
+                        event.waitUntil(networkP.then(function () { return null; }));
+                    }
+                }
             });
+            networkP.then(function (response) {
+                if (response) {
+                    finish(response);
+                    return;
+                }
+                if (settled) {
+                    return;
+                }
+                cacheP.then(function (hit) {
+                    if (settled) {
+                        return;
+                    }
+                    finish(serveCachedFast(hit, false) || uncachedAdminBrowseResponse(url));
+                });
+            });
+            setTimeout(function () {
+                if (settled) {
+                    return;
+                }
+                cacheP.then(function (hit) {
+                    if (settled) {
+                        return;
+                    }
+                    var bare = '';
+                    try {
+                        bare = String((url && url.pathname) || '').replace(/\/+$/, '');
+                    } catch (eB) { /* ignore */ }
+                    var dashP = /\/admin$/i.test(bare)
+                        ? matchCachedAdminDashboard(url).catch(function () { return null; })
+                        : Promise.resolve(null);
+                    dashP.then(function (dash) {
+                        if (settled) {
+                            return;
+                        }
+                        finish(
+                            serveCachedFast(hit, false)
+                            || serveCachedFast(dash, false)
+                            || uncachedAdminBrowseResponse(url)
+                        );
+                    });
+                });
+            }, 700);
         });
     }
 
