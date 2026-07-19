@@ -1,8 +1,7 @@
-/// Network layer — Phase 0 reserved.
-///
-/// Phase 1+: thin HTTP adapters to RATIB ERP only.
-/// Do not invent business validation here.
+/// Deprecated stub — use [ErpHttpClient] contract.
 library;
 
-/// Marker that Phase 0 has no live ERP connection.
+export 'package:ratib_hr_mobile/core/contracts/erp_http_client.dart';
+
+@Deprecated('Use ErpHttpClient contract')
 const bool kNetworkAdaptersEnabled = false;
