@@ -1,6 +1,6 @@
 /// LeavePort → `GET /api/v1/hr/leave/balances` (thin ERP adapter).
 ///
-/// Phase 3: [balances] only. Other methods deferred.
+/// Identity is server-resolved — never send employee_id.
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/error_mapper.dart';
@@ -24,11 +24,10 @@ final class ErpLeaveAdapter implements LeavePort {
   @override
   Future<List<Map<String, Object?>>> balances() async {
     try {
-      final ctx = EmployeeContext.requireResolved();
+      EmployeeContext.requireResolved();
       final body = await _http.get(
         balancesPath,
         query: {
-          'employee_id': ctx.employeeId,
           'year': DateTime.now().year.toString(),
         },
       );

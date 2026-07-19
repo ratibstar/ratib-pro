@@ -1,6 +1,6 @@
 /// AttendancePort → `GET /api/v1/hr/attendance/today` (thin ERP adapter).
 ///
-/// Phase 3: [today] only. Other methods deferred.
+/// Identity is server-resolved — never send employee_id.
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/attendance_port.dart';
@@ -24,11 +24,10 @@ final class ErpAttendanceAdapter implements AttendancePort {
   @override
   Future<Map<String, Object?>> today() async {
     try {
-      final ctx = EmployeeContext.requireResolved();
+      EmployeeContext.requireResolved();
       final body = await _http.get(
         todayPath,
         query: {
-          'employee_id': ctx.employeeId,
           'date': _calendarDateIso(),
         },
       );

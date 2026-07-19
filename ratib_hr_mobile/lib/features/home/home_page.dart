@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/home/home_dtos.dart';
@@ -43,7 +44,18 @@ class _HomePageState extends State<HomePage> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: DsAppBar(title: l10n.navHome),
+      appBar: DsAppBar(
+        title: l10n.navHome,
+        actions: [
+          IconButton(
+            tooltip: l10n.signOut,
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AppLocator.signOut();
+            },
+          ),
+        ],
+      ),
       body: switch (_vm.state) {
         HomeLoadState.idle || HomeLoadState.loading => DsLoadingState(
             message: l10n.homeLoading,

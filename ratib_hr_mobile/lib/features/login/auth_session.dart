@@ -77,6 +77,21 @@ final class AuthSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Phase 3.2 — HTTP 401: drop token + local ESS session (router redirects to login).
+  void handleUnauthorized() {
+    // Token usually cleared by Dio interceptor; clear again idempotently.
+    _authPort.signOut().then((_) {
+      EmployeeContext.clear();
+      _clearMeCache();
+      status = AuthStatus.signedOut;
+      lastError = const AppFailure(
+        code: 'unauthorized',
+        message: 'Session expired',
+      );
+      notifyListeners();
+    });
+  }
+
   Future<void> _resolveEmployeeOrThrow() async {
     _clearMeCache();
     EmployeeContext.clear();

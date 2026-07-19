@@ -1,9 +1,12 @@
 /// Dio transport to RATIB ERP. No domain rules.
+///
+/// Global 401: clear token + notify session (never keep stale auth).
 library;
 
 import 'package:dio/dio.dart';
 import 'package:ratib_hr_mobile/core/contracts/erp_http_client.dart';
 import 'package:ratib_hr_mobile/core/contracts/secure_token_store.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/env/app_environment.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 
@@ -30,6 +33,13 @@ final class DioErpHttpClient implements ErpHttpClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
+        },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            await _tokenStore.clearToken();
+            AppLocator.notifyUnauthorized();
+          }
+          handler.next(error);
         },
       ),
     );

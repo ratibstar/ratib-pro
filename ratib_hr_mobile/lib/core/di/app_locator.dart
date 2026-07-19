@@ -1,4 +1,4 @@
-/// Dependency injection — Phase 1–3 ESS ports.
+/// Dependency injection — Phase 1–3 ESS ports + session hooks.
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
@@ -13,6 +13,8 @@ abstract final class AppLocator {
   static AttendancePort? _attendance;
   static LeavePort? _leave;
   static NotificationPort? _notifications;
+  static void Function()? _unauthorizedHandler;
+  static Future<void> Function()? _signOutHandler;
 
   static Never _notRegistered(String name) {
     throw StateError(
@@ -47,6 +49,26 @@ abstract final class AppLocator {
     _attendance = attendance;
     _leave = leave;
     _notifications = notifications;
+  }
+
+  /// Phase 3.2 — bind AuthSession without circular imports.
+  static void bindSessionHandlers({
+    required void Function() onUnauthorized,
+    required Future<void> Function() onSignOut,
+  }) {
+    _unauthorizedHandler = onUnauthorized;
+    _signOutHandler = onSignOut;
+  }
+
+  static void notifyUnauthorized() {
+    _unauthorizedHandler?.call();
+  }
+
+  static Future<void> signOut() async {
+    final fn = _signOutHandler;
+    if (fn != null) {
+      await fn();
+    }
   }
 
   static AppEnvironment get environment =>
