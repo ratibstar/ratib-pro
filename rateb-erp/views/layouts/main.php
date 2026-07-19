@@ -545,9 +545,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
             <?php if (rateb_nav_can('dashboard.view', 'dashboard')) { ?>
-            <a href="<?php echo rateb_url('admin'); ?>" data-rateb-href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>" data-rateb-soft-nav="1" onclick="return false;">
+            <button type="button"
+                class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>"
+                data-rateb-href="<?php echo rateb_url('admin'); ?>"
+                data-rateb-soft-nav="1"
+                data-rateb-dashboard-nav="1">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
-            </a>
+            </button>
             <?php } ?>
             <?php if (rateb_nav_can('mobile_apps.view')) { ?>
             <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" data-rateb-href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>" onclick="return false;">
@@ -713,8 +717,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   }
 
   function onSidebarClick(ev) {
-    // Soft-nav ONLY for Admin links — never allow browser full navigation (black tab).
-    var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
+    // Soft-nav ONLY for Admin links / dashboard button — never browser full navigation.
+    var a = ev.target && ev.target.closest
+      ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
+      : null;
     if (a) {
       try {
         if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
@@ -727,6 +733,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           return;
         }
         var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+        if (!raw) {
+          return;
+        }
         var u = new URL(raw, location.href);
         if (u.origin !== location.origin || !/\/admin(\/|$)/i.test(u.pathname)) {
           return;
@@ -738,10 +747,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           return;
         }
         ev.preventDefault();
-        if (window.__RATEB_NAV_READY__ && window.RatebNavInstant && typeof window.RatebNavInstant.navigate === 'function') {
-          // Document capture may already be navigating; call only if not ready path.
-        } else {
+        if (!window.__RATEB_NAV_READY__) {
           window.__RATEB_PENDING_NAV__ = u.href;
+        } else if (a.getAttribute('data-rateb-dashboard-nav') === '1'
+            && window.RatebNavInstant && typeof window.RatebNavInstant.navigate === 'function') {
+          // Button: document capture may miss; navigate explicitly.
+          window.RatebNavInstant.navigate(u.href);
         }
       } catch (eNav) { /* ignore */ }
       return;

@@ -200,12 +200,18 @@
     }
 
     function hardNavigate(href) {
+        // Intentionally disabled — location.assign blanks the tab for minutes.
         try {
-            root.location.assign(href);
-        } catch (eAssign) {
-            try {
-                root.location.href = href;
-            } catch (eHref) { /* ignore */ }
+            console.warn('[RATEB NAV] hardNavigate blocked', href);
+        } catch (eHn) { /* ignore */ }
+    }
+
+    function isBareAdminHref(href) {
+        try {
+            var p = new URL(href, root.location.href).pathname.replace(/\/+$/, '');
+            return /\/admin$/i.test(p);
+        } catch (eBa) {
+            return false;
         }
     }
 
@@ -710,10 +716,13 @@
     }
 
     function fetchNetworkHtml(href) {
+        // Dashboard: short timeout — SW used to stall soft-nav for minutes after F5.
+        var timeoutMs = isBareAdminHref(href) ? 900 : 2000;
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
+            cache: 'no-store',
             headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
-        }, 2000);
+        }, timeoutMs);
         var packed = raw.then(function (res) {
             if (!res || !res.ok) {
                 throw new Error('nav_fetch_failed');
@@ -751,7 +760,7 @@
             return null;
         });
 
-        var ceilingMs = isUiOffline() ? 350 : 2500;
+        var ceilingMs = isUiOffline() ? 350 : (isBareAdminHref(href) ? 1000 : 2500);
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = root.setTimeout(function () {
@@ -892,7 +901,7 @@
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
-        var unlockMs = isUiOffline() ? 400 : 2800;
+        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 1200 : 2800);
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
@@ -1065,12 +1074,41 @@
     }
 
     function onClick(ev) {
-        var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
-        if (!shouldIntercept(a, ev)) {
+        var a = ev.target && ev.target.closest
+            ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
+            : null;
+        if (!a) {
+            return;
+        }
+        // Buttons never full-navigate; still soft-swap.
+        var isBtn = a.tagName === 'BUTTON' || a.getAttribute('data-rateb-dashboard-nav') === '1';
+        if (!isBtn && !shouldIntercept(a, ev)) {
+            return;
+        }
+        if (isBtn) {
+            if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                return;
+            }
+            var btnHref = navHrefOf(a);
+            if (!btnHref) {
+                return;
+            }
+            try {
+                var bu = new URL(btnHref, root.location.href);
+                if (bu.pathname.replace(/\/+$/, '') === root.location.pathname.replace(/\/+$/, '')
+                    && bu.search === root.location.search) {
+                    return;
+                }
+            } catch (eSame) { /* continue */ }
+            ev.preventDefault();
+            if (navigating) {
+                pendingNavHref = btnHref;
+                return;
+            }
+            swapTo(btnHref);
             return;
         }
         var href = navHrefOf(a);
-        // If a prior soft-nav is still in flight, queue latest intent (never freeze sidebar).
         if (navigating) {
             ev.preventDefault();
             pendingNavHref = href;

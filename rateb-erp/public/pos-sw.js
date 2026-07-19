@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-no-auto-reload-v100';
+var SW_BUILD_ID = '20260719-dashboard-passthrough-v101';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3657,8 +3657,9 @@ self.addEventListener('fetch', function (event) {
         }
     }
 
-    // Soft-nav content-swap / prefetch HTML: same cache-first as navigate (لوحة التحكم).
-    // Soft-online used to fall through to network passthrough → multi-second cold fetch.
+    // Soft-nav content-swap / prefetch HTML.
+    // Bare /admin (لوحة التحكم): NEVER respondWith — SW Cache API stalls with many
+    // tabs caused multi-minute black navigations after F5. Let the page fetch hit network.
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
         && event.request.mode !== 'navigate'
@@ -3672,23 +3673,30 @@ self.addEventListener('fetch', function (event) {
                 + String(event.request.headers.get('X-Rateb-Prefetch') || '');
         } catch (eSwapHdr) { /* ignore */ }
         if (swapFlag.indexOf('1') !== -1) {
+            var bareSwap = String(url.pathname || '').replace(/\/+$/, '');
+            if (/\/admin$/i.test(bareSwap)) {
+                return; // passthrough — page soft-nav talks to origin directly
+            }
             respondWithDocumentAndReleaseWarmGate(
                 event,
-                softNavAdminHtml(event.request, url, event).catch(function () {
-                    // Never reject respondWith — that aborts soft-nav into browser full navigation.
-                    return fetchNavigateNetwork(event.request, 2500).catch(function () {
-                        return matchSoftOnlineExactCache(event.request, url).then(function (hit) {
-                            if (hit) {
-                                return hit;
-                            }
-                            return Promise.reject(new Error('soft-nav-final-miss'));
+                Promise.race([
+                    softNavAdminHtml(event.request, url, event).catch(function () {
+                        return fetchNavigateNetwork(event.request, 800).catch(function () {
+                            return null;
                         });
-                    });
-                }).catch(function () {
-                    // Last resort: opaque miss so client stays on current page (no black tab).
-                    return new Response('', {
+                    }),
+                    new Promise(function (resolve) {
+                        setTimeout(function () {
+                            resolve(new Response('', {
+                                status: 504,
+                                statusText: 'soft-nav-timeout',
+                                headers: { 'Content-Type': 'text/plain', 'X-Rateb-Soft-Nav-Miss': '1' }
+                            }));
+                        }, 700);
+                    })
+                ]).then(function (res) {
+                    return res || new Response('', {
                         status: 504,
-                        statusText: 'soft-nav-miss',
                         headers: { 'Content-Type': 'text/plain', 'X-Rateb-Soft-Nav-Miss': '1' }
                     });
                 })
