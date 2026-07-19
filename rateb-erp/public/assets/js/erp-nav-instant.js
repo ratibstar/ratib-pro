@@ -669,54 +669,15 @@
             if (fastHit) {
                 return fastHit;
             }
-            if (offlineFast) {
-                // One ignoreSearch on pathname only — skip coexist fan-out offline.
-                return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
-                    return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
-                }).catch(function () { return null; });
+            // Online: exact keys only — fan-out across coexist caches stalled لوحة التحكم
+            // while network/SW already had the page (F5 felt instant, soft-nav waited).
+            if (!offlineFast) {
+                return null;
             }
-            return openOpsCaches().then(function (cachesList) {
-                if (!cachesList.length) {
-                    return null;
-                }
-                var attempts = [];
-                cachesList.forEach(function (cache) {
-                    keys.forEach(function (k) {
-                        attempts.push(
-                            cache.match(k).then(function (hit) {
-                                if (hit) {
-                                    return hit;
-                                }
-                                return cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                            }).catch(function () { return null; })
-                        );
-                    });
-                });
-                return new Promise(function (resolve) {
-                    var pending = attempts.length;
-                    if (!pending) {
-                        resolve(null);
-                        return;
-                    }
-                    var done = false;
-                    attempts.forEach(function (p) {
-                        p.then(function (hit) {
-                            if (done) {
-                                return;
-                            }
-                            if (hit) {
-                                done = true;
-                                resolve(hit);
-                                return;
-                            }
-                            pending -= 1;
-                            if (pending === 0) {
-                                resolve(null);
-                            }
-                        });
-                    });
-                });
-            });
+            // One ignoreSearch on pathname only — skip coexist fan-out offline.
+            return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+                return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
+            }).catch(function () { return null; });
         }).catch(function () {
             return null;
         });
@@ -880,12 +841,20 @@
     }
 
     function showOfflineMissToast() {
+        showNavToast('الصفحة غير محفوظة أوفلاين — افتحها مرة وأنت متصل.', true);
+    }
+
+    function showSoftNavMissToast(href) {
+        showNavToast('تعذر فتح الصفحة فوراً — بقيت على الشاشة الحالية. اضغط مرة أخرى.', false);
+        void href;
+    }
+
+    function showNavToast(msg, isErr) {
         try {
             var t = document.getElementById('rateb-offline-nav-toast');
             if (!t && document.body) {
                 t = document.createElement('div');
                 t.id = 'rateb-offline-nav-toast';
-                t.className = 'is-err';
                 t.setAttribute('role', 'status');
                 t.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
                     + 'background:#7f1d1d;color:#fecaca;padding:.65rem 1rem;border-radius:8px;'
@@ -894,10 +863,18 @@
                 document.body.appendChild(t);
             }
             if (t) {
-                t.textContent = 'الصفحة غير محفوظة أوفلاين — افتحها مرة وأنت متصل.';
+                t.className = isErr ? 'is-err' : 'is-warn';
+                if (!isErr) {
+                    t.style.background = '#1e3a5f';
+                    t.style.color = '#e8eaed';
+                } else {
+                    t.style.background = '#7f1d1d';
+                    t.style.color = '#fecaca';
+                }
+                t.textContent = msg;
                 t.hidden = false;
-                clearTimeout(showOfflineMissToast._h);
-                showOfflineMissToast._h = root.setTimeout(function () {
+                clearTimeout(showNavToast._h);
+                showNavToast._h = root.setTimeout(function () {
                     try { t.hidden = true; } catch (eH) { /* ignore */ }
                 }, 3500);
             }
@@ -992,12 +969,10 @@
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
-            // Offline: never hardNavigate (full reload is multi-second). Stay put + toast.
-            if (isUiOffline()) {
-                showOfflineMissToast();
-                return false;
-            }
-            hardNavigate(href);
+            // NEVER hardNavigate on soft-nav miss — location.assign blanks the tab
+            // (black #0b1120 body) and can hang minutes while F5 from SW cache is instant.
+            // Stay on the current shell; user keeps sidebar and can retry.
+            showSoftNavMissToast(href);
             return false;
         }).then(function (ok) {
             root.clearTimeout(unlockTimer);
