@@ -602,16 +602,19 @@ if (!function_exists('rateb_is_production')) {
 
 if (!function_exists('rateb_hr_mobile_dev_config')) {
     /**
-     * HR Mobile console config (env / feature flag only). Never used for HR business rules.
+     * HR Mobile console config (system setting + optional URL env). Never used for HR business rules.
      *
      * @return array{flag_enabled:bool,enabled:bool,web_url:string,api_base:string,build:string,environment:string,app_debug:bool}
      */
     function rateb_hr_mobile_dev_config(): array
     {
         static $cached = null;
-        if ($cached !== null) {
+        static $bust = 0;
+        $token = $GLOBALS['__rateb_hr_mobile_cfg_bust'] ?? 0;
+        if ($cached !== null && $bust === $token) {
             return $cached;
         }
+        $bust = $token;
         $file = RATEB_ROOT . '/config/hr-mobile-dev.php';
         if (!is_file($file)) {
             $cached = [
@@ -640,11 +643,56 @@ if (!function_exists('rateb_hr_mobile_dev_config')) {
     }
 }
 
+if (!function_exists('rateb_hr_mobile_dev_config_clear_cache')) {
+    function rateb_hr_mobile_dev_config_clear_cache(): void
+    {
+        $GLOBALS['__rateb_hr_mobile_cfg_bust'] = (int) ($GLOBALS['__rateb_hr_mobile_cfg_bust'] ?? 0) + 1;
+        $GLOBALS['__rateb_hr_mobile_flag_bust'] = (int) ($GLOBALS['__rateb_hr_mobile_flag_bust'] ?? 0) + 1;
+    }
+}
+
 if (!function_exists('rateb_hr_mobile_console_flag_enabled')) {
-    /** Feature flag HR_MOBILE_CONSOLE_ENABLED (default false). */
+    /**
+     * HR Mobile Console feature flag from rateb_system_settings (default false).
+     * Key: hr_mobile_console_enabled. Primary path is DB — not dotenv allowlist.
+     */
     function rateb_hr_mobile_console_flag_enabled(): bool
     {
-        return (bool) (rateb_hr_mobile_dev_config()['flag_enabled'] ?? false);
+        static $cached = null;
+        static $bust = 0;
+        $token = $GLOBALS['__rateb_hr_mobile_flag_bust'] ?? 0;
+        if ($cached !== null && $bust === $token) {
+            return $cached;
+        }
+        $bust = $token;
+
+        $raw = null;
+        try {
+            if (class_exists(\Rateb\App\Models\SystemSetting::class)) {
+                $raw = (new \Rateb\App\Models\SystemSetting())->get('hr_mobile_console_enabled');
+            }
+        } catch (\Throwable $e) {
+            $raw = null;
+        }
+
+        if ($raw !== null && $raw !== '') {
+            $normalized = strtolower(trim((string) $raw));
+            $cached = in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+            return $cached;
+        }
+
+        // Legacy: OS/FPM env only when DB row is missing (pre-migration).
+        $legacy = getenv('HR_MOBILE_CONSOLE_ENABLED');
+        if ($legacy === false || $legacy === '') {
+            $legacy = getenv('RATEB_HR_MOBILE_CONSOLE_ENABLED');
+        }
+        if ($legacy !== false && $legacy !== '') {
+            $cached = (bool) filter_var((string) $legacy, FILTER_VALIDATE_BOOLEAN);
+            return $cached;
+        }
+
+        $cached = false;
+        return $cached;
     }
 }
 

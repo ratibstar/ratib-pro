@@ -3051,6 +3051,7 @@ final class SettingsController extends Controller
         $fromDomain = \Rateb\App\Helpers\Str::emailDomain((string) ($mailCfg['from_email'] ?? 'info@rateb.sa'));
         $mailDomain = $fromDomain !== '' ? $fromDomain : 'rateb.sa';
         $user = \Rateb\App\Core\Auth::user();
+        $hrFlagRaw = $model->get('hr_mobile_console_enabled', '0');
         $this->view('admin/settings/index', [
             'title' => __('settings'),
             'items' => $model->all(100, 0),
@@ -3064,6 +3065,7 @@ final class SettingsController extends Controller
             'mailDnsDomain' => $mailDomain,
             'mailDnsUrl' => rateb_url('admin/api/mail-dns-check') . '?domain=' . rawurlencode($mailDomain),
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
+            'hrMobileConsoleEnabled' => in_array(strtolower(trim((string) ($hrFlagRaw ?? '0'))), ['1', 'true', 'yes', 'on'], true),
         ], 'main');
     }
 
@@ -3091,10 +3093,11 @@ final class SettingsController extends Controller
         $keys = $_POST['setting_key'] ?? [];
         $values = $_POST['setting_value'] ?? [];
         $mailKeys = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'];
+        $featureKeys = ['hr_mobile_console_enabled'];
         if (is_array($keys)) {
             foreach ($keys as $i => $key) {
                 $key = trim((string) $key);
-                if ($key === '' || in_array($key, $mailKeys, true)) {
+                if ($key === '' || in_array($key, $mailKeys, true) || in_array($key, $featureKeys, true)) {
                     continue;
                 }
                 $existing = $model->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k', ['k' => $key]);
@@ -3107,6 +3110,35 @@ final class SettingsController extends Controller
             }
         }
         SessionManager::flash('success', __('save') . ' OK');
+        Response::redirect(rateb_url('admin/settings'));
+    }
+
+    public function saveFeatures(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/settings'));
+        }
+        $model = new \Rateb\App\Models\SystemSetting();
+        $enabled = isset($_POST['hr_mobile_console_enabled'])
+            && (string) $_POST['hr_mobile_console_enabled'] === '1';
+        $val = $enabled ? '1' : '0';
+        $row = $model->queryOne(
+            'SELECT id FROM rateb_system_settings WHERE setting_key = :k LIMIT 1',
+            ['k' => 'hr_mobile_console_enabled']
+        );
+        if ($row) {
+            $model->update((int) $row['id'], ['setting_value' => $val]);
+        } else {
+            $model->create([
+                'setting_key' => 'hr_mobile_console_enabled',
+                'setting_value' => $val,
+                'setting_group' => 'features',
+            ]);
+        }
+        if (function_exists('rateb_hr_mobile_dev_config_clear_cache')) {
+            rateb_hr_mobile_dev_config_clear_cache();
+        }
+        SessionManager::flash('success', __('settings_features_saved'));
         Response::redirect(rateb_url('admin/settings'));
     }
 

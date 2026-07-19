@@ -1,5 +1,6 @@
 <?php
 $mailKeys = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'];
+$featureKeys = ['hr_mobile_console_enabled'];
 Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'mailCfg' => $mailCfg ?? [],
     'mailPassSet' => !empty($mailPassSet),
@@ -13,13 +14,20 @@ Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'testEmailDefault' => $testEmailDefault ?? 'info@rateb.sa',
 ]); ?>
 <script src="<?php echo rateb_asset('js/settings-mail-dns.js'); ?>" defer></script>
+<?php
+Rateb\App\Core\View::partial('admin/settings/features-card', [
+    'hrMobileConsoleEnabled' => !empty($hrMobileConsoleEnabled),
+    'csrf' => $csrf ?? '',
+]);
+?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('settings'); ?> — <?php echo __('all'); ?></div>
     <div class="rateb-card-body">
         <form method="post" action="<?php echo rateb_url('admin/settings'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php foreach ($items ?? [] as $item) {
-                if (in_array((string) ($item['setting_key'] ?? ''), $mailKeys, true)) {
+                $sk = (string) ($item['setting_key'] ?? '');
+                if (in_array($sk, $mailKeys, true) || in_array($sk, $featureKeys, true)) {
                     continue;
                 } ?>
             <div class="row g-2 mb-2 align-items-center">

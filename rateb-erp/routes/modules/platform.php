@@ -194,6 +194,7 @@ $router->get('/admin/api/mail-dns-check', [SettingsController::class, 'mailDnsCh
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/save-mail', [SettingsController::class, 'saveMail'], rateb_admin_mw('settings.manage'));
+$router->post('/admin/settings/save-features', [SettingsController::class, 'saveFeatures'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings/test-mail', [SettingsController::class, 'testMail'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/tools/fix-arabic', [SettingsController::class, 'fixArabic'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_platform_oversight_mw('reports.view'));
