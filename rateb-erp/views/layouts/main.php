@@ -246,27 +246,31 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           var u = new URL(url, location.href);
           keys.push(u.href, u.origin + u.pathname);
         } catch (e1) {}
-        return caches.keys().then(function (names) {
-          var chain = Promise.resolve(null);
-          (names || []).forEach(function (name) {
-            if (!/^rateb-/i.test(String(name || ''))) return;
-            chain = chain.then(function (hit) {
-              if (hit) return hit;
-              return caches.open(name).then(function (c) {
-                var inner = Promise.resolve(null);
-                keys.forEach(function (k) {
-                  inner = inner.then(function (h) {
-                    return h || c.match(k).then(function (m) {
-                      return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                    });
+        // Fixed buckets only — caches.keys() + every rateb-* name stalled every offline click.
+        var names = [
+          'rateb-erp-ops-pages-v34',
+          'rateb-erp-coexist-v34',
+          'rateb-pos-assets-v8',
+          'rateb-pos-shell-v8'
+        ];
+        var chain = Promise.resolve(null);
+        names.forEach(function (name) {
+          chain = chain.then(function (hit) {
+            if (hit) return hit;
+            return caches.open(name).then(function (c) {
+              var inner = Promise.resolve(null);
+              keys.forEach(function (k) {
+                inner = inner.then(function (h) {
+                  return h || c.match(k).then(function (m) {
+                    return m || c.match(k, { ignoreSearch: true }).catch(function () { return null; });
                   });
                 });
-                return inner;
               });
-            });
+              return inner;
+            }).catch(function () { return null; });
           });
-          return chain;
-        }).catch(function () { return null; });
+        });
+        return chain.catch(function () { return null; });
       }
       window.__RATEB_MATCH_ANY_CACHE__ = matchAnyCache;
       function rewriteCssUrls(css, cssHref) {
@@ -306,21 +310,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         });
       }
       window.__RATEB_RESCUE_STYLES__ = rescueStyles;
-      /* Head: claim only when offline — never register here (single register owns boot). */
-      if ('serviceWorker' in navigator) {
-        try {
-          var scope = location.origin + publicBase();
-          if (navigator.onLine === false) {
-            navigator.serviceWorker.getRegistration(scope).then(function (reg) {
-              if (!reg) return;
-              try {
-                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                if (reg.active) reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
-              } catch (eClaim) {}
-            }).catch(function () {});
-          }
-        } catch (e3) {}
-      }
+      /* Head: never SKIP_WAITING/CLIENTS_CLAIM on offline paint — activates waiting SW mid-click. */
       document.addEventListener('click', function (ev) {
         try {
           // Only help when SW is missing — never hijack edit/create (broke table buttons).
@@ -437,11 +427,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           link.rel = 'stylesheet';
         };
         document.head.appendChild(link);
+        // Offline: do not wait 3s for onload (hanging preload stalls first paint).
+        var swapMs = 3000;
+        try { if (navigator.onLine === false) swapMs = 0; } catch (eOff) { swapMs = 0; }
         setTimeout(function () {
           if (link.rel === 'preload') {
             link.rel = 'stylesheet';
           }
-        }, 3000);
+        }, swapMs);
       }
       swapIn(bs === 'light' ? themeLight : themeDark, 'rateb-theme-css');
       sheets.forEach(function (href) { swapIn(href); });
@@ -715,6 +708,30 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <span class="rateb-connection-indicator__dot" aria-hidden="true"></span>
                     <span class="rateb-connection-indicator__label"><?php echo Rateb\App\Core\View::escape(__('connection_online')); ?></span>
                 </span>
+                <script>
+                (function () {
+                  /* Sync badge immediately when browser is offline (cached HTML often says متصل). */
+                  function syncBadge() {
+                    try {
+                      var node = document.getElementById('rateb-connection-indicator');
+                      if (!node) return;
+                      var offline = navigator.onLine === false;
+                      var labelOn = node.getAttribute('data-label-online') || 'متصل';
+                      var labelOff = node.getAttribute('data-label-offline') || 'غير متصل';
+                      var label = offline ? labelOff : labelOn;
+                      node.classList.toggle('is-online', !offline);
+                      node.classList.toggle('is-offline', offline);
+                      node.setAttribute('title', label);
+                      node.setAttribute('aria-label', label);
+                      var text = node.querySelector('.rateb-connection-indicator__label');
+                      if (text) text.textContent = label;
+                    } catch (e) {}
+                  }
+                  syncBadge();
+                  window.addEventListener('offline', syncBadge);
+                  window.addEventListener('online', syncBadge);
+                })();
+                </script>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                     <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
@@ -1033,10 +1050,11 @@ if (!$ratebLocalAppliance) {
     function doRegister() {
       try {
         if (navigator.onLine === false) {
+          // Offline: keep current controller — do not SKIP_WAITING (waiting update freezes UI).
           var getReg = scope
             ? navigator.serviceWorker.getRegistration(scope)
             : navigator.serviceWorker.getRegistration();
-          return getReg.then(claim).catch(function () { return null; });
+          return getReg.catch(function () { return null; });
         }
       } catch (eOff) { /* continue */ }
       return navigator.serviceWorker.register(String(swUrl), scope

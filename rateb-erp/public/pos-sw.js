@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-block-offline-hard-refresh-v92';
+var SW_BUILD_ID = '20260719-offline-click-failfast-v93';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1316,12 +1316,20 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return response;
     }
 
-    // True offline: instant exact cache only (no deep scans). Miss → clear uncached page.
+    // True offline: instant exact cache only (no deep scans).
+    // Bare /admin miss → last dashboard snapshot (avoids black uncached shell).
     if (isCloudBrowserOffline()) {
         return matchSoftOnlineExactCache(request, url).then(function (hit) {
             var served = serveCachedFast(hit, true);
             if (served) {
                 return served;
+            }
+            var bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
+            if (/\/admin$/i.test(bareAdmin)) {
+                return matchCachedAdminDashboard(url).then(function (dash) {
+                    var dashServed = serveCachedFast(dash, true);
+                    return dashServed || uncachedAdminBrowseResponse(url);
+                });
             }
             return uncachedAdminBrowseResponse(url);
         }).catch(function () {
