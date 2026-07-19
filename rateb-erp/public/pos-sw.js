@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-offline-click-failfast-v93';
+var SW_BUILD_ID = '20260719-offline-system-speed-v94';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3453,9 +3453,20 @@ self.addEventListener('fetch', function (event) {
         }
     }
 
-    // Soft-online non-navigate: pass through to network (assets/XHR).
+    // Soft-online non-navigate: pass through XHR/API only.
+    // Static assets MUST NOT fall through — when Wi‑Fi is dead but navigator.onLine
+    // is still true, bare network hangs freeze the whole ERP for seconds per click.
     if (!isLocalApplianceOrigin() && !isCloudBrowserOffline()) {
-        return;
+        var softStatic = event.request.method === 'GET'
+            && (isErpOfflineAsset(url)
+                || isPosAsset(url)
+                || /\/webfonts\/fa-.+\.(woff2|ttf|woff)$/i.test(url.pathname)
+                || /\/assets\/(css|js|vendor|offline|pos|pwa)\//i.test(url.pathname)
+                || /\.(woff2?|ttf|otf|png|jpe?g|gif|webp|svg|ico|css|js)$/i.test(url.pathname));
+        if (!softStatic) {
+            return;
+        }
+        // continue into cache-first handlers below
     }
 
     // Offline POST (form Save / XHR): never let Chrome paint «لا يتوفر اتصال».
@@ -3562,15 +3573,20 @@ self.addEventListener('fetch', function (event) {
 
     if (isRegisterShellPath(url.pathname)
         && (event.request.headers.get('accept') || '').indexOf('text/html') !== -1) {
+        if (isCloudBrowserOffline()) {
+            event.respondWith(shellFallback(event.request));
+            return;
+        }
         event.respondWith(
-            fetch(navigateFetchInput(event.request)).then(function (response) {
+            fetchErpAssetNetwork(navigateFetchInput(event.request), 800).then(function (response) {
                 if (response) {
                     var forShell = response.clone();
                     event.waitUntil(putShell(event.request, forShell).catch(function () { return null; }));
+                    return asNonRedirectedResponse(response).then(function (clean) {
+                        return clean || response;
+                    });
                 }
-                return asNonRedirectedResponse(response).then(function (clean) {
-                    return clean || response;
-                });
+                return shellFallback(event.request);
             }).catch(function () {
                 return shellFallback(event.request);
             })
@@ -3580,29 +3596,56 @@ self.addEventListener('fetch', function (event) {
 
     if (isPosAsset(url)) {
         event.respondWith(
-            fetch(navigateFetchInput(event.request)).then(function (response) {
-                if (response && response.ok) {
-                    var clone = response.clone();
-                    event.waitUntil(
-                        caches.open(ASSET_CACHE).then(function (cache) {
-                            return asNonRedirectedResponse(clone).then(function (clean) {
-                                if (!clean) {
+            matchAsset(event.request).then(function (cached) {
+                if (cached) {
+                    if (!isCloudBrowserOffline()) {
+                        event.waitUntil(
+                            fetchErpAssetNetwork(event.request, 800).then(function (fresh) {
+                                if (!fresh || !fresh.ok) {
                                     return null;
                                 }
-                                return Promise.all([
-                                    cache.put(url.origin + url.pathname, clean.clone()).catch(function () { return null; }),
-                                    cache.put(url.origin + url.pathname + (url.search || ''), clean.clone()).catch(function () { return null; })
-                                ]);
-                            });
-                        }).catch(function () { return null; })
-                    );
+                                var clone = fresh.clone();
+                                return caches.open(ASSET_CACHE).then(function (cache) {
+                                    return Promise.all([
+                                        cache.put(url.origin + url.pathname, clone.clone()).catch(function () { return null; }),
+                                        cache.put(url.origin + url.pathname + (url.search || ''), clone.clone()).catch(function () { return null; })
+                                    ]);
+                                }).catch(function () { return null; });
+                            }).catch(function () { return null; })
+                        );
+                    }
+                    return asNonRedirectedResponse(cached).then(function (c) {
+                        return c || cached;
+                    });
                 }
-                return asNonRedirectedResponse(response).then(function (clean) {
-                    return clean || response;
-                });
-            }).catch(function () {
-                return matchAsset(event.request).then(function (cached) {
-                    return cached || emptyAssetResponse(event.request);
+                if (isCloudBrowserOffline()) {
+                    return emptyAssetResponse(event.request);
+                }
+                return fetchErpAssetNetwork(event.request, 800).then(function (response) {
+                    if (response && response.ok) {
+                        var clone = response.clone();
+                        event.waitUntil(
+                            caches.open(ASSET_CACHE).then(function (cache) {
+                                return asNonRedirectedResponse(clone).then(function (clean) {
+                                    if (!clean) {
+                                        return null;
+                                    }
+                                    return Promise.all([
+                                        cache.put(url.origin + url.pathname, clean.clone()).catch(function () { return null; }),
+                                        cache.put(url.origin + url.pathname + (url.search || ''), clean.clone()).catch(function () { return null; })
+                                    ]);
+                                });
+                            }).catch(function () { return null; })
+                        );
+                    }
+                    if (!response) {
+                        return emptyAssetResponse(event.request);
+                    }
+                    return asNonRedirectedResponse(response).then(function (clean) {
+                        return clean || response;
+                    });
+                }).catch(function () {
+                    return emptyAssetResponse(event.request);
                 });
             })
         );
@@ -3639,8 +3682,8 @@ self.addEventListener('fetch', function (event) {
                                 return c || real;
                             });
                         }
-                        // Design CSS/vendor: never substitute empty 503 while online — wait for PHP/CDN.
-                        return fetch(navigateFetchInput(event.request)).then(function (response) {
+                        // Soft-online miss: short race only — never hang for multi-second network.
+                        return fetchErpAssetNetwork(event.request, 800).then(function (response) {
                             if (response && response.ok) {
                                 var forCache = response.clone();
                                 event.waitUntil(
@@ -3648,10 +3691,11 @@ self.addEventListener('fetch', function (event) {
                                         return putBoth(cache, forCache);
                                     }).catch(function () { return null; })
                                 );
+                                return asNonRedirectedResponse(response).then(function (clean) {
+                                    return clean || response;
+                                });
                             }
-                            return asNonRedirectedResponse(response).then(function (clean) {
-                                return clean || response;
-                            });
+                            return emptyAssetResponse(event.request);
                         }).catch(function () {
                             return emptyAssetResponse(event.request);
                         });
@@ -3698,7 +3742,10 @@ self.addEventListener('fetch', function (event) {
                     if (hit2) {
                         return hit2;
                     }
-                    return fetch(fixed, { credentials: 'same-origin' }).then(function (res) {
+                    if (isCloudBrowserOffline()) {
+                        return new Response('', { status: 404 });
+                    }
+                    return fetchErpAssetNetwork(new Request(fixed, { credentials: 'same-origin' }), 800).then(function (res) {
                         if (res && res.ok) {
                             var clone = res.clone();
                             event.waitUntil(
@@ -3707,7 +3754,7 @@ self.addEventListener('fetch', function (event) {
                                 }).catch(function () { return null; })
                             );
                         }
-                        return res;
+                        return res || new Response('', { status: 404 });
                     }).catch(function () {
                         return new Response('', { status: 404 });
                     });
