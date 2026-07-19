@@ -1,93 +1,148 @@
-/// Material 3 enterprise theme — Arabic RTL-first, no desktop chrome.
+/// Material 3 theme built from design tokens.
 ///
-/// Color direction: deep navy + teal accent (enterprise SaaS).
-/// Avoids generic purple gradients and cream/terracotta AI defaults.
+/// RTL-first via MaterialApp locale. Dark mode ready.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:ratib_hr_mobile/core/config/app_config.dart';
+import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 
 abstract final class AppTheme {
-  static const Color _navy = Color(0xFF0B1F33);
-  static const Color _teal = Color(0xFF0D9488);
-  static const Color _surface = Color(0xFFF4F7FA);
-  static const Color _card = Color(0xFFFFFFFF);
-  static const Color _danger = Color(0xFFB42318);
+  static ThemeData get light => _build(
+        brightness: Brightness.light,
+        scheme: ColorScheme.fromSeed(
+          seedColor: AppColors.teal,
+          primary: AppColors.navy,
+          secondary: AppColors.teal,
+          surface: AppColors.surface,
+          error: AppColors.error,
+          brightness: Brightness.light,
+        ),
+        scaffold: AppColors.surface,
+        card: AppColors.surfaceElevated,
+        onCard: AppColors.textPrimary,
+      );
 
-  static ThemeData get light {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _teal,
-      primary: _navy,
-      secondary: _teal,
-      surface: _surface,
-      error: _danger,
-      brightness: Brightness.light,
+  static ThemeData get dark => _build(
+        brightness: Brightness.dark,
+        scheme: ColorScheme.fromSeed(
+          seedColor: AppColors.teal,
+          primary: AppColors.teal,
+          secondary: AppColors.tealDark,
+          surface: AppColors.surfaceDark,
+          error: AppColors.error,
+          brightness: Brightness.dark,
+        ),
+        scaffold: AppColors.surfaceDark,
+        card: AppColors.surfaceElevatedDark,
+        onCard: AppColors.textPrimaryDark,
+      );
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required ColorScheme scheme,
+    required Color scaffold,
+    required Color card,
+    required Color onCard,
+  }) {
+    final text = brightness == Brightness.light
+        ? AppTypography.lightTextTheme(scheme)
+        : AppTypography.darkTextTheme(scheme);
+
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.button),
     );
+
+    final outline = brightness == Brightness.light
+        ? AppColors.outline.withOpacity(0.6)
+        : AppColors.outlineDark;
 
     return ThemeData(
       useMaterial3: true,
-      colorScheme: colorScheme,
-      scaffoldBackgroundColor: _surface,
+      brightness: brightness,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scaffold,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      appBarTheme: const AppBarTheme(
+      textTheme: text,
+      primaryTextTheme: text,
+      appBarTheme: AppBarTheme(
         centerTitle: true,
-        elevation: 0,
+        elevation: AppElevation.appBar,
         scrolledUnderElevation: 0.5,
-        backgroundColor: _card,
-        foregroundColor: _navy,
+        backgroundColor: card,
+        foregroundColor: onCard,
+        titleTextStyle: text.titleLarge,
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
-        backgroundColor: _card,
-        indicatorColor: _teal.withOpacity(0.15),
+        elevation: AppElevation.bottomNav,
+        backgroundColor: card,
+        indicatorColor: AppColors.teal.withOpacity(0.15),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(64, AppConfig.minTouchTarget),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          minimumSize: const Size(88, AppSpacing.touchTarget),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
           ),
+          shape: shape,
+          textStyle: text.labelLarge,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(88, AppSpacing.touchTarget),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          shape: shape,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(64, AppConfig.minTouchTarget),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          minimumSize: const Size(88, AppSpacing.touchTarget),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          shape: shape,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(64, AppSpacing.touchTarget),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
         ),
       ),
+      cardColor: card,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: _card,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
+        fillColor: card,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
         ),
-        titleLarge: TextStyle(fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(height: 1.45),
-        bodyMedium: TextStyle(height: 1.4),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.field),
+        ),
       ),
-    );
-  }
-
-  static ThemeData get dark {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: _teal,
-      brightness: Brightness.dark,
-    );
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: colorScheme,
-      materialTapTargetSize: MaterialTapTargetSize.padded,
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+      ),
+      dividerColor: outline,
+      bottomSheetTheme: const BottomSheetThemeData(
+        showDragHandle: true,
+        elevation: AppElevation.sheet,
+      ),
     );
   }
 }
