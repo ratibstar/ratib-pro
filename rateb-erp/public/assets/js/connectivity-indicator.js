@@ -92,12 +92,16 @@
         }
         var base = probeUrlFallback();
         var url = base + (base.indexOf('?') >= 0 ? '&' : '?') + '_rateb_probe=' + Date.now();
+        if (browserSaysOffline()) {
+            return Promise.resolve(false);
+        }
         var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        // Keep probe short — 8s hung probes starved every offline/soft-offline click.
         var timer = setTimeout(function () {
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-        }, 8000);
+        }, 1200);
         return fetch(url, {
             method: 'GET',
             credentials: 'same-origin',
@@ -160,6 +164,10 @@
     }
 
     function scheduleVerify(delayMs) {
+        if (browserSaysOffline()) {
+            markOfflineConfirmed();
+            return;
+        }
         if (verifyTimer) {
             clearTimeout(verifyTimer);
         }

@@ -225,12 +225,20 @@
             }
             tasks.push(new Promise(function (resolve) {
                 var el = document.createElement('script');
-                el.src = src;
-                el.async = true;
-                el.onload = el.onerror = function () {
+                var done = false;
+                var finish = function () {
+                    if (done) {
+                        return;
+                    }
+                    done = true;
                     loadedScripts[key] = true;
                     resolve();
                 };
+                el.src = src;
+                el.async = true;
+                el.onload = el.onerror = finish;
+                // Soft-offline: hanging script fetch must not stall UI forever.
+                root.setTimeout(finish, isUiOffline() ? 800 : 2000);
                 (document.body || document.documentElement).appendChild(el);
             }));
         });
@@ -279,8 +287,8 @@
     }
 
     function runPrefetchQueue() {
-        // Offline: never start hanging HTML fetches (starves every click).
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        // Offline / soft-offline: never start hanging HTML fetches (starves every click).
+        if (isUiOffline()) {
             clearPrefetchQueue();
             return;
         }
@@ -289,10 +297,10 @@
             prefetchInFlight += 1;
             postSw({ type: 'PREFETCH_ERP_OPS_URL', url: href });
             try {
-                fetch(href, {
+                fetchWithTimeout(href, {
                     credentials: 'same-origin',
                     headers: { Accept: 'text/html', 'X-Rateb-Prefetch': '1' }
-                }).then(function (res) {
+                }, 1500).then(function (res) {
                     if (!res || !res.ok) {
                         return null;
                     }
@@ -303,7 +311,7 @@
                     });
                 }).catch(function () { /* ignore */ }).then(function () {
                     prefetchInFlight = Math.max(0, prefetchInFlight - 1);
-                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    if (isUiOffline()) {
                         clearPrefetchQueue();
                         return;
                     }
@@ -319,7 +327,7 @@
         if (!href || prefetchSeen[href]) {
             return;
         }
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (isUiOffline()) {
             return;
         }
         opts = opts || {};
@@ -549,9 +557,14 @@
         var keys = [href];
         try {
             var u = new URL(href, root.location.href);
-            keys.push(u.origin + u.pathname);
-            keys.push(u.origin + u.pathname.replace(/\/+$/, ''));
-            keys.push(u.origin + u.pathname.replace(/\/+$/, '') + '/');
+            // Exact pathname first (fast path) — full URL with query last.
+            keys = [
+                u.origin + u.pathname,
+                u.origin + u.pathname.replace(/\/+$/, ''),
+                u.origin + u.pathname.replace(/\/+$/, '') + '/',
+                u.href,
+                href
+            ];
         } catch (e) { /* ignore */ }
         // Dedupe keys
         var seen = Object.create(null);
@@ -562,45 +575,68 @@
             seen[k] = true;
             return true;
         });
-        return openOpsCaches().then(function (cachesList) {
-            if (!cachesList.length) {
-                return null;
-            }
-            var attempts = [];
-            cachesList.forEach(function (cache) {
-                keys.forEach(function (k) {
-                    attempts.push(
-                        cache.match(k).then(function (hit) {
-                            if (hit) {
-                                return hit;
-                            }
-                            return cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
-                        }).catch(function () { return null; })
-                    );
+        // Offline: try primary ops cache only (2–3 exact keys) before parallel fan-out.
+        var offlineFast = isUiOffline();
+        var primary = root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+            var chain = Promise.resolve(null);
+            var fastKeys = offlineFast ? keys.slice(0, 3) : keys.slice(0, 2);
+            fastKeys.forEach(function (k) {
+                chain = chain.then(function (hit) {
+                    return hit || cache.match(k);
                 });
             });
-            // First hit wins (parallel); avoid sequential cache.match chains.
-            return new Promise(function (resolve) {
-                var pending = attempts.length;
-                if (!pending) {
-                    resolve(null);
-                    return;
+            return chain;
+        }).catch(function () { return null; });
+
+        return primary.then(function (fastHit) {
+            if (fastHit) {
+                return fastHit;
+            }
+            if (offlineFast) {
+                // One ignoreSearch on pathname only — skip coexist fan-out offline.
+                return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+                    return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
+                }).catch(function () { return null; });
+            }
+            return openOpsCaches().then(function (cachesList) {
+                if (!cachesList.length) {
+                    return null;
                 }
-                var done = false;
-                attempts.forEach(function (p) {
-                    p.then(function (hit) {
-                        if (done) {
-                            return;
-                        }
-                        if (hit) {
-                            done = true;
-                            resolve(hit);
-                            return;
-                        }
-                        pending -= 1;
-                        if (pending === 0) {
-                            resolve(null);
-                        }
+                var attempts = [];
+                cachesList.forEach(function (cache) {
+                    keys.forEach(function (k) {
+                        attempts.push(
+                            cache.match(k).then(function (hit) {
+                                if (hit) {
+                                    return hit;
+                                }
+                                return cache.match(k, { ignoreSearch: true }).catch(function () { return null; });
+                            }).catch(function () { return null; })
+                        );
+                    });
+                });
+                return new Promise(function (resolve) {
+                    var pending = attempts.length;
+                    if (!pending) {
+                        resolve(null);
+                        return;
+                    }
+                    var done = false;
+                    attempts.forEach(function (p) {
+                        p.then(function (hit) {
+                            if (done) {
+                                return;
+                            }
+                            if (hit) {
+                                done = true;
+                                resolve(hit);
+                                return;
+                            }
+                            pending -= 1;
+                            if (pending === 0) {
+                                resolve(null);
+                            }
+                        });
                     });
                 });
             });
@@ -896,9 +932,16 @@
         root.addEventListener('offline', function () {
             clearPrefetchQueue();
         });
+        document.addEventListener('rateb-connection-badge', function (ev) {
+            try {
+                if (ev && ev.detail && ev.detail.online === false) {
+                    clearPrefetchQueue();
+                }
+            } catch (eBadge) { /* ignore */ }
+        });
         lastHref = root.location.href;
         /* PERF-P3 — idlePrefetchVisible self-delays; do not race first paint. */
-        if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+        if (!isUiOffline()) {
             idlePrefetchVisible();
         }
     }

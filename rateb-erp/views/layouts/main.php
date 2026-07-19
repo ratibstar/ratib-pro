@@ -244,20 +244,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         var keys = [url];
         try {
           var u = new URL(url, location.href);
-          keys.push(u.href, u.origin + u.pathname);
+          keys.push(u.origin + u.pathname, u.href);
         } catch (e1) {}
-        // Fixed buckets only — caches.keys() + every rateb-* name stalled every offline click.
+        // Fixed buckets + first-hit parallel (sequential chains stalled offline paint).
         var names = [
-          'rateb-erp-ops-pages-v34',
           'rateb-erp-coexist-v34',
-          'rateb-pos-assets-v8',
-          'rateb-pos-shell-v8'
+          'rateb-erp-ops-pages-v34',
+          'rateb-pos-assets-v8'
         ];
-        var chain = Promise.resolve(null);
+        var attempts = [];
         names.forEach(function (name) {
-          chain = chain.then(function (hit) {
-            if (hit) return hit;
-            return caches.open(name).then(function (c) {
+          attempts.push(
+            caches.open(name).then(function (c) {
               var inner = Promise.resolve(null);
               keys.forEach(function (k) {
                 inner = inner.then(function (h) {
@@ -267,10 +265,22 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 });
               });
               return inner;
-            }).catch(function () { return null; });
+            }).catch(function () { return null; })
+          );
+        });
+        return new Promise(function (resolve) {
+          var pending = attempts.length;
+          var done = false;
+          if (!pending) { resolve(null); return; }
+          attempts.forEach(function (p) {
+            p.then(function (hit) {
+              if (done) return;
+              if (hit) { done = true; resolve(hit); return; }
+              pending -= 1;
+              if (pending === 0) resolve(null);
+            });
           });
         });
-        return chain.catch(function () { return null; });
       }
       window.__RATEB_MATCH_ANY_CACHE__ = matchAnyCache;
       function rewriteCssUrls(css, cssHref) {
@@ -1249,10 +1259,18 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       return;
     }
     var s = document.createElement('script');
+    var advanced = false;
+    var next = function () {
+      if (advanced) return;
+      advanced = true;
+      loadChain(i + 1);
+    };
     s.src = urls[i];
     s.async = false;
-    s.onload = function () { loadChain(i + 1); };
-    s.onerror = function () { loadChain(i + 1); };
+    s.onload = next;
+    s.onerror = next;
+    // Soft-offline: hanging script must not freeze the sequential SDK chain.
+    setTimeout(next, (navigator.onLine === false) ? 900 : 2500);
     (document.body || document.documentElement).appendChild(s);
   }
   function startSdk() {

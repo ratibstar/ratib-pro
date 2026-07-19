@@ -68,12 +68,22 @@
         if (!url) {
             return;
         }
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return;
+            }
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) {
+                return;
+            }
+        } catch (eOff) { /* continue */ }
         var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        // Offline/soft-offline: never hold a 20s hung charts fetch.
         var timer = setTimeout(function () {
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-        }, 20000);
+        }, 1500);
         fetch(url, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json' },

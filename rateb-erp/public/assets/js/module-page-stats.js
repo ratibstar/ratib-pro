@@ -85,8 +85,27 @@
         container.classList.remove('is-loading');
     }
 
+    function isOfflineNow() {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return true;
+            }
+        } catch (e0) { /* ignore */ }
+        try {
+            var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+            if (badge && badge.classList.contains('is-offline')) {
+                return true;
+            }
+        } catch (e1) { /* ignore */ }
+        return false;
+    }
+
     function scheduleSilentRetry(container) {
         if (!container || container.getAttribute('data-rateb-metrics-retry') === '1') {
+            return;
+        }
+        // Offline: never retry — hanging XHR freezes the whole tab.
+        if (isOfflineNow()) {
             return;
         }
         container.setAttribute('data-rateb-metrics-retry', '1');
@@ -95,6 +114,9 @@
                 return;
             }
             if (container.getAttribute('data-rateb-metrics-ready') === '1') {
+                return;
+            }
+            if (isOfflineNow()) {
                 return;
             }
             container.removeAttribute('data-rateb-metrics-inflight');
@@ -114,25 +136,29 @@
         }
         container.setAttribute('data-rateb-metrics-inflight', '1');
 
-        try {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                renderPlaceholder(container);
-                container.removeAttribute('data-rateb-metrics-inflight');
-                scheduleSilentRetry(container);
-                return;
-            }
-        } catch (eOff) { /* continue */ }
+        if (isOfflineNow()) {
+            renderPlaceholder(container);
+            container.removeAttribute('data-rateb-metrics-inflight');
+            return;
+        }
 
         var settled = false;
+        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
         var failSoft = setTimeout(function () {
             if (settled) {
                 return;
             }
-            // Keep page feeling finished; fetch may still resolve and upgrade values.
+            // Keep page feeling finished; abort hung fetch so it cannot starve clicks.
+            try { if (ctrl) ctrl.abort(); } catch (eAb) { /* ignore */ }
             renderPlaceholder(container);
+            container.removeAttribute('data-rateb-metrics-inflight');
         }, FAILSOFT_MS);
 
-        fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal: ctrl ? ctrl.signal : undefined
+        })
             .then(function (res) {
                 return res.json();
             })

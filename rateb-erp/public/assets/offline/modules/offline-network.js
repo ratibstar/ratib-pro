@@ -15,8 +15,9 @@
     var probing = false;
     var probeUrl = null;
     var failStreak = 0;
-    var intervals = { online: 12000, offline: 8000 };
-    var timeoutMs = 5000;
+    var intervals = { online: 30000, offline: 60000 };
+    // Short probe — long hangs starved every soft-offline click.
+    var timeoutMs = 1200;
 
     function emit() {
         listeners.forEach(function (fn) {
