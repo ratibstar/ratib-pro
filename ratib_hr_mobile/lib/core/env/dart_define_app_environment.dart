@@ -10,7 +10,8 @@ final class DartDefineAppEnvironment implements AppEnvironment {
   /// Compile-time ERP origin, e.g. `--dart-define=ERP_BASE_URL=https://example.com/rateb-erp/public`
   static const String _baseUrl = String.fromEnvironment('ERP_BASE_URL');
 
-  /// `--dart-define=APP_FLAVOR=development|staging|production`
+  /// `--dart-define=APP_FLAVOR=dev|development|staging|production`
+  /// Native Gradle flavors use: `dev` | `staging` | `production`.
   static const String _flavorRaw = String.fromEnvironment(
     'APP_FLAVOR',
     defaultValue: 'development',
@@ -23,6 +24,8 @@ final class DartDefineAppEnvironment implements AppEnvironment {
         return AppFlavor.staging;
       case 'production':
         return AppFlavor.production;
+      case 'dev':
+      case 'development':
       default:
         return AppFlavor.development;
     }

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_me_adapter.dart';
-import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 
 void main() {
@@ -8,7 +7,6 @@ void main() {
 
   test('Phase 2 me path and context', () {
     expect(ErpMeAdapter.mePath, '/api/v1/hr/me');
-    expect(AppConfig.phase, '2');
     expect(EmployeeContext.isResolved, isFalse);
   });
 

@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+// Phase A0 — iOS flavor: dev
+// Wire this file to an Xcode configuration/scheme named "dev" on a Mac.
+PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile.dev
+DISPLAY_NAME = RATIB HR Dev
+FLUTTER_TARGET = lib/main.dart

@@ -128,9 +128,8 @@ class Phase0PlaceholderPage extends StatelessWidget {
                   vertical: 8,
                 ),
                 title: Text(_titleFor(l10n, link.titleKey)),
-                trailing: Icon(
+                trailing: const Icon(
                   Icons.chevron_right,
-                  matchTextDirection: true,
                 ),
                 onTap: () => context.push(link.route),
                 minVerticalPadding: 16,

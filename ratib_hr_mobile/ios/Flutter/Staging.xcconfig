@@ -1,0 +1,6 @@
+#include "Generated.xcconfig"
+
+// Phase A0 — iOS flavor: staging
+PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile.stg
+DISPLAY_NAME = RATIB HR Staging
+FLUTTER_TARGET = lib/main.dart

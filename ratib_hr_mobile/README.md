@@ -4,39 +4,42 @@
 
 | | |
 |--|--|
-| Phase | **0 — Foundation only** |
-| Role | Mobile UI / navigation shell |
+| Official ESS app | `ratib_hr_mobile` |
+| Current phase | **A0 — Native production shell** |
+| Next phase | **A — MobileConfig / white-label** (after A0 exit) |
 | Source of truth | RATIB ERP |
-| Not this | `rateb_mobile` workforce portal, Capacitor Admin wrapper, new HR system |
+| Not this | `rateb_mobile`, Capacitor Admin, Tracking |
 
-## Phase 0 scope (done)
+## Architecture lock
 
-- Flutter project skeleton (`ratib_hr_mobile`)
-- Folder architecture (`core/`, `features/`, `shared/`)
-- Material 3 theme (enterprise navy + teal)
-- Arabic RTL-first + English localization
-- go_router skeleton + **5-tab** ESS shell
-- Placeholder destinations (no business logic)
-- Coding standards + architecture docs
-- Declared dependencies (not wired to ERP)
+- Presentation layer only — **no business logic in Flutter**
+- Thin adapters → ERP APIs
+- Extensible for future Manager / Supervisor / CEO modules without restructuring
+- See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ROADMAP.md](docs/ROADMAP.md)
 
-## Phase 0 explicitly NOT done
+## Phase A0 (native)
 
-- API / adapter connection
-- Models / services
-- Real login against ERP
-- Attendance / leave / approvals logic
-- Offline queue wiring
-- Platform folders (`android/` / `ios/`) — generate with Flutter SDK
-
-## Setup (when Flutter SDK is available)
-
-```bash
+```powershell
 cd ratib_hr_mobile
-flutter create . --org sa.rateb --project-name ratib_hr_mobile --platforms=android,ios
-flutter pub get
-flutter run
+$flutter = "$env:LOCALAPPDATA\flutter\bin\flutter.bat"
+
+& $flutter pub get
+& $flutter test
+
+# Android flavors: dev | staging | production
+& $flutter build apk --flavor production --dart-define=APP_FLAVOR=production
+.\tool\run_android.ps1 -Flavor dev -ErpBaseUrl "https://YOUR_HOST/rateb-erp/public"
 ```
+
+| Flavor | Package ID |
+|--------|------------|
+| production | `sa.rateb.hr.mobile` |
+| staging | `sa.rateb.hr.mobile.stg` |
+| dev | `sa.rateb.hr.mobile.dev` |
+
+Signing placeholders: `android/key.properties.example`, `ios/SIGNING.md` — **no store secrets in A0**.
+
+iOS project is generated; full Simulator/TestFlight builds require **macOS + Xcode**.
 
 ## Bottom navigation (max 5)
 
@@ -48,11 +51,7 @@ flutter run
 
 ## Documentation
 
+- [Roadmap](docs/ROADMAP.md)
+- [Phase A0](docs/PHASE_A0.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Coding standards](docs/CODING_STANDARDS.md)
-- [Phase 0 checklist](docs/PHASE_0.md)
-
-## Controlled GO constraints (binding)
-
-No new ERP business logic, tables, permissions, queues, PIN, GPS rules, or approval workflows.  
-Thin adapters to existing RATIB ERP only — **after Phase 0 approval**.

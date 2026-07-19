@@ -13,23 +13,31 @@ build/
 .idea/
 .vscode/
 
-# Platform folders generated via `flutter create .`
+# Android / iOS local & build noise (projects themselves are committed)
 android/.gradle/
 android/local.properties
+android/key.properties
 android/**/GeneratedPluginRegistrant.java
+android/keystore/*.jks
+android/keystore/*.keystore
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
 macos/
 linux/
 windows/
 web/
 
-# Secrets
+# Secrets — never commit
 .env
 .env.*
 *.jks
 *.keystore
 **/google-services.json
 **/GoogleService-Info.plist
+**/ExportOptions.plist
+!**/ExportOptions.plist.example

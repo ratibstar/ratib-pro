@@ -1,0 +1,7 @@
+# Copy to android/key.properties (gitignored) when Play Store signing is ready.
+# Phase A0: do NOT commit real passwords or keystore files.
+
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=ratib_hr_mobile
+storeFile=keystore/ratib-hr-mobile-upload.jks

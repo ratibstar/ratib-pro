@@ -29,7 +29,7 @@ class DsListItem extends StatelessWidget {
           : Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium),
       leading: leading,
       trailing: trailing ??
-          Icon(AppIcons.chevron, matchTextDirection: true, size: AppIcons.sizeMd),
+          Icon(AppIcons.chevron, size: AppIcons.sizeMd),
       onTap: onTap,
     );
   }
