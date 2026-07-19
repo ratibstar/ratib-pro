@@ -2198,6 +2198,7 @@ return [
     'mobile_apps_title' => 'Mobile Apps Management',
     'mobile_apps_intro' => 'Enable and brand the shared RATIB Workforce mobile app per agency/company.',
     'mobile_apps_companies' => 'Companies',
+    'mobile_apps_empty' => 'No companies found.',
     'mobile_apps_edit' => 'Mobile app configuration',
     'mobile_apps_enable' => 'Enable mobile app for this company',
     'mobile_apps_app_name' => 'App name',

@@ -39,7 +39,7 @@ $consoleAccessible = !empty($consoleAccessible);
             </thead>
             <tbody>
             <?php if ($rows === []) { ?>
-                <tr><td colspan="5" class="text-muted"><?php echo Rateb\App\Core\View::escape(__('no_data')); ?></td></tr>
+                <tr><td colspan="5" class="text-muted"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_empty')); ?></td></tr>
             <?php } ?>
             <?php foreach ($rows as $row) {
                 $cid = (int) ($row['company_id'] ?? 0);

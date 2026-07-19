@@ -2197,6 +2197,7 @@ return [
     'mobile_apps_title' => 'إدارة تطبيقات الجوال',
     'mobile_apps_intro' => 'تفعيل ووسم تطبيق RATIB Workforce المشترك لكل وكالة/شركة.',
     'mobile_apps_companies' => 'الشركات',
+    'mobile_apps_empty' => 'لا توجد شركات.',
     'mobile_apps_edit' => 'إعدادات تطبيق الجوال',
     'mobile_apps_enable' => 'تفعيل تطبيق الجوال لهذه الشركة',
     'mobile_apps_app_name' => 'اسم التطبيق',
