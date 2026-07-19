@@ -1,0 +1,35 @@
+# RATIB HR Mobile — Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+.metadata
+*.iml
+*.log
+.idea/
+.vscode/
+
+# Platform folders generated via `flutter create .`
+android/.gradle/
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+macos/
+linux/
+windows/
+web/
+
+# Secrets
+.env
+.env.*
+*.jks
+*.keystore
+**/google-services.json
+**/GoogleService-Info.plist

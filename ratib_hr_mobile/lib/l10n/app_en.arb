@@ -1,0 +1,33 @@
+{
+  "@@locale": "en",
+  "appTitle": "RATIB HR",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "tabHome": "Home",
+  "tabAttendance": "Attendance",
+  "tabLeave": "Leave",
+  "tabRequests": "Requests",
+  "tabMore": "More",
+  "navLogin": "Sign in",
+  "navHome": "Employee home",
+  "navAttendance": "Attendance",
+  "navCheckIn": "Check in",
+  "navCheckOut": "Check out",
+  "navAttendanceHistory": "Attendance history",
+  "navLeaveBalance": "Leave balance",
+  "navApplyLeave": "Apply leave",
+  "navLeaveStatus": "Leave status",
+  "navPermissionRequests": "Permission requests",
+  "navEmployeeRequests": "Employee requests",
+  "navDocuments": "Documents",
+  "navPayslips": "Payslips",
+  "navNotifications": "Notifications",
+  "navProfile": "My profile",
+  "navApprovals": "Approvals",
+  "phase0Placeholder": "Phase 0 — shell only. No business logic yet.",
+  "phase0Subtitle": "Single source of truth: RATIB ERP",
+  "language": "Language",
+  "arabic": "العربية",
+  "english": "English"
+}

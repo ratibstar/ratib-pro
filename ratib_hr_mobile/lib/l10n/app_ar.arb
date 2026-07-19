@@ -1,0 +1,33 @@
+{
+  "@@locale": "ar",
+  "appTitle": "راتب — الموارد البشرية",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "tabHome": "الرئيسية",
+  "tabAttendance": "الحضور",
+  "tabLeave": "الإجازات",
+  "tabRequests": "الطلبات",
+  "tabMore": "المزيد",
+  "navLogin": "تسجيل الدخول",
+  "navHome": "لوحة الموظف",
+  "navAttendance": "الحضور",
+  "navCheckIn": "حضور",
+  "navCheckOut": "انصراف",
+  "navAttendanceHistory": "سجل الحضور",
+  "navLeaveBalance": "رصيد الإجازات",
+  "navApplyLeave": "طلب إجازة",
+  "navLeaveStatus": "حالة الإجازة",
+  "navPermissionRequests": "طلبات الاستئذان",
+  "navEmployeeRequests": "طلبات الموظف",
+  "navDocuments": "المستندات",
+  "navPayslips": "كشوف الرواتب",
+  "navNotifications": "الإشعارات",
+  "navProfile": "ملفي",
+  "navApprovals": "الموافقات",
+  "phase0Placeholder": "مرحلة ٠ — واجهة فقط. لا منطق أعمال بعد.",
+  "phase0Subtitle": "المصدر الوحيد للحقيقة: نظام راتب ERP",
+  "language": "اللغة",
+  "arabic": "العربية",
+  "english": "English"
+}
