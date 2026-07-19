@@ -749,10 +749,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         ev.preventDefault();
         if (!window.__RATEB_NAV_READY__) {
           window.__RATEB_PENDING_NAV__ = u.href;
-        } else if (a.getAttribute('data-rateb-dashboard-nav') === '1'
-            && window.RatebNavInstant && typeof window.RatebNavInstant.navigate === 'function') {
-          // Button: document capture may miss; navigate explicitly.
-          window.RatebNavInstant.navigate(u.href);
         }
       } catch (eNav) { /* ignore */ }
       return;
