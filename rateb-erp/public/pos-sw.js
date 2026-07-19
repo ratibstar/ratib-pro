@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260718-offline-instant-v91';
+var SW_BUILD_ID = '20260719-block-offline-hard-refresh-v92';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1333,12 +1333,34 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
     // - Exact cache from t=0 (no 200ms delay, no deep scans).
     // - Network in parallel (600ms budget).
     // - Hard ceiling 700ms → shell/placeholder (never indefinite black).
+    // Hard reload (Cache-Control: no-cache) still prefers cache first when a snapshot exists.
+    var hardReload = false;
+    try {
+        var cc = String(request.headers.get('Cache-Control') || '');
+        var pr = String(request.headers.get('Pragma') || '');
+        hardReload = /no-cache/i.test(cc) || /no-cache/i.test(pr);
+    } catch (eHr) { /* ignore */ }
     var networkP = fetchNavigateNetwork(request, 600).then(storeLive).catch(function () {
         return null;
     });
     var cacheP = matchSoftOnlineExactCache(request, url).catch(function () {
         return null;
     });
+    if (hardReload) {
+        // Treat like offline paint-first: never wait on network for Ctrl+F5.
+        return cacheP.then(function (hit) {
+            var served = serveCachedFast(hit, false);
+            if (served) {
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(networkP.then(function () { return null; }));
+                }
+                return served;
+            }
+            return networkP.then(function (response) {
+                return response || uncachedAdminBrowseResponse(url);
+            });
+        });
+    }
 
     return new Promise(function (resolve) {
         var settled = false;

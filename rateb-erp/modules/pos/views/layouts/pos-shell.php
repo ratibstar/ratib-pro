@@ -38,6 +38,50 @@ $deferScriptsJson = json_encode($deferScripts, JSON_UNESCAPED_SLASHES);
         } catch (e) {}
     })();
     </script>
+    <script>
+    (function () {
+        /* Block hard refresh while offline (Ctrl+F5 bypasses SW → black POS). */
+        function offlineNow() {
+            try { return navigator.onLine === false; } catch (e) { return false; }
+        }
+        function toast() {
+            try {
+                var id = 'rateb-pos-offline-reload-toast';
+                var el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = id;
+                    el.setAttribute('role', 'status');
+                    el.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100000;'
+                        + 'max-width:min(22rem,92vw);padding:10px 14px;background:#7f1d1d;color:#fee2e2;'
+                        + 'font:13px/1.45 Tajawal,system-ui,sans-serif;border-radius:10px;text-align:center';
+                    (document.body || document.documentElement).appendChild(el);
+                }
+                el.textContent = 'التحديث غير متاح دون اتصال — تبقى على شاشة البيع المحفوظة.';
+                el.hidden = false;
+                clearTimeout(toast._t);
+                toast._t = setTimeout(function () { el.hidden = true; }, 3200);
+            } catch (eT) { /* ignore */ }
+        }
+        window.addEventListener('keydown', function (ev) {
+            if (!offlineNow()) return;
+            var key = String(ev.key || ev.code || '');
+            var isF5 = key === 'F5' || key === 'f5';
+            var isR = key === 'r' || key === 'R' || key === 'KeyR';
+            if (!isF5 && !((ev.ctrlKey || ev.metaKey) && isR)) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            toast();
+        }, true);
+        try {
+            var _reload = window.location.reload.bind(window.location);
+            window.location.reload = function () {
+                if (offlineNow()) { toast(); return; }
+                return _reload.apply(window.location, arguments);
+            };
+        } catch (eR) { /* ignore */ }
+    })();
+    </script>
     <link rel="manifest" href="<?php echo rateb_public_url('pos-manifest.webmanifest'); ?>">
     <title><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_register')); ?></title>
     <link href="<?php echo rateb_pos_asset('css/pos-register.css'); ?>" rel="stylesheet">

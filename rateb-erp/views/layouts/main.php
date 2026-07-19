@@ -63,6 +63,57 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="rateb-csrf" content="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
     <script>
     (function () {
+        /* Block hard refresh / reload while offline — Ctrl+F5 bypasses SW and blacks the page. */
+        function ratebOfflineNow() {
+            try { return navigator.onLine === false; } catch (e0) { return false; }
+        }
+        function ratebBlockOfflineReloadToast() {
+            try {
+                var id = 'rateb-offline-reload-block-toast';
+                var el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = id;
+                    el.setAttribute('role', 'status');
+                    el.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100000;'
+                        + 'max-width:min(22rem,92vw);padding:10px 14px;background:#7f1d1d;color:#fee2e2;'
+                        + 'font:13px/1.45 Tajawal,system-ui,sans-serif;border-radius:10px;text-align:center;'
+                        + 'box-shadow:0 8px 24px rgba(0,0,0,.35)';
+                    (document.body || document.documentElement).appendChild(el);
+                }
+                el.textContent = 'التحديث غير متاح دون اتصال — تبقى على النسخة المحفوظة.';
+                el.hidden = false;
+                clearTimeout(ratebBlockOfflineReloadToast._t);
+                ratebBlockOfflineReloadToast._t = setTimeout(function () { el.hidden = true; }, 3200);
+            } catch (eT) { /* ignore */ }
+        }
+        function ratebIsReloadKey(ev) {
+            var key = String(ev.key || ev.code || '');
+            var isF5 = key === 'F5' || key === 'f5';
+            var isR = key === 'r' || key === 'R' || key === 'KeyR';
+            return isF5 || ((ev.ctrlKey || ev.metaKey) && isR);
+        }
+        window.addEventListener('keydown', function (ev) {
+            if (!ratebOfflineNow() || !ratebIsReloadKey(ev)) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            ratebBlockOfflineReloadToast();
+        }, true);
+        try {
+            var _reload = window.location.reload.bind(window.location);
+            window.location.reload = function () {
+                if (ratebOfflineNow()) {
+                    ratebBlockOfflineReloadToast();
+                    return;
+                }
+                return _reload.apply(window.location, arguments);
+            };
+        } catch (eRel) { /* ignore */ }
+        // No beforeunload trap — would block offline sidebar / soft-nav.
+    })();
+    </script>
+    <script>
+    (function () {
         /* Critical offline Save — runs even if deferred JS fails to load (fixes Save→dashboard). */
         var KEY = 'rateb_deferred_http_forms_v2';
         function offlineNow() {

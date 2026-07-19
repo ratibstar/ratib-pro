@@ -11,9 +11,45 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260714-save-server-v52';
+    var GUARD_BUILD = '20260719-block-offline-hard-refresh-v53';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v34'];
     var flushing = false;
+
+    /** Hard refresh / reload while offline blacks the page (Ctrl+F5 bypasses SW). */
+    function blockOfflineHardRefresh() {
+        function toastBlocked() {
+            toast('التحديث غير متاح دون اتصال — تبقى على النسخة المحفوظة.', true);
+        }
+        function isReloadKey(ev) {
+            var key = String(ev.key || ev.code || '');
+            var isF5 = key === 'F5' || key === 'f5';
+            var isR = key === 'r' || key === 'R' || key === 'KeyR';
+            return isF5 || ((ev.ctrlKey || ev.metaKey) && isR);
+        }
+        root.addEventListener('keydown', function (ev) {
+            if (browserHasNetwork() || !isReloadKey(ev)) {
+                return;
+            }
+            ev.preventDefault();
+            ev.stopPropagation();
+            toastBlocked();
+        }, true);
+        try {
+            var loc = root.location;
+            if (loc && typeof loc.reload === 'function' && !loc.reload.__ratebOfflineWrapped) {
+                var origReload = loc.reload.bind(loc);
+                loc.reload = function () {
+                    if (!browserHasNetwork()) {
+                        toastBlocked();
+                        return;
+                    }
+                    return origReload.apply(loc, arguments);
+                };
+                loc.reload.__ratebOfflineWrapped = true;
+            }
+        } catch (eRel) { /* ignore */ }
+        // Do NOT use beforeunload here — it would block offline soft-nav / sidebar clicks.
+    }
 
     function browserHasNetwork() {
         try {
@@ -978,6 +1014,7 @@
             root.__RATEB_NAV_GUARD_BUILD__ = GUARD_BUILD;
         } catch (eB) { /* ignore */ }
         ensureCss();
+        blockOfflineHardRefresh();
         clearStaleMarks();
         updateSyncBanner();
         root.document.addEventListener('click', onClick, true);
