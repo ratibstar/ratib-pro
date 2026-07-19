@@ -17,6 +17,7 @@
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
     var loadedScripts = Object.create(null);
     var navigating = false;
+    var pendingOfflineHref = '';
     var prefetchSeen = Object.create(null);
     var prefetchQueue = [];
     var prefetchInFlight = 0;
@@ -246,6 +247,13 @@
     }
 
     function scheduleModuleScripts(doc) {
+        // Hard offline: never inject module scripts — each page added hung <script> fetches
+        // that jammed the tab after a few navigations (sidebar stopped accepting clicks).
+        try {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                return;
+            }
+        } catch (eOff) { /* continue */ }
         // Paint first; start module scripts on next task (not idle — keeps forms interactive).
         var kick = function () {
             try {
@@ -698,7 +706,7 @@
             networkPromise = fetchNetworkHtml(href);
         }
 
-        return matchCachedHtml(href).then(function (cached) {
+        var cacheLookup = matchCachedHtml(href).then(function (cached) {
             if (cached) {
                 if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
                     try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
@@ -726,30 +734,96 @@
             }
             return networkPromise;
         });
+
+        // Offline: hard ceiling so Cache API stalls cannot leave navigating=true forever.
+        if (!isUiOffline()) {
+            return cacheLookup;
+        }
+        return new Promise(function (resolve, reject) {
+            var settled = false;
+            var timer = root.setTimeout(function () {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                reject(new Error('nav_offline_cache_timeout'));
+            }, 350);
+            cacheLookup.then(function (pack) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                root.clearTimeout(timer);
+                resolve(pack);
+            }, function (err) {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                root.clearTimeout(timer);
+                reject(err);
+            });
+        });
+    }
+
+    function showOfflineMissToast() {
+        try {
+            var t = document.getElementById('rateb-offline-nav-toast');
+            if (!t && document.body) {
+                t = document.createElement('div');
+                t.id = 'rateb-offline-nav-toast';
+                t.className = 'is-err';
+                t.setAttribute('role', 'status');
+                t.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
+                    + 'background:#7f1d1d;color:#fecaca;padding:.65rem 1rem;border-radius:8px;'
+                    + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center;'
+                    + 'pointer-events:none;';
+                document.body.appendChild(t);
+            }
+            if (t) {
+                t.textContent = 'الصفحة غير محفوظة أوفلاين — افتحها مرة وأنت متصل.';
+                t.hidden = false;
+                clearTimeout(showOfflineMissToast._h);
+                showOfflineMissToast._h = root.setTimeout(function () {
+                    try { t.hidden = true; } catch (eH) { /* ignore */ }
+                }, 3500);
+            }
+        } catch (eT) { /* ignore */ }
     }
 
     function swapTo(href, opts) {
         opts = opts || {};
         if (navigating) {
+            // Offline: remember latest click — never drop it (was freezing the sidebar).
+            if (isUiOffline()) {
+                pendingOfflineHref = href;
+            }
             return Promise.resolve(false);
         }
         navigating = true;
+        pendingOfflineHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
-        // Offline cache lookup must fail-fast — 8s lock made every click feel frozen.
-        var unlockMs = isUiOffline() ? 1200 : 8000;
+        var unlockMs = isUiOffline() ? 400 : 8000;
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
                 try {
                     console.warn('[RATEB NAV] unlock stuck navigating');
                 } catch (eU) { /* ignore */ }
+                drainPendingOfflineNav();
             }
         }, unlockMs);
         var t0 = performance.now();
-        runLifecycle('beforeLeave', { href: root.location.href, next: href });
+        try {
+            runLifecycle('beforeLeave', { href: root.location.href, next: href });
+        } catch (eLeave) { /* ignore */ }
 
         return fetchHtml(href).then(function (pack) {
+            // Stale generation — a newer click won; do not paint or relock.
+            if (swapTo._gen !== navGen) {
+                return false;
+            }
             var doc = new DOMParser().parseFromString(pack.html, 'text/html');
             if (!sameShell(doc)) {
                 throw new Error('shell_mismatch');
@@ -771,6 +845,9 @@
             rememberExistingScripts();
             // Defer module script loads so paint wins (common libs already present).
             var afterScripts = function () {
+                if (swapTo._gen !== navGen) {
+                    return false;
+                }
                 runLifecycle('afterEnter', {
                     href: pack.finalUrl,
                     ms: Math.round(performance.now() - t0),
@@ -798,39 +875,49 @@
             scheduleModuleScripts(doc);
             return Promise.resolve(painted);
         }).catch(function (err) {
+            if (swapTo._gen !== navGen) {
+                return false;
+            }
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
             // Offline: never hardNavigate (full reload is multi-second). Stay put + toast.
             if (isUiOffline()) {
-                try {
-                    var t = document.getElementById('rateb-offline-nav-toast');
-                    if (!t && document.body) {
-                        t = document.createElement('div');
-                        t.id = 'rateb-offline-nav-toast';
-                        t.className = 'is-err';
-                        t.setAttribute('role', 'status');
-                        t.style.cssText = 'position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);z-index:100000;'
-                            + 'background:#7f1d1d;color:#fecaca;padding:.65rem 1rem;border-radius:8px;'
-                            + 'font:13px/1.4 system-ui,sans-serif;max-width:90vw;text-align:center';
-                        document.body.appendChild(t);
-                    }
-                    if (t) {
-                        t.textContent = 'الصفحة غير محفوظة أوفلاين — افتحها مرة وأنت متصل.';
-                        t.hidden = false;
-                    }
-                } catch (eT) { /* ignore */ }
-                navigating = false;
+                showOfflineMissToast();
                 return false;
             }
             hardNavigate(href);
-            navigating = false;
             return false;
         }).then(function (ok) {
             root.clearTimeout(unlockTimer);
-            navigating = false;
+            if (swapTo._gen === navGen) {
+                navigating = false;
+            }
+            drainPendingOfflineNav();
             return ok;
         });
+    }
+
+    function drainPendingOfflineNav() {
+        if (!pendingOfflineHref || navigating) {
+            return;
+        }
+        if (!isUiOffline()) {
+            pendingOfflineHref = '';
+            return;
+        }
+        var next = pendingOfflineHref;
+        pendingOfflineHref = '';
+        if (!next || next === lastHref) {
+            return;
+        }
+        root.setTimeout(function () {
+            if (!navigating) {
+                swapTo(next);
+            } else {
+                pendingOfflineHref = next;
+            }
+        }, 0);
     }
 
     function shouldIntercept(a, ev) {
@@ -878,9 +965,21 @@
         if (!shouldIntercept(a, ev)) {
             return;
         }
-        // If a prior soft-nav is still in flight, do NOT stack full reloads offline.
+        // If a prior soft-nav is still in flight, queue offline intent (never freeze sidebar).
         if (navigating) {
+            ev.preventDefault();
             if (isUiOffline()) {
+                pendingOfflineHref = a.href;
+                // Force-unlock if somehow stuck beyond fail-fast window.
+                if (!onClick._unlockKick) {
+                    onClick._unlockKick = root.setTimeout(function () {
+                        onClick._unlockKick = null;
+                        if (navigating) {
+                            navigating = false;
+                            drainPendingOfflineNav();
+                        }
+                    }, 450);
+                }
                 return;
             }
             hardNavigate(a.href);
@@ -921,7 +1020,13 @@
     root.RatebNavInstant = {
         prefetch: prefetchUrl,
         navigate: swapTo,
-        bindPrefetch: bindPrefetch
+        bindPrefetch: bindPrefetch,
+        unlock: function () {
+            navigating = false;
+            pendingOfflineHref = '';
+            drainPendingOfflineNav();
+        },
+        isNavigating: function () { return !!navigating; }
     };
 
     function boot() {
