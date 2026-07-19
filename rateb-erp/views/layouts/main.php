@@ -541,7 +541,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
             <?php if (rateb_nav_can('dashboard.view', 'dashboard')) { ?>
-            <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>">
+            <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>" data-rateb-soft-nav="1">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
@@ -709,8 +709,36 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   }
 
   function onSidebarClick(ev) {
-    // Never interfere with real nav links (Dashboard, companies, …).
-    if (ev.target && ev.target.closest && ev.target.closest('a[href]')) {
+    // Soft-nav ONLY for Admin links — never allow browser full navigation (black tab).
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+    if (a) {
+      try {
+        if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+          return;
+        }
+        if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
+          return;
+        }
+        if (a.target && a.target !== '' && a.target !== '_self') {
+          return;
+        }
+        var u = new URL(a.href, location.href);
+        if (u.origin !== location.origin || !/\/admin(\/|$)/i.test(u.pathname)) {
+          return;
+        }
+        if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)) {
+          return;
+        }
+        if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+          return;
+        }
+        // Always cancel native navigation (black full reload). Soft-nav document
+        // handler runs in capture before this; only queue when soft-nav not ready yet.
+        ev.preventDefault();
+        if (!window.__RATEB_NAV_READY__) {
+          window.__RATEB_PENDING_NAV__ = u.href;
+        }
+      } catch (eNav) { /* ignore */ }
       return;
     }
     // One toggle per event — survives duplicate listeners (old app.js + inline).
@@ -1074,6 +1102,23 @@ if (!$ratebLocalAppliance) {
       sessionStorage.removeItem('rateb_sw_reloaded');
       sessionStorage.removeItem('rateb_sw_shell_warm_v46');
     } catch (e1) {}
+    /* One-shot live reload so SW-cached HTML (without early-nav-guard) is replaced. */
+    try {
+      var bustKey = 'rateb_html_bust_' + NEED;
+      if (!sessionStorage.getItem(bustKey)) {
+        sessionStorage.setItem(bustKey, '1');
+        setTimeout(function () {
+          try {
+            var u = new URL(location.href);
+            u.searchParams.set('rateb_live', '1');
+            u.searchParams.set('_rb', NEED);
+            location.replace(u.href);
+          } catch (eGo) {
+            location.reload();
+          }
+        }, 400);
+      }
+    } catch (eBust) {}
   }
   window.__RATEB_ASSET_BUILD__ = NEED;
   // Stale SW: soft update only — never forced reload (startup spin loops).
@@ -1093,6 +1138,29 @@ if (!$ratebLocalAppliance) {
           }
         });
       }).catch(function () {});
+      /* After HTML cache bust SW activates, reload once into fresh network HTML. */
+      var __ratebCcOnce = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (__ratebCcOnce) return;
+        var ck = 'rateb_cc_reload_' + NEED;
+        try {
+          if (sessionStorage.getItem(ck)) return;
+          sessionStorage.setItem(ck, '1');
+        } catch (eCk) { /* ignore */ }
+        __ratebCcOnce = true;
+        try {
+          location.reload();
+        } catch (eRl) { /* ignore */ }
+      });
+      navigator.serviceWorker.addEventListener('message', function (ev) {
+        try {
+          if (!ev || !ev.data || ev.data.type !== 'RATEB_HTML_CACHE_BUST') return;
+          var mk = 'rateb_msg_bust_' + String(ev.data.build || NEED);
+          if (sessionStorage.getItem(mk)) return;
+          sessionStorage.setItem(mk, '1');
+          location.reload();
+        } catch (eMsg) { /* ignore */ }
+      });
     }
   } catch (eForce) {}
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });

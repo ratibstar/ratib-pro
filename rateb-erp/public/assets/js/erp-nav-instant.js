@@ -617,7 +617,7 @@
             return Promise.resolve([]);
         }
         // Fixed names only — caches.keys() scans every rateb-* bucket and stalls offline clicks.
-        var names = ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v34'];
+        var names = ['rateb-erp-ops-pages-v35', 'rateb-erp-coexist-v34'];
         return Promise.all(names.map(function (name) {
             return root.caches.open(name).catch(function () { return null; });
         })).then(function (opened) {
@@ -654,7 +654,7 @@
         });
         // Offline: try primary ops cache only (2–3 exact keys) before parallel fan-out.
         var offlineFast = isUiOffline();
-        var primary = root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+        var primary = root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
             var chain = Promise.resolve(null);
             var fastKeys = offlineFast ? keys.slice(0, 3) : keys.slice(0, 2);
             fastKeys.forEach(function (k) {
@@ -675,7 +675,7 @@
                 return null;
             }
             // One ignoreSearch on pathname only — skip coexist fan-out offline.
-            return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+            return root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
                 return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
             }).catch(function () { return null; });
         }).catch(function () {
@@ -696,7 +696,7 @@
             keys.push(u.origin + bare + '/');
         } catch (e) { /* ignore */ }
         var body = html;
-        return root.caches.open('rateb-erp-ops-pages-v34').then(function (cache) {
+        return root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
             return Promise.all(keys.map(function (k) {
                 return cache.put(k, new Response(body, {
                     status: 200,

@@ -4,9 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
+/* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-early-nav-guard-v98';
+var SW_BUILD_ID = '20260719-html-cache-bust-v99';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1171,6 +1172,7 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
             res.headers.forEach(function (v, k) { headers.set(k, v); });
         } catch (eH) { /* ignore */ }
         headers.set('X-Rateb-Ops-Page', '1');
+        headers.set('X-Rateb-Asset-Build', SW_BUILD_ID);
         var materialize = function () {
             return new Response(body, { status: 200, statusText: 'OK', headers: new Headers(headers) });
         };
@@ -1437,17 +1439,15 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return null;
     });
     if (hardReload) {
-        // Treat like offline paint-first: never wait on network for Ctrl+F5.
-        return cacheP.then(function (hit) {
-            var served = serveCachedFast(hit, false);
-            if (served) {
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(networkP.then(function () { return null; }));
-                }
-                return served;
+        // Ctrl+F5 must hit network — cache-first here re-served weeks-old HTML without
+        // early-nav-guard and locked users into black لوحة التحكم navigations.
+        return networkP.then(function (response) {
+            if (response) {
+                return response;
             }
-            return networkP.then(function (response) {
-                return response || uncachedAdminBrowseResponse(url);
+            return cacheP.then(function (hit) {
+                var served = serveCachedFast(hit, false);
+                return served || uncachedAdminBrowseResponse(url);
             });
         });
     }
@@ -3328,9 +3328,34 @@ self.addEventListener('activate', function (event) {
     // Phase PF — arm warm only; do not start populate until first document response commits.
     event.waitUntil(
         self.clients.claim().then(function () {
+            // Drop every prior ops-page HTML bucket (v34 and earlier) — stale shells
+            // skipped early-nav-guard and made لوحة التحكم full-navigate to black.
+            return caches.keys().then(function (keys) {
+                return Promise.all((keys || []).map(function (key) {
+                    if (key === ERP_OPS_PAGE_CACHE) {
+                        return undefined;
+                    }
+                    if (/^rateb-erp-ops-pages-v\d+/i.test(String(key))) {
+                        return caches.delete(key);
+                    }
+                    return undefined;
+                }));
+            });
+        }).then(function () {
             armBackgroundWarmAfterFirstDocument({ reason: 'activate', force: false });
             loadErpOpsAllowlist().catch(function () { return null; });
-            return null;
+            return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+                (clients || []).forEach(function (client) {
+                    try {
+                        client.postMessage({
+                            type: 'RATEB_HTML_CACHE_BUST',
+                            build: SW_BUILD_ID,
+                            at: Date.now()
+                        });
+                    } catch (eMsg) { /* ignore */ }
+                });
+                return null;
+            });
         }).catch(function () {
             armBackgroundWarmAfterFirstDocument({ reason: 'activate_fallback', force: false });
             return null;
