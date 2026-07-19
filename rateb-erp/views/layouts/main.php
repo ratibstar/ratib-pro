@@ -495,21 +495,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
             <?php } ?>
+            <?php if (rateb_nav_can('mobile_apps.view')) { ?>
+            <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>">
+                <i class="fas fa-mobile-alt"></i><span><?php echo __('mobile_apps_nav'); ?></span>
+            </a>
+            <?php } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
             <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>">
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
-            </a>
-            <?php } ?>
-            <?php if (
-                (function_exists('rateb_nav_can') && rateb_nav_can('mobile_apps.view'))
-                || (function_exists('rateb_can') && rateb_can('mobile_apps.view'))
-                || (
-                    function_exists('rateb_is_super_admin') && rateb_is_super_admin()
-                    && function_exists('rateb_can') && rateb_can('settings.manage')
-                )
-            ) { ?>
-            <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>">
-                <i class="fas fa-mobile-alt"></i><span><?php echo __('mobile_apps_nav'); ?></span>
             </a>
             <?php } ?>
             <?php
