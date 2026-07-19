@@ -28,6 +28,8 @@ $router->get('/api/v1/hr/attendance/today', [\Rateb\App\Controllers\Api\HrEssAtt
 $router->get('/api/v1/hr/leave/balances', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'balances'], $api);
 $router->get('/api/v1/hr/notifications', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'list'], $api);
 
+$router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigController::class, 'config'], $api);
+
 $router->get('/api/v1/dashboard', [ApiController::class, 'dashboard'], $api);
 $router->get('/api/v1/companies', [ApiController::class, 'listCompanies'], $api);
 $router->post('/api/v1/companies', [ApiController::class, 'createCompany'], $api);

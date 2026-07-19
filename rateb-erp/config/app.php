@@ -653,8 +653,10 @@ if (!function_exists('rateb_hr_mobile_dev_config_clear_cache')) {
 
 if (!function_exists('rateb_hr_mobile_console_flag_enabled')) {
     /**
-     * HR Mobile Console feature flag from rateb_system_settings (default false).
-     * Key: hr_mobile_console_enabled. Primary path is DB — not dotenv allowlist.
+     * Platform HR Mobile Console launcher flag (default false).
+     * Primary: rateb_system_settings.hr_mobile_console_enabled (Admin → Settings → Features).
+     * Tenant enablement/branding is separate: rateb_mobile_app_configs (Mobile Apps Management).
+     * Legacy OS/FPM env only when DB setting row is missing.
      */
     function rateb_hr_mobile_console_flag_enabled(): bool
     {

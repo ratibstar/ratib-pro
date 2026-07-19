@@ -246,6 +246,8 @@ final class RouteModuleLoader
             '/admin/automation-health',
             '/admin/api/mail-dns-check',
             '/admin/settings',
+            '/admin/mobile-apps',
+            '/admin/hr-mobile',
             '/admin/tools',
             '/admin/reports',
             '/admin/procurement',

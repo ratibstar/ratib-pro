@@ -19,6 +19,11 @@ $hasUrl = $webUrl !== '';
         <div>
             <h1 class="h4 mb-1"><?php echo View::escape(__('hr_mobile_dev_console')); ?></h1>
             <p class="text-muted mb-0 small"><?php echo View::escape(__('hr_mobile_dev_intro')); ?></p>
+            <p class="mb-0 mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_url('admin/mobile-apps'); ?>">
+                    <i class="fas fa-mobile-alt"></i> <?php echo View::escape(__('mobile_apps_title')); ?>
+                </a>
+            </p>
         </div>
         <span class="badge text-bg-warning"><?php echo View::escape(__('hr_mobile_dev_badge')); ?></span>
     </div>

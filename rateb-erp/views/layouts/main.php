@@ -500,6 +500,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
             </a>
             <?php } ?>
+            <?php if (
+                (function_exists('rateb_nav_can') && rateb_nav_can('mobile_apps.view'))
+                || (function_exists('rateb_can') && rateb_can('mobile_apps.view'))
+                || (
+                    function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+                    && function_exists('rateb_can') && rateb_can('settings.manage')
+                )
+            ) { ?>
+            <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="rateb-nav-link<?php echo $navActive('admin/mobile-apps') ? ' active' : ''; ?>">
+                <i class="fas fa-mobile-alt"></i><span><?php echo __('mobile_apps_nav'); ?></span>
+            </a>
+            <?php } ?>
             <?php
             $platformCatalogNavPartial = RATEB_ROOT . '/views/partials/platform-catalog-nav-link.php';
             if (is_file($platformCatalogNavPartial)) {
