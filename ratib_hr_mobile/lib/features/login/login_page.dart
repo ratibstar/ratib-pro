@@ -56,6 +56,10 @@ class _LoginPageState extends State<LoginPage> {
         return failure.message?.isNotEmpty == true
             ? failure.message!
             : l10n.loginForbidden;
+      case 'employee_unbound':
+        return l10n.loginEmployeeUnbound;
+      case 'employee_ambiguous':
+        return l10n.loginEmployeeAmbiguous;
       case 'rate_limited':
         return l10n.loginRateLimited;
       default:

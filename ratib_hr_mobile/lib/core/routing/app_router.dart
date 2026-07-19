@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/login_page.dart';
@@ -31,6 +32,12 @@ abstract final class AppRouter {
         }
         if (session.status == AuthStatus.signedIn && onLogin) {
           return AppRoutes.home;
+        }
+        // ESS identity gate: signed-in without EmployeeContext is invalid.
+        if (session.status == AuthStatus.signedIn &&
+            !EmployeeContext.isResolved &&
+            !onLogin) {
+          return AppRoutes.login;
         }
         return null;
       },

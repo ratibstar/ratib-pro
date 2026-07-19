@@ -16,9 +16,25 @@ final class DefaultErrorMapper implements ErrorMapper {
       final status = error.response?.statusCode;
       final data = error.response?.data;
       String? erpMessage;
+      String? erpCode;
       if (data is Map) {
         final msg = data['message'];
         if (msg != null) erpMessage = msg.toString();
+        final code = data['code'];
+        if (code != null) erpCode = code.toString();
+      }
+
+      if (erpCode == 'employee_unbound' || status == 404) {
+        return AppFailure(
+          code: erpCode ?? 'employee_unbound',
+          message: erpMessage,
+        );
+      }
+      if (erpCode == 'employee_ambiguous' || status == 409) {
+        return AppFailure(
+          code: erpCode ?? 'employee_ambiguous',
+          message: erpMessage,
+        );
       }
 
       if (error.type == DioExceptionType.connectionTimeout ||
@@ -42,7 +58,7 @@ final class DefaultErrorMapper implements ErrorMapper {
         return AppFailure(code: 'erp', message: erpMessage);
       }
       return AppFailure(
-        code: 'erp',
+        code: erpCode ?? 'erp',
         message: erpMessage ?? error.message,
       );
     }

@@ -23,6 +23,8 @@ if (!function_exists('rateb_api_mw')) {
 $router->get('/api/v1', [ApiController::class, 'index']);
 $router->post('/api/v1/auth/token', [ApiController::class, 'createToken']);
 
+$router->get('/api/v1/hr/me', [\Rateb\App\Controllers\Api\HrEssMeController::class, 'me'], $api);
+
 $router->get('/api/v1/dashboard', [ApiController::class, 'dashboard'], $api);
 $router->get('/api/v1/companies', [ApiController::class, 'listCompanies'], $api);
 $router->post('/api/v1/companies', [ApiController::class, 'createCompany'], $api);

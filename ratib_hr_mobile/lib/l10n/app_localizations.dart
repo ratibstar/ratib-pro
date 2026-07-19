@@ -72,6 +72,8 @@ class AppLocalizations {
       'loginRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'loginFailed': 'فشل تسجيل الدخول',
       'loginErpOnlyHint': 'المصادقة عبر نظام راتب ERP فقط',
+      'loginEmployeeUnbound': 'لا يوجد موظف مرتبط بهذا الحساب',
+      'loginEmployeeAmbiguous': 'أكثر من موظف مرتبط بهذا الحساب',
       'signOut': 'تسجيل الخروج',
     },
     'en': {
@@ -120,6 +122,8 @@ class AppLocalizations {
       'loginRateLimited': 'Too many attempts. Try again later',
       'loginFailed': 'Sign-in failed',
       'loginErpOnlyHint': 'Authentication via RATIB ERP only',
+      'loginEmployeeUnbound': 'No employee is linked to this account',
+      'loginEmployeeAmbiguous': 'Multiple employees are linked to this account',
       'signOut': 'Sign out',
     },
   };
@@ -174,6 +178,8 @@ class AppLocalizations {
   String get loginRateLimited => _t('loginRateLimited');
   String get loginFailed => _t('loginFailed');
   String get loginErpOnlyHint => _t('loginErpOnlyHint');
+  String get loginEmployeeUnbound => _t('loginEmployeeUnbound');
+  String get loginEmployeeAmbiguous => _t('loginEmployeeAmbiguous');
   String get signOut => _t('signOut');
 }
 
