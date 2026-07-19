@@ -17,13 +17,69 @@
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
     var loadedScripts = Object.create(null);
     var navigating = false;
-    var pendingOfflineHref = '';
+    var pendingNavHref = '';
     var prefetchSeen = Object.create(null);
     var prefetchQueue = [];
     var prefetchInFlight = 0;
     var PREFETCH_MAX_PARALLEL = 1;
     var idlePrefetchUnlocked = false;
     var lastHref = '';
+
+    /**
+     * Soft-nav only replaces #rateb-main-content. Bootstrap modals are moved onto
+     * document.body (rateb-modal.js) so .modal-backdrop survives the swap and sits
+     * above the sidebar (z-index 1050 > 1000) — icons look dead after a few pages.
+     */
+    function cleanupSoftNavUiArtifacts() {
+        try {
+            document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(function (el) {
+                el.remove();
+            });
+            document.body.classList.remove('modal-open', 'offcanvas-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            document.querySelectorAll('.modal.show').forEach(function (modal) {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+                modal.removeAttribute('aria-modal');
+                try {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        var inst = bootstrap.Modal.getInstance(modal);
+                        // dispose — do not hide() (hide can recreate .modal-backdrop).
+                        if (inst && typeof inst.dispose === 'function') {
+                            inst.dispose();
+                        }
+                    }
+                } catch (eHide) { /* ignore */ }
+            });
+            // Second pass: hide() races or nested modals can leave another backdrop.
+            document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(function (el) {
+                el.remove();
+            });
+            document.body.classList.remove('modal-open', 'offcanvas-open');
+        } catch (eClean) { /* ignore */ }
+    }
+
+    /** Defer Cache API + SW postMessage so soft-nav paint is not blocked by multi-MB HTML copies. */
+    function schedulePageCache(href, html) {
+        if (!html || html.length < 20000) {
+            return;
+        }
+        var run = function () {
+            try {
+                putHtmlLocally(href, html);
+            } catch (ePut) { /* ignore */ }
+            try {
+                postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+            } catch (eSw) { /* ignore */ }
+        };
+        if (typeof root.requestIdleCallback === 'function') {
+            root.requestIdleCallback(run, { timeout: 8000 });
+        } else {
+            root.setTimeout(run, 1200);
+        }
+    }
 
     /** Paths blocked until browser idle (PERF-P3). */
     function isDeferredPrefetchPath(pathname) {
@@ -247,13 +303,11 @@
     }
 
     function scheduleModuleScripts(doc) {
-        // Hard offline: never inject module scripts — each page added hung <script> fetches
-        // that jammed the tab after a few navigations (sidebar stopped accepting clicks).
-        try {
-            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                return;
-            }
-        } catch (eOff) { /* continue */ }
+        // Offline / soft-offline: never inject module scripts — each page added hung <script>
+        // fetches that jammed the tab after a few navigations (sidebar stopped accepting clicks).
+        if (isUiOffline()) {
+            return;
+        }
         // Paint first; start module scripts on next task (not idle — keeps forms interactive).
         var kick = function () {
             try {
@@ -689,8 +743,8 @@
                 throw new Error('nav_fetch_failed');
             }
             return res.text().then(function (html) {
-                putHtmlLocally(res.url || href, html);
-                postSw({ type: 'CACHE_ERP_OPS_PAGE', url: res.url || href, html: html });
+                // Idle cache — never block paint / next click on Cache+SW HTML copies.
+                schedulePageCache(res.url || href, html);
                 return { html: html, finalUrl: res.url || href, fromCache: false };
             });
         });
@@ -735,10 +789,8 @@
             return networkPromise;
         });
 
-        // Offline: hard ceiling so Cache API stalls cannot leave navigating=true forever.
-        if (!isUiOffline()) {
-            return cacheLookup;
-        }
+        // Hard ceiling online + offline so Cache API stalls cannot leave navigating=true forever.
+        var ceilingMs = isUiOffline() ? 350 : 2500;
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = root.setTimeout(function () {
@@ -746,8 +798,11 @@
                     return;
                 }
                 settled = true;
-                reject(new Error('nav_offline_cache_timeout'));
-            }, 350);
+                if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
+                    try { networkPromise._ratebAbort(); } catch (eAb2) { /* ignore */ }
+                }
+                reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
+            }, ceilingMs);
             cacheLookup.then(function (pack) {
                 if (settled) {
                     return;
@@ -794,27 +849,26 @@
     function swapTo(href, opts) {
         opts = opts || {};
         if (navigating) {
-            // Offline: remember latest click — never drop it (was freezing the sidebar).
-            if (isUiOffline()) {
-                pendingOfflineHref = href;
-            }
+            // Remember latest click (online + offline) — never drop it / never freeze sidebar.
+            pendingNavHref = href;
             return Promise.resolve(false);
         }
         navigating = true;
-        pendingOfflineHref = '';
+        pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
-        var unlockMs = isUiOffline() ? 400 : 8000;
+        var unlockMs = isUiOffline() ? 400 : 2800;
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
                 try {
                     console.warn('[RATEB NAV] unlock stuck navigating');
                 } catch (eU) { /* ignore */ }
-                drainPendingOfflineNav();
+                drainPendingNav();
             }
         }, unlockMs);
         var t0 = performance.now();
+        cleanupSoftNavUiArtifacts();
         try {
             runLifecycle('beforeLeave', { href: root.location.href, next: href });
         } catch (eLeave) { /* ignore */ }
@@ -833,6 +887,7 @@
             if (!nextMain || !curMain) {
                 throw new Error('missing_main');
             }
+            cleanupSoftNavUiArtifacts();
             curMain.innerHTML = nextMain.innerHTML;
             syncMeta(doc);
             updateActiveNav(pack.finalUrl);
@@ -848,6 +903,7 @@
                 if (swapTo._gen !== navGen) {
                     return false;
                 }
+                cleanupSoftNavUiArtifacts();
                 runLifecycle('afterEnter', {
                     href: pack.finalUrl,
                     ms: Math.round(performance.now() - t0),
@@ -855,9 +911,6 @@
                 });
                 reinitModuleUi();
                 bindPrefetch(curMain);
-                if (pack.html && pack.html.length >= 20000 && !pack.fromCache) {
-                    postSw({ type: 'CACHE_ERP_OPS_PAGE', url: pack.finalUrl, html: pack.html });
-                }
                 try {
                     performance.mark('rateb-nav-swap');
                     console.info('[RATEB NAV]', Math.round(performance.now() - t0) + 'ms',
@@ -893,21 +946,17 @@
             if (swapTo._gen === navGen) {
                 navigating = false;
             }
-            drainPendingOfflineNav();
+            drainPendingNav();
             return ok;
         });
     }
 
-    function drainPendingOfflineNav() {
-        if (!pendingOfflineHref || navigating) {
+    function drainPendingNav() {
+        if (!pendingNavHref || navigating) {
             return;
         }
-        if (!isUiOffline()) {
-            pendingOfflineHref = '';
-            return;
-        }
-        var next = pendingOfflineHref;
-        pendingOfflineHref = '';
+        var next = pendingNavHref;
+        pendingNavHref = '';
         if (!next || next === lastHref) {
             return;
         }
@@ -915,7 +964,7 @@
             if (!navigating) {
                 swapTo(next);
             } else {
-                pendingOfflineHref = next;
+                pendingNavHref = next;
             }
         }, 0);
     }
@@ -965,27 +1014,22 @@
         if (!shouldIntercept(a, ev)) {
             return;
         }
-        // If a prior soft-nav is still in flight, queue offline intent (never freeze sidebar).
+        // If a prior soft-nav is still in flight, queue latest intent (never freeze sidebar).
+        // Online used to hardNavigate here — that caused multi-second full reloads mid-swap.
         if (navigating) {
             ev.preventDefault();
-            if (isUiOffline()) {
-                pendingOfflineHref = a.href;
-                // Force-unlock if somehow stuck beyond fail-fast window.
-                if (!onClick._unlockKick) {
-                    onClick._unlockKick = root.setTimeout(function () {
-                        onClick._unlockKick = null;
-                        if (navigating) {
-                            navigating = false;
-                            drainPendingOfflineNav();
-                        }
-                    }, 450);
-                }
-                return;
+            pendingNavHref = a.href;
+            if (!onClick._unlockKick) {
+                onClick._unlockKick = root.setTimeout(function () {
+                    onClick._unlockKick = null;
+                    if (navigating) {
+                        navigating = false;
+                        drainPendingNav();
+                    }
+                }, isUiOffline() ? 450 : 2900);
             }
-            hardNavigate(a.href);
             return;
         }
-        // Offline: cache-only content-swap (instant). Full reload was multi-second per click.
         ev.preventDefault();
         swapTo(a.href);
     }
@@ -1023,8 +1067,9 @@
         bindPrefetch: bindPrefetch,
         unlock: function () {
             navigating = false;
-            pendingOfflineHref = '';
-            drainPendingOfflineNav();
+            pendingNavHref = '';
+            cleanupSoftNavUiArtifacts();
+            drainPendingNav();
         },
         isNavigating: function () { return !!navigating; }
     };
