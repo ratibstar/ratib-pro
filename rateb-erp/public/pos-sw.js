@@ -6,7 +6,7 @@ var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-no-black-nav-v97';
+var SW_BUILD_ID = '20260719-early-nav-guard-v98';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3649,7 +3649,24 @@ self.addEventListener('fetch', function (event) {
         if (swapFlag.indexOf('1') !== -1) {
             respondWithDocumentAndReleaseWarmGate(
                 event,
-                softNavAdminHtml(event.request, url, event)
+                softNavAdminHtml(event.request, url, event).catch(function () {
+                    // Never reject respondWith — that aborts soft-nav into browser full navigation.
+                    return fetchNavigateNetwork(event.request, 2500).catch(function () {
+                        return matchSoftOnlineExactCache(event.request, url).then(function (hit) {
+                            if (hit) {
+                                return hit;
+                            }
+                            return Promise.reject(new Error('soft-nav-final-miss'));
+                        });
+                    });
+                }).catch(function () {
+                    // Last resort: opaque miss so client stays on current page (no black tab).
+                    return new Response('', {
+                        status: 504,
+                        statusText: 'soft-nav-miss',
+                        headers: { 'Content-Type': 'text/plain', 'X-Rateb-Soft-Nav-Miss': '1' }
+                    });
+                })
             );
             return;
         }

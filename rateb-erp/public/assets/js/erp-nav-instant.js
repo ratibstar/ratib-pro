@@ -1112,6 +1112,7 @@
         rememberExistingScripts();
         bindPrefetch(document.getElementById('rateb-sidebar') || document);
         document.addEventListener('click', onClick, true);
+        window.__RATEB_NAV_READY__ = true;
         root.addEventListener('popstate', onPopState);
         root.addEventListener('offline', function () {
             clearPrefetchQueue();
@@ -1124,6 +1125,16 @@
             } catch (eBadge) { /* ignore */ }
         });
         lastHref = root.location.href;
+        /* Drain click held by early head interceptor (before this script loaded). */
+        try {
+            var pending = root.__RATEB_PENDING_NAV__ || '';
+            root.__RATEB_PENDING_NAV__ = '';
+            if (pending && pending !== lastHref) {
+                root.setTimeout(function () {
+                    swapTo(pending);
+                }, 0);
+            }
+        } catch (ePend) { /* ignore */ }
         /* PERF-P3 — idlePrefetchVisible self-delays; do not race first paint. */
         if (!isUiOffline()) {
             idlePrefetchVisible();

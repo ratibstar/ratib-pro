@@ -114,6 +114,56 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     </script>
     <script>
     (function () {
+        /* EARLY: hold Admin nav clicks until erp-nav-instant boots.
+         * Without this, clicks before soft-nav loads do full navigation → black tab for minutes
+         * while F5 paints from SW cache. */
+        window.__RATEB_PENDING_NAV__ = window.__RATEB_PENDING_NAV__ || '';
+        window.__RATEB_NAV_READY__ = false;
+        document.addEventListener('click', function (ev) {
+            try {
+                if (window.__RATEB_NAV_READY__) {
+                    return;
+                }
+                if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                    return;
+                }
+                var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+                if (!a || !a.href) {
+                    return;
+                }
+                if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
+                    return;
+                }
+                if (a.target && a.target !== '' && a.target !== '_self') {
+                    return;
+                }
+                var u = new URL(a.href, location.href);
+                if (u.origin !== location.origin) {
+                    return;
+                }
+                if (!/\/admin(\/|$)/i.test(u.pathname)) {
+                    return;
+                }
+                if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)) {
+                    return;
+                }
+                if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+                    return;
+                }
+                var cur = location.pathname.replace(/\/+$/, '');
+                var next = u.pathname.replace(/\/+$/, '');
+                if (cur === next && u.search === location.search) {
+                    return;
+                }
+                ev.preventDefault();
+                ev.stopPropagation();
+                window.__RATEB_PENDING_NAV__ = u.href;
+            } catch (eEarly) { /* ignore */ }
+        }, true);
+    })();
+    </script>
+    <script>
+    (function () {
         /* Critical offline Save — runs even if deferred JS fails to load (fixes Save→dashboard). */
         var KEY = 'rateb_deferred_http_forms_v2';
         function offlineNow() {
@@ -845,9 +895,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 <?php
 /* PERF-P3: critical-path scripts only before paint settles; rest after interaction/idle. */
 $ratebCriticalScripts = [
+    // FIRST — soft-nav must bind before theme/app so لوحة التحكم never full-navigates to black.
+    rateb_asset('js/erp-nav-instant.js'),
     rateb_asset('js/theme.js'),
     rateb_asset('js/app.js'),
-    rateb_asset('js/erp-nav-instant.js'),
     // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
     rateb_asset('js/module-page-stats.js'),
 ];
@@ -924,11 +975,9 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
       try { window.dispatchEvent(new Event('rateb-critical-js-ready')); } catch (e) {}
     });
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadCritical, { once: true });
-  } else {
-    loadCritical();
-  }
+  /* Start NOW (script is after sidebar in body). Waiting for DCL delayed soft-nav
+   * until other head defer scripts finished — clicks escaped to full black navigation. */
+  loadCritical();
   function afterInteraction(fn) {
     var ran = false;
     var go = function () {
