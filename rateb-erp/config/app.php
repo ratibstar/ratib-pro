@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260719-dash-charts-v86');
+define('RATEB_ASSET_BUILD', '20260719-no-nav-alter-v87');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2880,6 +2880,17 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             $cached = $raw['data'];
             return $cached;
         }
+        // Soft-nav / prefetch: never run cold COUNT storms — reuse stale session or zeros.
+        $softNav = (isset($_SERVER['HTTP_X_RATEB_NAV_SWAP']) && (string) $_SERVER['HTTP_X_RATEB_NAV_SWAP'] === '1')
+            || (isset($_SERVER['HTTP_X_RATEB_PREFETCH']) && (string) $_SERVER['HTTP_X_RATEB_PREFETCH'] === '1');
+        if ($softNav) {
+            if (is_array($raw) && is_array($raw['data'] ?? null)) {
+                $cached = $raw['data'];
+                return $cached;
+            }
+            $cached = $empty;
+            return $cached;
+        }
         try {
             $cached = (new \Rateb\App\Services\ApprovalOversightService())->menuCounts(null);
         } catch (\Throwable $e) {
@@ -2965,6 +2976,16 @@ if (!function_exists('rateb_ops_nav_counts')) {
         $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
         if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
             $cached = $raw['data'];
+            return $cached;
+        }
+        $softNav = (isset($_SERVER['HTTP_X_RATEB_NAV_SWAP']) && (string) $_SERVER['HTTP_X_RATEB_NAV_SWAP'] === '1')
+            || (isset($_SERVER['HTTP_X_RATEB_PREFETCH']) && (string) $_SERVER['HTTP_X_RATEB_PREFETCH'] === '1');
+        if ($softNav) {
+            if (is_array($raw) && is_array($raw['data'] ?? null)) {
+                $cached = $raw['data'];
+                return $cached;
+            }
+            $cached = [];
             return $cached;
         }
         try {

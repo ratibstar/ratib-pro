@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260719-dash-fast-paint-v102';
+var SW_BUILD_ID = '20260719-no-nav-alter-v103';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1560,44 +1560,49 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         });
 
         // Absolute ceiling — black screen must not exceed ~700ms.
-        setTimeout(function () {
-            if (settled) {
-                return;
-            }
-            cacheP.then(function (hit) {
+            setTimeout(function () {
                 if (settled) {
                     return;
                 }
-                var served = serveCachedFast(hit, false);
-                if (served) {
-                    finish(served);
-                    return;
-                }
-                var bareAdmin = '';
-                try {
-                    bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
-                } catch (eB) { /* ignore */ }
-                var dashP = /\/admin$/i.test(bareAdmin)
-                    ? matchCachedAdminDashboard(url).catch(function () { return null; })
-                    : Promise.resolve(null);
+                // Do NOT await hanging cacheP — that left /admin black for ~40–60s.
                 Promise.race([
-                    dashP.then(function (dash) {
-                        return serveCachedFast(dash, false) || neverFailNavigate(request, url);
-                    }),
-                    new Promise(function (res) {
-                        setTimeout(function () {
-                            try {
-                                res(erpInlineShellResponse());
-                            } catch (eShell2) {
-                                res(uncachedAdminBrowseResponse(url));
+                    cacheP,
+                    Promise.resolve(null)
+                ]).then(function (hit) {
+                    if (settled) {
+                        return;
+                    }
+                    var served = serveCachedFast(hit, false);
+                    if (served) {
+                        finish(served);
+                        return;
+                    }
+                    var bareAdmin = '';
+                    try {
+                        bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
+                    } catch (eB) { /* ignore */ }
+                    if (/\/admin$/i.test(bareAdmin)) {
+                        Promise.race([
+                            matchCachedAdminDashboard(url).catch(function () { return null; }),
+                            new Promise(function (r) { setTimeout(function () { r(null); }, 50); })
+                        ]).then(function (dash) {
+                            if (settled) {
+                                return;
                             }
-                        }, 350);
-                    })
-                ]).then(function (fallback) {
-                    finish(fallback);
+                            finish(
+                                serveCachedFast(dash, false)
+                                || erpInlineShellResponse()
+                            );
+                        });
+                        return;
+                    }
+                    try {
+                        finish(erpInlineShellResponse());
+                    } catch (eShell2) {
+                        finish(uncachedAdminBrowseResponse(url));
+                    }
                 });
-            });
-        }, 700);
+            }, 700);
     });
 }
 

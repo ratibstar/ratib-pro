@@ -58,7 +58,7 @@ final class ApprovalOversightService
      */
     public function menuCounts(?int $companyFilter = null): array
     {
-        $this->ensureAccountingSubmitSchema();
+        // Never run schema ALTER from sidebar/nav — that blocked /admin for 30–60s.
         $counts = [
             'approvals' => 0,
             'procurement' => 0,
@@ -97,7 +97,7 @@ final class ApprovalOversightService
             return $this->opsActionCounts($companyFilter);
         }
 
-        $this->ensureAccountingSubmitSchema();
+        // Never schema-ensure from nav badges (ALTER MODIFY hung Admin for tens of seconds).
         $counts = [];
         $add = static function (array &$counts, string $path, int $n): void {
             if ($path === '' || $n <= 0) {

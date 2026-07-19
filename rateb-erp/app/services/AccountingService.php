@@ -943,9 +943,17 @@ final class AccountingService
             'rateb_cash_vouchers' => "ENUM('draft','posted','void','rejected') NOT NULL DEFAULT 'draft'",
         ] as $table => $enumDef) {
             try {
-                if (Database::liveTableHasColumn($table, 'status')) {
-                    $pdo->exec("ALTER TABLE {$table} MODIFY status {$enumDef}");
+                if (!Database::liveTableHasColumn($table, 'status')) {
+                    continue;
                 }
+                // Only ALTER when the live enum is missing a required value.
+                // Blind MODIFY rebuilt large InnoDB tables on every cold sidebar load (30–60s black /admin).
+                $row = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'status'")->fetch(\PDO::FETCH_ASSOC);
+                $type = strtolower((string) ($row['Type'] ?? ''));
+                if ($type !== '' && str_contains($type, 'rejected') && str_contains($type, 'enum')) {
+                    continue;
+                }
+                $pdo->exec("ALTER TABLE {$table} MODIFY status {$enumDef}");
             } catch (\Throwable $e) {
                 // Host may block ALTER; migration 117 applies on deploy.
             }

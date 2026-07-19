@@ -540,7 +540,7 @@
             if (!el) {
                 return;
             }
-            if (!(el.dataset && (el.dataset.labels || hasLabels(el)))) {
+            if (!(el && hasLabels(el))) {
                 return;
             }
             queue.push(function () {
