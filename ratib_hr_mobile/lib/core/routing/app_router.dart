@@ -1,12 +1,11 @@
-/// go_router skeleton — 5-tab ESS shell + login.
-///
-/// Phase 0: placeholder destinations only. No auth gate. No ERP calls.
+/// go_router — Phase 1 auth gate + MVP shell placeholders.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
-import 'package:ratib_hr_mobile/features/login/login_placeholder_page.dart';
+import 'package:ratib_hr_mobile/features/login/auth_session.dart';
+import 'package:ratib_hr_mobile/features/login/login_page.dart';
 import 'package:ratib_hr_mobile/shared/widgets/ess_shell.dart';
 import 'package:ratib_hr_mobile/shared/widgets/phase0_placeholder_page.dart';
 
@@ -14,18 +13,34 @@ typedef LocaleChanged = void Function(Locale locale);
 
 abstract final class AppRouter {
   static GoRouter router({
+    required AuthSession session,
     required LocaleChanged onLocaleChanged,
-    required Locale currentLocale,
   }) {
     return GoRouter(
       initialLocation: AppRoutes.login,
+      refreshListenable: session,
+      redirect: (context, state) {
+        final loc = state.matchedLocation;
+        final onLogin = loc == AppRoutes.login;
+
+        if (session.status == AuthStatus.unknown) {
+          return onLogin ? null : AppRoutes.login;
+        }
+        if (session.status == AuthStatus.signedOut && !onLogin) {
+          return AppRoutes.login;
+        }
+        if (session.status == AuthStatus.signedIn && onLogin) {
+          return AppRoutes.home;
+        }
+        return null;
+      },
       routes: [
         GoRoute(
           path: AppRoutes.login,
-          builder: (context, state) => LoginPlaceholderPage(
-            onContinue: () => context.go(AppRoutes.home),
+          builder: (context, state) => LoginPage(
+            session: session,
             onLocaleChanged: onLocaleChanged,
-            currentLocale: currentLocale,
+            onSignedIn: () => context.go(AppRoutes.home),
           ),
         ),
         StatefulShellRoute.indexedStack(
@@ -33,7 +48,6 @@ abstract final class AppRouter {
             return EssShell(
               navigationShell: navigationShell,
               onLocaleChanged: onLocaleChanged,
-              currentLocale: currentLocale,
             );
           },
           branches: [

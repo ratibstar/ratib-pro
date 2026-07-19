@@ -1,23 +1,28 @@
-/// RATIB HR Mobile — Phase 0 application entry.
-///
-/// Presentation layer only. No ERP business logic lives here.
+/// RATIB HR Mobile — Phase 1 entry (ERP authentication).
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
+import 'package:ratib_hr_mobile/core/di/phase1_bootstrap.dart';
 import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/app_theme.dart';
+import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const RatibHrMobileApp());
+  bootstrapPhase1();
+  final session = AuthSession();
+  await session.restore();
+  runApp(RatibHrMobileApp(session: session));
 }
 
-/// Root widget — Material 3, Arabic RTL-first, English supported.
 class RatibHrMobileApp extends StatefulWidget {
-  const RatibHrMobileApp({super.key});
+  const RatibHrMobileApp({super.key, required this.session});
+
+  final AuthSession session;
 
   @override
   State<RatibHrMobileApp> createState() => _RatibHrMobileAppState();
@@ -25,6 +30,10 @@ class RatibHrMobileApp extends StatefulWidget {
 
 class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
   Locale _locale = AppConfig.defaultLocale;
+  late final GoRouter _router = AppRouter.router(
+    session: widget.session,
+    onLocaleChanged: _setLocale,
+  );
 
   void _setLocale(Locale locale) {
     setState(() => _locale = locale);
@@ -37,7 +46,7 @@ class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
       locale: _locale,
       supportedLocales: AppConfig.supportedLocales,
       localizationsDelegates: const [
@@ -46,10 +55,7 @@ class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: AppRouter.router(
-        onLocaleChanged: _setLocale,
-        currentLocale: _locale,
-      ),
+      routerConfig: _router,
     );
   }
 }

@@ -59,6 +59,20 @@ class AppLocalizations {
       'leave': 'الإجازات',
       'requests': 'الطلبات',
       'attendance': 'الحضور',
+      'loginSubtitle': 'تسجيل الدخول بحساب راتب ERP',
+      'loginEmailLabel': 'البريد الإلكتروني',
+      'loginEmailHint': 'email@company.com',
+      'loginPasswordLabel': 'كلمة المرور',
+      'loginSubmit': 'تسجيل الدخول',
+      'loginFieldsRequired': 'يرجى إدخال البريد وكلمة المرور',
+      'loginConfigMissing': 'لم يُضبط عنوان ERP (ERP_BASE_URL)',
+      'loginNetworkError': 'تعذر الاتصال بالخادم',
+      'loginInvalidCredentials': 'بيانات الدخول غير صحيحة',
+      'loginForbidden': 'الوصول مرفوض',
+      'loginRateLimited': 'محاولات كثيرة. حاول لاحقاً',
+      'loginFailed': 'فشل تسجيل الدخول',
+      'loginErpOnlyHint': 'المصادقة عبر نظام راتب ERP فقط',
+      'signOut': 'تسجيل الخروج',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -93,6 +107,20 @@ class AppLocalizations {
       'leave': 'Leave',
       'requests': 'Requests',
       'attendance': 'Attendance',
+      'loginSubtitle': 'Sign in with your RATIB ERP account',
+      'loginEmailLabel': 'Email',
+      'loginEmailHint': 'email@company.com',
+      'loginPasswordLabel': 'Password',
+      'loginSubmit': 'Sign in',
+      'loginFieldsRequired': 'Email and password are required',
+      'loginConfigMissing': 'ERP_BASE_URL is not configured',
+      'loginNetworkError': 'Could not reach the server',
+      'loginInvalidCredentials': 'Invalid credentials',
+      'loginForbidden': 'Access denied',
+      'loginRateLimited': 'Too many attempts. Try again later',
+      'loginFailed': 'Sign-in failed',
+      'loginErpOnlyHint': 'Authentication via RATIB ERP only',
+      'signOut': 'Sign out',
     },
   };
 
@@ -133,6 +161,20 @@ class AppLocalizations {
   String get leave => _t('leave');
   String get requests => _t('requests');
   String get attendance => _t('attendance');
+  String get loginSubtitle => _t('loginSubtitle');
+  String get loginEmailLabel => _t('loginEmailLabel');
+  String get loginEmailHint => _t('loginEmailHint');
+  String get loginPasswordLabel => _t('loginPasswordLabel');
+  String get loginSubmit => _t('loginSubmit');
+  String get loginFieldsRequired => _t('loginFieldsRequired');
+  String get loginConfigMissing => _t('loginConfigMissing');
+  String get loginNetworkError => _t('loginNetworkError');
+  String get loginInvalidCredentials => _t('loginInvalidCredentials');
+  String get loginForbidden => _t('loginForbidden');
+  String get loginRateLimited => _t('loginRateLimited');
+  String get loginFailed => _t('loginFailed');
+  String get loginErpOnlyHint => _t('loginErpOnlyHint');
+  String get signOut => _t('signOut');
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,4 @@
 /// ESS bottom navigation shell — max 5 tabs.
-///
-/// Phase 0/0.7: presentation chrome using design system.
 library;
 
 import 'package:flutter/material.dart';
@@ -16,12 +14,10 @@ class EssShell extends StatelessWidget {
     super.key,
     required this.navigationShell,
     required this.onLocaleChanged,
-    required this.currentLocale,
   });
 
   final StatefulNavigationShell navigationShell;
   final LocaleChanged onLocaleChanged;
-  final Locale currentLocale;
 
   @override
   Widget build(BuildContext context) {
@@ -41,28 +37,21 @@ class EssShell extends StatelessWidget {
         onDestinationSelected: navigationShell.goBranch,
         destinations: destinations,
       ),
-      floatingActionButton: _LocaleChip(
-        currentLocale: currentLocale,
-        onLocaleChanged: onLocaleChanged,
-      ),
+      floatingActionButton: _LocaleChip(onLocaleChanged: onLocaleChanged),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndTop,
     );
   }
 }
 
 class _LocaleChip extends StatelessWidget {
-  const _LocaleChip({
-    required this.currentLocale,
-    required this.onLocaleChanged,
-  });
+  const _LocaleChip({required this.onLocaleChanged});
 
-  final Locale currentLocale;
   final LocaleChanged onLocaleChanged;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isAr = currentLocale.languageCode == 'ar';
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
 
     return SafeArea(
       child: Padding(

@@ -1,27 +1,48 @@
-/// Dependency injection structure — Phase 0.6.
-///
-/// Registers **nothing**. Implementations are forbidden until Phase 1+.
-/// Composition root will bind contracts → adapters without feature↔feature links.
+/// Dependency injection — Phase 1 registers auth stack only.
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
 
-/// Typed slots for future registration. All getters intentionally unimplemented.
-///
-/// Calling any getter before Phase 1 registration must fail fast.
 abstract final class AppLocator {
+  static AppEnvironment? _environment;
+  static ErpHttpClient? _http;
+  static AuthPort? _auth;
+  static SecureTokenStore? _tokenStore;
+  static ErrorMapper? _errors;
+
   static Never _notRegistered(String name) {
     throw StateError(
-      'AppLocator.$name is not registered. Phase 0.6 contracts only — '
-      'bind implementations in a later phase.',
+      'AppLocator.$name is not registered. '
+      'Phase 1 binds auth only; other ports wait for later phases.',
     );
   }
 
-  static AppEnvironment get environment => _notRegistered('environment');
+  /// Binds Phase 1 authentication dependencies.
+  static void registerPhase1({
+    required AppEnvironment environment,
+    required ErpHttpClient http,
+    required AuthPort auth,
+    required SecureTokenStore tokenStore,
+    required ErrorMapper errors,
+  }) {
+    _environment = environment;
+    _http = http;
+    _auth = auth;
+    _tokenStore = tokenStore;
+    _errors = errors;
+  }
 
-  static ErpHttpClient get http => _notRegistered('http');
+  static AppEnvironment get environment =>
+      _environment ?? _notRegistered('environment');
 
-  static AuthPort get auth => _notRegistered('auth');
+  static ErpHttpClient get http => _http ?? _notRegistered('http');
+
+  static AuthPort get auth => _auth ?? _notRegistered('auth');
+
+  static SecureTokenStore get tokenStore =>
+      _tokenStore ?? _notRegistered('tokenStore');
+
+  static ErrorMapper get errors => _errors ?? _notRegistered('errors');
 
   static MePort get me => _notRegistered('me');
 
@@ -43,13 +64,9 @@ abstract final class AppLocator {
 
   static ApprovalPort get approvals => _notRegistered('approvals');
 
-  static SecureTokenStore get tokenStore => _notRegistered('tokenStore');
-
   static CacheStore get cache => _notRegistered('cache');
 
   static BiometricUnlock get biometric => _notRegistered('biometric');
 
   static OfflineQueuePort get offlineQueue => _notRegistered('offlineQueue');
-
-  static ErrorMapper get errors => _notRegistered('errors');
 }
