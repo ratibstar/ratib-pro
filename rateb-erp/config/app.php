@@ -602,9 +602,9 @@ if (!function_exists('rateb_is_production')) {
 
 if (!function_exists('rateb_hr_mobile_dev_config')) {
     /**
-     * HR Mobile development console config (env-only). Never used for HR business rules.
+     * HR Mobile console config (env / feature flag only). Never used for HR business rules.
      *
-     * @return array{enabled:bool,web_url:string,api_base:string,build:string,environment:string,app_debug:bool}
+     * @return array{flag_enabled:bool,enabled:bool,web_url:string,api_base:string,build:string,environment:string,app_debug:bool}
      */
     function rateb_hr_mobile_dev_config(): array
     {
@@ -615,11 +615,12 @@ if (!function_exists('rateb_hr_mobile_dev_config')) {
         $file = RATEB_ROOT . '/config/hr-mobile-dev.php';
         if (!is_file($file)) {
             $cached = [
+                'flag_enabled' => false,
                 'enabled' => false,
                 'web_url' => '',
                 'api_base' => '',
                 'build' => 'dev',
-                'environment' => 'unknown',
+                'environment' => 'production',
                 'app_debug' => false,
             ];
             return $cached;
@@ -627,22 +628,66 @@ if (!function_exists('rateb_hr_mobile_dev_config')) {
         /** @var callable(): array $loader */
         $loader = require $file;
         $cached = is_callable($loader) ? $loader() : [
+            'flag_enabled' => false,
             'enabled' => false,
             'web_url' => '',
             'api_base' => '',
             'build' => 'dev',
-            'environment' => 'unknown',
+            'environment' => 'production',
             'app_debug' => false,
         ];
         return $cached;
     }
 }
 
+if (!function_exists('rateb_hr_mobile_console_flag_enabled')) {
+    /** Feature flag HR_MOBILE_CONSOLE_ENABLED (default false). */
+    function rateb_hr_mobile_console_flag_enabled(): bool
+    {
+        return (bool) (rateb_hr_mobile_dev_config()['flag_enabled'] ?? false);
+    }
+}
+
+if (!function_exists('rateb_hr_mobile_console_permission')) {
+    /**
+     * Existing permission used as production-safe console gate.
+     * Catalog has no system.development without a new RBAC migration — settings.manage is the admin-tools equivalent.
+     */
+    function rateb_hr_mobile_console_permission(): string
+    {
+        return 'settings.manage';
+    }
+}
+
+if (!function_exists('rateb_hr_mobile_console_accessible')) {
+    /**
+     * Production-safe access: feature flag + Super Admin + settings.manage.
+     * Does not use APP_ENV / APP_DEBUG / rateb_is_production() to hide.
+     */
+    function rateb_hr_mobile_console_accessible(): bool
+    {
+        if (!rateb_hr_mobile_console_flag_enabled()) {
+            return false;
+        }
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return false;
+        }
+        $perm = rateb_hr_mobile_console_permission();
+        if (function_exists('rateb_can') && rateb_can($perm)) {
+            return true;
+        }
+        if (function_exists('rateb_nav_can') && rateb_nav_can($perm)) {
+            return true;
+        }
+        return false;
+    }
+}
+
 if (!function_exists('rateb_hr_mobile_dev_console_enabled')) {
-    /** True only for non-production + (APP_ENV development|local|dev OR APP_DEBUG). */
+    /** @deprecated Prefer rateb_hr_mobile_console_accessible() — kept as alias for call sites. */
     function rateb_hr_mobile_dev_console_enabled(): bool
     {
-        return (bool) (rateb_hr_mobile_dev_config()['enabled'] ?? false);
+        return rateb_hr_mobile_console_accessible();
     }
 }
 

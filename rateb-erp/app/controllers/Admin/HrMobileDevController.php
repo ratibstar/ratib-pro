@@ -8,14 +8,14 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 
 /**
- * HR Mobile Development Console — launcher / diagnostics only.
- * No HR SQL, models, or business logic.
+ * HR Mobile Console — launcher / diagnostics only.
+ * No HR SQL, models, API proxy, or business logic.
  */
 final class HrMobileDevController extends Controller
 {
     public function console(): void
     {
-        if (!rateb_hr_mobile_dev_console_enabled()) {
+        if (!rateb_hr_mobile_console_accessible()) {
             http_response_code(404);
             echo '404';
             return;
@@ -40,7 +40,7 @@ final class HrMobileDevController extends Controller
 
     public function health(): void
     {
-        if (!rateb_hr_mobile_dev_console_enabled()) {
+        if (!rateb_hr_mobile_console_accessible()) {
             Response::json(['ok' => false, 'message' => 'disabled'], 404);
             return;
         }
