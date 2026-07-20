@@ -29,6 +29,9 @@ $router->get('/api/v1/hr/attendance/history', [\Rateb\App\Controllers\Api\HrEssA
 $router->post('/api/v1/hr/attendance/check-in', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'checkIn'], $api);
 $router->post('/api/v1/hr/attendance/check-out', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'checkOut'], $api);
 $router->get('/api/v1/hr/leave/balances', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'balances'], $api);
+$router->get('/api/v1/hr/leave/requests', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'requests'], $api);
+$router->get('/api/v1/hr/leave/requests/{id}', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'show'], $api);
+$router->post('/api/v1/hr/leave/apply', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'apply'], $api);
 $router->get('/api/v1/hr/notifications', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'list'], $api);
 $router->post('/api/v1/hr/notifications/read-all', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markAllRead'], $api);
 $router->post('/api/v1/hr/notifications/{id}/read', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markRead'], $api);

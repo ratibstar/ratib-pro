@@ -32,13 +32,13 @@
 | **B** | Native hardening / device QA (extends A0) | Pending |
 | **C** | Enterprise ESS modules | **COMPLETE** — see [PHASE_C.md](PHASE_C.md) |
 | **D** | Attendance deep wiring | **COMPLETE** — see [PHASE_D.md](PHASE_D.md) |
-| **D2** | Leave deep wiring | Next feature phase after Attendance |
-| **E** | Profile polish | After D2 |
-| **F** | Documents + Payslips | After thin APIs |
-| **G** | Offline hardening | After D/D2 |
-| **H** | Approvals (if ERP ready) | Optional |
-| **I** | Push + device registration (shared ERP API) | After native |
-| **J** | Store production release | After A–G |
+| **E** | Leave Management | **COMPLETE** — see [PHASE_E.md](PHASE_E.md) |
+| **F** | Profile polish | Next |
+| **G** | Documents + Payslips | After thin APIs |
+| **H** | Offline hardening | After E |
+| **I** | Approvals (if ERP ready) | Optional |
+| **J** | Push + device registration (shared ERP API) | After native |
+| **K** | Store production release | After A–H |
 
 ---
 

@@ -176,6 +176,22 @@ class AppLocalizations {
       'attendanceStatusCheckedIn': 'تم الحضور',
       'attendanceStatusCompleted': 'مكتمل',
       'attendanceOfflineBanner': 'عمليات حضور بانتظار المزامنة: {count}',
+      'leaveMyRequests': 'طلباتي',
+      'leaveType': 'نوع الإجازة',
+      'leaveDates': 'التواريخ',
+      'leaveStartDate': 'من تاريخ',
+      'leaveEndDate': 'إلى تاريخ',
+      'leaveReason': 'السبب',
+      'leaveReasonHint': 'اختياري',
+      'leaveSubmit': 'تقديم الطلب',
+      'leaveFormRequired': 'يرجى اختيار النوع والتواريخ',
+      'leaveApplySuccess': 'تم تقديم طلب الإجازة',
+      'leaveQueuedOffline': 'تم حفظ الطلب محلياً — سيُزامن عند الاتصال',
+      'leaveDuplicate': 'يوجد طلب متداخل بالفعل',
+      'leaveRequestsEmpty': 'لا توجد طلبات إجازة',
+      'leaveDetailTitle': 'تفاصيل الإجازة',
+      'leaveDays': 'أيام',
+      'leaveOfflineBanner': 'طلبات إجازة بانتظار المزامنة: {count}',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -333,6 +349,22 @@ class AppLocalizations {
       'attendanceStatusCheckedIn': 'Checked in',
       'attendanceStatusCompleted': 'Completed',
       'attendanceOfflineBanner': 'Pending offline attendance: {count}',
+      'leaveMyRequests': 'My requests',
+      'leaveType': 'Leave type',
+      'leaveDates': 'Dates',
+      'leaveStartDate': 'Start date',
+      'leaveEndDate': 'End date',
+      'leaveReason': 'Reason',
+      'leaveReasonHint': 'Optional',
+      'leaveSubmit': 'Submit request',
+      'leaveFormRequired': 'Please select type and dates',
+      'leaveApplySuccess': 'Leave request submitted',
+      'leaveQueuedOffline': 'Request saved offline — will sync when online',
+      'leaveDuplicate': 'An overlapping leave request already exists',
+      'leaveRequestsEmpty': 'No leave requests yet',
+      'leaveDetailTitle': 'Leave details',
+      'leaveDays': 'days',
+      'leaveOfflineBanner': 'Pending offline leave requests: {count}',
     },
   };
 
@@ -502,6 +534,25 @@ class AppLocalizations {
         return key;
     }
   }
+
+  String get leaveMyRequests => _t('leaveMyRequests');
+  String get leaveType => _t('leaveType');
+  String get leaveDates => _t('leaveDates');
+  String get leaveStartDate => _t('leaveStartDate');
+  String get leaveEndDate => _t('leaveEndDate');
+  String get leaveReason => _t('leaveReason');
+  String get leaveReasonHint => _t('leaveReasonHint');
+  String get leaveSubmit => _t('leaveSubmit');
+  String get leaveFormRequired => _t('leaveFormRequired');
+  String get leaveApplySuccess => _t('leaveApplySuccess');
+  String get leaveQueuedOffline => _t('leaveQueuedOffline');
+  String get leaveDuplicate => _t('leaveDuplicate');
+  String get leaveRequestsEmpty => _t('leaveRequestsEmpty');
+  String get leaveDetailTitle => _t('leaveDetailTitle');
+  String get leaveDays => _t('leaveDays');
+
+  String leaveOfflineBanner(int count) =>
+      _t('leaveOfflineBanner').replaceAll('{count}', '$count');
 }
 
 class _AppLocalizationsDelegate

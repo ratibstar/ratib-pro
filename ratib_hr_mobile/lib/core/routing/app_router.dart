@@ -12,6 +12,10 @@ import 'package:ratib_hr_mobile/features/attendance/attendance_history_screen.da
 import 'package:ratib_hr_mobile/features/attendance/attendance_screen.dart';
 import 'package:ratib_hr_mobile/features/home/home_page.dart';
 import 'package:ratib_hr_mobile/features/inquiries/inquiries_page.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_apply_screen.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_balances_screen.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_detail_screen.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_requests_screen.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/login_page.dart';
 import 'package:ratib_hr_mobile/features/more/more_page.dart';
@@ -116,41 +120,28 @@ abstract final class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.leave,
-                  builder: (context, state) => const Phase0PlaceholderPage(
-                    titleKey: Phase0TitleKey.leave,
-                    childLinks: [
-                      Phase0Link(
-                        route: AppRoutes.leaveBalance,
-                        titleKey: Phase0TitleKey.leaveBalance,
-                      ),
-                      Phase0Link(
-                        route: AppRoutes.leaveApply,
-                        titleKey: Phase0TitleKey.applyLeave,
-                      ),
-                      Phase0Link(
-                        route: AppRoutes.leaveStatus,
-                        titleKey: Phase0TitleKey.leaveStatus,
-                      ),
-                    ],
-                  ),
+                  builder: (context, state) => const LeaveBalancesScreen(),
                   routes: [
                     GoRoute(
                       path: 'balance',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.leaveBalance,
-                      ),
+                      builder: (context, state) =>
+                          const LeaveBalancesScreen(),
                     ),
                     GoRoute(
                       path: 'apply',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.applyLeave,
-                      ),
+                      builder: (context, state) => const LeaveApplyScreen(),
                     ),
                     GoRoute(
                       path: 'status',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.leaveStatus,
-                      ),
+                      builder: (context, state) =>
+                          const LeaveRequestsScreen(),
+                    ),
+                    GoRoute(
+                      path: 'detail',
+                      builder: (context, state) {
+                        final id = state.uri.queryParameters['id'] ?? '';
+                        return LeaveDetailScreen(requestId: id);
+                      },
                     ),
                   ],
                 ),

@@ -12,6 +12,7 @@ abstract final class AppRoutes {
   static const leaveBalance = '/leave/balance';
   static const leaveApply = '/leave/apply';
   static const leaveStatus = '/leave/status';
+  static const leaveDetail = '/leave/detail';
   static const requests = '/requests';
   static const permissionRequests = '/requests/permissions';
   static const employeeRequests = '/requests/employee';

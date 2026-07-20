@@ -76,8 +76,8 @@ void main() {
 
   tearDown(EmployeeContext.clear);
 
-  test('Phase marker is D', () {
-    expect(AppConfig.phase, 'D');
+  test('Phase marker is D or later', () {
+    expect(['D', 'E'].contains(AppConfig.phase), isTrue);
   });
 
   test('Attendance adapter paths are Phase D ESS endpoints', () {

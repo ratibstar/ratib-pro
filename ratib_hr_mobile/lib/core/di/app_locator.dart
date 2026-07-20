@@ -5,6 +5,7 @@ import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -28,6 +29,7 @@ abstract final class AppLocator {
   static AppearanceController? _appearance;
   static OfflineQueuePort? _offlineQueue;
   static AttendanceRepository? _attendanceRepository;
+  static LeaveRepository? _leaveRepository;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -97,9 +99,11 @@ abstract final class AppLocator {
   static void registerPhaseD({
     required OfflineQueuePort offlineQueue,
     required AttendanceRepository attendanceRepository,
+    required LeaveRepository leaveRepository,
   }) {
     _offlineQueue = offlineQueue;
     _attendanceRepository = attendanceRepository;
+    _leaveRepository = leaveRepository;
   }
 
   static void bindSessionHandlers({
@@ -156,6 +160,8 @@ abstract final class AppLocator {
       _offlineQueue ?? _notRegistered('offlineQueue');
   static AttendanceRepository get attendanceRepository =>
       _attendanceRepository ?? _notRegistered('attendanceRepository');
+  static LeaveRepository get leaveRepository =>
+      _leaveRepository ?? _notRegistered('leaveRepository');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static PayslipPort get payslips => _notRegistered('payslips');

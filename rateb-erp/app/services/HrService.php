@@ -463,8 +463,9 @@ final class HrService
         $companyId = (int) ($emp['company_id'] ?? 0);
         $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
         return $this->localizeLeaveTypeNames((new LeaveBalance())->query(
-            "SELECT lb.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lb.leave_type_id, lt.days_per_year,
-                    (lb.entitled_days - lb.used_days) AS remaining_days
+            "SELECT lb.id, lb.company_id, lb.employee_id, lb.leave_type_id, lb.balance_year,
+                    lb.entitled_days, lb.used_days, lt.name AS leave_type_name, lt.code AS leave_type_code,
+                    lt.days_per_year, (lb.entitled_days - lb.used_days) AS remaining_days
              FROM rateb_leave_balances lb
              JOIN rateb_leave_types lt ON lt.id = lb.leave_type_id
              WHERE lb.company_id = :cid AND lb.employee_id = :eid AND lb.balance_year = :y
@@ -474,6 +475,89 @@ final class HrService
              ), lt.name ASC",
             ['cid' => $companyId, 'eid' => $employeeId, 'y' => $year]
         ));
+    }
+
+    /**
+     * ESS leave request list — company + employee scoped.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listLeaveRequestsForEmployee(
+        int $companyId,
+        int $employeeId,
+        ?string $status = null
+    ): array {
+        if ($companyId < 1 || $employeeId < 1) {
+            return [];
+        }
+        $sql = "SELECT lr.id, lr.company_id, lr.employee_id, lr.leave_type_id, lr.start_date, lr.end_date,
+                       lr.days, lr.reason, lr.status, lr.created_at,
+                       lt.name AS leave_type_name, lt.code AS leave_type_code
+                FROM rateb_leave_requests lr
+                JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id AND lt.company_id = lr.company_id
+                WHERE lr.company_id = :cid AND lr.employee_id = :eid";
+        $params = ['cid' => $companyId, 'eid' => $employeeId];
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND lr.status = :st';
+            $params['st'] = $status;
+        }
+        $sql .= ' ORDER BY lr.start_date DESC, lr.id DESC LIMIT 100';
+
+        return $this->localizeLeaveTypeNames((new LeaveRequest())->query($sql, $params));
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findLeaveRequestForEmployee(int $companyId, int $employeeId, int $requestId): ?array
+    {
+        if ($companyId < 1 || $employeeId < 1 || $requestId < 1) {
+            return null;
+        }
+
+        $row = (new LeaveRequest())->queryOne(
+            "SELECT lr.id, lr.company_id, lr.employee_id, lr.leave_type_id, lr.start_date, lr.end_date,
+                    lr.days, lr.reason, lr.status, lr.created_at,
+                    lt.name AS leave_type_name, lt.code AS leave_type_code
+             FROM rateb_leave_requests lr
+             JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id AND lt.company_id = lr.company_id
+             WHERE lr.company_id = :cid AND lr.employee_id = :eid AND lr.id = :id
+             LIMIT 1",
+            ['cid' => $companyId, 'eid' => $employeeId, 'id' => $requestId]
+        );
+        if ($row === null) {
+            return null;
+        }
+        $localized = $this->localizeLeaveTypeNames([$row]);
+
+        return $localized[0] ?? $row;
+    }
+
+    /**
+     * Overlap with pending/approved requests (duplicate protection for ESS apply).
+     */
+    public function hasOverlappingLeaveRequest(
+        int $companyId,
+        int $employeeId,
+        string $startDate,
+        string $endDate
+    ): bool {
+        if ($companyId < 1 || $employeeId < 1 || $startDate === '' || $endDate === '') {
+            return false;
+        }
+        $row = (new LeaveRequest())->queryOne(
+            "SELECT id FROM rateb_leave_requests
+             WHERE company_id = :cid AND employee_id = :eid
+               AND status IN ('pending', 'approved')
+               AND start_date <= :end_d AND end_date >= :start_d
+             LIMIT 1",
+            [
+                'cid' => $companyId,
+                'eid' => $employeeId,
+                'start_d' => $startDate,
+                'end_d' => $endDate,
+            ]
+        );
+
+        return $row !== null;
     }
 
     /** @return array<int, array<string, mixed>> */

@@ -23,6 +23,7 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
+import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 
 void bootstrapPhase1() {
   bootstrapEssCore();
@@ -96,8 +97,13 @@ void bootstrapEssCore() {
     attendance: attendance,
     offlineQueue: offlineQueue,
   );
+  final leaveRepository = LeaveRepository(
+    leave: leave,
+    offlineQueue: offlineQueue,
+  );
   AppLocator.registerPhaseD(
     offlineQueue: offlineQueue,
     attendanceRepository: attendanceRepository,
+    leaveRepository: leaveRepository,
   );
 }
