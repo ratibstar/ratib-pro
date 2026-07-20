@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: DsAppBar(
-        title: 'راتب جديد · 0.1.3',
+        title: 'راتب 013',
         actions: [
           if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
             IconButton(
@@ -114,15 +114,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'الإصدار 0.1.3 — نسخة جديدة',
+                              'BUILDV013 — تم التحديث',
                               style: Theme.of(context)
                                   .textTheme
-                                  .labelMedium
+                                  .labelLarge
                                   ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
-                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF2DD4BF),
+                                    fontWeight: FontWeight.w800,
                                   ),
                             ),
                           ],
