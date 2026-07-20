@@ -30,6 +30,7 @@ import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
 import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
 import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
 import 'package:ratib_hr_mobile/features/settings/settings_page.dart';
+import 'package:ratib_hr_mobile/features/sync/sync_status_screen.dart';
 import 'package:ratib_hr_mobile/shared/widgets/ess_shell.dart';
 import 'package:ratib_hr_mobile/shared/widgets/phase0_placeholder_page.dart';
 
@@ -249,6 +250,10 @@ abstract final class AppRouter {
                     GoRoute(
                       path: 'profile',
                       builder: (context, state) => const ProfileScreen(),
+                    ),
+                    GoRoute(
+                      path: 'sync',
+                      builder: (context, state) => const SyncStatusScreen(),
                     ),
                     GoRoute(
                       path: 'approvals',

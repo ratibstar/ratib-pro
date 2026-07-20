@@ -100,6 +100,10 @@ abstract final class ShellNavPolicy {
     if (location.startsWith('/more/profile')) {
       return config.isFeatureEnabled(MobileFeatureKey.profile);
     }
+    if (location.startsWith('/more/sync')) {
+      return config.isFeatureEnabled(MobileFeatureKey.attendance) ||
+          config.isFeatureEnabled(MobileFeatureKey.leave);
+    }
     if (location.startsWith('/more/approvals')) {
       return config.isFeatureEnabled(MobileFeatureKey.approvals);
     }

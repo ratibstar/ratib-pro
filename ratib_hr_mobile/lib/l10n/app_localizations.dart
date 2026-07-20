@@ -221,6 +221,16 @@ class AppLocalizations {
       'profileEmail': 'البريد الإلكتروني',
       'profilePhone': 'الجوال',
       'profileJoinDate': 'تاريخ الالتحاق',
+      'navSyncStatus': 'حالة المزامنة',
+      'syncWaitingConnection': 'بانتظار الاتصال',
+      'syncCompleted': 'اكتملت المزامنة',
+      'syncFailedContactAdmin': 'فشلت العملية — تواصل مع المسؤول',
+      'syncPendingCount': 'إجراءات معلّقة: {count}',
+      'syncPendingActions': 'الإجراءات المعلّقة',
+      'syncQueueEmpty': 'لا توجد إجراءات معلّقة',
+      'syncNow': 'مزامنة الآن',
+      'syncOnline': 'متصل',
+      'syncLastOutcome': 'آخر نتيجة',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -423,6 +433,16 @@ class AppLocalizations {
       'profileEmail': 'Email',
       'profilePhone': 'Phone',
       'profileJoinDate': 'Join date',
+      'navSyncStatus': 'Sync status',
+      'syncWaitingConnection': 'Waiting for connection',
+      'syncCompleted': 'Sync completed',
+      'syncFailedContactAdmin': 'Action failed — contact administrator',
+      'syncPendingCount': 'Pending actions: {count}',
+      'syncPendingActions': 'Pending actions',
+      'syncQueueEmpty': 'No pending actions',
+      'syncNow': 'Sync now',
+      'syncOnline': 'Online',
+      'syncLastOutcome': 'Last result',
     },
   };
 
@@ -641,6 +661,19 @@ class AppLocalizations {
   String get profileEmail => _t('profileEmail');
   String get profilePhone => _t('profilePhone');
   String get profileJoinDate => _t('profileJoinDate');
+
+  String get navSyncStatus => _t('navSyncStatus');
+  String get syncWaitingConnection => _t('syncWaitingConnection');
+  String get syncCompleted => _t('syncCompleted');
+  String get syncFailedContactAdmin => _t('syncFailedContactAdmin');
+  String get syncPendingActions => _t('syncPendingActions');
+  String get syncQueueEmpty => _t('syncQueueEmpty');
+  String get syncNow => _t('syncNow');
+  String get syncOnline => _t('syncOnline');
+  String get syncLastOutcome => _t('syncLastOutcome');
+
+  String syncPendingCount(int count) =>
+      _t('syncPendingCount').replaceAll('{count}', '$count');
 
   String documentsFileLoaded(String name, int size) => _t('documentsFileLoaded')
       .replaceAll('{name}', name)

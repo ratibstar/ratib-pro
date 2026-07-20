@@ -2,9 +2,9 @@
 library;
 
 import 'package:ratib_hr_mobile/core/adapters/erp_attendance_adapter.dart';
-import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
 import 'package:ratib_hr_mobile/core/contracts/attendance_port.dart';
 import 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_state.dart';
@@ -47,6 +47,7 @@ final class AttendanceRepository {
       return AttendancePunchResult.online;
     } on AppFailure catch (e) {
       if (e.code == 'network' || e.code == 'timeout') {
+        AppLocator.connectivity.markOffline(e.message);
         await _enqueueCreate(date: date, checkIn: time);
         return AttendancePunchResult.queuedOffline;
       }
@@ -84,18 +85,11 @@ final class AttendanceRepository {
     );
   }
 
-  Future<int> _pendingCount() async {
-    if (_offlineQueue is LocalOfflineQueueAdapter) {
-      return _offlineQueue.pendingCount();
-    }
-    return 0;
-  }
+  Future<int> _pendingCount() => _offlineQueue.pendingCount();
 
   /// Replays pending `attendance.create` via online check-in (no attendance.update).
   Future<void> _flushPendingCheckIns() async {
-    if (_offlineQueue is! LocalOfflineQueueAdapter) return;
-    final local = _offlineQueue;
-    final items = await local.pendingItems();
+    final items = await _offlineQueue.pendingItems();
     if (items.isEmpty) return;
     final remaining = <Map<String, Object?>>[];
     for (final item in items) {
@@ -122,7 +116,7 @@ final class AttendanceRepository {
         remaining.add(item);
       }
     }
-    await local.replaceAll(remaining);
+    await _offlineQueue.replaceAll(remaining);
   }
 }
 

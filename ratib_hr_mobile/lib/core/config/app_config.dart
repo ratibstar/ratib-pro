@@ -11,7 +11,7 @@ abstract final class AppConfig {
   static const String appName = 'RATIB HR Mobile';
   static const String appId = 'sa.rateb.hr.mobile';
   /// Roadmap phase marker — see docs/ROADMAP.md (A0 → A → C …).
-  static const String phase = 'G';
+  static const String phase = 'H';
 
   /// ERP remains the single source of truth (documentation constant only).
   static const String sourceOfTruth = 'RATIB ERP';

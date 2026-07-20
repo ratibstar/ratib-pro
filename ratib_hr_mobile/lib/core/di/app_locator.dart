@@ -9,6 +9,8 @@ import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
+import 'package:ratib_hr_mobile/core/offline/connectivity_controller.dart';
+import 'package:ratib_hr_mobile/core/offline/offline_sync_service.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -39,6 +41,8 @@ abstract final class AppLocator {
   static DocumentsRepository? _documentsRepository;
   static ProfilePort? _profile;
   static ProfileRepository? _profileRepository;
+  static ConnectivityController? _connectivity;
+  static OfflineSyncService? _offlineSync;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -135,6 +139,14 @@ abstract final class AppLocator {
     _profileRepository = profileRepository;
   }
 
+  static void registerPhaseH({
+    required ConnectivityController connectivity,
+    required OfflineSyncService offlineSync,
+  }) {
+    _connectivity = connectivity;
+    _offlineSync = offlineSync;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -201,6 +213,10 @@ abstract final class AppLocator {
   static ProfilePort get profile => _profile ?? _notRegistered('profile');
   static ProfileRepository get profileRepository =>
       _profileRepository ?? _notRegistered('profileRepository');
+  static ConnectivityController get connectivity =>
+      _connectivity ?? _notRegistered('connectivity');
+  static OfflineSyncService get offlineSync =>
+      _offlineSync ?? _notRegistered('offlineSync');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static ApprovalPort get approvals => _notRegistered('approvals');

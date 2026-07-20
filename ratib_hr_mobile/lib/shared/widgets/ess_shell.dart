@@ -10,6 +10,7 @@ import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/ds_bottom_nav.dart';
+import 'package:ratib_hr_mobile/shared/widgets/offline_banner_host.dart';
 
 class EssShell extends StatelessWidget {
   const EssShell({
@@ -41,7 +42,7 @@ class EssShell extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: navigationShell,
+          body: OfflineBannerHost(child: navigationShell),
           bottomNavigationBar: liveDest.isEmpty
               ? null
               : DsBottomNavigation(

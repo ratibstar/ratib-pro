@@ -2,9 +2,9 @@
 library;
 
 import 'package:ratib_hr_mobile/core/adapters/erp_leave_adapter.dart';
-import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
 import 'package:ratib_hr_mobile/core/contracts/leave_port.dart';
 import 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 
@@ -53,6 +53,7 @@ final class LeaveRepository {
       return LeaveApplyResult.online;
     } on AppFailure catch (e) {
       if (e.code == 'network' || e.code == 'timeout') {
+        AppLocator.connectivity.markOffline(e.message);
         await _enqueueDraft(payload);
         return LeaveApplyResult.queuedOffline;
       }
@@ -61,11 +62,8 @@ final class LeaveRepository {
   }
 
   Future<int> pendingOfflineCount() async {
-    if (_offlineQueue is LocalOfflineQueueAdapter) {
-      final items = await _offlineQueue.pendingItems();
-      return items.where((e) => (e['action'] ?? '') == 'leave_request.draft').length;
-    }
-    return 0;
+    final items = await _offlineQueue.pendingItems();
+    return items.where((e) => (e['action'] ?? '') == 'leave_request.draft').length;
   }
 
   Future<void> _enqueueDraft(Map<String, Object?> payload) async {
@@ -80,9 +78,7 @@ final class LeaveRepository {
   }
 
   Future<void> _flushPendingDrafts() async {
-    if (_offlineQueue is! LocalOfflineQueueAdapter) return;
-    final local = _offlineQueue;
-    final items = await local.pendingItems();
+    final items = await _offlineQueue.pendingItems();
     if (items.isEmpty) return;
     final remaining = <Map<String, Object?>>[];
     for (final item in items) {
@@ -111,7 +107,7 @@ final class LeaveRepository {
         remaining.add(item);
       }
     }
-    await local.replaceAll(remaining);
+    await _offlineQueue.replaceAll(remaining);
   }
 }
 

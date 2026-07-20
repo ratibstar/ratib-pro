@@ -35,8 +35,8 @@
 | **E** | Leave Management | **COMPLETE** — see [PHASE_E.md](PHASE_E.md) |
 | **F** | Payslips + Documents | **COMPLETE** — see [PHASE_F.md](PHASE_F.md) |
 | **G** | Profile | **COMPLETE** — see [PHASE_G.md](PHASE_G.md) |
-| **H** | Offline hardening | Next |
-| **I** | Approvals (if ERP ready) | Optional |
+| **H** | Offline hardening | **COMPLETE** — see [PHASE_H.md](PHASE_H.md) |
+| **I** | Approvals (if ERP ready) | Optional / Next |
 | **J** | Unified Mobile Device Registry | **DESIGN COMPLETE** — see [PHASE_J.md](PHASE_J.md) (implement later) |
 | **K** | Store production release | After A–H |
 

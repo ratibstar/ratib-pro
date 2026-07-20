@@ -30,6 +30,8 @@ import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
+import 'package:ratib_hr_mobile/core/offline/connectivity_controller.dart';
+import 'package:ratib_hr_mobile/core/offline/offline_sync_service.dart';
 
 void bootstrapPhase1() {
   bootstrapEssCore();
@@ -124,5 +126,16 @@ void bootstrapEssCore() {
   AppLocator.registerPhaseG(
     profile: profile,
     profileRepository: ProfileRepository(profile: profile),
+  );
+  final connectivity = ConnectivityController(http: http);
+  final offlineSync = OfflineSyncService(
+    queue: offlineQueue,
+    attendance: attendance,
+    leave: leave,
+    connectivity: connectivity,
+  );
+  AppLocator.registerPhaseH(
+    connectivity: connectivity,
+    offlineSync: offlineSync,
   );
 }

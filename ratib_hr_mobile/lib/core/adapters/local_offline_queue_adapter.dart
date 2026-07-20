@@ -1,4 +1,4 @@
-/// Local offline queue — existing ERP action names only (`attendance.create`).
+/// Local offline queue — ESS allowed actions only.
 library;
 
 import 'dart:convert';
@@ -12,6 +12,12 @@ final class LocalOfflineQueueAdapter implements OfflineQueuePort {
 
   static const cacheKey = 'offline.queue.v1';
   static const allowed = {'attendance.create', 'leave_request.draft'};
+  static const forbidden = {
+    'attendance.update',
+    'attendance.delete',
+    'payroll',
+    'document.upload',
+  };
 
   final CacheStore _cache;
 
@@ -25,22 +31,20 @@ final class LocalOfflineQueueAdapter implements OfflineQueuePort {
     required String existingAction,
     required Map<String, Object?> payload,
   }) async {
-    if (!allowed.contains(existingAction)) {
+    if (forbidden.contains(existingAction) || !allowed.contains(existingAction)) {
       throw const AppFailure(
         code: 'offline_action_forbidden',
-        message: 'Unknown offline action',
+        message: 'Offline action not allowed',
       );
     }
-    if (existingAction == 'attendance.update') {
-      throw const AppFailure(
-        code: 'offline_action_forbidden',
-        message: 'attendance.update is not allowed',
-      );
-    }
+    final safe = Map<String, Object?>.from(payload)
+      ..remove('company_id')
+      ..remove('role')
+      ..remove('permissions');
     final items = await pendingItems();
     items.add({
       'action': existingAction,
-      'payload': payload,
+      'payload': safe,
       'enqueued_at': DateTime.now().toUtc().toIso8601String(),
       'idempotency_key':
           'ess-${existingAction}-${DateTime.now().millisecondsSinceEpoch}',
@@ -48,6 +52,7 @@ final class LocalOfflineQueueAdapter implements OfflineQueuePort {
     await _persist(items);
   }
 
+  @override
   Future<List<Map<String, Object?>>> pendingItems() async {
     final raw = await _cache.read(cacheKey);
     if (raw == null || raw.isEmpty) return [];
@@ -63,12 +68,18 @@ final class LocalOfflineQueueAdapter implements OfflineQueuePort {
     }
   }
 
+  @override
   Future<int> pendingCount() async => (await pendingItems()).length;
 
   Future<void> clear() async => _cache.write(cacheKey, '[]');
 
+  @override
   Future<void> replaceAll(List<Map<String, Object?>> items) async {
-    await _persist(items);
+    final filtered = items.where((e) {
+      final action = (e['action'] ?? '').toString();
+      return allowed.contains(action);
+    }).toList();
+    await _persist(filtered);
   }
 
   Future<void> _persist(List<Map<String, Object?>> items) async {

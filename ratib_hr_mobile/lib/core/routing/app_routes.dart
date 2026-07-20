@@ -28,5 +28,6 @@ abstract final class AppRoutes {
   static const payments = '/more/payments';
   static const settings = '/more/settings';
   static const profile = '/more/profile';
+  static const syncStatus = '/more/sync';
   static const approvals = '/more/approvals';
 }

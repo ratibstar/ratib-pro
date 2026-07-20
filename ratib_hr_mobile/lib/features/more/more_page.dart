@@ -7,6 +7,7 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
+import 'package:ratib_hr_mobile/core/mobile_config/mobile_app_configuration.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -27,12 +28,25 @@ class MorePage extends StatelessWidget {
         final title = cfg?.displayName.isNotEmpty == true
             ? cfg!.displayName
             : l10n.tabMore;
+        final showSync = cfg != null &&
+            (cfg.isFeatureEnabled(MobileFeatureKey.attendance) ||
+                cfg.isFeatureEnabled(MobileFeatureKey.leave));
 
         return DsPageScaffold(
           title: title,
           body: ListView(
             padding: const EdgeInsets.only(top: 8, bottom: 32),
             children: [
+              if (showSync)
+                DsListItem(
+                  title: l10n.navSyncStatus,
+                  leading: const DsIconBadge(
+                    icon: Icons.sync,
+                    color: AppColors.auroraAmber,
+                  ),
+                  accentColor: AppColors.auroraAmber,
+                  onTap: () => context.go(AppRoutes.syncStatus),
+                ),
               for (final item in items)
                 DsListItem(
                   title: _title(item, l10n),
