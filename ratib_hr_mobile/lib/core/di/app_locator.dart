@@ -1,9 +1,10 @@
-/// Dependency injection — ESS + Phase A/C ports.
+/// Dependency injection — ESS + Phase A/C/D ports.
 library;
 
 import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
+import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -25,6 +26,8 @@ abstract final class AppLocator {
   static PaymentMethodsPort? _payments;
   static SettingsPort? _settings;
   static AppearanceController? _appearance;
+  static OfflineQueuePort? _offlineQueue;
+  static AttendanceRepository? _attendanceRepository;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -91,6 +94,14 @@ abstract final class AppLocator {
     _appearance = appearance;
   }
 
+  static void registerPhaseD({
+    required OfflineQueuePort offlineQueue,
+    required AttendanceRepository attendanceRepository,
+  }) {
+    _offlineQueue = offlineQueue;
+    _attendanceRepository = attendanceRepository;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -141,11 +152,14 @@ abstract final class AppLocator {
       _settings ?? _notRegistered('settings');
   static AppearanceController get appearance =>
       _appearance ?? _notRegistered('appearance');
+  static OfflineQueuePort get offlineQueue =>
+      _offlineQueue ?? _notRegistered('offlineQueue');
+  static AttendanceRepository get attendanceRepository =>
+      _attendanceRepository ?? _notRegistered('attendanceRepository');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static PayslipPort get payslips => _notRegistered('payslips');
   static DocumentsPort get documents => _notRegistered('documents');
   static ApprovalPort get approvals => _notRegistered('approvals');
   static BiometricUnlock get biometric => _notRegistered('biometric');
-  static OfflineQueuePort get offlineQueue => _notRegistered('offlineQueue');
 }

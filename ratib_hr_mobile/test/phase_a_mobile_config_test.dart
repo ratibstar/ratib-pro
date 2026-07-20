@@ -170,12 +170,14 @@ void main() {
     expect(svc.current?.displayName, 'Second');
     expect(cache.map[MobileConfigurationService.cacheKey], contains('Second'));
 
-    await svc.clearSession();
-    expect(svc.current, isNull);
-
+    // Network failure while cache retained → offline fallback.
     await svc.refreshAfterLogin(); // call 3 → network fail → cache
     expect(svc.current?.displayName, 'Second');
     expect(svc.current?.fromCache, isTrue);
+
+    await svc.clearSession();
+    expect(svc.current, isNull);
+    expect(cache.map.containsKey(MobileConfigurationService.cacheKey), isFalse);
   });
 
   test('ERP body parser maps /api/mobile/config payload', () {

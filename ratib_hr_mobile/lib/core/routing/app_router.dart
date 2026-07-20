@@ -8,6 +8,8 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
+import 'package:ratib_hr_mobile/features/attendance/attendance_history_screen.dart';
+import 'package:ratib_hr_mobile/features/attendance/attendance_screen.dart';
 import 'package:ratib_hr_mobile/features/home/home_page.dart';
 import 'package:ratib_hr_mobile/features/inquiries/inquiries_page.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
@@ -91,41 +93,20 @@ abstract final class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.attendance,
-                  builder: (context, state) => const Phase0PlaceholderPage(
-                    titleKey: Phase0TitleKey.attendance,
-                    childLinks: [
-                      Phase0Link(
-                        route: AppRoutes.attendanceCheckIn,
-                        titleKey: Phase0TitleKey.checkIn,
-                      ),
-                      Phase0Link(
-                        route: AppRoutes.attendanceCheckOut,
-                        titleKey: Phase0TitleKey.checkOut,
-                      ),
-                      Phase0Link(
-                        route: AppRoutes.attendanceHistory,
-                        titleKey: Phase0TitleKey.attendanceHistory,
-                      ),
-                    ],
-                  ),
+                  builder: (context, state) => const AttendanceScreen(),
                   routes: [
                     GoRoute(
                       path: 'check-in',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.checkIn,
-                      ),
+                      builder: (context, state) => const AttendanceScreen(),
                     ),
                     GoRoute(
                       path: 'check-out',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.checkOut,
-                      ),
+                      builder: (context, state) => const AttendanceScreen(),
                     ),
                     GoRoute(
                       path: 'history',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.attendanceHistory,
-                      ),
+                      builder: (context, state) =>
+                          const AttendanceHistoryScreen(),
                     ),
                   ],
                 ),

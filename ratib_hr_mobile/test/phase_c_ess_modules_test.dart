@@ -29,8 +29,8 @@ MobileAppConfiguration _cfg(Map<String, bool> features) {
 }
 
 void main() {
-  test('Phase marker is C', () {
-    expect(AppConfig.phase, 'C');
+  test('Phase marker advanced past C', () {
+    expect(['C', 'D'].contains(AppConfig.phase), isTrue);
   });
 
   test('Phase C feature flags gate More items and routes', () {

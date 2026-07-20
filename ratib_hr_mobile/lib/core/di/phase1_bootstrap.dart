@@ -15,12 +15,14 @@ import 'package:ratib_hr_mobile/core/adapters/erp_notification_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_payment_methods_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_ratings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_settings_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/secure_token_store_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/shared_preferences_cache_store.dart';
 import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
+import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 
 void bootstrapPhase1() {
   bootstrapEssCore();
@@ -88,5 +90,14 @@ void bootstrapEssCore() {
     payments: payments,
     settings: settings,
     appearance: appearance,
+  );
+  final offlineQueue = LocalOfflineQueueAdapter(cache: cache);
+  final attendanceRepository = AttendanceRepository(
+    attendance: attendance,
+    offlineQueue: offlineQueue,
+  );
+  AppLocator.registerPhaseD(
+    offlineQueue: offlineQueue,
+    attendanceRepository: attendanceRepository,
   );
 }

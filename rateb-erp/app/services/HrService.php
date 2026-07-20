@@ -357,10 +357,41 @@ final class HrService
         }
 
         return (new AttendanceRecord())->queryOne(
-            'SELECT * FROM rateb_attendance_records
+            'SELECT id, company_id, employee_id, attendance_date, check_in, check_out, status, notes, branch_id
+             FROM rateb_attendance_records
              WHERE company_id = :cid AND employee_id = :eid AND attendance_date = :d
              LIMIT 1',
             ['cid' => $companyId, 'eid' => $employeeId, 'd' => $date]
+        );
+    }
+
+    /**
+     * ESS attendance history — employee + company scoped date range.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAttendanceForEmployee(
+        int $companyId,
+        int $employeeId,
+        string $fromDate,
+        string $toDate
+    ): array {
+        if ($companyId < 1 || $employeeId < 1 || $fromDate === '' || $toDate === '') {
+            return [];
+        }
+
+        return (new AttendanceRecord())->query(
+            'SELECT id, company_id, employee_id, attendance_date, check_in, check_out, status, notes, branch_id
+             FROM rateb_attendance_records
+             WHERE company_id = :cid AND employee_id = :eid
+               AND attendance_date BETWEEN :from_d AND :to_d
+             ORDER BY attendance_date DESC',
+            [
+                'cid' => $companyId,
+                'eid' => $employeeId,
+                'from_d' => $fromDate,
+                'to_d' => $toDate,
+            ]
         );
     }
 

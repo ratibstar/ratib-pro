@@ -6,39 +6,74 @@ namespace Rateb\App\Controllers\Api;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\TenantContext;
-use Rateb\App\Services\HrEssEmployeeResolverService;
-use Rateb\App\Services\HrService;
+use Rateb\App\Services\HrEssAttendanceService;
 
 /**
- * Thin ESS adapter — attendance day lookup.
- * Identity: HrEssEmployeeResolverService only (never client employee_id).
- * Data: HrService::findAttendanceByEmployeeDate
+ * Thin ESS attendance adapter — identity via resolver only.
+ * Routes: today / history / check-in / check-out.
  */
 final class HrEssAttendanceController extends Controller
 {
     public function today(): void
     {
-        $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee(
-            TenantContext::apiUserId(),
-            TenantContext::companyId()
+        $result = (new HrEssAttendanceService())->today(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            $this->optionalString('date')
         );
-        if ((int) ($resolved['status'] ?? 0) !== 200) {
-            Response::json($resolved['body'], (int) $resolved['status']);
-            return;
+        Response::json($result['body'], (int) $result['status']);
+    }
+
+    public function history(): void
+    {
+        $result = (new HrEssAttendanceService())->history(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            $this->optionalString('from'),
+            $this->optionalString('to')
+        );
+        Response::json($result['body'], (int) $result['status']);
+    }
+
+    public function checkIn(): void
+    {
+        $result = (new HrEssAttendanceService())->checkIn(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            $this->jsonBody()
+        );
+        Response::json($result['body'], (int) $result['status']);
+    }
+
+    public function checkOut(): void
+    {
+        $result = (new HrEssAttendanceService())->checkOut(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            $this->jsonBody()
+        );
+        Response::json($result['body'], (int) $result['status']);
+    }
+
+    private function optionalString(string $key): ?string
+    {
+        $v = $this->input($key, null);
+        if ($v === null || $v === '') {
+            return null;
         }
 
-        $employee = $resolved['body']['employee'] ?? null;
-        $employeeId = (int) (is_array($employee) ? ($employee['id'] ?? 0) : 0);
-        $date = (string) $this->input('date', date('Y-m-d'));
+        return is_string($v) ? $v : (string) $v;
+    }
 
-        $row = (new HrService())->findAttendanceByEmployeeDate(
-            (int) TenantContext::companyId(),
-            $employeeId,
-            $date
-        );
-        Response::json([
-            'success' => true,
-            'attendance' => $row,
-        ]);
+    /** @return array<string,mixed> */
+    private function jsonBody(): array
+    {
+        $raw = file_get_contents('php://input');
+        if (!is_string($raw) || $raw === '') {
+            return is_array($_POST) ? $_POST : [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 }

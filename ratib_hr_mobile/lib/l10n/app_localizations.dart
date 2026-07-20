@@ -164,6 +164,18 @@ class AppLocalizations {
           'تُدار بياناتك وفق سياسات الخصوصية الخاصة بشركتك ونظام راتب ERP.',
       'settingsTermsBody':
           'باستخدام التطبيق فإنك توافق على شروط الاستخدام الخاصة بشركتك ونظام راتب ERP.',
+      'attendanceWorkingDuration': 'مدة العمل',
+      'attendanceHistoryHint': 'عرض أيام الحضور السابقة',
+      'attendanceHistoryEmpty': 'لا يوجد سجل حضور بعد',
+      'attendanceCheckInSuccess': 'تم تسجيل الحضور',
+      'attendanceCheckOutSuccess': 'تم تسجيل الانصراف',
+      'attendanceQueuedOffline': 'تم حفظ الحضور محلياً — سيُزامن عند الاتصال',
+      'attendanceAlreadyCheckedIn': 'تم تسجيل الحضور مسبقاً لهذا اليوم',
+      'attendanceInvalidState': 'حالة الحضور غير صالحة لهذه العملية',
+      'attendanceStatusNotCheckedIn': 'لم يُسجَّل الحضور',
+      'attendanceStatusCheckedIn': 'تم الحضور',
+      'attendanceStatusCompleted': 'مكتمل',
+      'attendanceOfflineBanner': 'عمليات حضور بانتظار المزامنة: {count}',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -309,6 +321,18 @@ class AppLocalizations {
           'Your data is handled under your company privacy policy and RATIB ERP.',
       'settingsTermsBody':
           'By using this app you agree to your company terms and RATIB ERP terms.',
+      'attendanceWorkingDuration': 'Working duration',
+      'attendanceHistoryHint': 'View previous attendance days',
+      'attendanceHistoryEmpty': 'No attendance history yet',
+      'attendanceCheckInSuccess': 'Checked in successfully',
+      'attendanceCheckOutSuccess': 'Checked out successfully',
+      'attendanceQueuedOffline': 'Check-in saved offline — will sync when online',
+      'attendanceAlreadyCheckedIn': 'Already checked in for today',
+      'attendanceInvalidState': 'Attendance action is not valid in this state',
+      'attendanceStatusNotCheckedIn': 'Not checked in',
+      'attendanceStatusCheckedIn': 'Checked in',
+      'attendanceStatusCompleted': 'Completed',
+      'attendanceOfflineBanner': 'Pending offline attendance: {count}',
     },
   };
 
@@ -454,6 +478,30 @@ class AppLocalizations {
   String get settingsTerms => _t('settingsTerms');
   String get settingsPrivacyBody => _t('settingsPrivacyBody');
   String get settingsTermsBody => _t('settingsTermsBody');
+  String get attendanceWorkingDuration => _t('attendanceWorkingDuration');
+  String get attendanceHistoryHint => _t('attendanceHistoryHint');
+  String get attendanceHistoryEmpty => _t('attendanceHistoryEmpty');
+  String get attendanceCheckInSuccess => _t('attendanceCheckInSuccess');
+  String get attendanceCheckOutSuccess => _t('attendanceCheckOutSuccess');
+  String get attendanceQueuedOffline => _t('attendanceQueuedOffline');
+  String get attendanceAlreadyCheckedIn => _t('attendanceAlreadyCheckedIn');
+  String get attendanceInvalidState => _t('attendanceInvalidState');
+
+  String attendanceOfflineBanner(int count) =>
+      _t('attendanceOfflineBanner').replaceAll('{count}', '$count');
+
+  String attendanceStatusLabel(String key) {
+    switch (key) {
+      case 'checked_in':
+        return _t('attendanceStatusCheckedIn');
+      case 'completed':
+        return _t('attendanceStatusCompleted');
+      case 'not_checked_in':
+        return _t('attendanceStatusNotCheckedIn');
+      default:
+        return key;
+    }
+  }
 }
 
 class _AppLocalizationsDelegate
