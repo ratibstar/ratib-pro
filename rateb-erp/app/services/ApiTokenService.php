@@ -66,9 +66,8 @@ final class ApiTokenService
             return null;
         }
 
-        // Reject platform-only super-admin tokens (no company). Company-scoped
-        // tokens remain valid; ApiAuthMiddleware never elevates API to SA.
-        if ((int) ($token['is_super_admin'] ?? 0) === 1 && (int) ($token['company_id'] ?? 0) < 1) {
+        // Company-scoped tokens only (platform SA without company cannot use API).
+        if ((int) ($token['company_id'] ?? 0) < 1) {
             return null;
         }
 

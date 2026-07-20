@@ -75,18 +75,11 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
         }
+        // ESS / mobile API tokens are company-scoped. Platform-only accounts
+        // (no company) stay blocked; company users may mint tokens even when
+        // is_super_admin is set (common for seeded company admins).
+        // ApiAuthMiddleware always sets TenantContext::setSuperAdmin(false).
         $companyId = (int) ($user['company_id'] ?? 0);
-        // Block platform-only super admins (no company). Company-scoped users may
-        // mint tokens even if is_super_admin=1 (dedicated/appliance admins); API
-        // auth always forces TenantContext::setSuperAdmin(false).
-        if ((int) ($user['is_super_admin'] ?? 0) === 1 && $companyId < 1) {
-            Response::json([
-                'success' => false,
-                'code' => 'platform_sa_token_disabled',
-                'message' => 'Platform super-admin API tokens disabled',
-            ], 403);
-            return;
-        }
         if ($companyId < 1 || !(new PlanLimitService())->companyAccessAllowed($companyId)) {
             Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return;
