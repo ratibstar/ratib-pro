@@ -37,7 +37,7 @@
 | **G** | Profile polish | Next |
 | **H** | Offline hardening | After F |
 | **I** | Approvals (if ERP ready) | Optional |
-| **J** | Push + device registration (shared ERP API) | After native |
+| **J** | Unified Mobile Device Registry | **DESIGN COMPLETE** — see [PHASE_J.md](PHASE_J.md) (implement later) |
 | **K** | Store production release | After A–H |
 
 ---
