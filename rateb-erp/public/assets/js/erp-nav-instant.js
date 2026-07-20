@@ -647,12 +647,6 @@
         if (!root.caches) {
             return Promise.resolve(null);
         }
-        try {
-            var uFresh = new URL(href, root.location.href);
-            if (uFresh.searchParams.has('rateb_r')) {
-                return Promise.resolve(null);
-            }
-        } catch (eFresh) { /* ignore */ }
         var keys = [href];
         try {
             var u = new URL(href, root.location.href);

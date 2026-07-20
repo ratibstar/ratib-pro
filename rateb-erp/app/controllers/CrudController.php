@@ -408,12 +408,11 @@ abstract class CrudController extends Controller
 
     protected function redirectAfterSave(int $id): void
     {
-        $fresh = ['rateb_r' => (string) time()];
         if ($this->redirectToShowAfterSave && $id > 0) {
-            $this->redirect(rateb_list_url($this->routePrefix . '/' . $id, $fresh));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
             return;
         }
-        $this->redirect(rateb_list_url($this->routePrefix, $fresh));
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function edit(array $params): void

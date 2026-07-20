@@ -70,7 +70,7 @@ $lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields(
                 <?php if (!$readonly) { ?>
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
                 <?php } ?>
-                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary" data-rateb-full-nav="1"><?php echo __('cancel'); ?></a>
+                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
                 <?php if ($readonly && $isEdit && function_exists('rateb_can_manage_entity') && rateb_can_manage_entity((string) preg_replace('#^admin/(ops/)?#', '', $routePrefix ?? ''))) { ?>
                 <a href="<?php echo rateb_url($routePrefix . '/' . (int) $item['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
                 <?php } ?>
