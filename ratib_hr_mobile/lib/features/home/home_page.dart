@@ -139,10 +139,11 @@ class _AttendanceBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (raw is! Map || raw.isEmpty) {
+    final data = raw;
+    if (data is! Map || data.isEmpty) {
       return DsCard(child: Text(l10n.homeNoAttendanceToday));
     }
-    final m = raw.map((k, v) => MapEntry(k.toString(), v));
+    final m = data.map((k, v) => MapEntry(k.toString(), v));
     return DsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,12 +177,13 @@ class _LeaveBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (raw is! List || raw.isEmpty) {
+    final data = raw;
+    if (data is! List || data.isEmpty) {
       return DsCard(child: Text(l10n.homeNoLeaveBalances));
     }
     return Column(
       children: [
-        for (final row in raw.whereType<Map>().take(3))
+        for (final row in data.whereType<Map>().take(3))
           DsCard(
             child: Text(
               '${row['leave_type_name'] ?? row['name'] ?? l10n.tabLeave}: '
@@ -205,8 +207,10 @@ class _PendingBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reqCount = requests is List ? requests.length : 0;
-    final leaveCount = leaves is List ? leaves.length : 0;
+    final reqList = requests;
+    final leaveList = leaves;
+    final reqCount = reqList is List ? reqList.length : 0;
+    final leaveCount = leaveList is List ? leaveList.length : 0;
     return DsCard(
       child: Text(
         '${l10n.homePendingRequests}: $reqCount · ${l10n.tabLeave}: $leaveCount',
@@ -222,10 +226,11 @@ class _NotifSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (raw is! Map) {
+    final data = raw;
+    if (data is! Map) {
       return DsCard(child: Text(l10n.homeNoNotifications));
     }
-    final unread = raw['unread'] ?? 0;
+    final unread = data['unread'] ?? 0;
     return DsCard(
       onTap: () => context.go(AppRoutes.notifications),
       child: Text('${l10n.homeUnreadNotifications}: $unread'),
@@ -240,11 +245,13 @@ class _PayrollBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (raw is! Map) {
+    final data = raw;
+    if (data is! Map) {
       return DsCard(child: Text(l10n.homePayrollPlaceholder));
     }
-    final available = raw['available'] == true;
-    final message = (raw['message'] ?? l10n.homePayrollPlaceholder).toString();
+    final available = data['available'] == true;
+    final message =
+        (data['message'] ?? l10n.homePayrollPlaceholder).toString();
     return DsCard(
       child: Text(available ? message : l10n.homePayrollPlaceholder),
     );
