@@ -80,7 +80,11 @@ final class ApiController extends Controller
         // mint tokens even if is_super_admin=1 (dedicated/appliance admins); API
         // auth always forces TenantContext::setSuperAdmin(false).
         if ((int) ($user['is_super_admin'] ?? 0) === 1 && $companyId < 1) {
-            Response::json(['success' => false, 'message' => 'Super admin API tokens disabled'], 403);
+            Response::json([
+                'success' => false,
+                'code' => 'platform_sa_token_disabled',
+                'message' => 'Platform super-admin API tokens disabled',
+            ], 403);
             return;
         }
         if ($companyId < 1 || !(new PlanLimitService())->companyAccessAllowed($companyId)) {

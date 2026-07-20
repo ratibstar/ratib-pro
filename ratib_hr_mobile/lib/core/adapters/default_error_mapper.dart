@@ -49,7 +49,10 @@ final class DefaultErrorMapper implements ErrorMapper {
         return AppFailure(code: 'unauthorized', message: erpMessage);
       }
       if (status == 403) {
-        return AppFailure(code: 'forbidden', message: erpMessage);
+        return AppFailure(
+          code: erpCode ?? 'forbidden',
+          message: erpMessage,
+        );
       }
       if (status == 429) {
         return AppFailure(code: 'rate_limited', message: erpMessage);

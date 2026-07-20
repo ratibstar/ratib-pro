@@ -43,7 +43,9 @@ class _LoginPageState extends State<LoginPage> {
   String _messageFor(AppFailure? failure, AppLocalizations l10n) {
     if (failure == null) return l10n.loginFailed;
     final erp = failure.message ?? '';
-    if (erp.contains('Super admin API tokens disabled')) {
+    if (erp.contains('Super admin API tokens disabled') ||
+        erp.contains('Platform super-admin API tokens disabled') ||
+        failure.code == 'platform_sa_token_disabled') {
       return l10n.loginPlatformSuperAdmin;
     }
     switch (failure.code) {

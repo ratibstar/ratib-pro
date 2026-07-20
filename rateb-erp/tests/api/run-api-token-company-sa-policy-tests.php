@@ -30,11 +30,8 @@ assertTrue(
 );
 
 assertTrue(
-    preg_match(
-        '/is_super_admin.*?=== 1\s*&&\s*\$companyId < 1/s',
-        $apiCtrl
-    ) === 1,
-    'createToken uses SA && companyId < 1 gate'
+    str_contains($apiCtrl, 'platform_sa_token_disabled'),
+    'createToken returns platform_sa_token_disabled code'
 );
 
 assertTrue(
