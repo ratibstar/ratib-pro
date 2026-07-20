@@ -209,17 +209,17 @@ final class MobileAppConfigService
         $row = $this->findByCompanyId($companyId);
         if (!$row || (string) ($row['status'] ?? '') !== self::STATUS_ACTIVE) {
             $features = self::defaultFeatures();
-            $appName = trim((string) ($company['name'] ?? ''));
-            if ($appName === '') {
-                $appName = 'RATIB HR';
-            }
+            $companyName = trim((string) ($company['name'] ?? ''));
+            $appName = $this->isPlaceholderAppName($companyName, $companyName)
+                ? 'راتب — الموارد البشرية'
+                : ($companyName !== '' ? $companyName : 'راتب — الموارد البشرية');
 
             return [
                 'status' => 200,
                 'body' => [
                     'success' => true,
                     'company_id' => $companyId,
-                    'company_name' => (string) ($company['name'] ?? ''),
+                    'company_name' => $companyName,
                     'app_name' => $appName,
                     'logo' => '',
                     'icon' => '',
@@ -245,8 +245,9 @@ final class MobileAppConfigService
 
         $features = $this->decodeFeatures($row['enabled_features'] ?? null);
         $appName = trim((string) ($row['app_name'] ?? ''));
-        if ($appName === '') {
-            $appName = (string) ($company['name'] ?? '');
+        $companyName = trim((string) ($company['name'] ?? ''));
+        if ($appName === '' || $this->isPlaceholderAppName($appName, $companyName)) {
+            $appName = 'راتب — الموارد البشرية';
         }
 
         return [
@@ -254,7 +255,7 @@ final class MobileAppConfigService
             'body' => [
                 'success' => true,
                 'company_id' => $companyId,
-                'company_name' => (string) ($company['name'] ?? ''),
+                'company_name' => $companyName,
                 'app_name' => $appName,
                 'logo' => (string) ($row['logo_path'] ?? ''),
                 'icon' => (string) ($row['icon_path'] ?? ''),
@@ -286,5 +287,22 @@ final class MobileAppConfigService
         }
 
         return mb_substr($s, 0, 500);
+    }
+
+    /** Test / stub company names should not become the mobile app title. */
+    private function isPlaceholderAppName(string $appName, string $companyName): bool
+    {
+        $name = mb_strtolower(trim($appName));
+        if ($name === '') {
+            return true;
+        }
+        if (in_array($name, ['aaa', 'test', 'demo', 'tmp', 'xx', 'xyz'], true)) {
+            return true;
+        }
+        if (mb_strlen($name) <= 3 && mb_strtolower(trim($companyName)) === $name) {
+            return true;
+        }
+
+        return false;
     }
 }

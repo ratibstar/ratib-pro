@@ -12,6 +12,8 @@ final class Response
         }
         http_response_code($status);
         header('Content-Type: application/json; charset=UTF-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
         echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }

@@ -18,7 +18,10 @@ final class ErpDashboardAdapter implements DashboardPort {
   @override
   Future<Map<String, Object?>> summary() async {
     try {
-      final body = await _http.get(path);
+      final body = await _http.get(
+        path,
+        query: {'rateb_r': DateTime.now().millisecondsSinceEpoch.toString()},
+      );
       if (body['success'] != true) {
         throw AppFailure(
           code: body['code']?.toString() ?? 'dashboard_failed',
