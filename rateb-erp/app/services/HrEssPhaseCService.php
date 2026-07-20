@@ -14,6 +14,9 @@ use Rateb\App\Models\User;
  */
 final class HrEssPhaseCService
 {
+    /** Explicit ESS request DTO columns — never SELECT *. */
+    private const REQUEST_DTO_COLUMNS = 'id, request_no, request_type, request_date, status, notes, created_at';
+
     /**
      * @return array{status:int, body:array<string,mixed>}
      */
@@ -21,7 +24,7 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
         $employee = $resolved['body']['employee'] ?? [];
         $employeeId = (int) (is_array($employee) ? ($employee['id'] ?? 0) : 0);
@@ -29,13 +32,11 @@ final class HrEssPhaseCService
         $hr = new HrService();
         $attendance = $hr->findAttendanceByEmployeeDate($companyId, $employeeId, date('Y-m-d'));
         $balances = $hr->leaveBalancesForEmployee($employeeId, (int) date('Y'));
-        $notifications = (new NotificationService())->listForUser($userId, $companyId);
-        $unread = 0;
-        foreach ($notifications as $n) {
-            if (empty($n['is_read'])) {
-                $unread++;
-            }
-        }
+
+        $notifications = new NotificationService();
+        $unread = $notifications->countUnreadForUser($userId, $companyId);
+        $total = $notifications->countVisibleForUser($userId, $companyId);
+        $recent = $notifications->listRecentForUser($userId, $companyId, 5);
 
         $pendingLeaves = (new LeaveRequest())->query(
             'SELECT id, leave_type_id, start_date, end_date, status, created_at
@@ -45,7 +46,7 @@ final class HrEssPhaseCService
             ['cid' => $companyId, 'eid' => $employeeId]
         );
         $pendingRequests = (new HrEmployeeRequest())->query(
-            'SELECT id, request_no, request_type, request_date, status, notes, created_at
+            'SELECT ' . self::REQUEST_DTO_COLUMNS . '
              FROM rateb_hr_employee_requests
              WHERE company_id = :cid AND employee_id = :eid AND status IN (\'pending\',\'open\',\'draft\')
              ORDER BY id DESC LIMIT 10',
@@ -63,9 +64,9 @@ final class HrEssPhaseCService
                 'pending_requests' => is_array($pendingRequests) ? $pendingRequests : [],
                 'pending_leaves' => is_array($pendingLeaves) ? $pendingLeaves : [],
                 'notifications_summary' => [
-                    'total' => count($notifications),
+                    'total' => $total,
                     'unread' => $unread,
-                    'recent' => array_slice($notifications, 0, 5),
+                    'recent' => $recent,
                 ],
                 'payroll_summary' => [
                     'available' => false,
@@ -82,11 +83,12 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
         $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
         $params = ['cid' => $companyId, 'eid' => $employeeId];
-        $sql = 'SELECT * FROM rateb_hr_employee_requests
+        $sql = 'SELECT ' . self::REQUEST_DTO_COLUMNS . '
+                FROM rateb_hr_employee_requests
                 WHERE company_id = :cid AND employee_id = :eid';
         if ($type !== null && $type !== '') {
             $sql .= ' AND request_type = :t';
@@ -111,19 +113,17 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
         $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
         $row = (new HrEmployeeRequest())->queryOne(
-            'SELECT * FROM rateb_hr_employee_requests
+            'SELECT ' . self::REQUEST_DTO_COLUMNS . '
+             FROM rateb_hr_employee_requests
              WHERE id = :id AND company_id = :cid AND employee_id = :eid LIMIT 1',
             ['id' => $requestId, 'cid' => $companyId, 'eid' => $employeeId]
         );
         if (!$row) {
-            return [
-                'status' => 404,
-                'body' => ['success' => false, 'message' => 'Request not found'],
-            ];
+            return $this->fail(404, 'request_not_found', 'Request not found');
         }
 
         return [
@@ -140,7 +140,7 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
         $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
         $type = strtolower(trim((string) ($input['request_type'] ?? 'inquiry')));
@@ -149,10 +149,7 @@ final class HrEssPhaseCService
         }
         $notes = trim((string) ($input['notes'] ?? $input['message'] ?? ''));
         if ($notes === '') {
-            return [
-                'status' => 422,
-                'body' => ['success' => false, 'message' => 'Message is required'],
-            ];
+            return $this->fail(422, 'message_required', 'Message is required');
         }
         $id = (new HrEmployeeRequest())->create([
             'company_id' => $companyId,
@@ -181,7 +178,7 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
         $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
         $profile = (new HrmEmployeeProfile())->queryOne(
@@ -203,7 +200,25 @@ final class HrEssPhaseCService
                     }
                 }
             } catch (\Throwable $e) {
-                $items = [];
+                Logger::error('HrEssPhaseCService ratings failed', [
+                    'company_id' => $companyId,
+                    'user_id' => $userId,
+                    'employee_id' => $employeeId,
+                    'error' => $e->getMessage(),
+                ]);
+                return [
+                    'status' => 200,
+                    'body' => [
+                        'success' => true,
+                        'performance_score' => null,
+                        'reviews' => [],
+                        'kpi_summary' => [],
+                        'monthly_evaluation' => null,
+                        'degraded' => true,
+                        'code' => 'ratings_unavailable',
+                        'message' => 'Ratings temporarily unavailable',
+                    ],
+                ];
             }
         }
 
@@ -228,7 +243,7 @@ final class HrEssPhaseCService
     {
         $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
         if ((int) ($resolved['status'] ?? 0) !== 200) {
-            return $resolved;
+            return $this->normalizeFailure($resolved);
         }
 
         return [
@@ -251,18 +266,12 @@ final class HrEssPhaseCService
     public function changePassword(int $userId, int $companyId, array $input): array
     {
         if ($userId < 1 || $companyId < 1) {
-            return [
-                'status' => 401,
-                'body' => ['success' => false, 'message' => 'Unauthorized'],
-            ];
+            return $this->fail(401, 'unauthorized', 'Unauthorized');
         }
         $current = (string) ($input['current_password'] ?? '');
         $new = (string) ($input['new_password'] ?? '');
         if ($current === '' || strlen($new) < 8) {
-            return [
-                'status' => 422,
-                'body' => ['success' => false, 'message' => 'Invalid password payload'],
-            ];
+            return $this->fail(422, 'invalid_password_payload', 'Invalid password payload');
         }
         $userModel = new User();
         $user = $userModel->queryOne(
@@ -270,17 +279,11 @@ final class HrEssPhaseCService
             ['id' => $userId, 'cid' => $companyId]
         );
         if (!$user) {
-            return [
-                'status' => 404,
-                'body' => ['success' => false, 'message' => 'User not found'],
-            ];
+            return $this->fail(404, 'user_not_found', 'User not found');
         }
         $hash = (string) ($user['password_hash'] ?? $user['password'] ?? '');
         if ($hash === '' || !password_verify($current, $hash)) {
-            return [
-                'status' => 403,
-                'body' => ['success' => false, 'code' => 'invalid_current_password', 'message' => 'Current password is incorrect'],
-            ];
+            return $this->fail(403, 'invalid_current_password', 'Current password is incorrect');
         }
         $data = [];
         $userModel->applyPassword($data, $new);
@@ -290,5 +293,39 @@ final class HrEssPhaseCService
             'status' => 200,
             'body' => ['success' => true],
         ];
+    }
+
+    /**
+     * @return array{status:int, body:array{success:false,code:string,message:string}}
+     */
+    private function fail(int $status, string $code, string $message): array
+    {
+        return [
+            'status' => $status,
+            'body' => [
+                'success' => false,
+                'code' => $code,
+                'message' => $message,
+            ],
+        ];
+    }
+
+    /**
+     * Normalize resolver / upstream failure bodies to the ESS error envelope.
+     *
+     * @param array{status?:int, body?:array<string,mixed>} $result
+     * @return array{status:int, body:array{success:false,code:string,message:string}}
+     */
+    private function normalizeFailure(array $result): array
+    {
+        $status = (int) ($result['status'] ?? 500);
+        $body = is_array($result['body'] ?? null) ? $result['body'] : [];
+        $code = (string) ($body['code'] ?? 'error');
+        $message = (string) ($body['message'] ?? 'Request failed');
+        if ($code === '') {
+            $code = 'error';
+        }
+
+        return $this->fail($status > 0 ? $status : 500, $code, $message);
     }
 }

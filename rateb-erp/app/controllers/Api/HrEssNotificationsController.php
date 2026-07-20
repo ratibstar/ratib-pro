@@ -43,10 +43,15 @@ final class HrEssNotificationsController extends Controller
     {
         $id = (int) ($params['id'] ?? 0);
         $ok = (new NotificationService())->markRead($id, (int) TenantContext::apiUserId());
+        if ($ok) {
+            Response::json(['success' => true, 'code' => 'ok', 'message' => 'ok']);
+            return;
+        }
         Response::json([
-            'success' => $ok,
-            'message' => $ok ? 'ok' : 'not_found',
-        ], $ok ? 200 : 404);
+            'success' => false,
+            'code' => 'notification_not_found',
+            'message' => 'Notification not found',
+        ], 404);
     }
 
     public function markAllRead(): void
@@ -55,6 +60,11 @@ final class HrEssNotificationsController extends Controller
             (int) TenantContext::apiUserId(),
             (int) TenantContext::companyId()
         );
-        Response::json(['success' => true, 'updated' => $n]);
+        Response::json([
+            'success' => true,
+            'code' => 'ok',
+            'message' => 'ok',
+            'updated' => $n,
+        ]);
     }
 }

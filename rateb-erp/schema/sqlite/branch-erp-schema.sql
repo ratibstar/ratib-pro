@@ -4645,6 +4645,7 @@ CREATE TABLE IF NOT EXISTS "rateb_hr_employee_requests" (
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_rateb_hr_employee_requests_uk_hr_emp_req_no" ON "rateb_hr_employee_requests" ("company_id", "request_no");
 CREATE INDEX IF NOT EXISTS "idx_rateb_hr_employee_requests_idx_hr_emp_req_company" ON "rateb_hr_employee_requests" ("company_id");
 CREATE INDEX IF NOT EXISTS "idx_rateb_hr_employee_requests_idx_hr_emp_req_status" ON "rateb_hr_employee_requests" ("status");
+CREATE INDEX IF NOT EXISTS "idx_rateb_hr_employee_requests_idx_hr_emp_req_ess_list" ON "rateb_hr_employee_requests" ("company_id", "employee_id", "status", "id");
 
 CREATE TABLE IF NOT EXISTS "rateb_hr_fleet" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -5795,6 +5796,7 @@ CREATE INDEX IF NOT EXISTS "idx_rateb_leave_requests_idx_leave_req_company" ON "
 CREATE INDEX IF NOT EXISTS "idx_rateb_leave_requests_idx_leave_req_employee" ON "rateb_leave_requests" ("employee_id");
 CREATE INDEX IF NOT EXISTS "idx_rateb_leave_requests_idx_leave_req_status" ON "rateb_leave_requests" ("status");
 CREATE INDEX IF NOT EXISTS "idx_rateb_leave_requests_idx_lr_branch" ON "rateb_leave_requests" ("branch_id");
+CREATE INDEX IF NOT EXISTS "idx_rateb_leave_requests_idx_leave_req_ess_list" ON "rateb_leave_requests" ("company_id", "employee_id", "status", "id");
 
 CREATE TABLE IF NOT EXISTS "rateb_leave_types" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6661,6 +6663,7 @@ CREATE TABLE IF NOT EXISTS "rateb_notifications" (
 CREATE INDEX IF NOT EXISTS "idx_rateb_notifications_idx_notif_user" ON "rateb_notifications" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_rateb_notifications_idx_notif_company" ON "rateb_notifications" ("company_id");
 CREATE INDEX IF NOT EXISTS "idx_rateb_notifications_idx_notif_dedup" ON "rateb_notifications" ("company_id", "trigger_type", "entity_type", "entity_id", "created_at");
+CREATE INDEX IF NOT EXISTS "idx_rateb_notifications_idx_notif_ess_visible" ON "rateb_notifications" ("company_id", "user_id", "id");
 
 CREATE TABLE IF NOT EXISTS "rateb_offline_devices" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,

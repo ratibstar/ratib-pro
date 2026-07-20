@@ -40,14 +40,79 @@ final class NotificationService
     }
 
     /**
-     * Admin shell notification list (exact filter/order/limit from former NotificationsController).
+     * ESS / in-app user visibility (tenant + own + company broadcast only).
+     * Broadcast = user_id IS NULL within the same company_id.
+     */
+    public const VISIBLE_TO_USER_SQL = 'company_id = :cid AND (user_id = :uid OR user_id IS NULL)';
+
+    /**
+     * Notifications visible to the authenticated user (own + company broadcasts).
+     * Never returns other employees' user-targeted notifications.
      *
      * @return list<array<string, mixed>>
      */
     public function listForUser(int $userId, int $companyId): array
     {
+        if ($userId < 1 || $companyId < 1) {
+            return [];
+        }
+
         return (new Notification())->query(
-            'SELECT * FROM rateb_notifications WHERE user_id = :uid OR company_id = :cid ORDER BY id DESC LIMIT 50',
+            'SELECT id, company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at
+             FROM rateb_notifications
+             WHERE ' . self::VISIBLE_TO_USER_SQL . '
+             ORDER BY id DESC LIMIT 50',
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+    }
+
+    /** Unread count for ESS dashboard — no full list load. */
+    public function countUnreadForUser(int $userId, int $companyId): int
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return 0;
+        }
+        $row = (new Notification())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_notifications
+             WHERE ' . self::VISIBLE_TO_USER_SQL . ' AND (is_read = 0 OR is_read IS NULL)',
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /** Total visible notifications for ESS summary. */
+    public function countVisibleForUser(int $userId, int $companyId): int
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return 0;
+        }
+        $row = (new Notification())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_notifications
+             WHERE ' . self::VISIBLE_TO_USER_SQL,
+            ['uid' => $userId, 'cid' => $companyId]
+        );
+
+        return (int) ($row['c'] ?? 0);
+    }
+
+    /**
+     * Recent notifications for ESS dashboard.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentForUser(int $userId, int $companyId, int $limit = 5): array
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return [];
+        }
+        $safeLimit = max(1, min(20, $limit));
+
+        return (new Notification())->query(
+            'SELECT id, company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at
+             FROM rateb_notifications
+             WHERE ' . self::VISIBLE_TO_USER_SQL . '
+             ORDER BY id DESC LIMIT ' . $safeLimit,
             ['uid' => $userId, 'cid' => $companyId]
         );
     }
@@ -61,14 +126,16 @@ final class NotificationService
             return false;
         }
         $row = (new Notification())->queryOne(
-            'SELECT id FROM rateb_notifications WHERE id = :id AND company_id = :cid AND (user_id = :uid OR user_id IS NULL) LIMIT 1',
+            'SELECT id FROM rateb_notifications
+             WHERE id = :id AND ' . self::VISIBLE_TO_USER_SQL . ' LIMIT 1',
             ['id' => $id, 'uid' => $userId, 'cid' => $companyId]
         );
         if (!$row) {
             return false;
         }
         $db = \Rateb\App\Core\Database::connection();
-        $db->prepare('UPDATE rateb_notifications SET is_read = 1 WHERE id = :id')->execute(['id' => $id]);
+        $db->prepare('UPDATE rateb_notifications SET is_read = 1 WHERE id = :id AND company_id = :cid')
+            ->execute(['id' => $id, 'cid' => $companyId]);
         return true;
     }
 
