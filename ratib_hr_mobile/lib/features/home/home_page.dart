@@ -183,7 +183,7 @@ class _LeaveBlock extends StatelessWidget {
     }
     return Column(
       children: [
-        for (final row in data.whereType<Map>().take(3))
+        for (final row in _primaryLeaveRows(data).take(3))
           DsCard(
             child: Text(
               '${row['leave_type_name'] ?? row['name'] ?? l10n.tabLeave}: '
@@ -192,6 +192,42 @@ class _LeaveBlock extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  /// Prefer annual/sick on home; skip maternity/paternity noise when others exist.
+  List<Map> _primaryLeaveRows(List data) {
+    const preferred = [
+      'annual',
+      'sick',
+      'emergency',
+      'unpaid',
+      'hajj',
+      'marriage',
+      'bereavement',
+    ];
+    const skip = {'maternity', 'paternity', 'iddah'};
+    final maps = data.whereType<Map>().toList();
+    final ranked = <Map>[];
+    for (final code in preferred) {
+      for (final row in maps) {
+        final c = (row['leave_type_code'] ?? row['code'] ?? '')
+            .toString()
+            .toLowerCase()
+            .trim();
+        if (c == code) {
+          ranked.add(row);
+          break;
+        }
+      }
+    }
+    if (ranked.isNotEmpty) return ranked;
+    return maps.where((row) {
+      final c = (row['leave_type_code'] ?? row['code'] ?? '')
+          .toString()
+          .toLowerCase()
+          .trim();
+      return !skip.contains(c);
+    }).toList();
   }
 }
 

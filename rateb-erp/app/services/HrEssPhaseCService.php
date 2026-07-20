@@ -32,6 +32,7 @@ final class HrEssPhaseCService
         $hr = new HrService();
         $attendance = $hr->findAttendanceByEmployeeDate($companyId, $employeeId, date('Y-m-d'));
         $balances = $hr->leaveBalancesForEmployee($employeeId, (int) date('Y'));
+        $balances = $this->homeLeaveBalances(is_array($balances) ? $balances : []);
 
         $notifications = new NotificationService();
         $unread = $notifications->countUnreadForUser($userId, $companyId);
@@ -293,6 +294,34 @@ final class HrEssPhaseCService
             'status' => 200,
             'body' => ['success' => true],
         ];
+    }
+
+    /**
+     * Home dashboard: primary leave types only (avoid maternity/paternity noise).
+     *
+     * @param list<array<string, mixed>> $balances
+     * @return list<array<string, mixed>>
+     */
+    private function homeLeaveBalances(array $balances): array
+    {
+        $preferred = ['annual', 'sick', 'emergency', 'unpaid', 'hajj', 'marriage', 'bereavement'];
+        $primary = [];
+        foreach ($preferred as $code) {
+            foreach ($balances as $row) {
+                if (strtolower(trim((string) ($row['leave_type_code'] ?? ''))) === $code) {
+                    $primary[] = $row;
+                    break;
+                }
+            }
+            if (count($primary) >= 3) {
+                return $primary;
+            }
+        }
+        if ($primary !== []) {
+            return $primary;
+        }
+
+        return array_slice($balances, 0, 3);
     }
 
     /**

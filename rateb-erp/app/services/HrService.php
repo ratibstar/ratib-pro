@@ -432,11 +432,15 @@ final class HrService
         $companyId = (int) ($emp['company_id'] ?? 0);
         $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
         return $this->localizeLeaveTypeNames((new LeaveBalance())->query(
-            "SELECT lb.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lb.leave_type_id, lt.days_per_year
+            "SELECT lb.*, lt.name AS leave_type_name, lt.code AS leave_type_code, lb.leave_type_id, lt.days_per_year,
+                    (lb.entitled_days - lb.used_days) AS remaining_days
              FROM rateb_leave_balances lb
              JOIN rateb_leave_types lt ON lt.id = lb.leave_type_id
              WHERE lb.company_id = :cid AND lb.employee_id = :eid AND lb.balance_year = :y
-             ORDER BY lt.name ASC",
+             ORDER BY FIELD(LOWER(lt.code),
+                 'annual','sick','emergency','unpaid','hajj','marriage','bereavement',
+                 'paternity','maternity','iddah','study','exam','compensatory','work_injury'
+             ), lt.name ASC",
             ['cid' => $companyId, 'eid' => $employeeId, 'y' => $year]
         ));
     }
