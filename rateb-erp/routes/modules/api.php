@@ -24,6 +24,7 @@ $router->get('/api/v1', [ApiController::class, 'index']);
 $router->post('/api/v1/auth/token', [ApiController::class, 'createToken']);
 
 $router->get('/api/v1/hr/me', [\Rateb\App\Controllers\Api\HrEssMeController::class, 'me'], $api);
+$router->get('/api/v1/hr/profile', [\Rateb\App\Controllers\Api\HrEssProfileController::class, 'show'], $api);
 $router->get('/api/v1/hr/attendance/today', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'today'], $api);
 $router->get('/api/v1/hr/attendance/history', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'history'], $api);
 $router->post('/api/v1/hr/attendance/check-in', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'checkIn'], $api);

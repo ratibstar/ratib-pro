@@ -23,6 +23,7 @@ export 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/payment_methods_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/payslip_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/permission_request_port.dart';
+export 'package:ratib_hr_mobile/core/contracts/profile_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/ratings_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/secure_token_store.dart';
 export 'package:ratib_hr_mobile/core/contracts/settings_port.dart';

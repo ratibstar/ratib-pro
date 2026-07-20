@@ -8,6 +8,7 @@ import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
+import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -36,6 +37,8 @@ abstract final class AppLocator {
   static DocumentsPort? _documents;
   static PayslipRepository? _payslipRepository;
   static DocumentsRepository? _documentsRepository;
+  static ProfilePort? _profile;
+  static ProfileRepository? _profileRepository;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -124,6 +127,14 @@ abstract final class AppLocator {
     _documentsRepository = documentsRepository;
   }
 
+  static void registerPhaseG({
+    required ProfilePort profile,
+    required ProfileRepository profileRepository,
+  }) {
+    _profile = profile;
+    _profileRepository = profileRepository;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -187,6 +198,9 @@ abstract final class AppLocator {
       _payslipRepository ?? _notRegistered('payslipRepository');
   static DocumentsRepository get documentsRepository =>
       _documentsRepository ?? _notRegistered('documentsRepository');
+  static ProfilePort get profile => _profile ?? _notRegistered('profile');
+  static ProfileRepository get profileRepository =>
+      _profileRepository ?? _notRegistered('profileRepository');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static ApprovalPort get approvals => _notRegistered('approvals');

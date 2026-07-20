@@ -25,6 +25,7 @@ import 'package:ratib_hr_mobile/features/notifications/notifications_page.dart';
 import 'package:ratib_hr_mobile/features/payments/payments_page.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_detail_screen.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslips_list_screen.dart';
+import 'package:ratib_hr_mobile/features/profile/profile_screen.dart';
 import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
 import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
 import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
@@ -247,9 +248,7 @@ abstract final class AppRouter {
                     ),
                     GoRoute(
                       path: 'profile',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.profile,
-                      ),
+                      builder: (context, state) => const ProfileScreen(),
                     ),
                     GoRoute(
                       path: 'approvals',

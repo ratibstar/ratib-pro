@@ -15,6 +15,7 @@ import 'package:ratib_hr_mobile/core/adapters/erp_notification_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_payment_methods_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_payslip_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_documents_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_profile_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_ratings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_settings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
@@ -28,6 +29,7 @@ import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
+import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
 
 void bootstrapPhase1() {
   bootstrapEssCore();
@@ -117,5 +119,10 @@ void bootstrapEssCore() {
     documents: documents,
     payslipRepository: PayslipRepository(payslips: payslips),
     documentsRepository: DocumentsRepository(documents: documents),
+  );
+  final profile = ErpProfileAdapter(http: http, errors: errors);
+  AppLocator.registerPhaseG(
+    profile: profile,
+    profileRepository: ProfileRepository(profile: profile),
   );
 }

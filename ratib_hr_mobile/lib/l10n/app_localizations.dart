@@ -209,6 +209,18 @@ class AppLocalizations {
       'documentsFilterAll': 'الكل',
       'documentsFileLoaded': 'تم تحميل {name} ({size} بايت)',
       'genericClose': 'إغلاق',
+      'profileBasicInfo': 'البيانات الأساسية',
+      'profileJobInfo': 'المعلومات الوظيفية',
+      'profileContact': 'بيانات التواصل',
+      'profileFullName': 'الاسم الكامل',
+      'profileEmployeeNo': 'الرقم الوظيفي',
+      'profileJobTitle': 'المسمى الوظيفي',
+      'profileDepartment': 'القسم',
+      'profileBranch': 'الفرع',
+      'profileManager': 'المدير المباشر',
+      'profileEmail': 'البريد الإلكتروني',
+      'profilePhone': 'الجوال',
+      'profileJoinDate': 'تاريخ الالتحاق',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -399,6 +411,18 @@ class AppLocalizations {
       'documentsFilterAll': 'All',
       'documentsFileLoaded': 'Loaded {name} ({size} bytes)',
       'genericClose': 'Close',
+      'profileBasicInfo': 'Basic information',
+      'profileJobInfo': 'Job information',
+      'profileContact': 'Contact',
+      'profileFullName': 'Full name',
+      'profileEmployeeNo': 'Employee no.',
+      'profileJobTitle': 'Job title',
+      'profileDepartment': 'Department',
+      'profileBranch': 'Branch',
+      'profileManager': 'Manager',
+      'profileEmail': 'Email',
+      'profilePhone': 'Phone',
+      'profileJoinDate': 'Join date',
     },
   };
 
@@ -604,6 +628,19 @@ class AppLocalizations {
   String get documentsNoFile => _t('documentsNoFile');
   String get documentsFilterAll => _t('documentsFilterAll');
   String get genericClose => _t('genericClose');
+
+  String get profileBasicInfo => _t('profileBasicInfo');
+  String get profileJobInfo => _t('profileJobInfo');
+  String get profileContact => _t('profileContact');
+  String get profileFullName => _t('profileFullName');
+  String get profileEmployeeNo => _t('profileEmployeeNo');
+  String get profileJobTitle => _t('profileJobTitle');
+  String get profileDepartment => _t('profileDepartment');
+  String get profileBranch => _t('profileBranch');
+  String get profileManager => _t('profileManager');
+  String get profileEmail => _t('profileEmail');
+  String get profilePhone => _t('profilePhone');
+  String get profileJoinDate => _t('profileJoinDate');
 
   String documentsFileLoaded(String name, int size) => _t('documentsFileLoaded')
       .replaceAll('{name}', name)
