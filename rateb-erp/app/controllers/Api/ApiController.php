@@ -16,7 +16,6 @@ use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\ApiBranchGuardService;
 use Rateb\App\Services\ApiTokenService;
 use Rateb\App\Services\DashboardService;
-use Rateb\App\Services\DedicatedTenantPolicy;
 use Rateb\App\Services\Logger;
 use Rateb\App\Services\PlanLimitService;
 
@@ -86,14 +85,9 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
         }
-        // ESS / mobile API tokens are company-scoped. ApiAuthMiddleware always
-        // forces TenantContext::setSuperAdmin(false). Platform SA rows often have
-        // null company_id — bind primary tenant like web Auth::establishSession.
-        $companyId = (int) ($user['company_id'] ?? 0);
-        $isSa = (int) ($user['is_super_admin'] ?? 0) === 1;
-        if ($companyId < 1 && $isSa) {
-            $companyId = (int) DedicatedTenantPolicy::primaryCompanyId();
-        }
+        // ESS / mobile API tokens are company-scoped (active company only).
+        $planLimits = new PlanLimitService();
+        $companyId = $planLimits->resolveEssApiCompanyId($user);
         if ($companyId < 1) {
             Response::json([
                 'success' => false,
@@ -102,13 +96,7 @@ final class ApiController extends Controller
             ], 403);
             return;
         }
-        $company = (new Company())->find($companyId);
-        if (!$company || (string) ($company['status'] ?? '') !== 'active') {
-            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
-            return;
-        }
-        // Mirror web SA login: skip subscription gate for super-admin tokens.
-        if (!$isSa && !(new PlanLimitService())->companyAccessAllowed($companyId)) {
+        if (!$planLimits->apiBearerCompanyAllowed($companyId)) {
             Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return;
         }

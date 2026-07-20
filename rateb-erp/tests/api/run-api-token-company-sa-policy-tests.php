@@ -2,17 +2,14 @@
 declare(strict_types=1);
 
 /**
- * Policy: company-scoped API tokens for ESS.
- * - SA without company_id binds DedicatedTenantPolicy::primaryCompanyId
- * - SA skips subscription gate (active company only)
- * - Non-SA still requires companyAccessAllowed
+ * Policy: ESS/mobile API bearer skips SaaS subscription gate.
  *
  * Run: php rateb-erp/tests/api/run-api-token-company-sa-policy-tests.php
  */
 
 $root = dirname(__DIR__, 2);
 $apiCtrl = file_get_contents($root . '/app/controllers/Api/ApiController.php');
-$tokenSvc = file_get_contents($root . '/app/services/ApiTokenService.php');
+$planSvc = file_get_contents($root . '/app/services/PlanLimitService.php');
 $mw = file_get_contents($root . '/app/Core/Middleware/Middleware.php');
 
 $failed = 0;
@@ -28,31 +25,25 @@ function assertTrue(bool $cond, string $msg): void
 }
 
 assertTrue(
-    str_contains($apiCtrl, 'DedicatedTenantPolicy::primaryCompanyId'),
-    'createToken binds primary company for SA without company_id'
+    str_contains($planSvc, 'function apiBearerCompanyAllowed')
+        && str_contains($planSvc, 'function resolveEssApiCompanyId'),
+    'PlanLimitService exposes ESS API company helpers'
 );
 
 assertTrue(
-    str_contains($apiCtrl, 'No company linked')
-        && str_contains($apiCtrl, 'code\' => \'no_company\''),
-    'createToken returns no_company when unresolved'
+    str_contains($apiCtrl, 'resolveEssApiCompanyId')
+        && str_contains($apiCtrl, 'apiBearerCompanyAllowed'),
+    'createToken uses ESS company helpers'
 );
 
 assertTrue(
-    str_contains($apiCtrl, '!$isSa && !(new PlanLimitService())')
-        || str_contains($apiCtrl, '!$isSa && !(new PlanLimitService())->companyAccessAllowed'),
-    'createToken subscription gate applies only to non-SA'
+    !preg_match('/companyAccessAllowed\(\$companyId\)/', $apiCtrl),
+    'createToken does not enforce SaaS subscription gate'
 );
 
 assertTrue(
-    str_contains($tokenSvc, '$companyIdOverride'),
-    'ApiTokenService accepts companyIdOverride'
-);
-
-assertTrue(
-    str_contains($mw, '$tokenIsSa')
-        && str_contains($mw, 'companyAccessAllowed'),
-    'ApiAuthMiddleware SA tokens skip subscription gate'
+    str_contains($mw, 'apiBearerCompanyAllowed($companyId)'),
+    'ApiAuthMiddleware uses ESS company helper'
 );
 
 assertTrue(

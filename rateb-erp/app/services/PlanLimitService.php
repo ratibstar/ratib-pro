@@ -254,6 +254,34 @@ final class PlanLimitService
         return $this->hasValidSubscription($companyId);
     }
 
+    /** ESS / mobile API bearer: active company only — no SaaS subscription gate. */
+    public function apiBearerCompanyAllowed(int $companyId): bool
+    {
+        $company = $this->getCompanyRow($companyId);
+        if (!$company) {
+            return false;
+        }
+
+        return (string) ($company['status'] ?? '') === 'active';
+    }
+
+    /**
+     * Resolve tenant for mobile token minting.
+     * Super-admin without a valid company binds primary tenant (web shell parity).
+     *
+     * @param array<string, mixed> $user
+     */
+    public function resolveEssApiCompanyId(array $user): int
+    {
+        $companyId = (int) ($user['company_id'] ?? 0);
+        $isSa = (int) ($user['is_super_admin'] ?? 0) === 1;
+        if ($isSa && ($companyId < 1 || !$this->apiBearerCompanyAllowed($companyId))) {
+            return DedicatedTenantPolicy::primaryCompanyId();
+        }
+
+        return $companyId;
+    }
+
     public function hasValidSubscription(int $companyId): bool
     {
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
