@@ -71,8 +71,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: DsAppBar(
         title: cfg?.displayName.isNotEmpty == true
-            ? cfg!.displayName
-            : l10n.navHome,
+            ? '${cfg!.displayName} · 0.1.2'
+            : '${l10n.navHome} · 0.1.2',
         actions: [
           if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
             IconButton(
