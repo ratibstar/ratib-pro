@@ -1,4 +1,4 @@
-/// App bar — large touch-friendly actions.
+/// App bar — transparent chrome over modern page backdrops.
 library;
 
 import 'package:flutter/material.dart';
@@ -27,6 +27,10 @@ class DsAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: leading,
       automaticallyImplyLeading: automaticallyImplyLeading,
       actions: actions,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
     );
   }
 }

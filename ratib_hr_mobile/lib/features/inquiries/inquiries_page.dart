@@ -93,8 +93,8 @@ class _InquiriesPageState extends State<InquiriesPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.navInquiries),
+    return DsPageScaffold(
+      title: l10n.navInquiries,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
           : _error != null
@@ -140,9 +140,10 @@ class _InquiriesPageState extends State<InquiriesPage> {
                               ),
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            FilledButton(
+                            DsPrimaryButton(
+                              label: l10n.inquirySubmit,
                               onPressed: _submit,
-                              child: Text(l10n.inquirySubmit),
+                              icon: Icons.send_rounded,
                             ),
                           ],
                         ),
@@ -159,6 +160,10 @@ class _InquiriesPageState extends State<InquiriesPage> {
                               (row['status'] ?? '').toString(),
                               (row['notes'] ?? '').toString(),
                             ].where((e) => e.isNotEmpty).join(' · '),
+                            leading: const DsIconBadge(
+                              icon: Icons.support_agent_outlined,
+                              color: Color(0xFF0284C7),
+                            ),
                             trailing: const SizedBox.shrink(),
                           ),
                     ],

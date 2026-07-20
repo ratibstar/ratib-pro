@@ -1,8 +1,9 @@
-/// Enterprise card surface.
+/// Enterprise card surface — soft glass elevation.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
+import 'package:ratib_hr_mobile/shared/design_system/ds_surfaces.dart';
 
 class DsCard extends StatelessWidget {
   const DsCard({
@@ -20,25 +21,15 @@ class DsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
+    return DsGlassTile(
+      onTap: onTap,
+      padding: padding,
       margin: margin ??
           const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.xs,
           ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Padding(
-          padding: padding,
-          child: SizedBox(
-            width: double.infinity,
-            child: child,
-          ),
-        ),
-      ),
+      child: child,
     );
-    return card;
   }
 }

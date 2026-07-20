@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/shared/design_system/ds_list_item.dart';
+import 'package:ratib_hr_mobile/shared/design_system/ds_surfaces.dart';
 
 class DsNotificationTile extends StatelessWidget {
   const DsNotificationTile({
@@ -23,31 +24,41 @@ class DsNotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent =
+        unread ? AppColors.auroraCyan : AppColors.badgeNeutral;
     return DsListItemRaw(
       onTap: onTap,
-      leading: Icon(
-        AppIcons.notifications,
-        color: unread
-            ? Theme.of(context).colorScheme.secondary
-            : Theme.of(context).colorScheme.onSurfaceVariant,
+      leading: DsIconBadge(
+        icon: AppIcons.notifications,
+        color: accent,
       ),
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: unread ? FontWeight.w700 : FontWeight.w600,
+              fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
             ),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (body != null) Text(body!),
-          if (timeLabel != null)
+          if (body != null && body!.isNotEmpty) Text(body!),
+          if (timeLabel != null && timeLabel!.isNotEmpty)
             Text(
               timeLabel!,
               style: Theme.of(context).textTheme.bodySmall,
             ),
         ],
       ),
+      trailing: unread
+          ? Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: AppColors.auroraCyan,
+                shape: BoxShape.circle,
+              ),
+            )
+          : null,
     );
   }
 }

@@ -62,9 +62,9 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: AppSpacing.md),
               Text(body),
               const SizedBox(height: AppSpacing.lg),
-              FilledButton(
+              DsPrimaryButton(
+                label: AppLocalizations.of(ctx).settingsClose,
                 onPressed: () => Navigator.pop(ctx),
-                child: Text(AppLocalizations.of(ctx).settingsClose),
               ),
             ],
           ),
@@ -139,6 +139,36 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Widget _switchTile({
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required IconData icon,
+    required Color accent,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 6,
+      ),
+      child: DsGlassTile(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          secondary: DsIconBadge(icon: icon, color: accent),
+          title: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          value: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -150,21 +180,25 @@ class _SettingsPageState extends State<SettingsPage> {
         .toString();
 
     if (_loading) {
-      return Scaffold(
-        appBar: DsAppBar(title: l10n.navSettings),
+      return DsPageScaffold(
+        title: l10n.navSettings,
         body: DsLoadingState(message: l10n.genericLoading),
       );
     }
 
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.navSettings),
+    return DsPageScaffold(
+      title: l10n.navSettings,
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
         children: [
           DsSectionHeader(title: l10n.settingsPreferences),
           DsListItem(
             title: l10n.language,
             subtitle: isAr ? l10n.arabic : l10n.english,
-            leading: const Icon(Icons.language),
+            leading: const DsIconBadge(
+              icon: Icons.language,
+              color: AppColors.auroraCyan,
+            ),
             onTap: () {
               widget.onLocaleChanged(
                 isAr ? const Locale('en') : AppConfig.defaultLocale,
@@ -174,7 +208,10 @@ class _SettingsPageState extends State<SettingsPage> {
           DsListItem(
             title: l10n.settingsTheme,
             subtitle: _themeLabel(l10n, _theme),
-            leading: const Icon(Icons.brightness_6_outlined),
+            leading: const DsIconBadge(
+              icon: Icons.brightness_6_outlined,
+              color: AppColors.auroraAmber,
+            ),
             onTap: () async {
               final next = switch (_theme) {
                 ThemeMode.system => ThemeMode.light,
@@ -185,17 +222,21 @@ class _SettingsPageState extends State<SettingsPage> {
               setState(() => _theme = next);
             },
           ),
-          SwitchListTile(
-            title: Text(l10n.settingsNotifications),
+          _switchTile(
+            title: l10n.settingsNotifications,
             value: _notifications,
+            icon: Icons.notifications_outlined,
+            accent: AppColors.auroraTeal,
             onChanged: (v) async {
               await AppLocator.settings.setNotificationsEnabled(v);
               setState(() => _notifications = v);
             },
           ),
-          SwitchListTile(
-            title: Text(l10n.settingsBiometric),
+          _switchTile(
+            title: l10n.settingsBiometric,
             value: _biometric,
+            icon: Icons.fingerprint_rounded,
+            accent: AppColors.auroraRose,
             onChanged: (v) async {
               await AppLocator.settings.setBiometricEnabled(v);
               setState(() => _biometric = v);
@@ -204,7 +245,10 @@ class _SettingsPageState extends State<SettingsPage> {
           DsSectionHeader(title: l10n.settingsAccount),
           DsListItem(
             title: l10n.settingsChangePassword,
-            leading: const Icon(Icons.lock_outline),
+            leading: const DsIconBadge(
+              icon: Icons.lock_outline,
+              color: AppColors.auroraTeal,
+            ),
             onTap: _changePassword,
           ),
           DsSectionHeader(title: l10n.settingsAboutSection),
@@ -214,26 +258,35 @@ class _SettingsPageState extends State<SettingsPage> {
               cfg?.displayName ?? AppConfig.appName,
               'Phase ${AppConfig.phase}',
             ].join(' · '),
-            leading: const Icon(Icons.info_outline),
+            leading: const DsIconBadge(
+              icon: Icons.info_outline,
+              color: AppColors.badgeNeutral,
+            ),
             trailing: const SizedBox.shrink(),
           ),
           DsListItem(
             title: l10n.settingsPrivacy,
-            leading: const Icon(Icons.privacy_tip_outlined),
+            leading: const DsIconBadge(
+              icon: Icons.privacy_tip_outlined,
+              color: AppColors.auroraCyan,
+            ),
             onTap: () => _showLegal(l10n.settingsPrivacy, privacy),
           ),
           DsListItem(
             title: l10n.settingsTerms,
-            leading: const Icon(Icons.description_outlined),
+            leading: const DsIconBadge(
+              icon: Icons.description_outlined,
+              color: AppColors.auroraAmber,
+            ),
             onTap: () => _showLegal(l10n.settingsTerms, terms),
           ),
           const SizedBox(height: AppSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: OutlinedButton.icon(
+            child: DsOutlineButton(
+              label: l10n.signOut,
+              icon: Icons.logout,
               onPressed: () => AppLocator.signOut(),
-              icon: const Icon(Icons.logout),
-              label: Text(l10n.signOut),
             ),
           ),
           const SizedBox(height: AppSpacing.xxl),

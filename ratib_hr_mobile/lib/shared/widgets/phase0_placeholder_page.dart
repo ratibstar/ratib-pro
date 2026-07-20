@@ -3,7 +3,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
+import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
 enum Phase0TitleKey {
   home,
@@ -84,58 +86,120 @@ class Phase0PlaceholderPage extends StatelessWidget {
     }
   }
 
+  IconData _hubIcon() {
+    switch (titleKey) {
+      case Phase0TitleKey.attendance:
+      case Phase0TitleKey.checkIn:
+      case Phase0TitleKey.checkOut:
+      case Phase0TitleKey.attendanceHistory:
+        return Icons.fingerprint_rounded;
+      case Phase0TitleKey.leave:
+      case Phase0TitleKey.leaveBalance:
+      case Phase0TitleKey.applyLeave:
+      case Phase0TitleKey.leaveStatus:
+        return Icons.beach_access_rounded;
+      case Phase0TitleKey.requests:
+      case Phase0TitleKey.permissionRequests:
+      case Phase0TitleKey.employeeRequests:
+        return Icons.assignment_outlined;
+      case Phase0TitleKey.documents:
+        return Icons.folder_open_outlined;
+      case Phase0TitleKey.payslips:
+        return Icons.receipt_long_outlined;
+      case Phase0TitleKey.notifications:
+        return Icons.notifications_outlined;
+      case Phase0TitleKey.profile:
+        return Icons.person_outline;
+      case Phase0TitleKey.approvals:
+        return Icons.fact_check_outlined;
+      default:
+        return Icons.apps_rounded;
+    }
+  }
+
+  Color _hubAccent() {
+    switch (titleKey) {
+      case Phase0TitleKey.attendance:
+      case Phase0TitleKey.checkIn:
+      case Phase0TitleKey.checkOut:
+      case Phase0TitleKey.attendanceHistory:
+        return AppColors.auroraAmber;
+      case Phase0TitleKey.leave:
+      case Phase0TitleKey.leaveBalance:
+      case Phase0TitleKey.applyLeave:
+      case Phase0TitleKey.leaveStatus:
+        return AppColors.auroraCyan;
+      case Phase0TitleKey.requests:
+      case Phase0TitleKey.permissionRequests:
+      case Phase0TitleKey.employeeRequests:
+        return AppColors.auroraRose;
+      default:
+        return AppColors.auroraTeal;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final title = _title(l10n);
+    final accent = _hubAccent();
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
+    return DsPageScaffold(
+      title: title,
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: DsGlassTile(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Row(
+                    children: [
+                      DsIconBadge(icon: _hubIcon(), color: accent),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
                   Text(
                     l10n.phase0Placeholder,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     l10n.phase0Subtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                 ],
               ),
             ),
           ),
-          ...childLinks.map(
-            (link) => Card(
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
+          if (childLinks.isNotEmpty) ...[
+            DsSectionHeader(title: title),
+            for (final link in childLinks)
+              DsListItem(
+                title: _titleFor(l10n, link.titleKey),
+                leading: DsIconBadge(
+                  icon: Icons.arrow_outward_rounded,
+                  color: accent,
                 ),
-                title: Text(_titleFor(l10n, link.titleKey)),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                accentColor: accent,
                 onTap: () => context.push(link.route),
-                minVerticalPadding: 16,
               ),
-            ),
-          ),
+          ],
         ],
       ),
     );

@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
+import 'package:ratib_hr_mobile/shared/design_system/ds_surfaces.dart';
 
 class DsPrimaryButton extends StatelessWidget {
   const DsPrimaryButton({
@@ -20,18 +21,12 @@ class DsPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = icon == null
-        ? Text(label)
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: AppIcons.sizeSm),
-              const SizedBox(width: AppSpacing.xs),
-              Text(label),
-            ],
-          );
-    final button = FilledButton(onPressed: onPressed, child: child);
-    return expanded ? SizedBox(width: double.infinity, child: button) : button;
+    final button = DsGradientButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+    );
+    return expanded ? button : Align(child: button);
   }
 }
 

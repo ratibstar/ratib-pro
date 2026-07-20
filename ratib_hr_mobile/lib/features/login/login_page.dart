@@ -120,73 +120,123 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          children: [
-            Align(
-              alignment: AlignmentDirectional.topEnd,
-              child: TextButton(
-                onPressed: () {
-                  widget.onLocaleChanged(
-                    isAr ? const Locale('en') : AppConfig.defaultLocale,
-                  );
-                },
-                child: Text(isAr ? l10n.english : l10n.arabic),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            Text(
-              l10n.appTitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              l10n.loginSubtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            DsTextField(
-              controller: _identifier,
-              label: l10n.loginEmailLabel,
-              hint: l10n.loginEmailHint,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              enabled: !_busy,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            DsTextField(
-              controller: _password,
-              label: l10n.loginPasswordLabel,
-              obscureText: _obscure,
-              textInputAction: TextInputAction.done,
-              enabled: !_busy,
-              suffixIcon: IconButton(
-                onPressed: () => setState(() => _obscure = !_obscure),
-                icon: Icon(
-                  _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+    return DsPageBackdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            children: [
+              Align(
+                alignment: AlignmentDirectional.topEnd,
+                child: TextButton(
+                  onPressed: () {
+                    widget.onLocaleChanged(
+                      isAr ? const Locale('en') : AppConfig.defaultLocale,
+                    );
+                  },
+                  child: Text(isAr ? l10n.english : l10n.arabic),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            if (_busy)
-              const DsLoadingState()
-            else
-              DsPrimaryButton(
-                label: l10n.loginSubmit,
-                onPressed: _submit,
+              const SizedBox(height: 28),
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.teal.withValues(alpha: 0.4),
+                        blurRadius: 24,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.badge_rounded,
+                    color: Colors.white,
+                    size: 42,
+                  ),
+                ),
               ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.loginErpOnlyHint,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+              const SizedBox(height: 28),
+              Text(
+                l10n.appTitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.loginSubtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 36),
+              DsGlassTile(
+                padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DsTextField(
+                      controller: _identifier,
+                      label: l10n.loginEmailLabel,
+                      hint: l10n.loginEmailHint,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      enabled: !_busy,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    DsTextField(
+                      controller: _password,
+                      label: l10n.loginPasswordLabel,
+                      obscureText: _obscure,
+                      textInputAction: TextInputAction.done,
+                      enabled: !_busy,
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    if (_busy)
+                      const DsLoadingState()
+                    else
+                      DsPrimaryButton(
+                        label: l10n.loginSubmit,
+                        onPressed: _submit,
+                        icon: Icons.login_rounded,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                l10n.loginErpOnlyHint,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondary,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

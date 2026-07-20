@@ -56,8 +56,8 @@ class _RatingsPageState extends State<RatingsPage> {
     final kpis = _data['kpi_summary'];
     final reviews = _data['reviews'];
 
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.navRatings),
+    return DsPageScaffold(
+      title: l10n.navRatings,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
           : _error != null
@@ -78,6 +78,7 @@ class _RatingsPageState extends State<RatingsPage> {
                         label: l10n.ratingsScore,
                         value: score == null ? '—' : score.toString(),
                         icon: Icons.stars_outlined,
+                        accent: AppColors.auroraAmber,
                       ),
                       DsSectionHeader(title: l10n.ratingsMonthly),
                       DsCard(
@@ -100,6 +101,8 @@ class _RatingsPageState extends State<RatingsPage> {
                             label: (k['name'] ?? k['label'] ?? l10n.ratingsKpi)
                                 .toString(),
                             value: (k['value'] ?? k['score'] ?? '—').toString(),
+                            icon: Icons.insights_outlined,
+                            accent: AppColors.auroraTeal,
                           ),
                       DsSectionHeader(title: l10n.ratingsReviews),
                       if (reviews is! List || reviews.isEmpty)
@@ -115,6 +118,10 @@ class _RatingsPageState extends State<RatingsPage> {
                             subtitle:
                                 (r['overall_score'] ?? r['status'] ?? '')
                                     .toString(),
+                            leading: const DsIconBadge(
+                              icon: Icons.rate_review_outlined,
+                              color: AppColors.auroraAmber,
+                            ),
                             trailing: const SizedBox.shrink(),
                           ),
                     ],

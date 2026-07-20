@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
+import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -52,8 +53,8 @@ class _EmployeeRequestsPageState extends State<EmployeeRequestsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.navEmployeeRequests),
+    return DsPageScaffold(
+      title: l10n.navEmployeeRequests,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
           : _error != null
@@ -68,6 +69,7 @@ class _EmployeeRequestsPageState extends State<EmployeeRequestsPage> {
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 24),
                         itemCount: _items.length,
                         itemBuilder: (context, i) {
                           final row = _items[i];
@@ -87,6 +89,10 @@ class _EmployeeRequestsPageState extends State<EmployeeRequestsPage> {
                               if (status.isNotEmpty) status,
                               if (date.isNotEmpty) date,
                             ].join(' · '),
+                            leading: const DsIconBadge(
+                              icon: Icons.assignment_outlined,
+                              color: AppColors.auroraRose,
+                            ),
                             onTap: () => context.go(
                               '${AppRoutes.requestDetail}?id=$id',
                             ),

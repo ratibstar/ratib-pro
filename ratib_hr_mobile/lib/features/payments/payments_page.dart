@@ -53,8 +53,8 @@ class _PaymentsPageState extends State<PaymentsPage> {
     final l10n = AppLocalizations.of(context);
     final available = _data['available'] == true;
 
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.navPayments),
+    return DsPageScaffold(
+      title: l10n.navPayments,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
           : _error != null
@@ -72,19 +72,69 @@ class _PaymentsPageState extends State<PaymentsPage> {
                     children: [
                       DsSectionHeader(title: l10n.paymentsSalary),
                       DsCard(
-                        child: Text(
-                          available
-                              ? (_data['salary_payment']?.toString() ??
-                                  l10n.paymentsReady)
-                              : l10n.paymentsUnavailable,
+                        child: Row(
+                          children: [
+                            DsIconBadge(
+                              icon: Icons.payments_outlined,
+                              color: available
+                                  ? AppColors.auroraTeal
+                                  : AppColors.badgeNeutral,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                available
+                                    ? (_data['salary_payment']?.toString() ??
+                                        l10n.paymentsReady)
+                                    : l10n.paymentsUnavailable,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       DsSectionHeader(title: l10n.paymentsBanks),
-                      DsCard(child: Text(l10n.paymentsBanksPlaceholder)),
+                      DsCard(
+                        child: Row(
+                          children: [
+                            const DsIconBadge(
+                              icon: Icons.account_balance_outlined,
+                              color: AppColors.auroraCyan,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(child: Text(l10n.paymentsBanksPlaceholder)),
+                          ],
+                        ),
+                      ),
                       DsSectionHeader(title: l10n.paymentsWallet),
-                      DsCard(child: Text(l10n.paymentsWalletPlaceholder)),
+                      DsCard(
+                        child: Row(
+                          children: [
+                            const DsIconBadge(
+                              icon: Icons.account_balance_wallet_outlined,
+                              color: AppColors.auroraAmber,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(l10n.paymentsWalletPlaceholder),
+                            ),
+                          ],
+                        ),
+                      ),
                       DsSectionHeader(title: l10n.paymentsGateways),
-                      DsCard(child: Text(l10n.paymentsGatewaysPlaceholder)),
+                      DsCard(
+                        child: Row(
+                          children: [
+                            const DsIconBadge(
+                              icon: Icons.credit_card_outlined,
+                              color: AppColors.auroraRose,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(l10n.paymentsGatewaysPlaceholder),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

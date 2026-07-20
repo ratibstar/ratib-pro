@@ -16,3 +16,4 @@ export 'package:ratib_hr_mobile/shared/design_system/ds_section_header.dart';
 export 'package:ratib_hr_mobile/shared/design_system/ds_snackbar.dart';
 export 'package:ratib_hr_mobile/shared/design_system/ds_states.dart';
 export 'package:ratib_hr_mobile/shared/design_system/ds_status_badge.dart';
+export 'package:ratib_hr_mobile/shared/design_system/ds_surfaces.dart';

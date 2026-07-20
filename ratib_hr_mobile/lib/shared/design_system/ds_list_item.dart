@@ -1,8 +1,9 @@
-/// List row — card-friendly, no desktop tables.
+/// List row — modern glass card, no desktop tables.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
+import 'package:ratib_hr_mobile/shared/design_system/ds_surfaces.dart';
 
 class DsListItem extends StatelessWidget {
   const DsListItem({
@@ -12,6 +13,7 @@ class DsListItem extends StatelessWidget {
     this.leading,
     this.trailing,
     this.onTap,
+    this.accentColor = AppColors.auroraTeal,
   });
 
   final String title;
@@ -19,18 +21,56 @@ class DsListItem extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
-    return DsListItemRaw(
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: subtitle == null
-          ? null
-          : Text(subtitle!, style: Theme.of(context).textTheme.bodyMedium),
-      leading: leading,
-      trailing: trailing ??
-          Icon(AppIcons.chevron, size: AppIcons.sizeMd),
-      onTap: onTap,
+    final leadingWidget = leading ??
+        DsIconBadge(icon: Icons.chevron_left_rounded, color: accentColor);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 6,
+      ),
+      child: DsGlassTile(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            leadingWidget,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            trailing ??
+                Icon(
+                  AppIcons.chevron,
+                  size: AppIcons.sizeMd,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -53,39 +93,34 @@ class DsListItemRaw extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).cardColor,
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 6,
+      ),
+      child: DsGlassTile(
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppSpacing.touchTarget),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  title,
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    subtitle!,
+                  ],
                 ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      title,
-                      if (subtitle != null) ...[
-                        const SizedBox(height: AppSpacing.xxs),
-                        subtitle!,
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
+              ),
             ),
-          ),
+            if (trailing != null) trailing!,
+          ],
         ),
       ),
     );

@@ -40,6 +40,7 @@ class EssShell extends StatelessWidget {
         if (sel < 0) sel = 0;
 
         return Scaffold(
+          backgroundColor: Colors.transparent,
           body: navigationShell,
           bottomNavigationBar: liveDest.isEmpty
               ? null

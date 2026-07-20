@@ -74,75 +74,79 @@ class _HomePageState extends State<HomePage> {
         ? cfg!.displayName
         : l10n.navHome;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: DsAppBar(
-        title: title,
-        actions: [
-          if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
-            IconButton(
-              icon: Badge(
-                isLabelVisible: unreadCount > 0,
-                label: Text('$unreadCount'),
-                child: const Icon(Icons.notifications_outlined),
-              ),
-              onPressed: () => context.go(AppRoutes.notifications),
-            ),
-        ],
-      ),
-      body: _loading
-          ? DsLoadingState(message: l10n.homeLoading)
-          : _error != null
-              ? DsErrorState(
-                  title: l10n.homeLoadFailed,
-                  message: _error,
-                  actionLabel: l10n.homeRetry,
-                  onAction: _load,
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  edgeOffset: kToolbarHeight + 12,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.paddingOf(context).top + kToolbarHeight,
-                      bottom: AppSpacing.xxl,
-                    ),
-                    children: [
-                      _HeroGreeting(name: name, subtitle: job, l10n: l10n),
-                      const SizedBox(height: AppSpacing.md),
-                      _QuickActions(l10n: l10n, cfg: cfg),
-                      const SizedBox(height: AppSpacing.lg),
-                      DsSectionHeader(title: l10n.homeTodayAttendance),
-                      _AttendanceBlock(
-                        raw: _data['attendance_today'],
-                        l10n: l10n,
-                      ),
-                      DsSectionHeader(title: l10n.homeLeaveBalance),
-                      _LeaveBlock(raw: _data['leave_balances'], l10n: l10n),
-                      DsSectionHeader(title: l10n.homePendingRequests),
-                      _PendingBlock(
-                        requests: _data['pending_requests'],
-                        leaves: _data['pending_leaves'],
-                        l10n: l10n,
-                      ),
-                      if (unreadCount > 0) ...[
-                        DsSectionHeader(title: l10n.homeRecentNotifications),
-                        _NotifSummary(
-                          raw: _data['notifications_summary'],
-                          l10n: l10n,
-                        ),
-                      ],
-                      if (payrollAvailable) ...[
-                        DsSectionHeader(title: l10n.homePayrollSummary),
-                        _PayrollBlock(
-                          raw: _data['payroll_summary'],
-                          l10n: l10n,
-                        ),
-                      ],
-                    ],
-                  ),
+    return DsPageBackdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
+        appBar: DsAppBar(
+          title: title,
+          actions: [
+            if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
+              IconButton(
+                icon: Badge(
+                  isLabelVisible: unreadCount > 0,
+                  label: Text('$unreadCount'),
+                  child: const Icon(Icons.notifications_outlined),
                 ),
+                onPressed: () => context.go(AppRoutes.notifications),
+              ),
+          ],
+        ),
+        body: _loading
+            ? DsLoadingState(message: l10n.homeLoading)
+            : _error != null
+                ? DsErrorState(
+                    title: l10n.homeLoadFailed,
+                    message: _error,
+                    actionLabel: l10n.homeRetry,
+                    onAction: _load,
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    edgeOffset: kToolbarHeight + 12,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        top:
+                            MediaQuery.paddingOf(context).top + kToolbarHeight,
+                        bottom: AppSpacing.xxl,
+                      ),
+                      children: [
+                        _HeroGreeting(name: name, subtitle: job, l10n: l10n),
+                        const SizedBox(height: AppSpacing.md),
+                        _QuickActions(l10n: l10n, cfg: cfg),
+                        const SizedBox(height: AppSpacing.lg),
+                        DsSectionHeader(title: l10n.homeTodayAttendance),
+                        _AttendanceBlock(
+                          raw: _data['attendance_today'],
+                          l10n: l10n,
+                        ),
+                        DsSectionHeader(title: l10n.homeLeaveBalance),
+                        _LeaveBlock(raw: _data['leave_balances'], l10n: l10n),
+                        DsSectionHeader(title: l10n.homePendingRequests),
+                        _PendingBlock(
+                          requests: _data['pending_requests'],
+                          leaves: _data['pending_leaves'],
+                          l10n: l10n,
+                        ),
+                        if (unreadCount > 0) ...[
+                          DsSectionHeader(title: l10n.homeRecentNotifications),
+                          _NotifSummary(
+                            raw: _data['notifications_summary'],
+                            l10n: l10n,
+                          ),
+                        ],
+                        if (payrollAvailable) ...[
+                          DsSectionHeader(title: l10n.homePayrollSummary),
+                          _PayrollBlock(
+                            raw: _data['payroll_summary'],
+                            l10n: l10n,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+      ),
     );
   }
 }
@@ -241,20 +245,12 @@ class _AttendanceBlock extends StatelessWidget {
     if (data is! Map || data.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: _GlassTile(
+        child: DsGlassTile(
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.auroraAmber.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.fingerprint_rounded,
-                  color: AppColors.auroraAmber,
-                ),
+              const DsIconBadge(
+                icon: Icons.fingerprint_rounded,
+                color: AppColors.auroraAmber,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -275,7 +271,7 @@ class _AttendanceBlock extends StatelessWidget {
     final m = data.map((k, v) => MapEntry(k.toString(), v));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: _GlassTile(
+      child: DsGlassTile(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -323,7 +319,7 @@ class _LeaveBlock extends StatelessWidget {
     if (data is! List || data.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: _GlassTile(child: Text(l10n.homeNoLeaveBalances)),
+        child: DsGlassTile(child: Text(l10n.homeNoLeaveBalances)),
       );
     }
     final rows = _primaryLeaveRows(data).take(3).toList();
@@ -466,20 +462,12 @@ class _PendingBlock extends StatelessWidget {
         child: InkWell(
           onTap: () => context.go(AppRoutes.requests),
           borderRadius: BorderRadius.circular(18),
-          child: _GlassTile(
+          child: DsGlassTile(
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.auroraRose.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.assignment_outlined,
-                    color: AppColors.auroraRose,
-                  ),
+                const DsIconBadge(
+                  icon: Icons.assignment_outlined,
+                  color: AppColors.auroraRose,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -510,7 +498,7 @@ class _NotifSummary extends StatelessWidget {
     if (data is! Map) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        child: _GlassTile(child: Text(l10n.homeNoNotifications)),
+        child: DsGlassTile(child: Text(l10n.homeNoNotifications)),
       );
     }
     final unread = data['unread'] ?? 0;
@@ -521,7 +509,7 @@ class _NotifSummary extends StatelessWidget {
         child: InkWell(
           onTap: () => context.go(AppRoutes.notifications),
           borderRadius: BorderRadius.circular(18),
-          child: _GlassTile(
+          child: DsGlassTile(
             child: Text('${l10n.homeUnreadNotifications}: $unread'),
           ),
         ),
@@ -543,7 +531,7 @@ class _PayrollBlock extends StatelessWidget {
         (data['message'] ?? l10n.homePayrollPlaceholder).toString();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: _GlassTile(child: Text(message)),
+      child: DsGlassTile(child: Text(message)),
     );
   }
 }
@@ -669,32 +657,6 @@ class _ActionTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _GlassTile extends StatelessWidget {
-  const _GlassTile({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.white.withValues(alpha: 0.85),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : AppColors.outline.withValues(alpha: 0.5),
-        ),
-      ),
-      child: child,
     );
   }
 }

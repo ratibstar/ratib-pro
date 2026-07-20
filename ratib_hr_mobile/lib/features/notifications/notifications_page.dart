@@ -123,20 +123,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: DsAppBar(
-        title: l10n.navNotifications,
-        actions: [
-          TextButton(
-            onPressed: _items.isEmpty ? null : _markAll,
-            child: Text(l10n.notifMarkAllRead),
-          ),
-        ],
-      ),
+    return DsPageScaffold(
+      title: l10n.navNotifications,
+      actions: [
+        TextButton(
+          onPressed: _items.isEmpty ? null : _markAll,
+          child: Text(l10n.notifMarkAllRead),
+        ),
+      ],
       body: Column(
         children: [
           SizedBox(
-            height: 48,
+            height: 52,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
@@ -173,6 +171,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         : RefreshIndicator(
                             onRefresh: _load,
                             child: ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 24),
                               itemCount: _items.length,
                               itemBuilder: (context, i) {
                                 final row = _items[i];
@@ -186,7 +185,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       .toString(),
                                   body: (row['body'] ?? row['message'] ?? '')
                                       .toString(),
-                                  timeLabel: (row['created_at'] ?? '').toString(),
+                                  timeLabel:
+                                      (row['created_at'] ?? '').toString(),
                                   unread: unread,
                                   onTap: () => _markOne(row),
                                 );

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
+import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -23,26 +24,34 @@ class MorePage extends StatelessWidget {
         final items = cfg == null
             ? const <ShellMoreItem>[]
             : ShellNavPolicy.visibleMoreItems(cfg);
+        final title = cfg?.displayName.isNotEmpty == true
+            ? cfg!.displayName
+            : l10n.tabMore;
 
-        return Scaffold(
-          appBar: DsAppBar(
-            title: cfg?.displayName.isNotEmpty == true
-                ? cfg!.displayName
-                : l10n.tabMore,
-          ),
+        return DsPageScaffold(
+          title: title,
           body: ListView(
+            padding: const EdgeInsets.only(top: 8, bottom: 32),
             children: [
               for (final item in items)
                 DsListItem(
                   title: _title(item, l10n),
-                  leading: Icon(_icon(item)),
+                  leading: DsIconBadge(
+                    icon: _icon(item),
+                    color: _accent(item),
+                  ),
+                  accentColor: _accent(item),
                   onTap: () => context.go(_route(item)),
                 ),
               if (cfg == null ||
                   !cfg.isFeatureEnabled(ShellMoreItem.settings.featureKey))
                 DsListItem(
                   title: l10n.signOut,
-                  leading: const Icon(Icons.logout),
+                  leading: const DsIconBadge(
+                    icon: Icons.logout_rounded,
+                    color: AppColors.auroraRose,
+                  ),
+                  accentColor: AppColors.auroraRose,
                   trailing: const SizedBox.shrink(),
                   onTap: () async {
                     await AppLocator.signOut();
@@ -98,6 +107,29 @@ class MorePage extends StatelessWidget {
         return Icons.person_outline;
       case ShellMoreItem.approvals:
         return Icons.fact_check_outlined;
+    }
+  }
+
+  static Color _accent(ShellMoreItem item) {
+    switch (item) {
+      case ShellMoreItem.documents:
+        return AppColors.auroraAmber;
+      case ShellMoreItem.payslips:
+        return AppColors.auroraTeal;
+      case ShellMoreItem.notifications:
+        return AppColors.auroraCyan;
+      case ShellMoreItem.ratings:
+        return AppColors.auroraAmber;
+      case ShellMoreItem.inquiries:
+        return const Color(0xFF0284C7);
+      case ShellMoreItem.payments:
+        return AppColors.auroraTeal;
+      case ShellMoreItem.settings:
+        return AppColors.badgeNeutral;
+      case ShellMoreItem.profile:
+        return AppColors.auroraCyan;
+      case ShellMoreItem.approvals:
+        return AppColors.auroraRose;
     }
   }
 

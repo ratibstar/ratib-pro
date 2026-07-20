@@ -68,17 +68,41 @@ class DsBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     assert(destinations.length <= 5, 'ESS bottom nav max 5 tabs');
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onDestinationSelected,
-      destinations: [
-        for (final d in destinations)
-          NavigationDestination(
-            icon: Icon(d.icon),
-            selectedIcon: Icon(d.selectedIcon),
-            label: d.label,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0E1A28) : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : AppColors.outline.withValues(alpha: 0.5),
           ),
-      ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: isDark ? 0.45 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onDestinationSelected,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        height: 72,
+        indicatorColor: AppColors.auroraTeal.withValues(alpha: 0.22),
+        destinations: [
+          for (final d in destinations)
+            NavigationDestination(
+              icon: Icon(d.icon),
+              selectedIcon: Icon(d.selectedIcon, color: AppColors.auroraTeal),
+              label: d.label,
+            ),
+        ],
+      ),
     );
   }
 }

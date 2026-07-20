@@ -61,8 +61,8 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.requestDetailTitle),
+    return DsPageScaffold(
+      title: l10n.requestDetailTitle,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
           : _error != null
@@ -80,9 +80,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if ((_data['status'] ?? '')
-                              .toString()
-                              .isNotEmpty)
+                          if ((_data['status'] ?? '').toString().isNotEmpty)
                             DsStatusBadge(label: _data['status'].toString()),
                           const SizedBox(height: AppSpacing.sm),
                           Text(
@@ -97,9 +95,7 @@ class _RequestDetailPageState extends State<RequestDetailPage> {
                             Text(
                               '${l10n.requestDate}: ${_data['request_date']}',
                             ),
-                          if ((_data['notes'] ?? '')
-                              .toString()
-                              .isNotEmpty) ...[
+                          if ((_data['notes'] ?? '').toString().isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.sm),
                             Text(_data['notes'].toString()),
                           ],
