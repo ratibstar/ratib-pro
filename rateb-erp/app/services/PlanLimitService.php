@@ -286,12 +286,47 @@ final class PlanLimitService
 
     /**
      * Resolve tenant for mobile token minting.
-     * Any user without a valid company row binds ESS fallback tenant.
+     * Prefer employee-bound company, then user company, then ESS fallback.
      *
      * @param array<string, mixed> $user
      */
     public function resolveEssApiCompanyId(array $user): int
     {
+        $userId = (int) ($user['id'] ?? 0);
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+
+        if ($userId > 0) {
+            try {
+                $bound = (new \Rateb\App\Models\Employee())->queryOne(
+                    'SELECT company_id FROM rateb_employees WHERE user_id = :uid ORDER BY id ASC LIMIT 1',
+                    ['uid' => $userId]
+                );
+                $boundCompany = is_array($bound) ? (int) ($bound['company_id'] ?? 0) : 0;
+                if ($boundCompany > 0 && $this->getCompanyRow($boundCompany) !== null) {
+                    return $boundCompany;
+                }
+            } catch (\Throwable $e) {
+                // continue
+            }
+        }
+
+        if ($email !== '') {
+            try {
+                $byEmail = (new \Rateb\App\Models\Employee())->queryOne(
+                    'SELECT company_id FROM rateb_employees
+                     WHERE LOWER(TRIM(email)) = :em
+                     ORDER BY id ASC LIMIT 1',
+                    ['em' => $email]
+                );
+                $emailCompany = is_array($byEmail) ? (int) ($byEmail['company_id'] ?? 0) : 0;
+                if ($emailCompany > 0 && $this->getCompanyRow($emailCompany) !== null) {
+                    return $emailCompany;
+                }
+            } catch (\Throwable $e) {
+                // continue
+            }
+        }
+
         $companyId = (int) ($user['company_id'] ?? 0);
         if ($companyId > 0 && $this->getCompanyRow($companyId) !== null) {
             return $companyId;

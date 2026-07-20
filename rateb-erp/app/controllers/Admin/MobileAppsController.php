@@ -115,7 +115,7 @@ final class MobileAppsController extends Controller
             $result['ok'] ? 'success' : 'error',
             $result['ok'] ? __('mobile_apps_saved') : __('mobile_apps_save_failed')
         );
-        Response::redirect(rateb_url('admin/mobile-apps/' . $companyId));
+        Response::redirect(rateb_list_url('admin/mobile-apps', ['rateb_r' => (string) time()]));
     }
 
     private function canView(): bool

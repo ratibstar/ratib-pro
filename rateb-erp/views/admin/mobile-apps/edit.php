@@ -18,7 +18,7 @@ $disabled = !$canManage ? 'disabled' : '';
 $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'active';
 ?>
 <div class="mb-3">
-    <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="btn btn-sm btn-outline-secondary">
+    <a href="<?php echo rateb_url('admin/mobile-apps'); ?>" class="btn btn-sm btn-outline-secondary" data-rateb-full-nav="1">
         &larr; <?php echo Rateb\App\Core\View::escape(__('mobile_apps_title')); ?>
     </a>
 </div>

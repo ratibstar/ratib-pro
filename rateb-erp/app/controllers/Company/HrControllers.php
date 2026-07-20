@@ -82,7 +82,40 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             $data['job_title_id'] = null;
         }
         $this->assignDocumentCode($data, DocumentCodeService::PREFIX_EMPLOYEE, 'employee_code');
+        $this->autoLinkEmployeeUser($data);
         return $data;
+    }
+
+    /** Link ERP user when employee email matches (ESS mobile login). */
+    private function autoLinkEmployeeUser(array &$data): void
+    {
+        if ((int) ($data['user_id'] ?? 0) > 0) {
+            return;
+        }
+        $email = strtolower(trim((string) ($data['email'] ?? '')));
+        if ($email === '') {
+            return;
+        }
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+        $userModel = new \Rateb\App\Models\User();
+        $user = $companyId > 0
+            ? $userModel->queryOne(
+                'SELECT id FROM rateb_users WHERE LOWER(TRIM(email)) = :em AND company_id = :cid LIMIT 1',
+                ['em' => $email, 'cid' => $companyId]
+            )
+            : null;
+        if (!is_array($user)) {
+            $user = $userModel->queryOne(
+                'SELECT id FROM rateb_users WHERE LOWER(TRIM(email)) = :em ORDER BY id ASC LIMIT 1',
+                ['em' => $email]
+            );
+        }
+        if (is_array($user) && (int) ($user['id'] ?? 0) > 0) {
+            $data['user_id'] = (int) $user['id'];
+        }
     }
 
     public function show(array $params): void
