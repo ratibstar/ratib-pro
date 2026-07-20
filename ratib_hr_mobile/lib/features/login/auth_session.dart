@@ -31,8 +31,10 @@ final class AuthSession extends ChangeNotifier {
 
   AuthStatus status = AuthStatus.unknown;
   AppFailure? lastError;
+  bool _signInInProgress = false;
 
   Future<void> restore() async {
+    _signInInProgress = true;
     try {
       final ok = await _authPort.hasSession();
       if (!ok) {
@@ -50,6 +52,7 @@ final class AuthSession extends ChangeNotifier {
       await _resetLocal();
       status = AuthStatus.signedOut;
     }
+    _signInInProgress = false;
     notifyListeners();
   }
 
@@ -58,6 +61,7 @@ final class AuthSession extends ChangeNotifier {
     required String secret,
   }) async {
     lastError = null;
+    _signInInProgress = true;
     try {
       await _authPort.signIn(identifier: identifier, secret: secret);
       await _resolveEmployeeOrThrow();
@@ -72,6 +76,8 @@ final class AuthSession extends ChangeNotifier {
       status = AuthStatus.signedOut;
       notifyListeners();
       return false;
+    } finally {
+      _signInInProgress = false;
     }
   }
 
@@ -85,6 +91,9 @@ final class AuthSession extends ChangeNotifier {
 
   /// Phase 3.2 — HTTP 401: drop token + local ESS session (router redirects to login).
   void handleUnauthorized() {
+    if (_signInInProgress) {
+      return;
+    }
     _authPort.signOut().then((_) async {
       await _resetLocal();
       status = AuthStatus.signedOut;
