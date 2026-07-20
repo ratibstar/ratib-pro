@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Database;
 use Rateb\App\Models\Company;
 use Rateb\App\Models\Plan;
 use Rateb\App\Models\User;
@@ -296,34 +297,24 @@ final class PlanLimitService
         $email = strtolower(trim((string) ($user['email'] ?? '')));
 
         if ($userId > 0) {
-            try {
-                $bound = (new \Rateb\App\Models\Employee())->queryOne(
-                    'SELECT company_id FROM rateb_employees WHERE user_id = :uid ORDER BY id ASC LIMIT 1',
-                    ['uid' => $userId]
-                );
-                $boundCompany = is_array($bound) ? (int) ($bound['company_id'] ?? 0) : 0;
-                if ($boundCompany > 0 && $this->getCompanyRow($boundCompany) !== null) {
-                    return $boundCompany;
-                }
-            } catch (\Throwable $e) {
-                // continue
+            $boundCompany = $this->essEmployeeCompanyId(
+                'SELECT company_id FROM rateb_employees WHERE user_id = :uid ORDER BY id ASC LIMIT 1',
+                ['uid' => $userId]
+            );
+            if ($boundCompany > 0) {
+                return $boundCompany;
             }
         }
 
         if ($email !== '') {
-            try {
-                $byEmail = (new \Rateb\App\Models\Employee())->queryOne(
-                    'SELECT company_id FROM rateb_employees
-                     WHERE LOWER(TRIM(email)) = :em
-                     ORDER BY id ASC LIMIT 1',
-                    ['em' => $email]
-                );
-                $emailCompany = is_array($byEmail) ? (int) ($byEmail['company_id'] ?? 0) : 0;
-                if ($emailCompany > 0 && $this->getCompanyRow($emailCompany) !== null) {
-                    return $emailCompany;
-                }
-            } catch (\Throwable $e) {
-                // continue
+            $emailCompany = $this->essEmployeeCompanyId(
+                'SELECT company_id FROM rateb_employees
+                 WHERE LOWER(TRIM(email)) = :em
+                 ORDER BY id ASC LIMIT 1',
+                ['em' => $email]
+            );
+            if ($emailCompany > 0) {
+                return $emailCompany;
             }
         }
 
@@ -333,6 +324,24 @@ final class PlanLimitService
         }
 
         return $this->essFallbackCompanyId();
+    }
+
+    /** Unscoped employee company lookup (branch filters must not block ESS login). */
+    private function essEmployeeCompanyId(string $sql, array $params): int
+    {
+        try {
+            $stmt = Database::connection()->prepare($sql);
+            $stmt->execute($params);
+            $row = $stmt->fetch();
+            $companyId = is_array($row) ? (int) ($row['company_id'] ?? 0) : 0;
+            if ($companyId > 0 && $this->getCompanyRow($companyId) !== null) {
+                return $companyId;
+            }
+        } catch (\Throwable $e) {
+            // continue
+        }
+
+        return 0;
     }
 
     public function hasValidSubscription(int $companyId): bool

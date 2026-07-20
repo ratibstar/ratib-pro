@@ -2006,14 +2006,18 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
 
     private function scopedCompanyId(): int
     {
-        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled() || rateb_is_super_admin()) {
+        // When platform SA selected an ops company (e.g. aaa), treat users as company users.
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $opsId = (int) rateb_resolve_ops_company_id();
+            if ($opsId > 0) {
+                return $opsId;
+            }
+        }
+        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled()) {
             return 0;
         }
-        if (function_exists('rateb_resolve_ops_company_id')) {
-            $id = rateb_resolve_ops_company_id();
-            if ($id > 0) {
-                return $id;
-            }
+        if (rateb_is_super_admin()) {
+            return 0;
         }
 
         return (int) ($_SESSION['rateb_company_id'] ?? 0);
@@ -2029,8 +2033,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($companyId < 1) {
             return true;
         }
+        // Allow platform admin to open mis-tagged SA users and convert them to company users.
         if (!empty($user['is_super_admin'])) {
-            return false;
+            return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
         }
 
         return (int) ($user['company_id'] ?? 0) === $companyId;
