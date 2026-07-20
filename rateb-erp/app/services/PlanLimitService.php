@@ -254,32 +254,50 @@ final class PlanLimitService
         return $this->hasValidSubscription($companyId);
     }
 
-    /** ESS / mobile API bearer: active company only — no SaaS subscription gate. */
+    /** ESS / mobile API bearer: company row must exist (no SaaS subscription gate). */
     public function apiBearerCompanyAllowed(int $companyId): bool
     {
-        $company = $this->getCompanyRow($companyId);
-        if (!$company) {
-            return false;
+        return $companyId > 0 && $this->getCompanyRow($companyId) !== null;
+    }
+
+    /** First company row usable for ESS when user tenant is missing/invalid. */
+    public function essFallbackCompanyId(): int
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
         }
 
-        return (string) ($company['status'] ?? '') === 'active';
+        $primary = DedicatedTenantPolicy::primaryCompanyId();
+        if ($primary > 0 && $this->getCompanyRow($primary) !== null) {
+            $cached = $primary;
+            return $cached;
+        }
+
+        try {
+            $row = (new Company())->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $cached = is_array($row) ? (int) ($row['id'] ?? 0) : 0;
+        } catch (\Throwable $e) {
+            $cached = 0;
+        }
+
+        return $cached;
     }
 
     /**
      * Resolve tenant for mobile token minting.
-     * Super-admin without a valid company binds primary tenant (web shell parity).
+     * Any user without a valid company row binds ESS fallback tenant.
      *
      * @param array<string, mixed> $user
      */
     public function resolveEssApiCompanyId(array $user): int
     {
         $companyId = (int) ($user['company_id'] ?? 0);
-        $isSa = (int) ($user['is_super_admin'] ?? 0) === 1;
-        if ($isSa && ($companyId < 1 || !$this->apiBearerCompanyAllowed($companyId))) {
-            return DedicatedTenantPolicy::primaryCompanyId();
+        if ($companyId > 0 && $this->getCompanyRow($companyId) !== null) {
+            return $companyId;
         }
 
-        return $companyId;
+        return $this->essFallbackCompanyId();
     }
 
     public function hasValidSubscription(int $companyId): bool

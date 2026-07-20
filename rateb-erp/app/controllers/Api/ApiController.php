@@ -85,19 +85,15 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
         }
-        // ESS / mobile API tokens are company-scoped (active company only).
+        // ESS / mobile API tokens are company-scoped (company row must exist).
         $planLimits = new PlanLimitService();
         $companyId = $planLimits->resolveEssApiCompanyId($user);
-        if ($companyId < 1) {
+        if ($companyId < 1 || !$planLimits->apiBearerCompanyAllowed($companyId)) {
             Response::json([
                 'success' => false,
                 'code' => 'no_company',
                 'message' => 'No company linked',
             ], 403);
-            return;
-        }
-        if (!$planLimits->apiBearerCompanyAllowed($companyId)) {
-            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return;
         }
 

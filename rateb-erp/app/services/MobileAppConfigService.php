@@ -208,12 +208,37 @@ final class MobileAppConfigService
 
         $row = $this->findByCompanyId($companyId);
         if (!$row || (string) ($row['status'] ?? '') !== self::STATUS_ACTIVE) {
+            $features = self::defaultFeatures();
+            $appName = trim((string) ($company['name'] ?? ''));
+            if ($appName === '') {
+                $appName = 'RATIB HR';
+            }
+
             return [
-                'status' => 403,
+                'status' => 200,
                 'body' => [
-                    'success' => false,
-                    'message' => 'Mobile app is not enabled for this company',
-                    'features' => self::defaultFeatures(),
+                    'success' => true,
+                    'company_id' => $companyId,
+                    'company_name' => (string) ($company['name'] ?? ''),
+                    'app_name' => $appName,
+                    'logo' => '',
+                    'icon' => '',
+                    'splash' => '',
+                    'theme_color' => '#0D6EFD',
+                    'mobile_active' => true,
+                    'features' => [
+                        'attendance' => !empty($features['attendance']),
+                        'leave' => !empty($features['leave']),
+                        'profile' => !empty($features['profile']),
+                        'documents' => !empty($features['documents']),
+                        'payroll' => !empty($features['payroll']),
+                        'notifications' => !empty($features['notifications']),
+                        'requests' => !empty($features['requests']),
+                        'ratings' => !empty($features['ratings']),
+                        'inquiries' => !empty($features['inquiries']),
+                        'payments' => !empty($features['payments']),
+                        'settings' => !empty($features['settings']),
+                    ],
                 ],
             ];
         }

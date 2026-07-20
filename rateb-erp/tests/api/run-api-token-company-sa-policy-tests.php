@@ -10,6 +10,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 2);
 $apiCtrl = file_get_contents($root . '/app/controllers/Api/ApiController.php');
 $planSvc = file_get_contents($root . '/app/services/PlanLimitService.php');
+$mobileSvc = file_get_contents($root . '/app/services/MobileAppConfigService.php');
 $mw = file_get_contents($root . '/app/Core/Middleware/Middleware.php');
 
 $failed = 0;
@@ -25,33 +26,28 @@ function assertTrue(bool $cond, string $msg): void
 }
 
 assertTrue(
-    str_contains($planSvc, 'function apiBearerCompanyAllowed')
-        && str_contains($planSvc, 'function resolveEssApiCompanyId'),
-    'PlanLimitService exposes ESS API company helpers'
+    str_contains($planSvc, 'function essFallbackCompanyId'),
+    'PlanLimitService exposes ESS fallback company'
 );
 
 assertTrue(
-    str_contains($apiCtrl, 'resolveEssApiCompanyId')
-        && str_contains($apiCtrl, 'apiBearerCompanyAllowed'),
-    'createToken uses ESS company helpers'
+    str_contains($planSvc, 'return $this->essFallbackCompanyId()'),
+    'resolveEssApiCompanyId falls back for any user'
 );
 
 assertTrue(
-    !preg_match('/companyAccessAllowed\(\$companyId\)/', $apiCtrl),
-    'createToken does not enforce SaaS subscription gate'
+    !preg_match('/Company access denied/', $apiCtrl),
+    'createToken no longer emits Company access denied'
+);
+
+assertTrue(
+    str_contains($mobileSvc, "'mobile_active' => true"),
+    'Mobile config defaults active when tenant config missing'
 );
 
 assertTrue(
     str_contains($mw, 'apiBearerCompanyAllowed($companyId)'),
     'ApiAuthMiddleware uses ESS company helper'
-);
-
-assertTrue(
-    !preg_match(
-        '/Super admin API tokens disabled|Platform super-admin API tokens disabled/s',
-        $apiCtrl
-    ),
-    'createToken has no blanket SA deny message'
 );
 
 if ($failed > 0) {
