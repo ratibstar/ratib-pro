@@ -1,4 +1,7 @@
-/// Loads [AppEnvironment] from `--dart-define` only. No hardcoded hosts.
+/// Loads [AppEnvironment] from `--dart-define`, with production ERP fallback.
+///
+/// Production APKs must reach RATIB ERP even when Gradle/cache omits
+/// `--dart-define=ERP_BASE_URL` (observed on Windows flavor builds).
 library;
 
 import 'package:ratib_hr_mobile/core/env/app_environment.dart';
@@ -7,14 +10,21 @@ import 'package:ratib_hr_mobile/core/env/app_flavor.dart';
 final class DartDefineAppEnvironment implements AppEnvironment {
   const DartDefineAppEnvironment();
 
-  /// Compile-time ERP origin, e.g. `--dart-define=ERP_BASE_URL=https://example.com/rateb-erp/public`
-  static const String _baseUrl = String.fromEnvironment('ERP_BASE_URL');
+  /// Official production ESS API origin (Admin ERP public root).
+  static const String productionErpBaseUrl =
+      'https://rateb.sa/rateb-erp/public';
+
+  /// Compile-time ERP origin, e.g. `--dart-define=ERP_BASE_URL=https://…`
+  static const String _baseUrl = String.fromEnvironment(
+    'ERP_BASE_URL',
+    defaultValue: productionErpBaseUrl,
+  );
 
   /// `--dart-define=APP_FLAVOR=dev|development|staging|production`
   /// Native Gradle flavors use: `dev` | `staging` | `production`.
   static const String _flavorRaw = String.fromEnvironment(
     'APP_FLAVOR',
-    defaultValue: 'development',
+    defaultValue: 'production',
   );
 
   @override
@@ -26,13 +36,18 @@ final class DartDefineAppEnvironment implements AppEnvironment {
         return AppFlavor.production;
       case 'dev':
       case 'development':
-      default:
         return AppFlavor.development;
+      default:
+        return AppFlavor.production;
     }
   }
 
   @override
-  String get erpBaseUrl => _baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+  String get erpBaseUrl {
+    final configured = _baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    if (configured.isNotEmpty) return configured;
+    return productionErpBaseUrl;
+  }
 
   @override
   bool get apisEnabled => erpBaseUrl.isNotEmpty;

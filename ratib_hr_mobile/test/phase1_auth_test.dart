@@ -10,10 +10,10 @@ void main() {
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
 
-  test('Environment has no hardcoded host', () {
+  test('Environment defaults to production ERP host for device builds', () {
     const env = DartDefineAppEnvironment();
-    expect(env.erpBaseUrl, isEmpty); // tests run without dart-define
-    expect(env.apisEnabled, isFalse);
+    expect(env.erpBaseUrl, DartDefineAppEnvironment.productionErpBaseUrl);
+    expect(env.apisEnabled, isTrue);
     expect(AppFlavor.values, contains(env.flavor));
   });
 }
