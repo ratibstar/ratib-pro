@@ -2,7 +2,7 @@
 
 **Status:** COMPLETE  
 **Depends on:** Phase A0  
-**Next:** Phase B (native device QA) or Phase C (Attendance) per roadmap
+**Next:** Phase B (native device QA); deep attendance/leave screens remain for Phase D
 
 ## Objective
 

@@ -9,8 +9,7 @@ use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\NotificationService;
 
 /**
- * Thin ESS adapter — notification list only.
- * ONE service: NotificationService::listForUser
+ * Thin ESS adapter — notification list + mark read (NotificationService only).
  */
 final class HrEssNotificationsController extends Controller
 {
@@ -20,9 +19,42 @@ final class HrEssNotificationsController extends Controller
             (int) TenantContext::apiUserId(),
             (int) TenantContext::companyId()
         );
+        $type = strtolower(trim((string) $this->input('type', '')));
+        if ($type !== '' && $type !== 'all') {
+            $items = array_values(array_filter(
+                $items,
+                static function ($row) use ($type): bool {
+                    if (!is_array($row)) {
+                        return false;
+                    }
+                    $rowType = strtolower((string) ($row['type'] ?? $row['trigger_type'] ?? ''));
+
+                    return $rowType === $type || str_contains($rowType, $type);
+                }
+            ));
+        }
         Response::json([
             'success' => true,
             'notifications' => $items,
         ]);
+    }
+
+    public function markRead(array $params = []): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $ok = (new NotificationService())->markRead($id, (int) TenantContext::apiUserId());
+        Response::json([
+            'success' => $ok,
+            'message' => $ok ? 'ok' : 'not_found',
+        ], $ok ? 200 : 404);
+    }
+
+    public function markAllRead(): void
+    {
+        $n = (new NotificationService())->markAllReadForUser(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId()
+        );
+        Response::json(['success' => true, 'updated' => $n]);
     }
 }

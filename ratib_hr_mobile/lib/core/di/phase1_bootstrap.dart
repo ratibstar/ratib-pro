@@ -1,21 +1,27 @@
-/// Phase 1–A composition root — auth, me, home ports + mobile config.
+/// Composition root — Phases 1–A–C.
 library;
 
 import 'package:ratib_hr_mobile/core/adapters/default_error_mapper.dart';
 import 'package:ratib_hr_mobile/core/adapters/dio_erp_http_client.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_attendance_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_auth_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_dashboard_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_employee_request_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_inquiry_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_leave_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_me_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_mobile_config_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_notification_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_payment_methods_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_ratings_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_settings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/secure_token_store_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/shared_preferences_cache_store.dart';
+import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 
-/// Registers Phase 1–A ESS + MobileConfiguration. Call once from [main].
 void bootstrapPhase1() {
   bootstrapEssCore();
 }
@@ -43,6 +49,18 @@ void bootstrapEssCore() {
     port: mobileConfigPort,
     cache: cache,
   );
+  final dashboard = ErpDashboardAdapter(http: http, errors: errors);
+  final employeeRequests =
+      ErpEmployeeRequestAdapter(http: http, errors: errors);
+  final ratings = ErpRatingsAdapter(http: http, errors: errors);
+  final inquiries = ErpInquiryAdapter(http: http, errors: errors);
+  final payments = ErpPaymentMethodsAdapter(http: http, errors: errors);
+  final settings = ErpSettingsAdapter(
+    http: http,
+    errors: errors,
+    cache: cache,
+  );
+  final appearance = AppearanceController(settings: settings);
 
   AppLocator.registerPhase1(
     environment: environment,
@@ -61,5 +79,14 @@ void bootstrapEssCore() {
     mobileConfigPort: mobileConfigPort,
     mobileConfiguration: mobileConfiguration,
     cache: cache,
+  );
+  AppLocator.registerPhaseC(
+    dashboard: dashboard,
+    employeeRequests: employeeRequests,
+    ratings: ratings,
+    inquiries: inquiries,
+    payments: payments,
+    settings: settings,
+    appearance: appearance,
   );
 }

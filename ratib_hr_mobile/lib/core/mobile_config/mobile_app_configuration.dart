@@ -21,9 +21,12 @@ abstract final class MobileFeatureKey {
   static const documents = 'documents';
   static const payroll = 'payroll';
   static const notifications = 'notifications';
-  /// Not yet returned by ERP — reserved; default false until ERP sends it.
   static const requests = 'requests';
   static const approvals = 'approvals';
+  static const ratings = 'ratings';
+  static const inquiries = 'inquiries';
+  static const payments = 'payments';
+  static const settings = 'settings';
   static const manager = 'manager';
   static const supervisor = 'supervisor';
   static const ceoDashboard = 'ceo_dashboard';

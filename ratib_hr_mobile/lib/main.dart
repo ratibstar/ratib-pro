@@ -1,4 +1,4 @@
-/// RATIB HR Mobile — Phase A entry (auth + mobile white-label config).
+/// RATIB HR Mobile — Phase C entry (enterprise ESS modules).
 library;
 
 import 'package:flutter/material.dart';
@@ -15,6 +15,7 @@ import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   bootstrapPhase1();
+  await AppLocator.appearance.load();
   final session = AuthSession();
   AppLocator.bindSessionHandlers(
     onUnauthorized: session.handleUnauthorized,
@@ -47,7 +48,10 @@ class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: AppLocator.mobileConfiguration,
+      listenable: Listenable.merge([
+        AppLocator.mobileConfiguration,
+        AppLocator.appearance,
+      ]),
       builder: (context, _) {
         final cfg = AppLocator.mobileConfiguration.current;
         final title = (cfg?.displayName.isNotEmpty == true)
@@ -58,7 +62,7 @@ class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
           debugShowCheckedModeBanner: false,
           theme: BrandThemeFactory.lightFrom(cfg),
           darkTheme: BrandThemeFactory.darkFrom(cfg),
-          themeMode: ThemeMode.system,
+          themeMode: AppLocator.appearance.themeMode,
           locale: _locale,
           supportedLocales: AppConfig.supportedLocales,
           localizationsDelegates: const [

@@ -54,7 +54,12 @@ final class NotificationService
 
     public function markRead(int $id, int $userId): bool
     {
-        $companyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id') ?? 0);
+        $companyId = (int) (TenantContext::companyId()
+            ?? \Rateb\App\Core\SessionManager::get('rateb_company_id')
+            ?? 0);
+        if ($companyId < 1 || $userId < 1 || $id < 1) {
+            return false;
+        }
         $row = (new Notification())->queryOne(
             'SELECT id FROM rateb_notifications WHERE id = :id AND company_id = :cid AND (user_id = :uid OR user_id IS NULL) LIMIT 1',
             ['id' => $id, 'uid' => $userId, 'cid' => $companyId]
@@ -65,6 +70,22 @@ final class NotificationService
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare('UPDATE rateb_notifications SET is_read = 1 WHERE id = :id')->execute(['id' => $id]);
         return true;
+    }
+
+    /** Mark all notifications visible to the user as read (tenant-scoped). */
+    public function markAllReadForUser(int $userId, int $companyId): int
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return 0;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'UPDATE rateb_notifications SET is_read = 1
+             WHERE company_id = :cid AND is_read = 0 AND (user_id = :uid OR user_id IS NULL)'
+        );
+        $stmt->execute(['cid' => $companyId, 'uid' => $userId]);
+
+        return (int) $stmt->rowCount();
     }
 
     public function queueEmail(string $recipient, string $subject, string $body, string $status = 'pending'): void

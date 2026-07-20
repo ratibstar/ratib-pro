@@ -9,9 +9,16 @@ import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/features/home/home_page.dart';
+import 'package:ratib_hr_mobile/features/inquiries/inquiries_page.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/login_page.dart';
 import 'package:ratib_hr_mobile/features/more/more_page.dart';
+import 'package:ratib_hr_mobile/features/notifications/notifications_page.dart';
+import 'package:ratib_hr_mobile/features/payments/payments_page.dart';
+import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
+import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
+import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
+import 'package:ratib_hr_mobile/features/settings/settings_page.dart';
 import 'package:ratib_hr_mobile/shared/widgets/ess_shell.dart';
 import 'package:ratib_hr_mobile/shared/widgets/phase0_placeholder_page.dart';
 
@@ -194,9 +201,15 @@ abstract final class AppRouter {
                     ),
                     GoRoute(
                       path: 'employee',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.employeeRequests,
-                      ),
+                      builder: (context, state) =>
+                          const EmployeeRequestsPage(),
+                    ),
+                    GoRoute(
+                      path: 'detail',
+                      builder: (context, state) {
+                        final id = state.uri.queryParameters['id'] ?? '';
+                        return RequestDetailPage(requestId: id);
+                      },
                     ),
                   ],
                 ),
@@ -222,8 +235,24 @@ abstract final class AppRouter {
                     ),
                     GoRoute(
                       path: 'notifications',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.notifications,
+                      builder: (context, state) => const NotificationsPage(),
+                    ),
+                    GoRoute(
+                      path: 'ratings',
+                      builder: (context, state) => const RatingsPage(),
+                    ),
+                    GoRoute(
+                      path: 'inquiries',
+                      builder: (context, state) => const InquiriesPage(),
+                    ),
+                    GoRoute(
+                      path: 'payments',
+                      builder: (context, state) => const PaymentsPage(),
+                    ),
+                    GoRoute(
+                      path: 'settings',
+                      builder: (context, state) => SettingsPage(
+                        onLocaleChanged: onLocaleChanged,
                       ),
                     ),
                     GoRoute(

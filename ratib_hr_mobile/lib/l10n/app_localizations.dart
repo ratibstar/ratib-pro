@@ -1,7 +1,4 @@
-/// Manual localization (Phase 0) — Arabic RTL-first, English supported.
-///
-/// When Flutter SDK is available, `flutter gen-l10n` may replace this with
-/// generated delegates from `lib/l10n/*.arb`. Until then this stub is the source.
+/// Manual localization — Arabic RTL-first, English supported.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -47,6 +44,10 @@ class AppLocalizations {
       'navDocuments': 'المستندات',
       'navPayslips': 'كشوف الرواتب',
       'navNotifications': 'الإشعارات',
+      'navRatings': 'التقييمات',
+      'navInquiries': 'الشكاوى والاستفسارات',
+      'navPayments': 'طرق الدفع',
+      'navSettings': 'الإعدادات',
       'navProfile': 'ملفي',
       'navApprovals': 'الموافقات',
       'phase0Placeholder': 'مرحلة ٠ — واجهة فقط. لا منطق أعمال بعد.',
@@ -88,6 +89,75 @@ class AppLocalizations {
       'homeNoNotifications': 'لا توجد إشعارات',
       'homeEntitled': 'المستحق',
       'homeUsed': 'المستخدم',
+      'homePendingRequests': 'طلبات معلّقة',
+      'homeUnreadNotifications': 'إشعارات غير مقروءة',
+      'homePayrollSummary': 'ملخص الرواتب',
+      'homePayrollPlaceholder': 'تفاصيل الراتب متاحة عند تفعيل وحدة الرواتب',
+      'genericLoading': 'جاري التحميل…',
+      'genericLoadFailed': 'تعذر التحميل',
+      'requestsEmpty': 'لا توجد طلبات',
+      'requestDetailTitle': 'تفاصيل الطلب',
+      'requestStatus': 'الحالة',
+      'requestType': 'النوع',
+      'requestNumber': 'الرقم',
+      'requestDate': 'التاريخ',
+      'requestHistory': 'السجل',
+      'requestHistoryEmpty': 'لا يوجد سجل محادثة بعد',
+      'notifMarkAllRead': 'تعليم الكل كمقروء',
+      'notifCatAll': 'الكل',
+      'notifCatGeneral': 'عام',
+      'notifCatAttendance': 'حضور',
+      'notifCatLeave': 'إجازات',
+      'notifCatPayroll': 'رواتب',
+      'notifCatSystem': 'نظام',
+      'notifCatCustomer': 'عملاء',
+      'ratingsScore': 'درجة الأداء',
+      'ratingsMonthly': 'التقييم الشهري',
+      'ratingsNoMonthly': 'لا يوجد تقييم شهري',
+      'ratingsKpi': 'ملخص مؤشرات الأداء',
+      'ratingsNoKpi': 'لا توجد مؤشرات بعد',
+      'ratingsReviews': 'التقييمات',
+      'ratingsEmpty': 'لا توجد تقييمات',
+      'inquirySubmit': 'إرسال',
+      'inquiryTypeInquiry': 'استفسار',
+      'inquiryTypeComplaint': 'شكوى',
+      'inquiryMessageHint': 'اكتب رسالتك…',
+      'inquiryMessageRequired': 'الرسالة مطلوبة',
+      'inquirySubmitted': 'تم الإرسال',
+      'inquiryHistory': 'السجل',
+      'inquiryEmpty': 'لا توجد شكاوى أو استفسارات',
+      'paymentsSalary': 'معلومات صرف الراتب',
+      'paymentsBanks': 'الحسابات البنكية',
+      'paymentsWallet': 'المحفظة',
+      'paymentsGateways': 'بوابات الدفع (مستقبلاً)',
+      'paymentsUnavailable': 'طرق الدفع غير مفعّلة لهذه الشركة بعد',
+      'paymentsReady': 'بيانات الدفع متاحة',
+      'paymentsBanksPlaceholder': 'سيتم عرض الحسابات البنكية عند توفرها من ERP',
+      'paymentsWalletPlaceholder': 'المحفظة غير متاحة حالياً',
+      'paymentsGatewaysPlaceholder': 'لا معالجة دفع في هذه المرحلة',
+      'settingsPreferences': 'التفضيلات',
+      'settingsTheme': 'المظهر',
+      'settingsThemeSystem': 'حسب النظام',
+      'settingsThemeLight': 'فاتح',
+      'settingsThemeDark': 'داكن',
+      'settingsNotifications': 'الإشعارات',
+      'settingsBiometric': 'تسجيل الدخول بالبصمة',
+      'settingsAccount': 'الحساب',
+      'settingsChangePassword': 'تغيير كلمة المرور',
+      'settingsCurrentPassword': 'كلمة المرور الحالية',
+      'settingsNewPassword': 'كلمة المرور الجديدة',
+      'settingsCancel': 'إلغاء',
+      'settingsSave': 'حفظ',
+      'settingsClose': 'إغلاق',
+      'settingsPasswordChanged': 'تم تغيير كلمة المرور',
+      'settingsAboutSection': 'حول التطبيق',
+      'settingsAbout': 'حول',
+      'settingsPrivacy': 'سياسة الخصوصية',
+      'settingsTerms': 'الشروط والأحكام',
+      'settingsPrivacyBody':
+          'تُدار بياناتك وفق سياسات الخصوصية الخاصة بشركتك ونظام راتب ERP.',
+      'settingsTermsBody':
+          'باستخدام التطبيق فإنك توافق على شروط الاستخدام الخاصة بشركتك ونظام راتب ERP.',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -110,6 +180,10 @@ class AppLocalizations {
       'navDocuments': 'Documents',
       'navPayslips': 'Payslips',
       'navNotifications': 'Notifications',
+      'navRatings': 'Workforce ratings',
+      'navInquiries': 'Complaints & inquiries',
+      'navPayments': 'Payment methods',
+      'navSettings': 'Settings',
       'navProfile': 'My profile',
       'navApprovals': 'Approvals',
       'phase0Placeholder': 'Phase 0 — shell only. No business logic yet.',
@@ -151,6 +225,78 @@ class AppLocalizations {
       'homeNoNotifications': 'No notifications',
       'homeEntitled': 'Entitled',
       'homeUsed': 'Used',
+      'homePendingRequests': 'Pending requests',
+      'homeUnreadNotifications': 'Unread notifications',
+      'homePayrollSummary': 'Payroll summary',
+      'homePayrollPlaceholder':
+          'Payslip detail is available when payroll is enabled',
+      'genericLoading': 'Loading…',
+      'genericLoadFailed': 'Could not load',
+      'requestsEmpty': 'No requests',
+      'requestDetailTitle': 'Request details',
+      'requestStatus': 'Status',
+      'requestType': 'Type',
+      'requestNumber': 'Number',
+      'requestDate': 'Date',
+      'requestHistory': 'History',
+      'requestHistoryEmpty': 'No conversation history yet',
+      'notifMarkAllRead': 'Mark all read',
+      'notifCatAll': 'All',
+      'notifCatGeneral': 'General',
+      'notifCatAttendance': 'Attendance',
+      'notifCatLeave': 'Leave',
+      'notifCatPayroll': 'Payroll',
+      'notifCatSystem': 'System',
+      'notifCatCustomer': 'Customer',
+      'ratingsScore': 'Performance score',
+      'ratingsMonthly': 'Monthly evaluation',
+      'ratingsNoMonthly': 'No monthly evaluation',
+      'ratingsKpi': 'KPI summary',
+      'ratingsNoKpi': 'No KPIs yet',
+      'ratingsReviews': 'Ratings',
+      'ratingsEmpty': 'No ratings',
+      'inquirySubmit': 'Submit',
+      'inquiryTypeInquiry': 'Inquiry',
+      'inquiryTypeComplaint': 'Complaint',
+      'inquiryMessageHint': 'Write your message…',
+      'inquiryMessageRequired': 'Message is required',
+      'inquirySubmitted': 'Submitted',
+      'inquiryHistory': 'History',
+      'inquiryEmpty': 'No complaints or inquiries',
+      'paymentsSalary': 'Salary payment information',
+      'paymentsBanks': 'Bank accounts',
+      'paymentsWallet': 'Wallet',
+      'paymentsGateways': 'Payment gateways (future)',
+      'paymentsUnavailable':
+          'Payment methods are not enabled for this company yet',
+      'paymentsReady': 'Payment data available',
+      'paymentsBanksPlaceholder':
+          'Bank accounts will appear when ERP provides them',
+      'paymentsWalletPlaceholder': 'Wallet is not available yet',
+      'paymentsGatewaysPlaceholder': 'No payment processing in this phase',
+      'settingsPreferences': 'Preferences',
+      'settingsTheme': 'Theme',
+      'settingsThemeSystem': 'System',
+      'settingsThemeLight': 'Light',
+      'settingsThemeDark': 'Dark',
+      'settingsNotifications': 'Notifications',
+      'settingsBiometric': 'Biometric login',
+      'settingsAccount': 'Account',
+      'settingsChangePassword': 'Change password',
+      'settingsCurrentPassword': 'Current password',
+      'settingsNewPassword': 'New password',
+      'settingsCancel': 'Cancel',
+      'settingsSave': 'Save',
+      'settingsClose': 'Close',
+      'settingsPasswordChanged': 'Password changed',
+      'settingsAboutSection': 'About',
+      'settingsAbout': 'About',
+      'settingsPrivacy': 'Privacy policy',
+      'settingsTerms': 'Terms of service',
+      'settingsPrivacyBody':
+          'Your data is handled under your company privacy policy and RATIB ERP.',
+      'settingsTermsBody':
+          'By using this app you agree to your company terms and RATIB ERP terms.',
     },
   };
 
@@ -179,6 +325,10 @@ class AppLocalizations {
   String get navDocuments => _t('navDocuments');
   String get navPayslips => _t('navPayslips');
   String get navNotifications => _t('navNotifications');
+  String get navRatings => _t('navRatings');
+  String get navInquiries => _t('navInquiries');
+  String get navPayments => _t('navPayments');
+  String get navSettings => _t('navSettings');
   String get navProfile => _t('navProfile');
   String get navApprovals => _t('navApprovals');
   String get phase0Placeholder => _t('phase0Placeholder');
@@ -220,6 +370,73 @@ class AppLocalizations {
   String get homeNoNotifications => _t('homeNoNotifications');
   String get homeEntitled => _t('homeEntitled');
   String get homeUsed => _t('homeUsed');
+  String get homePendingRequests => _t('homePendingRequests');
+  String get homeUnreadNotifications => _t('homeUnreadNotifications');
+  String get homePayrollSummary => _t('homePayrollSummary');
+  String get homePayrollPlaceholder => _t('homePayrollPlaceholder');
+  String get genericLoading => _t('genericLoading');
+  String get genericLoadFailed => _t('genericLoadFailed');
+  String get requestsEmpty => _t('requestsEmpty');
+  String get requestDetailTitle => _t('requestDetailTitle');
+  String get requestStatus => _t('requestStatus');
+  String get requestType => _t('requestType');
+  String get requestNumber => _t('requestNumber');
+  String get requestDate => _t('requestDate');
+  String get requestHistory => _t('requestHistory');
+  String get requestHistoryEmpty => _t('requestHistoryEmpty');
+  String get notifMarkAllRead => _t('notifMarkAllRead');
+  String get notifCatAll => _t('notifCatAll');
+  String get notifCatGeneral => _t('notifCatGeneral');
+  String get notifCatAttendance => _t('notifCatAttendance');
+  String get notifCatLeave => _t('notifCatLeave');
+  String get notifCatPayroll => _t('notifCatPayroll');
+  String get notifCatSystem => _t('notifCatSystem');
+  String get notifCatCustomer => _t('notifCatCustomer');
+  String get ratingsScore => _t('ratingsScore');
+  String get ratingsMonthly => _t('ratingsMonthly');
+  String get ratingsNoMonthly => _t('ratingsNoMonthly');
+  String get ratingsKpi => _t('ratingsKpi');
+  String get ratingsNoKpi => _t('ratingsNoKpi');
+  String get ratingsReviews => _t('ratingsReviews');
+  String get ratingsEmpty => _t('ratingsEmpty');
+  String get inquirySubmit => _t('inquirySubmit');
+  String get inquiryTypeInquiry => _t('inquiryTypeInquiry');
+  String get inquiryTypeComplaint => _t('inquiryTypeComplaint');
+  String get inquiryMessageHint => _t('inquiryMessageHint');
+  String get inquiryMessageRequired => _t('inquiryMessageRequired');
+  String get inquirySubmitted => _t('inquirySubmitted');
+  String get inquiryHistory => _t('inquiryHistory');
+  String get inquiryEmpty => _t('inquiryEmpty');
+  String get paymentsSalary => _t('paymentsSalary');
+  String get paymentsBanks => _t('paymentsBanks');
+  String get paymentsWallet => _t('paymentsWallet');
+  String get paymentsGateways => _t('paymentsGateways');
+  String get paymentsUnavailable => _t('paymentsUnavailable');
+  String get paymentsReady => _t('paymentsReady');
+  String get paymentsBanksPlaceholder => _t('paymentsBanksPlaceholder');
+  String get paymentsWalletPlaceholder => _t('paymentsWalletPlaceholder');
+  String get paymentsGatewaysPlaceholder => _t('paymentsGatewaysPlaceholder');
+  String get settingsPreferences => _t('settingsPreferences');
+  String get settingsTheme => _t('settingsTheme');
+  String get settingsThemeSystem => _t('settingsThemeSystem');
+  String get settingsThemeLight => _t('settingsThemeLight');
+  String get settingsThemeDark => _t('settingsThemeDark');
+  String get settingsNotifications => _t('settingsNotifications');
+  String get settingsBiometric => _t('settingsBiometric');
+  String get settingsAccount => _t('settingsAccount');
+  String get settingsChangePassword => _t('settingsChangePassword');
+  String get settingsCurrentPassword => _t('settingsCurrentPassword');
+  String get settingsNewPassword => _t('settingsNewPassword');
+  String get settingsCancel => _t('settingsCancel');
+  String get settingsSave => _t('settingsSave');
+  String get settingsClose => _t('settingsClose');
+  String get settingsPasswordChanged => _t('settingsPasswordChanged');
+  String get settingsAboutSection => _t('settingsAboutSection');
+  String get settingsAbout => _t('settingsAbout');
+  String get settingsPrivacy => _t('settingsPrivacy');
+  String get settingsTerms => _t('settingsTerms');
+  String get settingsPrivacyBody => _t('settingsPrivacyBody');
+  String get settingsTermsBody => _t('settingsTermsBody');
 }
 
 class _AppLocalizationsDelegate

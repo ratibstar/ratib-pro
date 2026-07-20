@@ -1,6 +1,4 @@
-/// Phase 0 route paths — navigation skeleton only.
-///
-/// Feature implementations are deferred. Do not attach ERP adapters here yet.
+/// Phase C route paths.
 library;
 
 abstract final class AppRoutes {
@@ -17,10 +15,15 @@ abstract final class AppRoutes {
   static const requests = '/requests';
   static const permissionRequests = '/requests/permissions';
   static const employeeRequests = '/requests/employee';
+  static const requestDetail = '/requests/detail';
   static const more = '/more';
   static const documents = '/more/documents';
   static const payslips = '/more/payslips';
   static const notifications = '/more/notifications';
+  static const ratings = '/more/ratings';
+  static const inquiries = '/more/inquiries';
+  static const payments = '/more/payments';
+  static const settings = '/more/settings';
   static const profile = '/more/profile';
   static const approvals = '/more/approvals';
 }

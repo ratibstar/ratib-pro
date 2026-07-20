@@ -27,6 +27,16 @@ $router->get('/api/v1/hr/me', [\Rateb\App\Controllers\Api\HrEssMeController::cla
 $router->get('/api/v1/hr/attendance/today', [\Rateb\App\Controllers\Api\HrEssAttendanceController::class, 'today'], $api);
 $router->get('/api/v1/hr/leave/balances', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'balances'], $api);
 $router->get('/api/v1/hr/notifications', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'list'], $api);
+$router->post('/api/v1/hr/notifications/read-all', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markAllRead'], $api);
+$router->post('/api/v1/hr/notifications/{id}/read', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markRead'], $api);
+
+$router->get('/api/v1/hr/dashboard', [\Rateb\App\Controllers\Api\HrEssDashboardController::class, 'summary'], $api);
+$router->get('/api/v1/hr/requests', [\Rateb\App\Controllers\Api\HrEssEmployeeRequestsController::class, 'list'], $api);
+$router->get('/api/v1/hr/requests/{id}', [\Rateb\App\Controllers\Api\HrEssEmployeeRequestsController::class, 'show'], $api);
+$router->post('/api/v1/hr/requests', [\Rateb\App\Controllers\Api\HrEssEmployeeRequestsController::class, 'create'], $api);
+$router->get('/api/v1/hr/ratings', [\Rateb\App\Controllers\Api\HrEssRatingsController::class, 'summary'], $api);
+$router->get('/api/v1/hr/payment-methods', [\Rateb\App\Controllers\Api\HrEssPaymentMethodsController::class, 'list'], $api);
+$router->post('/api/v1/hr/settings/change-password', [\Rateb\App\Controllers\Api\HrEssSettingsController::class, 'changePassword'], $api);
 
 $router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigController::class, 'config'], $api);
 

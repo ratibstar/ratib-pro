@@ -24,5 +24,10 @@ abstract final class DiModules {
     'OfflineQueuePort',
     'ErrorMapper',
     'MobileConfigPort',
+    'DashboardPort',
+    'RatingsPort',
+    'InquiryPort',
+    'PaymentMethodsPort',
+    'SettingsPort',
   ];
 }

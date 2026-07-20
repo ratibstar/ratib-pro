@@ -1,41 +1,33 @@
-/// NotificationPort → list + mark read / mark all.
+/// EmployeeRequestPort → `/api/v1/hr/requests`.
 library;
 
+import 'package:ratib_hr_mobile/core/contracts/employee_request_port.dart';
 import 'package:ratib_hr_mobile/core/contracts/error_mapper.dart';
 import 'package:ratib_hr_mobile/core/contracts/erp_http_client.dart';
-import 'package:ratib_hr_mobile/core/contracts/notification_port.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 
-final class ErpNotificationAdapter implements NotificationPort {
-  ErpNotificationAdapter({
+final class ErpEmployeeRequestAdapter implements EmployeeRequestPort {
+  ErpEmployeeRequestAdapter({
     required ErpHttpClient http,
     required ErrorMapper errors,
   })  : _http = http,
         _errors = errors;
 
-  static const listPath = '/api/v1/hr/notifications';
+  static const listPath = '/api/v1/hr/requests';
   final ErpHttpClient _http;
   final ErrorMapper _errors;
 
   @override
-  Future<List<Map<String, Object?>>> list() async {
-    return listFiltered('');
-  }
-
-  @override
-  Future<List<Map<String, Object?>>> listFiltered(String type) async {
+  Future<List<Map<String, Object?>>> listMine() async {
     try {
-      final body = await _http.get(
-        listPath,
-        query: type.isEmpty ? null : {'type': type},
-      );
+      final body = await _http.get(listPath);
       if (body['success'] != true) {
         throw AppFailure(
-          code: body['code']?.toString() ?? 'notifications_failed',
+          code: 'requests_failed',
           message: body['message']?.toString(),
         );
       }
-      final raw = body['notifications'];
+      final raw = body['requests'];
       if (raw is! List) return const [];
       return raw
           .whereType<Map>()
@@ -47,12 +39,12 @@ final class ErpNotificationAdapter implements NotificationPort {
   }
 
   @override
-  Future<void> markRead(String notificationId) async {
+  Future<void> submit(Map<String, Object?> payload) async {
     try {
-      final body = await _http.post('$listPath/$notificationId/read');
+      final body = await _http.post(listPath, body: payload);
       if (body['success'] != true) {
         throw AppFailure(
-          code: 'mark_read_failed',
+          code: 'request_submit_failed',
           message: body['message']?.toString(),
         );
       }
@@ -62,15 +54,22 @@ final class ErpNotificationAdapter implements NotificationPort {
   }
 
   @override
-  Future<void> markAllRead() async {
+  Future<Map<String, Object?>> detail(String id) async {
     try {
-      final body = await _http.post('$listPath/read-all');
+      final body = await _http.get('$listPath/$id');
       if (body['success'] != true) {
         throw AppFailure(
-          code: 'mark_all_failed',
+          code: 'request_not_found',
           message: body['message']?.toString(),
         );
       }
+      final req = body['request'];
+      final map = <String, Object?>{};
+      if (req is Map) {
+        map.addAll(req.map((k, v) => MapEntry(k.toString(), v)));
+      }
+      map['history'] = body['history'];
+      return map;
     } catch (e, st) {
       throw _errors.map(e, st);
     }

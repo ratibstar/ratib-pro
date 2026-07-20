@@ -1,13 +1,13 @@
-/// Phase 3 Reduced MVP Home — presentation only.
+/// Enterprise ESS dashboard — presentation over DashboardPort.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/mobile_config/mobile_app_configuration.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
-import 'package:ratib_hr_mobile/features/home/home_dtos.dart';
-import 'package:ratib_hr_mobile/features/home/home_view_model.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -19,171 +19,173 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final HomeViewModel _vm;
+  bool _loading = true;
+  String? _error;
+  Map<String, Object?> _data = {};
 
   @override
   void initState() {
     super.initState();
-    _vm = HomeViewModel()..addListener(_onVm);
-    _vm.load();
+    _load();
   }
 
-  void _onVm() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _vm.removeListener(_onVm);
-    _vm.dispose();
-    super.dispose();
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final body = await AppLocator.dashboard.summary();
+      if (!mounted) return;
+      setState(() {
+        _data = body;
+        _loading = false;
+      });
+    } catch (e) {
+      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      if (!mounted) return;
+      setState(() {
+        _error = f.message ?? f.code;
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final cfg = AppLocator.mobileConfiguration.current;
+    final employee = _data['employee'];
+    final name = employee is Map
+        ? (employee['name'] ?? cfg?.displayName ?? '').toString()
+        : (cfg?.displayName ?? '');
 
     return Scaffold(
       appBar: DsAppBar(
-        title: l10n.navHome,
+        title: cfg?.displayName.isNotEmpty == true
+            ? cfg!.displayName
+            : l10n.navHome,
         actions: [
-          IconButton(
-            tooltip: l10n.signOut,
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AppLocator.signOut();
-            },
-          ),
+          if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () => context.go(AppRoutes.notifications),
+            ),
         ],
       ),
-      body: switch (_vm.state) {
-        HomeLoadState.idle || HomeLoadState.loading => DsLoadingState(
-            message: l10n.homeLoading,
-          ),
-        HomeLoadState.error => DsErrorState(
-            title: l10n.homeLoadFailed,
-            message: _vm.errorMessage,
-            actionLabel: l10n.homeRetry,
-            onAction: _vm.load,
-          ),
-        HomeLoadState.ready => RefreshIndicator(
-            onRefresh: _vm.load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
-              children: [
-                _EmployeeHeader(name: _vm.employeeName),
-                DsSectionHeader(title: l10n.homeTodayAttendance),
-                _AttendanceCard(dto: _vm.attendance, l10n: l10n),
-                DsSectionHeader(title: l10n.homeLeaveBalance),
-                _LeaveBalances(balances: _vm.leaveBalances, l10n: l10n),
-                DsSectionHeader(
-                  title: l10n.homeRecentNotifications,
-                  actionLabel: l10n.navNotifications,
-                  onAction: () => context.go(AppRoutes.notifications),
+      body: _loading
+          ? DsLoadingState(message: l10n.homeLoading)
+          : _error != null
+              ? DsErrorState(
+                  title: l10n.homeLoadFailed,
+                  message: _error,
+                  actionLabel: l10n.homeRetry,
+                  onAction: _load,
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.lg,
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                        ),
+                        child: Text(
+                          name,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                      DsSectionHeader(title: l10n.homeTodayAttendance),
+                      _AttendanceBlock(
+                        raw: _data['attendance_today'],
+                        l10n: l10n,
+                      ),
+                      DsSectionHeader(title: l10n.homeLeaveBalance),
+                      _LeaveBlock(raw: _data['leave_balances'], l10n: l10n),
+                      DsSectionHeader(title: l10n.homePendingRequests),
+                      _PendingBlock(
+                        requests: _data['pending_requests'],
+                        leaves: _data['pending_leaves'],
+                        l10n: l10n,
+                      ),
+                      DsSectionHeader(title: l10n.homeRecentNotifications),
+                      _NotifSummary(
+                        raw: _data['notifications_summary'],
+                        l10n: l10n,
+                      ),
+                      DsSectionHeader(title: l10n.homePayrollSummary),
+                      _PayrollBlock(
+                        raw: _data['payroll_summary'],
+                        l10n: l10n,
+                      ),
+                      DsSectionHeader(title: l10n.homeQuickActions),
+                      _QuickActions(l10n: l10n, cfg: cfg),
+                    ],
+                  ),
                 ),
-                _Notifications(items: _vm.notifications, l10n: l10n),
-                DsSectionHeader(title: l10n.homeQuickActions),
-                _QuickActions(l10n: l10n),
-              ],
-            ),
-          ),
-      },
     );
   }
 }
 
-class _EmployeeHeader extends StatelessWidget {
-  const _EmployeeHeader({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Text(
-        name,
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-    );
-  }
-}
-
-class _AttendanceCard extends StatelessWidget {
-  const _AttendanceCard({required this.dto, required this.l10n});
-
-  final HomeAttendanceDto dto;
+class _AttendanceBlock extends StatelessWidget {
+  const _AttendanceBlock({required this.raw, required this.l10n});
+  final Object? raw;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    if (!dto.hasRecord) {
-      return DsCard(
-        child: Text(
-          l10n.homeNoAttendanceToday,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
+    if (raw is! Map || raw.isEmpty) {
+      return DsCard(child: Text(l10n.homeNoAttendanceToday));
     }
-
+    final m = raw.map((k, v) => MapEntry(k.toString(), v));
     return DsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (dto.status != null && dto.status!.isNotEmpty)
-            DsStatusBadge(label: dto.status!),
-          if (dto.checkIn != null && dto.checkIn!.isNotEmpty) ...[
+          if ((m['status'] ?? '').toString().isNotEmpty)
+            DsStatusBadge(label: m['status'].toString()),
+          if ((m['check_in'] ?? m['check_in_at'] ?? '')
+              .toString()
+              .isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text('${l10n.navCheckIn}: ${dto.checkIn}'),
+            Text(
+              '${l10n.navCheckIn}: ${m['check_in'] ?? m['check_in_at']}',
+            ),
           ],
-          if (dto.checkOut != null && dto.checkOut!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text('${l10n.navCheckOut}: ${dto.checkOut}'),
-          ],
+          if ((m['check_out'] ?? m['check_out_at'] ?? '')
+              .toString()
+              .isNotEmpty)
+            Text(
+              '${l10n.navCheckOut}: ${m['check_out'] ?? m['check_out_at']}',
+            ),
         ],
       ),
     );
   }
 }
 
-class _LeaveBalances extends StatelessWidget {
-  const _LeaveBalances({required this.balances, required this.l10n});
-
-  final List<HomeLeaveBalanceDto> balances;
+class _LeaveBlock extends StatelessWidget {
+  const _LeaveBlock({required this.raw, required this.l10n});
+  final Object? raw;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    if (balances.isEmpty) {
-      return DsCard(
-        child: Text(
-          l10n.homeNoLeaveBalances,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
+    if (raw is! List || raw.isEmpty) {
+      return DsCard(child: Text(l10n.homeNoLeaveBalances));
     }
-
     return Column(
       children: [
-        for (final row in balances)
+        for (final row in raw.whereType<Map>().take(3))
           DsCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  row.typeName,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text('${l10n.homeEntitled}: ${row.entitledDays}'),
-                Text('${l10n.homeUsed}: ${row.usedDays}'),
-              ],
+            child: Text(
+              '${row['leave_type_name'] ?? row['name'] ?? l10n.tabLeave}: '
+              '${row['remaining_days'] ?? row['balance'] ?? row['entitled_days'] ?? '-'}',
             ),
           ),
       ],
@@ -191,66 +193,105 @@ class _LeaveBalances extends StatelessWidget {
   }
 }
 
-class _Notifications extends StatelessWidget {
-  const _Notifications({required this.items, required this.l10n});
-
-  final List<HomeNotificationDto> items;
+class _PendingBlock extends StatelessWidget {
+  const _PendingBlock({
+    required this.requests,
+    required this.leaves,
+    required this.l10n,
+  });
+  final Object? requests;
+  final Object? leaves;
   final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return DsCard(
-        child: Text(
-          l10n.homeNoNotifications,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      );
-    }
+    final reqCount = requests is List ? requests.length : 0;
+    final leaveCount = leaves is List ? leaves.length : 0;
+    return DsCard(
+      child: Text(
+        '${l10n.homePendingRequests}: $reqCount · ${l10n.tabLeave}: $leaveCount',
+      ),
+    );
+  }
+}
 
-    return Column(
-      children: [
-        for (final n in items)
-          DsNotificationTile(
-            title: n.title,
-            body: n.message,
-            timeLabel: n.createdAt,
-            unread: n.unread,
-          ),
-      ],
+class _NotifSummary extends StatelessWidget {
+  const _NotifSummary({required this.raw, required this.l10n});
+  final Object? raw;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    if (raw is! Map) {
+      return DsCard(child: Text(l10n.homeNoNotifications));
+    }
+    final unread = raw['unread'] ?? 0;
+    return DsCard(
+      onTap: () => context.go(AppRoutes.notifications),
+      child: Text('${l10n.homeUnreadNotifications}: $unread'),
+    );
+  }
+}
+
+class _PayrollBlock extends StatelessWidget {
+  const _PayrollBlock({required this.raw, required this.l10n});
+  final Object? raw;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    if (raw is! Map) {
+      return DsCard(child: Text(l10n.homePayrollPlaceholder));
+    }
+    final available = raw['available'] == true;
+    final message = (raw['message'] ?? l10n.homePayrollPlaceholder).toString();
+    return DsCard(
+      child: Text(available ? message : l10n.homePayrollPlaceholder),
     );
   }
 }
 
 class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.l10n});
-
+  const _QuickActions({required this.l10n, required this.cfg});
   final AppLocalizations l10n;
+  final MobileAppConfiguration? cfg;
 
   @override
   Widget build(BuildContext context) {
+    final actions = <Widget>[];
+    if (cfg?.isFeatureEnabled(MobileFeatureKey.attendance) == true) {
+      actions.add(
+        FilledButton.tonalIcon(
+          onPressed: () => context.go(AppRoutes.attendanceCheckIn),
+          icon: const Icon(AppIcons.checkIn),
+          label: Text(l10n.navCheckIn),
+        ),
+      );
+    }
+    if (cfg?.isFeatureEnabled(MobileFeatureKey.leave) == true) {
+      actions.add(
+        FilledButton.tonalIcon(
+          onPressed: () => context.go(AppRoutes.leaveApply),
+          icon: const Icon(AppIcons.leave),
+          label: Text(l10n.navApplyLeave),
+        ),
+      );
+    }
+    if (cfg?.isFeatureEnabled(MobileFeatureKey.inquiries) == true) {
+      actions.add(
+        FilledButton.tonalIcon(
+          onPressed: () => context.go(AppRoutes.inquiries),
+          icon: const Icon(Icons.support_agent_outlined),
+          label: Text(l10n.navInquiries),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Wrap(
         spacing: AppSpacing.sm,
         runSpacing: AppSpacing.sm,
-        children: [
-          FilledButton.tonalIcon(
-            onPressed: () => context.go(AppRoutes.attendanceCheckIn),
-            icon: const Icon(AppIcons.checkIn),
-            label: Text(l10n.navCheckIn),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: () => context.go(AppRoutes.leaveApply),
-            icon: const Icon(AppIcons.leave),
-            label: Text(l10n.navApplyLeave),
-          ),
-          FilledButton.tonalIcon(
-            onPressed: () => context.go(AppRoutes.notifications),
-            icon: const Icon(AppIcons.notifications),
-            label: Text(l10n.navNotifications),
-          ),
-        ],
+        children: actions,
       ),
     );
   }

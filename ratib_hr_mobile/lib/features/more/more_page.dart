@@ -32,19 +32,21 @@ class MorePage extends StatelessWidget {
           ),
           body: ListView(
             children: [
-              DsListItem(
-                title: l10n.signOut,
-                leading: const Icon(Icons.logout),
-                trailing: const SizedBox.shrink(),
-                onTap: () async {
-                  await AppLocator.signOut();
-                },
-              ),
               for (final item in items)
                 DsListItem(
                   title: _title(item, l10n),
                   leading: Icon(_icon(item)),
                   onTap: () => context.go(_route(item)),
+                ),
+              if (cfg == null ||
+                  !cfg.isFeatureEnabled(ShellMoreItem.settings.featureKey))
+                DsListItem(
+                  title: l10n.signOut,
+                  leading: const Icon(Icons.logout),
+                  trailing: const SizedBox.shrink(),
+                  onTap: () async {
+                    await AppLocator.signOut();
+                  },
                 ),
             ],
           ),
@@ -61,6 +63,14 @@ class MorePage extends StatelessWidget {
         return l10n.navPayslips;
       case ShellMoreItem.notifications:
         return l10n.navNotifications;
+      case ShellMoreItem.ratings:
+        return l10n.navRatings;
+      case ShellMoreItem.inquiries:
+        return l10n.navInquiries;
+      case ShellMoreItem.payments:
+        return l10n.navPayments;
+      case ShellMoreItem.settings:
+        return l10n.navSettings;
       case ShellMoreItem.profile:
         return l10n.navProfile;
       case ShellMoreItem.approvals:
@@ -76,6 +86,14 @@ class MorePage extends StatelessWidget {
         return Icons.receipt_long_outlined;
       case ShellMoreItem.notifications:
         return Icons.notifications_outlined;
+      case ShellMoreItem.ratings:
+        return Icons.stars_outlined;
+      case ShellMoreItem.inquiries:
+        return Icons.support_agent_outlined;
+      case ShellMoreItem.payments:
+        return Icons.account_balance_wallet_outlined;
+      case ShellMoreItem.settings:
+        return Icons.settings_outlined;
       case ShellMoreItem.profile:
         return Icons.person_outline;
       case ShellMoreItem.approvals:
@@ -91,6 +109,14 @@ class MorePage extends StatelessWidget {
         return AppRoutes.payslips;
       case ShellMoreItem.notifications:
         return AppRoutes.notifications;
+      case ShellMoreItem.ratings:
+        return AppRoutes.ratings;
+      case ShellMoreItem.inquiries:
+        return AppRoutes.inquiries;
+      case ShellMoreItem.payments:
+        return AppRoutes.payments;
+      case ShellMoreItem.settings:
+        return AppRoutes.settings;
       case ShellMoreItem.profile:
         return AppRoutes.profile;
       case ShellMoreItem.approvals:

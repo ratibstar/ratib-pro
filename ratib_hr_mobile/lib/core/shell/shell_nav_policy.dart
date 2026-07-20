@@ -3,7 +3,6 @@ library;
 
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_app_configuration.dart';
 
-/// Stable branch indices for [StatefulShellRoute] (do not reorder without router update).
 enum ShellTab {
   home(0),
   attendance(1),
@@ -15,11 +14,14 @@ enum ShellTab {
   final int branchIndex;
 }
 
-/// More-menu entries gated by ERP features.
 enum ShellMoreItem {
   documents(MobileFeatureKey.documents),
   payslips(MobileFeatureKey.payroll),
   notifications(MobileFeatureKey.notifications),
+  ratings(MobileFeatureKey.ratings),
+  inquiries(MobileFeatureKey.inquiries),
+  payments(MobileFeatureKey.payments),
+  settings(MobileFeatureKey.settings),
   profile(MobileFeatureKey.profile),
   approvals(MobileFeatureKey.approvals);
 
@@ -27,24 +29,16 @@ enum ShellMoreItem {
   final String featureKey;
 }
 
-/// Builds visible navigation from [MobileAppConfiguration] + workspace role.
-///
-/// Future Manager / HR / Supervisor / CEO shells extend policies here —
-/// do not fork the Flutter project.
 abstract final class ShellNavPolicy {
-  /// Bottom tabs for the active role. Home + More are always present when mobile is active.
   static List<ShellTab> visibleTabs(MobileAppConfiguration config) {
     if (!config.mobileActive) return const [];
 
     switch (config.role) {
       case AppWorkspaceRole.employee:
-        return _employeeTabs(config);
       case AppWorkspaceRole.manager:
       case AppWorkspaceRole.hr:
       case AppWorkspaceRole.supervisor:
       case AppWorkspaceRole.ceo:
-        // Future role shells — until ERP enables role-specific UIs, reuse employee tabs
-        // filtered by the same feature flags.
         return _employeeTabs(config);
     }
   }
@@ -57,7 +51,6 @@ abstract final class ShellNavPolicy {
     if (config.isFeatureEnabled(MobileFeatureKey.leave)) {
       tabs.add(ShellTab.leave);
     }
-    // Requests: show only when ERP explicitly enables (forward-compatible key).
     if (config.isFeatureEnabled(MobileFeatureKey.requests)) {
       tabs.add(ShellTab.requests);
     }
@@ -91,6 +84,18 @@ abstract final class ShellNavPolicy {
     }
     if (location.startsWith('/more/notifications')) {
       return config.isFeatureEnabled(MobileFeatureKey.notifications);
+    }
+    if (location.startsWith('/more/ratings')) {
+      return config.isFeatureEnabled(MobileFeatureKey.ratings);
+    }
+    if (location.startsWith('/more/inquiries')) {
+      return config.isFeatureEnabled(MobileFeatureKey.inquiries);
+    }
+    if (location.startsWith('/more/payments')) {
+      return config.isFeatureEnabled(MobileFeatureKey.payments);
+    }
+    if (location.startsWith('/more/settings')) {
+      return config.isFeatureEnabled(MobileFeatureKey.settings);
     }
     if (location.startsWith('/more/profile')) {
       return config.isFeatureEnabled(MobileFeatureKey.profile);

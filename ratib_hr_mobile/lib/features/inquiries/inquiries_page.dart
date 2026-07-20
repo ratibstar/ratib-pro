@@ -1,0 +1,169 @@
+/// Complaints & inquiries — InquiryPort only (ERP creates requests).
+library;
+
+import 'package:flutter/material.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
+import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
+import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
+
+class InquiriesPage extends StatefulWidget {
+  const InquiriesPage({super.key});
+
+  @override
+  State<InquiriesPage> createState() => _InquiriesPageState();
+}
+
+class _InquiriesPageState extends State<InquiriesPage> {
+  bool _loading = true;
+  String? _error;
+  List<Map<String, Object?>> _items = const [];
+  final _message = TextEditingController();
+  String _submitType = 'inquiry';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _message.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final rows = await AppLocator.inquiries.listMine();
+      if (!mounted) return;
+      setState(() {
+        _items = rows;
+        _loading = false;
+      });
+    } catch (e) {
+      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      if (!mounted) return;
+      setState(() {
+        _error = f.message ?? f.code;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    final text = _message.text.trim();
+    if (text.isEmpty) {
+      DsSnackbar.show(
+        context,
+        message: AppLocalizations.of(context).inquiryMessageRequired,
+        kind: DsSnackbarKind.error,
+      );
+      return;
+    }
+    try {
+      await AppLocator.inquiries.submit({
+        'request_type': _submitType,
+        'notes': text,
+      });
+      _message.clear();
+      if (!mounted) return;
+      DsSnackbar.show(
+        context,
+        message: AppLocalizations.of(context).inquirySubmitted,
+        kind: DsSnackbarKind.success,
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      DsSnackbar.show(
+        context,
+        message: f.message ?? f.code,
+        kind: DsSnackbarKind.error,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: DsAppBar(title: l10n.navInquiries),
+      body: _loading
+          ? DsLoadingState(message: l10n.genericLoading)
+          : _error != null
+              ? DsErrorState(
+                  title: l10n.genericLoadFailed,
+                  message: _error,
+                  actionLabel: l10n.homeRetry,
+                  onAction: _load,
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                    children: [
+                      DsSectionHeader(title: l10n.inquirySubmit),
+                      DsCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SegmentedButton<String>(
+                              segments: [
+                                ButtonSegment(
+                                  value: 'inquiry',
+                                  label: Text(l10n.inquiryTypeInquiry),
+                                ),
+                                ButtonSegment(
+                                  value: 'complaint',
+                                  label: Text(l10n.inquiryTypeComplaint),
+                                ),
+                              ],
+                              selected: {_submitType},
+                              onSelectionChanged: (s) {
+                                setState(() => _submitType = s.first);
+                              },
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            TextField(
+                              controller: _message,
+                              maxLines: 4,
+                              decoration: InputDecoration(
+                                hintText: l10n.inquiryMessageHint,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            FilledButton(
+                              onPressed: _submit,
+                              child: Text(l10n.inquirySubmit),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DsSectionHeader(title: l10n.inquiryHistory),
+                      if (_items.isEmpty)
+                        DsCard(child: Text(l10n.inquiryEmpty))
+                      else
+                        for (final row in _items)
+                          DsListItem(
+                            title: (row['request_type'] ?? l10n.navInquiries)
+                                .toString(),
+                            subtitle: [
+                              (row['status'] ?? '').toString(),
+                              (row['notes'] ?? '').toString(),
+                            ].where((e) => e.isNotEmpty).join(' · '),
+                            trailing: const SizedBox.shrink(),
+                          ),
+                    ],
+                  ),
+                ),
+    );
+  }
+}

@@ -30,12 +30,12 @@
 | **A0** | Native production Flutter shell | **COMPLETE** — see [PHASE_A0.md](PHASE_A0.md) |
 | **A** | MobileConfig + white-label + feature flags | **COMPLETE** — see [PHASE_A.md](PHASE_A.md) |
 | **B** | Native hardening / device QA (extends A0) | **NEXT** |
-| **C** | Attendance | After A |
-| **D** | Leave | After C patterns |
-| **E** | Notifications + Profile | After A |
-| **F** | Documents + Payslips | After A + thin APIs |
-| **G** | Offline hardening | After C–D |
-| **H** | Requests / Approvals (if ERP ready) | Optional |
+| **C** | Enterprise ESS modules | **COMPLETE** — see [PHASE_C.md](PHASE_C.md) |
+| **D** | Attendance + Leave deep wiring | After B/C |
+| **E** | Profile polish | After C |
+| **F** | Documents + Payslips | After thin APIs |
+| **G** | Offline hardening | After D |
+| **H** | Approvals (if ERP ready) | Optional |
 | **I** | Push + device registration (shared ERP API) | After native |
 | **J** | Store production release | After A–G |
 

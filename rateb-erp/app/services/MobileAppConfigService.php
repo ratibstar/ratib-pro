@@ -19,6 +19,11 @@ final class MobileAppConfigService
         'documents',
         'payroll',
         'notifications',
+        'requests',
+        'ratings',
+        'inquiries',
+        'payments',
+        'settings',
     ];
 
     public const STATUS_ACTIVE = 'active';
@@ -34,6 +39,11 @@ final class MobileAppConfigService
             'documents' => true,
             'payroll' => false,
             'notifications' => true,
+            'requests' => true,
+            'ratings' => true,
+            'inquiries' => true,
+            'payments' => false,
+            'settings' => true,
         ];
     }
 
@@ -232,6 +242,11 @@ final class MobileAppConfigService
                     'documents' => !empty($features['documents']),
                     'payroll' => !empty($features['payroll']),
                     'notifications' => !empty($features['notifications']),
+                    'requests' => !empty($features['requests']),
+                    'ratings' => !empty($features['ratings']),
+                    'inquiries' => !empty($features['inquiries']),
+                    'payments' => !empty($features['payments']),
+                    'settings' => !empty($features['settings']),
                 ],
             ],
         ];
