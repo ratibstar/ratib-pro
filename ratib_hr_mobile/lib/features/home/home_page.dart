@@ -107,9 +107,26 @@ class _HomePageState extends State<HomePage> {
                           AppSpacing.md,
                           AppSpacing.sm,
                         ),
-                        child: Text(
-                          name,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              name,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'الإصدار 0.1.2',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                       DsSectionHeader(title: l10n.homeQuickActions),

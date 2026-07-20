@@ -26,10 +26,17 @@ class DsCard extends StatelessWidget {
             horizontal: AppSpacing.md,
             vertical: AppSpacing.xs,
           ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Padding(padding: padding, child: child),
+        child: Padding(
+          padding: padding,
+          child: SizedBox(
+            width: double.infinity,
+            child: child,
+          ),
+        ),
       ),
     );
     return card;
