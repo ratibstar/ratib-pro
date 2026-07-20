@@ -32,6 +32,12 @@ $router->get('/api/v1/hr/leave/balances', [\Rateb\App\Controllers\Api\HrEssLeave
 $router->get('/api/v1/hr/leave/requests', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'requests'], $api);
 $router->get('/api/v1/hr/leave/requests/{id}', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'show'], $api);
 $router->post('/api/v1/hr/leave/apply', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'apply'], $api);
+$router->get('/api/v1/hr/payslips', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'index'], $api);
+$router->get('/api/v1/hr/payslips/{id}', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'show'], $api);
+$router->get('/api/v1/hr/payslips/{id}/file', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'file'], $api);
+$router->get('/api/v1/hr/documents', [\Rateb\App\Controllers\Api\HrEssDocumentController::class, 'index'], $api);
+$router->get('/api/v1/hr/documents/{id}', [\Rateb\App\Controllers\Api\HrEssDocumentController::class, 'show'], $api);
+$router->get('/api/v1/hr/documents/{id}/file', [\Rateb\App\Controllers\Api\HrEssDocumentController::class, 'file'], $api);
 $router->get('/api/v1/hr/notifications', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'list'], $api);
 $router->post('/api/v1/hr/notifications/read-all', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markAllRead'], $api);
 $router->post('/api/v1/hr/notifications/{id}/read', [\Rateb\App\Controllers\Api\HrEssNotificationsController::class, 'markRead'], $api);

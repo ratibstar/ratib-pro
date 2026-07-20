@@ -6,7 +6,7 @@ import 'package:ratib_hr_mobile/core/config/app_config.dart';
 void main() {
   test('Phase A0 native shell markers remain', () {
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
-    expect(['A0', 'A', 'C', 'D', 'E'].contains(AppConfig.phase), isTrue);
+    expect(['A0', 'A', 'C', 'D', 'E', 'F'].contains(AppConfig.phase), isTrue);
   });
 
   test('Android and iOS project trees exist', () {

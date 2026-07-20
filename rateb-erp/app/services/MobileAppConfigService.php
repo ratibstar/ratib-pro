@@ -18,6 +18,7 @@ final class MobileAppConfigService
         'profile',
         'documents',
         'payroll',
+        'payslips',
         'notifications',
         'requests',
         'ratings',
@@ -38,6 +39,7 @@ final class MobileAppConfigService
             'profile' => true,
             'documents' => true,
             'payroll' => false,
+            'payslips' => false,
             'notifications' => true,
             'requests' => true,
             'ratings' => true,
@@ -55,7 +57,7 @@ final class MobileAppConfigService
     {
         $out = self::defaultFeatures();
         if (!is_array($raw)) {
-            return $out;
+            return $this->alignPayslipAliases($out, null);
         }
         foreach (self::FEATURE_KEYS as $key) {
             if (array_key_exists($key, $raw)) {
@@ -63,7 +65,48 @@ final class MobileAppConfigService
             }
         }
 
+        return $this->alignPayslipAliases($out, $raw);
+    }
+
+    /**
+     * Keep `payslips` and legacy `payroll` aligned when only one is supplied.
+     *
+     * @param array<string, bool> $out
+     * @param array<string, mixed>|null $raw
+     * @return array<string, bool>
+     */
+    private function alignPayslipAliases(array $out, ?array $raw): array
+    {
+        $hasPayslips = is_array($raw) && array_key_exists('payslips', $raw);
+        $hasPayroll = is_array($raw) && array_key_exists('payroll', $raw);
+        if ($hasPayslips && !$hasPayroll) {
+            $out['payroll'] = !empty($out['payslips']);
+        } elseif ($hasPayroll && !$hasPayslips) {
+            $out['payslips'] = !empty($out['payroll']);
+        } elseif (!$hasPayslips && !$hasPayroll) {
+            $out['payslips'] = !empty($out['payroll']);
+        }
+
         return $out;
+    }
+
+    /** @param array<string, bool> $features @return array<string, bool> */
+    private function featuresPayload(array $features): array
+    {
+        return [
+            'attendance' => !empty($features['attendance']),
+            'leave' => !empty($features['leave']),
+            'profile' => !empty($features['profile']),
+            'documents' => !empty($features['documents']),
+            'payroll' => !empty($features['payroll']),
+            'payslips' => !empty($features['payslips']),
+            'notifications' => !empty($features['notifications']),
+            'requests' => !empty($features['requests']),
+            'ratings' => !empty($features['ratings']),
+            'inquiries' => !empty($features['inquiries']),
+            'payments' => !empty($features['payments']),
+            'settings' => !empty($features['settings']),
+        ];
     }
 
     /** @param mixed $json */
@@ -226,19 +269,7 @@ final class MobileAppConfigService
                     'splash' => '',
                     'theme_color' => '#0D6EFD',
                     'mobile_active' => true,
-                    'features' => [
-                        'attendance' => !empty($features['attendance']),
-                        'leave' => !empty($features['leave']),
-                        'profile' => !empty($features['profile']),
-                        'documents' => !empty($features['documents']),
-                        'payroll' => !empty($features['payroll']),
-                        'notifications' => !empty($features['notifications']),
-                        'requests' => !empty($features['requests']),
-                        'ratings' => !empty($features['ratings']),
-                        'inquiries' => !empty($features['inquiries']),
-                        'payments' => !empty($features['payments']),
-                        'settings' => !empty($features['settings']),
-                    ],
+                    'features' => $this->featuresPayload($features),
                 ],
             ];
         }
@@ -261,19 +292,7 @@ final class MobileAppConfigService
                 'icon' => (string) ($row['icon_path'] ?? ''),
                 'splash' => (string) ($row['splash_path'] ?? ''),
                 'theme_color' => (string) ($row['theme_color'] ?? '#0D6EFD'),
-                'features' => [
-                    'attendance' => !empty($features['attendance']),
-                    'leave' => !empty($features['leave']),
-                    'profile' => !empty($features['profile']),
-                    'documents' => !empty($features['documents']),
-                    'payroll' => !empty($features['payroll']),
-                    'notifications' => !empty($features['notifications']),
-                    'requests' => !empty($features['requests']),
-                    'ratings' => !empty($features['ratings']),
-                    'inquiries' => !empty($features['inquiries']),
-                    'payments' => !empty($features['payments']),
-                    'settings' => !empty($features['settings']),
-                ],
+                'features' => $this->featuresPayload($features),
             ],
         ];
     }

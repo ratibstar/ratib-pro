@@ -19,7 +19,9 @@ abstract final class AppRoutes {
   static const requestDetail = '/requests/detail';
   static const more = '/more';
   static const documents = '/more/documents';
+  static const documentDetail = '/more/documents/detail';
   static const payslips = '/more/payslips';
+  static const payslipDetail = '/more/payslips/detail';
   static const notifications = '/more/notifications';
   static const ratings = '/more/ratings';
   static const inquiries = '/more/inquiries';

@@ -16,7 +16,7 @@ enum ShellTab {
 
 enum ShellMoreItem {
   documents(MobileFeatureKey.documents),
-  payslips(MobileFeatureKey.payroll),
+  payslips(MobileFeatureKey.payslips),
   notifications(MobileFeatureKey.notifications),
   ratings(MobileFeatureKey.ratings),
   inquiries(MobileFeatureKey.inquiries),
@@ -80,7 +80,7 @@ abstract final class ShellNavPolicy {
       return config.isFeatureEnabled(MobileFeatureKey.documents);
     }
     if (location.startsWith('/more/payslips')) {
-      return config.isFeatureEnabled(MobileFeatureKey.payroll);
+      return config.isFeatureEnabled(MobileFeatureKey.payslips);
     }
     if (location.startsWith('/more/notifications')) {
       return config.isFeatureEnabled(MobileFeatureKey.notifications);

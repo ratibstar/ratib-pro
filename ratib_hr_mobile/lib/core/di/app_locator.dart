@@ -5,7 +5,9 @@ import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
+import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
+import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -30,6 +32,10 @@ abstract final class AppLocator {
   static OfflineQueuePort? _offlineQueue;
   static AttendanceRepository? _attendanceRepository;
   static LeaveRepository? _leaveRepository;
+  static PayslipPort? _payslips;
+  static DocumentsPort? _documents;
+  static PayslipRepository? _payslipRepository;
+  static DocumentsRepository? _documentsRepository;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -106,6 +112,18 @@ abstract final class AppLocator {
     _leaveRepository = leaveRepository;
   }
 
+  static void registerPhaseF({
+    required PayslipPort payslips,
+    required DocumentsPort documents,
+    required PayslipRepository payslipRepository,
+    required DocumentsRepository documentsRepository,
+  }) {
+    _payslips = payslips;
+    _documents = documents;
+    _payslipRepository = payslipRepository;
+    _documentsRepository = documentsRepository;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -162,10 +180,15 @@ abstract final class AppLocator {
       _attendanceRepository ?? _notRegistered('attendanceRepository');
   static LeaveRepository get leaveRepository =>
       _leaveRepository ?? _notRegistered('leaveRepository');
+  static PayslipPort get payslips => _payslips ?? _notRegistered('payslips');
+  static DocumentsPort get documents =>
+      _documents ?? _notRegistered('documents');
+  static PayslipRepository get payslipRepository =>
+      _payslipRepository ?? _notRegistered('payslipRepository');
+  static DocumentsRepository get documentsRepository =>
+      _documentsRepository ?? _notRegistered('documentsRepository');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
-  static PayslipPort get payslips => _notRegistered('payslips');
-  static DocumentsPort get documents => _notRegistered('documents');
   static ApprovalPort get approvals => _notRegistered('approvals');
   static BiometricUnlock get biometric => _notRegistered('biometric');
 }

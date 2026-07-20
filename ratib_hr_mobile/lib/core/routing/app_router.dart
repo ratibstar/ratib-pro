@@ -10,6 +10,8 @@ import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_history_screen.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_screen.dart';
+import 'package:ratib_hr_mobile/features/documents/document_detail_screen.dart';
+import 'package:ratib_hr_mobile/features/documents/documents_list_screen.dart';
 import 'package:ratib_hr_mobile/features/home/home_page.dart';
 import 'package:ratib_hr_mobile/features/inquiries/inquiries_page.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_apply_screen.dart';
@@ -21,6 +23,8 @@ import 'package:ratib_hr_mobile/features/login/login_page.dart';
 import 'package:ratib_hr_mobile/features/more/more_page.dart';
 import 'package:ratib_hr_mobile/features/notifications/notifications_page.dart';
 import 'package:ratib_hr_mobile/features/payments/payments_page.dart';
+import 'package:ratib_hr_mobile/features/payslips/payslip_detail_screen.dart';
+import 'package:ratib_hr_mobile/features/payslips/payslips_list_screen.dart';
 import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
 import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
 import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
@@ -195,15 +199,29 @@ abstract final class AppRouter {
                   routes: [
                     GoRoute(
                       path: 'documents',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.documents,
-                      ),
+                      builder: (context, state) => const DocumentsListScreen(),
+                      routes: [
+                        GoRoute(
+                          path: 'detail',
+                          builder: (context, state) {
+                            final id = state.uri.queryParameters['id'] ?? '';
+                            return DocumentDetailScreen(documentId: id);
+                          },
+                        ),
+                      ],
                     ),
                     GoRoute(
                       path: 'payslips',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.payslips,
-                      ),
+                      builder: (context, state) => const PayslipsListScreen(),
+                      routes: [
+                        GoRoute(
+                          path: 'detail',
+                          builder: (context, state) {
+                            final id = state.uri.queryParameters['id'] ?? '';
+                            return PayslipDetailScreen(payslipId: id);
+                          },
+                        ),
+                      ],
                     ),
                     GoRoute(
                       path: 'notifications',

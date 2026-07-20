@@ -12,6 +12,12 @@ abstract interface class ErpHttpClient {
     Map<String, String>? query,
   });
 
+  /// Authenticated GET returning raw bytes (file download / preview).
+  Future<({List<int> bytes, String? contentType, String? filename})> getBytes(
+    String path, {
+    Map<String, String>? query,
+  });
+
   /// Performs an authenticated POST with a JSON-compatible body map.
   Future<Map<String, Object?>> post(
     String path, {

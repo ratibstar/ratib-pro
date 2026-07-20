@@ -1,12 +1,15 @@
 /// Employee documents — existing ERP HR documents only.
 ///
-/// View-first. Upload only if ERP already supports file attach.
-/// Phase 0.6: interface only.
+/// View-first. Online only — no offline document sync.
 library;
 
 abstract interface class DocumentsPort {
-  Future<List<Map<String, Object?>>> listMine();
+  Future<List<Map<String, Object?>>> listMine({String? category});
 
-  /// Optional binary upload — must call existing ERP document write if available.
-  Future<void> upload(Map<String, Object?> payload);
+  Future<Map<String, Object?>> detail(String documentKey);
+
+  /// Authenticated file bytes when ERP exposes file_url (online only).
+  Future<({List<int> bytes, String? contentType, String? filename})?> download(
+    String documentKey,
+  );
 }

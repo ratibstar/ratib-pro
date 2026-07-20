@@ -20,6 +20,8 @@ abstract final class MobileFeatureKey {
   static const profile = 'profile';
   static const documents = 'documents';
   static const payroll = 'payroll';
+  /// ESS payslips gate — aliases legacy [payroll] when only one is set.
+  static const payslips = 'payslips';
   static const notifications = 'notifications';
   static const requests = 'requests';
   static const approvals = 'approvals';
@@ -72,7 +74,17 @@ final class MobileAppConfiguration {
     return companyName.trim();
   }
 
-  bool isFeatureEnabled(String key) => features[key] == true;
+  bool isFeatureEnabled(String key) {
+    if (features[key] == true) return true;
+    // Alias: payslips ↔ payroll for backward-compatible MobileConfig.
+    if (key == MobileFeatureKey.payslips) {
+      return features[MobileFeatureKey.payroll] == true;
+    }
+    if (key == MobileFeatureKey.payroll) {
+      return features[MobileFeatureKey.payslips] == true;
+    }
+    return false;
+  }
 
   MobileAppConfiguration copyWith({
     bool? fromCache,

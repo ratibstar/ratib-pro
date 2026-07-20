@@ -192,6 +192,23 @@ class AppLocalizations {
       'leaveDetailTitle': 'تفاصيل الإجازة',
       'leaveDays': 'أيام',
       'leaveOfflineBanner': 'طلبات إجازة بانتظار المزامنة: {count}',
+      'payslipsEmpty': 'لا توجد كشوف رواتب',
+      'payslipDetailTitle': 'تفاصيل كشف الراتب',
+      'payslipPeriod': 'الفترة',
+      'payslipGross': 'الإجمالي',
+      'payslipNet': 'الصافي',
+      'payslipMonthYear': 'الشهر / السنة',
+      'payslipDownload': 'عرض / تنزيل',
+      'documentsEmpty': 'لا توجد مستندات',
+      'documentDetailTitle': 'تفاصيل المستند',
+      'documentsCategory': 'التصنيف',
+      'documentsFileName': 'اسم الملف',
+      'documentsUploadedAt': 'تاريخ الرفع',
+      'documentsOpen': 'فتح المستند',
+      'documentsNoFile': 'لا يوجد ملف مرفق',
+      'documentsFilterAll': 'الكل',
+      'documentsFileLoaded': 'تم تحميل {name} ({size} بايت)',
+      'genericClose': 'إغلاق',
     },
     'en': {
       'appTitle': 'RATIB HR',
@@ -365,6 +382,23 @@ class AppLocalizations {
       'leaveDetailTitle': 'Leave details',
       'leaveDays': 'days',
       'leaveOfflineBanner': 'Pending offline leave requests: {count}',
+      'payslipsEmpty': 'No payslips yet',
+      'payslipDetailTitle': 'Payslip details',
+      'payslipPeriod': 'Period',
+      'payslipGross': 'Gross',
+      'payslipNet': 'Net',
+      'payslipMonthYear': 'Month / year',
+      'payslipDownload': 'View / download',
+      'documentsEmpty': 'No documents yet',
+      'documentDetailTitle': 'Document details',
+      'documentsCategory': 'Category',
+      'documentsFileName': 'File name',
+      'documentsUploadedAt': 'Uploaded at',
+      'documentsOpen': 'Open document',
+      'documentsNoFile': 'No file attached',
+      'documentsFilterAll': 'All',
+      'documentsFileLoaded': 'Loaded {name} ({size} bytes)',
+      'genericClose': 'Close',
     },
   };
 
@@ -553,6 +587,27 @@ class AppLocalizations {
 
   String leaveOfflineBanner(int count) =>
       _t('leaveOfflineBanner').replaceAll('{count}', '$count');
+
+  String get payslipsEmpty => _t('payslipsEmpty');
+  String get payslipDetailTitle => _t('payslipDetailTitle');
+  String get payslipPeriod => _t('payslipPeriod');
+  String get payslipGross => _t('payslipGross');
+  String get payslipNet => _t('payslipNet');
+  String get payslipMonthYear => _t('payslipMonthYear');
+  String get payslipDownload => _t('payslipDownload');
+  String get documentsEmpty => _t('documentsEmpty');
+  String get documentDetailTitle => _t('documentDetailTitle');
+  String get documentsCategory => _t('documentsCategory');
+  String get documentsFileName => _t('documentsFileName');
+  String get documentsUploadedAt => _t('documentsUploadedAt');
+  String get documentsOpen => _t('documentsOpen');
+  String get documentsNoFile => _t('documentsNoFile');
+  String get documentsFilterAll => _t('documentsFilterAll');
+  String get genericClose => _t('genericClose');
+
+  String documentsFileLoaded(String name, int size) => _t('documentsFileLoaded')
+      .replaceAll('{name}', name)
+      .replaceAll('{size}', '$size');
 }
 
 class _AppLocalizationsDelegate

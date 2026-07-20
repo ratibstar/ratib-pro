@@ -80,6 +80,32 @@ final class DioErpHttpClient implements ErpHttpClient {
   }
 
   @override
+  Future<({List<int> bytes, String? contentType, String? filename})> getBytes(
+    String path, {
+    Map<String, String>? query,
+  }) async {
+    _ensureEnabled();
+    final response = await _dio.get<List<int>>(
+      path,
+      queryParameters: query,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final data = response.data ?? <int>[];
+    final headers = response.headers;
+    final disposition = headers.value('content-disposition');
+    String? filename;
+    if (disposition != null) {
+      final match = RegExp(r'filename="?([^";]+)"?').firstMatch(disposition);
+      filename = match?.group(1);
+    }
+    return (
+      bytes: data,
+      contentType: headers.value('content-type'),
+      filename: filename,
+    );
+  }
+
+  @override
   Future<Map<String, Object?>> post(
     String path, {
     Map<String, Object?>? body,

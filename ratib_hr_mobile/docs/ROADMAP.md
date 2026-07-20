@@ -33,9 +33,9 @@
 | **C** | Enterprise ESS modules | **COMPLETE** — see [PHASE_C.md](PHASE_C.md) |
 | **D** | Attendance deep wiring | **COMPLETE** — see [PHASE_D.md](PHASE_D.md) |
 | **E** | Leave Management | **COMPLETE** — see [PHASE_E.md](PHASE_E.md) |
-| **F** | Profile polish | Next |
-| **G** | Documents + Payslips | After thin APIs |
-| **H** | Offline hardening | After E |
+| **F** | Payslips + Documents | **COMPLETE** — see [PHASE_F.md](PHASE_F.md) |
+| **G** | Profile polish | Next |
+| **H** | Offline hardening | After F |
 | **I** | Approvals (if ERP ready) | Optional |
 | **J** | Push + device registration (shared ERP API) | After native |
 | **K** | Store production release | After A–H |
