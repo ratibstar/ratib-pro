@@ -59,6 +59,14 @@ class _HomePageState extends State<HomePage> {
     final name = employee is Map
         ? (employee['name'] ?? cfg?.displayName ?? '').toString()
         : (cfg?.displayName ?? '');
+    final payroll = _data['payroll_summary'];
+    final payrollAvailable =
+        payroll is Map && payroll['available'] == true;
+    final notif = _data['notifications_summary'];
+    final unread = notif is Map ? (notif['unread'] ?? 0) : 0;
+    final unreadCount = unread is int
+        ? unread
+        : int.tryParse(unread.toString()) ?? 0;
 
     return Scaffold(
       appBar: DsAppBar(
@@ -68,7 +76,11 @@ class _HomePageState extends State<HomePage> {
         actions: [
           if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
+              icon: Badge(
+                isLabelVisible: unreadCount > 0,
+                label: Text('$unreadCount'),
+                child: const Icon(Icons.notifications_outlined),
+              ),
               onPressed: () => context.go(AppRoutes.notifications),
             ),
         ],
@@ -100,6 +112,8 @@ class _HomePageState extends State<HomePage> {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),
+                      DsSectionHeader(title: l10n.homeQuickActions),
+                      _QuickActions(l10n: l10n, cfg: cfg),
                       DsSectionHeader(title: l10n.homeTodayAttendance),
                       _AttendanceBlock(
                         raw: _data['attendance_today'],
@@ -113,18 +127,20 @@ class _HomePageState extends State<HomePage> {
                         leaves: _data['pending_leaves'],
                         l10n: l10n,
                       ),
-                      DsSectionHeader(title: l10n.homeRecentNotifications),
-                      _NotifSummary(
-                        raw: _data['notifications_summary'],
-                        l10n: l10n,
-                      ),
-                      DsSectionHeader(title: l10n.homePayrollSummary),
-                      _PayrollBlock(
-                        raw: _data['payroll_summary'],
-                        l10n: l10n,
-                      ),
-                      DsSectionHeader(title: l10n.homeQuickActions),
-                      _QuickActions(l10n: l10n, cfg: cfg),
+                      if (unreadCount > 0) ...[
+                        DsSectionHeader(title: l10n.homeRecentNotifications),
+                        _NotifSummary(
+                          raw: _data['notifications_summary'],
+                          l10n: l10n,
+                        ),
+                      ],
+                      if (payrollAvailable) ...[
+                        DsSectionHeader(title: l10n.homePayrollSummary),
+                        _PayrollBlock(
+                          raw: _data['payroll_summary'],
+                          l10n: l10n,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -181,20 +197,42 @@ class _LeaveBlock extends StatelessWidget {
     if (data is! List || data.isEmpty) {
       return DsCard(child: Text(l10n.homeNoLeaveBalances));
     }
-    return Column(
-      children: [
-        for (final row in _primaryLeaveRows(data).take(3))
-          DsCard(
-            child: Text(
-              '${row['leave_type_name'] ?? row['name'] ?? l10n.tabLeave}: '
-              '${row['remaining_days'] ?? row['balance'] ?? row['entitled_days'] ?? '-'}',
+    final rows = _primaryLeaveRows(data).take(3).toList();
+    final theme = Theme.of(context).textTheme;
+    return DsCard(
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const Divider(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    (rows[i]['leave_type_name'] ??
+                            rows[i]['name'] ??
+                            l10n.tabLeave)
+                        .toString(),
+                    style: theme.bodyLarge,
+                  ),
+                ),
+                Text(
+                  (rows[i]['remaining_days'] ??
+                          rows[i]['balance'] ??
+                          rows[i]['entitled_days'] ??
+                          '-')
+                      .toString(),
+                  style: theme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-          ),
-      ],
+          ],
+        ],
+      ),
     );
   }
 
-  /// Prefer annual/sick on home; skip maternity/paternity noise when others exist.
   List<Map> _primaryLeaveRows(List data) {
     const preferred = [
       'annual',
@@ -247,9 +285,18 @@ class _PendingBlock extends StatelessWidget {
     final leaveList = leaves;
     final reqCount = reqList is List ? reqList.length : 0;
     final leaveCount = leaveList is List ? leaveList.length : 0;
+    final total = reqCount + leaveCount;
+    final text = total == 0
+        ? l10n.homeNoPendingRequests
+        : '${l10n.homePendingRequests}: $total';
     return DsCard(
-      child: Text(
-        '${l10n.homePendingRequests}: $reqCount · ${l10n.tabLeave}: $leaveCount',
+      onTap: () => context.go(AppRoutes.requests),
+      child: Row(
+        children: [
+          Expanded(child: Text(text)),
+          if (total > 0)
+            DsStatusBadge(label: '$total'),
+        ],
       ),
     );
   }
@@ -283,14 +330,11 @@ class _PayrollBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = raw;
     if (data is! Map) {
-      return DsCard(child: Text(l10n.homePayrollPlaceholder));
+      return const SizedBox.shrink();
     }
-    final available = data['available'] == true;
     final message =
         (data['message'] ?? l10n.homePayrollPlaceholder).toString();
-    return DsCard(
-      child: Text(available ? message : l10n.homePayrollPlaceholder),
-    );
+    return DsCard(child: Text(message));
   }
 }
 

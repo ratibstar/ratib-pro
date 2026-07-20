@@ -94,6 +94,7 @@ class AppLocalizations {
       'homeEntitled': 'المستحق',
       'homeUsed': 'المستخدم',
       'homePendingRequests': 'طلبات معلّقة',
+      'homeNoPendingRequests': 'لا توجد طلبات معلّقة',
       'homeUnreadNotifications': 'إشعارات غير مقروءة',
       'homePayrollSummary': 'ملخص الرواتب',
       'homePayrollPlaceholder': 'تفاصيل الراتب متاحة عند تفعيل وحدة الرواتب',
@@ -234,6 +235,7 @@ class AppLocalizations {
       'homeEntitled': 'Entitled',
       'homeUsed': 'Used',
       'homePendingRequests': 'Pending requests',
+      'homeNoPendingRequests': 'No pending requests',
       'homeUnreadNotifications': 'Unread notifications',
       'homePayrollSummary': 'Payroll summary',
       'homePayrollPlaceholder':
@@ -382,6 +384,7 @@ class AppLocalizations {
   String get homeEntitled => _t('homeEntitled');
   String get homeUsed => _t('homeUsed');
   String get homePendingRequests => _t('homePendingRequests');
+  String get homeNoPendingRequests => _t('homeNoPendingRequests');
   String get homeUnreadNotifications => _t('homeUnreadNotifications');
   String get homePayrollSummary => _t('homePayrollSummary');
   String get homePayrollPlaceholder => _t('homePayrollPlaceholder');
