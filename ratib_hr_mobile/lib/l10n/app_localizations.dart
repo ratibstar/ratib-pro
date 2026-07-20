@@ -76,6 +76,8 @@ class AppLocalizations {
       'loginErpOnlyHint': 'المصادقة عبر نظام راتب ERP فقط',
       'loginEmployeeUnbound': 'لا يوجد موظف مرتبط بهذا الحساب',
       'loginEmployeeAmbiguous': 'أكثر من موظف مرتبط بهذا الحساب',
+      'loginPlatformSuperAdmin':
+          'حساب مشرف المنصة لا يدعم تطبيق الجوال — استخدم حساب شركة مرتبط بموظف',
       'signOut': 'تسجيل الخروج',
       'homeLoading': 'جاري تحميل لوحة الموظف…',
       'homeLoadFailed': 'تعذر تحميل الرئيسية',
@@ -212,6 +214,8 @@ class AppLocalizations {
       'loginErpOnlyHint': 'Authentication via RATIB ERP only',
       'loginEmployeeUnbound': 'No employee is linked to this account',
       'loginEmployeeAmbiguous': 'Multiple employees are linked to this account',
+      'loginPlatformSuperAdmin':
+          'Platform super-admin cannot use the mobile app — use a company employee account',
       'signOut': 'Sign out',
       'homeLoading': 'Loading employee home…',
       'homeLoadFailed': 'Could not load home',
@@ -357,6 +361,7 @@ class AppLocalizations {
   String get loginErpOnlyHint => _t('loginErpOnlyHint');
   String get loginEmployeeUnbound => _t('loginEmployeeUnbound');
   String get loginEmployeeAmbiguous => _t('loginEmployeeAmbiguous');
+  String get loginPlatformSuperAdmin => _t('loginPlatformSuperAdmin');
   String get signOut => _t('signOut');
   String get homeLoading => _t('homeLoading');
   String get homeLoadFailed => _t('homeLoadFailed');

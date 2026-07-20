@@ -75,11 +75,14 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
         }
-        if ((int) ($user['is_super_admin'] ?? 0) === 1) {
+        $companyId = (int) ($user['company_id'] ?? 0);
+        // Block platform-only super admins (no company). Company-scoped users may
+        // mint tokens even if is_super_admin=1 (dedicated/appliance admins); API
+        // auth always forces TenantContext::setSuperAdmin(false).
+        if ((int) ($user['is_super_admin'] ?? 0) === 1 && $companyId < 1) {
             Response::json(['success' => false, 'message' => 'Super admin API tokens disabled'], 403);
             return;
         }
-        $companyId = (int) ($user['company_id'] ?? 0);
         if ($companyId < 1 || !(new PlanLimitService())->companyAccessAllowed($companyId)) {
             Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return;

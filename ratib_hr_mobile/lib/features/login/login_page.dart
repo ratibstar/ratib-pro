@@ -42,6 +42,10 @@ class _LoginPageState extends State<LoginPage> {
 
   String _messageFor(AppFailure? failure, AppLocalizations l10n) {
     if (failure == null) return l10n.loginFailed;
+    final erp = failure.message ?? '';
+    if (erp.contains('Super admin API tokens disabled')) {
+      return l10n.loginPlatformSuperAdmin;
+    }
     switch (failure.code) {
       case 'config':
         return l10n.loginConfigMissing;
@@ -49,17 +53,11 @@ class _LoginPageState extends State<LoginPage> {
       case 'timeout':
         return l10n.loginNetworkError;
       case 'unauthorized':
-        return failure.message?.isNotEmpty == true
-            ? failure.message!
-            : l10n.loginInvalidCredentials;
+        return erp.isNotEmpty ? erp : l10n.loginInvalidCredentials;
       case 'mobile_disabled':
-        return failure.message?.isNotEmpty == true
-            ? failure.message!
-            : l10n.loginMobileDisabled;
+        return erp.isNotEmpty ? erp : l10n.loginMobileDisabled;
       case 'forbidden':
-        return failure.message?.isNotEmpty == true
-            ? failure.message!
-            : l10n.loginForbidden;
+        return erp.isNotEmpty ? erp : l10n.loginForbidden;
       case 'employee_unbound':
         return l10n.loginEmployeeUnbound;
       case 'employee_ambiguous':
