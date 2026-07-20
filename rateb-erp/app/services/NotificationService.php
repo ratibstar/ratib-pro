@@ -9,9 +9,17 @@ use Rateb\App\Models\SmsTemplate;
 
 final class NotificationService
 {
+    private ?MobilePushOutboxService $pushOutbox;
+
+    public function __construct(?MobilePushOutboxService $pushOutbox = null)
+    {
+        $this->pushOutbox = $pushOutbox;
+    }
+
     public function notifyUser(int $userId, ?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null, ?string $entityType = null, ?int $entityId = null): int
     {
-        return (new Notification())->create([
+        $cid = $companyId !== null ? (int) $companyId : 0;
+        $id = (int) (new Notification())->create([
             'company_id' => $companyId,
             'user_id' => $userId,
             'title' => $title,
@@ -22,11 +30,27 @@ final class NotificationService
             'entity_id' => $entityId,
             'is_read' => 0,
         ]);
+        $this->enqueueMobilePush(
+            $id,
+            $cid,
+            $userId,
+            $title,
+            $message,
+            [
+                'type' => $type,
+                'trigger_type' => $triggerType,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+            ]
+        );
+
+        return $id;
     }
 
     public function notifyCompany(?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null, ?string $entityType = null, ?int $entityId = null): int
     {
-        return (new Notification())->create([
+        $cid = (int) ($companyId ?? TenantContext::companyId() ?? 0);
+        $id = (int) (new Notification())->create([
             'company_id' => $companyId ?? TenantContext::companyId(),
             'user_id' => null,
             'title' => $title,
@@ -37,6 +61,49 @@ final class NotificationService
             'entity_id' => $entityId,
             'is_read' => 0,
         ]);
+        $this->enqueueMobilePush(
+            $id,
+            $cid,
+            0,
+            $title,
+            $message,
+            [
+                'type' => $type,
+                'trigger_type' => $triggerType,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'broadcast' => true,
+            ]
+        );
+
+        return $id;
+    }
+
+    /**
+     * Feature-flagged push outbox only — never blocks in-app create; no email/SMS change.
+     *
+     * @param array<string,mixed> $data
+     */
+    private function enqueueMobilePush(
+        int $notificationId,
+        int $companyId,
+        int $userId,
+        string $title,
+        string $body,
+        array $data
+    ): void {
+        try {
+            ($this->pushOutbox ?? new MobilePushOutboxService())->enqueueFromNotification(
+                $notificationId,
+                $companyId,
+                $userId,
+                $title,
+                $body,
+                $data
+            );
+        } catch (\Throwable $e) {
+            // Push outbox is best-effort; in-app notification already committed.
+        }
     }
 
     /**

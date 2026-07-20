@@ -62,6 +62,29 @@ final class ArrayMobileDeviceStore implements \Rateb\App\Services\MobileDeviceSt
         return $out;
     }
 
+    public function listActiveWithPushForCompany(int $companyId, string $clientApp): array
+    {
+        $out = [];
+        foreach ($this->rows as $row) {
+            if ((int) $row['company_id'] !== $companyId) {
+                continue;
+            }
+            if ((string) $row['client_app'] !== $clientApp) {
+                continue;
+            }
+            if ((string) ($row['status'] ?? '') !== 'active') {
+                continue;
+            }
+            $tok = (string) ($row['push_token'] ?? '');
+            if ($tok === '') {
+                continue;
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
     public function insert(array $data): int
     {
         $id = $this->seq++;

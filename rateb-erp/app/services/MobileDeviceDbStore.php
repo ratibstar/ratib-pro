@@ -63,6 +63,30 @@ final class MobileDeviceDbStore implements MobileDeviceStoreInterface
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * @return list<array<string,mixed>>
+     */
+    public function listActiveWithPushForCompany(int $companyId, string $clientApp): array
+    {
+        $rows = (new MobileDevice())->query(
+            'SELECT ' . self::COLS . '
+             FROM rateb_mobile_devices
+             WHERE company_id = :cid
+               AND client_app = :app
+               AND status = :st
+               AND push_token IS NOT NULL
+               AND push_token <> \'\'
+             ORDER BY id ASC',
+            [
+                'cid' => $companyId,
+                'app' => $clientApp,
+                'st' => MobileDeviceRegistryService::STATUS_ACTIVE,
+            ]
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
     /** @param array<string,mixed> $data */
     public function insert(array $data): int
     {

@@ -2,7 +2,7 @@
 
 **Status:** ACCEPTED  
 **Date:** 2026-07-20  
-**Phases:** I.0 (this ADR) · I.1 (registry/token APIs) · I.2+ (delivery worker — not yet)  
+**Phases:** I.0 (this ADR) · I.1 (registry/token APIs) · **I.2 (outbox + delivery engine — stubs)** · I.3+ (Flutter token wiring / real FCM SDK)  
 **Related:** Phase J Device Registry · AF-2.1 Identity / Authentication Authority · ADR-AL-1 Single ERP Frontend
 
 ---

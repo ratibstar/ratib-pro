@@ -40,6 +40,40 @@ final class MobileDeviceService
     }
 
     /**
+     * @return list<array<string,mixed>>
+     */
+    public function findActivePushDevicesForCompany(int $companyId, string $clientApp): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $app = $this->normalizeClientApp($clientApp);
+        if ($app === null) {
+            return [];
+        }
+
+        return $this->store->listActiveWithPushForCompany($companyId, $app);
+    }
+
+    /**
+     * Clear delivery handle after provider reports invalid token.
+     * Caller must pass a row already verified for company_id.
+     *
+     * @param array<string,mixed> $deviceRow
+     */
+    public function clearInvalidPushToken(array $deviceRow): void
+    {
+        $id = (int) ($deviceRow['id'] ?? 0);
+        if ($id < 1) {
+            return;
+        }
+        $this->store->update($id, [
+            'push_token' => null,
+            'push_provider' => 'none',
+        ]);
+    }
+
+    /**
      * Upsert push delivery handle for authenticated user's device.
      * company_id / user_id from auth only — never from body.
      *

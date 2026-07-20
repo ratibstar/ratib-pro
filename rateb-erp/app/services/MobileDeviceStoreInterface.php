@@ -19,6 +19,13 @@ interface MobileDeviceStoreInterface
      */
     public function listActiveWithPush(int $companyId, int $userId, string $clientApp): array;
 
+    /**
+     * Company broadcast — all active devices for client_app in tenant.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function listActiveWithPushForCompany(int $companyId, string $clientApp): array;
+
     /** @param array<string,mixed> $data */
     public function insert(array $data): int;
 

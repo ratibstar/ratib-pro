@@ -15,6 +15,7 @@ final class CronService
     {
         $stats = [
             'queue' => (new QueueWorkerService())->processPending(100),
+            'mobile_push' => (new PushQueueWorker())->processPending(50),
             'inventory_alerts' => 0,
             'low_stock_alerts' => 0,
             'contract_alerts' => 0,
