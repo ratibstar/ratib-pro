@@ -1,6 +1,6 @@
 # Phase J — Unified Mobile Device Registry (Design Only)
 
-**Status:** DESIGN COMPLETE — no implementation in this phase  
+**Status:** DESIGN COMPLETE — implementation shipped in [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md)  
 **Date:** 20 Jul 2026  
 **Scope:** Architecture charter for a shared ERP Mobile Device Registry  
 **Consumers (planned):** `ratib_hr_mobile` · `ratib_manager_mobile` · future Workforce / Supervisor / CEO apps

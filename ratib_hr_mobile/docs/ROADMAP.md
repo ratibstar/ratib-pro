@@ -37,7 +37,7 @@
 | **G** | Profile | **COMPLETE** — see [PHASE_G.md](PHASE_G.md) |
 | **H** | Offline hardening | **COMPLETE** — see [PHASE_H.md](PHASE_H.md) |
 | **I** | Approvals (if ERP ready) | Optional / Next |
-| **J** | Unified Mobile Device Registry | **DESIGN COMPLETE** — see [PHASE_J.md](PHASE_J.md) (implement later) |
+| **J** | Unified Mobile Device Registry | **COMPLETE** — see [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md) (design: [PHASE_J.md](PHASE_J.md)) |
 | **K** | Store production release | After A–H |
 
 ---

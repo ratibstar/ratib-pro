@@ -11,6 +11,7 @@ import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
 import 'package:ratib_hr_mobile/core/offline/connectivity_controller.dart';
 import 'package:ratib_hr_mobile/core/offline/offline_sync_service.dart';
+import 'package:ratib_hr_mobile/core/device/device_registry_service.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -43,6 +44,8 @@ abstract final class AppLocator {
   static ProfileRepository? _profileRepository;
   static ConnectivityController? _connectivity;
   static OfflineSyncService? _offlineSync;
+  static DeviceRegistryPort? _deviceRegistry;
+  static DeviceRegistryService? _deviceRegistryService;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -147,6 +150,14 @@ abstract final class AppLocator {
     _offlineSync = offlineSync;
   }
 
+  static void registerPhaseJ({
+    required DeviceRegistryPort deviceRegistry,
+    required DeviceRegistryService deviceRegistryService,
+  }) {
+    _deviceRegistry = deviceRegistry;
+    _deviceRegistryService = deviceRegistryService;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -217,6 +228,10 @@ abstract final class AppLocator {
       _connectivity ?? _notRegistered('connectivity');
   static OfflineSyncService get offlineSync =>
       _offlineSync ?? _notRegistered('offlineSync');
+  static DeviceRegistryPort get deviceRegistry =>
+      _deviceRegistry ?? _notRegistered('deviceRegistry');
+  static DeviceRegistryService get deviceRegistryService =>
+      _deviceRegistryService ?? _notRegistered('deviceRegistryService');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static ApprovalPort get approvals => _notRegistered('approvals');

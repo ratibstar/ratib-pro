@@ -16,6 +16,7 @@ import 'package:ratib_hr_mobile/core/adapters/erp_payment_methods_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_payslip_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_documents_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_profile_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_device_registry_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_ratings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_settings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
@@ -23,6 +24,8 @@ import 'package:ratib_hr_mobile/core/adapters/secure_token_store_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/shared_preferences_cache_store.dart';
 import 'package:ratib_hr_mobile/core/appearance/appearance_controller.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/device/device_registry_service.dart';
+import 'package:ratib_hr_mobile/core/device/local_device_id_store.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
@@ -137,5 +140,14 @@ void bootstrapEssCore() {
   AppLocator.registerPhaseH(
     connectivity: connectivity,
     offlineSync: offlineSync,
+  );
+  final deviceRegistry = ErpDeviceRegistryAdapter(http: http, errors: errors);
+  final deviceRegistryService = DeviceRegistryService(
+    port: deviceRegistry,
+    deviceIds: LocalDeviceIdStore(cache: cache),
+  );
+  AppLocator.registerPhaseJ(
+    deviceRegistry: deviceRegistry,
+    deviceRegistryService: deviceRegistryService,
   );
 }

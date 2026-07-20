@@ -11,6 +11,7 @@ export 'package:ratib_hr_mobile/core/contracts/biometric_unlock.dart';
 export 'package:ratib_hr_mobile/core/contracts/cache_store.dart';
 export 'package:ratib_hr_mobile/core/contracts/dashboard_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/documents_port.dart';
+export 'package:ratib_hr_mobile/core/contracts/device_registry_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/employee_request_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/erp_http_client.dart';
 export 'package:ratib_hr_mobile/core/contracts/error_mapper.dart';

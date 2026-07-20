@@ -45,7 +45,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is G or later', () {
-    expect(['G', 'H'].contains(AppConfig.phase), isTrue);
+    expect(['G', 'H', 'J'].contains(AppConfig.phase), isTrue);
   });
 
   test('Profile adapter path is Phase G ESS endpoint', () {
