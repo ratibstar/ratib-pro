@@ -12,6 +12,7 @@ import 'package:ratib_hr_mobile/features/profile/profile_repository.dart';
 import 'package:ratib_hr_mobile/core/offline/connectivity_controller.dart';
 import 'package:ratib_hr_mobile/core/offline/offline_sync_service.dart';
 import 'package:ratib_hr_mobile/core/device/device_registry_service.dart';
+import 'package:ratib_hr_mobile/core/push/push_notification_service.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -46,6 +47,7 @@ abstract final class AppLocator {
   static OfflineSyncService? _offlineSync;
   static DeviceRegistryPort? _deviceRegistry;
   static DeviceRegistryService? _deviceRegistryService;
+  static PushNotificationService? _pushNotifications;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -158,6 +160,12 @@ abstract final class AppLocator {
     _deviceRegistryService = deviceRegistryService;
   }
 
+  static void registerPhaseI3({
+    required PushNotificationService pushNotifications,
+  }) {
+    _pushNotifications = pushNotifications;
+  }
+
   static void bindSessionHandlers({
     required void Function() onUnauthorized,
     required Future<void> Function() onSignOut,
@@ -232,6 +240,10 @@ abstract final class AppLocator {
       _deviceRegistry ?? _notRegistered('deviceRegistry');
   static DeviceRegistryService get deviceRegistryService =>
       _deviceRegistryService ?? _notRegistered('deviceRegistryService');
+  static PushNotificationService get pushNotifications =>
+      _pushNotifications ?? _notRegistered('pushNotifications');
+  static MobileDevicePort get mobileDevice =>
+      _deviceRegistry ?? _notRegistered('mobileDevice');
   static PermissionRequestPort get permissionRequests =>
       _notRegistered('permissionRequests');
   static ApprovalPort get approvals => _notRegistered('approvals');

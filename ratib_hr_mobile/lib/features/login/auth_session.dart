@@ -1,4 +1,4 @@
-/// Presentation auth + ESS identity + mobile config gate + device registry.
+/// Presentation auth + ESS identity + mobile config gate + device + push.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +10,7 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
+import 'package:ratib_hr_mobile/core/push/push_notification_service.dart';
 
 enum AuthStatus { unknown, signedOut, signedIn }
 
@@ -19,10 +20,12 @@ final class AuthSession extends ChangeNotifier {
     MePort? me,
     MobileConfigurationService? mobileConfiguration,
     DeviceRegistryService? deviceRegistry,
+    PushNotificationService? pushNotifications,
   })  : _auth = auth,
         _me = me,
         _mobileConfiguration = mobileConfiguration,
-        _deviceRegistry = deviceRegistry;
+        _deviceRegistry = deviceRegistry,
+        _pushNotifications = pushNotifications;
 
   AuthPort get _authPort => _auth ?? AppLocator.auth;
   MePort get _mePort => _me ?? AppLocator.me;
@@ -34,10 +37,20 @@ final class AuthSession extends ChangeNotifier {
   final MePort? _me;
   final MobileConfigurationService? _mobileConfiguration;
   final DeviceRegistryService? _deviceRegistry;
+  final PushNotificationService? _pushNotifications;
 
   AuthStatus status = AuthStatus.unknown;
   AppFailure? lastError;
   bool _signInInProgress = false;
+
+  PushNotificationService? get _pushOrNull {
+    if (_pushNotifications != null) return _pushNotifications;
+    try {
+      return AppLocator.pushNotifications;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> restore() async {
     _signInInProgress = true;
@@ -52,6 +65,7 @@ final class AuthSession extends ChangeNotifier {
       await _resolveEmployeeOrThrow();
       await _mobileConfig.refreshAfterLogin();
       await _registerDeviceSafe();
+      await _registerPushSafe();
       status = AuthStatus.signedIn;
     } catch (e) {
       lastError = e is AppFailure ? e : AppLocator.errors.map(e);
@@ -74,6 +88,7 @@ final class AuthSession extends ChangeNotifier {
       await _resolveEmployeeOrThrow();
       await _mobileConfig.refreshAfterLogin();
       await _registerDeviceSafe();
+      await _registerPushSafe();
       status = AuthStatus.signedIn;
       notifyListeners();
       return true;
@@ -127,6 +142,32 @@ final class AuthSession extends ChangeNotifier {
         return;
       }
       rethrow;
+    }
+  }
+
+  /// Push token → ERP after device register. Soft-fail network; hard-fail revoke.
+  Future<void> _registerPushSafe() async {
+    final push = _pushOrNull;
+    if (push == null) return;
+    try {
+      await push.registerPushAfterDevice();
+    } on AppFailure catch (e) {
+      if (PushNotificationService.isRevokedFailure(e)) {
+        throw AppFailure(
+          code: 'device_revoked',
+          message: e.message ?? 'Device has been revoked',
+        );
+      }
+      if (e.code == 'network' ||
+          e.code == 'timeout' ||
+          e.code == 'config' ||
+          e.code == 'not_found') {
+        return;
+      }
+      // Missing Firebase / permission denied — do not break login.
+      return;
+    } catch (_) {
+      return;
     }
   }
 

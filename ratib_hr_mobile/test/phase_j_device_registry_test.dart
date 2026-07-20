@@ -151,8 +151,8 @@ void main() {
   setUp(EmployeeContext.clear);
   tearDown(EmployeeContext.clear);
 
-  test('Phase marker is J', () {
-    expect(AppConfig.phase, 'J');
+  test('Phase marker is J or later', () {
+    expect(['J', 'I3'].contains(AppConfig.phase), isTrue);
   });
 
   test('Adapter paths and client_app are shared ERP contract', () {
@@ -327,6 +327,17 @@ final class _CountingRegistry implements DeviceRegistryPort {
       {'id': 1, 'status': 'active'};
 
   @override
+  Future<Map<String, Object?>> updatePushToken({
+    required String deviceId,
+    required String pushToken,
+    required String pushProvider,
+    String? platform,
+    String? locale,
+    String? appVersion,
+  }) async =>
+      {'id': 1, 'status': 'active'};
+
+  @override
   Future<void> revoke(int devicePk) async {}
 }
 
@@ -344,6 +355,21 @@ final class _RevokedRegistry implements DeviceRegistryPort {
   Future<Map<String, Object?>> heartbeat({
     required String deviceId,
     String? pushToken,
+    String? appVersion,
+  }) async {
+    throw const AppFailure(
+      code: 'device_revoked',
+      message: 'Device has been revoked',
+    );
+  }
+
+  @override
+  Future<Map<String, Object?>> updatePushToken({
+    required String deviceId,
+    required String pushToken,
+    required String pushProvider,
+    String? platform,
+    String? locale,
     String? appVersion,
   }) async {
     throw const AppFailure(

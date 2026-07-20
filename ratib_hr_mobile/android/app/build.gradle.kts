@@ -14,6 +14,12 @@ if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Apply Google Services only when a real/local google-services.json is present.
+val googleServicesJson = file("google-services.json")
+if (googleServicesJson.exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "sa.rateb.hr.mobile"
     compileSdk = flutter.compileSdkVersion

@@ -28,6 +28,9 @@ import 'package:ratib_hr_mobile/core/device/device_registry_service.dart';
 import 'package:ratib_hr_mobile/core/device/local_device_id_store.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
+import 'package:ratib_hr_mobile/core/push/firebase_push_messaging_gateway.dart';
+import 'package:ratib_hr_mobile/core/push/local_notification_presenter.dart';
+import 'package:ratib_hr_mobile/core/push/push_notification_service.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
@@ -150,4 +153,11 @@ void bootstrapEssCore() {
     deviceRegistry: deviceRegistry,
     deviceRegistryService: deviceRegistryService,
   );
+  final pushNotifications = PushNotificationService(
+    devices: deviceRegistry,
+    deviceIds: LocalDeviceIdStore(cache: cache),
+    messaging: FirebasePushMessagingGateway(),
+    localNotifications: FlutterLocalNotificationPresenter(),
+  );
+  AppLocator.registerPhaseI3(pushNotifications: pushNotifications);
 }

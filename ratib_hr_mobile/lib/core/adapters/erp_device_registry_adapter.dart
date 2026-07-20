@@ -15,6 +15,7 @@ final class ErpDeviceRegistryAdapter implements DeviceRegistryPort {
 
   static const registerPath = '/api/v1/mobile/devices/register';
   static const heartbeatPath = '/api/v1/mobile/devices/heartbeat';
+  static const pushTokenPath = '/api/v1/mobile/devices/push-token';
   static const clientApp = 'ess';
 
   final ErpHttpClient _http;
@@ -63,6 +64,36 @@ final class ErpDeviceRegistryAdapter implements DeviceRegistryPort {
         },
       );
       _ensureSuccess(body, 'device_heartbeat_failed');
+      return _device(body);
+    } catch (e, st) {
+      throw _errors.map(e, st);
+    }
+  }
+
+  @override
+  Future<Map<String, Object?>> updatePushToken({
+    required String deviceId,
+    required String pushToken,
+    required String pushProvider,
+    String? platform,
+    String? locale,
+    String? appVersion,
+  }) async {
+    try {
+      final body = await _http.post(
+        pushTokenPath,
+        body: {
+          'client_app': clientApp,
+          'device_id': deviceId,
+          'push_token': pushToken,
+          'push_provider': pushProvider,
+          if (platform != null && platform.isNotEmpty) 'platform': platform,
+          if (locale != null && locale.isNotEmpty) 'locale': locale,
+          if (appVersion != null && appVersion.isNotEmpty)
+            'app_version': appVersion,
+        },
+      );
+      _ensureSuccess(body, 'device_push_token_failed');
       return _device(body);
     } catch (e, st) {
       throw _errors.map(e, st);

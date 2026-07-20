@@ -10,8 +10,8 @@ import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 abstract final class AppConfig {
   static const String appName = 'RATIB HR Mobile';
   static const String appId = 'sa.rateb.hr.mobile';
-  /// Roadmap phase marker — see docs/ROADMAP.md (A0 → A → C …).
-  static const String phase = 'J';
+  /// Roadmap phase marker — see docs/ROADMAP.md (A0 → A → C … I3 push client).
+  static const String phase = 'I3';
 
   /// ERP remains the single source of truth (documentation constant only).
   static const String sourceOfTruth = 'RATIB ERP';
