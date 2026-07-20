@@ -78,10 +78,11 @@ final class MobileConfigurationService extends ChangeNotifier {
     }
   }
 
-  /// Clears in-memory config (sign-out). Disk cache retained for offline re-login.
+  /// Clears in-memory + disk config on sign-out so next login gets fresh branding.
   Future<void> clearSession() async {
     _current = null;
     lastError = null;
+    await _cache.remove(cacheKey);
     notifyListeners();
   }
 

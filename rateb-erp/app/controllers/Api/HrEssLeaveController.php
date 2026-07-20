@@ -32,9 +32,42 @@ final class HrEssLeaveController extends Controller
         $year = (int) $this->input('year', date('Y'));
 
         $rows = (new HrService())->leaveBalancesForEmployee($employeeId, $year);
+        $rows = $this->essPrimaryLeaveBalances(is_array($rows) ? $rows : []);
         Response::json([
             'success' => true,
             'balances' => $rows,
         ]);
+    }
+
+    /**
+     * ESS leave list: primary types first; drop maternity/paternity/iddah noise.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function essPrimaryLeaveBalances(array $rows): array
+    {
+        $skip = ['maternity' => true, 'paternity' => true, 'iddah' => true];
+        $preferred = ['annual', 'sick', 'emergency', 'unpaid', 'hajj', 'marriage', 'bereavement'];
+        $byCode = [];
+        foreach ($rows as $row) {
+            $code = strtolower(trim((string) ($row['leave_type_code'] ?? '')));
+            if ($code === '' || isset($skip[$code])) {
+                continue;
+            }
+            $byCode[$code] = $row;
+        }
+        $ordered = [];
+        foreach ($preferred as $code) {
+            if (isset($byCode[$code])) {
+                $ordered[] = $byCode[$code];
+                unset($byCode[$code]);
+            }
+        }
+        foreach ($byCode as $row) {
+            $ordered[] = $row;
+        }
+
+        return $ordered;
     }
 }
