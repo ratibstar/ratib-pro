@@ -55,6 +55,7 @@ $router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigContr
 
 $router->post('/api/v1/mobile/devices/register', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'register'], $api);
 $router->post('/api/v1/mobile/devices/heartbeat', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'heartbeat'], $api);
+$router->post('/api/v1/mobile/devices/push-token', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'pushToken'], $api);
 $router->post('/api/v1/mobile/devices/{id}/revoke', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'revoke'], $api);
 
 $router->get('/api/v1/dashboard', [ApiController::class, 'dashboard'], $api);

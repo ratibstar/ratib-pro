@@ -67,11 +67,8 @@ final class EssPhaseJDeviceRegistryTest
 
     private function testDtoStripsSensitive(): void
     {
-        $ref = new ReflectionClass(\Rateb\App\Services\MobileDeviceRegistryService::class);
-        $m = $ref->getMethod('dto');
-        $m->setAccessible(true);
-        $svc = $ref->newInstanceWithoutConstructor();
-        $dto = $m->invoke($svc, [
+        $svc = new \Rateb\App\Services\MobileDeviceService(new ArrayMobileDeviceStore());
+        $dto = $svc->dto([
             'id' => 3,
             'company_id' => 9,
             'user_id' => 4,
@@ -79,6 +76,7 @@ final class EssPhaseJDeviceRegistryTest
             'platform' => 'android',
             'device_id' => 'dev-1',
             'push_token' => 'tok',
+            'push_provider' => 'fcm',
             'app_version' => '1.0',
             'status' => 'active',
             'last_seen_at' => '2026-07-20 10:00:00',
@@ -92,10 +90,8 @@ final class EssPhaseJDeviceRegistryTest
 
     private function testValidationCodes(): void
     {
-        $ref = new ReflectionClass(\Rateb\App\Services\MobileDeviceRegistryService::class);
-        $svc = $ref->newInstanceWithoutConstructor();
-        $reg = $ref->getMethod('register');
-        $bad = $reg->invoke($svc, 1, 1, ['client_app' => 'hack', 'device_id' => 'x']);
+        $svc = new \Rateb\App\Services\MobileDeviceRegistryService(new ArrayMobileDeviceStore());
+        $bad = $svc->register(1, 1, ['client_app' => 'hack', 'device_id' => 'x']);
         $ok = ($bad['status'] ?? 0) === 422
             && ($bad['body']['code'] ?? '') === 'validation_error';
         $this->record('Invalid client_app returns 422 validation_error', $ok);
@@ -103,7 +99,7 @@ final class EssPhaseJDeviceRegistryTest
 
     private function testSqlScoped(): void
     {
-        $src = (string) file_get_contents(RATEB_ROOT . '/app/services/MobileDeviceRegistryService.php');
+        $src = (string) file_get_contents(RATEB_ROOT . '/app/services/MobileDeviceDbStore.php');
         $ok = str_contains($src, 'company_id = :cid AND client_app = :app AND device_id = :did')
             && str_contains($src, 'company_id = :cid AND user_id = :uid AND id = :id')
             && !str_contains($src, 'SELECT *');

@@ -20,6 +20,8 @@ final class MobileDevice extends Model
         'platform',
         'device_id',
         'push_token',
+        'push_provider',
+        'locale',
         'app_version',
         'last_seen_at',
         'status',

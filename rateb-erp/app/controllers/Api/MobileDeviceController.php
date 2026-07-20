@@ -44,6 +44,16 @@ final class MobileDeviceController extends Controller
         Response::json($result['body'], (int) $result['status']);
     }
 
+    public function pushToken(): void
+    {
+        $result = (new MobileDeviceRegistryService())->updatePushToken(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            $this->jsonBody()
+        );
+        Response::json($result['body'], (int) $result['status']);
+    }
+
     /** @return array<string,mixed> */
     private function jsonBody(): array
     {

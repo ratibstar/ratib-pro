@@ -112,7 +112,7 @@ ERP composition: `HrEssPhaseCService` + one controller file per class under `app
 3. Employee work **schedule** source in ERP (dashboard returns `null`)
 4. Real **bank / salary payment** data when HR payroll exposes it
 5. Request **conversation history** model (returns `[]` today)
-6. Push notification device registration (Phase I)
+6. Push notification device registration — see [PHASE_I_PUSH.md](PHASE_I_PUSH.md) / Phase J registry (not Approvals)
 7. Offline sync / queue (Phase G)
 8. Store signing secrets (Phase J)
 9. Documents / payslips thin APIs when ready

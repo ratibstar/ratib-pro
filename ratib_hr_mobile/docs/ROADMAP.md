@@ -36,7 +36,8 @@
 | **F** | Payslips + Documents | **COMPLETE** — see [PHASE_F.md](PHASE_F.md) |
 | **G** | Profile | **COMPLETE** — see [PHASE_G.md](PHASE_G.md) |
 | **H** | Offline hardening | **COMPLETE** — see [PHASE_H.md](PHASE_H.md) |
-| **I** | Approvals (if ERP ready) | Optional / Next |
+| **I Push** | Push notification foundation | **I.0+I.1 COMPLETE** — see [PHASE_I_PUSH.md](PHASE_I_PUSH.md) · [ADR-PUSH-1](../../rateb-erp/offline-v2/docs/ADR-PUSH-1-MOBILE-PUSH-FOUNDATION.md) |
+| **I Approvals** | Approvals (if ERP ready) | Optional / separate from Push |
 | **J** | Unified Mobile Device Registry | **COMPLETE** — see [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md) (design: [PHASE_J.md](PHASE_J.md)) |
 | **K** | Store production release | After A–H |
 
