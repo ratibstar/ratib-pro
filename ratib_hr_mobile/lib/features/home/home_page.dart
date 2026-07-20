@@ -1,4 +1,4 @@
-/// Enterprise ESS dashboard — presentation over DashboardPort.
+/// Enterprise ESS dashboard — modern presentation over DashboardPort.
 library;
 
 import 'package:flutter/material.dart';
@@ -59,18 +59,25 @@ class _HomePageState extends State<HomePage> {
     final name = employee is Map
         ? (employee['name'] ?? cfg?.displayName ?? '').toString()
         : (cfg?.displayName ?? '');
+    final job = employee is Map
+        ? (employee['job_title'] ?? employee['employee_code'] ?? '')
+            .toString()
+            .trim()
+        : '';
     final payroll = _data['payroll_summary'];
-    final payrollAvailable =
-        payroll is Map && payroll['available'] == true;
+    final payrollAvailable = payroll is Map && payroll['available'] == true;
     final notif = _data['notifications_summary'];
     final unread = notif is Map ? (notif['unread'] ?? 0) : 0;
-    final unreadCount = unread is int
-        ? unread
-        : int.tryParse(unread.toString()) ?? 0;
+    final unreadCount =
+        unread is int ? unread : int.tryParse(unread.toString()) ?? 0;
+    final title = (cfg?.displayName.isNotEmpty == true)
+        ? cfg!.displayName
+        : l10n.navHome;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: DsAppBar(
-        title: 'راتب 013',
+        title: title,
         actions: [
           if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
             IconButton(
@@ -94,40 +101,18 @@ class _HomePageState extends State<HomePage> {
                 )
               : RefreshIndicator(
                   onRefresh: _load,
+                  edgeOffset: kToolbarHeight + 12,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.paddingOf(context).top + kToolbarHeight,
+                      bottom: AppSpacing.xxl,
+                    ),
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.lg,
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              name,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'BUILDV013 — تم التحديث',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: const Color(0xFF2DD4BF),
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      DsSectionHeader(title: l10n.homeQuickActions),
+                      _HeroGreeting(name: name, subtitle: job, l10n: l10n),
+                      const SizedBox(height: AppSpacing.md),
                       _QuickActions(l10n: l10n, cfg: cfg),
+                      const SizedBox(height: AppSpacing.lg),
                       DsSectionHeader(title: l10n.homeTodayAttendance),
                       _AttendanceBlock(
                         raw: _data['attendance_today'],
@@ -162,6 +147,88 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+class _HeroGreeting extends StatelessWidget {
+  const _HeroGreeting({
+    required this.name,
+    required this.subtitle,
+    required this.l10n,
+  });
+
+  final String name;
+  final String subtitle;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: isDark
+                ? const [
+                    Color(0xFF0F3D3A),
+                    Color(0xFF0B1F33),
+                    Color(0xFF122B45),
+                  ]
+                : [
+                    scheme.secondary.withValues(alpha: 0.22),
+                    AppColors.navy.withValues(alpha: 0.08),
+                    scheme.surface,
+                  ],
+          ),
+          border: Border.all(
+            color: AppColors.auroraTeal.withValues(alpha: isDark ? 0.35 : 0.25),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.auroraTeal.withValues(alpha: isDark ? 0.18 : 0.1),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.homeGreeting,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.auroraCyan,
+                    letterSpacing: 0.4,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name.isEmpty ? '—' : name,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
+                  ),
+            ),
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AttendanceBlock extends StatelessWidget {
   const _AttendanceBlock({required this.raw, required this.l10n});
   final Object? raw;
@@ -170,31 +237,70 @@ class _AttendanceBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = raw;
+    final scheme = Theme.of(context).colorScheme;
     if (data is! Map || data.isEmpty) {
-      return DsCard(child: Text(l10n.homeNoAttendanceToday));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: _GlassTile(
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.auroraAmber.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.fingerprint_rounded,
+                  color: AppColors.auroraAmber,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  l10n.homeNoAttendanceToday,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              FilledButton.tonal(
+                onPressed: () => context.go(AppRoutes.attendanceCheckIn),
+                child: Text(l10n.navCheckIn),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     final m = data.map((k, v) => MapEntry(k.toString(), v));
-    return DsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if ((m['status'] ?? '').toString().isNotEmpty)
-            DsStatusBadge(label: m['status'].toString()),
-          if ((m['check_in'] ?? m['check_in_at'] ?? '')
-              .toString()
-              .isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              '${l10n.navCheckIn}: ${m['check_in'] ?? m['check_in_at']}',
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: _GlassTile(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if ((m['status'] ?? '').toString().isNotEmpty)
+              DsStatusBadge(label: m['status'].toString()),
+            if ((m['check_in'] ?? m['check_in_at'] ?? '')
+                .toString()
+                .isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                '${l10n.navCheckIn}: ${m['check_in'] ?? m['check_in_at']}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+            if ((m['check_out'] ?? m['check_out_at'] ?? '')
+                .toString()
+                .isNotEmpty)
+              Text(
+                '${l10n.navCheckOut}: ${m['check_out'] ?? m['check_out_at']}',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
           ],
-          if ((m['check_out'] ?? m['check_out_at'] ?? '')
-              .toString()
-              .isNotEmpty)
-            Text(
-              '${l10n.navCheckOut}: ${m['check_out'] ?? m['check_out_at']}',
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -205,41 +311,41 @@ class _LeaveBlock extends StatelessWidget {
   final Object? raw;
   final AppLocalizations l10n;
 
+  static const _accents = [
+    AppColors.auroraTeal,
+    AppColors.auroraCyan,
+    AppColors.auroraAmber,
+  ];
+
   @override
   Widget build(BuildContext context) {
     final data = raw;
     if (data is! List || data.isEmpty) {
-      return DsCard(child: Text(l10n.homeNoLeaveBalances));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: _GlassTile(child: Text(l10n.homeNoLeaveBalances)),
+      );
     }
     final rows = _primaryLeaveRows(data).take(3).toList();
-    final theme = Theme.of(context).textTheme;
-    return DsCard(
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Row(
         children: [
           for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0) const Divider(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    (rows[i]['leave_type_name'] ??
-                            rows[i]['name'] ??
-                            l10n.tabLeave)
-                        .toString(),
-                    style: theme.bodyLarge,
-                  ),
-                ),
-                Text(
-                  (rows[i]['remaining_days'] ??
-                          rows[i]['balance'] ??
-                          rows[i]['entitled_days'] ??
-                          '-')
-                      .toString(),
-                  style: theme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            if (i > 0) const SizedBox(width: 10),
+            Expanded(
+              child: _LeaveMetricTile(
+                label: (rows[i]['leave_type_name'] ??
+                        rows[i]['name'] ??
+                        l10n.tabLeave)
+                    .toString(),
+                value: (rows[i]['remaining_days'] ??
+                        rows[i]['balance'] ??
+                        rows[i]['entitled_days'] ??
+                        '-')
+                    .toString(),
+                accent: _accents[i % _accents.length],
+              ),
             ),
           ],
         ],
@@ -283,6 +389,56 @@ class _LeaveBlock extends StatelessWidget {
   }
 }
 
+class _LeaveMetricTile extends StatelessWidget {
+  const _LeaveMetricTile({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  final String label;
+  final String value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            accent.withValues(alpha: 0.22),
+            accent.withValues(alpha: 0.06),
+          ],
+        ),
+        border: Border.all(color: accent.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: accent,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PendingBlock extends StatelessWidget {
   const _PendingBlock({
     required this.requests,
@@ -303,14 +459,41 @@ class _PendingBlock extends StatelessWidget {
     final text = total == 0
         ? l10n.homeNoPendingRequests
         : '${l10n.homePendingRequests}: $total';
-    return DsCard(
-      onTap: () => context.go(AppRoutes.requests),
-      child: Row(
-        children: [
-          Expanded(child: Text(text)),
-          if (total > 0)
-            DsStatusBadge(label: '$total'),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.requests),
+          borderRadius: BorderRadius.circular(18),
+          child: _GlassTile(
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.auroraRose.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_outlined,
+                    color: AppColors.auroraRose,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                if (total > 0) DsStatusBadge(label: '$total'),
+                const Icon(Icons.chevron_left_rounded),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -325,12 +508,24 @@ class _NotifSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = raw;
     if (data is! Map) {
-      return DsCard(child: Text(l10n.homeNoNotifications));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: _GlassTile(child: Text(l10n.homeNoNotifications)),
+      );
     }
     final unread = data['unread'] ?? 0;
-    return DsCard(
-      onTap: () => context.go(AppRoutes.notifications),
-      child: Text('${l10n.homeUnreadNotifications}: $unread'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.notifications),
+          borderRadius: BorderRadius.circular(18),
+          child: _GlassTile(
+            child: Text('${l10n.homeUnreadNotifications}: $unread'),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -343,12 +538,13 @@ class _PayrollBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = raw;
-    if (data is! Map) {
-      return const SizedBox.shrink();
-    }
+    if (data is! Map) return const SizedBox.shrink();
     final message =
         (data['message'] ?? l10n.homePayrollPlaceholder).toString();
-    return DsCard(child: Text(message));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: _GlassTile(child: Text(message)),
+    );
   }
 }
 
@@ -359,41 +555,146 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actions = <Widget>[];
+    final tiles = <Widget>[];
     if (cfg?.isFeatureEnabled(MobileFeatureKey.attendance) == true) {
-      actions.add(
-        FilledButton.tonalIcon(
-          onPressed: () => context.go(AppRoutes.attendanceCheckIn),
-          icon: const Icon(AppIcons.checkIn),
-          label: Text(l10n.navCheckIn),
+      tiles.add(
+        _ActionTile(
+          label: l10n.navCheckIn,
+          icon: AppIcons.checkIn,
+          colors: const [Color(0xFF0D9488), Color(0xFF0F766E)],
+          onTap: () => context.go(AppRoutes.attendanceCheckIn),
         ),
       );
     }
     if (cfg?.isFeatureEnabled(MobileFeatureKey.leave) == true) {
-      actions.add(
-        FilledButton.tonalIcon(
-          onPressed: () => context.go(AppRoutes.leaveApply),
-          icon: const Icon(AppIcons.leave),
-          label: Text(l10n.navApplyLeave),
+      tiles.add(
+        _ActionTile(
+          label: l10n.navApplyLeave,
+          icon: AppIcons.leave,
+          colors: const [Color(0xFF0284C7), Color(0xFF0369A1)],
+          onTap: () => context.go(AppRoutes.leaveApply),
         ),
       );
     }
     if (cfg?.isFeatureEnabled(MobileFeatureKey.inquiries) == true) {
-      actions.add(
-        FilledButton.tonalIcon(
-          onPressed: () => context.go(AppRoutes.inquiries),
-          icon: const Icon(Icons.support_agent_outlined),
-          label: Text(l10n.navInquiries),
+      tiles.add(
+        _ActionTile(
+          label: l10n.navInquiries,
+          icon: Icons.support_agent_rounded,
+          colors: const [Color(0xFFD97706), Color(0xFFB45309)],
+          onTap: () => context.go(AppRoutes.inquiries),
         ),
       );
     }
+    if (tiles.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        children: actions,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.homeQuickActions,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (var i = 0; i < tiles.length; i++) ...[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(child: tiles[i]),
+              ],
+            ],
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.label,
+    required this.icon,
+    required this.colors,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final List<Color> colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          height: 108,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colors.last.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: Colors.white, size: 26),
+                const Spacer(),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassTile extends StatelessWidget {
+  const _GlassTile({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.white.withValues(alpha: 0.85),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.outline.withValues(alpha: 0.5),
+        ),
+      ),
+      child: child,
     );
   }
 }

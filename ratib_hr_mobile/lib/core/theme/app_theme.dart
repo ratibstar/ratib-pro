@@ -75,11 +75,11 @@ abstract final class AppTheme {
       primaryTextTheme: text,
       appBarTheme: AppBarTheme(
         centerTitle: true,
-        elevation: AppElevation.appBar,
-        scrolledUnderElevation: 0.5,
-        backgroundColor: card,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
         foregroundColor: onCard,
-        titleTextStyle: text.titleLarge,
+        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
@@ -129,6 +129,20 @@ abstract final class AppTheme {
         ),
       ),
       cardColor: card,
+      cardTheme: CardThemeData(
+        color: card,
+        elevation: brightness == Brightness.dark ? 0 : 1,
+        shadowColor: AppColors.navy.withValues(alpha: 0.18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(
+            color: brightness == Brightness.dark
+                ? AppColors.outlineDark.withValues(alpha: 0.65)
+                : AppColors.outline.withValues(alpha: 0.55),
+          ),
+        ),
+        margin: EdgeInsets.zero,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: card,

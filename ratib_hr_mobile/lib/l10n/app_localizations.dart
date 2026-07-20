@@ -88,6 +88,7 @@ class AppLocalizations {
       'homeLeaveBalance': 'رصيد الإجازات',
       'homeRecentNotifications': 'أحدث الإشعارات',
       'homeQuickActions': 'إجراءات سريعة',
+      'homeGreeting': 'مرحباً',
       'homeNoAttendanceToday': 'لا يوجد سجل حضور لهذا اليوم',
       'homeNoLeaveBalances': 'لا توجد أرصدة إجازات',
       'homeNoNotifications': 'لا توجد إشعارات',
@@ -229,6 +230,7 @@ class AppLocalizations {
       'homeLeaveBalance': 'Leave balance',
       'homeRecentNotifications': 'Recent notifications',
       'homeQuickActions': 'Quick actions',
+      'homeGreeting': 'Welcome',
       'homeNoAttendanceToday': 'No attendance record for today',
       'homeNoLeaveBalances': 'No leave balances',
       'homeNoNotifications': 'No notifications',
@@ -378,6 +380,7 @@ class AppLocalizations {
   String get homeLeaveBalance => _t('homeLeaveBalance');
   String get homeRecentNotifications => _t('homeRecentNotifications');
   String get homeQuickActions => _t('homeQuickActions');
+  String get homeGreeting => _t('homeGreeting');
   String get homeNoAttendanceToday => _t('homeNoAttendanceToday');
   String get homeNoLeaveBalances => _t('homeNoLeaveBalances');
   String get homeNoNotifications => _t('homeNoNotifications');

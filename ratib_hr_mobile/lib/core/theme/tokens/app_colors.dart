@@ -20,12 +20,18 @@ abstract final class AppColors {
   static const Color textSecondary = Color(0xFF5B6B7C);
   static const Color textInverse = Color(0xFFFFFFFF);
 
-  // Neutrals (dark)
-  static const Color surfaceDark = Color(0xFF0F172A);
-  static const Color surfaceElevatedDark = Color(0xFF1E293B);
-  static const Color outlineDark = Color(0xFF334155);
-  static const Color textPrimaryDark = Color(0xFFF1F5F9);
-  static const Color textSecondaryDark = Color(0xFF94A3B8);
+  // Neutrals (dark) — richer depth for modern ESS shell
+  static const Color surfaceDark = Color(0xFF07111F);
+  static const Color surfaceElevatedDark = Color(0xFF122033);
+  static const Color outlineDark = Color(0xFF2A3F55);
+  static const Color textPrimaryDark = Color(0xFFF5F8FC);
+  static const Color textSecondaryDark = Color(0xFF9BB0C3);
+
+  /// Soft glow accents (home hero / action tiles).
+  static const Color auroraTeal = Color(0xFF14B8A6);
+  static const Color auroraCyan = Color(0xFF22D3EE);
+  static const Color auroraAmber = Color(0xFFF59E0B);
+  static const Color auroraRose = Color(0xFFFB7185);
 
   // Semantic
   static const Color success = Color(0xFF027A48);
