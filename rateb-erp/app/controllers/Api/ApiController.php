@@ -46,14 +46,18 @@ final class ApiController extends Controller
     public function createToken(): void
     {
         $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
-        if (!IpRateLimiter::attempt('api_token_' . md5($ip), 10, 900)) {
-            Response::json(['success' => false, 'message' => 'Too many attempts'], 429);
-            return;
-        }
+        $ipKey = 'api_token_ip_' . md5($ip);
 
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
         $email = trim((string) ($body['email'] ?? ''));
         $password = (string) ($body['password'] ?? '');
+        $emailKey = 'api_token_email_' . md5(strtolower($email));
+
+        // Count failures only (mirror web login) — do not burn quota on every POST.
+        if (IpRateLimiter::isLimited($ipKey, 30) || IpRateLimiter::isLimited($emailKey, 15)) {
+            Response::json(['success' => false, 'message' => 'Too many attempts'], 429);
+            return;
+        }
 
         $userModel = new \Rateb\App\Models\User();
         $preUser = $userModel->findByEmail($email);
@@ -66,12 +70,18 @@ final class ApiController extends Controller
 
         $user = $preUser;
         if (!$user || !password_verify($password, (string) $user['password'])) {
+            IpRateLimiter::attempt($ipKey, 30, 900);
+            if ($email !== '') {
+                IpRateLimiter::attempt($emailKey, 15, 900);
+            }
             $lockout->recordFailure($email);
             Logger::warning('API token auth failed', ['email' => $email, 'ip' => $ip]);
             Response::json(['success' => false, 'message' => 'Invalid credentials'], 401);
             return;
         }
         $lockout->clearLock((int) $user['id']);
+        IpRateLimiter::reset($ipKey);
+        IpRateLimiter::reset($emailKey);
         if ((string) ($user['status'] ?? '') !== 'active') {
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
