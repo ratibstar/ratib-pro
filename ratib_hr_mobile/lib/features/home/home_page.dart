@@ -70,9 +70,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: DsAppBar(
-        title: cfg?.displayName.isNotEmpty == true
-            ? '${cfg!.displayName} · 0.1.2'
-            : '${l10n.navHome} · 0.1.2',
+        title: 'راتب جديد · 0.1.3',
         actions: [
           if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
             IconButton(
@@ -116,14 +114,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'الإصدار 0.1.2',
+                              'الإصدار 0.1.3 — نسخة جديدة',
                               style: Theme.of(context)
                                   .textTheme
                                   .labelMedium
                                   ?.copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .onSurfaceVariant,
+                                        .primary,
+                                    fontWeight: FontWeight.w700,
                                   ),
                             ),
                           ],

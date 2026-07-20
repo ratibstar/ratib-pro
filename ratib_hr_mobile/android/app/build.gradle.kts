@@ -44,7 +44,8 @@ android {
         }
         create("production") {
             dimension = "env"
-            applicationId = "sa.rateb.hr.mobile"
+            // Temporary distinct id so sideload cannot silently keep an old install.
+            applicationId = "sa.rateb.hr.mobile.fix"
         }
     }
 
