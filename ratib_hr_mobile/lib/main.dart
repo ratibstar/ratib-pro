@@ -1,4 +1,4 @@
-/// RATIB HR Mobile — Phase 1 entry (ERP authentication).
+/// RATIB HR Mobile — Phase A entry (auth + mobile white-label config).
 library;
 
 import 'package:flutter/material.dart';
@@ -8,7 +8,7 @@ import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/di/phase1_bootstrap.dart';
 import 'package:ratib_hr_mobile/core/routing/app_router.dart';
-import 'package:ratib_hr_mobile/core/theme/app_theme.dart';
+import 'package:ratib_hr_mobile/core/theme/brand_theme_factory.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
@@ -46,21 +46,30 @@ class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'RATIB HR',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
-      locale: _locale,
-      supportedLocales: AppConfig.supportedLocales,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      routerConfig: _router,
+    return ListenableBuilder(
+      listenable: AppLocator.mobileConfiguration,
+      builder: (context, _) {
+        final cfg = AppLocator.mobileConfiguration.current;
+        final title = (cfg?.displayName.isNotEmpty == true)
+            ? cfg!.displayName
+            : AppConfig.appName;
+        return MaterialApp.router(
+          title: title,
+          debugShowCheckedModeBanner: false,
+          theme: BrandThemeFactory.lightFrom(cfg),
+          darkTheme: BrandThemeFactory.darkFrom(cfg),
+          themeMode: ThemeMode.system,
+          locale: _locale,
+          supportedLocales: AppConfig.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          routerConfig: _router,
+        );
+      },
     );
   }
 }

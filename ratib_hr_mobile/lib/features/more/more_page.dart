@@ -1,10 +1,11 @@
-/// More tab — Sign Out (Phase 3.2) + existing placeholder links.
+/// More tab — items from MobileConfiguration feature flags.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
+import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -15,45 +16,85 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: DsAppBar(title: l10n.tabMore),
-      body: ListView(
-        children: [
-          DsListItem(
-            title: l10n.signOut,
-            leading: const Icon(Icons.logout),
-            trailing: const SizedBox.shrink(),
-            onTap: () async {
-              await AppLocator.signOut();
-            },
+    return ListenableBuilder(
+      listenable: AppLocator.mobileConfiguration,
+      builder: (context, _) {
+        final cfg = AppLocator.mobileConfiguration.current;
+        final items = cfg == null
+            ? const <ShellMoreItem>[]
+            : ShellNavPolicy.visibleMoreItems(cfg);
+
+        return Scaffold(
+          appBar: DsAppBar(
+            title: cfg?.displayName.isNotEmpty == true
+                ? cfg!.displayName
+                : l10n.tabMore,
           ),
-          DsListItem(
-            title: l10n.navDocuments,
-            leading: const Icon(Icons.folder_open_outlined),
-            onTap: () => context.go(AppRoutes.documents),
+          body: ListView(
+            children: [
+              DsListItem(
+                title: l10n.signOut,
+                leading: const Icon(Icons.logout),
+                trailing: const SizedBox.shrink(),
+                onTap: () async {
+                  await AppLocator.signOut();
+                },
+              ),
+              for (final item in items)
+                DsListItem(
+                  title: _title(item, l10n),
+                  leading: Icon(_icon(item)),
+                  onTap: () => context.go(_route(item)),
+                ),
+            ],
           ),
-          DsListItem(
-            title: l10n.navPayslips,
-            leading: const Icon(Icons.receipt_long_outlined),
-            onTap: () => context.go(AppRoutes.payslips),
-          ),
-          DsListItem(
-            title: l10n.navNotifications,
-            leading: const Icon(Icons.notifications_outlined),
-            onTap: () => context.go(AppRoutes.notifications),
-          ),
-          DsListItem(
-            title: l10n.navProfile,
-            leading: const Icon(Icons.person_outline),
-            onTap: () => context.go(AppRoutes.profile),
-          ),
-          DsListItem(
-            title: l10n.navApprovals,
-            leading: const Icon(Icons.fact_check_outlined),
-            onTap: () => context.go(AppRoutes.approvals),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  static String _title(ShellMoreItem item, AppLocalizations l10n) {
+    switch (item) {
+      case ShellMoreItem.documents:
+        return l10n.navDocuments;
+      case ShellMoreItem.payslips:
+        return l10n.navPayslips;
+      case ShellMoreItem.notifications:
+        return l10n.navNotifications;
+      case ShellMoreItem.profile:
+        return l10n.navProfile;
+      case ShellMoreItem.approvals:
+        return l10n.navApprovals;
+    }
+  }
+
+  static IconData _icon(ShellMoreItem item) {
+    switch (item) {
+      case ShellMoreItem.documents:
+        return Icons.folder_open_outlined;
+      case ShellMoreItem.payslips:
+        return Icons.receipt_long_outlined;
+      case ShellMoreItem.notifications:
+        return Icons.notifications_outlined;
+      case ShellMoreItem.profile:
+        return Icons.person_outline;
+      case ShellMoreItem.approvals:
+        return Icons.fact_check_outlined;
+    }
+  }
+
+  static String _route(ShellMoreItem item) {
+    switch (item) {
+      case ShellMoreItem.documents:
+        return AppRoutes.documents;
+      case ShellMoreItem.payslips:
+        return AppRoutes.payslips;
+      case ShellMoreItem.notifications:
+        return AppRoutes.notifications;
+      case ShellMoreItem.profile:
+        return AppRoutes.profile;
+      case ShellMoreItem.approvals:
+        return AppRoutes.approvals;
+    }
   }
 }

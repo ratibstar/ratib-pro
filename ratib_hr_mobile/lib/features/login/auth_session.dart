@@ -1,4 +1,4 @@
-/// Presentation auth + ESS identity gate.
+/// Presentation auth + ESS identity + mobile config gate.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -8,18 +8,26 @@ import 'package:ratib_hr_mobile/core/contracts/me_port.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
+import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 
 enum AuthStatus { unknown, signedOut, signedIn }
 
 final class AuthSession extends ChangeNotifier {
-  AuthSession({AuthPort? auth, MePort? me})
-      : _auth = auth,
-        _me = me;
+  AuthSession({
+    AuthPort? auth,
+    MePort? me,
+    MobileConfigurationService? mobileConfiguration,
+  })  : _auth = auth,
+        _me = me,
+        _mobileConfiguration = mobileConfiguration;
 
   AuthPort get _authPort => _auth ?? AppLocator.auth;
   MePort get _mePort => _me ?? AppLocator.me;
+  MobileConfigurationService get _mobileConfig =>
+      _mobileConfiguration ?? AppLocator.mobileConfiguration;
   final AuthPort? _auth;
   final MePort? _me;
+  final MobileConfigurationService? _mobileConfiguration;
 
   AuthStatus status = AuthStatus.unknown;
   AppFailure? lastError;
@@ -28,19 +36,18 @@ final class AuthSession extends ChangeNotifier {
     try {
       final ok = await _authPort.hasSession();
       if (!ok) {
-        EmployeeContext.clear();
-        _clearMeCache();
+        await _resetLocal();
         status = AuthStatus.signedOut;
         notifyListeners();
         return;
       }
       await _resolveEmployeeOrThrow();
+      await _mobileConfig.refreshAfterLogin();
       status = AuthStatus.signedIn;
     } catch (e) {
       lastError = e is AppFailure ? e : AppLocator.errors.map(e);
       await _authPort.signOut();
-      EmployeeContext.clear();
-      _clearMeCache();
+      await _resetLocal();
       status = AuthStatus.signedOut;
     }
     notifyListeners();
@@ -54,14 +61,14 @@ final class AuthSession extends ChangeNotifier {
     try {
       await _authPort.signIn(identifier: identifier, secret: secret);
       await _resolveEmployeeOrThrow();
+      await _mobileConfig.refreshAfterLogin();
       status = AuthStatus.signedIn;
       notifyListeners();
       return true;
     } catch (e) {
       lastError = e is AppFailure ? e : AppLocator.errors.map(e);
       await _authPort.signOut();
-      EmployeeContext.clear();
-      _clearMeCache();
+      await _resetLocal();
       status = AuthStatus.signedOut;
       notifyListeners();
       return false;
@@ -70,8 +77,7 @@ final class AuthSession extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _authPort.signOut();
-    EmployeeContext.clear();
-    _clearMeCache();
+    await _resetLocal();
     status = AuthStatus.signedOut;
     lastError = null;
     notifyListeners();
@@ -79,10 +85,8 @@ final class AuthSession extends ChangeNotifier {
 
   /// Phase 3.2 — HTTP 401: drop token + local ESS session (router redirects to login).
   void handleUnauthorized() {
-    // Token usually cleared by Dio interceptor; clear again idempotently.
-    _authPort.signOut().then((_) {
-      EmployeeContext.clear();
-      _clearMeCache();
+    _authPort.signOut().then((_) async {
+      await _resetLocal();
       status = AuthStatus.signedOut;
       lastError = const AppFailure(
         code: 'unauthorized',
@@ -102,6 +106,12 @@ final class AuthSession extends ChangeNotifier {
         message: 'No employee linked to this user',
       );
     }
+  }
+
+  Future<void> _resetLocal() async {
+    EmployeeContext.clear();
+    _clearMeCache();
+    await _mobileConfig.clearSession();
   }
 
   void _clearMeCache() {

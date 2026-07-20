@@ -28,8 +28,8 @@
 | Phase | Name | Status |
 |-------|------|--------|
 | **A0** | Native production Flutter shell | **COMPLETE** — see [PHASE_A0.md](PHASE_A0.md) |
-| **A** | MobileConfig + white-label + feature flags | **NEXT** |
-| **B** | Native hardening / device QA (extends A0) | After A |
+| **A** | MobileConfig + white-label + feature flags | **COMPLETE** — see [PHASE_A.md](PHASE_A.md) |
+| **B** | Native hardening / device QA (extends A0) | **NEXT** |
 | **C** | Attendance | After A |
 | **D** | Leave | After C patterns |
 | **E** | Notifications + Profile | After A |

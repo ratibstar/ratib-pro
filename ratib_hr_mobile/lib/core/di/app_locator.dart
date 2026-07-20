@@ -1,7 +1,8 @@
-/// Dependency injection — Phase 1–3 ESS ports + session hooks.
+/// Dependency injection — ESS ports + MobileConfiguration (Phase A).
 library;
 
 import 'package:ratib_hr_mobile/core/contracts/contracts.dart';
+import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
 
 abstract final class AppLocator {
   static AppEnvironment? _environment;
@@ -13,6 +14,9 @@ abstract final class AppLocator {
   static AttendancePort? _attendance;
   static LeavePort? _leave;
   static NotificationPort? _notifications;
+  static MobileConfigPort? _mobileConfigPort;
+  static MobileConfigurationService? _mobileConfiguration;
+  static CacheStore? _cache;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -49,6 +53,16 @@ abstract final class AppLocator {
     _attendance = attendance;
     _leave = leave;
     _notifications = notifications;
+  }
+
+  static void registerPhaseA({
+    required MobileConfigPort mobileConfigPort,
+    required MobileConfigurationService mobileConfiguration,
+    required CacheStore cache,
+  }) {
+    _mobileConfigPort = mobileConfigPort;
+    _mobileConfiguration = mobileConfiguration;
+    _cache = cache;
   }
 
   /// Phase 3.2 — bind AuthSession without circular imports.
@@ -105,7 +119,13 @@ abstract final class AppLocator {
 
   static ApprovalPort get approvals => _notRegistered('approvals');
 
-  static CacheStore get cache => _notRegistered('cache');
+  static CacheStore get cache => _cache ?? _notRegistered('cache');
+
+  static MobileConfigPort get mobileConfigPort =>
+      _mobileConfigPort ?? _notRegistered('mobileConfigPort');
+
+  static MobileConfigurationService get mobileConfiguration =>
+      _mobileConfiguration ?? _notRegistered('mobileConfiguration');
 
   static BiometricUnlock get biometric => _notRegistered('biometric');
 

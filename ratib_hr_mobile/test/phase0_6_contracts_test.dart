@@ -4,7 +4,7 @@ import 'package:ratib_hr_mobile/core/env/app_flavor.dart';
 
 void main() {
   test('Phase 0.6 contract slots are locked', () {
-    expect(DiModules.contractSlots, hasLength(17));
+    expect(DiModules.contractSlots, hasLength(18));
     expect(AppFlavor.values, hasLength(3));
   });
 }

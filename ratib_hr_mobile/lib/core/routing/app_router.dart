@@ -1,10 +1,13 @@
-/// go_router — Phase 1 auth gate + MVP shell placeholders.
+/// go_router — auth gate + mobile config + feature-flagged routes.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
+import 'package:ratib_hr_mobile/core/shell/shell_nav_policy.dart';
 import 'package:ratib_hr_mobile/features/home/home_page.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/login_page.dart';
@@ -19,9 +22,10 @@ abstract final class AppRouter {
     required AuthSession session,
     required LocaleChanged onLocaleChanged,
   }) {
+    final mobile = AppLocator.mobileConfiguration;
     return GoRouter(
       initialLocation: AppRoutes.login,
-      refreshListenable: session,
+      refreshListenable: Listenable.merge([session, mobile]),
       redirect: (context, state) {
         final loc = state.matchedLocation;
         final onLogin = loc == AppRoutes.login;
@@ -35,11 +39,19 @@ abstract final class AppRouter {
         if (session.status == AuthStatus.signedIn && onLogin) {
           return AppRoutes.home;
         }
-        // ESS identity gate: signed-in without EmployeeContext is invalid.
         if (session.status == AuthStatus.signedIn &&
             !EmployeeContext.isResolved &&
             !onLogin) {
           return AppRoutes.login;
+        }
+        if (session.status == AuthStatus.signedIn && !onLogin) {
+          final cfg = mobile.current;
+          if (cfg == null || !cfg.mobileActive) {
+            return AppRoutes.login;
+          }
+          if (!ShellNavPolicy.isRouteAllowed(cfg, loc)) {
+            return AppRoutes.home;
+          }
         }
         return null;
       },

@@ -15,6 +15,7 @@ export 'package:ratib_hr_mobile/core/contracts/erp_http_client.dart';
 export 'package:ratib_hr_mobile/core/contracts/error_mapper.dart';
 export 'package:ratib_hr_mobile/core/contracts/leave_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/me_port.dart';
+export 'package:ratib_hr_mobile/core/contracts/mobile_config_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/notification_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
 export 'package:ratib_hr_mobile/core/contracts/payslip_port.dart';

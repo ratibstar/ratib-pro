@@ -23,5 +23,6 @@ abstract final class DiModules {
     'BiometricUnlock',
     'OfflineQueuePort',
     'ErrorMapper',
+    'MobileConfigPort',
   ];
 }

@@ -7,12 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 
 abstract final class AppTheme {
-  static ThemeData get light => _build(
+  static ThemeData get light => lightFromSeed(AppColors.teal);
+
+  static ThemeData get dark => darkFromSeed(AppColors.teal);
+
+  /// Runtime white-label seed from ERP `theme_color`.
+  static ThemeData lightFromSeed(Color seed) => _build(
         brightness: Brightness.light,
         scheme: ColorScheme.fromSeed(
-          seedColor: AppColors.teal,
+          seedColor: seed,
           primary: AppColors.navy,
-          secondary: AppColors.teal,
+          secondary: seed,
           surface: AppColors.surface,
           error: AppColors.error,
           brightness: Brightness.light,
@@ -20,14 +25,15 @@ abstract final class AppTheme {
         scaffold: AppColors.surface,
         card: AppColors.surfaceElevated,
         onCard: AppColors.textPrimary,
+        indicator: seed.withOpacity(0.15),
       );
 
-  static ThemeData get dark => _build(
+  static ThemeData darkFromSeed(Color seed) => _build(
         brightness: Brightness.dark,
         scheme: ColorScheme.fromSeed(
-          seedColor: AppColors.teal,
-          primary: AppColors.teal,
-          secondary: AppColors.tealDark,
+          seedColor: seed,
+          primary: seed,
+          secondary: seed,
           surface: AppColors.surfaceDark,
           error: AppColors.error,
           brightness: Brightness.dark,
@@ -35,6 +41,7 @@ abstract final class AppTheme {
         scaffold: AppColors.surfaceDark,
         card: AppColors.surfaceElevatedDark,
         onCard: AppColors.textPrimaryDark,
+        indicator: seed.withOpacity(0.2),
       );
 
   static ThemeData _build({
@@ -43,6 +50,7 @@ abstract final class AppTheme {
     required Color scaffold,
     required Color card,
     required Color onCard,
+    required Color indicator,
   }) {
     final text = brightness == Brightness.light
         ? AppTypography.lightTextTheme(scheme)
@@ -77,7 +85,7 @@ abstract final class AppTheme {
         height: 72,
         elevation: AppElevation.bottomNav,
         backgroundColor: card,
-        indicatorColor: AppColors.teal.withOpacity(0.15),
+        indicatorColor: indicator,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       filledButtonTheme: FilledButtonThemeData(

@@ -52,6 +52,10 @@ class _LoginPageState extends State<LoginPage> {
         return failure.message?.isNotEmpty == true
             ? failure.message!
             : l10n.loginInvalidCredentials;
+      case 'mobile_disabled':
+        return failure.message?.isNotEmpty == true
+            ? failure.message!
+            : l10n.loginMobileDisabled;
       case 'forbidden':
         return failure.message?.isNotEmpty == true
             ? failure.message!
