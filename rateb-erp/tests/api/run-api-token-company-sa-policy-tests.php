@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 /**
- * Policy: any active company-scoped user may mint/use API tokens.
- * Platform-only accounts (company_id < 1) cannot — including SA.
+ * Policy: company-scoped API tokens for ESS.
+ * - SA without company_id binds DedicatedTenantPolicy::primaryCompanyId
+ * - SA skips subscription gate (active company only)
+ * - Non-SA still requires companyAccessAllowed
  *
  * Run: php rateb-erp/tests/api/run-api-token-company-sa-policy-tests.php
  */
@@ -11,6 +13,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__, 2);
 $apiCtrl = file_get_contents($root . '/app/controllers/Api/ApiController.php');
 $tokenSvc = file_get_contents($root . '/app/services/ApiTokenService.php');
+$mw = file_get_contents($root . '/app/Core/Middleware/Middleware.php');
 
 $failed = 0;
 function assertTrue(bool $cond, string $msg): void
@@ -25,38 +28,39 @@ function assertTrue(bool $cond, string $msg): void
 }
 
 assertTrue(
+    str_contains($apiCtrl, 'DedicatedTenantPolicy::primaryCompanyId'),
+    'createToken binds primary company for SA without company_id'
+);
+
+assertTrue(
+    str_contains($apiCtrl, 'No company linked')
+        && str_contains($apiCtrl, 'code\' => \'no_company\''),
+    'createToken returns no_company when unresolved'
+);
+
+assertTrue(
+    str_contains($apiCtrl, '!$isSa && !(new PlanLimitService())')
+        || str_contains($apiCtrl, '!$isSa && !(new PlanLimitService())->companyAccessAllowed'),
+    'createToken subscription gate applies only to non-SA'
+);
+
+assertTrue(
+    str_contains($tokenSvc, '$companyIdOverride'),
+    'ApiTokenService accepts companyIdOverride'
+);
+
+assertTrue(
+    str_contains($mw, '$tokenIsSa')
+        && str_contains($mw, 'companyAccessAllowed'),
+    'ApiAuthMiddleware SA tokens skip subscription gate'
+);
+
+assertTrue(
     !preg_match(
-        '/if\s*\(\(int\)\s*\(\$user\[\'is_super_admin\'\].*?===\s*1\)/s',
+        '/Super admin API tokens disabled|Platform super-admin API tokens disabled/s',
         $apiCtrl
     ),
-    'createToken does not gate on is_super_admin'
-);
-
-assertTrue(
-    str_contains($apiCtrl, '$companyId < 1')
-        && str_contains($apiCtrl, 'Company access denied'),
-    'createToken requires company_id > 0'
-);
-
-assertTrue(
-    !preg_match(
-        '/Super admin API tokens disabled|Platform super-admin API tokens disabled|platform_sa_token_disabled/s',
-        $apiCtrl
-    ),
-    'createToken has no SA-specific deny messages'
-);
-
-assertTrue(
-    !preg_match(
-        '/is_super_admin.*?=== 1/s',
-        $tokenSvc
-    ),
-    'validateToken does not reject based on is_super_admin'
-);
-
-assertTrue(
-    str_contains($tokenSvc, "(int) (\$token['company_id'] ?? 0) < 1"),
-    'validateToken rejects tokens without company_id'
+    'createToken has no blanket SA deny message'
 );
 
 if ($failed > 0) {

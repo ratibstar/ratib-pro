@@ -16,6 +16,7 @@ use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\ApiBranchGuardService;
 use Rateb\App\Services\ApiTokenService;
 use Rateb\App\Services\DashboardService;
+use Rateb\App\Services\DedicatedTenantPolicy;
 use Rateb\App\Services\Logger;
 use Rateb\App\Services\PlanLimitService;
 
@@ -75,17 +76,34 @@ final class ApiController extends Controller
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;
         }
-        // ESS / mobile API tokens are company-scoped. Platform-only accounts
-        // (no company) stay blocked; company users may mint tokens even when
-        // is_super_admin is set (common for seeded company admins).
-        // ApiAuthMiddleware always sets TenantContext::setSuperAdmin(false).
+        // ESS / mobile API tokens are company-scoped. ApiAuthMiddleware always
+        // forces TenantContext::setSuperAdmin(false). Platform SA rows often have
+        // null company_id — bind primary tenant like web Auth::establishSession.
         $companyId = (int) ($user['company_id'] ?? 0);
-        if ($companyId < 1 || !(new PlanLimitService())->companyAccessAllowed($companyId)) {
+        $isSa = (int) ($user['is_super_admin'] ?? 0) === 1;
+        if ($companyId < 1 && $isSa) {
+            $companyId = (int) DedicatedTenantPolicy::primaryCompanyId();
+        }
+        if ($companyId < 1) {
+            Response::json([
+                'success' => false,
+                'code' => 'no_company',
+                'message' => 'No company linked',
+            ], 403);
+            return;
+        }
+        $company = (new Company())->find($companyId);
+        if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
+            return;
+        }
+        // Mirror web SA login: skip subscription gate for super-admin tokens.
+        if (!$isSa && !(new PlanLimitService())->companyAccessAllowed($companyId)) {
             Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return;
         }
 
-        $token = (new ApiTokenService())->createToken((int) $user['id'], 'API Token', 90);
+        $token = (new ApiTokenService())->createToken((int) $user['id'], 'API Token', 90, $companyId);
         Response::json(['success' => true, 'token' => $token['token'], 'expires_at' => $token['expires_at']]);
     }
 

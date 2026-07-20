@@ -48,6 +48,12 @@ class _LoginPageState extends State<LoginPage> {
         failure.code == 'platform_sa_token_disabled') {
       return l10n.loginPlatformSuperAdmin;
     }
+    if (failure.code == 'no_company' || erp.contains('No company linked')) {
+      return l10n.loginNoCompany;
+    }
+    if (erp.contains('Company access denied')) {
+      return l10n.loginCompanyAccessDenied;
+    }
     switch (failure.code) {
       case 'config':
         return l10n.loginConfigMissing;

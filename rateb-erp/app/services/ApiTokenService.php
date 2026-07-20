@@ -8,8 +8,12 @@ use Rateb\App\Models\User;
 
 final class ApiTokenService
 {
-    public function createToken(int $userId, string $name, ?int $expiresDays = 365): array
-    {
+    public function createToken(
+        int $userId,
+        string $name,
+        ?int $expiresDays = 365,
+        ?int $companyIdOverride = null
+    ): array {
         $user = (new User())->find($userId);
         if (!$user) {
             throw new \RuntimeException('User not found');
@@ -19,10 +23,13 @@ final class ApiTokenService
         $hash = hash('sha256', $plain);
 
         $expiresAt = $expiresDays ? date('Y-m-d H:i:s', time() + ($expiresDays * 86400)) : null;
+        $companyId = $companyIdOverride !== null && $companyIdOverride > 0
+            ? $companyIdOverride
+            : (int) ($user['company_id'] ?? 0);
         $modules = [];
         $branchId = null;
-        if (!empty($user['company_id'])) {
-            $modules = (new PlanLimitService())->getLimits((int) $user['company_id'])['modules'] ?? [];
+        if ($companyId > 0) {
+            $modules = (new PlanLimitService())->getLimits($companyId)['modules'] ?? [];
         }
         if (function_exists('rateb_resolve_create_branch_id')) {
             $resolved = rateb_resolve_create_branch_id();
@@ -39,7 +46,7 @@ final class ApiTokenService
 
         (new ApiToken())->create([
             'user_id' => $userId,
-            'company_id' => $user['company_id'],
+            'company_id' => $companyId > 0 ? $companyId : null,
             'branch_id' => $branchId,
             'token_hash' => $hash,
             'name' => $name,

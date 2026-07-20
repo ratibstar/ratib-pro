@@ -70,6 +70,8 @@ class AppLocalizations {
       'loginNetworkError': 'تعذر الاتصال بالخادم',
       'loginInvalidCredentials': 'بيانات الدخول غير صحيحة',
       'loginForbidden': 'الوصول مرفوض',
+      'loginCompanyAccessDenied': 'الشركة غير مفعّلة أو الاشتراك منتهٍ',
+      'loginNoCompany': 'لا توجد شركة مرتبطة بهذا الحساب',
       'loginMobileDisabled': 'تطبيق الجوال غير مفعّل لهذه الشركة',
       'loginRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'loginFailed': 'فشل تسجيل الدخول',
@@ -208,6 +210,8 @@ class AppLocalizations {
       'loginNetworkError': 'Could not reach the server',
       'loginInvalidCredentials': 'Invalid credentials',
       'loginForbidden': 'Access denied',
+      'loginCompanyAccessDenied': 'Company is inactive or subscription expired',
+      'loginNoCompany': 'No company is linked to this account',
       'loginMobileDisabled': 'Mobile app is not enabled for this company',
       'loginRateLimited': 'Too many attempts. Try again later',
       'loginFailed': 'Sign-in failed',
@@ -355,6 +359,8 @@ class AppLocalizations {
   String get loginNetworkError => _t('loginNetworkError');
   String get loginInvalidCredentials => _t('loginInvalidCredentials');
   String get loginForbidden => _t('loginForbidden');
+  String get loginCompanyAccessDenied => _t('loginCompanyAccessDenied');
+  String get loginNoCompany => _t('loginNoCompany');
   String get loginMobileDisabled => _t('loginMobileDisabled');
   String get loginRateLimited => _t('loginRateLimited');
   String get loginFailed => _t('loginFailed');

@@ -177,7 +177,19 @@ final class ApiAuthMiddleware implements MiddlewareInterface
         }
 
         $companyId = (int) ($tokenRow['company_id'] ?? 0);
-        if ($companyId < 1 || !(new \Rateb\App\Services\PlanLimitService())->companyAccessAllowed($companyId)) {
+        if ($companyId < 1) {
+            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
+            return false;
+        }
+        // Mirror web SA login: SA-minted company tokens skip subscription gate.
+        $tokenIsSa = (int) ($tokenRow['is_super_admin'] ?? 0) === 1;
+        if ($tokenIsSa) {
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+                Response::json(['success' => false, 'message' => 'Company access denied'], 403);
+                return false;
+            }
+        } elseif (!(new \Rateb\App\Services\PlanLimitService())->companyAccessAllowed($companyId)) {
             Response::json(['success' => false, 'message' => 'Company access denied'], 403);
             return false;
         }
