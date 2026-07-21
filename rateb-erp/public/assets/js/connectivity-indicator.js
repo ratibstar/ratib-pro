@@ -42,6 +42,17 @@
         }
     }
 
+    function notifySwCloudState(online) {
+        try {
+            if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
+                return;
+            }
+            navigator.serviceWorker.controller.postMessage({
+                type: online ? 'RATEB_CLOUD_ONLINE' : 'RATEB_CLOUD_OFFLINE'
+            });
+        } catch (eSw) { /* ignore */ }
+    }
+
     function apply(online) {
         var node = el();
         if (!node) {
@@ -62,6 +73,7 @@
         if (text) {
             text.textContent = label;
         }
+        notifySwCloudState(on);
         try {
             document.dispatchEvent(new CustomEvent('rateb-connection-badge', {
                 detail: { online: on }

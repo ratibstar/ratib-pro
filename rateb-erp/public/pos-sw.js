@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260721-second-refresh-swr-v101';
+var SW_BUILD_ID = '20260721-offline-fast-abort-v102';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -23,6 +23,12 @@ var SHELL_WARM_TTL_MS = 30 * 60 * 1000;
 var shellWarmRunning = false;
 /** Phase OD — last verified protected-asset warm result (for status messages). */
 var LAST_PROTECTED_CACHE_RESULT = null;
+/**
+ * Soft-offline latch: Wi‑Fi dead but navigator.onLine still true.
+ * Without this, hung fetch() (no Abort) freezes the SW → minutes of black Admin.
+ */
+var cloudDegradedUntil = 0;
+var CLOUD_DEGRADED_TTL_MS = 45000;
 
 /**
  * Phase OD — assets that MUST exist in Cache Storage before offline use.
@@ -1225,19 +1231,22 @@ function matchSoftOnlineExactCache(request, url) {
             }
         }
     } catch (e1) { /* ignore */ }
+    var uniq = [];
+    keys.forEach(function (key) {
+        if (key && uniq.indexOf(key) === -1) {
+            uniq.push(key);
+        }
+    });
+    // Parallel matches — sequential chains stalled under Cache.put contention (black offline).
     return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
-        var chain = Promise.resolve(null);
-        keys.forEach(function (key) {
-            if (!key) {
-                return;
-            }
-            chain = chain.then(function (found) {
-                return found || cache.match(key);
-            });
-        });
-        return chain.then(function (found) {
-            if (found) {
-                return found;
+        return Promise.all(uniq.map(function (key) {
+            return cache.match(key).catch(function () { return null; });
+        })).then(function (hits) {
+            var i;
+            for (i = 0; i < hits.length; i++) {
+                if (hits[i]) {
+                    return hits[i];
+                }
             }
             if (!url || !url.pathname) {
                 return null;
@@ -1306,10 +1315,20 @@ function fetchNavigateNetworkPassthrough(request, timeoutMs) {
         return Promise.reject(new Error('offline'));
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
-    var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        markCloudNetworkDegraded('navigate-passthrough-timeout');
+        if (ctrl) {
+            try { ctrl.abort(); } catch (eAb) { /* ignore */ }
+        }
+    }, ms);
+    var network = fetch(navigateFetchInput(request), {
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(asNonRedirectedResponse).then(function (response) {
         if (!response) {
             return Promise.reject(new Error('empty-response'));
         }
+        clearCloudNetworkDegraded();
         return response;
     });
     var timed = new Promise(function (_resolve, reject) {
@@ -1317,7 +1336,13 @@ function fetchNavigateNetworkPassthrough(request, timeoutMs) {
             reject(new Error('navigate-timeout'));
         }, ms);
     });
-    return Promise.race([network, timed]);
+    return Promise.race([network, timed]).then(function (res) {
+        clearTimeout(timer);
+        return res;
+    }, function (err) {
+        clearTimeout(timer);
+        return Promise.reject(err);
+    });
 }
 
 /**
@@ -1386,6 +1411,10 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         if (!response || !response.ok) {
             return null;
         }
+        // Never Cache.put while offline/degraded — locks Cache API and black-screens the next F5.
+        if (isCloudBrowserOffline()) {
+            return response;
+        }
         // Defer Cache.put past this navigation (+ typical second F5).
         // Immediate puts lock Cache API and made the *next* refresh wait on network.
         var store = new Promise(function (resolve) {
@@ -1401,24 +1430,61 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return response;
     }
 
-    // True offline: instant exact cache only (no deep scans).
+    // True offline / soft-offline latch: instant exact cache only (no network, hard ceiling).
     // Bare /admin miss → last dashboard snapshot (avoids black uncached shell).
+    // Hung Cache.match (put contention) used to black-screen for minutes — race at 280ms.
     if (isCloudBrowserOffline()) {
-        return matchSoftOnlineExactCache(request, url).then(function (hit) {
-            var served = serveCachedFast(hit, true);
-            if (served) {
-                return served;
+        return new Promise(function (resolve) {
+            var settled = false;
+            function finish(res) {
+                if (settled || !res) {
+                    return false;
+                }
+                settled = true;
+                resolve(res);
+                return true;
             }
-            var bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
-            if (/\/admin$/i.test(bareAdmin)) {
-                return matchCachedAdminDashboard(url).then(function (dash) {
-                    var dashServed = serveCachedFast(dash, true);
-                    return dashServed || uncachedAdminBrowseResponse(url);
+            function missFallback() {
+                var bareAdmin = '';
+                try {
+                    bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
+                } catch (eB) { /* ignore */ }
+                if (/\/admin$/i.test(bareAdmin)) {
+                    return Promise.race([
+                        matchCachedAdminDashboard(url).catch(function () { return null; }),
+                        new Promise(function (r) { setTimeout(function () { r(null); }, 80); })
+                    ]).then(function (dash) {
+                        return serveCachedFast(dash, true) || uncachedAdminBrowseResponse(url);
+                    });
+                }
+                return Promise.resolve(uncachedAdminBrowseResponse(url));
+            }
+            matchSoftOnlineExactCache(request, url).then(function (hit) {
+                if (settled) {
+                    return;
+                }
+                var served = serveCachedFast(hit, true);
+                if (served) {
+                    finish(served);
+                    return;
+                }
+                missFallback().then(function (fb) {
+                    finish(fb);
                 });
-            }
-            return uncachedAdminBrowseResponse(url);
-        }).catch(function () {
-            return uncachedAdminBrowseResponse(url);
+            }).catch(function () {
+                if (settled) {
+                    return;
+                }
+                missFallback().then(function (fb) {
+                    finish(fb);
+                });
+            });
+            setTimeout(function () {
+                if (settled) {
+                    return;
+                }
+                finish(uncachedAdminBrowseResponse(url));
+            }, 280);
         });
     }
 
@@ -1490,14 +1556,18 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             if (settled) {
                 return;
             }
-            // Do NOT await hanging cacheP — that left /admin black for ~40–60s.
-            Promise.race([
-                cacheP,
-                Promise.resolve(null)
-            ]).then(function (hit) {
+            // Give cacheP a tiny grace; do NOT await it forever (was 40–60s black).
+            var hitNow = null;
+            var saw = false;
+            cacheP.then(function (hit) {
+                hitNow = hit;
+                saw = true;
+            });
+            setTimeout(function () {
                 if (settled) {
                     return;
                 }
+                var hit = saw ? hitNow : null;
                 var served = serveCachedFast(hit, false);
                 if (served) {
                     finish(served);
@@ -1527,7 +1597,7 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 } catch (eShell2) {
                     finish(uncachedAdminBrowseResponse(url));
                 }
-            });
+            }, 40);
         }, 700);
     });
 }
@@ -2422,18 +2492,30 @@ function isLocalApplianceOrigin() {
     }
 }
 
+function markCloudNetworkDegraded(/* reason */) {
+    cloudDegradedUntil = Date.now() + CLOUD_DEGRADED_TTL_MS;
+}
+
+function clearCloudNetworkDegraded() {
+    cloudDegradedUntil = 0;
+}
+
 /**
  * Cloud tab with no internet — use cache/shell fail-fast.
+ * Includes soft-offline latch (Wi‑Fi dead, navigator.onLine still true).
  * Never true on local appliance (PHP built-in server is still up).
  */
 function isCloudBrowserOffline() {
     if (isLocalApplianceOrigin()) {
         return false;
     }
-    return !!(self.navigator && self.navigator.onLine === false);
+    if (self.navigator && self.navigator.onLine === false) {
+        return true;
+    }
+    return Date.now() < cloudDegradedUntil;
 }
 
-/** Offline must not wait on hanging fetch(); online uses a short race timeout. */
+/** Offline must not wait on hanging fetch(); online uses AbortController race. */
 function fetchErpAssetNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.resolve(null);
@@ -2447,15 +2529,27 @@ function fetchErpAssetNetwork(request, timeoutMs) {
         });
     }
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 2500;
-    var network = fetch(request, { credentials: 'same-origin' }).then(function (response) {
-        return response && response.ok ? response : null;
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        if (ctrl) {
+            try { ctrl.abort(); } catch (eAb) { /* ignore */ }
+        }
+    }, ms);
+    return fetch(request, {
+        credentials: 'same-origin',
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(function (response) {
+        if (response && response.ok) {
+            clearCloudNetworkDegraded();
+            return response;
+        }
+        return null;
     }).catch(function () {
         return null;
+    }).then(function (res) {
+        clearTimeout(timer);
+        return res;
     });
-    var timed = new Promise(function (resolve) {
-        setTimeout(function () { resolve(null); }, ms);
-    });
-    return Promise.race([network, timed]);
 }
 
 /**
@@ -2558,14 +2652,24 @@ function fetchNavigateNetwork(request, timeoutMs) {
     if (isCloudBrowserOffline()) {
         return Promise.reject(new Error('offline'));
     }
-    // Cloud pages: prefer a bounded wait, then fall back to cache (network-first navigation).
+    // Cloud pages: bounded wait + AbortController (hung fetch froze SW → black offline).
     var ms = typeof timeoutMs === 'number' ? timeoutMs : 4500;
-    var network = fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (response) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        markCloudNetworkDegraded('navigate-timeout');
+        if (ctrl) {
+            try { ctrl.abort(); } catch (eAb) { /* ignore */ }
+        }
+    }, ms);
+    var network = fetch(navigateFetchInput(request), {
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(asNonRedirectedResponse).then(function (response) {
         // Non-OK (404/500) must fall through to cache — never paint server errors over
         // a good offline snapshot (edit→back to companies-approvals).
         if (!response || !response.ok) {
             return Promise.reject(new Error('bad-navigate-status'));
         }
+        clearCloudNetworkDegraded();
         return response;
     });
     var timed = new Promise(function (_resolve, reject) {
@@ -2573,7 +2677,13 @@ function fetchNavigateNetwork(request, timeoutMs) {
             reject(new Error('navigate-timeout'));
         }, ms);
     });
-    return Promise.race([network, timed]);
+    return Promise.race([network, timed]).then(function (res) {
+        clearTimeout(timer);
+        return res;
+    }, function (err) {
+        clearTimeout(timer);
+        return Promise.reject(err);
+    });
 }
 
 function migrateErpCoexistCaches(keys) {
@@ -3425,6 +3535,14 @@ self.addEventListener('message', function (event) {
     var data = event.data || {};
     if (data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+        return;
+    }
+    if (data.type === 'RATEB_CLOUD_OFFLINE') {
+        markCloudNetworkDegraded('client');
+        return;
+    }
+    if (data.type === 'RATEB_CLOUD_ONLINE') {
+        clearCloudNetworkDegraded();
         return;
     }
     if (data.type === 'CLIENTS_CLAIM') {
