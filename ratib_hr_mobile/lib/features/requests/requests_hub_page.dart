@@ -15,7 +15,7 @@ class RequestsHubPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return DsPageScaffold(
-      title: l10n.navRequests,
+      title: l10n.tabRequests,
       body: ListView(
         padding: const EdgeInsets.only(top: 8, bottom: 32),
         children: [
