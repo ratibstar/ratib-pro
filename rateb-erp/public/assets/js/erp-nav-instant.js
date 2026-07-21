@@ -216,6 +216,44 @@
         }
     }
 
+    /** Heavy PHP pages: soft-nav must wait longer than the default 1.4s ceiling. */
+    function isHeavyNavHref(href) {
+        try {
+            var p = new URL(href, root.location.href).pathname.toLowerCase();
+            return /\/access-control\/matrix(?:\/|$)/.test(p)
+                || /\/chart-of-accounts(?:\/|$)/.test(p)
+                || /\/company-permissions(?:\/|$)/.test(p)
+                || /\/roles(?:\/|$)/.test(p)
+                || /\/permissions(?:\/|$)/.test(p)
+                || /\/audit(?:\/|$)/.test(p)
+                || /\/oversight(?:\/|$)/.test(p);
+        } catch (eH) {
+            return false;
+        }
+    }
+
+    function ensureAgentAppsCss(href) {
+        try {
+            if (!/\/admin\/(?:ops\/)?(?:agent-apps|mobile-apps)(?:\/|$|\?)/i.test(String(href || ''))) {
+                return;
+            }
+            if (document.getElementById('rateb-agent-apps-css')
+                || document.querySelector('link[href*="agent-apps.css"]')) {
+                return;
+            }
+            var map = root.__RATEB_MODULE_CSS__ || {};
+            var hrefCss = map.agentApps || '';
+            if (!hrefCss) {
+                return;
+            }
+            var link = document.createElement('link');
+            link.id = 'rateb-agent-apps-css';
+            link.rel = 'stylesheet';
+            link.href = hrefCss;
+            document.head.appendChild(link);
+        } catch (eCss) { /* ignore */ }
+    }
+
     function fetchWithTimeout(url, opts, ms) {
         opts = opts || {};
         var timedOut = false;
@@ -775,8 +813,8 @@
 
     function fetchNetworkHtml(href) {
         // Generous timeout: SW no longer kills soft-nav at 700ms; PHP pages can
-        // be 1–3s cold. Cache race still paints instantly when a snapshot exists.
-        var timeoutMs = isBareAdminHref(href) ? 4000 : 8000;
+        // be 1–3s cold (matrix/COA heavier). Cache race still paints instantly when a snapshot exists.
+        var timeoutMs = isBareAdminHref(href) ? 4000 : (isHeavyNavHref(href) ? 15000 : 8000);
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -819,19 +857,26 @@
             return null;
         });
 
-        var ceilingMs = isUiOffline() ? 350 : (isBareAdminHref(href) ? 800 : 1400);
+        var heavy = isHeavyNavHref(href);
+        // Heavy PHP pages: no early race abort — wait for network/cache (fetch timeout is backstop).
+        var ceilingMs = isUiOffline()
+            ? 350
+            : (isBareAdminHref(href) ? 800 : (heavy ? 0 : 1400));
         return new Promise(function (resolve, reject) {
             var settled = false;
-            var timer = root.setTimeout(function () {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
-                    try { networkPromise._ratebAbort(); } catch (eAb2) { /* ignore */ }
-                }
-                reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
-            }, ceilingMs);
+            var timer = null;
+            if (ceilingMs > 0) {
+                timer = root.setTimeout(function () {
+                    if (settled) {
+                        return;
+                    }
+                    settled = true;
+                    if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
+                        try { networkPromise._ratebAbort(); } catch (eAb2) { /* ignore */ }
+                    }
+                    reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
+                }, ceilingMs);
+            }
 
             // Expose abort so a newer sidebar click can cancel this race.
             inflightAbort = function () {
@@ -839,7 +884,9 @@
                     return;
                 }
                 settled = true;
-                root.clearTimeout(timer);
+                if (timer) {
+                    root.clearTimeout(timer);
+                }
                 if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
                     try { networkPromise._ratebAbort(); } catch (eAb3) { /* ignore */ }
                 }
@@ -851,7 +898,9 @@
                     return;
                 }
                 settled = true;
-                root.clearTimeout(timer);
+                if (timer) {
+                    root.clearTimeout(timer);
+                }
                 if (pack.fromCache && networkPromise && typeof networkPromise._ratebAbort === 'function') {
                     try { networkPromise._ratebAbort(); } catch (eAb) { /* ignore */ }
                     if (!isUiOffline()) {
@@ -978,8 +1027,10 @@
         navigating = true;
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
-        // Safety unlock aligned with fetch ceiling (was 4.5–9s — sidebar felt frozen).
-        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 1600 : 2200);
+        // Safety unlock aligned with fetch ceiling (heavy pages need more headroom).
+        var unlockMs = isUiOffline()
+            ? 400
+            : (isBareAdminHref(href) ? 1600 : (isHeavyNavHref(href) ? 16000 : 2200));
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
@@ -1016,6 +1067,7 @@
                 throw new Error('missing_main');
             }
             cleanupSoftNavUiArtifacts();
+            ensureAgentAppsCss(pack.finalUrl || href);
             curMain.innerHTML = nextMain.innerHTML;
             syncMeta(doc);
             updateActiveNav(pack.finalUrl);

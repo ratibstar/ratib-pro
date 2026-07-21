@@ -5,7 +5,7 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
 var SW_BUILD_ID = '20260721-nav-instant-feedback-v91';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';

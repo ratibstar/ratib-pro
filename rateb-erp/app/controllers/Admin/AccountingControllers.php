@@ -46,15 +46,18 @@ final class AccessControlController extends Controller
     {
         $authz = new \Rateb\App\Services\AuthorizationService();
         $companyId = $this->scopedCompanyId();
-        if ($companyId > 0) {
+        // Bootstrap only when tenant roles are missing — never rewrite catalogs on every GET.
+        if ($companyId > 0 && !$authz->companyHasTenantRoleBootstrap($companyId)) {
             $authz->ensureCompanyRoles($companyId);
         }
-        $authz->dedupeDuplicateRoles();
+        // dedupeDuplicateRoles is write-heavy maintenance — not a page-view side effect.
+        $scope = $companyId > 0 ? $companyId : 0;
+        $roles = $authz->allRoles($scope);
         $this->view('admin/access-control/matrix', [
             'title' => __('permission_matrix'),
-            'roles' => $authz->allRoles($companyId > 0 ? $companyId : 0),
+            'roles' => $roles,
             'permissionGroups' => $authz->allPermissionsGrouped(),
-            'matrix' => $authz->rolePermissionMatrix($companyId > 0 ? $companyId : 0),
+            'matrix' => $authz->rolePermissionMatrixForRoles($roles),
             'csrf' => Csrf::token(),
             'scopedCompanyId' => $companyId,
         ], 'main');

@@ -12,7 +12,7 @@
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
     var GUARD_BUILD = '20260719-block-offline-hard-refresh-v53';
-    var CACHE_NAMES = ['rateb-erp-ops-pages-v35', 'rateb-erp-coexist-v34'];
+    var CACHE_NAMES = ['rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-coexist-v34'];
     var flushing = false;
 
     /** Hard refresh / reload while offline blacks the page (Ctrl+F5 bypasses SW). */

@@ -407,12 +407,65 @@ final class AuthorizationService
         );
     }
 
+    /** True when company already has the expected tenant role slugs (skip GET bootstrap). */
+    public function companyHasTenantRoleBootstrap(int $companyId): bool
+    {
+        if ($companyId < 1) {
+            return true;
+        }
+        $slugs = self::tenantRoleSlugs();
+        if ($slugs === []) {
+            return true;
+        }
+        $placeholders = implode(',', array_fill(0, count($slugs), '?'));
+        $params = array_merge([$companyId], $slugs);
+        $row = (new Role())->queryOne(
+            'SELECT COUNT(DISTINCT slug) AS c FROM rateb_roles
+             WHERE company_id = ? AND slug IN (' . $placeholders . ')',
+            $params
+        );
+
+        return (int) ($row['c'] ?? 0) >= count($slugs);
+    }
+
     /** @return array<int, array<int, int>> roleId => permission ids */
     public function rolePermissionMatrix(?int $companyId = null): array
     {
+        return $this->rolePermissionMatrixForRoles($this->allRoles($companyId));
+    }
+
+    /**
+     * One query for all role↔permission links (avoids N+1 on matrix pages).
+     *
+     * @param list<array<string, mixed>> $roles
+     * @return array<int, array<int, int>> roleId => permission ids
+     */
+    public function rolePermissionMatrixForRoles(array $roles): array
+    {
         $matrix = [];
-        foreach ($this->allRoles($companyId) as $role) {
-            $matrix[(int) $role['id']] = $this->getRolePermissionIds((int) $role['id']);
+        $ids = [];
+        foreach ($roles as $role) {
+            $id = (int) ($role['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $matrix[$id] = [];
+            $ids[] = $id;
+        }
+        if ($ids === []) {
+            return $matrix;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = (new Permission())->query(
+            'SELECT role_id, permission_id FROM rateb_role_permissions WHERE role_id IN (' . $placeholders . ')',
+            $ids
+        );
+        foreach ($rows as $row) {
+            $rid = (int) ($row['role_id'] ?? 0);
+            if (!isset($matrix[$rid])) {
+                continue;
+            }
+            $matrix[$rid][] = (int) ($row['permission_id'] ?? 0);
         }
 
         return $matrix;
