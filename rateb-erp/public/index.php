@@ -52,6 +52,7 @@ if (is_file($kernelFile)) {
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
+    header('X-Rateb-Erp-Build: ecb6a6f0-device-registry');
 }
 
 register_shutdown_function(static function (): void {
