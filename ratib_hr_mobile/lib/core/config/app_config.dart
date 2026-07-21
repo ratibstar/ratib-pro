@@ -13,6 +13,8 @@ abstract final class AppConfig {
   /// Roadmap phase marker — see docs/ROADMAP.md.
   static const String phase = 'I3+PR';
   static const String versionLabel = '0.1.12';
+  /// ASCII stamp — must appear in release libapp.so for install verification.
+  static const String buildStamp = '<<<RATIB_BUILD_0812>>>';
 
   /// ERP remains the single source of truth (documentation constant only).
   static const String sourceOfTruth = 'RATIB ERP';

@@ -54,7 +54,7 @@ android {
             dimension = "env"
             // Brand-new id so this install cannot collide with leftover
             // راتب / راتب 015–018 / راتب-كل-الصفحات packages on the phone.
-            applicationId = "sa.rateb.hr.mobile.new1"
+            applicationId = "sa.rateb.hr.mobile.z812"
         }
     }
 
