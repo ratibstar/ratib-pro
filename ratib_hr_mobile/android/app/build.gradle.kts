@@ -52,7 +52,7 @@ android {
         }
         create("production") {
             dimension = "env"
-            applicationId = "sa.rateb.hr.mobile.v017"
+            applicationId = "sa.rateb.hr.mobile.v018"
         }
     }
 

@@ -1,11 +1,9 @@
-/// Permission (short-exit) requests list — ERP PermissionRequestPort only.
+/// Permission requests — apply form + my requests list on one screen.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
-import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -18,6 +16,11 @@ class PermissionRequestsPage extends StatefulWidget {
 }
 
 class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
+  final _reason = TextEditingController();
+  DateTime? _date;
+  TimeOfDay? _from;
+  TimeOfDay? _to;
+  bool _busy = false;
   bool _loading = true;
   String? _error;
   List<Map<String, Object?>> _items = const [];
@@ -27,6 +30,18 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
     super.initState();
     _load();
   }
+
+  @override
+  void dispose() {
+    _reason.dispose();
+    super.dispose();
+  }
+
+  String _isoDate(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  String _hhmm(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Future<void> _load() async {
     setState(() {
@@ -50,81 +65,208 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
     }
   }
 
-  void _openApply() => context.go(AppRoutes.permissionApply);
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _pickFrom() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _from ?? const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (picked != null) setState(() => _from = picked);
+  }
+
+  Future<void> _pickTo() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _to ?? _from ?? const TimeOfDay(hour: 11, minute: 0),
+    );
+    if (picked != null) setState(() => _to = picked);
+  }
+
+  Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
+    if (_date == null || _from == null || _to == null) {
+      DsSnackbar.show(
+        context,
+        message: l10n.permissionFormRequired,
+        kind: DsSnackbarKind.error,
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await AppLocator.permissionRequests.submit({
+        'permission_date': _isoDate(_date!),
+        'time_from': _hhmm(_from!),
+        'time_to': _hhmm(_to!),
+        if (_reason.text.trim().isNotEmpty) 'reason': _reason.text.trim(),
+      });
+      if (!mounted) return;
+      _reason.clear();
+      setState(() {
+        _date = null;
+        _from = null;
+        _to = null;
+      });
+      DsSnackbar.show(
+        context,
+        message: l10n.permissionApplySuccess,
+        kind: DsSnackbarKind.success,
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      DsSnackbar.show(
+        context,
+        message: _errorMessage(l10n, f),
+        kind: DsSnackbarKind.error,
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _errorMessage(AppLocalizations l10n, AppFailure f) {
+    switch (f.code) {
+      case 'duplicate_request':
+        return l10n.permissionDuplicate;
+      case 'validation_error':
+        return f.message?.isNotEmpty == true
+            ? f.message!
+            : l10n.permissionFormRequired;
+      case 'network':
+      case 'timeout':
+        return l10n.loginNetworkError;
+      default:
+        return f.message?.isNotEmpty == true
+            ? f.message!
+            : l10n.genericLoadFailed;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return DsPageScaffold(
       title: l10n.navPermissionRequests,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: FilledButton.icon(
-              onPressed: _openApply,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.permissionApply),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 40),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.permissionApplyHint,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
             ),
-          ),
-          Expanded(
-            child: _loading
-                ? DsLoadingState(message: l10n.genericLoading)
-                : _error != null
-                    ? DsErrorState(
-                        title: l10n.genericLoadFailed,
-                        message: _error,
-                        actionLabel: l10n.homeRetry,
-                        onAction: _load,
-                      )
-                    : _items.isEmpty
-                        ? DsEmptyState(
-                            title: l10n.permissionRequestsEmpty,
-                            message: l10n.permissionApplyHint,
-                            actionLabel: l10n.permissionApply,
-                            onAction: _openApply,
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.builder(
-                              padding:
-                                  const EdgeInsets.only(top: 0, bottom: 24),
-                              itemCount: _items.length,
-                              itemBuilder: (context, i) {
-                                final row = _items[i];
-                                final date =
-                                    (row['permission_date'] ?? '').toString();
-                                final from =
-                                    (row['time_from'] ?? '').toString();
-                                final to = (row['time_to'] ?? '').toString();
-                                final status =
-                                    (row['status'] ?? '').toString();
-                                final reason =
-                                    (row['reason'] ?? '').toString();
-                                final window = [
-                                  if (from.isNotEmpty) from,
-                                  if (to.isNotEmpty) to,
-                                ].join(' – ');
-                                return DsListItem(
-                                  title: date.isNotEmpty
-                                      ? date
-                                      : l10n.navPermissionRequests,
-                                  subtitle: [
-                                    if (window.isNotEmpty) window,
-                                    if (status.isNotEmpty) status,
-                                    if (reason.isNotEmpty) reason,
-                                  ].join(' · '),
-                                  leading: const DsIconBadge(
-                                    icon: Icons.schedule_outlined,
-                                    color: AppColors.auroraTeal,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
+            DsSectionHeader(title: l10n.permissionDate),
+            DsListItem(
+              title: l10n.permissionDate,
+              subtitle: _date == null ? '—' : _isoDate(_date!),
+              leading: const DsIconBadge(
+                icon: Icons.event,
+                color: AppColors.auroraTeal,
+              ),
+              onTap: _busy ? null : _pickDate,
+            ),
+            DsSectionHeader(title: l10n.permissionTime),
+            DsListItem(
+              title: l10n.permissionTimeFrom,
+              subtitle: _from == null ? '—' : _hhmm(_from!),
+              leading: const DsIconBadge(
+                icon: Icons.schedule,
+                color: AppColors.auroraTeal,
+              ),
+              onTap: _busy ? null : _pickFrom,
+            ),
+            DsListItem(
+              title: l10n.permissionTimeTo,
+              subtitle: _to == null ? '—' : _hhmm(_to!),
+              leading: const DsIconBadge(
+                icon: Icons.schedule_outlined,
+                color: AppColors.auroraTeal,
+              ),
+              onTap: _busy ? null : _pickTo,
+            ),
+            DsSectionHeader(title: l10n.permissionReason),
+            DsCard(
+              child: TextField(
+                controller: _reason,
+                enabled: !_busy,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: l10n.permissionReasonOptional,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FilledButton(
+                onPressed: _busy ? null : _submit,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    _busy ? l10n.genericLoading : l10n.permissionSubmit,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            DsSectionHeader(title: l10n.permissionMyRequests),
+            if (_loading)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: DsLoadingState(message: l10n.genericLoading),
+              )
+            else if (_error != null)
+              DsErrorState(
+                title: l10n.genericLoadFailed,
+                message: _error,
+                actionLabel: l10n.homeRetry,
+                onAction: _load,
+              )
+            else if (_items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.permissionRequestsEmpty),
+              )
+            else
+              for (final row in _items)
+                DsListItem(
+                  title: (row['permission_date'] ?? l10n.navPermissionRequests)
+                      .toString(),
+                  subtitle: [
+                    if ((row['time_from'] ?? '').toString().isNotEmpty ||
+                        (row['time_to'] ?? '').toString().isNotEmpty)
+                      '${row['time_from'] ?? ''} – ${row['time_to'] ?? ''}',
+                    if ((row['status'] ?? '').toString().isNotEmpty)
+                      row['status'].toString(),
+                    if ((row['reason'] ?? '').toString().isNotEmpty)
+                      row['reason'].toString(),
+                  ].where((e) => e.trim().isNotEmpty).join(' · '),
+                  leading: const DsIconBadge(
+                    icon: Icons.history,
+                    color: AppColors.auroraCyan,
+                  ),
+                ),
+          ],
+        ),
       ),
     );
   }

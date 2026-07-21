@@ -28,7 +28,6 @@ import 'package:ratib_hr_mobile/features/payslips/payslips_list_screen.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_screen.dart';
 import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
 import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
-import 'package:ratib_hr_mobile/features/requests/permission_apply_page.dart';
 import 'package:ratib_hr_mobile/features/requests/permission_requests_page.dart';
 import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
 import 'package:ratib_hr_mobile/features/requests/requests_hub_page.dart';
@@ -169,8 +168,9 @@ abstract final class AppRouter {
                       routes: [
                         GoRoute(
                           path: 'apply',
+                          // Same screen — form is inline (no separate page).
                           builder: (context, state) =>
-                              const PermissionApplyPage(),
+                              const PermissionRequestsPage(),
                         ),
                       ],
                     ),

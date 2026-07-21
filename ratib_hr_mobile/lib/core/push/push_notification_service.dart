@@ -72,7 +72,7 @@ final class PushNotificationService {
       pushToken: pushToken,
       pushProvider: _provider(),
       platform: _platform(),
-      appVersion: '0.1.7',
+      appVersion: '0.1.8',
     );
   }
 
