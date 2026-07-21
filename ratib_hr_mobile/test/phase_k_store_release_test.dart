@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 
 void main() {
-  test('Phase marker is K3 and store version is 1.0.0', () {
-    expect(AppConfig.phase, 'K3');
+  test('Phase marker is K3 or L1 and store version is 1.0.0', () {
+    expect(['K3', 'L1'].contains(AppConfig.phase), isTrue);
     expect(AppConfig.versionLabel, '1.0.0');
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });

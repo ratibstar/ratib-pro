@@ -44,6 +44,7 @@
 | **K1** | Android production signing automation | **COMPLETE** — see [PHASE_K1.md](PHASE_K1.md) |
 | **K2** | Google Play release preparation | **COMPLETE (prep — no upload)** — see [PHASE_K2.md](PHASE_K2.md) · [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md) |
 | **K3** | Google Play Internal release checklist | **COMPLETE (checklist — no upload)** — see [PHASE_K3.md](PHASE_K3.md) |
+| **L1** | iOS production build preparation | **COMPLETE (prep — Mac compile pending)** — see [PHASE_L1.md](PHASE_L1.md) |
 
 ---
 

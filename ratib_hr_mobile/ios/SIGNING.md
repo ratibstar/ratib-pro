@@ -45,6 +45,10 @@ Then in Xcode:
 6. Product → Archive → Distribute App (use `ExportOptions.plist.example` as template)
 7. Never commit `.p12`, provisioning profiles, AuthKey `.p8`, or real `GoogleService-Info.plist`
 
+## Phase L1 (build prep)
+
+Operator Mac path and TestFlight checklist: [docs/PHASE_L1.md](../docs/PHASE_L1.md) · `tool/build_ios_macos.sh`
+
 ## Phase K (store upload)
 
 1. Set Apple Team ID in a local `ExportOptions.plist` (from `ExportOptions.plist.example`).

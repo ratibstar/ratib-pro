@@ -5,8 +5,8 @@
 | | |
 |--|--|
 | Official ESS app | `ratib_hr_mobile` |
-| Current phase | **K3 — Google Play Internal Release Checklist** |
-| Next phase | Operator Internal upload (Play Console) + store assets + iOS Archive (Mac) |
+| Current phase | **L1 — iOS Production Build Preparation** |
+| Next phase | Mac `./tool/build_ios_macos.sh` + Xcode Archive → TestFlight (operator) |
 | Source of truth | RATIB ERP |
 | Not this | `rateb_mobile`, Capacitor Admin, Tracking |
 
