@@ -632,6 +632,15 @@
         if (title) {
             document.title = title.textContent || document.title;
         }
+        // Topbar <h1> lives outside #rateb-main-content — soft-nav must sync it or
+        // the previous page title sticks (e.g. مقارنة الفروع on صلاحيات الشركات).
+        try {
+            var nextH1 = doc.querySelector('.rateb-topbar h1');
+            var curH1 = document.querySelector('.rateb-topbar h1');
+            if (nextH1 && curH1) {
+                curH1.textContent = (nextH1.textContent || '').trim();
+            }
+        } catch (eH1) { /* ignore */ }
     }
 
     function runLifecycle(name, detail) {
