@@ -260,7 +260,10 @@ def main() -> int:
         if must_check:
             print(f"MUST_OK check skipped for rsync (uploaded {ok} paths in batch)", flush=True)
 
-        return _run_integrity(core, remote_base.rstrip("/"), key_path)
+        gate = _run_integrity(core, remote_base.rstrip("/"), key_path)
+        if gate == 0 and hasattr(core, "bust_production_opcache"):
+            core.bust_production_opcache()
+        return gate
     finally:
         try:
             os.remove(key_path)

@@ -1568,7 +1568,35 @@ def main() -> int:
         return 1
 
     mirror_test_rateb_entry_files(succeeded)
-    return run_px_deploy_integrity_gate(remote_base)
+    gate = run_px_deploy_integrity_gate(remote_base)
+    if gate == 0:
+        bust_production_opcache()
+    return gate
+
+
+def bust_production_opcache() -> None:
+    """Invalidate PHP opcache so freshly uploaded rateb-erp/public/*.php is live.
+
+    Production often runs with opcache.validate_timestamps=0; Fileman uploads then
+    leave stale bytecode until reset (device-registry login fix depended on this).
+    """
+    url = (
+        os.environ.get("RATEB_OPCACH_BUST_URL")
+        or "https://rateb.sa/rateb-erp/public/erp-opcache-bust.php"
+    ).strip()
+    if not url:
+        return
+    try:
+        req = urllib.request.Request(
+            url,
+            method="GET",
+            headers={"User-Agent": "rateb-deploy-opcache-bust"},
+        )
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            body = resp.read().decode("utf-8", "replace").strip().replace("\n", " | ")
+        print(f"opcache bust OK: {body[:300]}", flush=True)
+    except Exception as exc:
+        print(f"::warning::opcache bust failed: {exc}", flush=True)
 
 
 def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:
