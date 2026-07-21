@@ -23,6 +23,7 @@ final class EssPhaseJDeviceRegistryTest
         $this->testSqlScoped();
         $this->testControllerNeverTrustsClientIds();
         $this->testRevokeAndDuplicatePaths();
+        $this->testSchemaBootstrapPresent();
 
         return $this->results;
     }
@@ -42,6 +43,17 @@ final class EssPhaseJDeviceRegistryTest
             && str_contains($src, 'push_token')
             && !str_contains($src, 'password');
         $this->record('Migration defines rateb_mobile_devices without secrets', $ok);
+    }
+
+    private function testSchemaBootstrapPresent(): void
+    {
+        $path = RATEB_ROOT . '/app/services/MobileDeviceSchemaBootstrap.php';
+        $src = is_file($path) ? (string) file_get_contents($path) : '';
+        $reg = (string) file_get_contents(RATEB_ROOT . '/app/services/MobileDeviceRegistryService.php');
+        $ok = str_contains($src, 'CREATE TABLE IF NOT EXISTS rateb_mobile_devices')
+            && str_contains($src, 'push_provider')
+            && str_contains($reg, 'MobileDeviceSchemaBootstrap::ensure()');
+        $this->record('Schema bootstrap creates registry table when migrations lag', $ok);
     }
 
     private function testRoutesRegistered(): void

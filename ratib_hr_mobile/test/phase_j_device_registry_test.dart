@@ -301,6 +301,23 @@ void main() {
     expect(session.status, AuthStatus.signedOut);
     expect(session.lastError?.code, 'device_revoked');
   });
+
+  test('Login soft-fails when device registry schema is missing', () async {
+    final devices = DeviceRegistryService(
+      port: _SchemaMissingRegistry(),
+      deviceIds: LocalDeviceIdStore(cache: _MemCache()),
+    );
+    final session = AuthSession(
+      auth: _FakeAuth(),
+      me: _FakeMe(),
+      mobileConfiguration: _mobileConfig(),
+      deviceRegistry: devices,
+    );
+    final ok = await session.signIn(identifier: 'u', secret: 'p');
+    expect(ok, isTrue);
+    expect(session.status, AuthStatus.signedIn);
+    expect(session.lastError, isNull);
+  });
 }
 
 final class _CountingRegistry implements DeviceRegistryPort {
@@ -376,6 +393,45 @@ final class _RevokedRegistry implements DeviceRegistryPort {
       code: 'device_revoked',
       message: 'Device has been revoked',
     );
+  }
+
+  @override
+  Future<void> revoke(int devicePk) async {}
+}
+
+final class _SchemaMissingRegistry implements DeviceRegistryPort {
+  @override
+  Future<Map<String, Object?>> register({
+    required String deviceId,
+    required String platform,
+    String? pushToken,
+    String? appVersion,
+  }) async {
+    throw const AppFailure(
+      code: 'erp',
+      message: 'قاعدة البيانات تحتاج تحديثاً',
+    );
+  }
+
+  @override
+  Future<Map<String, Object?>> heartbeat({
+    required String deviceId,
+    String? pushToken,
+    String? appVersion,
+  }) async {
+    throw const AppFailure(code: 'erp', message: 'schema');
+  }
+
+  @override
+  Future<Map<String, Object?>> updatePushToken({
+    required String deviceId,
+    required String pushToken,
+    required String pushProvider,
+    String? platform,
+    String? locale,
+    String? appVersion,
+  }) async {
+    throw const AppFailure(code: 'erp', message: 'schema');
   }
 
   @override

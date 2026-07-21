@@ -18,7 +18,7 @@ final class DefaultErrorMapper implements ErrorMapper {
       String? erpMessage;
       String? erpCode;
       if (data is Map) {
-        final msg = data['message'];
+        final msg = data['message'] ?? data['error'];
         if (msg != null) erpMessage = msg.toString();
         final code = data['code'];
         if (code != null) erpCode = code.toString();

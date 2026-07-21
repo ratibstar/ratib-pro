@@ -138,10 +138,11 @@ final class AuthSession extends ChangeNotifier {
           message: e.message ?? 'Device has been revoked',
         );
       }
-      if (e.code == 'network' || e.code == 'timeout' || e.code == 'config') {
-        return;
-      }
-      rethrow;
+      // Soft-fail: missing migrations / ERP 5xx / validation must not block ESS login.
+      // Hard-fail only when the device is explicitly revoked.
+      return;
+    } catch (_) {
+      return;
     }
   }
 
