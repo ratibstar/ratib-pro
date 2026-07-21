@@ -16,12 +16,22 @@ final class MobileDeviceController extends Controller
 {
     public function register(): void
     {
-        $result = (new MobileDeviceRegistryService())->register(
-            (int) TenantContext::apiUserId(),
-            (int) TenantContext::companyId(),
-            $this->jsonBody()
-        );
-        Response::json($result['body'], (int) $result['status']);
+        try {
+            $result = (new MobileDeviceRegistryService())->register(
+                (int) TenantContext::apiUserId(),
+                (int) TenantContext::companyId(),
+                $this->jsonBody()
+            );
+            Response::json($result['body'], (int) $result['status']);
+        } catch (\Throwable $e) {
+            Response::json([
+                'success' => false,
+                'code' => 'schema_outdated',
+                'message' => class_exists(\Rateb\App\Services\DatabaseErrorService::class)
+                    ? \Rateb\App\Services\DatabaseErrorService::userMessage($e)
+                    : 'Device registry unavailable',
+            ], 503);
+        }
     }
 
     public function heartbeat(): void
