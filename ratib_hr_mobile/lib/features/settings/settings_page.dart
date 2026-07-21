@@ -256,6 +256,7 @@ class _SettingsPageState extends State<SettingsPage> {
             title: l10n.settingsAbout,
             subtitle: [
               cfg?.displayName ?? AppConfig.appName,
+              'v${AppConfig.versionLabel}',
               'Phase ${AppConfig.phase}',
             ].join(' · '),
             leading: const DsIconBadge(
