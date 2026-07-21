@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-admin-home-offline-v103';
+var SW_BUILD_ID = '20260722-black-promise-fix-v104';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1030,12 +1030,16 @@ function matchErpNavSnapshot(request, url) {
 }
 
 /**
+ * Stamp soft-offline headers onto a cached Response.
+ * MUST stay synchronous — returning a Promise into finish() set settled=true while the
+ * inner thenable rejected/hung → respondWith never settled → permanent black /admin.
  * @param {Response} response
- * @param {{softOnly?: boolean}} [opts] softOnly=true → do not stamp X-Rateb-Offline (soft-online SWR)
+ * @param {{softOnly?: boolean}} [opts] softOnly=true → do not stamp X-Rateb-Offline
+ * @returns {Response}
  */
 function withSoftOfflineCacheHeader(response, opts) {
     if (!response) {
-        return Promise.resolve(response);
+        return response;
     }
     opts = opts || {};
     try {
@@ -1044,25 +1048,28 @@ function withSoftOfflineCacheHeader(response, opts) {
         if (!opts.softOnly) {
             headers.set('X-Rateb-Offline', headers.get('X-Rateb-Offline') || '1');
         }
-        // PERF — reuse body stream; avoid full arrayBuffer clone on every offline paint.
-        if (response.body) {
-            return Promise.resolve(new Response(response.body, {
-                status: response.status || 200,
-                statusText: response.statusText || 'OK',
-                headers: headers
-            }));
+        var status = response.status || 200;
+        var statusText = response.statusText || 'OK';
+        var bodyStream = null;
+        try {
+            bodyStream = response.clone().body;
+        } catch (eClone) {
+            try {
+                bodyStream = response.body;
+            } catch (eBody) {
+                bodyStream = null;
+            }
         }
-        return response.clone().arrayBuffer().then(function (buf) {
-            return new Response(buf, {
-                status: response.status || 200,
-                statusText: response.statusText || 'OK',
+        if (bodyStream) {
+            return new Response(bodyStream, {
+                status: status,
+                statusText: statusText,
                 headers: headers
             });
-        }).catch(function () {
-            return response;
-        });
+        }
+        return response;
     } catch (e) {
-        return Promise.resolve(response);
+        return response;
     }
 }
 
@@ -1402,9 +1409,16 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         if (!hit) {
             return null;
         }
-        // Put path already validated — stream clone; never .text() on F5 critical path.
-        // Offline stamps X-Rateb-Offline; soft-online does not (avoids false offline UI).
-        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: !offlineMode });
+        // Sync only — never return a Promise into finish() (that caused permanent black).
+        try {
+            return withSoftOfflineCacheHeader(hit.clone(), { softOnly: !offlineMode });
+        } catch (eServe) {
+            try {
+                return hit.clone();
+            } catch (eClone) {
+                return hit;
+            }
+        }
     }
 
     function storeLive(response) {
@@ -1438,6 +1452,17 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             var settled = false;
             function finish(res) {
                 if (settled || !res) {
+                    return false;
+                }
+                // Never lock settled on a thenable — rejection left respondWith pending (black).
+                if (typeof res.then === 'function') {
+                    res.then(function (real) {
+                        if (settled || !real) {
+                            return;
+                        }
+                        settled = true;
+                        resolve(real);
+                    }).catch(function () { /* allow ceiling / other fallback */ });
                     return false;
                 }
                 settled = true;
@@ -1536,8 +1561,19 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             if (settled || !res) {
                 return false;
             }
+            // Never lock settled on a thenable — rejection left respondWith pending (black).
+            if (typeof res.then === 'function') {
+                res.then(function (real) {
+                    if (settled || !real) {
+                        return;
+                    }
+                    settled = true;
+                    resolve(real);
+                }).catch(function () { /* allow ceiling */ });
+                return false;
+            }
             settled = true;
-            Promise.resolve(res).then(resolve);
+            resolve(res);
             return true;
         }
 
@@ -1553,6 +1589,11 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     return;
                 }
                 // Cap neverFail — was able to hang respondWith → minutes of black tab.
+                // Bare /admin: paint inline shell in ≤150ms (not 400ms).
+                var bareAdminMiss = false;
+                try {
+                    bareAdminMiss = /\/admin$/i.test(String((url && url.pathname) || '').replace(/\/+$/, ''));
+                } catch (eBare) { /* ignore */ }
                 Promise.race([
                     neverFailNavigate(request, url),
                     new Promise(function (res) {
@@ -1562,10 +1603,16 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                             } catch (eShell) {
                                 res(uncachedAdminBrowseResponse(url));
                             }
-                        }, 400);
+                        }, bareAdminMiss ? 150 : 400);
                     })
                 ]).then(function (fallback) {
                     finish(fallback);
+                }).catch(function () {
+                    try {
+                        finish(erpInlineShellResponse());
+                    } catch (eShell3) {
+                        finish(uncachedAdminBrowseResponse(url));
+                    }
                 });
             });
         }
