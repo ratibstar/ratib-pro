@@ -52,9 +52,9 @@ android {
         }
         create("production") {
             dimension = "env"
-            // Keep stable id so updates replace the installed employee app
-            // (changing v015→v016… created parallel apps and users kept opening the old one).
-            applicationId = "sa.rateb.hr.mobile.v015"
+            // Brand-new id so this install cannot collide with leftover
+            // راتب / راتب 015–018 / راتب-كل-الصفحات packages on the phone.
+            applicationId = "sa.rateb.hr.mobile.new1"
         }
     }
 

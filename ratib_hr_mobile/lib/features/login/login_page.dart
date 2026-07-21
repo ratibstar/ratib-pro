@@ -177,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                'راتب-019 · v${AppConfig.versionLabel}',
+                'راتب جديد · v${AppConfig.versionLabel}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: const Color(0xFFF59E0B),

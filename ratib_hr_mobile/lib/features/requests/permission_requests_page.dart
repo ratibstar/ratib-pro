@@ -176,7 +176,7 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'راتب-019 · v${AppConfig.versionLabel}',
+                        'راتب جديد · v${AppConfig.versionLabel}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFF111827),
