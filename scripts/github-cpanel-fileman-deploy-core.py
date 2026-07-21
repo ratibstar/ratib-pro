@@ -456,6 +456,7 @@ FAST_FILES = [
     "rateb-erp/public/index.php",
     "rateb-erp/public/assets/build-stamp.txt",
     "rateb-erp/public/erp-build-probe.php",
+    "rateb-erp/public/erp-opcache-bust.php",
     "rateb-erp/public/pos-sw.js",
     "rateb-erp/public/offline-shell.html",
     "rateb-erp/public/manifest.webmanifest",
