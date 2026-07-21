@@ -43,12 +43,13 @@ assert('rejects blank document poison', isValidErpOpsHtmlBody && isValidErpOpsHt
 assert('rejects truncated HTML without shell markers', isValidErpOpsHtmlBody && isValidErpOpsHtmlBody(companiesUrl, truncatedHtml) === false);
 assert('accepts valid ERP HTML', isValidErpOpsHtmlBody && isValidErpOpsHtmlBody(companiesUrl, validHtml) === true);
 
-assert('ops cache version unchanged', source.includes("var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v34'"));
-assert('navigateErpCloudWithCacheSafety validates cache hits', /function navigateErpCloudWithCacheSafety[\s\S]*isValidErpOpsHtmlBody\(pageUrl, html\)/.test(source));
+assert('ops cache version unchanged', source.includes("var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36'"));
+assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateErpCloudWithCacheSafety[\s\S]*serveCachedFast\(hit/.test(source));
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260717-ops-cache-poison-guard-v85'));
+assert('SW build id bumped for upgrade path', source.includes('20260721-offline-cache-migrate-v100'));
+assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 
 // Simulated cache recovery contract: invalid body must not be re-cached by put path.
 assert(

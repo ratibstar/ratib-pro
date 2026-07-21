@@ -313,6 +313,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         // Fixed buckets + first-hit parallel (sequential chains stalled offline paint).
         var names = [
           'rateb-erp-coexist-v34',
+          'rateb-erp-ops-pages-v36',
+          'rateb-erp-ops-pages-v35',
           'rateb-erp-ops-pages-v34',
           'rateb-pos-assets-v8'
         ];
@@ -1145,12 +1147,28 @@ if (!$ratebLocalAppliance) {
         'rateb_erp_full_warm_at_v12', 'rateb_erp_full_warm_ok_v12',
         'rateb_erp_full_warm_assets_v12',
         'rateb_erp_full_warm_at_v13', 'rateb_erp_full_warm_ok_v13',
-        'rateb_erp_full_warm_assets_v13'
+        'rateb_erp_full_warm_assets_v13',
+        'rateb_erp_full_warm_at_v18', 'rateb_erp_full_warm_ok_v18',
+        'rateb_erp_full_warm_assets_v18',
+        'rateb_erp_full_warm_at_v19', 'rateb_erp_full_warm_ok_v19',
+        'rateb_erp_full_warm_assets_v19'
       ].forEach(function (k) {
         try { localStorage.removeItem(k); } catch (eR) {}
       });
       sessionStorage.removeItem('rateb_sw_reloaded');
       sessionStorage.removeItem('rateb_sw_shell_warm_v46');
+      // After build bump: start offline warm ASAP while online so /admin is not empty offline.
+      try {
+        if (navigator.onLine !== false) {
+          setTimeout(function () {
+            try {
+              if (window.RatebOfflineFullWarm && typeof window.RatebOfflineFullWarm.start === 'function') {
+                window.RatebOfflineFullWarm.start({ force: true });
+              }
+            } catch (eWarm) { /* ignore */ }
+          }, 2500);
+        }
+      } catch (eKick) { /* ignore */ }
     } catch (e1) {}
     /* Do NOT location.reload here — that blanked the tab for minutes after F5
      * while SW negotiate a fresh document (user saw black after refresh / لوحة التحكم). */
@@ -1600,7 +1618,7 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
       cacheLiveAdminPage._fp = fp;
       cacheLiveAdminPage._at = now;
       var cacheNames = [
-        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v34',
+        (window.RatebOfflineFullWarm && window.RatebOfflineFullWarm.cacheName) || 'rateb-erp-ops-pages-v36',
         'rateb-erp-coexist-v34'
       ];
       var keys = [location.href, location.origin + location.pathname];

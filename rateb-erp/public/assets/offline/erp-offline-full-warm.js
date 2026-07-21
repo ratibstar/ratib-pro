@@ -12,13 +12,13 @@
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
-    var CACHE_NAME = 'rateb-erp-ops-pages-v34';
+    var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Phase OH — bump TTL keys so clients re-warm after offline speed parity.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v18';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v18';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v18';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v19';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v19';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v19';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',

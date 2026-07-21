@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260721-nav-instant-feedback-v91';
+var SW_BUILD_ID = '20260721-offline-cache-migrate-v100';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3390,18 +3390,45 @@ self.addEventListener('activate', function (event) {
     // Phase PF — arm warm only; do not start populate until first document response commits.
     event.waitUntil(
         self.clients.claim().then(function () {
-            // Drop every prior ops-page HTML bucket (v34 and earlier) — stale shells
-            // skipped early-nav-guard and made لوحة التحكم full-navigate to black.
+            // Migrate prior ops-page HTML into the current bucket BEFORE delete.
+            // Deleting v34/v35 without copy left offline black for minutes after SW update
+            // (full-warm still wrote v34 while navigate read v36).
             return caches.keys().then(function (keys) {
-                return Promise.all((keys || []).map(function (key) {
-                    if (key === ERP_OPS_PAGE_CACHE) {
-                        return undefined;
-                    }
-                    if (/^rateb-erp-ops-pages-v\d+/i.test(String(key))) {
-                        return caches.delete(key);
-                    }
-                    return undefined;
-                }));
+                var oldOps = (keys || []).filter(function (key) {
+                    return key !== ERP_OPS_PAGE_CACHE
+                        && /^rateb-erp-ops-pages-v\d+/i.test(String(key));
+                });
+                if (!oldOps.length) {
+                    return null;
+                }
+                return caches.open(ERP_OPS_PAGE_CACHE).then(function (fresh) {
+                    return Promise.all(oldOps.map(function (name) {
+                        return caches.open(name).then(function (old) {
+                            return old.keys().then(function (reqs) {
+                                return Promise.all((reqs || []).map(function (req) {
+                                    return old.match(req).then(function (res) {
+                                        if (!res) {
+                                            return null;
+                                        }
+                                        return fresh.put(req, res.clone()).then(function () {
+                                            try {
+                                                var href = typeof req === 'string' ? req : (req.url || '');
+                                                var u = new URL(href);
+                                                return fresh.put(u.origin + u.pathname, res.clone());
+                                            } catch (eAlias) {
+                                                return null;
+                                            }
+                                        });
+                                    });
+                                }));
+                            });
+                        }).catch(function () { return null; });
+                    }));
+                }).then(function () {
+                    return Promise.all(oldOps.map(function (name) {
+                        return caches.delete(name).catch(function () { return false; });
+                    }));
+                });
             });
         }).then(function () {
             armBackgroundWarmAfterFirstDocument({ reason: 'activate', force: false });
