@@ -14,4 +14,19 @@ if (function_exists('opcache_get_status')) {
     $st = @opcache_get_status(false);
     echo 'opcache_restart_pending=' . (!empty($st['restart_pending']) ? 'yes' : 'no') . PHP_EOL;
 }
+
+// New probe files are not stuck in opcache — use them to invalidate stale index.php.
+if (isset($_GET['opcache_reset']) && (string) $_GET['opcache_reset'] === '1') {
+    $invalidated = false;
+    if (function_exists('opcache_invalidate') && is_file($index)) {
+        $invalidated = @opcache_invalidate($index, true) ? true : false;
+    }
+    $reset = false;
+    if (function_exists('opcache_reset')) {
+        $reset = @opcache_reset() ? true : false;
+    }
+    echo 'opcache_invalidate_index=' . ($invalidated ? 'yes' : 'no') . PHP_EOL;
+    echo 'opcache_reset=' . ($reset ? 'yes' : 'no') . PHP_EOL;
+}
+
 echo 'probe_ok' . PHP_EOL;
