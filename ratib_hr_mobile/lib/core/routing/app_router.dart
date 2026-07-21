@@ -158,8 +158,9 @@ abstract final class AppRouter {
             StatefulShellBranch(
               routes: [
                 GoRoute(
+                  // Requests tab opens permission form+list directly.
                   path: AppRoutes.requests,
-                  builder: (context, state) => const RequestsHubPage(),
+                  builder: (context, state) => const PermissionRequestsPage(),
                   routes: [
                     GoRoute(
                       path: 'permissions',
@@ -168,7 +169,6 @@ abstract final class AppRouter {
                       routes: [
                         GoRoute(
                           path: 'apply',
-                          // Same screen — form is inline (no separate page).
                           builder: (context, state) =>
                               const PermissionRequestsPage(),
                         ),
@@ -185,6 +185,10 @@ abstract final class AppRouter {
                         final id = state.uri.queryParameters['id'] ?? '';
                         return RequestDetailPage(requestId: id);
                       },
+                    ),
+                    GoRoute(
+                      path: 'hub',
+                      builder: (context, state) => const RequestsHubPage(),
                     ),
                   ],
                 ),

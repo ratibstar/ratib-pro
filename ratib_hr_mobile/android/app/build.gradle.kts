@@ -52,7 +52,9 @@ android {
         }
         create("production") {
             dimension = "env"
-            applicationId = "sa.rateb.hr.mobile.v018"
+            // Keep stable id so updates replace the installed employee app
+            // (changing v015→v016… created parallel apps and users kept opening the old one).
+            applicationId = "sa.rateb.hr.mobile.v015"
         }
     }
 
