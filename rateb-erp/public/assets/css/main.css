@@ -281,9 +281,8 @@ body.rateb-app {
     outline-offset: -1px;
 }
 
+/* Soft-nav in-flight: block double-clicks only — never dim/flash the page. */
 .rateb-content.is-nav-busy {
-    opacity: 0.72;
-    transition: opacity 0.12s ease;
     pointer-events: none;
 }
 
