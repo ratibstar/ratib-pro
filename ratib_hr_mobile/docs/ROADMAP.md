@@ -42,6 +42,7 @@
 | **J** | Unified Mobile Device Registry | **COMPLETE** — see [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md) (design: [PHASE_J.md](PHASE_J.md)) |
 | **K** | Store production release | **PREP COMPLETE — NO-GO upload** — see [PHASE_K.md](PHASE_K.md) |
 | **K1** | Android production signing automation | **COMPLETE** — see [PHASE_K1.md](PHASE_K1.md) |
+| **K2** | Google Play release preparation | **COMPLETE (prep — no upload)** — see [PHASE_K2.md](PHASE_K2.md) · [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md) |
 
 ---
 

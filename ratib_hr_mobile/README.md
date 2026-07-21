@@ -5,8 +5,8 @@
 | | |
 |--|--|
 | Official ESS app | `ratib_hr_mobile` |
-| Current phase | **K1 — Android Production Signing (AAB ready)** |
-| Next phase | Play Console upload + iOS Archive (Mac) + store assets |
+| Current phase | **K2 — Google Play Release Preparation** |
+| Next phase | Play Console upload (operator) + store assets + iOS Archive (Mac) |
 | Source of truth | RATIB ERP |
 | Not this | `rateb_mobile`, Capacitor Admin, Tracking |
 

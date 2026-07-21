@@ -9,11 +9,12 @@
 |-------|----------------|-------|--------|
 | App icon | 512×512 PNG, 32-bit | Branding | ☐ |
 | Feature graphic | 1024×500 PNG/JPEG | Branding | ☐ |
-| Phone screenshots | ≥2, 16:9 or 9:16 | Product | ☐ |
-| 7" tablet screenshots | Optional | Product | ☐ |
-| 10" tablet screenshots | Optional | Product | ☐ |
-| Short description | ≤80 chars (AR + EN) | Product | ☐ |
-| Full description | ≤4000 chars (AR + EN) | Product | ☐ |
+| Phone screenshots (EN) | ≥2, 16:9 or 9:16 | Product | ☐ |
+| Phone screenshots (AR RTL) | Same sizes; device locale `ar` | Product | ☐ **required for AR listing** |
+| 7" tablet screenshots | Optional unless tablet targeting | Product | ☐ optional |
+| 10" tablet screenshots | Optional | Product | ☐ optional |
+| Short description | ≤80 chars (AR + EN) — draft in PLAY_STORE_RELEASE.md | Product | ☑ draft / ☐ Console |
+| Full description | ≤4000 chars (AR + EN) — draft in PLAY_STORE_RELEASE.md | Product | ☑ draft / ☐ Console |
 | App category | Business / Productivity | Product | ☐ |
 | Contact email | Support | Ops | ☐ |
 | Privacy Policy URL | HTTPS public | Legal | ☐ |

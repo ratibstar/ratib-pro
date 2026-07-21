@@ -18,9 +18,16 @@
 | Permission | Platform | Purpose | Declarable in stores |
 |------------|----------|---------|----------------------|
 | `INTERNET` | Android | ERP HTTPS API | Network |
+| `ACCESS_NETWORK_STATE` | Android | Connectivity (plugin) | Network |
 | `POST_NOTIFICATIONS` | Android 13+ | Push / local notifications | Notifications |
+| `WAKE_LOCK` | Android | FCM delivery | Notifications |
+| `VIBRATE` | Android | Notification UX | Notifications |
+| `USE_BIOMETRIC` / `USE_FINGERPRINT` | Android | Local app unlock (`local_auth`) | Biometrics (local only) |
+| `com.google.android.c2dm.permission.RECEIVE` | Android | FCM | Notifications |
 | Face ID usage | iOS | Unlock existing ERP session (`local_auth`) | Biometrics |
 | Camera / Photos / Location / Mic | — | **Not used** | Do not declare |
+
+Merged productionRelease manifest reviewed in Phase K2 — see [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md) §2.
 
 ## Google Play — Data Safety (draft answers)
 
