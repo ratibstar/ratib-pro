@@ -166,12 +166,37 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
           padding: const EdgeInsets.only(bottom: 40),
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                'v${AppConfig.versionLabel} — ${l10n.permissionApplyHint}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Material(
+                color: const Color(0xFFF59E0B),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'راتب-019 · v${AppConfig.versionLabel}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.permissionApplyHint,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             DsSectionHeader(title: l10n.permissionDate),
@@ -218,12 +243,17 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: const Color(0xFF111827),
+                  minimumSize: const Size.fromHeight(52),
+                ),
                 onPressed: _busy ? null : _submit,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    _busy ? l10n.genericLoading : l10n.permissionSubmit,
-                    style: const TextStyle(fontSize: 16),
+                child: Text(
+                  _busy ? l10n.genericLoading : l10n.permissionSubmit,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),

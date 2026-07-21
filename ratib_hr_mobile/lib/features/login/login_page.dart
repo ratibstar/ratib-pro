@@ -175,6 +175,15 @@ class _LoginPageState extends State<LoginPage> {
                       fontWeight: FontWeight.w800,
                     ),
               ),
+              const SizedBox(height: 6),
+              Text(
+                'راتب-019 · v${AppConfig.versionLabel}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: const Color(0xFFF59E0B),
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
               const SizedBox(height: 8),
               Text(
                 l10n.loginSubtitle,
