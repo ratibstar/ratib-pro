@@ -106,6 +106,7 @@ class AppLocalizations {
       'employeeRequestsSubtitle': 'استفسارات وشكاوى الموظف',
       'permissionRequestsEmpty': 'لا توجد طلبات استئذان',
       'permissionApply': 'طلب استئذان جديد',
+      'permissionApplyHint': 'اختر التاريخ والوقت ثم اضغط تقديم الطلب',
       'permissionDate': 'تاريخ الاستئذان',
       'permissionTime': 'الوقت',
       'permissionTimeFrom': 'من',
@@ -330,6 +331,7 @@ class AppLocalizations {
       'employeeRequestsSubtitle': 'Employee inquiries and complaints',
       'permissionRequestsEmpty': 'No permission requests',
       'permissionApply': 'New permission request',
+      'permissionApplyHint': 'Pick date and time, then tap Submit',
       'permissionDate': 'Permission date',
       'permissionTime': 'Time',
       'permissionTimeFrom': 'From',
@@ -560,6 +562,7 @@ class AppLocalizations {
   String get employeeRequestsSubtitle => _t('employeeRequestsSubtitle');
   String get permissionRequestsEmpty => _t('permissionRequestsEmpty');
   String get permissionApply => _t('permissionApply');
+  String get permissionApplyHint => _t('permissionApplyHint');
   String get permissionDate => _t('permissionDate');
   String get permissionTime => _t('permissionTime');
   String get permissionTimeFrom => _t('permissionTimeFrom');

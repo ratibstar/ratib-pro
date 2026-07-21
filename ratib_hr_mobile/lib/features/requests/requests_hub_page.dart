@@ -20,6 +20,15 @@ class RequestsHubPage extends StatelessWidget {
         padding: const EdgeInsets.only(top: 8, bottom: 32),
         children: [
           DsListItem(
+            title: l10n.permissionApply,
+            subtitle: l10n.permissionApplyHint,
+            leading: const DsIconBadge(
+              icon: Icons.add_rounded,
+              color: AppColors.auroraTeal,
+            ),
+            onTap: () => context.go(AppRoutes.permissionApply),
+          ),
+          DsListItem(
             title: l10n.navPermissionRequests,
             subtitle: l10n.permissionRequestsSubtitle,
             leading: const DsIconBadge(

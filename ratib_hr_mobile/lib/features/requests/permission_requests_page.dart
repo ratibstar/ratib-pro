@@ -50,66 +50,82 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
     }
   }
 
+  void _openApply() => context.go(AppRoutes.permissionApply);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return DsPageScaffold(
       title: l10n.navPermissionRequests,
-      actions: [
-        IconButton(
-          onPressed: () => context.go(AppRoutes.permissionApply),
-          icon: const Icon(Icons.add_rounded),
-        ),
-      ],
-      body: _loading
-          ? DsLoadingState(message: l10n.genericLoading)
-          : _error != null
-              ? DsErrorState(
-                  title: l10n.genericLoadFailed,
-                  message: _error,
-                  actionLabel: l10n.homeRetry,
-                  onAction: _load,
-                )
-              : _items.isEmpty
-                  ? DsEmptyState(
-                      title: l10n.permissionRequestsEmpty,
-                      actionLabel: l10n.permissionApply,
-                      onAction: () => context.go(AppRoutes.permissionApply),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(top: 8, bottom: 24),
-                        itemCount: _items.length,
-                        itemBuilder: (context, i) {
-                          final row = _items[i];
-                          final date =
-                              (row['permission_date'] ?? '').toString();
-                          final from = (row['time_from'] ?? '').toString();
-                          final to = (row['time_to'] ?? '').toString();
-                          final status = (row['status'] ?? '').toString();
-                          final reason = (row['reason'] ?? '').toString();
-                          final window = [
-                            if (from.isNotEmpty) from,
-                            if (to.isNotEmpty) to,
-                          ].join(' – ');
-                          return DsListItem(
-                            title: date.isNotEmpty
-                                ? date
-                                : l10n.navPermissionRequests,
-                            subtitle: [
-                              if (window.isNotEmpty) window,
-                              if (status.isNotEmpty) status,
-                              if (reason.isNotEmpty) reason,
-                            ].join(' · '),
-                            leading: const DsIconBadge(
-                              icon: Icons.schedule_outlined,
-                              color: AppColors.auroraTeal,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: FilledButton.icon(
+              onPressed: _openApply,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.permissionApply),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? DsLoadingState(message: l10n.genericLoading)
+                : _error != null
+                    ? DsErrorState(
+                        title: l10n.genericLoadFailed,
+                        message: _error,
+                        actionLabel: l10n.homeRetry,
+                        onAction: _load,
+                      )
+                    : _items.isEmpty
+                        ? DsEmptyState(
+                            title: l10n.permissionRequestsEmpty,
+                            message: l10n.permissionApplyHint,
+                            actionLabel: l10n.permissionApply,
+                            onAction: _openApply,
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView.builder(
+                              padding:
+                                  const EdgeInsets.only(top: 0, bottom: 24),
+                              itemCount: _items.length,
+                              itemBuilder: (context, i) {
+                                final row = _items[i];
+                                final date =
+                                    (row['permission_date'] ?? '').toString();
+                                final from =
+                                    (row['time_from'] ?? '').toString();
+                                final to = (row['time_to'] ?? '').toString();
+                                final status =
+                                    (row['status'] ?? '').toString();
+                                final reason =
+                                    (row['reason'] ?? '').toString();
+                                final window = [
+                                  if (from.isNotEmpty) from,
+                                  if (to.isNotEmpty) to,
+                                ].join(' – ');
+                                return DsListItem(
+                                  title: date.isNotEmpty
+                                      ? date
+                                      : l10n.navPermissionRequests,
+                                  subtitle: [
+                                    if (window.isNotEmpty) window,
+                                    if (status.isNotEmpty) status,
+                                    if (reason.isNotEmpty) reason,
+                                  ].join(' · '),
+                                  leading: const DsIconBadge(
+                                    icon: Icons.schedule_outlined,
+                                    color: AppColors.auroraTeal,
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -127,6 +127,13 @@ class _PermissionApplyPageState extends State<PermissionApplyPage> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              l10n.permissionApplyHint,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
           DsSectionHeader(title: l10n.permissionDate),
           DsListItem(
             title: l10n.permissionDate,
