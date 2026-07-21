@@ -27,44 +27,57 @@ final class MobileConfigController extends Controller
         }
 
         // ESS login calls this before device register — create registry if migrations lag.
-        $this->ensureMobileDeviceRegistry();
+        $registryBoot = $this->ensureMobileDeviceRegistry();
 
         $companyId = (int) (TenantContext::companyId() ?? 0);
         $result = (new MobileAppConfigService())->apiConfigForCompany($companyId);
-        Response::json($result['body'], (int) $result['status']);
+        $body = $result['body'];
+        if (is_array($body)) {
+            $body['device_registry_boot'] = $registryBoot;
+        }
+        Response::json($body, (int) $result['status']);
     }
 
-    private function ensureMobileDeviceRegistry(): void
+    /** @return array{ok:bool,detail:string} */
+    private function ensureMobileDeviceRegistry(): array
     {
         try {
             if (class_exists(\Rateb\App\Services\MobileDeviceSchemaBootstrap::class)) {
                 \Rateb\App\Services\MobileDeviceSchemaBootstrap::ensure();
-                return;
+            } else {
+                $pdo = Database::connection();
+                $pdo->exec(
+                    'CREATE TABLE IF NOT EXISTS rateb_mobile_devices (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        company_id INT UNSIGNED NOT NULL,
+                        user_id INT UNSIGNED NOT NULL,
+                        client_app VARCHAR(32) NOT NULL,
+                        platform VARCHAR(16) NOT NULL DEFAULT \'other\',
+                        device_id VARCHAR(64) NOT NULL,
+                        push_token VARCHAR(512) NULL,
+                        push_provider VARCHAR(16) NOT NULL DEFAULT \'none\',
+                        locale VARCHAR(16) NULL,
+                        app_version VARCHAR(64) NULL,
+                        last_seen_at DATETIME NULL,
+                        status ENUM(\'active\', \'inactive\', \'revoked\') NOT NULL DEFAULT \'active\',
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_mobile_device_identity (company_id, client_app, device_id),
+                        KEY idx_mobile_device_user (company_id, user_id, status),
+                        KEY idx_mobile_device_seen (company_id, last_seen_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+                );
             }
-            $pdo = Database::connection();
-            $pdo->exec(
-                'CREATE TABLE IF NOT EXISTS rateb_mobile_devices (
-                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                    company_id INT UNSIGNED NOT NULL,
-                    user_id INT UNSIGNED NOT NULL,
-                    client_app VARCHAR(32) NOT NULL,
-                    platform VARCHAR(16) NOT NULL DEFAULT \'other\',
-                    device_id VARCHAR(64) NOT NULL,
-                    push_token VARCHAR(512) NULL,
-                    push_provider VARCHAR(16) NOT NULL DEFAULT \'none\',
-                    locale VARCHAR(16) NULL,
-                    app_version VARCHAR(64) NULL,
-                    last_seen_at DATETIME NULL,
-                    status ENUM(\'active\', \'inactive\', \'revoked\') NOT NULL DEFAULT \'active\',
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY uq_mobile_device_identity (company_id, client_app, device_id),
-                    KEY idx_mobile_device_user (company_id, user_id, status),
-                    KEY idx_mobile_device_seen (company_id, last_seen_at)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
+            $check = Database::connection()->query('SELECT 1 FROM rateb_mobile_devices LIMIT 1');
+            if ($check === false) {
+                return ['ok' => false, 'detail' => 'select_failed'];
+            }
+
+            return ['ok' => true, 'detail' => 'ready'];
         } catch (\Throwable $e) {
             error_log('Mobile device registry ensure failed: ' . $e->getMessage());
+
+            return ['ok' => false, 'detail' => $e->getMessage()];
         }
     }
 }

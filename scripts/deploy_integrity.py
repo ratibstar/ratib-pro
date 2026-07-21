@@ -23,6 +23,9 @@ from typing import Iterable
 # are orphans and must be deleted.
 INTEGRITY_MANAGED_ROOTS = (
     "rateb-erp/public",
+    "rateb-erp/app",
+    "rateb-erp/routes",
+    "rateb-erp/migrations",
     "public",
     "js",
     "css",
