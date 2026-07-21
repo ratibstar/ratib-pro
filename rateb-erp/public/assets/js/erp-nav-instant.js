@@ -15,6 +15,10 @@
     var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
     var POS_PATH_RE = /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i;
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
+    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
+    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
+    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
+    var OPS_COEXIST_CACHE = 'rateb-erp-coexist-v34';
     var loadedScripts = Object.create(null);
     var navigating = false;
     var pendingNavHref = '';
@@ -730,8 +734,8 @@
         if (!root.caches) {
             return Promise.resolve([]);
         }
-        // Fixed names only — caches.keys() scans every rateb-* bucket and stalls offline clicks.
-        var names = ['rateb-erp-ops-pages-v35', 'rateb-erp-coexist-v34'];
+        // Primary = SW cache; fallbacks for devices that still hold older warm snapshots.
+        var names = [OPS_PAGE_CACHE].concat(OPS_PAGE_CACHE_FALLBACKS).concat([OPS_COEXIST_CACHE]);
         return Promise.all(names.map(function (name) {
             return root.caches.open(name).catch(function () { return null; });
         })).then(function (opened) {
@@ -768,7 +772,7 @@
         });
         // Offline: try primary ops cache only (2–3 exact keys) before parallel fan-out.
         var offlineFast = isUiOffline();
-        var primary = root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
+        var primary = root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
             var chain = Promise.resolve(null);
             var fastKeys = offlineFast ? keys.slice(0, 3) : keys.slice(0, 2);
             fastKeys.forEach(function (k) {
@@ -783,13 +787,16 @@
             if (fastHit) {
                 return fastHit;
             }
-            // Online: exact keys only — fan-out across coexist caches stalled لوحة التحكم
-            // while network/SW already had the page (F5 felt instant, soft-nav waited).
+            // Online miss on v36: try one older warm bucket (devices mid-upgrade).
             if (!offlineFast) {
-                return null;
+                return root.caches.open(OPS_PAGE_CACHE_FALLBACKS[0]).then(function (cache) {
+                    return cache.match(keys[0]).then(function (hit) {
+                        return hit || (keys[1] ? cache.match(keys[1]) : null);
+                    });
+                }).catch(function () { return null; });
             }
             // One ignoreSearch on pathname only — skip coexist fan-out offline.
-            return root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
+            return root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
                 return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
             }).catch(function () { return null; });
         }).catch(function () {
@@ -810,7 +817,7 @@
             keys.push(u.origin + bare + '/');
         } catch (e) { /* ignore */ }
         var body = html;
-        return root.caches.open('rateb-erp-ops-pages-v35').then(function (cache) {
+        return root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
             return Promise.all(keys.map(function (k) {
                 return cache.put(k, new Response(body, {
                     status: 200,
@@ -824,9 +831,8 @@
     }
 
     function fetchNetworkHtml(href) {
-        // Generous timeout: SW no longer kills soft-nav at 700ms; PHP pages can
-        // be 1–3s cold (matrix/COA heavier). Cache race still paints instantly when a snapshot exists.
-        var timeoutMs = isBareAdminHref(href) ? 4000 : (isHeavyNavHref(href) ? 15000 : 8000);
+        // Fetch timeout is the only online backstop (do not race-abort at 1.4s — that broke sidebar tabs).
+        var timeoutMs = isBareAdminHref(href) ? 10000 : (isHeavyNavHref(href) ? 20000 : 12000);
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -869,11 +875,9 @@
             return null;
         });
 
-        var heavy = isHeavyNavHref(href);
-        // Heavy PHP pages: no early race abort — wait for network/cache (fetch timeout is backstop).
-        var ceilingMs = isUiOffline()
-            ? 350
-            : (isBareAdminHref(href) ? 800 : (heavy ? 0 : 1400));
+        // Online: never abort early — Cache vs Network race resolves when either wins.
+        // The old 800–1400ms ceiling aborted good navigations (tabs looked broken; F5 felt fast).
+        var ceilingMs = isUiOffline() ? 350 : 0;
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = null;
@@ -1039,10 +1043,10 @@
         navigating = true;
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
-        // Safety unlock aligned with fetch ceiling (heavy pages need more headroom).
+        // Safety unlock aligned with fetch timeout (was shorter → stuck chrome + dead clicks).
         var unlockMs = isUiOffline()
             ? 400
-            : (isBareAdminHref(href) ? 1600 : (isHeavyNavHref(href) ? 16000 : 2200));
+            : (isBareAdminHref(href) ? 11000 : (isHeavyNavHref(href) ? 21000 : 13000));
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
@@ -1131,16 +1135,11 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Soft-nav miss: keep shell (toast). Second consecutive miss → hard navigate
-            // because sidebar links use onclick=return false and would otherwise trap the user.
+            // Soft-nav miss: recover immediately with full navigation (sidebar onclick=return false).
             if (!(err && err.message === 'nav_superseded')) {
                 showSoftNavMissToast(href);
-                if (lastSoftNavMissHref === href) {
-                    lastSoftNavMissHref = '';
-                    hardNavigate(href);
-                } else {
-                    lastSoftNavMissHref = href;
-                }
+                lastSoftNavMissHref = '';
+                hardNavigate(href);
             }
             return false;
         }).then(function (ok) {
