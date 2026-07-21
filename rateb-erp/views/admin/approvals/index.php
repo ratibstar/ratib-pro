@@ -32,6 +32,7 @@ $approvalsConfig = [
         'close' => __('close'),
         'error' => __('system_error_generic'),
         'already_processed' => __('manager_approval_already_processed'),
+        'no_records' => __('no_records'),
     ],
 ];
 ?>
@@ -124,9 +125,10 @@ $approvalsConfig = [
             <div class="col-6 col-md">
                 <a href="<?php echo Rateb\App\Core\View::escape($cardHref); ?>"
                    class="rateb-card rateb-approval-summary-card border-<?php echo $card['class']; ?><?php echo $isActive ? ' is-active' : ''; ?> text-decoration-none d-block"
-                   data-rateb-soft-nav="1">
+                   data-rateb-soft-nav="1"
+                   data-summary-card="<?php echo Rateb\App\Core\View::escape($card['key']); ?>">
                     <div class="rateb-card-body py-3 text-center">
-                        <div class="h4 mb-0 rateb-ltr-num"><?php echo $count; ?></div>
+                        <div class="h4 mb-0 rateb-ltr-num" data-summary-count><?php echo $count; ?></div>
                         <div class="small text-muted"><?php echo __($card['label']); ?></div>
                     </div>
                 </a>

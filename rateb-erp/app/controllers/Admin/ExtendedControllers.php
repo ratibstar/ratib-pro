@@ -278,7 +278,8 @@ final class AdminApprovalsController extends Controller
         $recordId = (int) $this->input('record_id', 0);
         $companyId = (int) $this->input('company_id', 0);
         try {
-            (new ApprovalOversightService())->undo($sourceKey, $recordId, $companyId);
+            $svc = new ApprovalOversightService();
+            $svc->undo($sourceKey, $recordId, $companyId);
             try {
                 (new AuditService())->log('undo', 'approval_oversight', $recordId, [
                     'source' => $sourceKey,
@@ -287,8 +288,9 @@ final class AdminApprovalsController extends Controller
             } catch (\Throwable $e) {
                 // Do not block undo if audit log insert fails.
             }
-            $detail = (new ApprovalOversightService())->detail($sourceKey, $recordId, $companyId);
-            $this->respondDecision(true, __('approval_undone'), $detail);
+            $detail = $svc->detail($sourceKey, $recordId, $companyId);
+            $this->clearOversightCountCache();
+            $this->respondDecision(true, __('approval_undone'), $detail, null, $svc, $companyId);
         } catch (\Throwable $e) {
             $this->respondDecision(false, DatabaseErrorService::userMessage($e));
         }
@@ -334,19 +336,48 @@ final class AdminApprovalsController extends Controller
                     'status_label' => $action === 'approve' ? __('approved') : __('rejected'),
                 ];
             }
-            $this->respondDecision(true, $msg, $detail);
+            $this->clearOversightCountCache();
+            $this->respondDecision(true, $msg, $detail, null, $svc, $companyId);
         } catch (\Throwable $e) {
             $this->respondDecision(false, DatabaseErrorService::userMessage($e), null, $e);
         }
     }
 
-    /** @param array<string, mixed>|null $detail */
-    private function respondDecision(bool $ok, string $message, ?array $detail = null, ?\Throwable $error = null): void
+    private function clearOversightCountCache(): void
     {
+        try {
+            SessionManager::forget('rateb_oversight_menu_counts');
+            SessionManager::forget('rateb_oversight_approvals_seen');
+        } catch (\Throwable $e) {
+            // Ignore cache clear failures.
+        }
+    }
+
+    /**
+     * @param array<string, mixed>|null $detail
+     * @param ApprovalOversightService|null $svc
+     */
+    private function respondDecision(
+        bool $ok,
+        string $message,
+        ?array $detail = null,
+        ?\Throwable $error = null,
+        ?ApprovalOversightService $svc = null,
+        int $companyId = 0
+    ): void {
         if ($this->wantsJson()) {
             $payload = ['ok' => $ok, 'message' => $message];
             if ($detail !== null) {
                 $payload['detail'] = $detail;
+            }
+            if ($ok && $svc !== null) {
+                try {
+                    $filterCompany = $companyId > 0 ? $companyId : null;
+                    $payload['summary'] = $svc->summary($filterCompany);
+                    $payload['menu_counts'] = $svc->menuCounts(null);
+                } catch (\Throwable $e) {
+                    // Counts are progressive enhancement for live UI refresh.
+                }
             }
             if (!$ok && $error !== null && rateb_is_super_admin()) {
                 $sqlError = DatabaseErrorService::technicalDetail($error);

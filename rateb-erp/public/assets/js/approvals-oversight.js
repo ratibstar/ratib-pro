@@ -338,7 +338,244 @@
         }
     }
 
-    function syncRowAfterAction(key, data) {
+    function summaryCardKeyForSource(sourceKey) {
+        if (sourceKey === 'company_registration') {
+            return 'company_registration';
+        }
+        if (sourceKey === 'workflow_instance') {
+            return 'workflow_instance';
+        }
+        if (sourceKey === 'journal_entry' || sourceKey === 'cash_voucher') {
+            return 'journal_entry';
+        }
+        if (sourceKey === 'hr_leave' || sourceKey === 'hr_permission'
+            || sourceKey === 'hr_request' || sourceKey === 'hr_payroll') {
+            return 'hr_leave';
+        }
+        return 'supplier_evaluation';
+    }
+
+    function cardCountFromSummary(summary, cardKey) {
+        summary = summary || {};
+        if (cardKey === 'total') {
+            return (intOrZero(summary.total));
+        }
+        if (cardKey === 'journal_entry') {
+            return intOrZero(summary.journal_entry) + intOrZero(summary.cash_voucher);
+        }
+        if (cardKey === 'supplier_evaluation') {
+            return intOrZero(summary.supplier_evaluation)
+                + intOrZero(summary.contract_renewal)
+                + intOrZero(summary.asset_maintenance)
+                + intOrZero(summary.asset_assignment)
+                + intOrZero(summary.device_maintenance)
+                + intOrZero(summary.device_spare_part)
+                + intOrZero(summary.inventory_audit);
+        }
+        if (cardKey === 'hr_leave') {
+            return intOrZero(summary.hr_leave)
+                + intOrZero(summary.hr_permission)
+                + intOrZero(summary.hr_request)
+                + intOrZero(summary.hr_payroll);
+        }
+        return intOrZero(summary[cardKey]);
+    }
+
+    function intOrZero(v) {
+        var n = parseInt(v, 10);
+        return isFinite(n) ? n : 0;
+    }
+
+    function applySummaryCards(summary) {
+        var root = rootEl();
+        if (!root || !summary) {
+            return;
+        }
+        root.querySelectorAll('[data-summary-card]').forEach(function (card) {
+            var key = card.getAttribute('data-summary-card') || '';
+            var el = card.querySelector('[data-summary-count]');
+            if (!el || !key) {
+                return;
+            }
+            el.textContent = String(cardCountFromSummary(summary, key));
+        });
+    }
+
+    function navHrefMatches(href, routeSuffix) {
+        if (!href || !routeSuffix) {
+            return false;
+        }
+        try {
+            var path = new URL(href, window.location.href).pathname.replace(/\/+$/, '');
+            var needle = String(routeSuffix).replace(/\/+$/, '');
+            return path.endsWith(needle);
+        } catch (eH) {
+            return href.indexOf(routeSuffix) !== -1;
+        }
+    }
+
+    function setNavBadge(routeSuffix, count) {
+        var links = document.querySelectorAll('#rateb-sidebar a.rateb-nav-link, .rateb-sidebar a.rateb-nav-link');
+        var n = Math.max(0, intOrZero(count));
+        var matched = null;
+        Array.prototype.forEach.call(links, function (a) {
+            var href = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+            if (!navHrefMatches(href, routeSuffix)) {
+                return;
+            }
+            matched = a;
+            var badge = a.querySelector('.rateb-nav-badge');
+            if (n <= 0) {
+                if (badge) {
+                    badge.remove();
+                }
+                return;
+            }
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'rateb-nav-badge rateb-nav-badge--pending';
+                a.appendChild(badge);
+            }
+            badge.textContent = String(n);
+        });
+        return matched;
+    }
+
+    function setGroupBadgeNear(linkEl, count) {
+        if (!linkEl) {
+            return;
+        }
+        var n = Math.max(0, intOrZero(count));
+        var group = linkEl.closest('.rateb-nav-group');
+        if (!group) {
+            return;
+        }
+        var toggle = group.querySelector(':scope > .rateb-nav-group-toggle, :scope > .rateb-nav-subgroup-toggle');
+        if (!toggle) {
+            return;
+        }
+        var badge = toggle.querySelector('.rateb-nav-badge');
+        if (n <= 0) {
+            if (badge) {
+                badge.remove();
+            }
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'rateb-nav-badge rateb-nav-group-badge rateb-nav-badge--pending';
+            var chevron = toggle.querySelector('.rateb-nav-group-chevron, .rateb-nav-subgroup-chevron');
+            if (chevron) {
+                toggle.insertBefore(badge, chevron);
+            } else {
+                toggle.appendChild(badge);
+            }
+        }
+        badge.textContent = String(n);
+    }
+
+    function applyMenuCounts(menuCounts) {
+        if (!menuCounts) {
+            return;
+        }
+        var approvalsLink = setNavBadge('/admin/oversight/approvals', menuCounts.approvals);
+        setNavBadge('/admin/oversight/companies-approvals', menuCounts.company_pending);
+        setNavBadge('/admin/oversight/procurement', menuCounts.procurement);
+        setNavBadge('/admin/oversight/rfq', menuCounts.rfq);
+        setNavBadge('/admin/oversight/inventory', menuCounts.inventory);
+        setNavBadge('/admin/oversight/supplier-evaluations', menuCounts.supplier_evaluations);
+
+        // Section badge (مراقبة الإدارة) — only the group that owns approvals.
+        setGroupBadgeNear(approvalsLink, menuCounts.total);
+        // Subgroup badge (متابعة المنصة) sums child link badges; recompute from known keys.
+        var subTotal = intOrZero(menuCounts.approvals)
+            + intOrZero(menuCounts.procurement)
+            + intOrZero(menuCounts.rfq)
+            + intOrZero(menuCounts.inventory)
+            + intOrZero(menuCounts.supplier_evaluations);
+        if (approvalsLink) {
+            var sub = approvalsLink.closest('.rateb-nav-subgroup');
+            if (sub) {
+                var subToggle = sub.querySelector(':scope > .rateb-nav-subgroup-toggle');
+                if (subToggle) {
+                    var subBadge = subToggle.querySelector('.rateb-nav-badge');
+                    if (subTotal <= 0) {
+                        if (subBadge) {
+                            subBadge.remove();
+                        }
+                    } else {
+                        if (!subBadge) {
+                            subBadge = document.createElement('span');
+                            subBadge.className = 'rateb-nav-badge rateb-nav-badge--pending';
+                            var subChev = subToggle.querySelector('.rateb-nav-subgroup-chevron');
+                            if (subChev) {
+                                subToggle.insertBefore(subBadge, subChev);
+                            } else {
+                                subToggle.appendChild(subBadge);
+                            }
+                        }
+                        subBadge.textContent = String(subTotal);
+                    }
+                }
+            }
+        }
+    }
+
+    function removeProcessedRow(key) {
+        var row = dataRow(key);
+        var detail = detailRow(key);
+        if (activeRowKey === key) {
+            activeRowKey = null;
+        }
+        if (detail) {
+            detail.remove();
+        }
+        if (row) {
+            row.remove();
+        }
+        var root = rootEl();
+        if (!root) {
+            return;
+        }
+        var tbody = root.querySelector('table.rateb-approvals-table tbody');
+        if (!tbody) {
+            return;
+        }
+        if (!tbody.querySelector('tr.rateb-approval-data-row')) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">'
+                + escapeHtml(labels.no_records || 'No records')
+                + '</td></tr>';
+        }
+    }
+
+    function syncRowAfterAction(action, key, data) {
+        var row = dataRow(key);
+        var sourceKey = row ? (row.getAttribute('data-source-key') || '') : '';
+
+        if (action === 'approve' || action === 'reject') {
+            removeProcessedRow(key);
+            if (data.summary) {
+                applySummaryCards(data.summary);
+            } else if (sourceKey) {
+                // Optimistic local bump when server omitted summary.
+                var root = rootEl();
+                if (root) {
+                    [['total', -1], [summaryCardKeyForSource(sourceKey), -1]].forEach(function (pair) {
+                        var card = root.querySelector('[data-summary-card="' + pair[0] + '"] [data-summary-count]');
+                        if (!card) {
+                            return;
+                        }
+                        card.textContent = String(Math.max(0, intOrZero(card.textContent) + pair[1]));
+                    });
+                }
+            }
+            if (data.menu_counts) {
+                applyMenuCounts(data.menu_counts);
+            }
+            return;
+        }
+
+        // Undo: keep row and refresh actions/detail from server payload.
         if (data.detail) {
             applyDetailToRow(key, data.detail);
             var detailTr = detailRow(key);
@@ -354,6 +591,12 @@
                         loadingEl.classList.add('d-none');
                     }
                 }
+            }
+            if (data.summary) {
+                applySummaryCards(data.summary);
+            }
+            if (data.menu_counts) {
+                applyMenuCounts(data.menu_counts);
             }
             return;
         }
@@ -439,7 +682,7 @@
                         flashToast('تم حفظ الاعتماد أوفلاين — يُزامَن عند الاتصال أو من «مزامنة الآن».', 'success');
                     }
                     if (action === 'approve' || action === 'reject') {
-                        row.setAttribute('data-processed', '1');
+                        syncRowAfterAction(action, key, {});
                     }
                 } catch (eQ) {
                     flashToast(labels.error || 'Error', 'danger');
@@ -474,7 +717,7 @@
                     if (data && data.queued) {
                         flashToast(data.message || 'تم حفظ الاعتماد أوفلاين للمزامنة.', 'success');
                         if (action === 'approve' || action === 'reject') {
-                            row.setAttribute('data-processed', '1');
+                            syncRowAfterAction(action, key, data || {});
                         }
                         return;
                     }
@@ -483,7 +726,7 @@
                         return;
                     }
                     if (action === 'approve' || action === 'reject' || action === 'undo') {
-                        syncRowAfterAction(key, data);
+                        syncRowAfterAction(action, key, data);
                     }
                     if (data.message) {
                         flashToast(data.message, 'success');
