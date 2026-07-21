@@ -169,19 +169,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 28),
               Text(
-                l10n.appTitle,
+                'راتب جديد ${AppConfig.versionLabel}',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'راتب جديد · v${AppConfig.versionLabel}',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
                       color: const Color(0xFFF59E0B),
-                      fontWeight: FontWeight.w800,
                     ),
               ),
               const SizedBox(height: 8),
