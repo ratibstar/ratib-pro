@@ -1,4 +1,4 @@
-﻿/// Phase B — Device QA static + widget evidence (no ERP business rules).
+/// Phase B — Device QA static + widget evidence (no ERP business rules).
 library;
 
 import 'dart:io';
@@ -31,7 +31,7 @@ class _MemCache implements CacheStore {
 
 void main() {
   test('Phase marker is B', () {
-    expect(AppConfig.phase, 'B');
+    expect(['B','B2'].contains(AppConfig.phase), isTrue);
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
 
@@ -67,13 +67,20 @@ void main() {
     expect(plist.contains('NSFaceIDUsageDescription'), isTrue);
   });
 
-  test('iOS Runner.entitlements wires aps-environment', () {
-    final entitlements =
-        File('ios/Runner/Runner.entitlements').readAsStringSync();
-    expect(entitlements.contains('aps-environment'), isTrue);
+  test('iOS Runner entitlements wire aps-environment', () {
+    final debugEnt =
+        File('ios/Runner/RunnerDebug.entitlements').readAsStringSync();
+    final releaseEnt =
+        File('ios/Runner/RunnerRelease.entitlements').readAsStringSync();
+    expect(debugEnt.contains('aps-environment'), isTrue);
+    expect(releaseEnt.contains('aps-environment'), isTrue);
     final pbx = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
     expect(
-      pbx.contains('CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements'),
+      pbx.contains('CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug.entitlements'),
+      isTrue,
+    );
+    expect(
+      pbx.contains('CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements'),
       isTrue,
     );
   });

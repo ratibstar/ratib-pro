@@ -11,10 +11,10 @@ abstract final class AppConfig {
   static const String appName = 'RATIB HR Mobile';
   static const String appId = 'sa.rateb.hr.mobile';
   /// Roadmap phase marker — see docs/ROADMAP.md.
-  static const String phase = 'B';
-  static const String versionLabel = '0.1.13';
+  static const String phase = 'B2';
+  static const String versionLabel = '0.1.14';
   /// ASCII stamp — must appear in release libapp.so for install verification.
-  static const String buildStamp = '<<<RATIB_BUILD_B013>>>';
+  static const String buildStamp = '<<<RATIB_BUILD_B214>>>';
 
   /// ERP remains the single source of truth (documentation constant only).
   static const String sourceOfTruth = 'RATIB ERP';

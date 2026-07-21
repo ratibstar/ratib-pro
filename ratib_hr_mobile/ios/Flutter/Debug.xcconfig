@@ -1,1 +1,6 @@
 #include "Generated.xcconfig"
+
+// Phase B2 — Debug defaults (production bundle for local Runner scheme).
+PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile
+DISPLAY_NAME = RATIB HR
+FLUTTER_TARGET = lib/main.dart

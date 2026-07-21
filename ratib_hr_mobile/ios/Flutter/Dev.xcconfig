@@ -1,7 +1,6 @@
-#include "Generated.xcconfig"
+#include "Debug.xcconfig"
 
-// Phase A0 / B — iOS flavor: dev
-// On macOS: duplicate Debug/Release configs, set base to this file, create scheme "dev".
+// Phase B2 — iOS flavor: dev (wire scheme base to this file on macOS).
 PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile.dev
 DISPLAY_NAME = RATIB HR Dev
 FLUTTER_TARGET = lib/main.dart

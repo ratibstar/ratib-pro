@@ -1,40 +1,46 @@
-# iOS signing structure (Phase A0 + Phase B)
+# iOS signing & production validation (Phase A0 → B → B2)
 
 ## Bundle IDs
 
-| Flavor | Bundle ID |
-|--------|-----------|
-| production | `sa.rateb.hr.mobile` |
-| staging | `sa.rateb.hr.mobile.stg` |
-| dev | `sa.rateb.hr.mobile.dev` |
+| Flavor | Bundle ID | xcconfig |
+|--------|-----------|----------|
+| production | `sa.rateb.hr.mobile` | `Flutter/Production.xcconfig` |
+| staging | `sa.rateb.hr.mobile.stg` | `Flutter/Staging.xcconfig` |
+| dev | `sa.rateb.hr.mobile.dev` | `Flutter/Dev.xcconfig` |
 
-Xcconfig stubs: `ios/Flutter/{Dev,Staging,Production}.xcconfig`.
+## Phase B2 wiring (21 Jul 2026)
 
-## Phase B status (21 Jul 2026)
+| Item | Status |
+|------|--------|
+| Release / Profile base | `Production.xcconfig` |
+| Archive scheme | `Production.xcscheme` (Release Archive) |
+| Debug APS | `RunnerDebug.entitlements` → `aps-environment=development` |
+| Release APS | `RunnerRelease.entitlements` → `aps-environment=production` |
+| Display name | `$(DISPLAY_NAME)` from xcconfig |
+| ATS | `NSAllowsArbitraryLoads=false` |
+| Face ID usage | Present |
+| Camera / Photos / Location / Associated Domains | Not required (no plugins) |
+| Firebase plist | `GoogleService-Info.plist.example` — real file gitignored |
+| Keychain Sharing | Not required |
+| Compile on Windows | **Impossible** — Flutter has no `build ios` subcommand on Windows |
 
-| Check | Result |
-|-------|--------|
-| Project trees (`Runner`, schemes) | Present |
-| `UIBackgroundModes` remote-notification + fetch | Present in `Info.plist` |
-| `NSFaceIDUsageDescription` | Present (pre-wires `local_auth`) |
-| `Runner.entitlements` + `aps-environment=development` | Present; wired via `CODE_SIGN_ENTITLEMENTS` |
-| CocoaPods `Podfile` | Not required — Flutter SPM plugin package |
-| Flavor schemes `dev` / `staging` / `production` | **Not yet** — create on macOS (below) |
-| Full iOS compile / Simulator | **Requires macOS + Xcode** |
-| Real certificates / provisioning | **Not created** (Phase K) |
+## macOS validation (required for ✔ build)
 
-## macOS / Xcode validation (no store secrets)
+```bash
+cd ratib_hr_mobile
+chmod +x tool/build_ios_macos.sh
+./tool/build_ios_macos.sh
+# or:
+flutter clean && flutter pub get
+flutter build ios --release --no-codesign --dart-define=APP_FLAVOR=production
+```
 
-1. `flutter pub get` (materializes ephemeral SPM package under `ios/Flutter/ephemeral/`).
-2. Open `ios/Runner.xcworkspace` (or `.xcodeproj` — SPM path).
-3. Signing & Capabilities → select Development Team (Automatic).
-4. Confirm Push Notifications capability reflects `Runner.entitlements`.
-5. Optional flavors: duplicate Debug/Release → set base configuration to `Flutter/Dev.xcconfig` (etc.) → schemes `dev` / `staging` / `production`.
-6. `flutter build ios --no-codesign --dart-define=APP_FLAVOR=production` to prove compile without distributing.
-7. Never commit `.p12`, provisioning profiles, or AuthKey `.p8` files.
+Then in Xcode:
 
-## Phase K (store)
-
-1. Create App IDs in Apple Developer for each bundle ID (or production only first).
-2. Switch `aps-environment` to `production` for App Store / TestFlight distribution builds.
-3. Use `ExportOptions.plist.example` as a CI export template.
+1. Open `ios/Runner.xcworkspace`
+2. Scheme **Production** (or Runner → Archive uses Release → Production.xcconfig)
+3. Signing & Capabilities → Development Team (Automatic)
+4. Confirm Push Notifications + Background Modes (remote-notification)
+5. Copy Firebase `GoogleService-Info.plist` locally (BUNDLE_ID must be `sa.rateb.hr.mobile`)
+6. Product → Archive → Distribute App (use `ExportOptions.plist.example` as template)
+7. Never commit `.p12`, provisioning profiles, AuthKey `.p8`, or real `GoogleService-Info.plist`

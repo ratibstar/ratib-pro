@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>RATIB HR</string>
+	<string>$(DISPLAY_NAME)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,8 +26,17 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- ATS: HTTPS only. No arbitrary loads. ERP base URL must be https. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+	<!-- local_auth Face ID — unlock stored ERP session only (no passwords stored). -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>RATIB HR uses Face ID only to unlock your existing ERP session on this device.</string>
+	<!-- Camera / Photo Library / Location: not required — no camera, picker, or geolocation plugins. -->
+	<!-- Associated Domains: not required — deep links not shipped. -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
