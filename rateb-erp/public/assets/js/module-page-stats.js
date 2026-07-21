@@ -184,15 +184,33 @@
 
     /**
      * PERF-P4: start immediately on afterEnter / boot — no afterInteraction, no idle queue.
+     * Soft-nav swaps main HTML — never skip a fresh skeleton that still needs loading.
      */
     function boot() {
         document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
-            if (el.getAttribute('data-rateb-metrics-bound') === '1') {
+            if (el.getAttribute('data-rateb-metrics-ready') === '1') {
+                el.classList.remove('is-loading');
+                return;
+            }
+            if (el.getAttribute('data-rateb-metrics-inflight') === '1') {
                 return;
             }
             el.setAttribute('data-rateb-metrics-bound', '1');
             loadMetrics(el);
         });
+        // Clear any skeleton left behind by a raced soft-nav / aborted fetch.
+        setTimeout(function () {
+            document.querySelectorAll('[data-module-metrics-async].is-loading').forEach(function (el) {
+                if (el.getAttribute('data-rateb-metrics-ready') === '1') {
+                    el.classList.remove('is-loading');
+                    return;
+                }
+                if (el.getAttribute('data-rateb-metrics-inflight') === '1') {
+                    return;
+                }
+                renderPlaceholder(el);
+            });
+        }, FAILSOFT_MS + 150);
     }
 
     if (document.readyState === 'loading') {

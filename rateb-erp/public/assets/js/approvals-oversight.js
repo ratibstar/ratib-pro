@@ -1,23 +1,27 @@
 (function () {
     'use strict';
 
-    var root = document.getElementById('rateb-approvals-oversight');
-    if (!root) {
-        return;
-    }
-
     var config = {};
-    var configEl = document.getElementById('rateb-approvals-config-json');
-    if (configEl) {
-        try {
-            config = JSON.parse(configEl.textContent || '{}');
-        } catch (e) {
-            config = {};
-        }
+    var labels = {};
+    var activeRowKey = null;
+    var clickBound = false;
+
+    function rootEl() {
+        return document.getElementById('rateb-approvals-oversight');
     }
 
-    var labels = config.labels || {};
-    var activeRowKey = null;
+    function refreshConfig() {
+        config = {};
+        var configEl = document.getElementById('rateb-approvals-config-json');
+        if (configEl) {
+            try {
+                config = JSON.parse(configEl.textContent || '{}');
+            } catch (e) {
+                config = {};
+            }
+        }
+        labels = config.labels || {};
+    }
 
     function csrf() {
         return config.csrf || (document.querySelector('meta[name="rateb-csrf"]') || {}).getAttribute('content') || '';
@@ -36,14 +40,20 @@
     }
 
     function dataRow(key) {
-        return root.querySelector('tr.rateb-approval-data-row[data-approval-row="' + key + '"]');
+        var root = rootEl();
+        return root ? root.querySelector('tr.rateb-approval-data-row[data-approval-row="' + key + '"]') : null;
     }
 
     function detailRow(key) {
-        return root.querySelector('tr[data-detail-for="' + key + '"]');
+        var root = rootEl();
+        return root ? root.querySelector('tr[data-detail-for="' + key + '"]') : null;
     }
 
     function closeAllDetails() {
+        var root = rootEl();
+        if (!root) {
+            return;
+        }
         root.querySelectorAll('.rateb-approval-detail-row').forEach(function (tr) {
             tr.classList.add('d-none');
         });
@@ -506,6 +516,13 @@
     }
 
     function flashToast(message, type) {
+        var root = rootEl();
+        if (!root) {
+            try {
+                window.alert(message);
+            } catch (eA) { /* ignore */ }
+            return;
+        }
         var el = document.createElement('div');
         el.className = 'alert alert-' + (type || 'success') + ' rateb-approval-toast';
         el.textContent = message;
@@ -515,7 +532,12 @@
         }, 5200);
     }
 
-    root.addEventListener('click', function (e) {
+    function onRootClick(e) {
+        var root = rootEl();
+        if (!root || !root.contains(e.target)) {
+            return;
+        }
+
         var navLink = e.target.closest('a.rateb-approval-btn-edit, a.rateb-approval-btn-link');
         if (navLink && root.contains(navLink)) {
             e.preventDefault();
@@ -564,5 +586,29 @@
             e.stopPropagation();
             postAction(action, key);
         }
-    });
+    }
+
+    /**
+     * Soft-nav replaces #rateb-main-content — re-read config and keep one document listener.
+     * Idle-only load + one-shot IIFE left approve/reject dead after sidebar navigation.
+     */
+    function boot() {
+        var root = rootEl();
+        if (!root) {
+            activeRowKey = null;
+            return;
+        }
+        refreshConfig();
+        if (!clickBound) {
+            document.addEventListener('click', onRootClick);
+            clickBound = true;
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+    document.addEventListener('rateb:nav:afterEnter', boot);
 })();

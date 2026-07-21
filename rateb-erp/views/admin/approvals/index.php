@@ -79,13 +79,16 @@ $approvalsConfig = [
     <div class="col-12">
         <div class="row g-2">
             <?php
+            $companyIdQ = (int) ($filters['company_id'] ?? 0);
+            $approvalsBase = rateb_url('admin/oversight/approvals');
+            $companiesBase = rateb_url('admin/oversight/companies-approvals');
             $cards = [
-                ['key' => 'total', 'label' => 'approvals_total_pending', 'class' => 'primary'],
-                ['key' => 'company_registration', 'label' => 'companies_approvals_oversight', 'class' => 'info'],
-                ['key' => 'workflow_instance', 'label' => 'approval_category_workflow', 'class' => 'warning'],
-                ['key' => 'journal_entry', 'label' => 'approval_category_accounting', 'class' => 'info'],
-                ['key' => 'supplier_evaluation', 'label' => 'approval_category_manager', 'class' => 'secondary'],
-                ['key' => 'hr_leave', 'label' => 'approval_category_hr', 'class' => 'success'],
+                ['key' => 'total', 'label' => 'approvals_total_pending', 'class' => 'primary', 'type' => '', 'href' => $approvalsBase],
+                ['key' => 'company_registration', 'label' => 'companies_approvals_oversight', 'class' => 'info', 'type' => 'companies', 'href' => $companiesBase],
+                ['key' => 'workflow_instance', 'label' => 'approval_category_workflow', 'class' => 'warning', 'type' => 'workflow', 'href' => $approvalsBase],
+                ['key' => 'journal_entry', 'label' => 'approval_category_accounting', 'class' => 'info', 'type' => 'accounting', 'href' => $approvalsBase],
+                ['key' => 'supplier_evaluation', 'label' => 'approval_category_manager', 'class' => 'secondary', 'type' => 'manager', 'href' => $approvalsBase],
+                ['key' => 'hr_leave', 'label' => 'approval_category_hr', 'class' => 'success', 'type' => 'hr', 'href' => $approvalsBase],
             ];
             foreach ($cards as $card) {
                 $count = (int) ($summary[$card['key']] ?? 0);
@@ -106,14 +109,27 @@ $approvalsConfig = [
                         $count += (int) ($summary[$hk] ?? 0);
                     }
                 }
+                $qs = [];
+                if ($card['type'] !== '') {
+                    $qs['type'] = $card['type'];
+                }
+                if ($companyIdQ > 0) {
+                    $qs['company_id'] = $companyIdQ;
+                }
+                $cardHref = $card['href'] . ($qs !== [] ? '?' . http_build_query($qs) : '');
+                $isActive = ($card['type'] === '' && $typeFilter === '')
+                    || ($card['type'] !== '' && $typeFilter === $card['type'])
+                    || ($card['type'] === 'companies' && $typeFilter === 'companies');
                 ?>
             <div class="col-6 col-md">
-                <div class="rateb-card border-<?php echo $card['class']; ?>">
+                <a href="<?php echo Rateb\App\Core\View::escape($cardHref); ?>"
+                   class="rateb-card rateb-approval-summary-card border-<?php echo $card['class']; ?><?php echo $isActive ? ' is-active' : ''; ?> text-decoration-none d-block"
+                   data-rateb-soft-nav="1">
                     <div class="rateb-card-body py-3 text-center">
                         <div class="h4 mb-0 rateb-ltr-num"><?php echo $count; ?></div>
                         <div class="small text-muted"><?php echo __($card['label']); ?></div>
                     </div>
-                </div>
+                </a>
             </div>
             <?php } ?>
         </div>

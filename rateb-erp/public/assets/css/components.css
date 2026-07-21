@@ -1205,6 +1205,26 @@ table.rateb-oversight-table td.rateb-oversight-clip {
     max-width: 16rem;
 }
 
+/* Approvals oversight — clickable summary filter cards */
+a.rateb-approval-summary-card {
+    color: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+    cursor: pointer;
+}
+
+a.rateb-approval-summary-card:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+a.rateb-approval-summary-card.is-active {
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.55);
+}
+
+a.rateb-approval-summary-card .text-muted {
+    color: var(--rateb-text-muted, #94a3b8) !important;
+}
+
 /* Approvals oversight — horizontal action chips + inline detail panel */
 table.rateb-approvals-table th.rateb-th-actions,
 table.rateb-approvals-table td.rateb-actions-cell {

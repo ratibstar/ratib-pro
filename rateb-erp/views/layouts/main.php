@@ -947,6 +947,8 @@ $ratebCriticalScripts = [
     rateb_asset('js/app.js'),
     // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
     rateb_asset('js/module-page-stats.js'),
+    // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
+    rateb_asset('js/approvals-oversight.js'),
 ];
 $ratebIdleScripts = [
     rateb_bootstrap_js(),
@@ -981,9 +983,6 @@ if (!empty($layoutAssets['contractRenewal'])) {
 }
 if (!empty($layoutAssets['cmsAdmin'])) {
     $ratebIdleScripts[] = rateb_asset('js/cms-admin.js');
-}
-if ($approvalsOversightJs) {
-    $ratebIdleScripts[] = rateb_asset('js/approvals-oversight.js');
 }
 if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
