@@ -84,7 +84,13 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'reports'],
     ['documents', 'documents', 'fa-folder-open', 'documents'],
 ], 'fa-briefcase');
-if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
+// Platform super-admin already gets Access Control (+ App Management) from main.php —
+// skip here to avoid a duplicate "التحكم بالوصول" group.
+if (!rateb_is_super_admin()
+    && function_exists('rateb_company_access_routes_enabled')
+    && rateb_company_access_routes_enabled()
+) {
+    require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
     $accessNavLinks = [
         ['access-control', 'access_control', 'fa-shield-halved', '', 'access.manage'],
         ['access-control/matrix', 'permission_matrix', 'fa-table-cells', '', 'access.manage'],

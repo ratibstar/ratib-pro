@@ -576,20 +576,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </button>
             <?php } ?>
-            <?php if (rateb_nav_can('mobile_apps.view')) {
-                $adminSection(__('agent_apps_section'), [
-                    ['admin/agent-apps', 'agent_apps_nav_dashboard', 'fa-gauge-high', 'mobile_apps.view'],
-                    ['admin/agent-apps/settings', 'agent_apps_settings', 'fa-sliders', 'mobile_apps.view'],
-                    ['admin/agent-apps/ratings', 'agent_apps_ratings', 'fa-star', 'mobile_apps.view'],
-                    ['admin/agent-apps/complaints', 'agent_apps_complaints', 'fa-exclamation-triangle', 'mobile_apps.view'],
-                    ['admin/agent-apps/notifications', 'agent_apps_notifications', 'fa-bell', 'mobile_apps.view'],
-                    ['admin/agent-apps/payments', 'agent_apps_payments', 'fa-credit-card', 'mobile_apps.view'],
-                    ['admin/agent-apps/content', 'agent_apps_content', 'fa-file-lines', 'mobile_apps.view'],
-                    ['admin/agent-apps/offers', 'agent_apps_offers', 'fa-image', 'mobile_apps.view'],
-                    ['admin/agent-apps/invoices', 'agent_apps_invoices', 'fa-file-invoice', 'mobile_apps.view'],
-                    ['admin/mobile-apps', 'mobile_apps_nav', 'fa-mobile-alt', 'mobile_apps.view'],
-                ], 'fa-mobile-screen-button');
-            } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
             <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" data-rateb-href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>" onclick="return false;">
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
@@ -650,6 +636,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ?>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
+            <?php
+            // Tenant without company-access routes still needs App Management when permitted.
+            if (!rateb_is_super_admin()
+                && rateb_nav_can('mobile_apps.view')
+                && !(function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled())
+            ) {
+                require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
+            }
+            ?>
             <?php if (rateb_is_super_admin()) { ?>
             <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
             <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" data-rateb-href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>" onclick="return false;">
@@ -675,6 +670,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     ['admin/cms/about', 'cms_about', 'fa-building', 'cms.manage'],
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
+            require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
             $accessControlLinks = [
                 ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],
                 ['admin/access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access.manage'],
