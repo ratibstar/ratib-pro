@@ -87,7 +87,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is F or later', () {
-    expect(['F', 'G', 'H', 'J', 'I3','B','B2'].contains(AppConfig.phase), isTrue);
+    expect(['F', 'G', 'H', 'J', 'I3','B','B2','K'].contains(AppConfig.phase), isTrue);
   });
 
   test('Payslip/document adapter paths are Phase F ESS endpoints', () {

@@ -31,7 +31,7 @@ class _MemCache implements CacheStore {
 
 void main() {
   test('Phase marker is B', () {
-    expect(['B','B2'].contains(AppConfig.phase), isTrue);
+    expect(['B','B2','K'].contains(AppConfig.phase), isTrue);
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
 

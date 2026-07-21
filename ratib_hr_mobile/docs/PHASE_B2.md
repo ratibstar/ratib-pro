@@ -16,7 +16,7 @@ Prepare production-quality iOS native integration for App Store / TestFlight pat
 | `flutter build` subcommands | `aar`, `apk`, `appbundle`, `bundle`, `web`, `windows` only |
 | `flutter build ios --release --no-codesign` | **Not available** on this host (exit 64 / unknown option) |
 | `flutter clean` + `flutter pub get` | **PASS** |
-| Static suite `phase_b2_ios_production_test.dart` | Run in close-out |
+| Static suite `phase_b2_ios_production_test.dart` | **PASS** (included in `flutter test` **94/94**) |
 
 ## Fixes applied
 

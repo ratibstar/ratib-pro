@@ -23,7 +23,8 @@ if (googleServicesJson.exists()) {
 android {
     namespace = "sa.rateb.hr.mobile"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pin to installed NDK so release AAB can strip native symbols (Phase K).
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -35,9 +36,10 @@ android {
         applicationId = "sa.rateb.hr.mobile"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
+        // Version strategy (Phase K): pubspec.yaml `version: NAME+CODE`
+        // versionName = marketing (e.g. 1.0.0); versionCode = monotonic Play integer.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
     }
 
     flavorDimensions += "env"
@@ -52,7 +54,6 @@ android {
         }
         create("production") {
             dimension = "env"
-            // Architecture Lock / ROADMAP production id (Phase B restored).
             applicationId = "sa.rateb.hr.mobile"
         }
     }
@@ -70,14 +71,18 @@ android {
 
     buildTypes {
         release {
-            // Phase A0: use debug signing until real Play Store keystore is supplied locally.
+            // Play upload requires local key.properties + upload JKS (never commit secrets).
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
             }
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

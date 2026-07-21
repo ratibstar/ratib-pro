@@ -1,5 +1,5 @@
-# Copy to android/key.properties (gitignored) when Play Store signing is ready.
-# Phase A0: do NOT commit real passwords or keystore files.
+# Copy to android/key.properties (gitignored) for Play Store upload signing.
+# Phase K: do NOT commit real passwords or keystore files.
 
 storePassword=REPLACE_ME
 keyPassword=REPLACE_ME

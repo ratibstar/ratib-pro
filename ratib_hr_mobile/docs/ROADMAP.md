@@ -40,7 +40,7 @@
 | **I Push** | Push notification foundation | **I.0–I.3 COMPLETE** — ERP [PHASE_I_PUSH.md](PHASE_I_PUSH.md) · Flutter [PHASE_I3_PUSH_CLIENT.md](PHASE_I3_PUSH_CLIENT.md) · [ADR-PUSH-1](../../rateb-erp/offline-v2/docs/ADR-PUSH-1-MOBILE-PUSH-FOUNDATION.md) |
 | **I Approvals** | Approvals (if ERP ready) | Optional / separate from Push |
 | **J** | Unified Mobile Device Registry | **COMPLETE** — see [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md) (design: [PHASE_J.md](PHASE_J.md)) |
-| **K** | Store production release | After A–H |
+| **K** | Store production release | **PREP COMPLETE — NO-GO upload** — see [PHASE_K.md](PHASE_K.md) |
 
 ---
 
