@@ -439,8 +439,16 @@
         initCoaFullTree();
     };
     document.addEventListener('rateb:nav:afterEnter', function () {
-        if (window.RatebApp && typeof window.RatebApp.reinit === 'function') {
-            window.RatebApp.reinit();
+        var run = function () {
+            if (window.RatebApp && typeof window.RatebApp.reinit === 'function') {
+                window.RatebApp.reinit();
+            }
+        };
+        // Keep sidebar clicks free — defer heavy table/COA rebind off the paint path.
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(run, { timeout: 1200 });
+        } else {
+            setTimeout(run, 0);
         }
     });
 

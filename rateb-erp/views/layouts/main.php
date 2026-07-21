@@ -162,6 +162,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ev.preventDefault();
                 ev.stopPropagation();
                 window.__RATEB_PENDING_NAV__ = u.href;
+                try {
+                    document.querySelectorAll('a.rateb-nav-link').forEach(function (link) {
+                        link.classList.remove('active', 'is-nav-pending');
+                    });
+                    a.classList.add('active', 'is-nav-pending');
+                    var main = document.querySelector('#rateb-main-content, main.rateb-content');
+                    if (main) {
+                        main.classList.add('is-nav-busy');
+                    }
+                } catch (eUi) { /* ignore */ }
             } catch (eEarly) { /* ignore */ }
         }, true);
     })();

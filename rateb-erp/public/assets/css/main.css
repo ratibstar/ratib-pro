@@ -276,6 +276,17 @@ body.rateb-app {
     border-left-color: var(--rateb-accent);
 }
 
+.rateb-nav-link.is-nav-pending {
+    outline: 1px solid rgba(56, 189, 248, 0.55);
+    outline-offset: -1px;
+}
+
+.rateb-content.is-nav-busy {
+    opacity: 0.72;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
 .rateb-nav-link.rateb-nav-logout {
     margin-top: 0.65rem;
     padding-top: 0.75rem;

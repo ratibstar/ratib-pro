@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v35';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260720-softnav-passthrough-v89';
+var SW_BUILD_ID = '20260721-nav-instant-feedback-v91';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3719,10 +3719,8 @@ self.addEventListener('fetch', function (event) {
         }
     }
 
-    // Soft-nav / prefetch HTML: ALWAYS passthrough.
-    // Page soft-nav already races Cache API (matchCachedHtml). A SW 700ms ceiling
-    // returned empty 504 and made sidebar icons look dead after F5 until a full
-    // navigation warmed something. Never respondWith these — let fetch hit origin.
+    // Soft-nav / prefetch HTML: cache-first like F5, never empty 504.
+    // Hit → instant paint; miss → network fetch (same as passthrough).
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
         && event.request.mode !== 'navigate'
@@ -3736,6 +3734,11 @@ self.addEventListener('fetch', function (event) {
                 + String(event.request.headers.get('X-Rateb-Prefetch') || '');
         } catch (eSwapHdr) { /* ignore */ }
         if (swapFlag.indexOf('1') !== -1) {
+            event.respondWith(
+                softNavAdminHtml(event.request, url, event).catch(function () {
+                    return fetch(event.request);
+                })
+            );
             return;
         }
     }

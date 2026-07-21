@@ -18,6 +18,7 @@
     var loadedScripts = Object.create(null);
     var navigating = false;
     var pendingNavHref = '';
+    var inflightAbort = null;
     var prefetchSeen = Object.create(null);
     var prefetchQueue = [];
     var prefetchInFlight = 0;
@@ -528,12 +529,59 @@
             document.querySelectorAll('a.rateb-nav-link').forEach(function (a) {
                 var ap = '';
                 try {
-                    ap = new URL(a.href, root.location.href).pathname.replace(/\/+$/, '');
+                    ap = new URL(a.getAttribute('data-rateb-href') || a.href, root.location.href)
+                        .pathname.replace(/\/+$/, '');
                 } catch (e) { return; }
                 var on = ap === path || (path.indexOf(ap) === 0 && ap.length > 10);
                 a.classList.toggle('active', on);
+                a.classList.toggle('is-nav-pending', on);
+                if (on) {
+                    // Expand parent groups so the active link is visible immediately.
+                    var group = a.closest('.rateb-nav-group, .rateb-nav-subgroup');
+                    while (group) {
+                        group.classList.add('is-open');
+                        var toggle = group.querySelector(':scope > [data-nav-group-toggle]');
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'true');
+                        }
+                        group = group.parentElement
+                            ? group.parentElement.closest('.rateb-nav-group, .rateb-nav-subgroup')
+                            : null;
+                    }
+                }
             });
         } catch (e2) { /* ignore */ }
+    }
+
+    function setMainNavBusy(busy) {
+        try {
+            var main = document.querySelector('#rateb-main-content, main.rateb-content');
+            if (!main) {
+                return;
+            }
+            if (busy) {
+                main.classList.add('is-nav-busy');
+                main.setAttribute('aria-busy', 'true');
+            } else {
+                main.classList.remove('is-nav-busy');
+                main.removeAttribute('aria-busy');
+            }
+        } catch (eB) { /* ignore */ }
+    }
+
+    function clearNavPending() {
+        try {
+            document.querySelectorAll('a.rateb-nav-link.is-nav-pending').forEach(function (a) {
+                a.classList.remove('is-nav-pending');
+            });
+        } catch (eC) { /* ignore */ }
+    }
+
+    function abortInflightNav() {
+        if (typeof inflightAbort === 'function') {
+            try { inflightAbort(); } catch (eA) { /* ignore */ }
+        }
+        inflightAbort = null;
     }
 
     function syncMeta(doc) {
@@ -771,7 +819,7 @@
             return null;
         });
 
-        var ceilingMs = isUiOffline() ? 350 : (isBareAdminHref(href) ? 1000 : 2500);
+        var ceilingMs = isUiOffline() ? 350 : (isBareAdminHref(href) ? 800 : 1400);
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = root.setTimeout(function () {
@@ -784,6 +832,19 @@
                 }
                 reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
             }, ceilingMs);
+
+            // Expose abort so a newer sidebar click can cancel this race.
+            inflightAbort = function () {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                root.clearTimeout(timer);
+                if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
+                    try { networkPromise._ratebAbort(); } catch (eAb3) { /* ignore */ }
+                }
+                reject(new Error('nav_superseded'));
+            };
 
             function win(pack) {
                 if (settled || !pack || !pack.html) {
@@ -904,18 +965,26 @@
     function swapTo(href, opts) {
         opts = opts || {};
         if (navigating) {
-            // Remember latest click (online + offline) — never drop it / never freeze sidebar.
+            // Latest click wins: optimistic chrome + supersede in-flight fetch immediately.
             pendingNavHref = href;
+            updateActiveNav(href);
+            setMainNavBusy(true);
+            abortInflightNav();
+            swapTo._gen = (swapTo._gen || 0) + 1;
+            navigating = false;
+            drainPendingNav();
             return Promise.resolve(false);
         }
         navigating = true;
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
-        // Safety: never leave soft-nav locked (hung fetch would kill Dashboard / all links).
-        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 4500 : 9000);
+        // Safety unlock aligned with fetch ceiling (was 4.5–9s — sidebar felt frozen).
+        var unlockMs = isUiOffline() ? 400 : (isBareAdminHref(href) ? 1600 : 2200);
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;
+                setMainNavBusy(false);
+                clearNavPending();
                 try {
                     console.warn('[RATEB NAV] unlock stuck navigating');
                 } catch (eU) { /* ignore */ }
@@ -924,6 +993,10 @@
         }, unlockMs);
         var t0 = performance.now();
         cleanupSoftNavUiArtifacts();
+        // Instant feedback — do not wait for HTML fetch.
+        updateActiveNav(href);
+        setMainNavBusy(true);
+        clearPrefetchQueue();
         try {
             runLifecycle('beforeLeave', { href: root.location.href, next: href });
         } catch (eLeave) { /* ignore */ }
@@ -946,6 +1019,8 @@
             curMain.innerHTML = nextMain.innerHTML;
             syncMeta(doc);
             updateActiveNav(pack.finalUrl);
+            clearNavPending();
+            setMainNavBusy(false);
             if (!opts.replace && !opts.popstate) {
                 root.history.pushState({ ratebNav: 1 }, '', pack.finalUrl);
             } else if (opts.replace) {
@@ -989,15 +1064,20 @@
             try {
                 console.warn('[RATEB NAV] fallback', err && err.message);
             } catch (eW) { /* ignore */ }
+            setMainNavBusy(false);
+            clearNavPending();
             // NEVER hardNavigate on soft-nav miss — location.assign blanks the tab
             // (black #0b1120 body) and can hang minutes while F5 from SW cache is instant.
             // Stay on the current shell; user keeps sidebar and can retry.
-            showSoftNavMissToast(href);
+            if (!(err && err.message === 'nav_superseded')) {
+                showSoftNavMissToast(href);
+            }
             return false;
         }).then(function (ok) {
             root.clearTimeout(unlockTimer);
             if (swapTo._gen === navGen) {
                 navigating = false;
+                inflightAbort = null;
             }
             drainPendingNav();
             return ok;
@@ -1115,6 +1195,12 @@
             try { ev.stopImmediatePropagation(); } catch (eSip) { /* ignore */ }
             if (navigating) {
                 pendingNavHref = btnHref;
+                updateActiveNav(btnHref);
+                setMainNavBusy(true);
+                abortInflightNav();
+                swapTo._gen = (swapTo._gen || 0) + 1;
+                navigating = false;
+                drainPendingNav();
                 return;
             }
             swapTo(btnHref);
@@ -1125,15 +1211,12 @@
             ev.preventDefault();
             try { ev.stopImmediatePropagation(); } catch (eSip2) { /* ignore */ }
             pendingNavHref = href;
-            if (!onClick._unlockKick) {
-                onClick._unlockKick = root.setTimeout(function () {
-                    onClick._unlockKick = null;
-                    if (navigating) {
-                        navigating = false;
-                        drainPendingNav();
-                    }
-                }, isUiOffline() ? 450 : 2900);
-            }
+            updateActiveNav(href);
+            setMainNavBusy(true);
+            abortInflightNav();
+            swapTo._gen = (swapTo._gen || 0) + 1;
+            navigating = false;
+            drainPendingNav();
             return;
         }
         ev.preventDefault();
