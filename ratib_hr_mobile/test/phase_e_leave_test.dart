@@ -71,7 +71,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is E or later', () {
-    expect(['E', 'F', 'G', 'H', 'J', 'I3','B','B2','K','K1','K2'].contains(AppConfig.phase), isTrue);
+    expect(['E', 'F', 'G', 'H', 'J', 'I3','B','B2','K','K1','K2','K3'].contains(AppConfig.phase), isTrue);
   });
 
   test('Leave adapter paths are Phase E ESS endpoints', () {

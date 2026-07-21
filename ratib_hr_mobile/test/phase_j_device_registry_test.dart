@@ -152,7 +152,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is J or later', () {
-    expect(['J', 'I3','B','B2','K','K1','K2'].contains(AppConfig.phase), isTrue);
+    expect(['J', 'I3','B','B2','K','K1','K2','K3'].contains(AppConfig.phase), isTrue);
   });
 
   test('Adapter paths and client_app are shared ERP contract', () {

@@ -8,7 +8,7 @@ import 'package:ratib_hr_mobile/core/config/app_config.dart';
 
 void main() {
   test('Phase marker is B2', () {
-    expect(['B2','K','K1','K2'].contains(AppConfig.phase), isTrue);
+    expect(['B2','K','K1','K2','K3'].contains(AppConfig.phase), isTrue);
   });
 
   test('Release/Profile use Production.xcconfig and production APS', () {

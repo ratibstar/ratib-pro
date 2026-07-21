@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 
 void main() {
-  test('Phase marker is K2 and store version is 1.0.0', () {
-    expect(AppConfig.phase, 'K2');
+  test('Phase marker is K3 and store version is 1.0.0', () {
+    expect(AppConfig.phase, 'K3');
     expect(AppConfig.versionLabel, '1.0.0');
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
@@ -79,6 +79,7 @@ void main() {
     expect(File('docs/COMPLIANCE.md').existsSync(), isTrue);
     expect(File('docs/PHASE_K.md').existsSync(), isTrue);
     expect(File('docs/PHASE_K2.md').existsSync(), isTrue);
+    expect(File('docs/PHASE_K3.md').existsSync(), isTrue);
     expect(File('docs/PLAY_STORE_RELEASE.md').existsSync(), isTrue);
     expect(File('tool/build_android_aab.ps1').existsSync(), isTrue);
   });

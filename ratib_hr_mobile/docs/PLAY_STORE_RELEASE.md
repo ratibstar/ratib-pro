@@ -5,7 +5,7 @@
 **AAB (local):** `build/app/outputs/bundle/productionRelease/app-production-release.aab`  
 **Version:** `1.0.0` (versionCode `200`) · flavor `production`
 
-Related: [PHASE_K1.md](PHASE_K1.md) · [COMPLIANCE.md](COMPLIANCE.md) · [STORE_ASSETS_CHECKLIST.md](STORE_ASSETS_CHECKLIST.md)
+Related: [PHASE_K1.md](PHASE_K1.md) · [PHASE_K3.md](PHASE_K3.md) (Internal checklist) · [COMPLIANCE.md](COMPLIANCE.md) · [STORE_ASSETS_CHECKLIST.md](STORE_ASSETS_CHECKLIST.md)
 
 ---
 

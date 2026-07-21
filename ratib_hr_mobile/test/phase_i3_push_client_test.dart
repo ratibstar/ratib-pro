@@ -220,7 +220,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is I3', () {
-    expect(['I3','B','B2','K','K1','K2'].contains(AppConfig.phase), isTrue);
+    expect(['I3','B','B2','K','K1','K2','K3'].contains(AppConfig.phase), isTrue);
   });
 
   test('Adapter push-token path omits user_id and company_id', () async {
