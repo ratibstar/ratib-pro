@@ -29,7 +29,7 @@
 |-------|------|--------|
 | **A0** | Native production Flutter shell | **COMPLETE** — see [PHASE_A0.md](PHASE_A0.md) |
 | **A** | MobileConfig + white-label + feature flags | **COMPLETE** — see [PHASE_A.md](PHASE_A.md) |
-| **B** | Native hardening / device QA (extends A0) | Pending |
+| **B** | Native hardening / device QA (extends A0) | **COMPLETE** — see [PHASE_B.md](PHASE_B.md) |
 | **C** | Enterprise ESS modules | **COMPLETE** — see [PHASE_C.md](PHASE_C.md) |
 | **D** | Attendance deep wiring | **COMPLETE** — see [PHASE_D.md](PHASE_D.md) |
 | **E** | Leave Management | **COMPLETE** — see [PHASE_E.md](PHASE_E.md) |

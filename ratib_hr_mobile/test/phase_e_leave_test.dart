@@ -71,7 +71,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is E or later', () {
-    expect(['E', 'F', 'G', 'H', 'J', 'I3'].contains(AppConfig.phase), isTrue);
+    expect(['E', 'F', 'G', 'H', 'J', 'I3','B'].contains(AppConfig.phase), isTrue);
   });
 
   test('Leave adapter paths are Phase E ESS endpoints', () {
@@ -127,6 +127,10 @@ void main() {
   });
 
   test('Repository queues apply on network failure', () async {
+    EmployeeContext.bind(
+      EmployeeContext.fromErpRecord({'id': 42, 'name': 'QA'}),
+    );
+    addTearDown(EmployeeContext.clear);
     final fake = _FakeLeave()
       ..applyError = const AppFailure(code: 'network', message: 'down');
     final queue = LocalOfflineQueueAdapter(cache: _MemCache());
@@ -219,4 +223,13 @@ class _NoopOffline implements OfflineQueuePort {
   @override
   Future<bool> supportsExistingAction(String existingAction) async =>
       existingAction == 'leave_request.draft';
+
+  @override
+  Future<List<Map<String, Object?>>> pendingItems() async => const [];
+
+  @override
+  Future<int> pendingCount() async => 0;
+
+  @override
+  Future<void> replaceAll(List<Map<String, Object?>> items) async {}
 }

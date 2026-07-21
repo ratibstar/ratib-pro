@@ -1,6 +1,6 @@
 #include "Generated.xcconfig"
 
-// Phase A0 — iOS flavor: production
+// Phase A0 / B — iOS flavor: production (wire via Xcode scheme → this file as base).
 PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile
 DISPLAY_NAME = RATIB HR
 FLUTTER_TARGET = lib/main.dart

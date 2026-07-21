@@ -53,8 +53,9 @@ final class LeaveRepository {
       return LeaveApplyResult.online;
     } on AppFailure catch (e) {
       if (e.code == 'network' || e.code == 'timeout') {
-        AppLocator.connectivity.markOffline(e.message);
+        // Enqueue first — never lose the offline draft if connectivity UI is unbound.
         await _enqueueDraft(payload);
+        _markConnectivityOffline(e.message);
         return LeaveApplyResult.queuedOffline;
       }
       rethrow;
@@ -64,6 +65,14 @@ final class LeaveRepository {
   Future<int> pendingOfflineCount() async {
     final items = await _offlineQueue.pendingItems();
     return items.where((e) => (e['action'] ?? '') == 'leave_request.draft').length;
+  }
+
+  void _markConnectivityOffline(String? message) {
+    try {
+      AppLocator.connectivity.markOffline(message);
+    } catch (_) {
+      // Presentation-only signal; queue already persisted.
+    }
   }
 
   Future<void> _enqueueDraft(Map<String, Object?> payload) async {

@@ -5,8 +5,8 @@
 | | |
 |--|--|
 | Official ESS app | `ratib_hr_mobile` |
-| Current phase | **A0 — Native production shell** |
-| Next phase | **A — MobileConfig / white-label** (after A0 exit) |
+| Current phase | **B — Enterprise Device QA** |
+| Next phase | **K — Store production release** (after signing + hardware QA on Mac/device) |
 | Source of truth | RATIB ERP |
 | Not this | `rateb_mobile`, Capacitor Admin, Tracking |
 

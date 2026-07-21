@@ -47,8 +47,9 @@ final class AttendanceRepository {
       return AttendancePunchResult.online;
     } on AppFailure catch (e) {
       if (e.code == 'network' || e.code == 'timeout') {
-        AppLocator.connectivity.markOffline(e.message);
+        // Enqueue first — never lose the offline action if connectivity UI is unbound.
         await _enqueueCreate(date: date, checkIn: time);
+        _markConnectivityOffline(e.message);
         return AttendancePunchResult.queuedOffline;
       }
       rethrow;
@@ -86,6 +87,14 @@ final class AttendanceRepository {
   }
 
   Future<int> _pendingCount() => _offlineQueue.pendingCount();
+
+  void _markConnectivityOffline(String? message) {
+    try {
+      AppLocator.connectivity.markOffline(message);
+    } catch (_) {
+      // Presentation-only signal; queue already persisted.
+    }
+  }
 
   /// Replays pending `attendance.create` via online check-in (no attendance.update).
   Future<void> _flushPendingCheckIns() async {

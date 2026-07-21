@@ -71,7 +71,7 @@ MobileAppConfiguration _cfg(Map<String, bool> features) {
 
 void main() {
   test('Phase marker is H or later', () {
-    expect(['H', 'J', 'I3'].contains(AppConfig.phase), isTrue);
+    expect(['H', 'J', 'I3','B'].contains(AppConfig.phase), isTrue);
   });
 
   test('Queue persists only allowed actions', () async {

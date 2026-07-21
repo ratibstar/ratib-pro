@@ -77,7 +77,7 @@ void main() {
   tearDown(EmployeeContext.clear);
 
   test('Phase marker is D or later', () {
-    expect(['D', 'E', 'F', 'G', 'H', 'J', 'I3'].contains(AppConfig.phase), isTrue);
+    expect(['D', 'E', 'F', 'G', 'H', 'J', 'I3','B'].contains(AppConfig.phase), isTrue);
   });
 
   test('Attendance adapter paths are Phase D ESS endpoints', () {
@@ -140,6 +140,10 @@ void main() {
   });
 
   test('Repository queues check-in on network failure', () async {
+    EmployeeContext.bind(
+      EmployeeContext.fromErpRecord({'id': 42, 'name': 'QA'}),
+    );
+    addTearDown(EmployeeContext.clear);
     final fake = _FakeAttendance()
       ..checkInError = const AppFailure(code: 'network', message: 'down');
     final queue = LocalOfflineQueueAdapter(cache: _MemCache());
@@ -210,6 +214,15 @@ class _NoopOffline implements OfflineQueuePort {
   @override
   Future<bool> supportsExistingAction(String existingAction) async =>
       existingAction == 'attendance.create';
+
+  @override
+  Future<List<Map<String, Object?>>> pendingItems() async => const [];
+
+  @override
+  Future<int> pendingCount() async => 0;
+
+  @override
+  Future<void> replaceAll(List<Map<String, Object?>> items) async {}
 }
 
 class _Harness extends StatefulWidget {
