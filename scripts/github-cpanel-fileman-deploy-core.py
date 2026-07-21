@@ -365,6 +365,7 @@ FAST_FILES = [
     "rateb-erp/app/services/MobileDeviceService.php",
     "rateb-erp/app/services/MobileDeviceDbStore.php",
     "rateb-erp/app/controllers/Api/MobileDeviceController.php",
+    "rateb-erp/app/controllers/Api/MobileConfigController.php",
     "rateb-erp/migrations/003_permissions_ar_evaluations.sql",
     "rateb-erp/migrations/206_mobile_devices_registry.sql",
     "rateb-erp/migrations/207_mobile_devices_push_foundation.sql",
