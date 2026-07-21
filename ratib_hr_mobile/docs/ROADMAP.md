@@ -41,6 +41,7 @@
 | **I Approvals** | Approvals (if ERP ready) | Optional / separate from Push |
 | **J** | Unified Mobile Device Registry | **COMPLETE** — see [PHASE_J_IMPLEMENTATION.md](PHASE_J_IMPLEMENTATION.md) (design: [PHASE_J.md](PHASE_J.md)) |
 | **K** | Store production release | **PREP COMPLETE — NO-GO upload** — see [PHASE_K.md](PHASE_K.md) |
+| **K1** | Android production signing automation | **COMPLETE** — see [PHASE_K1.md](PHASE_K1.md) |
 
 ---
 

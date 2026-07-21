@@ -1,27 +1,31 @@
-# Android upload keystore (Phase K)
+# Android upload keystore (Phase K1)
 
-This directory holds the Play Console **upload** keystore locally only.
+Local-only Play Console **upload** keystore.
 
 ## Rules
 
-- Do **not** commit `*.jks` / `*.keystore` files.
-- Do **not** commit `../key.properties` (see `../key.properties.example`).
-- Play App Signing: upload key signs the AAB; Google holds the app signing key.
+- Do **not** commit `*.jks` / `*.keystore` / `key.properties`.
+- File name: `ratib-hr-upload-key.jks`
+- Alias: `ratib_hr_upload`
+- Algorithm: RSA 2048 · validity 10000 days
 
-## Generate (operator machine — once)
-
-```bash
-keytool -genkey -v -keystore ratib-hr-mobile-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias ratib_hr_mobile
-```
-
-1. Copy `android/key.properties.example` → `android/key.properties`
-2. Fill `storePassword`, `keyPassword`, `keyAlias`, `storeFile`
-3. Build: `.\tool\build_android_aab.ps1`
-
-## Verify
+## Generate (operator machine)
 
 ```powershell
-# After key.properties exists:
-flutter build appbundle --flavor production --dart-define=APP_FLAVOR=production --release
-# Output: build/app/outputs/bundle/productionRelease/app-production-release.aab
+$keytool = "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
+& $keytool -genkeypair -v `
+  -keystore android/keystore/ratib-hr-upload-key.jks `
+  -storetype JKS `
+  -alias ratib_hr_upload `
+  -keyalg RSA -keysize 2048 -validity 10000 `
+  -storepass "<STORE_PASS>" -keypass "<KEY_PASS>" `
+  -dname "CN=RATIB HR Mobile Upload, OU=Mobile, O=Rateb, L=Riyadh, ST=Riyadh, C=SA"
+```
+
+Then create `android/key.properties` from `key.properties.example`.
+
+## Build signed AAB
+
+```powershell
+.\tool\build_android_aab.ps1
 ```

@@ -37,7 +37,6 @@ android {
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Version strategy (Phase K): pubspec.yaml `version: NAME+CODE`
-        // versionName = marketing (e.g. 1.0.0); versionCode = monotonic Play integer.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -63,7 +62,8 @@ android {
             create("release") {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
+                // Paths in key.properties are relative to android/ (rootProject), not app/.
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
                 storePassword = keystoreProperties["storePassword"] as String
             }
         }
@@ -71,12 +71,14 @@ android {
 
     buildTypes {
         release {
-            // Play upload requires local key.properties + upload JKS (never commit secrets).
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            // Phase K1: production release must use upload keystore (no silent debug fallback).
+            if (!hasReleaseKeystore) {
+                throw GradleException(
+                    "Missing android/key.properties — required for release signing (Phase K1). " +
+                        "Copy key.properties.example and generate keystore/ratib-hr-upload-key.jks locally.",
+                )
             }
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

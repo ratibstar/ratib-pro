@@ -7,8 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 
 void main() {
-  test('Phase marker is K and store version is 1.0.0', () {
-    expect(AppConfig.phase, 'K');
+  test('Phase marker is K1 and store version is 1.0.0', () {
+    expect(AppConfig.phase, 'K1');
     expect(AppConfig.versionLabel, '1.0.0');
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
@@ -33,12 +33,17 @@ void main() {
     expect(File('android/app/proguard-rules.pro').existsSync(), isTrue);
   });
 
-  test('Signing placeholders only — no committed keystore secrets', () {
-    expect(File('android/key.properties').existsSync(), isFalse);
+  test('Signing secrets are gitignored; example documents upload alias', () {
     expect(File('android/key.properties.example').existsSync(), isTrue);
+    final example = File('android/key.properties.example').readAsStringSync();
+    expect(example.contains('ratib_hr_upload'), isTrue);
+    expect(example.contains('ratib-hr-upload-key.jks'), isTrue);
     final gi = File('android/.gitignore').readAsStringSync();
     expect(gi.contains('key.properties'), isTrue);
     expect(gi.contains('*.jks'), isTrue);
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    expect(gradle.contains('Missing android/key.properties'), isTrue);
+    expect(gradle.contains('signingConfigs.getByName("debug")'), isFalse);
   });
 
   test('Manifest cleartext disabled and notification permission present', () {

@@ -1,7 +1,7 @@
-# Copy to android/key.properties (gitignored) for Play Store upload signing.
-# Phase K: do NOT commit real passwords or keystore files.
+# Copy to android/key.properties (gitignored) for Play upload signing.
+# Phase K1: NEVER commit real passwords or the .jks file.
 
 storePassword=REPLACE_ME
 keyPassword=REPLACE_ME
-keyAlias=ratib_hr_mobile
-storeFile=keystore/ratib-hr-mobile-upload.jks
+keyAlias=ratib_hr_upload
+storeFile=keystore/ratib-hr-upload-key.jks

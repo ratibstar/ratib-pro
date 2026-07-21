@@ -31,7 +31,7 @@ class _MemCache implements CacheStore {
 
 void main() {
   test('Phase marker is B', () {
-    expect(['B','B2','K'].contains(AppConfig.phase), isTrue);
+    expect(['B','B2','K','K1'].contains(AppConfig.phase), isTrue);
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
   });
 
@@ -152,10 +152,10 @@ void main() {
     expect(find.text('theme'), findsOneWidget);
   });
 
-  test('Release build uses debug signing when key.properties absent', () {
-    expect(File('android/key.properties').existsSync(), isFalse);
+  test('Release signing requires key.properties (no silent debug fallback)', () {
     expect(File('android/key.properties.example').existsSync(), isTrue);
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
-    expect(gradle.contains('signingConfigs.getByName("debug")'), isTrue);
+    expect(gradle.contains('Missing android/key.properties'), isTrue);
+    expect(gradle.contains('signingConfigs.getByName("debug")'), isFalse);
   });
 }
