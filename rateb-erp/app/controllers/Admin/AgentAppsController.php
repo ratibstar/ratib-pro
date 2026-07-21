@@ -15,17 +15,11 @@ final class AgentAppsController extends Controller
 {
     /** @var array<string, array{title:string,icon:string,tone:string,desc:string}> */
     private const SECTIONS = [
-        'requests' => [
-            'title' => 'agent_apps_requests',
-            'icon' => 'fa-users',
+        'settings' => [
+            'title' => 'agent_apps_settings',
+            'icon' => 'fa-sliders',
             'tone' => 'blue',
-            'desc' => 'agent_apps_requests_desc',
-        ],
-        'invoices' => [
-            'title' => 'agent_apps_invoices',
-            'icon' => 'fa-file-invoice',
-            'tone' => 'navy',
-            'desc' => 'agent_apps_invoices_desc',
+            'desc' => 'agent_apps_settings_desc',
         ],
         'ratings' => [
             'title' => 'agent_apps_ratings',
@@ -63,11 +57,11 @@ final class AgentAppsController extends Controller
             'tone' => 'teal',
             'desc' => 'agent_apps_offers_desc',
         ],
-        'settings' => [
-            'title' => 'agent_apps_settings',
-            'icon' => 'fa-sliders',
-            'tone' => 'blue',
-            'desc' => 'agent_apps_settings_desc',
+        'invoices' => [
+            'title' => 'agent_apps_invoices',
+            'icon' => 'fa-file-invoice',
+            'tone' => 'navy',
+            'desc' => 'agent_apps_invoices_desc',
         ],
     ];
 
@@ -79,14 +73,11 @@ final class AgentAppsController extends Controller
             return;
         }
 
-        $stats = $this->buildStats();
-        $modules = $this->buildModules();
-
         $this->view('admin/agent-apps/dashboard', [
             'title' => __('agent_apps_dashboard_title'),
             'activeSection' => 'dashboard',
-            'modules' => $modules,
-            'stats' => $stats,
+            'modules' => $this->buildModules(),
+            'stats' => $this->buildStats(),
             'canManage' => $this->canManage(),
         ], 'main');
     }
@@ -100,7 +91,7 @@ final class AgentAppsController extends Controller
         }
 
         $key = trim((string) ($params['section'] ?? ''));
-        if ($key === '' || !isset(self::SECTIONS[$key])) {
+        if ($key === 'requests' || $key === '' || !isset(self::SECTIONS[$key])) {
             Response::redirect(rateb_url('admin/agent-apps'));
             return;
         }
@@ -191,10 +182,10 @@ final class AgentAppsController extends Controller
                 'tone' => 'green',
             ],
             [
-                'key' => 'requests',
-                'label' => __('agent_apps_stat_requests'),
+                'key' => 'notifications',
+                'label' => __('agent_apps_stat_notifications'),
                 'value' => '0',
-                'icon' => 'fa-file-circle-plus',
+                'icon' => 'fa-bell',
                 'tone' => 'teal',
             ],
             [

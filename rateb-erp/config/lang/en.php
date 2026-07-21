@@ -2247,6 +2247,7 @@ return [
     'agent_apps_stat_active_apps' => 'Active apps',
     'agent_apps_stat_companies' => 'Agents / companies',
     'agent_apps_stat_requests' => 'Recruitment requests',
+    'agent_apps_stat_notifications' => 'Sent notifications',
     'agent_apps_stat_revenue' => 'Total revenue',
     'agent_apps_stat_rating' => 'Average rating',
     'agent_apps_stat_complaints' => 'Pending complaints',

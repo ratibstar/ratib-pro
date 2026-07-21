@@ -2246,6 +2246,7 @@ return [
     'agent_apps_stat_active_apps' => 'التطبيقات النشطة',
     'agent_apps_stat_companies' => 'الوكلاء / الشركات',
     'agent_apps_stat_requests' => 'طلبات الاستقدام',
+    'agent_apps_stat_notifications' => 'التنبيهات المرسلة',
     'agent_apps_stat_revenue' => 'إجمالي الإيرادات',
     'agent_apps_stat_rating' => 'متوسط التقييم',
     'agent_apps_stat_complaints' => 'الشكاوى المعلقة',
