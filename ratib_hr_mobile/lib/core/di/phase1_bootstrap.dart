@@ -7,6 +7,7 @@ import 'package:ratib_hr_mobile/core/adapters/erp_attendance_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_auth_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_dashboard_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_employee_request_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/erp_permission_request_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_inquiry_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_leave_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_me_adapter.dart';
@@ -69,6 +70,8 @@ void bootstrapEssCore() {
   final dashboard = ErpDashboardAdapter(http: http, errors: errors);
   final employeeRequests =
       ErpEmployeeRequestAdapter(http: http, errors: errors);
+  final permissionRequests =
+      ErpPermissionRequestAdapter(http: http, errors: errors);
   final ratings = ErpRatingsAdapter(http: http, errors: errors);
   final inquiries = ErpInquiryAdapter(http: http, errors: errors);
   final payments = ErpPaymentMethodsAdapter(http: http, errors: errors);
@@ -100,6 +103,7 @@ void bootstrapEssCore() {
   AppLocator.registerPhaseC(
     dashboard: dashboard,
     employeeRequests: employeeRequests,
+    permissionRequests: permissionRequests,
     ratings: ratings,
     inquiries: inquiries,
     payments: payments,

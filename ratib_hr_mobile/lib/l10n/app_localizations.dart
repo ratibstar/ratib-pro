@@ -102,6 +102,20 @@ class AppLocalizations {
       'genericLoading': 'جاري التحميل…',
       'genericLoadFailed': 'تعذر التحميل',
       'requestsEmpty': 'لا توجد طلبات',
+      'permissionRequestsSubtitle': 'طلبات الخروج القصير خلال الدوام',
+      'employeeRequestsSubtitle': 'استفسارات وشكاوى الموظف',
+      'permissionRequestsEmpty': 'لا توجد طلبات استئذان',
+      'permissionApply': 'طلب استئذان جديد',
+      'permissionDate': 'تاريخ الاستئذان',
+      'permissionTime': 'الوقت',
+      'permissionTimeFrom': 'من',
+      'permissionTimeTo': 'إلى',
+      'permissionReason': 'السبب',
+      'permissionReasonOptional': 'السبب (اختياري)',
+      'permissionSubmit': 'تقديم الطلب',
+      'permissionFormRequired': 'التاريخ ووقت البداية والنهاية مطلوبة',
+      'permissionApplySuccess': 'تم تقديم طلب الاستئذان',
+      'permissionDuplicate': 'يوجد طلب استئذان متداخل بالفعل',
       'requestDetailTitle': 'تفاصيل الطلب',
       'requestStatus': 'الحالة',
       'requestType': 'النوع',
@@ -312,6 +326,20 @@ class AppLocalizations {
       'genericLoading': 'Loading…',
       'genericLoadFailed': 'Could not load',
       'requestsEmpty': 'No requests',
+      'permissionRequestsSubtitle': 'Short-exit requests during work hours',
+      'employeeRequestsSubtitle': 'Employee inquiries and complaints',
+      'permissionRequestsEmpty': 'No permission requests',
+      'permissionApply': 'New permission request',
+      'permissionDate': 'Permission date',
+      'permissionTime': 'Time',
+      'permissionTimeFrom': 'From',
+      'permissionTimeTo': 'To',
+      'permissionReason': 'Reason',
+      'permissionReasonOptional': 'Reason (optional)',
+      'permissionSubmit': 'Submit request',
+      'permissionFormRequired': 'Date, start time and end time are required',
+      'permissionApplySuccess': 'Permission request submitted',
+      'permissionDuplicate': 'An overlapping permission request already exists',
       'requestDetailTitle': 'Request details',
       'requestStatus': 'Status',
       'requestType': 'Type',
@@ -528,6 +556,20 @@ class AppLocalizations {
   String get genericLoading => _t('genericLoading');
   String get genericLoadFailed => _t('genericLoadFailed');
   String get requestsEmpty => _t('requestsEmpty');
+  String get permissionRequestsSubtitle => _t('permissionRequestsSubtitle');
+  String get employeeRequestsSubtitle => _t('employeeRequestsSubtitle');
+  String get permissionRequestsEmpty => _t('permissionRequestsEmpty');
+  String get permissionApply => _t('permissionApply');
+  String get permissionDate => _t('permissionDate');
+  String get permissionTime => _t('permissionTime');
+  String get permissionTimeFrom => _t('permissionTimeFrom');
+  String get permissionTimeTo => _t('permissionTimeTo');
+  String get permissionReason => _t('permissionReason');
+  String get permissionReasonOptional => _t('permissionReasonOptional');
+  String get permissionSubmit => _t('permissionSubmit');
+  String get permissionFormRequired => _t('permissionFormRequired');
+  String get permissionApplySuccess => _t('permissionApplySuccess');
+  String get permissionDuplicate => _t('permissionDuplicate');
   String get requestDetailTitle => _t('requestDetailTitle');
   String get requestStatus => _t('requestStatus');
   String get requestType => _t('requestType');

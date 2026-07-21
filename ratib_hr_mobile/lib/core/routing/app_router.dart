@@ -28,7 +28,10 @@ import 'package:ratib_hr_mobile/features/payslips/payslips_list_screen.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_screen.dart';
 import 'package:ratib_hr_mobile/features/ratings/ratings_page.dart';
 import 'package:ratib_hr_mobile/features/requests/employee_requests_page.dart';
+import 'package:ratib_hr_mobile/features/requests/permission_apply_page.dart';
+import 'package:ratib_hr_mobile/features/requests/permission_requests_page.dart';
 import 'package:ratib_hr_mobile/features/requests/request_detail_page.dart';
+import 'package:ratib_hr_mobile/features/requests/requests_hub_page.dart';
 import 'package:ratib_hr_mobile/features/settings/settings_page.dart';
 import 'package:ratib_hr_mobile/features/sync/sync_status_screen.dart';
 import 'package:ratib_hr_mobile/shared/widgets/ess_shell.dart';
@@ -157,25 +160,19 @@ abstract final class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.requests,
-                  builder: (context, state) => const Phase0PlaceholderPage(
-                    titleKey: Phase0TitleKey.requests,
-                    childLinks: [
-                      Phase0Link(
-                        route: AppRoutes.permissionRequests,
-                        titleKey: Phase0TitleKey.permissionRequests,
-                      ),
-                      Phase0Link(
-                        route: AppRoutes.employeeRequests,
-                        titleKey: Phase0TitleKey.employeeRequests,
-                      ),
-                    ],
-                  ),
+                  builder: (context, state) => const RequestsHubPage(),
                   routes: [
                     GoRoute(
                       path: 'permissions',
-                      builder: (context, state) => const Phase0PlaceholderPage(
-                        titleKey: Phase0TitleKey.permissionRequests,
-                      ),
+                      builder: (context, state) =>
+                          const PermissionRequestsPage(),
+                      routes: [
+                        GoRoute(
+                          path: 'apply',
+                          builder: (context, state) =>
+                              const PermissionApplyPage(),
+                        ),
+                      ],
                     ),
                     GoRoute(
                       path: 'employee',

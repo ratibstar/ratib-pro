@@ -1,7 +1,6 @@
 /// Permission (short exit) requests — existing ERP permission requests only.
 ///
-/// Writes are online-only in Controlled GO (no new offline queue).
-/// Phase 0.6: interface only.
+/// Writes are online-only. Identity is server-resolved.
 library;
 
 abstract interface class PermissionRequestPort {

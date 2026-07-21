@@ -29,6 +29,7 @@ abstract final class AppLocator {
   static CacheStore? _cache;
   static DashboardPort? _dashboard;
   static EmployeeRequestPort? _employeeRequests;
+  static PermissionRequestPort? _permissionRequests;
   static RatingsPort? _ratings;
   static InquiryPort? _inquiries;
   static PaymentMethodsPort? _payments;
@@ -99,6 +100,7 @@ abstract final class AppLocator {
   static void registerPhaseC({
     required DashboardPort dashboard,
     required EmployeeRequestPort employeeRequests,
+    required PermissionRequestPort permissionRequests,
     required RatingsPort ratings,
     required InquiryPort inquiries,
     required PaymentMethodsPort payments,
@@ -107,6 +109,7 @@ abstract final class AppLocator {
   }) {
     _dashboard = dashboard;
     _employeeRequests = employeeRequests;
+    _permissionRequests = permissionRequests;
     _ratings = ratings;
     _inquiries = inquiries;
     _payments = payments;
@@ -207,6 +210,8 @@ abstract final class AppLocator {
       _dashboard ?? _notRegistered('dashboard');
   static EmployeeRequestPort get employeeRequests =>
       _employeeRequests ?? _notRegistered('employeeRequests');
+  static PermissionRequestPort get permissionRequests =>
+      _permissionRequests ?? _notRegistered('permissionRequests');
   static RatingsPort get ratings => _ratings ?? _notRegistered('ratings');
   static InquiryPort get inquiries =>
       _inquiries ?? _notRegistered('inquiries');
@@ -244,8 +249,6 @@ abstract final class AppLocator {
       _pushNotifications ?? _notRegistered('pushNotifications');
   static MobileDevicePort get mobileDevice =>
       _deviceRegistry ?? _notRegistered('mobileDevice');
-  static PermissionRequestPort get permissionRequests =>
-      _notRegistered('permissionRequests');
   static ApprovalPort get approvals => _notRegistered('approvals');
   static BiometricUnlock get biometric => _notRegistered('biometric');
 }

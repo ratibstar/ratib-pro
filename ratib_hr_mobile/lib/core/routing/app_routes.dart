@@ -15,6 +15,7 @@ abstract final class AppRoutes {
   static const leaveDetail = '/leave/detail';
   static const requests = '/requests';
   static const permissionRequests = '/requests/permissions';
+  static const permissionApply = '/requests/permissions/apply';
   static const employeeRequests = '/requests/employee';
   static const requestDetail = '/requests/detail';
   static const more = '/more';
