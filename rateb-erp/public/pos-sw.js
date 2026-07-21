@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260721-offline-fast-abort-v102';
+var SW_BUILD_ID = '20260722-admin-home-offline-v103';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1430,9 +1430,9 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         return response;
     }
 
-    // True offline / soft-offline latch: instant exact cache only (no network, hard ceiling).
-    // Bare /admin miss → last dashboard snapshot (avoids black uncached shell).
-    // Hung Cache.match (put contention) used to black-screen for minutes — race at 280ms.
+    // True offline / soft-offline latch: cache-only with hard ceiling (never minutes of black).
+    // Bare /admin MUST NEVER show «غير محفوظة» — that is the home URL; use dashboard snapshot
+    // or inline offline nav shell instead (280ms used to race ahead of a valid cache hit).
     if (isCloudBrowserOffline()) {
         return new Promise(function (resolve) {
             var settled = false;
@@ -1444,18 +1444,31 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 resolve(res);
                 return true;
             }
-            function missFallback() {
-                var bareAdmin = '';
+            function isBareAdminPath() {
                 try {
-                    bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
-                } catch (eB) { /* ignore */ }
-                if (/\/admin$/i.test(bareAdmin)) {
-                    return Promise.race([
-                        matchCachedAdminDashboard(url).catch(function () { return null; }),
-                        new Promise(function (r) { setTimeout(function () { r(null); }, 80); })
-                    ]).then(function (dash) {
-                        return serveCachedFast(dash, true) || uncachedAdminBrowseResponse(url);
-                    });
+                    return /\/admin$/i.test(String((url && url.pathname) || '').replace(/\/+$/, ''));
+                } catch (eBa) {
+                    return false;
+                }
+            }
+            function adminHomeFallback() {
+                return matchCachedAdminDashboard(url).catch(function () {
+                    return null;
+                }).then(function (dash) {
+                    var served = serveCachedFast(dash, true);
+                    if (served) {
+                        return served;
+                    }
+                    try {
+                        return erpInlineShellResponse();
+                    } catch (eShell) {
+                        return uncachedAdminBrowseResponse(url);
+                    }
+                });
+            }
+            function pageMissFallback() {
+                if (isBareAdminPath()) {
+                    return adminHomeFallback();
                 }
                 return Promise.resolve(uncachedAdminBrowseResponse(url));
             }
@@ -1468,14 +1481,14 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     finish(served);
                     return;
                 }
-                missFallback().then(function (fb) {
+                pageMissFallback().then(function (fb) {
                     finish(fb);
                 });
             }).catch(function () {
                 if (settled) {
                     return;
                 }
-                missFallback().then(function (fb) {
+                pageMissFallback().then(function (fb) {
                     finish(fb);
                 });
             });
@@ -1483,8 +1496,26 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 if (settled) {
                     return;
                 }
+                if (isBareAdminPath()) {
+                    adminHomeFallback().then(function (fb) {
+                        if (!finish(fb)) {
+                            return;
+                        }
+                    });
+                    setTimeout(function () {
+                        if (settled) {
+                            return;
+                        }
+                        try {
+                            finish(erpInlineShellResponse());
+                        } catch (eShell2) {
+                            finish(uncachedAdminBrowseResponse(url));
+                        }
+                    }, 220);
+                    return;
+                }
                 finish(uncachedAdminBrowseResponse(url));
-            }, 280);
+            }, 500);
         });
     }
 
@@ -2098,23 +2129,59 @@ function matchCachedAdminDashboard(url) {
     try {
         keys.push(new URL('admin/', self.registration.scope).href);
         keys.push(new URL('admin', self.registration.scope).href);
+        keys.push(new URL('admin/executive-dashboard', self.registration.scope).href);
+        keys.push(new URL('admin/companies', self.registration.scope).href);
     } catch (e2) { /* ignore */ }
+    var uniq = [];
+    keys.forEach(function (key) {
+        if (key && uniq.indexOf(key) === -1) {
+            uniq.push(key);
+        }
+    });
     return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
-        var chain = Promise.resolve(null);
-        keys.forEach(function (key) {
-            if (!key) {
-                return;
+        return Promise.all(uniq.map(function (key) {
+            return cache.match(key).catch(function () { return null; });
+        })).then(function (hits) {
+            var i;
+            for (i = 0; i < hits.length; i++) {
+                if (hits[i]) {
+                    return hits[i];
+                }
             }
-            chain = chain.then(function (found) {
-                return found || cache.match(key);
+            var primary = uniq[0] || (url ? (url.origin + '/rateb-erp/public/admin') : '');
+            if (!primary) {
+                return null;
+            }
+            return cache.match(primary, { ignoreSearch: true }).catch(function () { return null; });
+        });
+    }).catch(function () {
+        return null;
+    });
+}
+
+/** Seed bare /admin keys with inline nav shell so offline home never shows «غير محفوظة». */
+function seedAdminHomeOfflineFallback() {
+    var res = erpInlineShellResponse();
+    var keys = [];
+    try {
+        keys.push(new URL('admin', self.registration.scope).href);
+        keys.push(new URL('admin/', self.registration.scope).href);
+    } catch (e0) { /* ignore */ }
+    try {
+        keys.push(self.location.origin + '/rateb-erp/public/admin');
+        keys.push(self.location.origin + '/rateb-erp/public/admin/');
+    } catch (e1) { /* ignore */ }
+    return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+        return Promise.all(keys.filter(Boolean).map(function (key) {
+            return cache.match(key).then(function (existing) {
+                if (existing) {
+                    return null;
+                }
+                return cache.put(key, res.clone()).catch(function () { return null; });
+            }).catch(function () {
+                return cache.put(key, res.clone()).catch(function () { return null; });
             });
-        });
-        return chain.then(function (hit) {
-            if (hit) {
-                return hit;
-            }
-            return cache.match(keys[0] || '', { ignoreSearch: true }).catch(function () { return null; });
-        });
+        }));
     }).catch(function () {
         return null;
     });
@@ -3408,6 +3475,8 @@ self.addEventListener('install', function (event) {
     self.skipWaiting();
     event.waitUntil(
         seedInlineOfflineShell().then(function () {
+            return seedAdminHomeOfflineFallback().catch(function () { return null; });
+        }).then(function () {
             return Promise.all([
                 caches.open(ASSET_CACHE),
                 caches.open(SHELL_CACHE)
@@ -3464,6 +3533,8 @@ self.addEventListener('activate', function (event) {
                     }));
                 });
             });
+        }).then(function () {
+            return seedAdminHomeOfflineFallback().catch(function () { return null; });
         }).then(function () {
             armBackgroundWarmAfterFirstDocument({ reason: 'activate', force: false });
             loadErpOpsAllowlist().catch(function () { return null; });

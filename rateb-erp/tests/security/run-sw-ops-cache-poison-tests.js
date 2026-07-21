@@ -48,11 +48,12 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260721-offline-fast-abort-v102'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-admin-home-offline-v103'));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 assert('F5 uses strict cache-before-network paint', /Strict stale-while-revalidate[\s\S]*afterCacheMiss/.test(source));
 assert('ops HTML put deferred past second F5', /setTimeout\(function \(\) \{[\s\S]*putErpOpsHtmlResponse[\s\S]*\}, 400\)/.test(source));
-assert('offline navigate has hard cache ceiling', /Hung Cache\.match[\s\S]*280/.test(source));
+assert('bare /admin offline never uses uncached-first ceiling', /Bare \/admin MUST NEVER show[\s\S]*adminHomeFallback/.test(source));
+assert('admin home offline seed on activate', /seedAdminHomeOfflineFallback/.test(source));
 assert('navigate fetch aborts on timeout', /function fetchNavigateNetwork[\s\S]*AbortController[\s\S]*markCloudNetworkDegraded/.test(source));
 assert('soft-offline latch from client message', source.includes("data.type === 'RATEB_CLOUD_OFFLINE'"));
 
