@@ -247,6 +247,7 @@ final class RouteModuleLoader
             '/admin/api/mail-dns-check',
             '/admin/settings',
             '/admin/mobile-apps',
+            '/admin/agent-apps',
             '/admin/hr-mobile',
             '/admin/tools',
             '/admin/reports',
