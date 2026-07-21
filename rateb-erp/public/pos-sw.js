@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260721-offline-cache-migrate-v100';
+var SW_BUILD_ID = '20260721-second-refresh-swr-v101';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1386,13 +1386,14 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         if (!response || !response.ok) {
             return null;
         }
-        // Defer cache write so it cannot contend with this navigation's respondWith.
+        // Defer Cache.put past this navigation (+ typical second F5).
+        // Immediate puts lock Cache API and made the *next* refresh wait on network.
         var store = new Promise(function (resolve) {
             setTimeout(function () {
                 caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
                     return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
                 }).catch(function () { return null; }).then(resolve);
-            }, 0);
+            }, 400);
         });
         if (event && typeof event.waitUntil === 'function') {
             event.waitUntil(store);
@@ -1421,93 +1422,16 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         });
     }
 
-    // Soft-online INSTANT F5:
-    // - Exact cache from t=0 (no 200ms delay, no deep scans).
-    // - Network in parallel (600ms budget).
-    // - Hard ceiling 700ms → shell/placeholder (never indefinite black).
-    // Hard reload (Cache-Control: no-cache) still prefers cache first when a snapshot exists.
-    var hardReload = false;
-    try {
-        var cc = String(request.headers.get('Cache-Control') || '');
-        var pr = String(request.headers.get('Pragma') || '');
-        hardReload = /no-cache/i.test(cc) || /no-cache/i.test(pr);
-    } catch (eHr) { /* ignore */ }
+    // Soft-online INSTANT F5 (incl. hard reload / Cache-Control: no-cache):
+    // Strict stale-while-revalidate — network must NEVER paint before cache settles.
+    // Second F5 used to feel frozen: Cache.put from the first refresh delayed match,
+    // then network won the race and waited on PHP.
     var networkP = fetchNavigateNetwork(request, 600).then(storeLive).catch(function () {
         return null;
     });
     var cacheP = matchSoftOnlineExactCache(request, url).catch(function () {
         return null;
     });
-    if (hardReload) {
-        // Paint cache within 700ms — never wait on a hung network (was ~40s black after F5).
-        return new Promise(function (resolve) {
-            var settled = false;
-            function finish(res) {
-                if (settled || !res) {
-                    return false;
-                }
-                settled = true;
-                resolve(res);
-                return true;
-            }
-            cacheP.then(function (hit) {
-                var served = serveCachedFast(hit, false);
-                if (served && finish(served)) {
-                    if (event && typeof event.waitUntil === 'function') {
-                        event.waitUntil(networkP.then(function () { return null; }));
-                    }
-                }
-            });
-            networkP.then(function (response) {
-                if (response) {
-                    finish(response);
-                    return;
-                }
-                if (settled) {
-                    return;
-                }
-                cacheP.then(function (hit) {
-                    if (settled) {
-                        return;
-                    }
-                    finish(serveCachedFast(hit, false) || uncachedAdminBrowseResponse(url));
-                });
-            });
-            setTimeout(function () {
-                if (settled) {
-                    return;
-                }
-                // Never await a hanging cacheP (was 40–60s black).
-                Promise.race([cacheP, Promise.resolve(null)]).then(function (hit) {
-                    if (settled) {
-                        return;
-                    }
-                    var bare = '';
-                    try {
-                        bare = String((url && url.pathname) || '').replace(/\/+$/, '');
-                    } catch (eB) { /* ignore */ }
-                    var served = serveCachedFast(hit, false);
-                    if (served) {
-                        finish(served);
-                        return;
-                    }
-                    if (!/\/admin$/i.test(bare)) {
-                        finish(uncachedAdminBrowseResponse(url));
-                        return;
-                    }
-                    Promise.race([
-                        matchCachedAdminDashboard(url).catch(function () { return null; }),
-                        new Promise(function (r) { setTimeout(function () { r(null); }, 50); })
-                    ]).then(function (dash) {
-                        if (settled) {
-                            return;
-                        }
-                        finish(serveCachedFast(dash, false) || uncachedAdminBrowseResponse(url));
-                    });
-                });
-            }, 700);
-        });
-    }
 
     return new Promise(function (resolve) {
         var settled = false;
@@ -1520,31 +1444,15 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             return true;
         }
 
-        // Paint cached snapshot immediately when present.
-        cacheP.then(function (hit) {
-            var served = serveCachedFast(hit, false);
-            if (served && finish(served)) {
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(networkP.then(function () { return null; }));
-                }
-            }
-        });
-
-        networkP.then(function (response) {
-            if (response) {
-                finish(response);
-                return;
-            }
+        function afterCacheMiss() {
             if (settled) {
                 return;
             }
-            cacheP.then(function (hit) {
+            networkP.then(function (response) {
                 if (settled) {
                     return;
                 }
-                var served = serveCachedFast(hit, false);
-                if (served) {
-                    finish(served);
+                if (response && finish(response)) {
                     return;
                 }
                 // Cap neverFail — was able to hang respondWith → minutes of black tab.
@@ -1563,52 +1471,64 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     finish(fallback);
                 });
             });
+        }
+
+        // Prefer cache; network paints only after an explicit miss (afterCacheMiss).
+        cacheP.then(function (hit) {
+            var served = serveCachedFast(hit, false);
+            if (served && finish(served)) {
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(networkP.then(function () { return null; }));
+                }
+                return;
+            }
+            afterCacheMiss();
         });
 
         // Absolute ceiling — black screen must not exceed ~700ms.
-            setTimeout(function () {
+        setTimeout(function () {
+            if (settled) {
+                return;
+            }
+            // Do NOT await hanging cacheP — that left /admin black for ~40–60s.
+            Promise.race([
+                cacheP,
+                Promise.resolve(null)
+            ]).then(function (hit) {
                 if (settled) {
                     return;
                 }
-                // Do NOT await hanging cacheP — that left /admin black for ~40–60s.
-                Promise.race([
-                    cacheP,
-                    Promise.resolve(null)
-                ]).then(function (hit) {
-                    if (settled) {
-                        return;
-                    }
-                    var served = serveCachedFast(hit, false);
-                    if (served) {
-                        finish(served);
-                        return;
-                    }
-                    var bareAdmin = '';
-                    try {
-                        bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
-                    } catch (eB) { /* ignore */ }
-                    if (/\/admin$/i.test(bareAdmin)) {
-                        Promise.race([
-                            matchCachedAdminDashboard(url).catch(function () { return null; }),
-                            new Promise(function (r) { setTimeout(function () { r(null); }, 50); })
-                        ]).then(function (dash) {
-                            if (settled) {
-                                return;
-                            }
-                            finish(
-                                serveCachedFast(dash, false)
-                                || erpInlineShellResponse()
-                            );
-                        });
-                        return;
-                    }
-                    try {
-                        finish(erpInlineShellResponse());
-                    } catch (eShell2) {
-                        finish(uncachedAdminBrowseResponse(url));
-                    }
-                });
-            }, 700);
+                var served = serveCachedFast(hit, false);
+                if (served) {
+                    finish(served);
+                    return;
+                }
+                var bareAdmin = '';
+                try {
+                    bareAdmin = String((url && url.pathname) || '').replace(/\/+$/, '');
+                } catch (eB) { /* ignore */ }
+                if (/\/admin$/i.test(bareAdmin)) {
+                    Promise.race([
+                        matchCachedAdminDashboard(url).catch(function () { return null; }),
+                        new Promise(function (r) { setTimeout(function () { r(null); }, 50); })
+                    ]).then(function (dash) {
+                        if (settled) {
+                            return;
+                        }
+                        finish(
+                            serveCachedFast(dash, false)
+                            || erpInlineShellResponse()
+                        );
+                    });
+                    return;
+                }
+                try {
+                    finish(erpInlineShellResponse());
+                } catch (eShell2) {
+                    finish(uncachedAdminBrowseResponse(url));
+                }
+            });
+        }, 700);
     });
 }
 
@@ -1631,9 +1551,13 @@ function softNavAdminHtml(request, url, event) {
         if (!response || !response.ok) {
             return response;
         }
-        var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-            return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
-        }).catch(function () { return null; });
+        var store = new Promise(function (resolve) {
+            setTimeout(function () {
+                caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                }).catch(function () { return null; }).then(resolve);
+            }, 400);
+        });
         if (event && typeof event.waitUntil === 'function') {
             event.waitUntil(store);
         }
