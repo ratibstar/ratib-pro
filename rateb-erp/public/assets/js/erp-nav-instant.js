@@ -12,7 +12,7 @@
     }
     root.__RATEB_NAV_INSTANT__ = true;
 
-    var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
+    var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet|module-page-stats)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
     var POS_PATH_RE = /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i;
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
     /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
@@ -607,22 +607,6 @@
         } catch (e2) { /* ignore */ }
     }
 
-    function setMainNavBusy(busy) {
-        try {
-            var main = document.querySelector('#rateb-main-content, main.rateb-content');
-            if (!main) {
-                return;
-            }
-            if (busy) {
-                main.classList.add('is-nav-busy');
-                main.setAttribute('aria-busy', 'true');
-            } else {
-                main.classList.remove('is-nav-busy');
-                main.removeAttribute('aria-busy');
-            }
-        } catch (eB) { /* ignore */ }
-    }
-
     function clearNavPending() {
         try {
             document.querySelectorAll('a.rateb-nav-link.is-nav-pending').forEach(function (a) {
@@ -720,6 +704,11 @@
     function reinitModuleUi() {
         // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
         try {
+            if (typeof root.RatebBootModulePageStats === 'function') {
+                root.RatebBootModulePageStats();
+            }
+        } catch (eMetrics) { /* ignore */ }
+        try {
             document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
                 if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
                     return;
@@ -728,6 +717,31 @@
             });
         } catch (e2) { /* ignore */ }
         ensureDashboardCharts();
+    }
+
+    function setMainNavBusy(busy) {
+        try {
+            var main = document.querySelector('#rateb-main-content, main.rateb-content');
+            if (!main) {
+                return;
+            }
+            if (busy) {
+                main.classList.add('is-nav-busy');
+                main.setAttribute('aria-busy', 'true');
+                // Never leave the whole page unclickable if a soft-nav hangs.
+                root.clearTimeout(setMainNavBusy._clearTimer);
+                setMainNavBusy._clearTimer = root.setTimeout(function () {
+                    try {
+                        main.classList.remove('is-nav-busy');
+                        main.removeAttribute('aria-busy');
+                    } catch (eC) { /* ignore */ }
+                }, 3000);
+            } else {
+                root.clearTimeout(setMainNavBusy._clearTimer);
+                main.classList.remove('is-nav-busy');
+                main.removeAttribute('aria-busy');
+            }
+        } catch (eBusy) { /* ignore */ }
     }
 
     function openOpsCaches() {

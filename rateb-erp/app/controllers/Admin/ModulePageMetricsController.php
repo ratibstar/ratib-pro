@@ -26,6 +26,14 @@ final class ModulePageMetricsController
             return;
         }
 
+        // Honor ?company_id= for super-admin ops company picker (same as list pages).
+        $companyId = (int) ($_GET['company_id'] ?? 0);
+        if ($companyId > 0 && function_exists('rateb_adopt_ops_company_id')) {
+            rateb_adopt_ops_company_id($companyId);
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $companyId);
+            \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        }
+
         if (!class_exists(\Rateb\App\Services\ModulePageStatsService::class)) {
             Response::json(['ok' => true, 'metrics' => []]);
             return;

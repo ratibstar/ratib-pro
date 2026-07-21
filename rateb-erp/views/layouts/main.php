@@ -951,10 +951,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 Rateb\App\Core\View::partial('ops-company-select');
             }
             if ($deferModulePageMetrics) {
+                $metricsQs = 'route=' . rawurlencode($erpRoute);
+                $opsCid = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
+                if ($opsCid > 0) {
+                    $metricsQs .= '&company_id=' . $opsCid;
+                }
                 Rateb\App\Core\View::partial('module-page-stats', [
                     'async' => true,
                     'metricsRoute' => $erpRoute,
-                    'metricsUrl' => rateb_url('admin/api/module-metrics') . '?route=' . rawurlencode($erpRoute),
+                    'metricsUrl' => rateb_url('admin/api/module-metrics') . '?' . $metricsQs,
                 ]);
             } elseif ($modulePageMetrics !== []) {
                 Rateb\App\Core\View::partial('module-page-stats', ['metrics' => $modulePageMetrics]);
