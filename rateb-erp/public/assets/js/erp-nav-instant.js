@@ -200,11 +200,21 @@
         return false;
     }
 
+    var lastSoftNavMissHref = '';
+
     function hardNavigate(href) {
-        // Intentionally disabled — location.assign blanks the tab for minutes.
+        // Soft-nav miss fallback only — full assign after a failed soft swap.
+        // (Previously blocked entirely; sidebar uses onclick=return false so users got stuck.)
         try {
-            console.warn('[RATEB NAV] hardNavigate blocked', href);
-        } catch (eHn) { /* ignore */ }
+            if (!href) {
+                return;
+            }
+            root.location.href = href;
+        } catch (eHn) {
+            try {
+                console.warn('[RATEB NAV] hardNavigate failed', href, eHn);
+            } catch (eLog) { /* ignore */ }
+        }
     }
 
     function isBareAdminHref(href) {
@@ -226,7 +236,9 @@
                 || /\/roles(?:\/|$)/.test(p)
                 || /\/permissions(?:\/|$)/.test(p)
                 || /\/audit(?:\/|$)/.test(p)
-                || /\/oversight(?:\/|$)/.test(p);
+                || /\/oversight(?:\/|$)/.test(p)
+                // HR module lists are tenant-scoped PHP CRUD — same timeout class as oversight.
+                || /\/hr(?:\/|$)/.test(p);
         } catch (eH) {
             return false;
         }
@@ -1079,6 +1091,7 @@
                 root.history.replaceState({ ratebNav: 1 }, '', pack.finalUrl);
             }
             lastHref = pack.finalUrl;
+            lastSoftNavMissHref = '';
             rememberExistingScripts();
             // Defer module script loads so paint wins (common libs already present).
             var afterScripts = function () {
@@ -1118,11 +1131,16 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // NEVER hardNavigate on soft-nav miss — location.assign blanks the tab
-            // (black #0b1120 body) and can hang minutes while F5 from SW cache is instant.
-            // Stay on the current shell; user keeps sidebar and can retry.
+            // Soft-nav miss: keep shell (toast). Second consecutive miss → hard navigate
+            // because sidebar links use onclick=return false and would otherwise trap the user.
             if (!(err && err.message === 'nav_superseded')) {
                 showSoftNavMissToast(href);
+                if (lastSoftNavMissHref === href) {
+                    lastSoftNavMissHref = '';
+                    hardNavigate(href);
+                } else {
+                    lastSoftNavMissHref = href;
+                }
             }
             return false;
         }).then(function (ok) {

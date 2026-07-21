@@ -405,6 +405,9 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
 
     public function index(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         HrService::bootstrapTenant();
         $page = max(1, (int) $this->input('page', 1));
         $limit = rateb_list_per_page();
@@ -431,6 +434,9 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
 
     public function create(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         HrService::bootstrapTenant();
         parent::create();
     }

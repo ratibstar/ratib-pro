@@ -285,11 +285,13 @@ final class HrService
 
     public function approveLeave(int $requestId, int $userId): void
     {
-        $req = (new LeaveRequest())->find($requestId);
+        // Unscoped: oversight may approve while branch filter would hide the row.
+        $leaveModel = new LeaveRequest();
+        $req = $leaveModel->findByIdUnscoped($requestId);
         if (!$req || ($req['status'] ?? '') !== 'pending') {
             throw new \RuntimeException(__('leave_not_pending'));
         }
-        (new LeaveRequest())->update($requestId, [
+        $leaveModel->update($requestId, [
             'status' => 'approved',
             'approved_by' => $userId > 0 ? $userId : null,
             'approved_at' => date('Y-m-d H:i:s'),
@@ -299,11 +301,12 @@ final class HrService
 
     public function rejectLeave(int $requestId, int $userId): void
     {
-        $req = (new LeaveRequest())->find($requestId);
+        $leaveModel = new LeaveRequest();
+        $req = $leaveModel->findByIdUnscoped($requestId);
         if (!$req || ($req['status'] ?? '') !== 'pending') {
             throw new \RuntimeException(__('leave_not_pending'));
         }
-        (new LeaveRequest())->update($requestId, [
+        $leaveModel->update($requestId, [
             'status' => 'rejected',
             'approved_by' => $userId > 0 ? $userId : null,
             'approved_at' => date('Y-m-d H:i:s'),
@@ -696,6 +699,12 @@ final class HrService
         $year = (int) date('Y', strtotime($start));
         $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
 
+        $branchId = (int) ($req['branch_id'] ?? 0);
+        if ($branchId < 1) {
+            $emp = (new Employee())->findByIdUnscoped($employeeId);
+            $branchId = (int) ($emp['branch_id'] ?? 0);
+        }
+
         $attModel = new AttendanceRecord();
         $cursor = strtotime($start);
         $endTs = strtotime($end);
@@ -706,13 +715,17 @@ final class HrService
             $date = date('Y-m-d', $cursor);
             $exists = $this->findAttendanceByEmployeeDate($companyId, $employeeId, $date);
             if (!$exists) {
-                $attModel->create([
+                $row = [
                     'company_id' => $companyId,
                     'employee_id' => $employeeId,
                     'attendance_date' => $date,
                     'status' => 'leave',
                     'notes' => __('hr_leave_auto_attendance'),
-                ]);
+                ];
+                if ($branchId > 0) {
+                    $row['branch_id'] = $branchId;
+                }
+                $attModel->create($row);
             }
             $cursor = strtotime('+1 day', $cursor);
         }

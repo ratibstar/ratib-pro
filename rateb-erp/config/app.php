@@ -2392,7 +2392,12 @@ if (!function_exists('rateb_branch_filter_sql')) {
             $parts[] = ':' . $key;
             $params[$key] = $id;
         }
-        return [' AND ' . $col . ' IN (' . implode(',', $parts) . ')', $params];
+        // Include NULL branch rows (ESS / oversight-created HR often omit branch_id).
+        // Without this, approved leave/attendance disappears under any branch filter.
+        return [
+            ' AND (' . $col . ' IN (' . implode(',', $parts) . ') OR ' . $col . ' IS NULL)',
+            $params,
+        ];
     }
 }
 

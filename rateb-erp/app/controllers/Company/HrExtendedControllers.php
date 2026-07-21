@@ -500,11 +500,18 @@ final class HrEmployeeRequestsController extends \Rateb\App\Controllers\CrudCont
 
     public function index(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         HrService::bootstrapTenant();
         $page = max(1, (int) $this->input('page', 1));
         $limit = rateb_list_per_page();
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $this->model->all($limit, $offset, [], $search),
