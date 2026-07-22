@@ -182,7 +182,7 @@
         }
     }
 
-    /** Soft badge OR hard offline — content-swap must not hang on a pending fetch. */
+    /** Soft badge OR hard offline — UI hints only (toasts / skip non-critical inject). */
     function isUiOffline() {
         try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -204,6 +204,15 @@
         return false;
     }
 
+    /** Hard offline only — soft badge must NOT force cache-only soft-nav (spins online). */
+    function isBrowserOffline() {
+        try {
+            return typeof navigator !== 'undefined' && navigator.onLine === false;
+        } catch (e) {
+            return false;
+        }
+    }
+
     var lastSoftNavMissHref = '';
 
     function hasSwController() {
@@ -215,13 +224,12 @@
     }
 
     function hardNavigate(href) {
-        // Soft-nav miss fallback — full assign so SW can paint cache/shell offline.
-        // Only skip when offline AND no controller (Chrome interstitial risk).
+        // Soft-nav miss → full assign. Block only when browser is offline and no SW.
         try {
             if (!href) {
                 return;
             }
-            if (isUiOffline() && !hasSwController()) {
+            if (isBrowserOffline() && !hasSwController()) {
                 try {
                     showSoftNavMissToast(href);
                 } catch (eToast) { /* ignore */ }
@@ -380,7 +388,7 @@
     function scheduleModuleScripts(doc) {
         // Offline / soft-offline: never inject module scripts — each page added hung <script>
         // fetches that jammed the tab after a few navigations (sidebar stopped accepting clicks).
-        if (isUiOffline()) {
+        if (isBrowserOffline()) {
             return;
         }
         // Paint first; start module scripts on next task (not idle — keeps forms interactive).
@@ -907,7 +915,7 @@
         // Old chain awaited matchCachedHtml before returning networkPromise — that made
         // لوحة التحكم soft-nav wait seconds while F5 painted from SW navigate cache.
         var networkPromise = null;
-        if (!isUiOffline()) {
+        if (!isBrowserOffline()) {
             networkPromise = fetchNetworkHtml(href);
         }
 
@@ -927,7 +935,7 @@
 
         // Online: never abort early — Cache vs Network race resolves when either wins.
         // The old 800–1400ms ceiling aborted good navigations (tabs looked broken; F5 felt fast).
-        var ceilingMs = isUiOffline() ? 2000 : 0;
+        var ceilingMs = isBrowserOffline() ? 2000 : 0;
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = null;
@@ -940,7 +948,7 @@
                     if (networkPromise && typeof networkPromise._ratebAbort === 'function') {
                         try { networkPromise._ratebAbort(); } catch (eAb2) { /* ignore */ }
                     }
-                    reject(new Error(isUiOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
+                    reject(new Error(isBrowserOffline() ? 'nav_offline_cache_timeout' : 'nav_online_timeout'));
                 }, ceilingMs);
             }
 
@@ -1094,8 +1102,8 @@
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
         // Safety unlock aligned with fetch timeout (was shorter → stuck chrome + dead clicks).
-        var unlockMs = isUiOffline()
-            ? 400
+        var unlockMs = isBrowserOffline()
+            ? 2500
             : (isBareAdminHref(href) ? 11000 : (isHeavyNavHref(href) ? 21000 : 13000));
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {

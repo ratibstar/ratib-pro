@@ -1923,20 +1923,20 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   afterLoad(function () {
     /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
     loadGuard();
-    /* full-warm: ~8s after load (charts first) — auto-cache pages for offline without visiting each */
+    /* full-warm: after charts settle (~20s) — avoid starving online refresh */
     var scheduleWarm = function () {
       setTimeout(function () {
         if (window.requestIdleCallback) {
-          window.requestIdleCallback(loadWarm, { timeout: 12000 });
+          window.requestIdleCallback(loadWarm, { timeout: 30000 });
         } else {
           loadWarm();
         }
-      }, 8000);
+      }, 20000);
     };
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(scheduleWarm, { timeout: 12000 });
+      window.requestIdleCallback(scheduleWarm, { timeout: 30000 });
     } else {
-      setTimeout(scheduleWarm, 8000);
+      setTimeout(scheduleWarm, 20000);
     }
   });
 })();

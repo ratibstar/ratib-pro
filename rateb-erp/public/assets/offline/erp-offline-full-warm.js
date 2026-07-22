@@ -1124,21 +1124,7 @@
                     if (userStillActive()) {
                         kickIdle();
                     }
-                }, 8000);
-            };
-            if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(afterIdle, { timeout: 12000 });
-            } else {
-                setTimeout(afterIdle, 8000);
-            }
-        };
-        if (root.document && root.document.readyState === 'complete') {
-            idleKick();
-        } else if (root.addEventListener) {
-            root.addEventListener('load', idleKick, { once: true });
-        } else {
-            setTimeout(idleKick, 10000);
-        }
+                }, 20000);
     }
 
     root.RatebOfflineFullWarm = {
