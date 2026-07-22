@@ -48,7 +48,7 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-charts-before-warm-v114'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-auto-offline-pages-v115'));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 assert('F5 clones response before deferred Cache.put', /Clone NOW[\s\S]*toCache = response\.clone\(\)[\s\S]*setTimeout/.test(source));
 assert('ops HTML put deferred past second F5', /setTimeout\(function \(\) \{[\s\S]*putErpOpsHtmlResponse[\s\S]*\}, 400\)/.test(source));
@@ -67,7 +67,8 @@ assert('admin nav never bypasses to Chrome interstitial', /ALWAYS respondWith â€
 assert('respondWith document gate never rejects', /respondWithDocumentAndReleaseWarmGate[\s\S]{0,800}?\.catch\(function/.test(source));
 assert('SW warms agency-updates for offline', /leanOpsCritical[\s\S]*admin\/agency-updates/.test(source));
 assert('SW warms companies-approvals for offline', source.includes("'admin/oversight/companies-approvals'"));
-assert('SW HTML warm delayed for online charts', /HTML warm starts later so online[\s\S]*20000/.test(source));
+assert('SW HTML warm delayed for online charts', /HTML warm ~8s after shell assets[\s\S]*8000/.test(source));
+assert('SW warms accounting hub', /leanOpsCritical[\s\S]*admin\/ops\/accounting/.test(source));
 
 // Simulated cache recovery contract: invalid body must not be re-cached by put path.
 assert(

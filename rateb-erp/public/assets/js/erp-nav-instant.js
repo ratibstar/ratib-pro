@@ -800,12 +800,25 @@
             seen[k] = true;
             return true;
         });
-        // Offline: try primary ops cache only (2–3 exact keys) before parallel fan-out.
+        // Offline: pathname + ignoreSearch first (warm stores bare paths; sidebar has ?company_id=).
         var offlineFast = isUiOffline();
         var primary = root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
+            if (offlineFast) {
+                return cache.match(keys[0], { ignoreSearch: true }).then(function (hit) {
+                    if (hit) {
+                        return hit;
+                    }
+                    var chain = Promise.resolve(null);
+                    keys.slice(0, 3).forEach(function (k) {
+                        chain = chain.then(function (h) {
+                            return h || cache.match(k);
+                        });
+                    });
+                    return chain;
+                });
+            }
             var chain = Promise.resolve(null);
-            var fastKeys = offlineFast ? keys.slice(0, 3) : keys.slice(0, 2);
-            fastKeys.forEach(function (k) {
+            keys.slice(0, 2).forEach(function (k) {
                 chain = chain.then(function (hit) {
                     return hit || cache.match(k);
                 });
@@ -907,7 +920,7 @@
 
         // Online: never abort early — Cache vs Network race resolves when either wins.
         // The old 800–1400ms ceiling aborted good navigations (tabs looked broken; F5 felt fast).
-        var ceilingMs = isUiOffline() ? 350 : 0;
+        var ceilingMs = isUiOffline() ? 900 : 0;
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = null;

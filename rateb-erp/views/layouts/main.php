@@ -1923,20 +1923,20 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   afterLoad(function () {
     /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
     loadGuard();
-    /* full-warm: AFTER first paint/charts — never compete with online dashboard Chart.js */
+    /* full-warm: ~8s after load (charts first) — auto-cache pages for offline without visiting each */
     var scheduleWarm = function () {
       setTimeout(function () {
         if (window.requestIdleCallback) {
-          window.requestIdleCallback(loadWarm, { timeout: 30000 });
+          window.requestIdleCallback(loadWarm, { timeout: 12000 });
         } else {
           loadWarm();
         }
-      }, 45000);
+      }, 8000);
     };
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(scheduleWarm, { timeout: 60000 });
+      window.requestIdleCallback(scheduleWarm, { timeout: 12000 });
     } else {
-      setTimeout(scheduleWarm, 45000);
+      setTimeout(scheduleWarm, 8000);
     }
   });
 })();

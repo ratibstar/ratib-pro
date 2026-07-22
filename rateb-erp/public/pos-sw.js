@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-charts-before-warm-v114';
+var SW_BUILD_ID = '20260722-auto-offline-pages-v115';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2564,8 +2564,10 @@ function warmErpOfflineShell(opts) {
         'admin/ops/access-control/matrix',
         'admin/accounting',
         'admin/ops/accounting',
-        'admin/ops/accounting/platform',
         'admin/ops/pos/register',
+        'admin/ops/contracts',
+        'admin/ops/assets',
+        'admin/ops/contract-renewals',
         'admin/users',
         'admin/branches',
         'admin/customers',
@@ -2619,7 +2621,9 @@ function warmErpOfflineShell(opts) {
         'admin/oversight/approvals',
         'admin/oversight/companies-approvals',
         'admin/ops/stock-movements',
-        'admin/ops/branch-dashboard'
+        'admin/ops/branch-dashboard',
+        'admin/ops/accounting',
+        'admin/cms'
     ];
     function warmLeanOpsList(list, gapMs) {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
@@ -2662,7 +2666,7 @@ function warmErpOfflineShell(opts) {
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // HTML warm starts later so online /admin Chart.js paints first.
+                // HTML warm ~8s after shell assets — charts paint first, then auto-cache pages.
                 setTimeout(function () {
                     warmLeanOpsList(leanOpsCritical, 80).then(function () {
                         var rest = leanOps.filter(function (rel) {
@@ -2670,7 +2674,7 @@ function warmErpOfflineShell(opts) {
                         });
                         return warmLeanOpsList(rest, 150);
                     }).catch(function () { return null; });
-                }, 20000);
+                }, 8000);
                 return protectedResult;
             });
         }).then(function (result) {

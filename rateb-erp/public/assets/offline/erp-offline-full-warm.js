@@ -16,9 +16,9 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Bump TTL keys so clients re-warm after auto-offline page coverage fix.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v20';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v20';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v20';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v21';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v21';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v21';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -37,19 +37,16 @@
         'admin/ops/access-control',
         'admin/ops/access-control/matrix',
         'admin/ops/accounting',
-        'admin/ops/accounting/platform',
         'admin/ops/pos/register',
         'admin/ops/branch-dashboard',
+        'admin/ops/notifications',
         'admin/accounting',
         'admin/companies',
         'admin/company-permissions',
         'admin/agency-updates',
-        'admin/mobile-apps',
-        'admin/hr-mobile',
         'admin/settings',
         'admin/profile',
         'admin/notifications',
-        'admin/ops/notifications',
         'admin/users',
         'admin/branches',
         'admin/customers',
@@ -62,7 +59,10 @@
         'admin/oversight/procurement',
         'admin/oversight/rfq',
         'admin/oversight/inventory',
-        'admin/oversight/supplier-evaluations'
+        'admin/oversight/supplier-evaluations',
+        'admin/ops/contracts',
+        'admin/ops/assets',
+        'admin/ops/contract-renewals'
     ];
     var deadWarmUrls = {};
     var running = false;
@@ -127,9 +127,32 @@
     }
 
     function withCompany(href) {
-        // Never append ?company_id= during warm — it produced console 404/500 storms
-        // (e.g. /admin/ops?company_id=22, accounting/platform). Live visits are cached as-is.
-        return href;
+        // Attach active company only on tenant ops/hr pages so offline soft-nav
+        // hits the same URL the sidebar uses (?company_id=). Skip hubs that 404 with it.
+        var cid = companyId();
+        if (cid < 1) {
+            return href;
+        }
+        try {
+            var u = new URL(href, root.location.origin);
+            var p = String(u.pathname || '');
+            if (!/\/admin\/(ops|hr)\//i.test(p)) {
+                return href;
+            }
+            if (/\/admin\/ops\/?$/i.test(p.replace(/\/+$/, ''))) {
+                return href;
+            }
+            if (/\/accounting\/(platform|currencies|tax-codes|profit-centers|recurring|opening-balances)(\/|$)/i.test(p)) {
+                return href;
+            }
+            if (u.searchParams.has('company_id')) {
+                return u.href;
+            }
+            u.searchParams.set('company_id', String(cid));
+            return u.href;
+        } catch (e) {
+            return href;
+        }
     }
 
     function forceWarmRequested() {
@@ -232,10 +255,7 @@
         if (/\/admin\/ops$/i.test(p)) {
             return true;
         }
-        // Accounting hub / incomplete children often 500 on platform.
-        if (/\/accounting(\/platform)?$/i.test(p)) {
-            return true;
-        }
+        // Incomplete accounting children often 500 — hub /admin/ops/accounting MUST warm.
         if (isBrokenAccountingWarmPath(p)) {
             return true;
         }
@@ -954,7 +974,12 @@
                 root.location.origin + publicBase() + 'admin/agency-updates',
                 root.location.origin + publicBase() + 'admin/companies',
                 root.location.origin + publicBase() + 'admin/ops/stock-movements',
-                root.location.origin + publicBase() + 'admin/ops/branch-dashboard'
+                root.location.origin + publicBase() + 'admin/ops/branch-dashboard',
+                root.location.origin + publicBase() + 'admin/ops/accounting',
+                root.location.origin + publicBase() + 'admin/ops/notifications',
+                root.location.origin + publicBase() + 'admin/cms',
+                root.location.origin + publicBase() + 'admin/ops/contracts',
+                root.location.origin + publicBase() + 'admin/ops/assets'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
@@ -1095,19 +1120,19 @@
             return;
         }
         trackActivity();
-        // Delay page warm so online dashboard Chart.js is not starved (was 2.5s).
+        // After charts (~8s): auto-warm sidebar pages so offline works without visiting each one.
         var idleKick = function () {
             var afterIdle = function () {
                 setTimeout(function () {
                     if (userStillActive()) {
                         kickIdle();
                     }
-                }, 45000);
+                }, 8000);
             };
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(afterIdle, { timeout: 60000 });
+                root.requestIdleCallback(afterIdle, { timeout: 12000 });
             } else {
-                setTimeout(afterIdle, 45000);
+                setTimeout(afterIdle, 8000);
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -1115,7 +1140,7 @@
         } else if (root.addEventListener) {
             root.addEventListener('load', idleKick, { once: true });
         } else {
-            setTimeout(idleKick, 50000);
+            setTimeout(idleKick, 10000);
         }
     }
 
