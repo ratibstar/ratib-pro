@@ -75,6 +75,40 @@
         } catch (ePaint) { /* ignore */ }
     }
 
+    /** Progressive badge hydrate after HTML paint (counts deferred to avoid login black screen). */
+    function applyOversightBadges(menuCounts) {
+        if (!menuCounts || typeof menuCounts !== 'object') {
+            return;
+        }
+        var map = {
+            'admin/oversight/companies-approvals': menuCounts.company_pending || 0,
+            'admin/oversight/approvals': menuCounts.approvals || 0,
+            'admin/oversight/procurement': menuCounts.procurement || 0,
+            'admin/oversight/rfq': menuCounts.rfq || 0,
+            'admin/oversight/inventory': menuCounts.inventory || 0,
+            'admin/oversight/supplier-evaluations': menuCounts.supplier_evaluations || 0
+        };
+        Object.keys(map).forEach(function (route) {
+            var n = parseInt(map[route], 10) || 0;
+            var links = document.querySelectorAll('a[href*="' + route + '"], a[data-rateb-href*="' + route + '"]');
+            links.forEach(function (a) {
+                var badge = a.querySelector('.rateb-nav-badge');
+                if (n < 1) {
+                    if (badge) {
+                        badge.remove();
+                    }
+                    return;
+                }
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'rateb-nav-badge rateb-nav-badge--pending';
+                    a.appendChild(badge);
+                }
+                badge.textContent = String(n);
+            });
+        });
+    }
+
     function loadChartLibs(rootEl) {
         return new Promise(function (resolve) {
             if (typeof window.Chart !== 'undefined' && typeof window.ratebChartsBoot === 'function') {
@@ -134,17 +168,14 @@
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                     return;
                 }
-                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
-                if (badge && badge.classList.contains('is-offline')) {
-                    return;
-                }
             } catch (eOff) { /* continue */ }
             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            // Was 2500ms — aborted on shared-host COUNT/login_activity and left black chart boxes.
             var timer = setTimeout(function () {
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 2500);
+            }, 15000);
             fetch(url, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
@@ -160,6 +191,9 @@
                 }
                 applyCharts(data.charts || {});
                 paintCharts();
+                if (data.menu_counts) {
+                    applyOversightBadges(data.menu_counts);
+                }
             }).catch(function () { /* ignore */ }).finally(function () {
                 clearTimeout(timer);
             });

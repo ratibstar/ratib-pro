@@ -102,18 +102,29 @@ final class DashboardService
 
     public function adminCharts(): array
     {
+        // Bound time window — full-table GROUP BY on login_activity blocked deferred charts (2.5s abort).
+        $since = date('Y-m-01', strtotime('-11 months'));
+
         $companyGrowth = (new Company())->query(
             "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
-             FROM rateb_companies GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12"
+             FROM rateb_companies
+             WHERE created_at >= :since
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12",
+            ['since' => $since]
         );
         $subscriptionGrowth = (new Subscription())->query(
             "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
-             FROM rateb_subscriptions GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12"
+             FROM rateb_subscriptions
+             WHERE created_at >= :since
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12",
+            ['since' => $since]
         );
         $userGrowth = (new User())->query(
             "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
-             FROM rateb_users WHERE is_super_admin = 0
-             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12"
+             FROM rateb_users
+             WHERE is_super_admin = 0 AND created_at >= :since
+             GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC LIMIT 12",
+            ['since' => $since]
         );
         $statusRows = (new Company())->query(
             "SELECT status, COUNT(*) AS total FROM rateb_companies GROUP BY status"
@@ -146,14 +157,17 @@ final class DashboardService
             'value' => (int) ($r['total'] ?? 0),
         ], $subStatusRows);
 
-        $loginActivity = $pdo->query(
+        $loginStmt = $pdo->prepare(
             "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
                     SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) AS success_total,
                     SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) AS failed_total
              FROM rateb_login_activity
+             WHERE created_at >= :since
              GROUP BY DATE_FORMAT(created_at, '%Y-%m')
              ORDER BY month ASC LIMIT 12"
-        )->fetchAll() ?: [];
+        );
+        $loginStmt->execute(['since' => $since]);
+        $loginActivity = $loginStmt->fetchAll() ?: [];
         if ($loginActivity === []) {
             for ($i = 5; $i >= 0; $i--) {
                 $loginActivity[] = [

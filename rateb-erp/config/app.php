@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260722-respondwith-flatten-v104');
+define('RATEB_ASSET_BUILD', '20260722-admin-dash-ttfb-v105');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2851,6 +2851,22 @@ if (!function_exists('rateb_app_url')) {
     }
 }
 
+if (!function_exists('rateb_nav_counts_allow_cold')) {
+    /**
+     * Cold COUNT storms must not block HTML first paint (login → /admin black screen).
+     * Allow only on oversight pages or dedicated warm APIs.
+     */
+    function rateb_nav_counts_allow_cold(): bool
+    {
+        $route = function_exists('rateb_current_erp_route') ? (string) rateb_current_erp_route() : '';
+        if ($route !== '' && (str_starts_with($route, 'admin/oversight') || $route === 'admin/api/dashboard-charts')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('rateb_oversight_pending_approvals_count')) {
     function rateb_oversight_pending_approvals_count(): int
     {
@@ -2885,14 +2901,14 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             $cached = $raw['data'];
             return $cached;
         }
-        // Soft-nav / prefetch: never run cold COUNT storms — reuse stale session or zeros.
+        // Prefer stale session over a cold COUNT storm (HTML paint / soft-nav / dashboard).
+        if (is_array($raw) && is_array($raw['data'] ?? null)) {
+            $cached = $raw['data'];
+            return $cached;
+        }
         $softNav = (isset($_SERVER['HTTP_X_RATEB_NAV_SWAP']) && (string) $_SERVER['HTTP_X_RATEB_NAV_SWAP'] === '1')
             || (isset($_SERVER['HTTP_X_RATEB_PREFETCH']) && (string) $_SERVER['HTTP_X_RATEB_PREFETCH'] === '1');
-        if ($softNav) {
-            if (is_array($raw) && is_array($raw['data'] ?? null)) {
-                $cached = $raw['data'];
-                return $cached;
-            }
+        if ($softNav || !rateb_nav_counts_allow_cold()) {
             $cached = $empty;
             return $cached;
         }
@@ -2983,13 +2999,14 @@ if (!function_exists('rateb_ops_nav_counts')) {
             $cached = $raw['data'];
             return $cached;
         }
+        // Prefer stale over cold COUNT (same policy as oversight badges).
+        if (is_array($raw) && is_array($raw['data'] ?? null)) {
+            $cached = $raw['data'];
+            return $cached;
+        }
         $softNav = (isset($_SERVER['HTTP_X_RATEB_NAV_SWAP']) && (string) $_SERVER['HTTP_X_RATEB_NAV_SWAP'] === '1')
             || (isset($_SERVER['HTTP_X_RATEB_PREFETCH']) && (string) $_SERVER['HTTP_X_RATEB_PREFETCH'] === '1');
-        if ($softNav) {
-            if (is_array($raw) && is_array($raw['data'] ?? null)) {
-                $cached = $raw['data'];
-                return $cached;
-            }
+        if ($softNav || !rateb_nav_counts_allow_cold()) {
             $cached = [];
             return $cached;
         }
