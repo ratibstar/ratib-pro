@@ -24,6 +24,6 @@ if (function_exists('opcache_reset')) {
     opcache_reset();
 }
 $plan = @file_get_contents($root . '/app/services/PlanLimitService.php');
-echo 'build=' . trim((string) @file_get_contents(__DIR__ . '/rateb-erp-build.txt')) . "\n";
+echo 'build=' . trim((string) @file_get_contents(__DIR__ . '/ratib-erp-build.txt')) . "\n";
 echo 'has_ess_fallback=' . (is_string($plan) && str_contains($plan, 'essFallbackCompanyId') ? 'yes' : 'no') . "\n";
 echo "ok\n";
