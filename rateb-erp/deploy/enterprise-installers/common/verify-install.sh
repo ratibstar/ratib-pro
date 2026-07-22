@@ -13,7 +13,7 @@ if [[ -z "${PORT}" && -f storage/branch/appliance.env ]]; then
   PHP_BIN="${RATEB_PHP_BIN:-${PHP_BIN}}"
 fi
 
-echo "=== RATIB Branch verify (universal) ==="
+echo "=== RATEB Branch verify (universal) ==="
 fail=0
 check() {
   local name="$1"; shift

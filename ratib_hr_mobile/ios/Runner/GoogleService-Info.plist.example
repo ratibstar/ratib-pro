@@ -12,9 +12,9 @@
 	<key>BUNDLE_ID</key>
 	<string>sa.rateb.hr.mobile</string>
 	<key>PROJECT_ID</key>
-	<string>ratib-hr-mobile-placeholder</string>
+	<string>rateb-hr-mobile-placeholder</string>
 	<key>STORAGE_BUCKET</key>
-	<string>ratib-hr-mobile-placeholder.appspot.com</string>
+	<string>rateb-hr-mobile-placeholder.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase D.4 — RATIB ERP zero-touch launcher (Linux)
+# Phase D.4 — RATEB ERP zero-touch launcher (Linux)
 # Browser always opens cloud admin: https://rateb.sa/rateb-erp/public/admin/
 # (same URL online and offline via PWA). Local services still start for Hybrid Sync.
 set -euo pipefail
@@ -66,4 +66,4 @@ if [[ "${RATIB_NO_BROWSER:-0}" != "1" ]]; then
     xdg-open "${OPEN_URL}" >/dev/null 2>&1 || true
   fi
 fi
-echo "RATIB ERP → ${OPEN_URL}"
+echo "RATEB ERP → ${OPEN_URL}"

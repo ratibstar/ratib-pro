@@ -1,6 +1,6 @@
 {
   "phase": "PERF-P2",
-  "title": "RATIB ERP Enterprise Offline Persistence — Architecture Audit",
+  "title": "RATEB ERP Enterprise Offline Persistence — Architecture Audit",
   "mode": "READ_ONLY_NO_CODE_NO_PATCHES",
   "at": "2026-07-16T05:57:00+03:00",
   "goal": "Offline ERP must behave like an installed desktop app. Hard Refresh / restart / internet-off must not destroy Offline ERP. Only Logout, Device Revoke, or user Clear Site Data may remove it.",

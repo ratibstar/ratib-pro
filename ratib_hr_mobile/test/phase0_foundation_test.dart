@@ -6,6 +6,6 @@ void main() {
     expect(AppConfig.appId, 'sa.rateb.hr.mobile');
     expect(AppConfig.apisEnabled, isFalse);
     expect(AppConfig.defaultLocale.languageCode, 'ar');
-    expect(AppConfig.sourceOfTruth, 'RATIB ERP');
+    expect(AppConfig.sourceOfTruth, 'RATEB ERP');
   });
 }

@@ -1,4 +1,4 @@
-# RATIB ERP — Real Browser Boot Benchmark
+# RATEB ERP — Real Browser Boot Benchmark
 
 Generated: 2026-07-14T12:18:01.889Z
 

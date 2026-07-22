@@ -1,4 +1,4 @@
-/// AuthPort → existing RATIB ERP `POST /api/v1/auth/token`.
+/// AuthPort → existing RATEB ERP `POST /api/v1/auth/token`.
 ///
 /// Reuses ERP credential verification. No PIN/OTP/biometric.
 library;

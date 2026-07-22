@@ -1,6 +1,6 @@
 # Post-install verification (Windows) — Phase D.3 port-aware
 param(
-    [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+    [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
     [string]$PhpPath = 'php.exe'
 )
 $ErrorActionPreference = 'Continue'
@@ -26,7 +26,7 @@ Check 'Sync key' { (Get-Content (Join-Path $InstallRoot 'storage\branch\serve.en
 & $PhpPath -d extension=pdo_sqlite -d extension=sqlite3 (Join-Path $InstallRoot 'bin\hybrid-branch-health.php') --once
 if ($LASTEXITCODE -eq 0) { Write-Host 'OK Health' } else { Write-Host 'FAIL Health'; $fail++ }
 
-foreach ($svc in @('RATIBHybridSync','RATIBBranchWeb')) {
+foreach ($svc in @('RATEBHybridSync','RATEBBranchWeb')) {
     $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
     if ($s -and $s.Status -eq 'Running') { Write-Host "OK Service $svc" } else { Write-Host "WARN Service $svc" }
 }

@@ -197,7 +197,7 @@
             var payload = res.payload || {};
             if (!(payload.ok && payload.identity && payload.device)) {
                 try {
-                    console.warn('[RATIB OFFLINE] identity enroll failed', res.http, payload.error || payload);
+                    console.warn('[RATEB OFFLINE] identity enroll failed', res.http, payload.error || payload);
                 } catch (e) { /* ignore */ }
                 return null;
             }
@@ -211,7 +211,7 @@
             return payload;
         }).catch(function (err) {
             try {
-                console.warn('[RATIB OFFLINE] identity enroll network error', err);
+                console.warn('[RATEB OFFLINE] identity enroll network error', err);
             } catch (e2) { /* ignore */ }
             return null;
         });
@@ -309,7 +309,7 @@
             if (online) {
                 storePendingIdentity(identityPayload);
                 try {
-                    console.info('[RATIB OFFLINE] PIN seal deferred until offline unlock (live UI uninterrupted)');
+                    console.info('[RATEB OFFLINE] PIN seal deferred until offline unlock (live UI uninterrupted)');
                 } catch (e) { /* ignore */ }
                 return row;
             }
@@ -320,7 +320,7 @@
                 if (!pin || String(pin).length < 4) {
                     storePendingIdentity(identityPayload);
                     try {
-                        console.warn('[RATIB OFFLINE] PIN enroll deferred — device is registered; set PIN on offline unlock');
+                        console.warn('[RATEB OFFLINE] PIN enroll deferred — device is registered; set PIN on offline unlock');
                     } catch (e) { /* ignore */ }
                     return null;
                 }
@@ -391,7 +391,7 @@
                 if (policy && policy.enroll && policy.enroll.ok === false
                     && String(policy.enroll.error || '') === 'super_admin_denied') {
                     try {
-                        console.info('[RATIB OFFLINE] warm identity enroll skipped (unbound super-admin)');
+                        console.info('[RATEB OFFLINE] warm identity enroll skipped (unbound super-admin)');
                     } catch (e) { /* ignore */ }
                     finishUnlockGate();
                     return null;

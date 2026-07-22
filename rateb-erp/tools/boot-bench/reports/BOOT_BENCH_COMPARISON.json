@@ -1,5 +1,5 @@
 {
-  "title": "RATIB ERP Boot Performance — Real Browser Benchmark",
+  "title": "RATEB ERP Boot Performance — Real Browser Benchmark",
   "generatedAt": "2026-07-14T12:18:01.889Z",
   "method": {
     "browser": "Google Chrome via Playwright + Lighthouse",

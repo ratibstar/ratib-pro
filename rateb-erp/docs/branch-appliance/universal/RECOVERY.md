@@ -9,7 +9,7 @@ If SQLite fails integrity check → restore latest backup → verify → restart
 ## Manual
 
 ```bash
-cd /opt/ratib-branch   # or Windows install root
+cd /opt/rateb-branch   # or Windows install root
 php -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-recover.php
 php -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-backup.php list
 php -d extension=pdo_sqlite -d extension=sqlite3 bin/hybrid-branch-backup.php restore <path>

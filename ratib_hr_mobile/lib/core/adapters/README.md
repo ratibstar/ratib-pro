@@ -1,6 +1,6 @@
 # Adapters
 
-Thin adapters that implement `lib/core/contracts/*` by calling **existing** RATIB ERP endpoints/services.
+Thin adapters that implement `lib/core/contracts/*` by calling **existing** RATEB ERP endpoints/services.
 
 ## Rules
 

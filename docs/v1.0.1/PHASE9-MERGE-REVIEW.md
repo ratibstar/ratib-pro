@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 9 Merge Review
+# RATEB ERP v1.0.1 — Phase 9 Merge Review
 
 **Date:** 2026-06-27  
 **Repository:** https://github.com/ratibstar/ratib-pro  

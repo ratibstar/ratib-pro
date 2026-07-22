@@ -1,6 +1,6 @@
 # Phase 0.7 — UI Design System Lock
 
-Enterprise Material 3 design system for RATIB HR Mobile.
+Enterprise Material 3 design system for RATEB HR Mobile.
 
 ## Tokens
 

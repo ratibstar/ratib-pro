@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Release Notes
+# RATEB ERP v1.0.1 — Release Notes
 
 **Release date:** 2026-06-27  
 **Type:** Maintenance release (first patch after GA v1.0.0)  
@@ -9,7 +9,7 @@
 
 ## Summary
 
-RATIB ERP v1.0.1 is the first maintenance release after General Availability. It addresses operational observations from GA closeout: backup verification false negatives on MariaDB 10.11 dumps, company portal logout redirect UX, build/version metadata, repository security hygiene, and prepared (inactive) CI workflow drafts.
+RATEB ERP v1.0.1 is the first maintenance release after General Availability. It addresses operational observations from GA closeout: backup verification false negatives on MariaDB 10.11 dumps, company portal logout redirect UX, build/version metadata, repository security hygiene, and prepared (inactive) CI workflow drafts.
 
 **No new ERP features. No database schema changes. No migrations.**
 

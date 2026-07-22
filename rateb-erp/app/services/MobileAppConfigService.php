@@ -254,8 +254,8 @@ final class MobileAppConfigService
             $features = self::defaultFeatures();
             $companyName = trim((string) ($company['name'] ?? ''));
             $appName = $this->isPlaceholderAppName($companyName, $companyName)
-                ? 'راتب — الموارد البشرية'
-                : ($companyName !== '' ? $companyName : 'راتب — الموارد البشرية');
+                ? 'رتب — الموارد البشرية'
+                : ($companyName !== '' ? $companyName : 'رتب — الموارد البشرية');
 
             return [
                 'status' => 200,
@@ -278,7 +278,7 @@ final class MobileAppConfigService
         $appName = trim((string) ($row['app_name'] ?? ''));
         $companyName = trim((string) ($company['name'] ?? ''));
         if ($appName === '' || $this->isPlaceholderAppName($appName, $companyName)) {
-            $appName = 'راتب — الموارد البشرية';
+            $appName = 'رتب — الموارد البشرية';
         }
 
         return [

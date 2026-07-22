@@ -18,7 +18,7 @@ final class FlutterLocalNotificationPresenter
   final FlutterLocalNotificationsPlugin _plugin;
   bool _ready = false;
   static const _channelId = 'ratib_ess_push';
-  static const _channelName = 'RATIB ESS';
+  static const _channelName = 'RATEB ESS';
 
   @override
   Future<void> ensureInitialized() async {
@@ -51,7 +51,7 @@ final class FlutterLocalNotificationPresenter
     }
     await _plugin.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title ?? 'RATIB',
+      title ?? 'RATEB',
       body ?? '',
       const NotificationDetails(
         android: AndroidNotificationDetails(

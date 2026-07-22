@@ -1,6 +1,6 @@
 # Phase D.3 — resolve PHP (system → bundled → download official Windows build)
 param(
-  [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+  [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
   [string]$PreferredPhp = ''
 )
 $ErrorActionPreference = 'Stop'
@@ -36,7 +36,7 @@ foreach ($c in $candidates) {
 # Auto-download official PHP Windows x64 NTS into runtime\php (clean machine)
 $runtime = Join-Path $InstallRoot 'runtime\php'
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
-$zip = Join-Path $env:TEMP 'ratib-php-nts.zip'
+$zip = Join-Path $env:TEMP 'rateb-php-nts.zip'
 $urls = @(
   'https://windows.php.net/downloads/releases/latest/php-8.3-nts-Win32-vs16-x64-latest.zip',
   'https://windows.php.net/downloads/releases/latest/php-8.2-nts-Win32-vs16-x64-latest.zip'

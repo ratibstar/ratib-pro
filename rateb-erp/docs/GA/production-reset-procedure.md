@@ -1,4 +1,4 @@
-# Production Reset Procedure — RATIB ERP v1.0 GA
+# Production Reset Procedure — RATEB ERP v1.0 GA
 
 **Script:** `bin/reset-production.php`  
 **Status:** Generated and validated (structure). **Not executed** in this session.

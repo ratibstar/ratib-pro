@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Production Handover
+# RATEB ERP v1.0 — Production Handover
 
 **Handover date:** 2026-06-27  
 **Version:** 1.0.0  
@@ -251,4 +251,4 @@ GA closeout reference drill: restore to `admin_designed` scratch — **143 table
 
 ---
 
-*RATIB ERP v1.0 Production Handover — operator reference. No production changes during GA closeout.*
+*RATEB ERP v1.0 Production Handover — operator reference. No production changes during GA closeout.*

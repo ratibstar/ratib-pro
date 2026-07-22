@@ -1,6 +1,6 @@
-# RATIB Branch — Windows Installer
+# RATEB Branch — Windows Installer
 
-Artifact: **RATIB-Branch-Setup.exe**
+Artifact: **RATEB-Branch-Setup.exe**
 
 ## Phase D.3 Universal
 
@@ -11,20 +11,20 @@ See `docs/branch-appliance/universal/INSTALLATION.md`.
 ## Build
 
 1. Install [Inno Setup 6](https://jrsoftware.org/isinfo.php)
-2. Place WinSW as `deploy/enterprise-installers/windows/RATIBHybridSync.exe` and `RATIBBranchWeb.exe`
+2. Place WinSW as `deploy/enterprise-installers/windows/RATEBHybridSync.exe` and `RATEBBranchWeb.exe`
 3. Run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File deploy\enterprise-installers\windows\build.ps1
 ```
 
-Output: `storage/branch/enterprise-installers/RATIB-Branch-Setup.exe`
+Output: `storage/branch/enterprise-installers/RATEB-Branch-Setup.exe`
 
 ## Install
 
-- GUI: run `RATIB-Branch-Setup.exe` as Administrator
-- Silent: `RATIB-Branch-Setup.exe /SILENT`
-- Destination: `C:\Program Files\RATIB Branch\`
+- GUI: run `RATEB-Branch-Setup.exe` as Administrator
+- Silent: `RATEB-Branch-Setup.exe /SILENT`
+- Destination: `C:\Program Files\RATEB Branch\`
 
 ## Flow
 
@@ -32,7 +32,7 @@ Output: `storage/branch/enterprise-installers/RATIB-Branch-Setup.exe`
 2. Copy ERP + optional bundled PHP under `runtime\php`
 3. Create `storage\branch\{logs,backups,tmp}`
 4. `bin\hybrid-branch-install.php` (skipped if SQLite exists)
-5. Register **RATIB Hybrid Sync** + **RATIB Branch Web** (WinSW)
+5. Register **RATEB Hybrid Sync** + **RATEB Branch Web** (WinSW)
 6. Firewall rule (optional task)
 7. Verify + open `http://127.0.0.1/`
 8. Desktop + Start Menu shortcuts

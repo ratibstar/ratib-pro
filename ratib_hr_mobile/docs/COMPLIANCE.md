@@ -1,6 +1,6 @@
 # Phase K — Store compliance checklist
 
-**App:** RATIB HR Mobile · presentation-only ESS client for RATIB ERP  
+**App:** RATEB HR Mobile · presentation-only ESS client for RATEB ERP  
 **Architecture Lock:** No passwords stored in Identity vault; Online ERP = Authentication Authority
 
 ## Platform targets (engineering evidence)

@@ -24,7 +24,7 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _text = {
     'ar': {
-      'appTitle': 'راتب — الموارد البشرية',
+      'appTitle': 'رتب — الموارد البشرية',
       'tabHome': 'الرئيسية',
       'tabAttendance': 'الحضور',
       'tabLeave': 'الإجازات',
@@ -51,7 +51,7 @@ class AppLocalizations {
       'navProfile': 'ملفي',
       'navApprovals': 'الموافقات',
       'phase0Placeholder': 'مرحلة ٠ — واجهة فقط. لا منطق أعمال بعد.',
-      'phase0Subtitle': 'المصدر الوحيد للحقيقة: نظام راتب ERP',
+      'phase0Subtitle': 'المصدر الوحيد للحقيقة: نظام رتب ERP',
       'language': 'اللغة',
       'arabic': 'العربية',
       'english': 'English',
@@ -60,7 +60,7 @@ class AppLocalizations {
       'leave': 'الإجازات',
       'requests': 'الطلبات',
       'attendance': 'الحضور',
-      'loginSubtitle': 'تسجيل الدخول بحساب راتب ERP',
+      'loginSubtitle': 'تسجيل الدخول بحساب رتب ERP',
       'loginEmailLabel': 'البريد الإلكتروني',
       'loginEmailHint': 'email@company.com',
       'loginPasswordLabel': 'كلمة المرور',
@@ -75,7 +75,7 @@ class AppLocalizations {
       'loginMobileDisabled': 'تطبيق الجوال غير مفعّل لهذه الشركة',
       'loginRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'loginFailed': 'فشل تسجيل الدخول',
-      'loginErpOnlyHint': 'المصادقة عبر نظام راتب ERP فقط',
+      'loginErpOnlyHint': 'المصادقة عبر نظام رتب ERP فقط',
       'loginEmployeeUnbound': 'لا يوجد موظف مرتبط بهذا الحساب',
       'loginEmployeeAmbiguous': 'أكثر من موظف مرتبط بهذا الحساب',
       'loginPlatformSuperAdmin':
@@ -184,9 +184,9 @@ class AppLocalizations {
       'settingsPrivacy': 'سياسة الخصوصية',
       'settingsTerms': 'الشروط والأحكام',
       'settingsPrivacyBody':
-          'تُدار بياناتك وفق سياسات الخصوصية الخاصة بشركتك ونظام راتب ERP.',
+          'تُدار بياناتك وفق سياسات الخصوصية الخاصة بشركتك ونظام رتب ERP.',
       'settingsTermsBody':
-          'باستخدام التطبيق فإنك توافق على شروط الاستخدام الخاصة بشركتك ونظام راتب ERP.',
+          'باستخدام التطبيق فإنك توافق على شروط الاستخدام الخاصة بشركتك ونظام رتب ERP.',
       'attendanceWorkingDuration': 'مدة العمل',
       'attendanceHistoryHint': 'عرض أيام الحضور السابقة',
       'attendanceHistoryEmpty': 'لا يوجد سجل حضور بعد',
@@ -256,7 +256,7 @@ class AppLocalizations {
       'syncLastOutcome': 'آخر نتيجة',
     },
     'en': {
-      'appTitle': 'RATIB HR',
+      'appTitle': 'RATEB HR',
       'tabHome': 'Home',
       'tabAttendance': 'Attendance',
       'tabLeave': 'Leave',
@@ -283,7 +283,7 @@ class AppLocalizations {
       'navProfile': 'My profile',
       'navApprovals': 'Approvals',
       'phase0Placeholder': 'Phase 0 — shell only. No business logic yet.',
-      'phase0Subtitle': 'Single source of truth: RATIB ERP',
+      'phase0Subtitle': 'Single source of truth: RATEB ERP',
       'language': 'Language',
       'arabic': 'العربية',
       'english': 'English',
@@ -292,7 +292,7 @@ class AppLocalizations {
       'leave': 'Leave',
       'requests': 'Requests',
       'attendance': 'Attendance',
-      'loginSubtitle': 'Sign in with your RATIB ERP account',
+      'loginSubtitle': 'Sign in with your RATEB ERP account',
       'loginEmailLabel': 'Email',
       'loginEmailHint': 'email@company.com',
       'loginPasswordLabel': 'Password',
@@ -307,7 +307,7 @@ class AppLocalizations {
       'loginMobileDisabled': 'Mobile app is not enabled for this company',
       'loginRateLimited': 'Too many attempts. Try again later',
       'loginFailed': 'Sign-in failed',
-      'loginErpOnlyHint': 'Authentication via RATIB ERP only',
+      'loginErpOnlyHint': 'Authentication via RATEB ERP only',
       'loginEmployeeUnbound': 'No employee is linked to this account',
       'loginEmployeeAmbiguous': 'Multiple employees are linked to this account',
       'loginPlatformSuperAdmin':
@@ -419,9 +419,9 @@ class AppLocalizations {
       'settingsPrivacy': 'Privacy policy',
       'settingsTerms': 'Terms of service',
       'settingsPrivacyBody':
-          'Your data is handled under your company privacy policy and RATIB ERP.',
+          'Your data is handled under your company privacy policy and RATEB ERP.',
       'settingsTermsBody':
-          'By using this app you agree to your company terms and RATIB ERP terms.',
+          'By using this app you agree to your company terms and RATEB ERP terms.',
       'attendanceWorkingDuration': 'Working duration',
       'attendanceHistoryHint': 'View previous attendance days',
       'attendanceHistoryEmpty': 'No attendance history yet',

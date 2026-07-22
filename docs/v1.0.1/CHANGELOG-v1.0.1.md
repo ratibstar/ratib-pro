@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Changelog
+# RATEB ERP v1.0.1 — Changelog
 
 All notable changes for the v1.0.1 maintenance release.
 

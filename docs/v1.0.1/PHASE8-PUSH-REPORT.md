@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 8 Push Report
+# RATEB ERP v1.0.1 — Phase 8 Push Report
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  

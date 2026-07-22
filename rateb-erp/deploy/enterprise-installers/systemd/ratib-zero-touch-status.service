@@ -1,5 +1,5 @@
 [Unit]
-Description=RATIB Zero-Touch Status Monitor
+Description=RATEB Zero-Touch Status Monitor
 Documentation=file:///opt/ratib-branch/docs/branch-appliance/zero-touch/README.md
 After=network-online.target
 

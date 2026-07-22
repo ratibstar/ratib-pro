@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Known Issues
+# RATEB ERP v1.0.1 — Known Issues
 
 **Last updated:** 2026-06-27  
 **Release:** 1.0.1 (maintenance)

@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 3 Maintenance Report
+# RATEB ERP v1.0.1 — Phase 3 Maintenance Report
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Phase 3 prepared RATIB ERP **v1.0.1** as the first maintenance release after GA. All nine work items were completed on the development branch only. No merge, push, deploy, migration, or production database access was performed.
+Phase 3 prepared RATEB ERP **v1.0.1** as the first maintenance release after GA. All nine work items were completed on the development branch only. No merge, push, deploy, migration, or production database access was performed.
 
 | Task | Status |
 |------|--------|

@@ -81,7 +81,7 @@ final class BranchesSetupService
             ['id' => 'permissions', 'label' => 'branch_check_permissions', 'done' => $perms['view'] && $perms['manage'], 'hint' => 'branches.view / branches.manage'],
             ['id' => 'nav', 'label' => 'branch_check_nav', 'done' => function_exists('rateb_nav_can') && rateb_nav_can('branches.view'), 'hint' => __('branches')],
             ['id' => 'crud', 'label' => 'branch_check_crud', 'done' => $tableOk && class_exists(\Rateb\App\Controllers\Company\BranchesController::class), 'hint' => rateb_app_route('branches')],
-            ['id' => 'map_url', 'label' => 'branch_check_map_url', 'done' => function_exists('rateb_external_url') && rateb_external_url('ratib.sa') === 'https://ratib.sa', 'hint' => 'rateb_external_url()'],
+            ['id' => 'map_url', 'label' => 'branch_check_map_url', 'done' => function_exists('rateb_external_url') && rateb_external_url('rateb.sa') === 'https://rateb.sa', 'hint' => 'rateb_external_url()'],
             ['id' => 'limit', 'label' => 'branch_check_limit', 'done' => $hasLimitCol, 'hint' => 'max_branches / branch_limit'],
             ['id' => 'export', 'label' => 'branch_check_export', 'done' => method_exists(\Rateb\App\Controllers\Company\BranchesController::class, 'export'), 'hint' => rateb_app_route('branches/export')],
             ['id' => 'main', 'label' => 'branch_check_main_branch', 'done' => $hasMain, 'hint' => BranchService::MAIN_CODE],

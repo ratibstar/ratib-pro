@@ -23,7 +23,7 @@ $report = $runner->runAll();
 if ($json) {
     echo json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 } else {
-    echo "RATIB ERP Enterprise Test Suite\n";
+    echo "RATEB ERP Enterprise Test Suite\n";
     echo str_repeat('=', 40) . "\n";
     foreach ($report['suites'] as $suite => $data) {
         echo strtoupper($suite) . ": {$data['passed']}/{$data['total']} passed\n";

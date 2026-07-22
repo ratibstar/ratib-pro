@@ -92,12 +92,12 @@
         }
         return rbac.syncFromServer(fetchVersion, fetchManifest).then(function (res) {
             try {
-                console.info('[RATIB OFFLINE] RBAC sync', res && res.ok ? 'ok' : 'result', res || {});
+                console.info('[RATEB OFFLINE] RBAC sync', res && res.ok ? 'ok' : 'result', res || {});
             } catch (e) { /* ignore */ }
             // Do not applyCachedNav on live online Admin DOM — only persist cache for offline.
         }).catch(function (err) {
             try {
-                console.warn('[RATIB OFFLINE] RBAC sync failed', err);
+                console.warn('[RATEB OFFLINE] RBAC sync failed', err);
             } catch (e2) { /* ignore */ }
         });
     }

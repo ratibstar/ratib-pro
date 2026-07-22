@@ -1,10 +1,10 @@
 {
   "phase": "PERF-P3",
-  "title": "RATIB ERP Enterprise Offline Certification — Desktop-Grade Audit",
+  "title": "RATEB ERP Enterprise Offline Certification — Desktop-Grade Audit",
   "mode": "READ_ONLY_NO_CODE_NO_PATCHES",
   "at": "2026-07-16T06:03:00+03:00",
-  "certification_question": "What prevents RATIB ERP from behaving like a real installed desktop application?",
-  "certification_answer": "RATIB Offline is a Service-Worker cache overlay on a live PHP web app, not a sealed installed package. Boot, navigation, and survival still depend on (1) prior online warm of HTML/JS into Cache API, (2) Soft navigations that the SW can intercept, and (3) update/recovery code that can delete those caches. Hard Refresh offline, incomplete warm, SW install shell-delete, and nuclear live-escape all break the desktop contract. Identity in IndexedDB is stronger than the shell — the product can remember who you are while still failing to open the ERP UI.",
+  "certification_question": "What prevents RATEB ERP from behaving like a real installed desktop application?",
+  "certification_answer": "RATEB Offline is a Service-Worker cache overlay on a live PHP web app, not a sealed installed package. Boot, navigation, and survival still depend on (1) prior online warm of HTML/JS into Cache API, (2) Soft navigations that the SW can intercept, and (3) update/recovery code that can delete those caches. Hard Refresh offline, incomplete warm, SW install shell-delete, and nuclear live-escape all break the desktop contract. Identity in IndexedDB is stronger than the shell — the product can remember who you are while still failing to open the ERP UI.",
   "scores": {
     "enterprise_score": 31,
     "desktop_erp_score": 22,
@@ -104,7 +104,7 @@
       "sap_gui_offline_field": "Local DB + explicit sync packages; refresh does not re-download app binary",
       "dynamics_365_field_service": "Mobile offline profile downloads entity set; app binary separate from data",
       "oracle_field_service": "Installed client + local data store; updates staged",
-      "odoo_pwa": "Still web/PWA — closer to RATIB but stronger when installed standalone + cache-first app shell",
+      "odoo_pwa": "Still web/PWA — closer to RATEB but stronger when installed standalone + cache-first app shell",
       "enterprise_pwa_standard": "App shell cache-first; never purge on recovery; update = new cache version; navigation always SW-controlled in installed window",
       "ratib_gap": "App = live PHP pages cached opportunistically; recovery can purge; Hard Refresh leaves installed contract; warm ≠ install"
     }

@@ -13,17 +13,17 @@ One installer run on a clean Windows or Linux machine → login at localhost. No
 
 | Package | Command |
 |---------|---------|
-| Windows | `RATIB-Branch-Setup.exe` (Admin) or extract `RATIB-Branch-Setup.zip` → `RATIB-Branch-Setup.cmd` |
-| Generic Linux | `sudo bash ratib-branch-installer.run` |
-| Debian/Ubuntu | `sudo apt install ./ratib-branch-installer.deb` |
-| RHEL family | `sudo dnf install ./ratib-branch-installer.rpm` |
+| Windows | `RATEB-Branch-Setup.exe` (Admin) or extract `RATEB-Branch-Setup.zip` → `RATEB-Branch-Setup.cmd` |
+| Generic Linux | `sudo bash rateb-branch-installer.run` |
+| Debian/Ubuntu | `sudo apt install ./rateb-branch-installer.deb` |
+| RHEL family | `sudo dnf install ./rateb-branch-installer.rpm` |
 
 ## What the Universal installer does
 
 1. Detect OS / CPU / init system  
 2. Resolve PHP (system → auto package install → **bundled** `runtime/php`)  
 3. Detect free port among 80, 443, 8080, 8088, 8099 (+ fallback)  
-4. Copy ERP → `C:\Program Files\RATIB Branch` or `/opt/ratib-branch`  
+4. Copy ERP → `C:\Program Files\RATEB Branch` or `/opt/rateb-branch`  
 5. Cold-start SQLite via `bin/hybrid-branch-install.php`  
 6. Register Web + Hybrid Sync services (`Restart=always`)  
 7. Open firewall for the chosen port  

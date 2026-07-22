@@ -34,7 +34,7 @@
 	</dict>
 	<!-- local_auth Face ID — unlock stored ERP session only (no passwords stored). -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>RATIB HR uses Face ID only to unlock your existing ERP session on this device.</string>
+	<string>RATEB HR uses Face ID only to unlock your existing ERP session on this device.</string>
 	<!-- Camera / Photo Library / Location: not required — no camera, picker, or geolocation plugins. -->
 	<!-- Associated Domains: not required — deep links not shipped. -->
 	<key>UIApplicationSceneManifest</key>

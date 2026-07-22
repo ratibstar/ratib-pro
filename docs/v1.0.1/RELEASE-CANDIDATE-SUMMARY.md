@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Release Candidate Summary
+# RATEB ERP v1.0.1 — Release Candidate Summary
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  

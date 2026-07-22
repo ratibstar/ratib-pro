@@ -27,7 +27,7 @@ flowchart TB
     Shell --> UI
   end
 
-  subgraph ERP["RATIB ERP"]
+  subgraph ERP["RATEB ERP"]
     MC["GET /api/mobile/config"]
     Dash["GET /api/v1/hr/dashboard"]
     Req["GET|POST /api/v1/hr/requests"]

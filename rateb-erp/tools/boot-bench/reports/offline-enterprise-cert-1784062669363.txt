@@ -1,4 +1,4 @@
-RATIB ERP — OFFLINE ENTERPRISE CERTIFICATION (REAL BROWSER)
+RATEB ERP — OFFLINE ENTERPRISE CERTIFICATION (REAL BROWSER)
 ================================================================
 Verdict: NO
 OA bootstrap active: false

@@ -22,7 +22,7 @@ main() {
     echo "Run as root (sudo)." >&2
     exit 1
   fi
-  echo "=== RATIB Branch Universal Installer (.run) ==="
+  echo "=== RATEB Branch Universal Installer (.run) ==="
   if [[ -f /etc/os-release ]]; then
     # shellcheck disable=SC1091
     . /etc/os-release

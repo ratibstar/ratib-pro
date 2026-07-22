@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — GA Certification (Operational)
+# RATEB ERP v1.0 — GA Certification (Operational)
 
 **Auditor role:** Lead Release Engineer + Enterprise QA  
 **Date:** 2026-06-26  

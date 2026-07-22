@@ -25,7 +25,7 @@ These files in `rateb-erp/docs/GA/` **must not move or edit**:
 |--------|--------|
 | `rateb-erp/docs/GA/enterprise-ga-final-certification.md` | Superseded — says GA BLOCKED |
 | `rateb-erp/docs/GA/ga-certification.md` | Superseded |
-| `rateb-erp/docs/GA/RATIB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md` | Partial run superseded |
+| `rateb-erp/docs/GA/RATEB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md` | Partial run superseded |
 | `rateb-erp/docs/GA/go-live-operational-cert-20260627-023758.json` | Blocked backup probe |
 | `rateb-erp/docs/GA/enterprise-validation-report.md` | Duplicate |
 | `rateb-erp/docs/GA/enterprise-validation-final.md` | Duplicate |

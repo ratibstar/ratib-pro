@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Merge Checklist
+# RATEB ERP v1.0.1 — Merge Checklist
 
 **PR:** `release/v1.0.1` → `main`  
 **Date:** 2026-06-27  

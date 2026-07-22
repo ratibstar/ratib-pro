@@ -1015,7 +1015,7 @@
                 boxA.textContent = 'حفظ التصميم أوفلاين…';
                 boxA.style.background = '#1e3a5f';
             }
-            console.info('[RATIB OFFLINE] asset warm start', assetUrls.length);
+            console.info('[RATEB OFFLINE] asset warm start', assetUrls.length);
         } catch (eA) { /* ignore */ }
 
         // Phase 1: CSS/JS/vendor ONLY — finish before any page warm so design works offline early.
@@ -1081,7 +1081,7 @@
                 progress.finished = 0;
                 ensureProgressUi(list.length);
                 try {
-                    console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
+                    console.info('[RATEB OFFLINE] page warm start', list.length, 'urls');
                 } catch (eLog) { /* ignore */ }
                 return runQueue(list, { concurrency: CONCURRENCY, gapMs: GAP_MS, signal: signal }).then(function (pageStats) {
                     return {
@@ -1121,7 +1121,7 @@
                         }, 8000);
                     }
                 }
-                console.info('[RATIB OFFLINE] full warm done', stats);
+                console.info('[RATEB OFFLINE] full warm done', stats);
             } catch (e2) { /* ignore */ }
             return stats;
         }).finally(function () {

@@ -229,7 +229,7 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
       if (!(window.RatebOfflineAuthLock && typeof window.RatebOfflineAuthLock.requireUnlockIfNeeded === 'function')) {
         var host = String(location.hostname || '');
         var localHint = (host === '127.0.0.1' || host === 'localhost' || host === '[::1]')
-          ? ' On this PC: start RATIB ERP (local server on port 8088), then Retry.'
+          ? ' On this PC: start RATEB ERP (local server on port 8088), then Retry.'
           : ' Reconnect, open Admin once (online), then retry offline.';
         setStatus(
           'Offline shell error',
@@ -241,7 +241,7 @@ html[data-bs-theme="light"] #offline-status{background:rgba(255,255,255,.92);bor
       clearTimeout(slow);
       var host = String(location.hostname || '');
       var localHint = (host === '127.0.0.1' || host === 'localhost' || host === '[::1]')
-        ? ' Start RATIB ERP local server (port 8088), then Retry.'
+        ? ' Start RATEB ERP local server (port 8088), then Retry.'
         : ' Reconnect, hard-refresh Admin once, then retry offline.';
       setStatus(
         'Offline shell error',

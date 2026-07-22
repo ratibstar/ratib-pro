@@ -4,7 +4,7 @@
   Phase D.3 — Universal Windows Branch Appliance install (self-contained, port/firewall/services/rollback).
 #>
 param(
-  [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+  [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
   [string]$PhpPath = '',
   [switch]$Silent,
   [switch]$SkipDownloadPhp
@@ -20,7 +20,7 @@ function Invoke-Rollback([string]$Reason) {
   if ($script:rolled) { throw $Reason }
   $script:rolled = $true
   Write-Host "ROLLBACK — $Reason"
-  foreach ($n in @('RATIBBranchWeb','RATIBHybridSync')) {
+  foreach ($n in @('RATEBBranchWeb','RATEBHybridSync')) {
     $exe = Join-Path $InstallRoot "bin\windows\$n.exe"
     if (Test-Path $exe) { & $exe stop 2>$null; & $exe uninstall 2>$null }
   }
@@ -82,9 +82,9 @@ if (Test-Path $ztInstall) {
 }
 
 if (-not $Silent) {
-  $launcher = Join-Path $InstallRoot 'deploy\enterprise-installers\zero-touch\windows\RatibLauncher.ps1'
+  $launcher = Join-Path $InstallRoot 'deploy\enterprise-installers\zero-touch\windows\RatebLauncher.ps1'
   if (-not (Test-Path $launcher)) {
-    $launcher = Join-Path $here '..\zero-touch\windows\RatibLauncher.ps1'
+    $launcher = Join-Path $here '..\zero-touch\windows\RatebLauncher.ps1'
   }
   if (Test-Path $launcher) {
     & $launcher -InstallRoot $InstallRoot

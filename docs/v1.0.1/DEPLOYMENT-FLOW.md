@@ -1,8 +1,8 @@
-# RATIB ERP — Deployment Flow
+# RATEB ERP — Deployment Flow
 
 **Date:** 2026-06-27  
 **Mode:** Read-only audit — no code, deploy, or workflow changes  
-**Purpose:** Explain exactly how GitHub Actions deploys RATIB ERP, and **why modified files may not reach the server**
+**Purpose:** Explain exactly how GitHub Actions deploys RATEB ERP, and **why modified files may not reach the server**
 
 ---
 
@@ -464,4 +464,4 @@ If merged to `main` tomorrow:
 
 ---
 
-*Deployment Flow — READ ONLY — RATIB ERP*
+*Deployment Flow — READ ONLY — RATEB ERP*

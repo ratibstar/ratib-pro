@@ -1,21 +1,21 @@
-# RATIB HR Mobile — Architecture
+# RATEB HR Mobile — Architecture
 
 **Official product:** Employee Self-Service (ESS)  
 **Project:** `ratib_hr_mobile` only  
-**Source of truth:** RATIB ERP  
+**Source of truth:** RATEB ERP  
 **Roadmap:** see [ROADMAP.md](ROADMAP.md) (Phase **A0** before Phase **A**)
 
 ## Principle
 
 ```
 ┌─────────────────────────────┐
-│   RATIB HR Mobile (Flutter) │  ← presentation only
+│   RATEB HR Mobile (Flutter) │  ← presentation only
 │   UI · Navigation · Theme   │
 └──────────────┬──────────────┘
                │ thin adapters
                ▼
 ┌─────────────────────────────┐
-│         RATIB ERP           │  ← single source of truth
+│         RATEB ERP           │  ← single source of truth
 │ Auth · RBAC · HR Services   │
 │ Mobile Apps Management      │
 │ Offline Engine · Sync       │

@@ -1,13 +1,13 @@
-# RATIB HR Mobile
+# RATEB HR Mobile
 
-**Enterprise Employee Self-Service (ESS)** presentation app for **RATIB ERP**.
+**Enterprise Employee Self-Service (ESS)** presentation app for **RATEB ERP**.
 
 | | |
 |--|--|
 | Official ESS app | `ratib_hr_mobile` |
 | Current phase | **L1 — iOS Production Build Preparation** |
 | Next phase | Mac `./tool/build_ios_macos.sh` + Xcode Archive → TestFlight (operator) |
-| Source of truth | RATIB ERP |
+| Source of truth | RATEB ERP |
 | Not this | `rateb_mobile`, Capacitor Admin, Tracking |
 
 ## Architecture lock

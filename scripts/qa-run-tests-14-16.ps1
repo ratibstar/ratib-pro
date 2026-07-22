@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA v2 — Tests 14–16+ (manifest-only, session resolver auth)
+# RATEB ERP Safe QA v2 — Tests 14–16+ (manifest-only, session resolver auth)
 param(
     [string]$Site = 'https://rateb.sa'
 )

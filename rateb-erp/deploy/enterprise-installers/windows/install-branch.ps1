@@ -4,7 +4,7 @@
   Phase D.2/D.3 — Branch Appliance install. Delegates to Universal installer.
 #>
 param(
-    [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+    [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
     [string]$PhpPath = '',
     [switch]$Upgrade,
     [switch]$Silent

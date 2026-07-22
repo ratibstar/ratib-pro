@@ -1,4 +1,4 @@
-# Stage payload + compile RATIB-Branch-Setup.exe (requires Inno Setup 6).
+# Stage payload + compile RATEB-Branch-Setup.exe (requires Inno Setup 6).
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 $Out = Join-Path $Root 'storage\branch\enterprise-installers'
@@ -40,13 +40,13 @@ Copy-Item (Join-Path $Root 'bin\windows\*') $winBin -Force -ErrorAction Silently
 $note = Join-Path $winBin 'WINSW-README.txt'
 @"
 Place WinSW binaries here (or beside installer scripts):
-  RATIBHybridSync.exe  — rename from WinSW x64
-  RATIBBranchWeb.exe   — second copy of WinSW x64
+  RATEBHybridSync.exe  — rename from WinSW x64
+  RATEBBranchWeb.exe   — second copy of WinSW x64
 Download: https://github.com/winsw/winsw/releases
 "@ | Set-Content $note -Encoding UTF8
 
 # Optional: copy pre-downloaded WinSW if present in enterprise windows folder
-foreach ($n in @('RATIBHybridSync.exe','RATIBBranchWeb.exe')) {
+foreach ($n in @('RATEBHybridSync.exe','RATEBBranchWeb.exe')) {
     $src = Join-Path $PSScriptRoot $n
     if (Test-Path $src) {
         Copy-Item $src (Join-Path $winBin $n) -Force
@@ -62,11 +62,11 @@ $iscc = @(
 if (-not $iscc) {
     Write-Host "Payload staged: $Payload"
     Write-Host "Inno Setup 6 not found — install from https://jrsoftware.org/isinfo.php then re-run."
-    Write-Host "Expected output: $Out\RATIB-Branch-Setup.exe"
+    Write-Host "Expected output: $Out\RATEB-Branch-Setup.exe"
     exit 0
 }
 
-$iss = Join-Path $PSScriptRoot 'RATIB-Branch-Setup.iss'
+$iss = Join-Path $PSScriptRoot 'RATEB-Branch-Setup.iss'
 & $iscc "/DPayloadDir=$Payload" $iss
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed: $LASTEXITCODE" }
-Write-Host "OK $Out\RATIB-Branch-Setup.exe"
+Write-Host "OK $Out\RATEB-Branch-Setup.exe"

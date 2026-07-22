@@ -1,4 +1,4 @@
-# Coding Standards — RATIB HR Mobile
+# Coding Standards — RATEB HR Mobile
 
 ## Language & UI
 

@@ -1,4 +1,4 @@
-# RATIB ERP — Phase AI Accounting Performance Report
+# RATEB ERP — Phase AI Accounting Performance Report
 
 **Verdict: PASS** (primary targets met; measured on production company_id=22)
 

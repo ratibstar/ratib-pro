@@ -1,5 +1,5 @@
 /**
- * Phase PD — RATIB POS Enterprise Final Performance Certification (READ ONLY).
+ * Phase PD — RATEB POS Enterprise Final Performance Certification (READ ONLY).
  * Profiles current POS register end-to-end after AA–PC work.
  */
 const fs = require('fs');

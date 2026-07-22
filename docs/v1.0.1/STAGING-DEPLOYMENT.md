@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Staging Deployment
+# RATEB ERP v1.0.1 — Staging Deployment
 
 **Date:** 2026-06-27  
 **Environment:** `dev.rateb.sa`  

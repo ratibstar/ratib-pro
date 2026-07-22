@@ -1,5 +1,5 @@
 /**
- * RATIB ERP Enterprise Performance Root Cause Audit (READ-ONLY / EVIDENCE).
+ * RATEB ERP Enterprise Performance Root Cause Audit (READ-ONLY / EVIDENCE).
  * Times REAL sidebar clicks from mousedown → usable. Does NOT call navigate() API as the primary metric.
  */
 'use strict';

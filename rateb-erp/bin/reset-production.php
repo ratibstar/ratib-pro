@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * RATIB ERP — Production reset (pre-GA go-live).
+ * RATEB ERP — Production reset (pre-GA go-live).
  *
  * Removes all business/transactional data while preserving schema, migrations,
  * super-admin, RBAC, templates, CMS marketing content, and system settings.

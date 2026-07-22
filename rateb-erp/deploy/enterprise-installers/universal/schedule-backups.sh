@@ -5,8 +5,8 @@ INSTALL_ROOT="${1:-/opt/ratib-branch}"
 PHP_BIN="${2:-$(command -v php)}"
 USER_NAME="${RATEB_BRANCH_USER:-rateb}"
 
-mkdir -p /etc/ratib
-cat > /etc/ratib/branch-backup.env <<EOF
+mkdir -p /etc/rateb
+cat > /etc/rateb/branch-backup.env <<EOF
 RATEB_BRANCH_ROOT=${INSTALL_ROOT}
 RATEB_PHP_BIN=${PHP_BIN}
 EOF
@@ -14,12 +14,12 @@ EOF
 # systemd timers
 cat > /etc/systemd/system/ratib-branch-backup@.service <<EOF
 [Unit]
-Description=RATIB Branch Backup (%i)
+Description=RATEB Branch Backup (%i)
 After=network.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=/etc/ratib/branch-backup.env
+EnvironmentFile=/etc/rateb/branch-backup.env
 WorkingDirectory=${INSTALL_ROOT}
 User=${USER_NAME}
 ExecStart=${PHP_BIN} -d extension=pdo_sqlite -d extension=sqlite3 ${INSTALL_ROOT}/bin/hybrid-branch-backup.php --label=%i
@@ -27,7 +27,7 @@ EOF
 
 cat > /etc/systemd/system/ratib-branch-backup-daily.timer <<'EOF'
 [Unit]
-Description=RATIB Branch daily backup
+Description=RATEB Branch daily backup
 [Timer]
 OnCalendar=daily
 Persistent=true
@@ -38,7 +38,7 @@ EOF
 
 cat > /etc/systemd/system/ratib-branch-backup-weekly.timer <<'EOF'
 [Unit]
-Description=RATIB Branch weekly backup
+Description=RATEB Branch weekly backup
 [Timer]
 OnCalendar=weekly
 Persistent=true
@@ -49,7 +49,7 @@ EOF
 
 cat > /etc/systemd/system/ratib-branch-backup-monthly.timer <<'EOF'
 [Unit]
-Description=RATIB Branch monthly backup
+Description=RATEB Branch monthly backup
 [Timer]
 OnCalendar=monthly
 Persistent=true
@@ -61,7 +61,7 @@ EOF
 # Integrity watchdog → auto-recover
 cat > /etc/systemd/system/ratib-branch-recover.service <<EOF
 [Unit]
-Description=RATIB Branch SQLite auto-recovery check
+Description=RATEB Branch SQLite auto-recovery check
 [Service]
 Type=oneshot
 WorkingDirectory=${INSTALL_ROOT}
@@ -71,7 +71,7 @@ EOF
 
 cat > /etc/systemd/system/ratib-branch-recover.timer <<'EOF'
 [Unit]
-Description=RATIB Branch recovery watchdog (hourly)
+Description=RATEB Branch recovery watchdog (hourly)
 [Timer]
 OnCalendar=hourly
 Persistent=true

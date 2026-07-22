@@ -33,12 +33,12 @@ trap 'rc=$?; [[ $rc -ne 0 ]] && rollback || true' ERR
 
 [[ "$(id -u)" -eq 0 ]] || { echo "Run as root"; exit 1; }
 
-bash "${SCRIPT_DIR}/detect-platform.sh" > /tmp/ratib-platform.env
-log "platform: $(tr '\n' ' ' </tmp/ratib-platform.env)"
+bash "${SCRIPT_DIR}/detect-platform.sh" > /tmp/rateb-platform.env
+log "platform: $(tr '\n' ' ' </tmp/rateb-platform.env)"
 
 # Snapshot existing install for upgrade rollback of app files only (storage kept)
 if [[ -d "${INSTALL_ROOT}" && -f "${INSTALL_ROOT}/VERSION" ]]; then
-  ROLLBACK_DIR="$(mktemp -d /tmp/ratib-rollback-XXXXXX)"
+  ROLLBACK_DIR="$(mktemp -d /tmp/rateb-rollback-XXXXXX)"
   rsync -a --exclude 'storage/' "${INSTALL_ROOT}/" "${ROLLBACK_DIR}/" 2>/dev/null \
     || (mkdir -p "${ROLLBACK_DIR}" && cp -a "${INSTALL_ROOT}/." "${ROLLBACK_DIR}/" && rm -rf "${ROLLBACK_DIR}/storage")
   FRESH_INSTALL=0
@@ -73,7 +73,7 @@ bash "${SCRIPT_DIR}/write-appliance-config.sh" "${INSTALL_ROOT}" "${PORT}" "${PH
 # Patch systemd web service ExecStart to wrapper
 cat > /etc/systemd/system/ratib-branch-web.service <<EOF
 [Unit]
-Description=RATIB Branch Web
+Description=RATEB Branch Web
 After=network-online.target
 Wants=network-online.target
 
@@ -117,7 +117,7 @@ systemctl daemon-reload
 systemctl enable ratib-hybrid-sync.service ratib-branch-web.service
 systemctl restart ratib-hybrid-sync.service ratib-branch-web.service
 
-# Desktop launcher via zero-touch (RATIB ERP); keep legacy alias
+# Desktop launcher via zero-touch (RATEB ERP); keep legacy alias
 URL="http://127.0.0.1:${PORT}/"
 [[ "${PORT}" == "80" ]] && URL="http://127.0.0.1/"
 LAUNCHER="${INSTALL_ROOT}/deploy/enterprise-installers/zero-touch/linux/ratib-launcher.sh"
@@ -125,7 +125,7 @@ if [[ -x "${LAUNCHER}" ]]; then
   cat > /usr/share/applications/ratib-erp.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=RATIB ERP
+Name=RATEB ERP
 Exec=${LAUNCHER}
 Icon=applications-office
 Terminal=false

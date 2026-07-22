@@ -1,4 +1,4 @@
-/// RATIB HR Mobile — Phase C entry (enterprise ESS modules).
+/// RATEB HR Mobile — Phase C entry (enterprise ESS modules).
 library;
 
 import 'package:flutter/material.dart';
@@ -22,19 +22,19 @@ Future<void> main() async {
     onSignOut: session.signOut,
   );
   await session.restore();
-  runApp(RatibHrMobileApp(session: session));
+  runApp(RatebHrMobileApp(session: session));
 }
 
-class RatibHrMobileApp extends StatefulWidget {
-  const RatibHrMobileApp({super.key, required this.session});
+class RatebHrMobileApp extends StatefulWidget {
+  const RatebHrMobileApp({super.key, required this.session});
 
   final AuthSession session;
 
   @override
-  State<RatibHrMobileApp> createState() => _RatibHrMobileAppState();
+  State<RatebHrMobileApp> createState() => _RatebHrMobileAppState();
 }
 
-class _RatibHrMobileAppState extends State<RatibHrMobileApp> {
+class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
   Locale _locale = AppConfig.defaultLocale;
   late final GoRouter _router = AppRouter.router(
     session: widget.session,

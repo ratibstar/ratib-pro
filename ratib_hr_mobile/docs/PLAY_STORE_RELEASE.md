@@ -1,7 +1,7 @@
 # Google Play — Release Preparation (Phase K2)
 
 **Status:** Prep complete — **do not upload** until operator checklist below is green.  
-**App:** RATIB HR (`sa.rateb.hr.mobile`)  
+**App:** RATEB HR (`sa.rateb.hr.mobile`)  
 **AAB (local):** `build/app/outputs/bundle/productionRelease/app-production-release.aab`  
 **Version:** `1.0.0` (versionCode `200`) · flavor `production`
 
@@ -17,7 +17,7 @@ Related: [PHASE_K1.md](PHASE_K1.md) · [PHASE_K3.md](PHASE_K3.md) (Internal chec
 | versionName / versionCode | `1.0.0` / `200` | Yes |
 | Flavor | `production` | Yes |
 | ERP base (build) | `https://rateb.sa/rateb-erp/public` | Yes |
-| Signing | Upload keystore (`CN=RATIB HR Mobile Upload`) — not debug | Yes (K1) |
+| Signing | Upload keystore (`CN=RATEB HR Mobile Upload`) — not debug | Yes (K1) |
 | Cleartext HTTP | Disabled | Yes |
 | Minify / shrink | Enabled (release) | Yes |
 
@@ -64,15 +64,15 @@ No permission removals needed for this release; all merged permissions map to sh
 ### Short description (≤ 80 characters)
 
 **EN:**  
-`Employee self-service for leave, payslips, and HR tasks — powered by RATIB ERP.`
+`Employee self-service for leave, payslips, and HR tasks — powered by RATEB ERP.`
 
 **AR:**  
-`الخدمة الذاتية للموظفين: إجازات وكشوف رواتب ومهام الموارد البشرية عبر راتب.`
+`الخدمة الذاتية للموظفين: إجازات وكشوف رواتب ومهام الموارد البشرية عبر رتب.`
 
 ### Full description — English
 
 ```
-RATIB HR is the official employee self-service app for organizations running RATIB ERP.
+RATEB HR is the official employee self-service app for organizations running RATEB ERP.
 
 Sign in with your workplace account to:
 • View your dashboard and pending HR tasks
@@ -82,7 +82,7 @@ Sign in with your workplace account to:
 • Receive HR notifications (when push is enabled for your tenant)
 • Continue securely offline for queued actions, then sync when back online
 
-Authentication and business rules live in RATIB ERP. This app is a secure presentation client — your employer remains the source of truth for HR data and access rights.
+Authentication and business rules live in RATEB ERP. This app is a secure presentation client — your employer remains the source of truth for HR data and access rights.
 
 Need help? Contact your HR administrator or visit https://rateb.sa
 ```
@@ -90,7 +90,7 @@ Need help? Contact your HR administrator or visit https://rateb.sa
 ### Full description — Arabic
 
 ```
-راتب للموارد البشرية هو التطبيق الرسمي للخدمة الذاتية للموظفين لدى المؤسسات التي تستخدم نظام راتب ERP.
+رتب للموارد البشرية هو التطبيق الرسمي للخدمة الذاتية للموظفين لدى المؤسسات التي تستخدم نظام رتب ERP.
 
 سجّل الدخول بحساب عملك لـ:
 • عرض لوحة المتابعة ومهام الموارد البشرية
@@ -118,10 +118,10 @@ Need help? Contact your HR administrator or visit https://rateb.sa
 ### Release notes — `1.0.0 (200)`
 
 **EN:**  
-`First Play release of RATIB HR: employee self-service for leave, payslips, profile, offline sync, and notifications — connected to RATIB ERP.`
+`First Play release of RATEB HR: employee self-service for leave, payslips, profile, offline sync, and notifications — connected to RATEB ERP.`
 
 **AR:**  
-`الإصدار الأول على Google Play لتطبيق راتب للموارد البشرية: خدمة ذاتية للإجازات وكشوف الرواتب والملف الشخصي والمزامنة دون اتصال والإشعارات — متصل بنظام راتب ERP.`
+`الإصدار الأول على Google Play لتطبيق رتب للموارد البشرية: خدمة ذاتية للإجازات وكشوف الرواتب والملف الشخصي والمزامنة دون اتصال والإشعارات — متصل بنظام رتب ERP.`
 
 ---
 
@@ -191,7 +191,7 @@ Full matrix: [STORE_ASSETS_CHECKLIST.md](STORE_ASSETS_CHECKLIST.md).
 ### 7.1 Create / open app
 
 1. [Google Play Console](https://play.google.com/console) → Create app (or open existing).
-2. App name: **RATIB HR** / **راتب للموارد البشرية**.
+2. App name: **RATEB HR** / **رتب للموارد البشرية**.
 3. Default language: Arabic or English (add the other as translation).
 4. App / Game → **App**; Free/Paid → per commercial model.
 5. Declarations: Privacy Policy URL, Data safety, Ads (likely **No** ads), Target audience (employees / 18+), News app = No, COVID = No, etc.

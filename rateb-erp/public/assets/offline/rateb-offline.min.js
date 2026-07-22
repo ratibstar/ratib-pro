@@ -4766,7 +4766,7 @@
         }
         if (isHttpErrorDocument()) {
             try {
-                console.warn('[RATIB OFFLINE] INVALID ROUTE', path, 'document looks like HTTP error; skip capture');
+                console.warn('[RATEB OFFLINE] INVALID ROUTE', path, 'document looks like HTTP error; skip capture');
             } catch (eInv) { /* ignore */ }
             return Promise.resolve({ skipped: true, reason: 'invalid_route_http_error' });
         }
@@ -4914,14 +4914,14 @@
                 var status = res ? res.status : 0;
                 if (!res || status !== 200) {
                     try {
-                        console.warn('[RATIB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'HTTP', status);
+                        console.warn('[RATEB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'HTTP', status);
                     } catch (eLog) { /* ignore */ }
                     return null;
                 }
                 return res.text().then(function (html) {
                     if (!html || /page not found/i.test(String(html).slice(0, 800)) && /\b404\b/.test(String(html).slice(0, 800))) {
                         try {
-                            console.warn('[RATIB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'body looks like 404');
+                            console.warn('[RATEB OFFLINE] INVALID ROUTE', next.logical || next.path, next.href, 'body looks like 404');
                         } catch (e404) { /* ignore */ }
                         return null;
                     }
@@ -4951,7 +4951,7 @@
         var run = function () {
             captureChrome().then(function (res) {
                 try {
-                    console.info('[RATIB OFFLINE] captureChrome', res || {});
+                    console.info('[RATEB OFFLINE] captureChrome', res || {});
                 } catch (e0) { /* ignore */ }
             }).catch(function () { /* ignore */ });
             // Always cache current Admin page when visiting (every module, not only ops pilot).
@@ -4959,7 +4959,7 @@
             if (/\/admin(\/|$)/i.test(pathNow) || isOpsPagesActive()) {
                 captureOpsPage().then(function (res) {
                     try {
-                        console.info('[RATIB OFFLINE] captureOpsPage', res || {});
+                        console.info('[RATEB OFFLINE] captureOpsPage', res || {});
                     } catch (e1) { /* ignore */ }
                 }).catch(function () { /* ignore */ });
             }

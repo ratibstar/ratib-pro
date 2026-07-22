@@ -1,5 +1,5 @@
 [Unit]
-Description=RATIB Hybrid Sync
+Description=RATEB Hybrid Sync
 Documentation=file:///opt/ratib-branch/docs/install/linux-run.md
 After=network-online.target
 Wants=network-online.target

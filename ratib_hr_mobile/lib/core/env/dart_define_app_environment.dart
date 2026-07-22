@@ -1,6 +1,6 @@
 /// Loads [AppEnvironment] from `--dart-define`, with production ERP fallback.
 ///
-/// Production APKs must reach RATIB ERP even when Gradle/cache omits
+/// Production APKs must reach RATEB ERP even when Gradle/cache omits
 /// `--dart-define=ERP_BASE_URL` (observed on Windows flavor builds).
 library;
 

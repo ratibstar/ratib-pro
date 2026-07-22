@@ -2,5 +2,5 @@
 
 // Phase B2 — iOS flavor: dev (wire scheme base to this file on macOS).
 PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile.dev
-DISPLAY_NAME = RATIB HR Dev
+DISPLAY_NAME = RATEB HR Dev
 FLUTTER_TARGET = lib/main.dart

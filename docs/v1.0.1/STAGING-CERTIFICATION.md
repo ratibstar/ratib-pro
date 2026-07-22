@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Staging Certification
+# RATEB ERP v1.0.1 — Staging Certification
 
 **Date:** 2026-06-27  
 **Certification type:** Staging / UAT readiness  
@@ -10,7 +10,7 @@
 
 ## Certification Statement
 
-RATIB ERP **v1.0.1 maintenance** is **certified for staging user acceptance** on `dev.rateb.sa` with database **`admin_rateb_dev`**.
+RATEB ERP **v1.0.1 maintenance** is **certified for staging user acceptance** on `dev.rateb.sa` with database **`admin_rateb_dev`**.
 
 Production (`rateb.sa` / `admin_rateb-erp`) was **not modified** by this deployment.
 

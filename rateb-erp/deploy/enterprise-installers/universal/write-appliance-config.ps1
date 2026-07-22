@@ -17,7 +17,7 @@ $url = if ($Port -eq 80) { 'http://127.0.0.1/admin' } else { "http://127.0.0.1:$
 $sqlite = Join-Path $branchDir 'rateb-branch.sqlite'
 $sync = 'unknown'
 try {
-  $s = Get-Service -Name 'RATIBHybridSync' -ErrorAction SilentlyContinue
+  $s = Get-Service -Name 'RATEBHybridSync' -ErrorAction SilentlyContinue
   if ($s) { $sync = $s.Status.ToString() }
 } catch {}
 
@@ -38,12 +38,12 @@ if ((Test-Path $serve) -and -not ((Get-Content $serve -Raw) -match 'RATEB_BRANCH
 
 @"
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>RATIB Branch Installed</title>
+<html lang="en"><head><meta charset="utf-8"><title>RATEB Branch Installed</title>
 <style>body{font-family:Segoe UI,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem;line-height:1.5}
 h1{font-size:1.4rem}code{background:#f4f4f4;padding:.1rem .3rem}
 a.btn{display:inline-block;margin-top:1rem;padding:.6rem 1rem;background:#0b5;color:#fff;text-decoration:none;border-radius:4px}</style>
 </head><body>
-<h1>RATIB Branch Appliance ready</h1>
+<h1>RATEB Branch Appliance ready</h1>
 <p><strong>URL:</strong> <a href="$url">$url</a></p>
 <p><strong>Branch ID:</strong> <code>$branchId</code></p>
 <p><strong>SQLite:</strong> <code>$sqlite</code></p>

@@ -1,8 +1,8 @@
-# RATIB HR Mobile — Production Roadmap
+# RATEB HR Mobile — Production Roadmap
 
 **Official product:** Employee Self-Service (ESS)  
 **Project:** `ratib_hr_mobile` only  
-**Source of truth:** RATIB ERP  
+**Source of truth:** RATEB ERP  
 **Status:** Architecture Lock approved (20 Jul 2026) with Phase A0 mandatory before Phase A
 
 ---

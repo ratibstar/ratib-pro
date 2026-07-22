@@ -18,7 +18,7 @@ flowchart TB
   Conn[ConnectivityController]
   Att[AttendancePort]
   Leave[LeavePort]
-  ERP[RATIB ESS HTTP APIs]
+  ERP[RATEB ESS HTTP APIs]
   Replay[HrOfflineReplayService]
 
   UI --> Sync

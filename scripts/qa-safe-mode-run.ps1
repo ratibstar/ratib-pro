@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA Mode — Tests 11-16 (session manifest + exact-ID cleanup only)
+# RATEB ERP Safe QA Mode — Tests 11-16 (session manifest + exact-ID cleanup only)
 $ErrorActionPreference = 'Stop'
 $base = 'https://rateb.sa/rateb-erp/public'
 $ts = Get-Date -Format 'yyyyMMddHHmmss'

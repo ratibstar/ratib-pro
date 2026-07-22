@@ -1,4 +1,4 @@
-# Phase D.4 — RATIB ERP zero-touch launcher (Windows)
+# Phase D.4 — RATEB ERP zero-touch launcher (Windows)
 # Browser always opens cloud admin: https://rateb.sa/rateb-erp/public/admin/
 # (same URL online and offline via PWA). Local services still start for Hybrid Sync.
 param(
@@ -10,7 +10,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 if (-not $InstallRoot) {
   $InstallRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
   if (-not (Test-Path (Join-Path $InstallRoot 'bin\hybrid-branch-serve.php'))) {
-    $InstallRoot = 'C:\Program Files\RATIB Branch'
+    $InstallRoot = 'C:\Program Files\RATEB Branch'
   }
 }
 
@@ -69,7 +69,7 @@ $statusPath = Join-Path $InstallRoot 'storage\branch\status.json'
 } | ConvertTo-Json | Set-Content $statusPath -Encoding UTF8
 
 # Prefer Windows services when present
-foreach ($n in @('RATIBBranchWeb','RATIBHybridSync')) {
+foreach ($n in @('RATEBBranchWeb','RATEBHybridSync')) {
   $exe = Join-Path $InstallRoot "bin\windows\$n.exe"
   if (Test-Path $exe) { & $exe start 2>$null }
   else {
@@ -97,9 +97,9 @@ if (Test-Path $mon) {
 }
 
 if (-not $NoTray) {
-  $tray = Join-Path $PSScriptRoot 'RatibTray.ps1'
+  $tray = Join-Path $PSScriptRoot 'RatebTray.ps1'
   $running = Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -and $_.CommandLine -like '*RatibTray.ps1*' }
+    Where-Object { $_.CommandLine -and $_.CommandLine -like '*RatebTray.ps1*' }
   if (-not $running -and (Test-Path $tray)) {
     Start-Process powershell.exe -ArgumentList @('-NoProfile','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',"`"$tray`"","-InstallRoot","`"$InstallRoot`"") -WindowStyle Hidden
   }
@@ -123,5 +123,5 @@ if (Test-Path $statusPath) {
 if (-not $NoBrowser) {
   Start-Process $openUrl
 }
-Write-Host "RATIB ERP → $openUrl"
+Write-Host "RATEB ERP → $openUrl"
 exit 0

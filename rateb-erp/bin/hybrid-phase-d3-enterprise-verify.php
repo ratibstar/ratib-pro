@@ -67,12 +67,12 @@ $required = [
     'deploy/enterprise-installers/universal/schedule-backups.ps1',
     'deploy/enterprise-installers/universal/write-appliance-config.sh',
     'deploy/enterprise-installers/universal/write-appliance-config.ps1',
-    'deploy/enterprise-installers/systemd/ratib-branch-web-start.sh',
+    'deploy/enterprise-installers/systemd/rateb-branch-web-start.sh',
     'deploy/enterprise-installers/common/verify-install.sh',
-    'deploy/enterprise-installers/windows/RATIB-Branch-Setup.iss',
-    'deploy/enterprise-installers/linux-run/ratib-branch-installer.sh',
+    'deploy/enterprise-installers/windows/RATEB-Branch-Setup.iss',
+    'deploy/enterprise-installers/linux-run/rateb-branch-installer.sh',
     'deploy/enterprise-installers/deb/DEBIAN/postinst',
-    'deploy/enterprise-installers/rpm/ratib-branch-installer.spec',
+    'deploy/enterprise-installers/rpm/rateb-branch-installer.spec',
     'bin/hybrid-branch-install.php',
     'bin/hybrid-branch-backup.php',
     'bin/hybrid-branch-recover.php',
@@ -118,7 +118,7 @@ d3_assert('D3_backup_weekly', str_contains($bk, 'weekly'), 'weekly');
 d3_assert('D3_backup_monthly', str_contains($bk, 'monthly'), 'monthly');
 d3_assert('D3_recover_watchdog', str_contains($bk, 'hybrid-branch-recover.php'), 'recover timer');
 
-$webStart = (string) file_get_contents($root . '/deploy/enterprise-installers/systemd/ratib-branch-web-start.sh');
+$webStart = (string) file_get_contents($root . '/deploy/enterprise-installers/systemd/rateb-branch-web-start.sh');
 d3_assert('D3_web_reads_appliance_env', str_contains($webStart, 'appliance.env'), 'port from appliance.env');
 d3_assert('D3_web_calls_existing_serve', str_contains($webStart, 'hybrid-branch-serve.php'), 'one serve entrypoint');
 

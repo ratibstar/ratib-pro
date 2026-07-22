@@ -52,7 +52,7 @@ function tms(t0) {
   });
   page.on('console', (m) => {
     const text = m.text();
-    if (/RATIB|offline|service.?worker|reload|error|fail/i.test(text)) {
+    if (/RATEB|offline|service.?worker|reload|error|fail/i.test(text)) {
       push('console', { level: m.type(), text: text.slice(0, 250) });
     }
   });

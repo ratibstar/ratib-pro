@@ -1,4 +1,4 @@
-/// Transport contract for calling RATIB ERP.
+/// Transport contract for calling RATEB ERP.
 ///
 /// Implementations must not contain HR business rules.
 /// No Dio / HTTP client code in Phase 0.6 — interface only.

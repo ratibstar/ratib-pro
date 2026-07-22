@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RATIB ERP v1.0 — backup/restore operational sign-off (production server)
+# RATEB ERP v1.0 — backup/restore operational sign-off (production server)
 set -eu
 
 ERP="/home/admin/domains/rateb.sa/public_html/rateb-erp"

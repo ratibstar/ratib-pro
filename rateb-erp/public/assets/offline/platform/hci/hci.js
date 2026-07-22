@@ -9,7 +9,7 @@
     var HCI_VERSION = '1.2.0-phase3';
     var LAYOUT_ID = 'P1-00A';
     var OPFS_APP_ROOT = 'rateb-offline-v2';
-    var SQLITE_REL_PATH = 'database/ratib.sqlite';
+    var SQLITE_REL_PATH = 'database/rateb.sqlite';
     var SLOTS = ['slot-a', 'slot-b', 'slot-c'];
     var PACKAGE_TYPES = ['runtime', 'modules', 'language', 'assets'];
 
@@ -41,7 +41,7 @@
         'runtime/runtime.pkg': new Uint8Array(0),
         'runtime/runtime.manifest': null,
         'runtime/active.json': null,
-        'database/ratib.sqlite': new Uint8Array(0),
+        'database/rateb.sqlite': new Uint8Array(0),
         'vault/vault.bin': new Uint8Array(0)
     };
 
@@ -338,7 +338,7 @@
                 'runtime/runtime.pkg': PLACEHOLDER_FILES['runtime/runtime.pkg'],
                 'runtime/runtime.manifest': defaultManifestBytes(),
                 'runtime/active.json': defaultActiveBytes(),
-                'database/ratib.sqlite': PLACEHOLDER_FILES['database/ratib.sqlite'],
+                'database/rateb.sqlite': PLACEHOLDER_FILES['database/rateb.sqlite'],
                 'vault/vault.bin': PLACEHOLDER_FILES['vault/vault.bin']
             };
             var fileChain = Promise.resolve();
@@ -491,7 +491,7 @@
         return OPFS_APP_ROOT + '/' + SQLITE_REL_PATH;
     }
 
-    /** Persist full SQLite DB bytes to database/ratib.sqlite (HCI-only). */
+    /** Persist full SQLite DB bytes to database/rateb.sqlite (HCI-only). */
     function persistSqliteBytes(bytes) {
         return writeBytes(SQLITE_REL_PATH, bytes, { sqlitePersist: true });
     }
@@ -504,7 +504,7 @@
     /** Copy current DB file into backups/ with label. */
     function backupSqliteFile(label) {
         var safe = String(label || 'manual').replace(/[^a-zA-Z0-9._-]/g, '_');
-        var dest = 'backups/ratib-' + safe + '-' + Date.now() + '.sqlite';
+        var dest = 'backups/rateb-' + safe + '-' + Date.now() + '.sqlite';
         return readSqliteBytes().then(function (bytes) {
             if (!bytes || !bytes.length) {
                 throw new Error('hci_sqlite_empty');

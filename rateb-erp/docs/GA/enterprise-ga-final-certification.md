@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Enterprise GA Final Certification
+# RATEB ERP v1.0 — Enterprise GA Final Certification
 
 **Role:** Enterprise Release Director  
 **Date:** 2026-06-26  

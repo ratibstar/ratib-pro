@@ -1,12 +1,12 @@
 #Requires -RunAsAdministrator
 param(
-    [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+    [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
     [ValidateSet('ask','yes','no')]
     [string]$KeepDatabase = 'ask'
 )
 $ErrorActionPreference = 'Stop'
 
-foreach ($name in @('RATIBBranchWeb','RATIBHybridSync')) {
+foreach ($name in @('RATEBBranchWeb','RATEBHybridSync')) {
     $exeCandidates = @(
         (Join-Path $InstallRoot "bin\windows\$name.exe"),
         (Join-Path $PSScriptRoot "$name.exe")

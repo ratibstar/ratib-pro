@@ -13,7 +13,7 @@ abstract interface class AppEnvironment {
   /// Active deployment flavor.
   AppFlavor get flavor;
 
-  /// RATIB ERP HTTP origin. Source: configuration only.
+  /// RATEB ERP HTTP origin. Source: configuration only.
   String get erpBaseUrl;
 
   /// When false, adapters must not perform network I/O (Phase 0/0.6 default).

@@ -1,8 +1,8 @@
-# RATIB ERP — Customer guide (Zero-Touch)
+# RATEB ERP — Customer guide (Zero-Touch)
 
 1. Download the installer for your computer.  
 2. Run it and wait until it finishes.  
-3. Double-click **RATIB ERP** on the desktop.  
+3. Double-click **RATEB ERP** on the desktop.  
 4. Sign in and work.
 
 Always open **RATEB ERP** at:

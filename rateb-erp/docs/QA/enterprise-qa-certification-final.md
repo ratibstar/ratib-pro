@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Enterprise QA Certification Report (Final)
+# RATEB ERP v1.0 — Enterprise QA Certification Report (Final)
 
 **Date:** 2026-06-27  
 **Environment:** Production `https://rateb.sa`  
@@ -241,7 +241,7 @@ None blocking certification.
 
 ## Sign-Off Recommendation
 
-**RATIB ERP v1.0** is certified for continued production operation with **minor observations** (portal logout UX, support-ticket QA write scope). Full GA go-live still requires operator completion of backup/restore proof and explicit production-reset approval per GA documentation.
+**RATEB ERP v1.0** is certified for continued production operation with **minor observations** (portal logout UX, support-ticket QA write scope). Full GA go-live still requires operator completion of backup/restore proof and explicit production-reset approval per GA documentation.
 
 **Certified by:** Safe QA v2 automated enterprise run  
 **Next step:** Operator sign-off on go-live checklist; optional browser-based UAT for dark mode/mobile/console.

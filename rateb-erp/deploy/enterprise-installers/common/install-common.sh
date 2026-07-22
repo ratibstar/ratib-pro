@@ -64,8 +64,8 @@ desktop_launcher() {
   cat > "${desk}" <<EOF
 [Desktop Entry]
 Type=Application
-Name=RATIB Branch
-Comment=RATIB ERP Branch Appliance
+Name=RATEB Branch
+Comment=RATEB ERP Branch Appliance
 Exec=xdg-open http://127.0.0.1/
 Icon=utilities-terminal
 Terminal=false

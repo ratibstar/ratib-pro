@@ -102,7 +102,7 @@ final class HrEssPayslipDocumentService
         }
 
         $lines = [
-            'RATIB ESS Payslip',
+            'RATEB ESS Payslip',
             'Period: ' . (string) ($dto['period'] ?? ''),
             'Gross: ' . (string) ($dto['gross_amount'] ?? ''),
             'Net: ' . (string) ($dto['net_amount'] ?? ''),

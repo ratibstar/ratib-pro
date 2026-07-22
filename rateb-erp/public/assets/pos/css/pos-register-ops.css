@@ -1,4 +1,4 @@
-/* RATIB POS — register post-sale ops (Phase 6) */
+/* RATEB POS — register post-sale ops (Phase 6) */
 .rateb-pos-ops-panel {
     border: 1px solid var(--rateb-border, rgba(255,255,255,0.12));
     border-radius: var(--rateb-radius, 0.5rem);

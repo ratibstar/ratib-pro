@@ -1,4 +1,4 @@
-/// Dio transport to RATIB ERP. No domain rules.
+/// Dio transport to RATEB ERP. No domain rules.
 ///
 /// Global 401: clear token + notify session (never keep stale auth).
 library;

@@ -1,4 +1,4 @@
-/// Offline enqueue façade — wraps **existing** RATIB ERP offline queues only.
+/// Offline enqueue façade — wraps **existing** RATEB ERP offline queues only.
 ///
 /// Allowed (ESS): `attendance.create`, `leave_request.draft`.
 /// Forbidden: inventing new queue action types (e.g. attendance.update).

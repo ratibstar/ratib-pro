@@ -2,5 +2,5 @@
 
 // Phase B2 — iOS flavor: staging
 PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile.stg
-DISPLAY_NAME = RATIB HR Staging
+DISPLAY_NAME = RATEB HR Staging
 FLUTTER_TARGET = lib/main.dart

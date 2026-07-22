@@ -1,7 +1,7 @@
 /**
- * TEMPORARY — RATIB Offline runtime diagnostics.
+ * TEMPORARY — RATEB Offline runtime diagnostics.
  * Remove after Offline warm-chain is confirmed.
- * Console: [RATIB OFFLINE] PASS|FAIL …
+ * Console: [RATEB OFFLINE] PASS|FAIL …
  * Inspect: window.ratebOfflineDebug()
  */
 (function (root) {
@@ -28,15 +28,15 @@
         if (pass) {
             state.lastPass = row;
             try {
-                console.log('[RATIB OFFLINE]', 'PASS', 'step=' + step, 'file=' + row.file, 'function=' + row.function, 'reason=' + row.reason);
+                console.log('[RATEB OFFLINE]', 'PASS', 'step=' + step, 'file=' + row.file, 'function=' + row.function, 'reason=' + row.reason);
             } catch (e) { /* ignore */ }
             return true;
         }
         state.lastFail = row;
         state.stopped = true;
         try {
-            console.error('[RATIB OFFLINE]', 'FAIL', 'step=' + step, 'file=' + row.file, 'function=' + row.function, 'reason=' + row.reason);
-            console.error('[RATIB OFFLINE]', 'STOPPED at first FAIL — later steps not executed');
+            console.error('[RATEB OFFLINE]', 'FAIL', 'step=' + step, 'file=' + row.file, 'function=' + row.function, 'reason=' + row.reason);
+            console.error('[RATEB OFFLINE]', 'STOPPED at first FAIL — later steps not executed');
         } catch (e2) { /* ignore */ }
         return false;
     }
@@ -100,7 +100,7 @@
 
         var print = function () {
             try {
-                console.log('[RATIB OFFLINE] === ratebOfflineDebug() ===');
+                console.log('[RATEB OFFLINE] === ratebOfflineDebug() ===');
                 console.log('Current Step', out.currentStep, out.stopped ? '(STOPPED)' : '');
                 console.log('Current SW', out.currentSW || '(none)');
                 console.log('Current Cache', out.currentCache);
@@ -108,7 +108,7 @@
                 console.log('Current Flags', out.currentFlags);
                 console.log('Current Offline Status', out.offlineStatus);
                 console.log('Last Fail', out.lastFail);
-                console.log('[RATIB OFFLINE] full dump', out);
+                console.log('[RATEB OFFLINE] full dump', out);
             } catch (e2) { /* ignore */ }
             return out;
         };

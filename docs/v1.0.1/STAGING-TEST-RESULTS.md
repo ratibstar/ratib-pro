@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Staging Test Results
+# RATEB ERP v1.0.1 — Staging Test Results
 
 **Date:** 2026-06-27  
 **Environment:** `https://dev.rateb.sa`  

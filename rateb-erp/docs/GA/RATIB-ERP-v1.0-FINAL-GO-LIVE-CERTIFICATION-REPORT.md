@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — FINAL GO-LIVE OPERATIONAL CERTIFICATION REPORT
+# RATEB ERP v1.0 — FINAL GO-LIVE OPERATIONAL CERTIFICATION REPORT
 
 **Report date:** 2026-06-27  
 **Environment:** Production — `https://rateb.sa`  
@@ -115,7 +115,7 @@ Record: filename, timestamp, size (bytes), duration (seconds), SHA-256 checksum.
 
 ## Executive summary
 
-RATIB ERP v1.0 on `https://rateb.sa` has completed:
+RATEB ERP v1.0 on `https://rateb.sa` has completed:
 
 - **Enterprise QA Tests 1–100** — 76 PASS, 1 BLOCKED (tenant-scoped support ticket write), 0 FAIL  
 - **Safe QA v2** — zero orphan QA objects  
@@ -322,4 +322,4 @@ Detail: `rateb-erp/docs/GA/reset-dry-run-report.md`
 
 ---
 
-*RATIB ERP v1.0 — Final Go-Live Operational Certification Report. Generated under read-only code freeze. No production data was modified during this certification run.*
+*RATEB ERP v1.0 — Final Go-Live Operational Certification Report. Generated under read-only code freeze. No production data was modified during this certification run.*

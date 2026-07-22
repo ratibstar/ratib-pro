@@ -1,28 +1,28 @@
 #Requires -RunAsAdministrator
 param(
-    [string]$InstallRoot = 'C:\Program Files\RATIB Branch',
+    [string]$InstallRoot = 'C:\Program Files\RATEB Branch',
     [string]$PhpPath = 'php.exe',
     [int]$Port = 80
 )
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$winsw = Join-Path $here 'RATIBBranchWeb.exe'
-$alt = Join-Path $InstallRoot 'bin\windows\RATIBBranchWeb.exe'
+$winsw = Join-Path $here 'RATEBBranchWeb.exe'
+$alt = Join-Path $InstallRoot 'bin\windows\RATEBBranchWeb.exe'
 if (-not (Test-Path $winsw) -and (Test-Path $alt)) { $winsw = $alt }
 if (-not (Test-Path $winsw)) {
-    throw "Missing WinSW binary RATIBBranchWeb.exe (download WinSW and rename)."
+    throw "Missing WinSW binary RATEBBranchWeb.exe (download WinSW and rename)."
 }
 
 $logDir = Join-Path $InstallRoot 'storage\branch\logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $servePhp = Join-Path $InstallRoot 'bin\hybrid-branch-serve.php'
-$genXml = Join-Path (Split-Path $winsw) 'RATIBBranchWeb.xml'
+$genXml = Join-Path (Split-Path $winsw) 'RATEBBranchWeb.xml'
 
 @"
 <service>
-  <id>RATIBBranchWeb</id>
-  <name>RATIB Branch Web</name>
-  <description>RATIB ERP Branch Appliance local PHP web server</description>
+  <id>RATEBBranchWeb</id>
+  <name>RATEB Branch Web</name>
+  <description>RATEB ERP Branch Appliance local PHP web server</description>
   <executable>$PhpPath</executable>
   <arguments>-d extension=pdo_sqlite -d extension=sqlite3 -d extension=gd -d extension=mbstring `"$servePhp`" --host=127.0.0.1 --port=$Port</arguments>
   <workingdirectory>$InstallRoot</workingdirectory>
@@ -43,7 +43,7 @@ $genXml = Join-Path (Split-Path $winsw) 'RATIBBranchWeb.xml'
 
 # Firewall (localhost only is default; allow inbound loopback HTTP if needed)
 try {
-    New-NetFirewallRule -DisplayName 'RATIB Branch Web' -Direction Inbound -Protocol TCP -LocalPort $Port -Action Allow -Profile Any -ErrorAction SilentlyContinue | Out-Null
+    New-NetFirewallRule -DisplayName 'RATEB Branch Web' -Direction Inbound -Protocol TCP -LocalPort $Port -Action Allow -Profile Any -ErrorAction SilentlyContinue | Out-Null
 } catch {}
 
-Write-Host "Installed Windows Service: RATIB Branch Web (port $Port)"
+Write-Host "Installed Windows Service: RATEB Branch Web (port $Port)"

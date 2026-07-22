@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 2 Report
+# RATEB ERP v1.0.1 — Phase 2 Report
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  
@@ -50,7 +50,7 @@ Deploy:     main → production (automatic)
 | Field | Value |
 |-------|-------|
 | Commit | `e64c37b3274040ebc480865c01c247324f288cfb` |
-| Message | RATIB ERP v1.0.0 GA — production certified 2026-06-27. Build: rateb-erp-ga-security-20260626. Enterprise 31/31. Backup/restore verified. |
+| Message | RATEB ERP v1.0.0 GA — production certified 2026-06-27. Build: rateb-erp-ga-security-20260626. Enterprise 31/31. Backup/restore verified. |
 | Pushed | ❌ No |
 
 ---
@@ -92,7 +92,7 @@ Structurally sound for v1.0.1. Non-blocking hygiene issues: tracked `__pycache__
 ### `docs/` — superseded (archive → `rateb-erp/docs/GA/archive/pre-closeout-20260627/`)
 
 - `enterprise-ga-final-certification.md`, `ga-certification.md` — ❌ GA BLOCKED
-- `RATIB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md` — partial run
+- `RATEB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md` — partial run
 - `enterprise-validation-report.md` / `final` / `enterprise-final-pass-report.md`
 - `dr-validation.md` / `dr-final.md`, `performance-report.md` / `performance-final.md`
 
@@ -282,4 +282,4 @@ Environment **`rateb.sa`**: optional deploy approval gate.
 
 ---
 
-*RATIB ERP v1.0.1 Phase 2 — complete report. Documentation only.*
+*RATEB ERP v1.0.1 Phase 2 — complete report. Documentation only.*

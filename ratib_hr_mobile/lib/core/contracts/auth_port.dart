@@ -1,4 +1,4 @@
-/// Authentication port — reuses RATIB ERP authentication only.
+/// Authentication port — reuses RATEB ERP authentication only.
 ///
 /// No PIN system. No local credential authority.
 /// Online ERP remains Authentication Authority.

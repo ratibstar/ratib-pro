@@ -19,7 +19,7 @@ $keytool = "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
   -alias ratib_hr_upload `
   -keyalg RSA -keysize 2048 -validity 10000 `
   -storepass "<STORE_PASS>" -keypass "<KEY_PASS>" `
-  -dname "CN=RATIB HR Mobile Upload, OU=Mobile, O=Rateb, L=Riyadh, ST=Riyadh, C=SA"
+  -dname "CN=RATEB HR Mobile Upload, OU=Mobile, O=Rateb, L=Riyadh, ST=Riyadh, C=SA"
 ```
 
 Then create `android/key.properties` from `key.properties.example`.

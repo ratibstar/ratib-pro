@@ -4,7 +4,7 @@
   "sw_build": "20260715-phase-ok1-v61",
   "files_changed": [
     "rateb-erp/public/pos-sw.js",
-    "rateb-erp/public/ratib-erp-build.txt"
+    "rateb-erp/public/rateb-erp-build.txt"
   ],
   "root_cause": {
     "id": "sw_online_early_return_lets_document_fetch_hang",

@@ -1,6 +1,6 @@
-# Phase D.4 — RATIB Tray (Windows Notification Area)
+# Phase D.4 — RATEB Tray (Windows Notification Area)
 # Status / Open ERP / Backup / Diagnostics / Restart / Exit — no technical jargon for customers.
-param([string]$InstallRoot = 'C:\Program Files\RATIB Branch')
+param([string]$InstallRoot = 'C:\Program Files\RATEB Branch')
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'SilentlyContinue'
@@ -18,7 +18,7 @@ if (Test-Path $appEnv) {
 if ($url -notmatch 'rateb\.sa') { $url = $cloudAdmin }
 $statusFile = Join-Path $InstallRoot 'storage\branch\status.json'
 
-function Get-RatibStatus {
+function Get-RatebStatus {
   if (-not (Test-Path $statusFile)) {
     return @{ display = '🔵 STARTING'; state = 'starting'; pending_records = 0; last_sync = $null; cloud_connected = $false; sqlite_connected = $false; open_url = $cloudAdmin }
   }
@@ -52,7 +52,7 @@ $form.ShowInTaskbar = $false
 $form.Visible = $false
 
 $notify = New-Object System.Windows.Forms.NotifyIcon
-$notify.Text = 'RATIB ERP'
+$notify.Text = 'RATEB ERP'
 $notify.Icon = $icons.starting
 $notify.Visible = $true
 
@@ -68,7 +68,7 @@ $miCloud.Enabled = $false
 $miSqlite = $menu.Items.Add('Local data: —')
 $miSqlite.Enabled = $false
 [void]$menu.Items.Add('-')
-$miOpen = $menu.Items.Add('Open RATIB ERP')
+$miOpen = $menu.Items.Add('Open RATEB ERP')
 $miBackup = $menu.Items.Add('Backup Now')
 $miDiag = $menu.Items.Add('Diagnostics')
 $miExport = $menu.Items.Add('Export Support Package')
@@ -78,7 +78,7 @@ $miExit = $menu.Items.Add('Exit')
 $notify.ContextMenuStrip = $menu
 
 $miOpen.add_Click({
-  $s = Get-RatibStatus
+  $s = Get-RatebStatus
   $u = $cloudAdmin
   if ($s.open_url -and ([string]$s.open_url -match 'rateb\.sa')) { $u = [string]$s.open_url }
   elseif ($s.cloud_admin_url) { $u = [string]$s.cloud_admin_url }
@@ -86,7 +86,7 @@ $miOpen.add_Click({
 })
 $miBackup.add_Click({
   Start-Process $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3',"`"$(Join-Path $InstallRoot 'bin\hybrid-branch-backup.php')`"","--label=manual") -WorkingDirectory $InstallRoot -WindowStyle Hidden
-  $notify.ShowBalloonTip(3000, 'RATIB ERP', 'Backup started', [System.Windows.Forms.ToolTipIcon]::Info)
+  $notify.ShowBalloonTip(3000, 'RATEB ERP', 'Backup started', [System.Windows.Forms.ToolTipIcon]::Info)
 })
 $miDiag.add_Click({
   Start-Process $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3',"`"$(Join-Path $InstallRoot 'bin\hybrid-branch-diagnostics.php')`"") -WorkingDirectory $InstallRoot -WindowStyle Hidden
@@ -94,14 +94,14 @@ $miDiag.add_Click({
 })
 $miExport.add_Click({
   Start-Process $php -ArgumentList @('-d','extension=pdo_sqlite','-d','extension=sqlite3',"`"$(Join-Path $InstallRoot 'bin\hybrid-zero-touch-export-support.php')`"") -WorkingDirectory $InstallRoot -WindowStyle Hidden
-  $notify.ShowBalloonTip(4000, 'RATIB ERP', 'Support package exporting…', [System.Windows.Forms.ToolTipIcon]::Info)
+  $notify.ShowBalloonTip(4000, 'RATEB ERP', 'Support package exporting…', [System.Windows.Forms.ToolTipIcon]::Info)
 })
 $miRestart.add_Click({
-  foreach ($n in @('RATIBBranchWeb','RATIBHybridSync')) {
+  foreach ($n in @('RATEBBranchWeb','RATEBHybridSync')) {
     $exe = Join-Path $InstallRoot "bin\windows\$n.exe"
     if (Test-Path $exe) { & $exe restart 2>$null } else { Restart-Service $n -Force -ErrorAction SilentlyContinue }
   }
-  $notify.ShowBalloonTip(3000, 'RATIB ERP', 'Services restarting', [System.Windows.Forms.ToolTipIcon]::Info)
+  $notify.ShowBalloonTip(3000, 'RATEB ERP', 'Services restarting', [System.Windows.Forms.ToolTipIcon]::Info)
 })
 $miExit.add_Click({
   $notify.Visible = $false
@@ -111,12 +111,12 @@ $miExit.add_Click({
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 3000
 $timer.add_Tick({
-  $s = Get-RatibStatus
+  $s = Get-RatebStatus
   $state = [string]$s.state
   if (-not $icons.ContainsKey($state)) { $state = 'maintenance' }
   $notify.Icon = $icons[$state]
   $disp = if ($s.display) { [string]$s.display } else { $state }
-  $notify.Text = ('RATIB ERP — ' + $disp)
+  $notify.Text = ('RATEB ERP — ' + $disp)
   $miStatus.Text = 'Status: ' + $disp
   $miPending.Text = 'Pending: ' + [string]$s.pending_records
   $miLast.Text = 'Last sync: ' + $(if ($s.last_sync) { $s.last_sync } else { '—' })
@@ -125,5 +125,5 @@ $timer.add_Tick({
 })
 $timer.Start()
 
-$notify.ShowBalloonTip(4000, 'RATIB ERP', 'Ready — double-click the desktop shortcut anytime', [System.Windows.Forms.ToolTipIcon]::Info)
+$notify.ShowBalloonTip(4000, 'RATEB ERP', 'Ready — double-click the desktop shortcut anytime', [System.Windows.Forms.ToolTipIcon]::Info)
 [System.Windows.Forms.Application]::Run()

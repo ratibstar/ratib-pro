@@ -1,4 +1,4 @@
-# RATIB ERP — Deployment Coverage Audit
+# RATEB ERP — Deployment Coverage Audit
 
 **Date:** 2026-06-27  
 **Scope:** Full read-only deployment coverage analysis  
@@ -571,4 +571,4 @@ This audit did **not** SSH into Hetzner to diff full server trees. Server-only f
 
 ---
 
-*Deployment Coverage Audit — READ ONLY — RATIB ERP v1.0.1*
+*Deployment Coverage Audit — READ ONLY — RATEB ERP v1.0.1*

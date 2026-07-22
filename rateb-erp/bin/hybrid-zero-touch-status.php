@@ -91,7 +91,7 @@ function d4_probe_https(string $url, int $timeoutSec = 3): array
             CURLOPT_TIMEOUT => $timeoutSec,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_NOBODY => true,
-            CURLOPT_USERAGENT => 'RATIB-ZeroTouch/D4',
+            CURLOPT_USERAGENT => 'RATEB-ZeroTouch/D4',
         ]);
         $t0 = microtime(true);
         curl_exec($ch);

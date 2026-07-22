@@ -161,7 +161,7 @@ final class CmsLeadNotificationService
         if ($domain === '') {
             return true;
         }
-        return !in_array($domain, ['rateb.sa', 'ratib.sa'], true);
+        return !in_array($domain, ['rateb.sa', 'rateb.sa'], true);
     }
 
     private function staffInboxEmail(): string

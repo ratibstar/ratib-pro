@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase D.4 — RATIB system tray (Linux). Uses PyQt5/PySide2 if available; else notify-send poller."""
+"""Phase D.4 — RATEB system tray (Linux). Uses PyQt5/PySide2 if available; else notify-send poller."""
 from __future__ import annotations
 
 import json
@@ -96,11 +96,11 @@ def try_qt_tray() -> bool:
 
     app = QtWidgets.QApplication(sys.argv)
     tray = QtWidgets.QSystemTrayIcon()
-    tray.setToolTip("RATIB ERP")
+    tray.setToolTip("RATEB ERP")
     menu = QtWidgets.QMenu()
     act_status = menu.addAction("Status")
     act_status.setEnabled(False)
-    act_open = menu.addAction("Open RATIB ERP")
+    act_open = menu.addAction("Open RATEB ERP")
     act_open.triggered.connect(open_erp)
     act_bak = menu.addAction("Backup Now")
     act_bak.triggered.connect(backup_now)
@@ -118,9 +118,9 @@ def try_qt_tray() -> bool:
 
     def refresh() -> None:
         st = read_status()
-        disp = st.get("display") or st.get("label") or "RATIB"
+        disp = st.get("display") or st.get("label") or "RATEB"
         act_status.setText(f"Status: {disp}")
-        tray.setToolTip(f"RATIB ERP — {disp}")
+        tray.setToolTip(f"RATEB ERP — {disp}")
 
     timer = QtWidgets.QTimer()
     timer.timeout.connect(refresh)
@@ -134,9 +134,9 @@ def notify_loop() -> None:
     last = ""
     while True:
         st = read_status()
-        disp = st.get("display") or "RATIB"
+        disp = st.get("display") or "RATEB"
         if disp != last and shutil.which("notify-send"):
-            subprocess.call(["notify-send", "-a", "RATIB ERP", "RATIB ERP", str(disp)])
+            subprocess.call(["notify-send", "-a", "RATEB ERP", "RATEB ERP", str(disp)])
             last = disp
         time.sleep(5)
 

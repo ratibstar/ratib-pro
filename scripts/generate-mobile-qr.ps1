@@ -65,7 +65,7 @@ PHONE (camera scan — no paste):
   2. Logout → Login with QR → allow camera
   3. Point phone at the QR on your PC screen
 
-OR use main RATEB badge (RATIBLOGIN QR):
+OR use main RATEB badge (RATEBLOGIN QR):
   Log in at https://rateb.sa → open employee login badge for a user
   (pages/user-login-barcode.php) → scan with mobile app
 

@@ -848,7 +848,7 @@
             route: (root.location && (root.location.pathname + (root.location.search || ''))) || ''
         };
         try {
-            console.error('[RATIB OFFLINE]', 'FAIL', 'tenant_gate', payload);
+            console.error('[RATEB OFFLINE]', 'FAIL', 'tenant_gate', payload);
         } catch (eLog) { /* ignore */ }
         try {
             if (!root.document || !root.document.body) {

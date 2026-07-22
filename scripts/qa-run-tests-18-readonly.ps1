@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA v2 — Tests 18+ read-only (no writes, no cleanup needed)
+# RATEB ERP Safe QA v2 — Tests 18+ read-only (no writes, no cleanup needed)
 param([string]$Site = 'https://rateb.sa')
 
 $ErrorActionPreference = 'Stop'

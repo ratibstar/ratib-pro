@@ -19,8 +19,8 @@ chmod +x "${ROOT}/deploy/enterprise-installers/zero-touch/linux/"*.sh "${ROOT}/d
 cat > /usr/share/applications/ratib-erp.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=RATIB ERP
-Comment=RATIB ERP Branch Appliance
+Name=RATEB ERP
+Comment=RATEB ERP Branch Appliance
 Exec=${ROOT}/deploy/enterprise-installers/zero-touch/linux/ratib-launcher.sh
 Icon=applications-office
 Terminal=false
@@ -34,7 +34,7 @@ mkdir -p /etc/xdg/autostart
 cat > /etc/xdg/autostart/ratib-tray.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=RATIB Tray
+Name=RATEB Tray
 Exec=env RATEB_BRANCH_ROOT=${ROOT} python3 ${ROOT}/deploy/enterprise-installers/zero-touch/linux/ratib-tray.py
 X-GNOME-Autostart-enabled=true
 EOF
@@ -42,7 +42,7 @@ EOF
 # Status monitor systemd
 cat > /etc/systemd/system/ratib-zero-touch-status.service <<EOF
 [Unit]
-Description=RATIB Zero-Touch Status Monitor
+Description=RATEB Zero-Touch Status Monitor
 After=network-online.target ratib-branch-web.service
 [Service]
 Type=simple
@@ -70,7 +70,7 @@ fi
 # Symlink on Desktop for logged-in graphical users (best-effort)
 for d in /home/*/Desktop /home/*/سطح\ المكتب; do
   [[ -d "$d" ]] || continue
-  ln -sf /usr/share/applications/ratib-erp.desktop "$d/RATIB ERP.desktop" 2>/dev/null || true
+  ln -sf /usr/share/applications/ratib-erp.desktop "$d/RATEB ERP.desktop" 2>/dev/null || true
 done
 
 echo "OK zero-touch Linux desktop + status monitor"

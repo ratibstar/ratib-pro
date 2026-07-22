@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appTitle": "راتب — الموارد البشرية",
+  "appTitle": "رتب — الموارد البشرية",
   "@appTitle": {
     "description": "Application title"
   },
@@ -26,7 +26,7 @@
   "navProfile": "ملفي",
   "navApprovals": "الموافقات",
   "phase0Placeholder": "مرحلة ٠ — واجهة فقط. لا منطق أعمال بعد.",
-  "phase0Subtitle": "المصدر الوحيد للحقيقة: نظام راتب ERP",
+  "phase0Subtitle": "المصدر الوحيد للحقيقة: نظام رتب ERP",
   "language": "اللغة",
   "arabic": "العربية",
   "english": "English",

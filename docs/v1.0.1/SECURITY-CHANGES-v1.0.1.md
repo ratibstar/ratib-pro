@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Security Changes
+# RATEB ERP v1.0.1 — Security Changes
 
 **Version:** 1.0.1  
 **Date:** 2026-06-27

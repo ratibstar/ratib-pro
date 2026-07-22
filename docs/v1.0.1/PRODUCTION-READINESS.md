@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Production Readiness
+# RATEB ERP v1.0.1 — Production Readiness
 
 **Release:** v1.0.1 (maintenance)  
 **Branch:** `release/v1.0.1` → `main`  

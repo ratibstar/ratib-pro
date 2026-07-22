@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 5 Release Validation
+# RATEB ERP v1.0.1 — Phase 5 Release Validation
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  

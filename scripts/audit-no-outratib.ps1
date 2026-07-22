@@ -1,7 +1,7 @@
-# Audit: fail if out.ratib.sa / outratib appear in active repo paths.
+# Audit: fail if out.rateb.sa / outratib appear in active repo paths.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$patterns = @('out\.ratib\.sa', 'outratib', 'www\.out\.ratib')
+$patterns = @('out\.rateb\.sa', 'outratib', 'www\.out\.rateb')
 $excludeDir = @(
     [regex]::Escape('archive'),
     [regex]::Escape('Designed'),
@@ -39,7 +39,7 @@ Get-ChildItem -Path $root -Recurse -File -ErrorAction SilentlyContinue | ForEach
 }
 
 if ($hits.Count -eq 0) {
-    Write-Host "PASS: no out.ratib / outratib in active paths (archive/Designed/logs/build excluded)."
+    Write-Host "PASS: no out.rateb / outratib in active paths (archive/Designed/logs/build excluded)."
     exit 0
 }
 

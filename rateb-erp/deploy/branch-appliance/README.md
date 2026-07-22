@@ -36,7 +36,7 @@ Official OS packages (no business-layer changes):
 
 | Artifact | Builder |
 |----------|---------|
-| `RATIB-Branch-Setup.exe` | `deploy/enterprise-installers/windows/build.ps1` |
+| `RATEB-Branch-Setup.exe` | `deploy/enterprise-installers/windows/build.ps1` |
 | `ratib-branch-installer.run` | `deploy/enterprise-installers/linux-run/build-run.sh` |
 | `ratib-branch-installer.deb` | `deploy/enterprise-installers/deb/build-deb.sh` |
 | `ratib-branch-installer.rpm` | `deploy/enterprise-installers/rpm/build-rpm.sh` |

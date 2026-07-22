@@ -1,5 +1,5 @@
 [Unit]
-Description=RATIB Branch Web
+Description=RATEB Branch Web
 Documentation=file:///opt/ratib-branch/docs/install/linux-run.md
 After=network-online.target
 Wants=network-online.target

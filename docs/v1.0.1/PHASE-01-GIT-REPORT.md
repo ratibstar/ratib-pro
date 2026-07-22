@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 1 Git Report
+# RATEB ERP v1.0.1 — Phase 1 Git Report
 
 **Report date:** 2026-06-27  
 **Phase:** 1 — Git repository health (read-only audit + local branch creation)  
@@ -135,4 +135,4 @@ Phase 2: repository hardening, local tag `v1.0.0`, full audits — see `PHASE-02
 
 ---
 
-*RATIB ERP v1.0.1 Phase 1 — Git report. Documentation only.*
+*RATEB ERP v1.0.1 Phase 1 — Git report. Documentation only.*

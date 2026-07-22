@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 RC1 — التقرير الشامل
+# RATEB ERP v1.0 RC1 — التقرير الشامل
 
 **الإصدار:** RC1 (Release Candidate 1)  
 **التاريخ:** 2026-06-24  
@@ -68,7 +68,7 @@ v1.0 RC1 **غير معتمد** للإصدار العام حتى إغلاق ال�
 
 ### نطاق v1.0 RC1
 
-RATIB ERP — نظام ERP متعدد المستأجرين والفروع:
+RATEB ERP — نظام ERP متعدد المستأجرين والفروع:
 
 - **Accounting** — COA، journals، AP/AR، VAT، GL بالفرع، تقارير HQ موحدة
 - **HR** — موظفون، حضور، إجازات، رواتب
@@ -499,7 +499,7 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 
 ---
 
-*وثيقة موحدة — RATIB ERP v1.0 RC1 — آخر تحديث 2026-06-24*
+*وثيقة موحدة — RATEB ERP v1.0 RC1 — آخر تحديث 2026-06-24*
 
 ---
 
@@ -705,7 +705,7 @@ SELECT COUNT(*) FROM rateb_branch_transfers WHERE status IN ('completed','failed
 - `rateb-erp/public/erp-health.php`
 - `rateb-erp/config/lang/en.php`, `ar.php`
 - `rateb-erp/bin/enterprise-test/EnterpriseTestRunner.php` (هذا التدقيق)
-- `rateb-erp/docs/RC1/RATIB_ERP_v1.0_RC1.md`
+- `rateb-erp/docs/RC1/RATEB_ERP_v1.0_RC1.md`
 
 ---
 

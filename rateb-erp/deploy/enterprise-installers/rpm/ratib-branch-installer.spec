@@ -1,14 +1,14 @@
 Name:           ratib-branch-installer
 Version:        1.0.0
 Release:        1%{?dist}
-Summary:        RATIB ERP Enterprise Branch Appliance
+Summary:        RATEB ERP Enterprise Branch Appliance
 License:        Proprietary
 URL:            https://rateb.sa
 BuildArch:      noarch
 Requires:       php-cli >= 8.2, php-pdo, php-sqlite3, php-gd, php-curl, php-zip, php-mbstring, php-xml, sqlite, openssl
 
 %description
-Official Branch Appliance installer for RATIB ERP.
+Official Branch Appliance installer for RATEB ERP.
 Installs to /opt/ratib-branch, configures SQLite branch runtime,
 registers systemd Hybrid Sync and Branch Web services.
 One ERP • One Runtime • One Hybrid Sync Engine.
@@ -54,7 +54,7 @@ systemctl restart ratib-hybrid-sync.service ratib-branch-web.service >/dev/null 
 cat > /usr/share/applications/ratib-branch.desktop <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=RATIB Branch
+Name=RATEB Branch
 Exec=xdg-open http://127.0.0.1/
 Terminal=false
 Categories=Office;
@@ -87,5 +87,5 @@ fi
 /usr/lib/systemd/system/ratib-branch-web.service
 
 %changelog
-* Mon Jul 13 2026 RATIB <support@rateb.sa> - 1.0.0-1
+* Mon Jul 13 2026 RATEB <support@rateb.sa> - 1.0.0-1
 - Phase D.2 enterprise Branch Appliance package

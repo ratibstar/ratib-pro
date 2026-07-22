@@ -31,13 +31,13 @@ d4_assert('D4_one_sync_engine', is_file($root . '/app/Core/HybridSyncEngine.php'
 $required = [
     'bin/hybrid-zero-touch-status.php',
     'bin/hybrid-zero-touch-export-support.php',
-    'deploy/enterprise-installers/zero-touch/windows/RatibLauncher.ps1',
-    'deploy/enterprise-installers/zero-touch/windows/RatibTray.ps1',
+    'deploy/enterprise-installers/zero-touch/windows/RatebLauncher.ps1',
+    'deploy/enterprise-installers/zero-touch/windows/RatebTray.ps1',
     'deploy/enterprise-installers/zero-touch/windows/install-zero-touch.ps1',
-    'deploy/enterprise-installers/zero-touch/linux/ratib-launcher.sh',
-    'deploy/enterprise-installers/zero-touch/linux/ratib-tray.py',
+    'deploy/enterprise-installers/zero-touch/linux/rateb-launcher.sh',
+    'deploy/enterprise-installers/zero-touch/linux/rateb-tray.py',
     'deploy/enterprise-installers/zero-touch/linux/install-zero-touch.sh',
-    'deploy/enterprise-installers/systemd/ratib-zero-touch-status.service',
+    'deploy/enterprise-installers/systemd/rateb-zero-touch-status.service',
     'docs/branch-appliance/zero-touch/README.md',
     'docs/branch-appliance/zero-touch/CUSTOMER.md',
     'docs/branch-appliance/zero-touch/OPERATIONS.md',
@@ -58,20 +58,20 @@ d4_assert('D4_writes_status_json', str_contains($statusSrc, 'status.json'), 'sta
 d4_assert('D4_open_url_cloud_admin', str_contains($statusSrc, 'cloudAdminUrl') && str_contains($statusSrc, '$openUrl = $cloudAdminUrl'), 'open_url always cloud admin');
 d4_assert('D4_no_runtime_mutation', !str_contains($statusSrc, 'file_put_contents($serve') && !str_contains($statusSrc, 'RATEB_RUNTIME='), 'does not rewrite serve.env runtime');
 
-$tray = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatibTray.ps1');
-d4_assert('D4_tray_windows', str_contains($tray, 'NotifyIcon') && str_contains($tray, 'Open RATIB ERP'), 'NotifyIcon tray');
+$tray = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatebTray.ps1');
+d4_assert('D4_tray_windows', str_contains($tray, 'NotifyIcon') && str_contains($tray, 'Open RATEB ERP'), 'NotifyIcon tray');
 d4_assert('D4_tray_actions', str_contains($tray, 'Backup Now') && str_contains($tray, 'Diagnostics') && str_contains($tray, 'Restart Services'), 'menu actions');
 
-$launch = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatibLauncher.ps1');
-d4_assert('D4_launcher_starts_services', str_contains($launch, 'RATIBBranchWeb') && str_contains($launch, 'Start-Process'), 'auto start');
+$launch = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/windows/RatebLauncher.ps1');
+d4_assert('D4_launcher_starts_services', str_contains($launch, 'RATEBBranchWeb') && str_contains($launch, 'Start-Process'), 'auto start');
 d4_assert('D4_launcher_opens_browser', str_contains($launch, 'Start-Process $openUrl') || str_contains($launch, 'Start-Process $url') || str_contains($launch, 'Start-Process $u'), 'browser');
 
-$iss = (string) file_get_contents($root . '/deploy/enterprise-installers/windows/RATIB-Branch-Setup.iss');
-d4_assert('D4_shortcut_name', str_contains($iss, 'RATIB ERP'), 'desktop name RATIB ERP');
+$iss = (string) file_get_contents($root . '/deploy/enterprise-installers/windows/RATEB-Branch-Setup.iss');
+d4_assert('D4_shortcut_name', str_contains($iss, 'RATEB ERP'), 'desktop name RATEB ERP');
 
 $linuxDesk = (string) file_get_contents($root . '/deploy/enterprise-installers/zero-touch/linux/install-zero-touch.sh');
-d4_assert('D4_linux_desktop_ratib_erp', str_contains($linuxDesk, 'Name=RATIB ERP'), 'RATIB ERP.desktop');
-d4_assert('D4_linux_status_service', str_contains($linuxDesk, 'ratib-zero-touch-status'), 'status systemd');
+d4_assert('D4_linux_desktop_ratib_erp', str_contains($linuxDesk, 'Name=RATEB ERP'), 'RATEB ERP.desktop');
+d4_assert('D4_linux_status_service', str_contains($linuxDesk, 'rateb-zero-touch-status'), 'status systemd');
 
 $uni = (string) file_get_contents($root . '/deploy/enterprise-installers/universal/install-universal.sh');
 d4_assert('D4_wired_universal_linux', str_contains($uni, 'install-zero-touch.sh'), 'universal calls zero-touch');
@@ -92,7 +92,7 @@ $report = [
     'failed' => $failed,
     'checks' => $lines,
     'architecture_note' => 'Customer browser always opens https://rateb.sa/rateb-erp/public/admin/ (same URL online and offline via PWA). Online/Offline badge reflects connectivity; no redirect to 127.0.0.1. Product nav is unified lean. Local HybridRuntime remains for sync appliance only.',
-    'customer_flow' => ['Install', 'Open RATIB ERP', 'Login', 'Work'],
+    'customer_flow' => ['Install', 'Open RATEB ERP', 'Login', 'Work'],
 ];
 $out = $root . '/storage/branch/phase-d4-enterprise-verify.json';
 if (!is_dir(dirname($out))) {

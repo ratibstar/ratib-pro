@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Final Sign-Off
+# RATEB ERP v1.0 — Final Sign-Off
 
 **Sign-off date:** 2026-06-27  
 **Version:** 1.0.0  
@@ -30,7 +30,7 @@
 
 | Field | Detail |
 |-------|--------|
-| **Deliverable** | RATIB ERP v1.0.0 |
+| **Deliverable** | RATEB ERP v1.0.0 |
 | **Build** | `rateb-erp-ga-security-20260626` |
 | **Scope** | Full ERP platform — admin, company ops, HR, accounting, billing, CRM, portal, API |
 | **Security hardening** | GA-SEC-C01, GA-SEC-H01 through GA-SEC-H05 |
@@ -98,7 +98,7 @@
 
 | Field | Detail |
 |-------|--------|
-| **Release** | RATIB ERP v1.0 GA |
+| **Release** | RATEB ERP v1.0 GA |
 | **Go-live decision** | Production ready |
 | **Remaining risk** | LOW (3 cosmetic/tooling observations) |
 | **Production reset** | Not approved — separate gate |
@@ -131,7 +131,7 @@
 
 # ✅ APPROVED FOR PRODUCTION
 
-RATIB ERP v1.0 is certified for General Availability on production `https://rateb.sa`.
+RATEB ERP v1.0 is certified for General Availability on production `https://rateb.sa`.
 
 ---
 
@@ -149,4 +149,4 @@ RATIB ERP v1.0 is certified for General Availability on production `https://rate
 
 ---
 
-*RATIB ERP v1.0 Final Sign-Off — documentation only. No production changes.*
+*RATEB ERP v1.0 Final Sign-Off — documentation only. No production changes.*

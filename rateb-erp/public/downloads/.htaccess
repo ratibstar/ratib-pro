@@ -1,1 +1,8 @@
 Options -Indexes
+
+# Brand rename: legacy ratib-* download names → rateb-*
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^ratib-hr-mobile-latest\.apk$ rateb-hr-mobile-latest.apk [L]
+  RewriteRule ^ratib-hr-mobile-(.+)\.apk$ rateb-hr-mobile-$1.apk [L]
+</IfModule>

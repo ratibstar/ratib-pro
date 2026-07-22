@@ -25,7 +25,7 @@ if ($hasCpanel.Count -eq 3) {
     Write-Host 'CPANEL_* not set — pushing to main to trigger GitHub Actions deploy...' -ForegroundColor Yellow
     $git = 'C:\Program Files\Git\cmd\git.exe'
     if (-not (Test-Path $git)) { $git = 'git' }
-    & $git add public/ratib-build.txt scripts/github-cpanel-fileman-deploy-core.py
+    & $git add public/rateb-build.txt scripts/github-cpanel-fileman-deploy-core.py
     & $git commit -m 'Deploy infra 23-file bundle via FAST_FILES baseline' 2>$null
     if ($LASTEXITCODE -eq 0) { & $git push origin main }
     else { Write-Host 'Nothing to commit; ensure latest main is pushed for Actions deploy.' }
@@ -34,7 +34,7 @@ if ($hasCpanel.Count -eq 3) {
 }
 
 Write-Host "`nLive build marker:"
-curl.exe -sS 'https://rateb.sa/public/ratib-build.txt'
+curl.exe -sS 'https://rateb.sa/public/rateb-build.txt'
 Write-Host ''
 Write-Host 'Production verify:'
 curl.exe -sS 'https://rateb.sa/modules/infrastructure-marketplace/Cli/production-verify.php'

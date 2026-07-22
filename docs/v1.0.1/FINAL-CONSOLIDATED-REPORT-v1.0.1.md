@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Final Consolidated Release Report
+# RATEB ERP v1.0.1 — Final Consolidated Release Report
 
 **Document:** Master consolidation of all v1.0.1 phase reports  
 **Date:** 2026-06-27  
@@ -24,7 +24,7 @@
 | **Baseline (v1.0.0)** | `e64c37b3274040ebc480865c01c247324f288cfb` |
 | **Tag status** | Local tag `v1.0.0` on baseline; **no `v1.0.1` tag pushed** |
 
-RATIB ERP v1.0.1 is the first **maintenance release** after General Availability. It delivers three runtime fixes (backup verifier, portal logout UX, security hygiene), build/version metadata, repository hygiene, and comprehensive release documentation. **No new ERP features. No schema changes. No migrations.**
+RATEB ERP v1.0.1 is the first **maintenance release** after General Availability. It delivers three runtime fixes (backup verifier, portal logout UX, security hygiene), build/version metadata, repository hygiene, and comprehensive release documentation. **No new ERP features. No schema changes. No migrations.**
 
 **Production remains on v1.0.0.** Staging runs v1.0.1 on `dev.rateb.sa` / `admin_rateb_dev` with verified backup, health, and logout behavior.
 
@@ -473,7 +473,7 @@ All phase reports, release notes, staging certs, and this consolidated report.
 
 ### Consolidated statement
 
-**RATIB ERP v1.0.1** is **certified ready for merge and production deployment upon explicit operator approval**. Staging certification on `dev.rateb.sa` supports user acceptance. Production remains safely on **v1.0.0 GA** until merge triggers deploy.
+**RATEB ERP v1.0.1** is **certified ready for merge and production deployment upon explicit operator approval**. Staging certification on `dev.rateb.sa` supports user acceptance. Production remains safely on **v1.0.0 GA** until merge triggers deploy.
 
 ---
 
@@ -534,4 +534,4 @@ rateb-erp/public/ratib-erp-build.txt
 
 ---
 
-*Final consolidated report — RATIB ERP v1.0.1 — Documentation only.*
+*Final consolidated report — RATEB ERP v1.0.1 — Documentation only.*

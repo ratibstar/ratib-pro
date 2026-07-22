@@ -6,20 +6,20 @@
 
 ## Tray
 
-- Windows: Notification Area (startup via `RATIB Tray` shortcut)  
+- Windows: Notification Area (startup via `RATEB Tray` shortcut)  
 - Linux: system tray (Qt) or notify-send fallback; autostart desktop entry  
 
 ## Support package
 
-Tray → **Export Support Package** → `storage/branch/support/ratib-support-*.zip` (sync keys redacted).
+Tray → **Export Support Package** → `storage/branch/support/rateb-support-*.zip` (sync keys redacted).
 
 ## Services
 
 | Windows | Linux |
 |---------|-------|
-| RATIB Branch Web | `ratib-branch-web` |
-| RATIB Hybrid Sync | `ratib-hybrid-sync` |
-| Zero-Touch Status task | `ratib-zero-touch-status` |
+| RATEB Branch Web | `rateb-branch-web` |
+| RATEB Hybrid Sync | `rateb-hybrid-sync` |
+| Zero-Touch Status task | `rateb-zero-touch-status` |
 | Backup / Recover tasks | backup + recover timers |
 
 ## Verify

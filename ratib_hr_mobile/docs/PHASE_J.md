@@ -10,7 +10,7 @@
 ## 1. Binding architecture
 
 ```
-RATIB ERP
+RATEB ERP
 (Source of Truth + Authentication Authority)
         │
 Mobile Device Registry Service
@@ -25,7 +25,7 @@ Mobile Device Registry Service
 
 | Rule | Binding |
 |------|---------|
-| Source of Truth | RATIB ERP only |
+| Source of Truth | RATEB ERP only |
 | Authentication Authority | Online ERP only (Bearer / existing `ApiAuthMiddleware`) |
 | Registry ownership | ERP service + table(s) — never owned by a Flutter app |
 | Flutter role | Presentation + thin adapter — register / heartbeat / unregister only |

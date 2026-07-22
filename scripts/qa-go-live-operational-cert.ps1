@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Operational Go-Live Certification (read-only + token-gated backup)
+# RATEB ERP v1.0 — Operational Go-Live Certification (read-only + token-gated backup)
 param([string]$Site = 'https://rateb.sa')
 
 $ErrorActionPreference = 'Stop'

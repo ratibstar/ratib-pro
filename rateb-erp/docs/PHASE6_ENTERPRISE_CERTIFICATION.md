@@ -1,4 +1,4 @@
-# RATIB ERP — Phase 6 Enterprise Certification Report
+# RATEB ERP — Phase 6 Enterprise Certification Report
 
 Generated: 2026-06-24  
 Scope: Inter-branch execution, audit, notifications, staging validation infrastructure.

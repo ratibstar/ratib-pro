@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Release Candidate Checklist
+# RATEB ERP v1.0.1 — Release Candidate Checklist
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  

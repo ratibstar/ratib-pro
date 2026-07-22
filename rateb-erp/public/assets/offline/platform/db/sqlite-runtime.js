@@ -1,6 +1,6 @@
 /*!
  * RATEB Offline V2 — L3 SQLite Runtime (Phase 3)
- * ERP database path: database/ratib.sqlite (P1-00A) via HCI.
+ * ERP database path: database/rateb.sqlite (P1-00A) via HCI.
  * Prefers OPFS VFS; falls back to in-memory + HCI byte persist (no COOP required).
  * Does NOT use IndexedDB or Cache API for business data.
  */

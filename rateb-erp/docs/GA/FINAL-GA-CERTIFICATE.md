@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Final GA Certificate
+# RATEB ERP v1.0 — Final GA Certificate
 
 **Certificate date:** 2026-06-27  
 **Production URL:** https://rateb.sa  
@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-RATIB ERP v1.0 has completed full General Availability (GA) certification on production. Application quality, security hardening, enterprise validation, operational backup/restore proof, and manifest-based QA cleanup are all complete with reproducible evidence.
+RATEB ERP v1.0 has completed full General Availability (GA) certification on production. Application quality, security hardening, enterprise validation, operational backup/restore proof, and manifest-based QA cleanup are all complete with reproducible evidence.
 
 | Certification area | Result |
 |--------------------|--------|
@@ -31,7 +31,7 @@ RATIB ERP v1.0 has completed full General Availability (GA) certification on pro
 
 | Field | Value |
 |-------|-------|
-| **Product** | RATIB ERP |
+| **Product** | RATEB ERP |
 | **Version** | **1.0.0** |
 | **Environment** | Production |
 | **Host** | `https://rateb.sa` |
@@ -175,11 +175,11 @@ See `rateb-erp/docs/GA/FINAL-RISK-REGISTER.md` for full register.
 
 ## Final recommendation
 
-# ✅ RATIB ERP v1.0
+# ✅ RATEB ERP v1.0
 # PRODUCTION READY FOR GO-LIVE
 
-RATIB ERP v1.0 is approved for production operation on `https://rateb.sa`. All mandatory GA certification gates have passed. Remaining items are low-severity observations only and do not block go-live.
+RATEB ERP v1.0 is approved for production operation on `https://rateb.sa`. All mandatory GA certification gates have passed. Remaining items are low-severity observations only and do not block go-live.
 
 ---
 
-*Issued as part of RATIB ERP v1.0 Final GA Closeout. Documentation only — no production changes.*
+*Issued as part of RATEB ERP v1.0 Final GA Closeout. Documentation only — no production changes.*

@@ -1,4 +1,4 @@
-# Deployment Verification — RATIB ERP v1.0 GA
+# Deployment Verification — RATEB ERP v1.0 GA
 
 **Verified:** 2026-06-26T18:46Z (UTC)  
 **Environment:** Production `https://rateb.sa`  

@@ -11,7 +11,7 @@
 
 ```
                     ┌─────────────────────────────────┐
-                    │         RATIB ERP               │
+                    │         RATEB ERP               │
                     │  Authentication Authority        │
                     │  ApiAuthMiddleware → TenantContext│
                     └───────────────┬─────────────────┘

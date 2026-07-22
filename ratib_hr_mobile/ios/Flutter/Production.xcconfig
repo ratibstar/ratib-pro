@@ -2,5 +2,5 @@
 
 // Phase B2 — production flavor (Archive / Release / Profile base).
 PRODUCT_BUNDLE_IDENTIFIER = sa.rateb.hr.mobile
-DISPLAY_NAME = RATIB HR
+DISPLAY_NAME = RATEB HR
 FLUTTER_TARGET = lib/main.dart

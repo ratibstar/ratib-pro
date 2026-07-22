@@ -5,7 +5,7 @@ PORT="${1:?port required}"
 
 opened=0
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi 'Status: active'; then
-  ufw allow "${PORT}/tcp" comment 'RATIB Branch Web' || true
+  ufw allow "${PORT}/tcp" comment 'RATEB Branch Web' || true
   opened=1
   echo "firewall=ufw port=${PORT}"
 fi

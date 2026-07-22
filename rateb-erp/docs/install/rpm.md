@@ -1,6 +1,6 @@
-# RATIB Branch — RHEL family (.rpm)
+# RATEB Branch — RHEL family (.rpm)
 
-Artifact: **ratib-branch-installer.rpm**
+Artifact: **rateb-branch-installer.rpm**
 
 Supports: RHEL, AlmaLinux, Rocky, Oracle Linux, Fedora.
 
@@ -15,15 +15,15 @@ Requires `rpmbuild`. Without it, the script stages the SPEC + payload tar for a 
 ## Install
 
 ```bash
-sudo dnf install -y ./ratib-branch-installer.rpm
+sudo dnf install -y ./rateb-branch-installer.rpm
 # or
-sudo rpm -Uvh ratib-branch-installer.rpm
+sudo rpm -Uvh rateb-branch-installer.rpm
 ```
 
-Install root: `/opt/ratib-branch/`
+Install root: `/opt/rateb-branch/`
 
 ## Spec hooks
 
 - `%pre` — backup SQLite; stop services
 - `%post` — user `rateb`, cold-start, enable/start systemd units
-- `%preun` / `%postun` — stop services; keep `storage/` unless `RATIB_PURGE_STORAGE=1`
+- `%preun` / `%postun` — stop services; keep `storage/` unless `RATEB_PURGE_STORAGE=1`

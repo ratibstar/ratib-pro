@@ -54,7 +54,7 @@ sort($missingAr);
 $hardcoded = array_unique($hardcoded);
 sort($hardcoded);
 
-echo "=== RATIB ERP i18n audit ===\n";
+echo "=== RATEB ERP i18n audit ===\n";
 echo 'Field keys scanned: ' . count($labels) . "\n";
 echo 'Missing EN: ' . count($missingEn) . "\n";
 foreach (array_slice($missingEn, 0, 40) as $m) {

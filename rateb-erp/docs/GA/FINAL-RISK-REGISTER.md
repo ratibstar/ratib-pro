@@ -1,4 +1,4 @@
-# RATIB ERP v1.0 — Final Risk Register
+# RATEB ERP v1.0 — Final Risk Register
 
 **Register date:** 2026-06-27  
 **Environment:** Production `https://rateb.sa`  
@@ -90,4 +90,4 @@ All three LOW items are **accepted for GA go-live**. None require immediate prod
 
 ---
 
-*RATIB ERP v1.0 Final Risk Register — documentation only.*
+*RATEB ERP v1.0 Final Risk Register — documentation only.*

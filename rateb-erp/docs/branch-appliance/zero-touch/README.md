@@ -5,7 +5,7 @@ Customer never sees SQLite, MySQL, Hybrid Runtime, or env files.
 ## Flow
 
 1. Install  
-2. Desktop shortcut **RATIB ERP**  
+2. Desktop shortcut **RATEB ERP**  
 3. Double-click → services + tray + browser open automatically  
 4. Login and work  
 
@@ -29,8 +29,8 @@ Product nav is **unified lean** (procurement = PR / PO / RFQ / quotations).
 
 | Piece | Role |
 |-------|------|
-| `RatibLauncher` / `ratib-launcher.sh` | Start services, open local URL |
-| `RatibTray` / `ratib-tray.py` | Live status + Open / Backup / Diagnostics / Restart |
+| `RatebLauncher` / `rateb-launcher.sh` | Start services, open local URL |
+| `RatebTray` / `rateb-tray.py` | Live status + Open / Backup / Diagnostics / Restart |
 | `hybrid-zero-touch-status.php` | Writes `storage/branch/status.json` |
 | Background services | Web, Hybrid Sync, Health, Backup, Recover, Status monitor |
 

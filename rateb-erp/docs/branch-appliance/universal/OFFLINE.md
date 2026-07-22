@@ -7,4 +7,4 @@ After install, disconnect Internet. Branch continues on **SQLite only**:
 
 No cloud required. `RATEB_RUNTIME=branch` in `storage/branch/serve.env`.
 
-When Internet returns, **RATIB Hybrid Sync** detects connectivity and resumes push/pull/conflict/audit automatically — no user action.
+When Internet returns, **RATEB Hybrid Sync** detects connectivity and resumes push/pull/conflict/audit automatically — no user action.

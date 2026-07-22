@@ -1,4 +1,4 @@
-﻿{
+{
   "out": "C:\\Users\\انا\\Documents\\ratibprogram\\rateb-erp\\tools\\boot-bench\\reports\\phase-p1-validation-1784168408017.json",
   "verdict": {
     "benchmark_measures": "In-page RatebNavInstant.navigate() after prefetch (not sidebar click)",

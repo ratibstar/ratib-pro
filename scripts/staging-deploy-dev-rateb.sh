@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RATIB ERP v1.0.1 — staging bootstrap + deploy to dev.rateb.sa ONLY
+# RATEB ERP v1.0.1 — staging bootstrap + deploy to dev.rateb.sa ONLY
 set -euo pipefail
 
 PROD="/home/admin/domains/rateb.sa/public_html"

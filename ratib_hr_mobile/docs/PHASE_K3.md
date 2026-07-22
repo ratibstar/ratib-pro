@@ -4,7 +4,7 @@
 **Date:** 2026-07-21  
 **Depends on:** K1 signed AAB · K2 store prep ([PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md))
 
-**Operator goal:** First upload of RATIB HR to Google Play **Internal testing** track.
+**Operator goal:** First upload of RATEB HR to Google Play **Internal testing** track.
 
 ---
 
@@ -78,7 +78,7 @@ Internal testing can start with limited testers; complete Privacy Policy + Data 
 
 1. Open [Google Play Console](https://play.google.com/console).
 2. **Create app**.
-3. App name: **RATIB HR** (AR listing: **راتب للموارد البشرية**).
+3. App name: **RATEB HR** (AR listing: **رتب للموارد البشرية**).
 4. Default language: Arabic or English; add the other locale later.
 5. App or game → **App**; Free/Paid per commercial model.
 6. Accept declarations.

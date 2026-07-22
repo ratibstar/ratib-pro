@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA v2 runner — manifest-based ID capture via qa-manifest-resolve.php
+# RATEB ERP Safe QA v2 runner — manifest-based ID capture via qa-manifest-resolve.php
 param(
     [string]$Site = 'https://rateb.sa',
     [string]$MigrateToken = $env:RATEB_ERP_MIGRATE_TOKEN

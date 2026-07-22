@@ -33,7 +33,7 @@ if [ -x "${UNI}/install-universal.sh" ]; then
     "${ROOT}/deploy/enterprise-installers/systemd/ratib-branch-web-start.sh" 2>/dev/null || true
   cat > /etc/systemd/system/ratib-branch-web.service <<EOF
 [Unit]
-Description=RATIB Branch Web
+Description=RATEB Branch Web
 After=network-online.target
 [Service]
 Type=simple
@@ -66,7 +66,7 @@ EOF
   cat > /usr/share/applications/ratib-branch.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=RATIB Branch
+Name=RATEB Branch
 Exec=xdg-open ${URL}
 Terminal=false
 Categories=Office;

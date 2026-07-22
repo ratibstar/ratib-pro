@@ -1,4 +1,4 @@
-/* RATIB POS — checkout panel */
+/* RATEB POS — checkout panel */
 .rateb-pos-checkout-panel {
     border: 1px solid var(--rateb-border, rgba(255,255,255,0.12));
     border-radius: var(--rateb-radius, 0.5rem);

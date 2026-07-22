@@ -8,16 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 
 abstract final class AppConfig {
-  static const String appName = 'RATIB HR Mobile';
+  static const String appName = 'RATEB HR Mobile';
   static const String appId = 'sa.rateb.hr.mobile';
   /// Roadmap phase marker — see docs/ROADMAP.md.
   static const String phase = 'L1';
   static const String versionLabel = '1.0.0';
   /// ASCII stamp — must appear in release libapp.so for install verification.
-  static const String buildStamp = '<<<RATIB_BUILD_FULL>>>';
+  static const String buildStamp = '<<<RATEB_BUILD_NAME>>>';
 
   /// ERP remains the single source of truth (documentation constant only).
-  static const String sourceOfTruth = 'RATIB ERP';
+  static const String sourceOfTruth = 'RATEB ERP';
 
   /// Arabic is the default / primary locale (RTL-first).
   static const Locale defaultLocale = Locale('ar');

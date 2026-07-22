@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA v2 — Tests 23+ through Enterprise Certification (production)
+# RATEB ERP Safe QA v2 — Tests 23+ through Enterprise Certification (production)
 param(
     [string]$Site = 'https://rateb.sa',
     [int]$StartTest = 23

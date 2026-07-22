@@ -12,7 +12,7 @@
 | AAB path | `build/app/outputs/bundle/productionRelease/app-production-release.aab` (~55.5MB) |
 | `applicationId` | `sa.rateb.hr.mobile` |
 | `versionName` / `versionCode` | `1.0.0` / `200` |
-| Signer | `CN=RATIB HR Mobile Upload` · alias `ratib_hr_upload` |
+| Signer | `CN=RATEB HR Mobile Upload` · alias `ratib_hr_upload` |
 | Cert SHA-256 | `8F:E3:0E:B9:…:C9:EA` (matches upload JKS) |
 | `jarsigner -verify` | `jar verified` (self-signed upload key — expected) |
 | Debug signing | **Not used** |

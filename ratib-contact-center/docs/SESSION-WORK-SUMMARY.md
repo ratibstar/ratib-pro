@@ -409,7 +409,7 @@ Removed second `QUEUE_ASSIGNED` emit from `QueueDeliveryService.php`. AMI origin
 - `public/run-realtime-hub.php`
 
 ### Environment
-- `env.rateb-contact-center.example` — AMI, omnichannel, realtime vars
+- `env.ratib-contact-center.example` — AMI, omnichannel, realtime vars
 
 ---
 
@@ -444,7 +444,7 @@ These are **not** code gaps alone — they need production configuration and dae
 | **Asterisk** | Install `deploy/asterisk/*`, AMI credentials, PJSIP/WebRTC |
 | **SIP extensions** | Configure `rcc_sip_extensions` + env password refs |
 | **Webhooks** | Set `WEBHOOK_SIGNING_SECRET` for WhatsApp/email providers |
-| **WhatsApp / SMTP / IMAP** | Env vars in `env.rateb-contact-center.example` |
+| **WhatsApp / SMTP / IMAP** | Env vars in `env.ratib-contact-center.example` |
 | **CP report UI** | Optional — API exists at `public/api/v1/reports.php` |
 | **Supervisor dashboard** | Permission exists; no CP page yet |
 
@@ -464,7 +464,7 @@ These are **not** code gaps alone — they need production configuration and dae
 | `docs/PRODUCTION_READINESS_REPORT.md` | Post-hardening report (~82% claim) |
 | `docs/SESSION-WORK-SUMMARY.md` | This file — full session log |
 | `deploy/asterisk/INSTALL.md` | PBX install steps |
-| `env.rateb-contact-center.example` | Server environment template |
+| `env.ratib-contact-center.example` | Server environment template |
 
 ---
 

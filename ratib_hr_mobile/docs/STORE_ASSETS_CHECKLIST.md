@@ -1,6 +1,6 @@
 # Phase K — Store listing assets checklist
 
-**Product:** RATIB HR Mobile (ESS) · `sa.rateb.hr.mobile`  
+**Product:** RATEB HR Mobile (ESS) · `sa.rateb.hr.mobile`  
 **Do not invent marketing copy here** — fill with approved Legal / Branding content before upload.
 
 ## Google Play

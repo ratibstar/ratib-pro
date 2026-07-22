@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Migration Notes
+# RATEB ERP v1.0.1 — Migration Notes
 
 **Version:** 1.0.1 (maintenance)  
 **Schema migrations required:** **None**

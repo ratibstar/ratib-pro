@@ -1,8 +1,8 @@
-# RATIB ERP v1.0 — Go-Live Final Report
+# RATEB ERP v1.0 — Go-Live Final Report
 
 **Report date:** 2026-06-27  
 **Code freeze:** ACTIVE — no code changes unless critical production defect  
-**Application:** RATIB ERP `1.0.0`  
+**Application:** RATEB ERP `1.0.0`  
 **Production host:** `https://rateb.sa`  
 **ERP database:** `admin_rateb-erp`  
 **Build marker:** `rateb-erp-ga-security-20260626`  
@@ -13,7 +13,7 @@
 
 ## Executive decision
 
-# ✅ RATIB ERP v1.0 — PRODUCTION READY FOR GO-LIVE
+# ✅ RATEB ERP v1.0 — PRODUCTION READY FOR GO-LIVE
 
 All **application certification** and **operational backup/restore evidence** requirements are complete. Production reset remains **not approved** and **not executed** (by design).
 
@@ -21,7 +21,7 @@ All **application certification** and **operational backup/restore evidence** re
 
 ## Executive summary
 
-RATIB ERP v1.0 on `https://rateb.sa` is certified for production go-live:
+RATEB ERP v1.0 on `https://rateb.sa` is certified for production go-live:
 
 | Area | Result |
 |------|--------|
@@ -187,7 +187,7 @@ Report: `rateb-erp/docs/QA/enterprise-qa-certification-final.md`
 
 Related reports:
 
-- `rateb-erp/docs/GA/RATIB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md`
+- `rateb-erp/docs/GA/RATEB-ERP-v1.0-FINAL-GO-LIVE-CERTIFICATION-REPORT.md`
 - `rateb-erp/docs/GA/enterprise-final-pass-report.md`
 - `rateb-erp/docs/GA/reset-dry-run-report.md`
 
@@ -201,4 +201,4 @@ Related reports:
 
 ---
 
-*RATIB ERP v1.0 — Final Go-Live Report. Updated after operational backup/restore sign-off completed 2026-06-27.*
+*RATEB ERP v1.0 — Final Go-Live Report. Updated after operational backup/restore sign-off completed 2026-06-27.*

@@ -1,4 +1,4 @@
-# RATIB ERP v1.0.1 — Phase 7 Release Commit
+# RATEB ERP v1.0.1 — Phase 7 Release Commit
 
 **Date:** 2026-06-27  
 **Branch:** `release/v1.0.1`  

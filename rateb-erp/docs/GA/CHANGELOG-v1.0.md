@@ -1,10 +1,10 @@
-# RATIB ERP v1.0 — Changelog
+# RATEB ERP v1.0 — Changelog
 
 **Release:** 1.0.0  
 **GA date:** 2026-06-27  
 **Production:** https://rateb.sa
 
-This changelog summarizes everything completed during the RATIB ERP v1.0 GA certification project.
+This changelog summarizes everything completed during the RATEB ERP v1.0 GA certification project.
 
 ---
 
@@ -255,4 +255,4 @@ This changelog summarizes everything completed during the RATIB ERP v1.0 GA cert
 
 ---
 
-*RATIB ERP v1.0.0 — General Availability release changelog.*
+*RATEB ERP v1.0.0 — General Availability release changelog.*

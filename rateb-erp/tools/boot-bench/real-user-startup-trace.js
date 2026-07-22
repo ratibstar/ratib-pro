@@ -1,5 +1,5 @@
 /**
- * REAL user startup investigation — production RATIB ERP only.
+ * REAL user startup investigation — production RATEB ERP only.
  * Login click → dashboard usable. No synthetic benches.
  *
  *   node real-user-startup-trace.js

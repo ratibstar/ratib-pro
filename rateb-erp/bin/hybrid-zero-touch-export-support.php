@@ -18,7 +18,7 @@ $outDir = $dir . '/support';
 if (!is_dir($outDir)) {
     mkdir($outDir, 0775, true);
 }
-$pack = $outDir . '/ratib-support-' . $stamp;
+$pack = $outDir . '/rateb-support-' . $stamp;
 mkdir($pack, 0775, true);
 
 $copyIf = static function (string $src, string $dest) use ($pack): void {
@@ -49,7 +49,7 @@ file_put_contents($pack . '/diagnostics.json', implode("\n", $dOut) . "\n");
 @exec(escapeshellarg($php) . ' -d extension=pdo_sqlite -d extension=sqlite3 ' . escapeshellarg($root . '/bin/hybrid-branch-health.php') . ' --once 2>&1', $hOut);
 file_put_contents($pack . '/health.json', implode("\n", $hOut) . "\n");
 
-$zipPath = $outDir . '/ratib-support-' . $stamp . '.zip';
+$zipPath = $outDir . '/rateb-support-' . $stamp . '.zip';
 if (class_exists('ZipArchive')) {
     $zip = new ZipArchive();
     if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {

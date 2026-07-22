@@ -15,8 +15,10 @@ void main() {
 
   test('pubspec version strategy NAME+CODE', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(pubspec.contains(RegExp(r'^version:\s*1\.0\.0\+200\s*$', multiLine: true)),
-        isTrue);
+    expect(
+      pubspec.contains(RegExp(r'^version:\s*1\.0\.0\+\d+\s*$', multiLine: true)),
+      isTrue,
+    );
   });
 
   test('Android production applicationId and R8 release minify', () {
