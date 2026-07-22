@@ -1,6 +1,8 @@
 /// Presentation auth + ESS identity + mobile config gate + device + push.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_me_adapter.dart';
 import 'package:ratib_hr_mobile/core/contracts/auth_port.dart';
@@ -43,6 +45,9 @@ final class AuthSession extends ChangeNotifier {
   AppFailure? lastError;
   bool _signInInProgress = false;
 
+  /// True when the active session was restored from local caches (offline).
+  bool offlineSession = false;
+
   PushNotificationService? get _pushOrNull {
     if (_pushNotifications != null) return _pushNotifications;
     try {
@@ -54,27 +59,75 @@ final class AuthSession extends ChangeNotifier {
 
   Future<void> restore() async {
     _signInInProgress = true;
+    offlineSession = false;
+    lastError = null;
     try {
       final ok = await _authPort.hasSession();
       if (!ok) {
-        await _resetLocal();
+        await _resetLocal(wipeDisk: true);
         status = AuthStatus.signedOut;
         notifyListeners();
         return;
       }
-      await _resolveEmployeeOrThrow();
-      await _mobileConfig.refreshAfterLogin();
-      await _registerDeviceSafe();
-      await _registerPushSafe();
-      status = AuthStatus.signedIn;
-    } catch (e) {
-      lastError = e is AppFailure ? e : AppLocator.errors.map(e);
-      await _authPort.signOut();
-      await _resetLocal();
-      status = AuthStatus.signedOut;
+      try {
+        await _resolveEmployeeOrThrow();
+        await _mobileConfig.refreshAfterLogin();
+        await _registerDeviceSafe();
+        await _registerPushSafe();
+        status = AuthStatus.signedIn;
+        offlineSession = false;
+        _warmEssCaches();
+      } on AppFailure catch (e) {
+        lastError = e;
+        if (_isConnectivityFailure(e)) {
+          final hydrated = await _hydrateOfflineSession();
+          if (hydrated) {
+            offlineSession = true;
+            _markConnectivityOffline(e.message);
+            status = AuthStatus.signedIn;
+          } else {
+            // Keep the token — do not wipe session caches on transport failure.
+            await _resetLocal(wipeDisk: false);
+            status = AuthStatus.signedOut;
+          }
+        } else if (_isHardSessionFailure(e)) {
+          await _authPort.signOut();
+          await _resetLocal(wipeDisk: true);
+          status = AuthStatus.signedOut;
+        } else {
+          // Unknown domain failure: try offline hydrate before forcing login.
+          final hydrated = await _hydrateOfflineSession();
+          if (hydrated) {
+            offlineSession = true;
+            status = AuthStatus.signedIn;
+          } else {
+            await _authPort.signOut();
+            await _resetLocal(wipeDisk: true);
+            status = AuthStatus.signedOut;
+          }
+        }
+      } catch (e) {
+        lastError = e is AppFailure ? e : AppLocator.errors.map(e);
+        if (_isConnectivityFailure(lastError!)) {
+          final hydrated = await _hydrateOfflineSession();
+          if (hydrated) {
+            offlineSession = true;
+            _markConnectivityOffline(lastError!.message);
+            status = AuthStatus.signedIn;
+          } else {
+            await _resetLocal(wipeDisk: false);
+            status = AuthStatus.signedOut;
+          }
+        } else {
+          await _authPort.signOut();
+          await _resetLocal(wipeDisk: true);
+          status = AuthStatus.signedOut;
+        }
+      }
+    } finally {
+      _signInInProgress = false;
+      notifyListeners();
     }
-    _signInInProgress = false;
-    notifyListeners();
   }
 
   Future<bool> signIn({
@@ -82,6 +135,7 @@ final class AuthSession extends ChangeNotifier {
     required String secret,
   }) async {
     lastError = null;
+    offlineSession = false;
     _signInInProgress = true;
     try {
       await _authPort.signIn(identifier: identifier, secret: secret);
@@ -90,12 +144,13 @@ final class AuthSession extends ChangeNotifier {
       await _registerDeviceSafe();
       await _registerPushSafe();
       status = AuthStatus.signedIn;
+      _warmEssCaches();
       notifyListeners();
       return true;
     } catch (e) {
       lastError = e is AppFailure ? e : AppLocator.errors.map(e);
       await _authPort.signOut();
-      await _resetLocal();
+      await _resetLocal(wipeDisk: true);
       status = AuthStatus.signedOut;
       notifyListeners();
       return false;
@@ -106,8 +161,9 @@ final class AuthSession extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _authPort.signOut();
-    await _resetLocal();
+    await _resetLocal(wipeDisk: true);
     status = AuthStatus.signedOut;
+    offlineSession = false;
     lastError = null;
     notifyListeners();
   }
@@ -118,8 +174,9 @@ final class AuthSession extends ChangeNotifier {
       return;
     }
     _authPort.signOut().then((_) async {
-      await _resetLocal();
+      await _resetLocal(wipeDisk: true);
       status = AuthStatus.signedOut;
+      offlineSession = false;
       lastError = const AppFailure(
         code: 'unauthorized',
         message: 'Session expired',
@@ -173,7 +230,7 @@ final class AuthSession extends ChangeNotifier {
   }
 
   Future<void> _resolveEmployeeOrThrow() async {
-    _clearMeCache();
+    _clearMeCache(wipeDisk: false);
     EmployeeContext.clear();
     await _mePort.currentEmployee();
     if (!EmployeeContext.isResolved) {
@@ -184,16 +241,80 @@ final class AuthSession extends ChangeNotifier {
     }
   }
 
-  Future<void> _resetLocal() async {
-    EmployeeContext.clear();
-    _clearMeCache();
-    await _mobileConfig.clearSession();
+  Future<bool> _hydrateOfflineSession() async {
+    final me = _mePort;
+    var employeeOk = EmployeeContext.isResolved;
+    if (!employeeOk && me is ErpMeAdapter) {
+      employeeOk = await me.hydrateFromDisk();
+    }
+    if (!employeeOk) return false;
+
+    if (_mobileConfig.current != null && _mobileConfig.current!.mobileActive) {
+      return true;
+    }
+    return _mobileConfig.hydrateFromCache();
   }
 
-  void _clearMeCache() {
+  Future<void> _resetLocal({required bool wipeDisk}) async {
+    EmployeeContext.clear();
+    _clearMeCache(wipeDisk: wipeDisk);
+    if (wipeDisk) {
+      await _mobileConfig.clearSession();
+    } else {
+      // Keep disk branding/claims; clear only in-memory config pointer if unbound.
+      // Do not delete mobile_app_config.v1 on transport failures.
+    }
+  }
+
+  void _clearMeCache({required bool wipeDisk}) {
     final me = _mePort;
     if (me is ErpMeAdapter) {
-      me.clearCache();
+      me.clearCache(wipeDisk: wipeDisk);
     }
+  }
+
+  bool _isConnectivityFailure(AppFailure e) =>
+      e.code == 'network' || e.code == 'timeout';
+
+  bool _isHardSessionFailure(AppFailure e) {
+    switch (e.code) {
+      case 'unauthorized':
+      case 'employee_unbound':
+      case 'employee_ambiguous':
+      case 'mobile_disabled':
+      case 'forbidden':
+      case 'device_revoked':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void _markConnectivityOffline(String? message) {
+    try {
+      AppLocator.connectivity.markOffline(message);
+    } catch (_) {}
+  }
+
+  /// Prefetch ESS read caches while online so tabs open offline later.
+  void _warmEssCaches() {
+    Future<void>(() async {
+      try {
+        await AppLocator.attendanceRepository.loadToday();
+      } catch (_) {}
+      try {
+        await AppLocator.leaveRepository.loadBalances();
+      } catch (_) {}
+      try {
+        await AppLocator.profileRepository.loadMine();
+      } catch (_) {}
+      try {
+        final body = await AppLocator.dashboard.summary();
+        await AppLocator.cache.write(
+          'ess.dashboard.summary.v1',
+          jsonEncode(body),
+        );
+      } catch (_) {}
+    });
   }
 }

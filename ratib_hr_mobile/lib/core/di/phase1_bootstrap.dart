@@ -58,7 +58,7 @@ void bootstrapEssCore() {
     tokenStore: tokenStore,
     errors: errors,
   );
-  final me = ErpMeAdapter(http: http, errors: errors);
+  final me = ErpMeAdapter(http: http, errors: errors, cache: cache);
   final attendance = ErpAttendanceAdapter(http: http, errors: errors);
   final leave = ErpLeaveAdapter(http: http, errors: errors);
   final notifications = ErpNotificationAdapter(http: http, errors: errors);

@@ -1,11 +1,14 @@
 /// Enterprise ESS dashboard — modern presentation over DashboardPort.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
+import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_app_configuration.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
@@ -23,6 +26,9 @@ class _HomePageState extends State<HomePage> {
   bool _loading = true;
   String? _error;
   Map<String, Object?> _data = {};
+  bool _offlineDegraded = false;
+
+  static const _dashboardCacheKey = 'ess.dashboard.summary.v1';
 
   @override
   void initState() {
@@ -34,9 +40,11 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _loading = true;
       _error = null;
+      _offlineDegraded = false;
     });
     try {
       final body = await AppLocator.dashboard.summary();
+      await _writeDashboardCache(body);
       if (!mounted) return;
       setState(() {
         _data = body;
@@ -44,12 +52,54 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (e) {
       final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      EssFailureUi.signalIfOffline(f);
+      final cached = await _readDashboardCache();
       if (!mounted) return;
+      if (cached != null) {
+        setState(() {
+          _data = cached;
+          _offlineDegraded = true;
+          _loading = false;
+        });
+        return;
+      }
+      if (EssFailureUi.isConnectivity(f) && EmployeeContext.isResolved) {
+        final ctx = EmployeeContext.current!;
+        setState(() {
+          _data = {
+            'employee': {
+              'name': ctx.name ?? '',
+              'employee_code': ctx.employeeCode ?? '',
+              'id': ctx.employeeId,
+            },
+          };
+          _offlineDegraded = true;
+          _loading = false;
+        });
+        return;
+      }
       setState(() {
         _error = EssFailureUi.message(AppLocalizations.of(context), f);
-        EssFailureUi.signalIfOffline(f);
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _writeDashboardCache(Map<String, Object?> body) async {
+    try {
+      await AppLocator.cache.write(_dashboardCacheKey, jsonEncode(body));
+    } catch (_) {}
+  }
+
+  Future<Map<String, Object?>?> _readDashboardCache() async {
+    try {
+      final raw = await AppLocator.cache.read(_dashboardCacheKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return decoded.map((k, v) => MapEntry(k.toString(), v));
+    } catch (_) {
+      return null;
     }
   }
 
@@ -114,6 +164,13 @@ class _HomePageState extends State<HomePage> {
                         bottom: AppSpacing.xxl,
                       ),
                       children: [
+                        if (_offlineDegraded)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: DsGlassTile(
+                              child: Text(l10n.offlineCachedHint),
+                            ),
+                          ),
                         _HeroGreeting(name: name, subtitle: job, l10n: l10n),
                         const SizedBox(height: AppSpacing.md),
                         _QuickActions(l10n: l10n, cfg: cfg),

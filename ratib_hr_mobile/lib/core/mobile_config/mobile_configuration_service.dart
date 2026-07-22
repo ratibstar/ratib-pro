@@ -78,6 +78,18 @@ final class MobileConfigurationService extends ChangeNotifier {
     }
   }
 
+  /// Cold offline start — load last active config without hitting the network.
+  Future<bool> hydrateFromCache() async {
+    lastError = null;
+    final cached = await _readCache();
+    if (cached == null || !cached.mobileActive) {
+      return false;
+    }
+    _current = cached.copyWith(fromCache: true);
+    notifyListeners();
+    return true;
+  }
+
   /// Clears in-memory + disk config on sign-out so next login gets fresh branding.
   Future<void> clearSession() async {
     _current = null;
