@@ -48,7 +48,7 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-offline-f5-latch-v124'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-offline-reliability-v125'));
 assert('online charts never get empty stub', /isCriticalOnlineChartAsset[\s\S]*12000|chartCritical \? 12000/.test(source));
 assert('chart asset miss uses bare fetch online', /Last resort: bare fetch without abort[\s\S]*chartCritical/.test(source));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
@@ -65,6 +65,7 @@ assert('hard offline helper ignores soft latch', source.includes('function isHar
 assert('safe offline admin navigate exists', source.includes('function safeOfflineAdminNavigate'));
 assert('admin document navigate always intercepts', source.includes('function adminDocumentNavigate'));
 assert('offline admin paints within ceiling', /ceilingMs = bareAdmin \? 1800 : 2000/.test(source));
+assert('soft-nav offline miss never returns lean shell', /soft-nav-offline-miss[\s\S]*NEVER return lean inline shell|NEVER return lean inline shell[\s\S]*soft-nav-offline-miss/.test(source));
 assert('soft-offline TTL is short', /CLOUD_DEGRADED_TTL_MS = 5000/.test(source));
 assert('admin nav never bypasses to Chrome interstitial', /ALWAYS respondWith — never fall through to Chrome/.test(source));
 assert('respondWith document gate never rejects', /respondWithDocumentAndReleaseWarmGate[\s\S]{0,800}?\.catch\(function/.test(source));

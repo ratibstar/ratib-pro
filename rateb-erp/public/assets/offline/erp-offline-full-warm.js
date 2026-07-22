@@ -17,9 +17,9 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Bump so every client re-warms full lazy sidebar + expanded module set.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v24';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v24';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v24';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v25';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v25';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v25';
     /** Certified offline-capable module HTML snapshots (lean product sidebar). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -1203,19 +1203,19 @@
             return;
         }
         trackActivity();
-        // After charts (~20s): auto-warm sidebar pages so offline works without starving online refresh.
+        // Script is already delayed by layout (~4s). Start soon — do not add another 20s.
         var idleKick = function () {
             var afterIdle = function () {
                 setTimeout(function () {
                     if (userStillActive()) {
                         kickIdle();
                     }
-                }, 20000);
+                }, 800);
             };
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(afterIdle, { timeout: 30000 });
+                root.requestIdleCallback(afterIdle, { timeout: 4000 });
             } else {
-                setTimeout(afterIdle, 20000);
+                setTimeout(afterIdle, 800);
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -1223,7 +1223,7 @@
         } else if (root.addEventListener) {
             root.addEventListener('load', idleKick, { once: true });
         } else {
-            setTimeout(idleKick, 10000);
+            setTimeout(idleKick, 2000);
         }
     }
 

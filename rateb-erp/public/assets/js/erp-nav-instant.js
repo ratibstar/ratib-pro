@@ -385,16 +385,66 @@
         return tasks.length ? Promise.all(tasks) : Promise.resolve();
     }
 
-    function scheduleModuleScripts(doc) {
-        // Soft OR hard offline: never inject module scripts — hung <script> fetches
-        // jam the browser connection pool after a few soft-navs (sidebar dies).
-        if (isUiOffline()) {
-            return;
+    function loadNewScriptsFromCacheOnly(doc) {
+        if (!root.caches) {
+            return Promise.resolve();
         }
-        // Paint first; start module scripts on next task (not idle — keeps forms interactive).
+        var nodes = doc.querySelectorAll('script[src]');
+        var tasks = [];
+        Array.prototype.forEach.call(nodes, function (s) {
+            var src = s.getAttribute('src');
+            if (!src) {
+                return;
+            }
+            var key = scriptKey(src);
+            if (loadedScripts[key]) {
+                return;
+            }
+            if (COMMON_SCRIPT_RE.test(key) || /erp-nav-instant/i.test(key)) {
+                loadedScripts[key] = true;
+                return;
+            }
+            var abs = src;
+            try {
+                abs = new URL(src, root.location.href).href;
+            } catch (eAbs) { /* ignore */ }
+            tasks.push(root.caches.match(abs, { ignoreSearch: true }).then(function (hit) {
+                if (!hit || !hit.ok) {
+                    return null;
+                }
+                return new Promise(function (resolve) {
+                    var el = document.createElement('script');
+                    var done = false;
+                    var finish = function () {
+                        if (done) {
+                            return;
+                        }
+                        done = true;
+                        loadedScripts[key] = true;
+                        resolve();
+                    };
+                    el.src = abs;
+                    el.async = true;
+                    el.onload = el.onerror = finish;
+                    root.setTimeout(finish, 700);
+                    (document.body || document.documentElement).appendChild(el);
+                });
+            }).catch(function () {
+                return null;
+            }));
+        });
+        return tasks.length ? Promise.all(tasks) : Promise.resolve();
+    }
+
+    function scheduleModuleScripts(doc) {
+        // Soft/hard offline: only inject scripts already in Cache Storage (no network hang).
         var kick = function () {
             try {
-                loadNewScripts(doc);
+                if (isUiOffline()) {
+                    loadNewScriptsFromCacheOnly(doc);
+                } else {
+                    loadNewScripts(doc);
+                }
             } catch (eLoad) { /* ignore */ }
         };
         if (typeof root.setTimeout === 'function') {
@@ -1203,10 +1253,10 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Offline soft-nav miss: stay put — hardNavigate paints lean "وضع عدم الاتصال" menu.
-            // Online miss: full navigation (SW / network) as before.
+            // Soft OR hard offline miss: stay on real Admin chrome — never hardNavigate
+            // into lean "وضع عدم الاتصال" menu (shell_mismatch / cache miss).
             if (!(err && err.message === 'nav_superseded')) {
-                if (isBrowserOffline()) {
+                if (isBrowserOffline() || isUiOffline()) {
                     showNavToast('الصفحة غير محفوظة أوفلاين بعد. افتح النظام وأنت متصل دقيقة ليكتمل التسخين.', false);
                 } else {
                     showSoftNavMissToast(href);

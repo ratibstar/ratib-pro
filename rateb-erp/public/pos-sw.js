@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-f5-latch-v124';
+var SW_BUILD_ID = '20260722-offline-reliability-v125';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -4305,12 +4305,11 @@ self.addEventListener('fetch', function (event) {
         if (swapFlag.indexOf('1') !== -1) {
             event.respondWith(
                 softNavAdminHtml(event.request, url, event).catch(function () {
+                    // NEVER return lean inline shell to soft-nav — that HTML has no
+                    // #rateb-sidebar → shell_mismatch → hardNavigate → black/lean menu.
+                    // Reject so client soft-nav stays on current Admin chrome + toast.
                     if (isHardBrowserOffline() || isCloudBrowserOffline()) {
-                        try {
-                            return erpInlineShellResponse();
-                        } catch (eSoftOff) {
-                            return uncachedAdminBrowseResponse(url);
-                        }
+                        return Promise.reject(new Error('soft-nav-offline-miss'));
                     }
                     return fetch(event.request);
                 })

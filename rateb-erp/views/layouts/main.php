@@ -1944,21 +1944,18 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   afterLoad(function () {
     /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
     loadGuard();
-    /* full-warm: after charts settle (~20s) — avoid starving online refresh */
-    var scheduleWarm = function () {
-      setTimeout(function () {
-        if (window.requestIdleCallback) {
-          window.requestIdleCallback(loadWarm, { timeout: 30000 });
-        } else {
-          loadWarm();
-        }
-      }, 20000);
-    };
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(scheduleWarm, { timeout: 30000 });
-    } else {
-      setTimeout(scheduleWarm, 20000);
-    }
+    /* full-warm: start ~4s after load so offline works without visiting each page.
+     * (Was 20s+20s idle — warm rarely finished before users went offline.) */
+    setTimeout(function () {
+      if (!userActive()) {
+        return;
+      }
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(loadWarm, { timeout: 8000 });
+      } else {
+        loadWarm();
+      }
+    }, 4000);
   });
 })();
 </script>
