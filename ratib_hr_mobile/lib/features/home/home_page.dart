@@ -30,6 +30,8 @@ class _HomePageState extends State<HomePage> {
 
   static const _dashboardCacheKey = 'ess.dashboard.summary.v1';
 
+  bool get _hasContent => _data.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -37,10 +39,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _load() async {
+    final keepContent = _hasContent;
     setState(() {
-      _loading = true;
+      // Pull-to-refresh must not blank the page — RefreshIndicator shows its own spinner.
+      if (!keepContent) {
+        _loading = true;
+      }
       _error = null;
-      _offlineDegraded = false;
     });
     try {
       final body = await AppLocator.dashboard.summary();
@@ -48,22 +53,38 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       setState(() {
         _data = body;
+        _offlineDegraded = false;
         _loading = false;
+        _error = null;
       });
     } catch (e) {
       final f = e is AppFailure ? e : AppLocator.errors.map(e);
       EssFailureUi.signalIfOffline(f);
       final cached = await _readDashboardCache();
       if (!mounted) return;
+
       if (cached != null) {
         setState(() {
           _data = cached;
           _offlineDegraded = true;
           _loading = false;
+          _error = null;
         });
+        _toastOffline();
         return;
       }
+
       if (EssFailureUi.isConnectivity(f) && EmployeeContext.isResolved) {
+        // Keep existing dashboard cards if we already rendered them.
+        if (keepContent) {
+          setState(() {
+            _offlineDegraded = true;
+            _loading = false;
+            _error = null;
+          });
+          _toastOffline();
+          return;
+        }
         final ctx = EmployeeContext.current!;
         setState(() {
           _data = {
@@ -75,14 +96,37 @@ class _HomePageState extends State<HomePage> {
           };
           _offlineDegraded = true;
           _loading = false;
+          _error = null;
         });
         return;
       }
+
+      // Never replace a working screen with a hard error on refresh failure.
+      if (keepContent) {
+        setState(() {
+          _offlineDegraded = EssFailureUi.isConnectivity(f);
+          _loading = false;
+          _error = null;
+        });
+        _toastOffline(message: EssFailureUi.message(AppLocalizations.of(context), f));
+        return;
+      }
+
       setState(() {
         _error = EssFailureUi.message(AppLocalizations.of(context), f);
         _loading = false;
       });
     }
+  }
+
+  void _toastOffline({String? message}) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    DsSnackbar.show(
+      context,
+      message: message ?? l10n.offlineNeedsConnection,
+      kind: DsSnackbarKind.error,
+    );
   }
 
   Future<void> _writeDashboardCache(Map<String, Object?> body) async {

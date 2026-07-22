@@ -59,11 +59,12 @@ class AttendanceState extends ChangeNotifier {
   }
 
   Future<void> loadToday() async {
-    status = AttendanceLoadStatus.loading;
+    final keepReady = status == AttendanceLoadStatus.ready;
+    if (!keepReady) {
+      status = AttendanceLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
-    offlineDegraded = false;
-    fromCache = false;
     notifyListeners();
     try {
       final snap = await _repository.loadToday();
@@ -75,9 +76,14 @@ class AttendanceState extends ChangeNotifier {
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      errorCode = f.code;
-      errorMessage = f.message;
-      status = AttendanceLoadStatus.error;
+      if (keepReady && EssFailureUi.isConnectivity(f)) {
+        offlineDegraded = true;
+        status = AttendanceLoadStatus.ready;
+      } else {
+        errorCode = f.code;
+        errorMessage = f.message;
+        status = AttendanceLoadStatus.error;
+      }
     }
     notifyListeners();
   }

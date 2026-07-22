@@ -21,11 +21,16 @@ class ProfileState extends ChangeNotifier {
   bool fromCache = false;
 
   Future<void> load() async {
-    status = ProfileLoadStatus.loading;
+    final keepReady = status == ProfileLoadStatus.ready;
+    if (!keepReady) {
+      status = ProfileLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
-    offlineDegraded = false;
-    fromCache = false;
+    if (!keepReady) {
+      offlineDegraded = false;
+      fromCache = false;
+    }
     notifyListeners();
     try {
       final snap = await _repository.loadMine();
@@ -36,9 +41,14 @@ class ProfileState extends ChangeNotifier {
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      errorCode = f.code;
-      errorMessage = f.message;
-      status = ProfileLoadStatus.error;
+      if (keepReady && EssFailureUi.isConnectivity(f)) {
+        offlineDegraded = true;
+        status = ProfileLoadStatus.ready;
+      } else {
+        errorCode = f.code;
+        errorMessage = f.message;
+        status = ProfileLoadStatus.error;
+      }
     }
     notifyListeners();
   }

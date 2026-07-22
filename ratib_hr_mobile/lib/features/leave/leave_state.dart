@@ -24,11 +24,16 @@ class LeaveState extends ChangeNotifier {
   bool fromCache = false;
 
   Future<void> loadBalances() async {
-    status = LeaveLoadStatus.loading;
+    final keepReady = status == LeaveLoadStatus.ready;
+    if (!keepReady) {
+      status = LeaveLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
-    offlineDegraded = false;
-    fromCache = false;
+    if (!keepReady) {
+      offlineDegraded = false;
+      fromCache = false;
+    }
     notifyListeners();
     try {
       final snap = await _repository.loadBalances();
@@ -38,6 +43,16 @@ class LeaveState extends ChangeNotifier {
       fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
+      if (keepReady) {
+        final f = EssFailureUi.normalize(e);
+        EssFailureUi.signalIfOffline(f);
+        if (EssFailureUi.isConnectivity(f)) {
+          offlineDegraded = true;
+          status = LeaveLoadStatus.ready;
+          notifyListeners();
+          return;
+        }
+      }
       _setError(e);
     }
     notifyListeners();
