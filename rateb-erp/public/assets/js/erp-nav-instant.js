@@ -649,6 +649,89 @@
         } catch (e3) { /* ignore */ }
     }
 
+    function navLabelForHref(href) {
+        try {
+            var path = new URL(href, root.location.href).pathname.replace(/\/+$/, '');
+            var best = '';
+            var bestLen = 0;
+            document.querySelectorAll('a.rateb-nav-link').forEach(function (a) {
+                var ap = '';
+                var text = '';
+                try {
+                    ap = new URL(a.getAttribute('data-rateb-href') || a.href, root.location.href)
+                        .pathname.replace(/\/+$/, '');
+                    text = (a.textContent || '').replace(/\s+/g, ' ').trim();
+                } catch (e) { return; }
+                if (!ap || !text) {
+                    return;
+                }
+                if (ap === path || (path.indexOf(ap) === 0 && ap.length > bestLen)) {
+                    best = text;
+                    bestLen = ap.length;
+                }
+            });
+            return best;
+        } catch (e2) {
+            return '';
+        }
+    }
+
+    /**
+     * Offline cache miss: still "open" the destination inside the live Admin shell
+     * (sidebar stays). Real HTML is filled later when online warm completes.
+     */
+    function paintOfflinePageStub(href, opts) {
+        opts = opts || {};
+        var curMain = document.querySelector('#rateb-main-content, main.rateb-content');
+        if (!curMain) {
+            return false;
+        }
+        var label = navLabelForHref(href) || 'هذه الصفحة';
+        var path = '';
+        try {
+            path = new URL(href, root.location.href).pathname;
+        } catch (eP) {
+            path = String(href || '');
+        }
+        var titleEl = document.querySelector('.rateb-topbar h1');
+        if (titleEl) {
+            titleEl.textContent = label;
+        }
+        try {
+            document.title = label + ' | نظام رتب ERP';
+        } catch (eT) { /* ignore */ }
+        curMain.innerHTML = ''
+            + '<div class="container-fluid py-4" data-rateb-offline-stub="1" data-rateb-offline-stub-path="'
+            + String(path).replace(/"/g, '&quot;') + '">'
+            + '<div class="rateb-card p-4" style="max-width:40rem;margin:0 auto;text-align:center">'
+            + '<div class="mb-3" style="font-size:2rem;opacity:.85"><i class="fas fa-cloud-moon"></i></div>'
+            + '<h2 class="h4 mb-2">' + String(label).replace(/</g, '&lt;') + '</h2>'
+            + '<p class="text-muted mb-3" style="line-height:1.6">'
+            + 'فتحت الصفحة أوفلاين داخل النظام. النسخة الكاملة والبيانات تُحمَّل تلقائياً '
+            + 'عند الاتصال (أو بعد اكتمال التسخين وأنت متصل).'
+            + '</p>'
+            + '<p class="small text-muted mb-0" dir="ltr" style="opacity:.7">' + String(path).replace(/</g, '&lt;') + '</p>'
+            + '</div></div>';
+        updateActiveNav(href);
+        clearNavPending();
+        if (!opts.replace && !opts.popstate) {
+            try {
+                root.history.pushState({ ratebNav: 1, ratebOfflineStub: 1 }, '', href);
+            } catch (eH) { /* ignore */ }
+        } else if (opts.replace) {
+            try {
+                root.history.replaceState({ ratebNav: 1, ratebOfflineStub: 1 }, '', href);
+            } catch (eR) { /* ignore */ }
+        }
+        lastHref = href;
+        lastSoftNavMissHref = '';
+        try {
+            runLifecycle('afterEnter', { href: href, fromCache: false, offlineStub: true });
+        } catch (eLife) { /* ignore */ }
+        showNavToast('أوفلاين: «' + label + '» مفتوحة — البيانات الكاملة بعد الاتصال.', false);
+        return true;
+    }
+
     function updateActiveNav(href) {
         try {
             var path = new URL(href, root.location.href).pathname.replace(/\/+$/, '');
@@ -1253,27 +1336,13 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Soft OR hard offline miss: stay on real Admin chrome — never hardNavigate
-            // into lean "وضع عدم الاتصال" menu (shell_mismatch / cache miss).
+            // Soft OR hard offline miss: open destination inside current Admin shell
+            // (sidebar stays). Never lean "وضع عدم الاتصال" menu / never trap on previous page.
             if (!(err && err.message === 'nav_superseded')) {
                 if (isBrowserOffline() || isUiOffline()) {
-                    // Restore sidebar highlight to the page still on screen (optimistic
-                    // updateActiveNav already pointed at the failed destination).
-                    try {
-                        updateActiveNav(lastHref || root.location.href);
-                    } catch (eAct) { /* ignore */ }
-                    var destLabel = '';
-                    try {
-                        var uMiss = new URL(href, root.location.href);
-                        var parts = String(uMiss.pathname || '').split('/').filter(Boolean);
-                        destLabel = parts.length ? parts[parts.length - 1] : '';
-                    } catch (eLab) { /* ignore */ }
-                    showNavToast(
-                        destLabel
-                            ? ('تعذر فتح «' + destLabel + '» أوفلاين — بقيت على الصفحة الحالية. وصّل النت دقيقة لإكمال التسخين.')
-                            : 'تعذر فتح الصفحة المطلوبة أوفلاين — بقيت على الصفحة الحالية. وصّل النت دقيقة لإكمال التسخين.',
-                        false
-                    );
+                    if (!paintOfflinePageStub(href, opts)) {
+                        showNavToast('تعذر فتح الصفحة أوفلاين من الشيل الحالي.', true);
+                    }
                 } else {
                     showSoftNavMissToast(href);
                     lastSoftNavMissHref = '';

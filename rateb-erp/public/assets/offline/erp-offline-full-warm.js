@@ -5,21 +5,21 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 280;
-    var CONCURRENCY = 3;
-    var GAP_MS = 100;
+    var MAX_URLS = 320;
+    var CONCURRENCY = 4;
+    var GAP_MS = 80;
     /** Page HTML only — never count CSS/JS toward "offline ready". */
-    var MIN_OK = 40;
+    var MIN_OK = 55;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Bump so every client re-warms full lazy sidebar + expanded module set.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v26';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v26';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v26';
+    // Bump so clients re-warm after offline-stub UX.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v27';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v27';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v27';
     /** Certified offline-capable module HTML snapshots (lean product sidebar). */
     var CERTIFIED_MODULE_RELS = [
         'admin',

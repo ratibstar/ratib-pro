@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-cms-miss-toast-v126';
+var SW_BUILD_ID = '20260722-offline-open-all-v127';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1070,12 +1070,126 @@ function safeOfflineAdminNavigate(request, url, event) {
             }
         }
 
+        function adminHtmlWithOfflineStub(baseHtml, destUrl) {
+            var path = '';
+            try {
+                path = String((destUrl && destUrl.pathname) || '');
+            } catch (eP) {
+                path = '';
+            }
+            var parts = path.split('/').filter(Boolean);
+            var label = parts.length ? parts[parts.length - 1] : 'صفحة';
+            var stubInner = '<div class="container-fluid py-4" data-rateb-offline-stub="1">'
+                + '<div class="rateb-card p-4" style="max-width:40rem;margin:0 auto;text-align:center">'
+                + '<h2 class="h4 mb-2">' + label.replace(/</g, '') + '</h2>'
+                + '<p class="text-muted mb-0" style="line-height:1.6">'
+                + 'فتحت الصفحة أوفلاين داخل النظام. النسخة الكاملة والبيانات تُحمَّل عند الاتصال.'
+                + '</p>'
+                + '<p class="small text-muted mt-3 mb-0" dir="ltr" style="opacity:.7">'
+                + path.replace(/</g, '') + '</p></div></div>';
+            var body = String(baseHtml || '');
+            if (/id=["']rateb-main-content["']/i.test(body)) {
+                body = body.replace(
+                    /(<main[^>]*id=["']rateb-main-content["'][^>]*>)[\s\S]*?(<\/main>)/i,
+                    '$1' + stubInner + '$2'
+                );
+            } else if (/<main[^>]*class=["'][^"']*rateb-content/i.test(body)) {
+                body = body.replace(
+                    /(<main[^>]*class=["'][^"']*rateb-content[^"']*["'][^>]*>)[\s\S]*?(<\/main>)/i,
+                    '$1' + stubInner + '$2'
+                );
+            } else {
+                return null;
+            }
+            body = body.replace(/<title>[^<]*<\/title>/i, '<title>' + label.replace(/</g, '') + ' | RATEB ERP</title>');
+            return body;
+        }
+
+        function finishWithShellStub() {
+            if (settled) {
+                return Promise.resolve(null);
+            }
+            return matchCachedAdminDashboard(url).catch(function () {
+                return null;
+            }).then(function (dash) {
+                if (dash) {
+                    return dash;
+                }
+                // Fallback hubs commonly warmed early.
+                var hubs = [];
+                try {
+                    var origin = (url && url.origin) || self.location.origin;
+                    var base = '/rateb-erp/public/';
+                    try {
+                        base = self.registration.scope;
+                    } catch (eSc) { /* ignore */ }
+                    hubs = [
+                        origin + base.replace(/\/?$/, '/') + 'admin/',
+                        origin + base.replace(/\/?$/, '/') + 'admin/companies',
+                        origin + base.replace(/\/?$/, '/') + 'admin/notifications'
+                    ];
+                } catch (eH) { /* ignore */ }
+                return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+                    var chain = Promise.resolve(null);
+                    hubs.forEach(function (key) {
+                        chain = chain.then(function (found) {
+                            return found || cache.match(key, { ignoreSearch: true }).catch(function () {
+                                return null;
+                            });
+                        });
+                    });
+                    return chain;
+                }).catch(function () {
+                    return null;
+                });
+            }).then(function (hit) {
+                if (!hit || settled) {
+                    return null;
+                }
+                return hit.clone().text().then(function (html) {
+                    if (settled) {
+                        return null;
+                    }
+                    var body = String(html || '');
+                    if (!isValidErpOpsHtmlBody(pageUrl || '', body) || body.length < 8000) {
+                        return null;
+                    }
+                    var stubbed = adminHtmlWithOfflineStub(body, url);
+                    if (!stubbed) {
+                        return null;
+                    }
+                    return new Response(stubbed, {
+                        status: 200,
+                        statusText: 'OK',
+                        headers: {
+                            'Content-Type': 'text/html; charset=utf-8',
+                            'X-Rateb-Offline': '1',
+                            'X-Rateb-Offline-Stub': '1',
+                            'Cache-Control': 'no-store'
+                        }
+                    });
+                }).catch(function () {
+                    return null;
+                });
+            }).then(function (res) {
+                if (res) {
+                    finish(res);
+                    return res;
+                }
+                inlineNow();
+                return null;
+            }).catch(function () {
+                inlineNow();
+                return null;
+            });
+        }
+
         // Offline F5 #2+: Cache.put from prior paint can stall match — give Cache API time.
         // Always use a real ceiling (never leave respondWith pending → black spinner).
         var ceilingMs = bareAdmin ? 1800 : 2000;
         setTimeout(function () {
             if (!settled) {
-                inlineNow();
+                finishWithShellStub();
             }
         }, ceilingMs);
 
@@ -1156,7 +1270,7 @@ function safeOfflineAdminNavigate(request, url, event) {
 
         cacheTry.then(function (ok) {
             if (!ok && !settled) {
-                inlineNow();
+                finishWithShellStub();
             }
         });
     });
