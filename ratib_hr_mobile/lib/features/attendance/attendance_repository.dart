@@ -10,6 +10,7 @@ import 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_state.dart';
 
 final class AttendanceRepository {
@@ -52,8 +53,12 @@ final class AttendanceRepository {
     }
   }
 
-  Future<List<Map<String, Object?>>> loadHistory() {
-    return _attendance.history();
+  Future<EssCachedList> loadHistory() {
+    return EssReadCache.fetchList(
+      key: EssReadCache.attendanceHistory,
+      fetch: () => _attendance.history(),
+      cache: _cache,
+    );
   }
 
   Future<int> pendingOfflineCount() => _pendingCount();

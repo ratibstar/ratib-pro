@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/features/payslips/payslip_repository.dart';
 
 enum PayslipLoadStatus { idle, loading, ready, error }
@@ -19,35 +19,59 @@ class PayslipState extends ChangeNotifier {
   List<Map<String, Object?>> items = const [];
   Map<String, Object?> detail = const {};
   bool downloading = false;
+  bool offlineDegraded = false;
+  bool fromCache = false;
   List<int>? previewBytes;
   String? previewContentType;
   String? previewFilename;
 
   Future<void> loadList() async {
-    status = PayslipLoadStatus.loading;
+    final keepReady = status == PayslipLoadStatus.ready;
+    if (!keepReady) {
+      status = PayslipLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
     notifyListeners();
     try {
-      items = await _repository.loadList();
+      final snap = await _repository.loadList();
+      items = snap.items;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = PayslipLoadStatus.ready;
     } catch (e) {
-      _setError(e);
+      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+        offlineDegraded = true;
+        status = PayslipLoadStatus.ready;
+      } else {
+        _setError(e);
+      }
     }
     notifyListeners();
   }
 
   Future<void> loadDetail(String id) async {
-    status = PayslipLoadStatus.loading;
+    final keepReady = status == PayslipLoadStatus.ready;
+    if (!keepReady) {
+      status = PayslipLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
     previewBytes = null;
     notifyListeners();
     try {
-      detail = await _repository.loadDetail(id);
+      final snap = await _repository.loadDetail(id);
+      detail = snap.data;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = PayslipLoadStatus.ready;
     } catch (e) {
-      _setError(e);
+      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+        offlineDegraded = true;
+        status = PayslipLoadStatus.ready;
+      } else {
+        _setError(e);
+      }
     }
     notifyListeners();
   }
@@ -71,7 +95,13 @@ class PayslipState extends ChangeNotifier {
   }
 
   void _setError(Object e) {
-    final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+    final f = EssFailureUi.normalize(e);
+    EssFailureUi.signalIfOffline(f);
+    if (EssFailureUi.isConnectivity(f)) {
+      offlineDegraded = true;
+      status = PayslipLoadStatus.ready;
+      return;
+    }
     errorCode = f.code;
     errorMessage = f.message;
     status = PayslipLoadStatus.error;

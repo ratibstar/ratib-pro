@@ -1,8 +1,6 @@
 /// Presentation auth + ESS identity + mobile config gate + device + push.
 library;
 
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_me_adapter.dart';
 import 'package:ratib_hr_mobile/core/contracts/auth_port.dart';
@@ -12,6 +10,7 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
 import 'package:ratib_hr_mobile/core/mobile_config/mobile_configuration_service.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 import 'package:ratib_hr_mobile/core/push/push_notification_service.dart';
 
 enum AuthStatus { unknown, signedOut, signedIn }
@@ -296,25 +295,77 @@ final class AuthSession extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Prefetch ESS read caches while online so tabs open offline later.
+  /// Prefetch ALL ESS read caches while online so every screen opens offline
+  /// without requiring the user to visit that screen first.
   void _warmEssCaches() {
     Future<void>(() async {
-      try {
+      Future<void> safe(Future<void> Function() fn) async {
+        try {
+          await fn();
+        } catch (_) {}
+      }
+
+      await safe(() async {
         await AppLocator.attendanceRepository.loadToday();
-      } catch (_) {}
-      try {
+      });
+      await safe(() async {
+        await AppLocator.attendanceRepository.loadHistory();
+      });
+      await safe(() async {
         await AppLocator.leaveRepository.loadBalances();
-      } catch (_) {}
-      try {
+      });
+      await safe(() async {
+        await AppLocator.leaveRepository.loadRequests();
+      });
+      await safe(() async {
         await AppLocator.profileRepository.loadMine();
-      } catch (_) {}
-      try {
+      });
+      await safe(() async {
         final body = await AppLocator.dashboard.summary();
-        await AppLocator.cache.write(
-          'ess.dashboard.summary.v1',
-          jsonEncode(body),
+        await EssReadCache.writeMap(EssReadCache.dashboard, body);
+      });
+      await safe(() async {
+        await AppLocator.documentsRepository.loadList();
+      });
+      await safe(() async {
+        await AppLocator.payslipRepository.loadList();
+      });
+      await safe(() async {
+        await EssReadCache.fetchList(
+          key: EssReadCache.permissionRequests,
+          fetch: () => AppLocator.permissionRequests.listMine(),
         );
-      } catch (_) {}
+      });
+      await safe(() async {
+        await EssReadCache.fetchList(
+          key: EssReadCache.employeeRequests,
+          fetch: () => AppLocator.employeeRequests.listMine(),
+        );
+      });
+      await safe(() async {
+        await EssReadCache.fetchList(
+          key: EssReadCache.notifications,
+          fetch: () => AppLocator.notifications.listFiltered(''),
+        );
+      });
+      await safe(() async {
+        await EssReadCache.fetchMap(
+          key: EssReadCache.ratings,
+          fetch: () => AppLocator.ratings.summary(),
+        );
+      });
+      await safe(() async {
+        await EssReadCache.fetchList(
+          key: EssReadCache.inquiries,
+          fetch: () => AppLocator.inquiries.listMine(),
+        );
+      });
+      await safe(() async {
+        await EssReadCache.fetchMap(
+          key: EssReadCache.payments,
+          fetch: () => AppLocator.payments.list(),
+        );
+      });
     });
   }
 }

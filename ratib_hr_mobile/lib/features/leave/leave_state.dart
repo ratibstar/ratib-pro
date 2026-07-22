@@ -59,30 +59,52 @@ class LeaveState extends ChangeNotifier {
   }
 
   Future<void> loadRequests() async {
-    status = LeaveLoadStatus.loading;
+    final keepReady = status == LeaveLoadStatus.ready;
+    if (!keepReady) {
+      status = LeaveLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
     notifyListeners();
     try {
-      requests = await _repository.loadRequests();
-      pendingOfflineCount = await _repository.pendingOfflineCount();
+      final snap = await _repository.loadRequests();
+      requests = snap.requests;
+      pendingOfflineCount = snap.pendingOfflineCount;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
-      _setError(e);
+      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+        offlineDegraded = true;
+        status = LeaveLoadStatus.ready;
+      } else {
+        _setError(e);
+      }
     }
     notifyListeners();
   }
 
   Future<void> loadDetail(String id) async {
-    status = LeaveLoadStatus.loading;
+    final keepReady = status == LeaveLoadStatus.ready;
+    if (!keepReady) {
+      status = LeaveLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
     notifyListeners();
     try {
-      detail = await _repository.loadDetail(id);
+      final snap = await _repository.loadDetail(id);
+      detail = snap.data;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
-      _setError(e);
+      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+        offlineDegraded = true;
+        status = LeaveLoadStatus.ready;
+      } else {
+        _setError(e);
+      }
     }
     notifyListeners();
   }

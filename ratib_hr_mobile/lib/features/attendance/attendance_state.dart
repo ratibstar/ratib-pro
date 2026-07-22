@@ -89,27 +89,35 @@ class AttendanceState extends ChangeNotifier {
   }
 
   Future<void> loadHistory() async {
-    status = AttendanceLoadStatus.loading;
+    final keepReady = status == AttendanceLoadStatus.ready;
+    if (!keepReady) {
+      status = AttendanceLoadStatus.loading;
+    }
     errorCode = null;
     errorMessage = null;
     notifyListeners();
     try {
-      history = await _repository.loadHistory();
+      final historySnap = await _repository.loadHistory();
+      history = historySnap.items;
       final snap = await _repository.loadToday();
       pendingOfflineCount = snap.pendingOfflineCount;
-      offlineDegraded = snap.offlineDegraded;
-      fromCache = snap.fromCache;
+      offlineDegraded = historySnap.offlineDegraded || snap.offlineDegraded;
+      fromCache = historySnap.fromCache || snap.fromCache;
       status = AttendanceLoadStatus.ready;
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      // History is online-only; still surface pending + degraded today if possible.
-      try {
-        pendingOfflineCount = await _repository.pendingOfflineCount();
-      } catch (_) {}
-      errorCode = f.code;
-      errorMessage = f.message;
-      status = AttendanceLoadStatus.error;
+      if (keepReady && EssFailureUi.isConnectivity(f)) {
+        offlineDegraded = true;
+        status = AttendanceLoadStatus.ready;
+      } else {
+        try {
+          pendingOfflineCount = await _repository.pendingOfflineCount();
+        } catch (_) {}
+        errorCode = f.code;
+        errorMessage = f.message;
+        status = AttendanceLoadStatus.error;
+      }
     }
     notifyListeners();
   }

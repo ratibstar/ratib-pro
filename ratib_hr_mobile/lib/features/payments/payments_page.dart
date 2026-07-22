@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -19,6 +20,7 @@ class PaymentsPage extends StatefulWidget {
 class _PaymentsPageState extends State<PaymentsPage> {
   bool _loading = true;
   String? _error;
+  bool _offlineDegraded = false;
   Map<String, Object?> _data = {};
 
   @override
@@ -28,23 +30,28 @@ class _PaymentsPageState extends State<PaymentsPage> {
   }
 
   Future<void> _load() async {
+    final keep = _data.isNotEmpty;
     setState(() {
-      _loading = true;
+      if (!keep) _loading = true;
       _error = null;
     });
     try {
-      final body = await AppLocator.payments.list();
+      final snap = await EssReadCache.fetchMap(
+        key: EssReadCache.payments,
+        fetch: () => AppLocator.payments.list(),
+      );
       if (!mounted) return;
       setState(() {
-        _data = body;
+        _data = snap.data;
+        _offlineDegraded = snap.offlineDegraded;
         _loading = false;
       });
     } catch (e) {
-      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       if (!mounted) return;
       setState(() {
-        _error = EssFailureUi.message(AppLocalizations.of(context), f);
-        EssFailureUi.signalIfOffline(f);
+        _offlineDegraded = EssFailureUi.isConnectivity(f);
         _loading = false;
       });
     }
@@ -59,19 +66,17 @@ class _PaymentsPageState extends State<PaymentsPage> {
       title: l10n.navPayments,
       body: _loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _error != null
-              ? DsErrorState(
-                  title: l10n.genericLoadFailed,
-                  message: _error,
-                  actionLabel: l10n.homeRetry,
-                  onAction: _load,
-                )
-              : RefreshIndicator(
+          : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
                     children: [
+                      if (_offlineDegraded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: DsGlassTile(child: Text(l10n.offlineCachedHint)),
+                        ),
                       DsSectionHeader(title: l10n.paymentsSalary),
                       DsCard(
                         child: Row(

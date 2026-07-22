@@ -114,10 +114,12 @@ void bootstrapEssCore() {
   final attendanceRepository = AttendanceRepository(
     attendance: attendance,
     offlineQueue: offlineQueue,
+    cache: cache,
   );
   final leaveRepository = LeaveRepository(
     leave: leave,
     offlineQueue: offlineQueue,
+    cache: cache,
   );
   AppLocator.registerPhaseD(
     offlineQueue: offlineQueue,
@@ -129,13 +131,13 @@ void bootstrapEssCore() {
   AppLocator.registerPhaseF(
     payslips: payslips,
     documents: documents,
-    payslipRepository: PayslipRepository(payslips: payslips),
-    documentsRepository: DocumentsRepository(documents: documents),
+    payslipRepository: PayslipRepository(payslips: payslips, cache: cache),
+    documentsRepository: DocumentsRepository(documents: documents, cache: cache),
   );
   final profile = ErpProfileAdapter(http: http, errors: errors);
   AppLocator.registerPhaseG(
     profile: profile,
-    profileRepository: ProfileRepository(profile: profile),
+    profileRepository: ProfileRepository(profile: profile, cache: cache),
   );
   final connectivity = ConnectivityController(http: http);
   final offlineSync = OfflineSyncService(

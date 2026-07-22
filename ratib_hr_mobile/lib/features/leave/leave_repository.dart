@@ -10,6 +10,7 @@ import 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/identity/employee_context.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 
 final class LeaveRepository {
   LeaveRepository({
@@ -51,18 +52,56 @@ final class LeaveRepository {
     }
   }
 
-  Future<List<Map<String, Object?>>> loadRequests() => _leave.status();
-
-  Future<Map<String, Object?>> loadDetail(String id) {
-    if (_leave is ErpLeaveAdapter) {
-      return _leave.detail(id);
-    }
-    return _leave.status().then((rows) {
-      for (final r in rows) {
-        if ((r['id'] ?? '').toString() == id) return r;
+  Future<LeaveRequestsSnapshot> loadRequests() async {
+    try {
+      final rows = await _leave.status();
+      await EssReadCache.writeList(EssReadCache.leaveRequests, rows, cache: _cache);
+      final pending = await pendingOfflineCount();
+      return LeaveRequestsSnapshot(
+        requests: rows,
+        pendingOfflineCount: pending,
+      );
+    } on AppFailure catch (e) {
+      if (EssReadCache.isConnectivity(e)) {
+        EssReadCache.markOffline(e.message);
+        final pending = await pendingOfflineCount();
+        final cached =
+            await EssReadCache.readList(EssReadCache.leaveRequests, cache: _cache);
+        return LeaveRequestsSnapshot(
+          requests: cached ?? const [],
+          pendingOfflineCount: pending,
+          fromCache: cached != null && cached.isNotEmpty,
+          offlineDegraded: true,
+        );
       }
-      return <String, Object?>{};
-    });
+      rethrow;
+    }
+  }
+
+  Future<EssCachedMap> loadDetail(String id) async {
+    try {
+      Map<String, Object?> row;
+      if (_leave is ErpLeaveAdapter) {
+        row = await _leave.detail(id);
+      } else {
+        final rows = await _leave.status();
+        row = EssReadCache.findById(rows, id) ?? <String, Object?>{};
+      }
+      return EssCachedMap(data: row);
+    } on AppFailure catch (e) {
+      if (EssReadCache.isConnectivity(e)) {
+        EssReadCache.markOffline(e.message);
+        final cached =
+            await EssReadCache.readList(EssReadCache.leaveRequests, cache: _cache);
+        final hit = cached == null ? null : EssReadCache.findById(cached, id);
+        return EssCachedMap(
+          data: hit ?? const {},
+          fromCache: hit != null,
+          offlineDegraded: true,
+        );
+      }
+      rethrow;
+    }
   }
 
   /// Online apply; on network failure enqueue `leave_request.draft` only.
@@ -196,6 +235,20 @@ final class LeaveBalancesSnapshot {
   });
 
   final List<Map<String, Object?>> balances;
+  final int pendingOfflineCount;
+  final bool fromCache;
+  final bool offlineDegraded;
+}
+
+final class LeaveRequestsSnapshot {
+  const LeaveRequestsSnapshot({
+    required this.requests,
+    required this.pendingOfflineCount,
+    this.fromCache = false,
+    this.offlineDegraded = false,
+  });
+
+  final List<Map<String, Object?>> requests;
   final int pendingOfflineCount;
   final bool fromCache;
   final bool offlineDegraded;

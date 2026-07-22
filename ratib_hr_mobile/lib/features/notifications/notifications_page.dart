@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -39,6 +40,7 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   bool _loading = true;
   String? _error;
+  bool _offlineDegraded = false;
   String _filter = _NotifCategory.all;
   List<Map<String, Object?>> _items = const [];
 
@@ -49,24 +51,40 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _load() async {
+    final keep = _items.isNotEmpty;
     setState(() {
-      _loading = true;
+      if (!keep) _loading = true;
       _error = null;
     });
     try {
-      final rows = await AppLocator.notifications.listFiltered(_filter);
+      // Always warm the full list; filter client-side so offline works without re-fetch.
+      final snap = await EssReadCache.fetchList(
+        key: EssReadCache.notifications,
+        fetch: () => AppLocator.notifications.listFiltered(''),
+      );
       if (!mounted) return;
+      final rows = snap.items;
+      final filtered = _filter.isEmpty
+          ? rows
+          : rows
+              .where((e) => (e['type'] ?? e['category'] ?? '')
+                  .toString()
+                  .toLowerCase()
+                  .contains(_filter))
+              .toList();
       setState(() {
-        _items = rows;
+        _items = filtered;
+        _offlineDegraded = snap.offlineDegraded;
         _loading = false;
       });
     } catch (e) {
-      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       if (!mounted) return;
       setState(() {
-        _error = EssFailureUi.message(AppLocalizations.of(context), f);
-        EssFailureUi.signalIfOffline(f);
+        _offlineDegraded = EssFailureUi.isConnectivity(f);
         _loading = false;
+        if (!keep) _items = const [];
       });
     }
   }
@@ -161,22 +179,38 @@ class _NotificationsPageState extends State<NotificationsPage> {
           Expanded(
             child: _loading
                 ? DsLoadingState(message: l10n.genericLoading)
-                : _error != null
-                    ? DsErrorState(
-                        title: l10n.genericLoadFailed,
-                        message: _error,
-                        actionLabel: l10n.homeRetry,
-                        onAction: _load,
-                      )
-                    : _items.isEmpty
-                        ? DsEmptyState(title: l10n.homeNoNotifications)
+                : _items.isEmpty
+                        ? Column(
+                            children: [
+                              if (_offlineDegraded)
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: DsGlassTile(
+                                    child: Text(l10n.offlineCachedHint),
+                                  ),
+                                ),
+                              Expanded(
+                                child: DsEmptyState(
+                                  title: l10n.homeNoNotifications,
+                                ),
+                              ),
+                            ],
+                          )
                         : RefreshIndicator(
                             onRefresh: _load,
                             child: ListView.builder(
                               padding: const EdgeInsets.only(bottom: 24),
-                              itemCount: _items.length,
+                              itemCount: _items.length + (_offlineDegraded ? 1 : 0),
                               itemBuilder: (context, i) {
-                                final row = _items[i];
+                                if (_offlineDegraded && i == 0) {
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                                    child: DsGlassTile(
+                                      child: Text(l10n.offlineCachedHint),
+                                    ),
+                                  );
+                                }
+                                final row = _items[_offlineDegraded ? i - 1 : i];
                                 final unread = row['is_read'] != true &&
                                     row['is_read'] != 1 &&
                                     row['is_read'] != '1';

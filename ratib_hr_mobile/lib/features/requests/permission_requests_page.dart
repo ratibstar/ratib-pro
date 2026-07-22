@@ -6,6 +6,7 @@ import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
+import 'package:ratib_hr_mobile/core/offline/ess_read_cache.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -25,6 +26,7 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
   bool _busy = false;
   bool _loading = true;
   String? _error;
+  bool _offlineDegraded = false;
   List<Map<String, Object?>> _items = const [];
 
   @override
@@ -46,24 +48,30 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   Future<void> _load() async {
+    final keep = _items.isNotEmpty;
     setState(() {
-      _loading = true;
+      if (!keep) _loading = true;
       _error = null;
     });
     try {
-      final rows = await AppLocator.permissionRequests.listMine();
+      final snap = await EssReadCache.fetchList(
+        key: EssReadCache.permissionRequests,
+        fetch: () => AppLocator.permissionRequests.listMine(),
+      );
       if (!mounted) return;
       setState(() {
-        _items = rows;
+        _items = snap.items;
+        _offlineDegraded = snap.offlineDegraded;
         _loading = false;
       });
     } catch (e) {
-      final f = e is AppFailure ? e : AppLocator.errors.map(e);
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       if (!mounted) return;
       setState(() {
-        _error = EssFailureUi.message(AppLocalizations.of(context), f);
-        EssFailureUi.signalIfOffline(f);
+        _offlineDegraded = EssFailureUi.isConnectivity(f);
         _loading = false;
+        if (!keep) _items = const [];
       });
     }
   }
@@ -267,17 +275,14 @@ class _PermissionRequestsPageState extends State<PermissionRequestsPage> {
                 padding: const EdgeInsets.all(24),
                 child: DsLoadingState(message: l10n.genericLoading),
               )
-            else if (_error != null)
-              DsErrorState(
-                title: l10n.genericLoadFailed,
-                message: _error,
-                actionLabel: l10n.homeRetry,
-                onAction: _load,
-              )
             else if (_items.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(l10n.permissionRequestsEmpty),
+                child: Text(
+                  _offlineDegraded
+                      ? l10n.offlineCachedHint
+                      : l10n.permissionRequestsEmpty,
+                ),
               )
             else
               for (final row in _items)
