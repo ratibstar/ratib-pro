@@ -203,6 +203,15 @@ final class AdminApprovalsController extends Controller
         $svc = new ApprovalOversightService();
         $summary = $svc->summary($companyFilter);
         SessionManager::set('rateb_oversight_approvals_seen', (int) ($summary['total'] ?? 0));
+        // Warm nav badges from this page's summary — avoid a second COUNT storm in the layout.
+        try {
+            SessionManager::set('rateb_oversight_menu_counts', [
+                'exp' => time() + 300,
+                'data' => $svc->menuCountsFromSummary($summary),
+            ]);
+        } catch (\Throwable $e) {
+            // Best-effort badge warm.
+        }
         $formPath = $typeFilter === 'companies'
             ? 'admin/oversight/companies-approvals'
             : 'admin/oversight/approvals';
@@ -348,6 +357,11 @@ final class AdminApprovalsController extends Controller
         try {
             SessionManager::forget('rateb_oversight_menu_counts');
             SessionManager::forget('rateb_oversight_approvals_seen');
+            SessionManager::forget('rateb_approval_summary_v1_0');
+            $cid = (int) $this->input('company_id', 0);
+            if ($cid > 0) {
+                SessionManager::forget('rateb_approval_summary_v1_' . $cid);
+            }
         } catch (\Throwable $e) {
             // Ignore cache clear failures.
         }
@@ -373,8 +387,12 @@ final class AdminApprovalsController extends Controller
             if ($ok && $svc !== null) {
                 try {
                     $filterCompany = $companyId > 0 ? $companyId : null;
-                    $payload['summary'] = $svc->summary($filterCompany);
-                    $payload['menu_counts'] = $svc->menuCounts(null);
+                    $payload['summary'] = $svc->summary($filterCompany, true);
+                    $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
+                    SessionManager::set('rateb_oversight_menu_counts', [
+                        'exp' => time() + 300,
+                        'data' => $payload['menu_counts'],
+                    ]);
                 } catch (\Throwable $e) {
                     // Counts are progressive enhancement for live UI refresh.
                 }

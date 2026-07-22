@@ -40,14 +40,64 @@ final class ApprovalOversightService
     }
 
     /** @return array<string, int> */
-    public function summary(?int $companyFilter = null): array
+    public function summary(?int $companyFilter = null, bool $bypassCache = false): array
     {
-        $this->ensureAccountingSubmitSchema();
+        // Never ALTER schema on list/count GET — that blocked oversight pages for tens of seconds.
+        $cid = ($companyFilter !== null && $companyFilter > 0) ? (int) $companyFilter : 0;
+        $sessionKey = 'rateb_approval_summary_v1_' . $cid;
+        if (!$bypassCache) {
+            $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
+            if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
+                /** @var array<string, int> $cached */
+                $cached = $raw['data'];
+                return $cached;
+            }
+        }
         $counts = [];
         foreach ($this->sources() as $key => $source) {
             $counts[$key] = $this->countSource($source, $companyFilter);
         }
         $counts['total'] = array_sum($counts);
+        try {
+            \Rateb\App\Core\SessionManager::set($sessionKey, [
+                'exp' => time() + 60,
+                'data' => $counts,
+            ]);
+        } catch (\Throwable $e) {
+            // Session warm is best-effort.
+        }
+        return $counts;
+    }
+
+    /**
+     * Derive sidebar menu badges from a summary() payload (no extra COUNTs).
+     *
+     * @param array<string, int> $summary
+     * @return array{approvals:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,company_pending:int,total:int}
+     */
+    public function menuCountsFromSummary(array $summary): array
+    {
+        $counts = [
+            'approvals' => 0,
+            'procurement' => 0,
+            'rfq' => 0,
+            'inventory' => 0,
+            'supplier_evaluations' => 0,
+            'company_pending' => 0,
+        ];
+        foreach ($this->sources() as $key => $source) {
+            if ($key === 'workflow_instance') {
+                $counts['approvals'] += (int) ($summary[$key] ?? 0);
+                continue;
+            }
+            $n = (int) ($summary[$key] ?? 0);
+            $menu = self::menuKeyForSource($key);
+            $counts[$menu] += $n;
+            if ($key === 'company_registration') {
+                $counts['company_pending'] = $n;
+            }
+        }
+        $counts['total'] = (int) ($summary['total'] ?? array_sum($counts));
         return $counts;
     }
 
@@ -353,7 +403,7 @@ final class ApprovalOversightService
      */
     public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200): array
     {
-        $this->ensureAccountingSubmitSchema();
+        // Never ALTER schema on list GET — approve/reject paths ensure columns when needed.
         $items = [];
         $perSource = max(10, (int) ceil($limit / max(1, count($this->sources()))));
         foreach ($this->sources() as $key => $source) {
