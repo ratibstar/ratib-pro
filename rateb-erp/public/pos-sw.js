@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-reliability-v125';
+var SW_BUILD_ID = '20260722-offline-cms-miss-toast-v126';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2684,6 +2684,17 @@ function warmErpOfflineShell(opts) {
         'admin/branches',
         'admin/customers',
         'admin/cms',
+        'admin/cms/pages',
+        'admin/cms/page-builder',
+        'admin/cms/leads',
+        'admin/cms/blog-articles',
+        'admin/cms/newsletter',
+        'admin/cms/media',
+        'admin/cms/seo',
+        'admin/cms/faqs',
+        'admin/cms/testimonials',
+        'admin/cms/theme',
+        'admin/cms/about',
         'admin/executive-dashboard',
         'admin/reports',
         'admin/cfo'
@@ -2746,7 +2757,10 @@ function warmErpOfflineShell(opts) {
         'admin/ops/journal-entries',
         'admin/ops/contracts',
         'admin/ops/assets',
-        'admin/cms'
+        'admin/cms',
+        'admin/cms/newsletter',
+        'admin/cms/leads',
+        'admin/cms/pages'
     ];
     function warmLeanOpsList(list, gapMs) {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {

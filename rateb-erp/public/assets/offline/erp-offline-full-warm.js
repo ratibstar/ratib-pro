@@ -17,9 +17,9 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Bump so every client re-warms full lazy sidebar + expanded module set.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v25';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v25';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v25';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v26';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v26';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v26';
     /** Certified offline-capable module HTML snapshots (lean product sidebar). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -34,6 +34,17 @@
         'admin/branches',
         'admin/customers',
         'admin/cms',
+        'admin/cms/pages',
+        'admin/cms/page-builder',
+        'admin/cms/leads',
+        'admin/cms/blog-articles',
+        'admin/cms/newsletter',
+        'admin/cms/media',
+        'admin/cms/seo',
+        'admin/cms/faqs',
+        'admin/cms/testimonials',
+        'admin/cms/theme',
+        'admin/cms/about',
         'admin/executive-dashboard',
         'admin/reports',
         'admin/cfo',

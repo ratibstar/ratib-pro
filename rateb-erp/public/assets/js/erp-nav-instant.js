@@ -1257,7 +1257,23 @@
             // into lean "وضع عدم الاتصال" menu (shell_mismatch / cache miss).
             if (!(err && err.message === 'nav_superseded')) {
                 if (isBrowserOffline() || isUiOffline()) {
-                    showNavToast('الصفحة غير محفوظة أوفلاين بعد. افتح النظام وأنت متصل دقيقة ليكتمل التسخين.', false);
+                    // Restore sidebar highlight to the page still on screen (optimistic
+                    // updateActiveNav already pointed at the failed destination).
+                    try {
+                        updateActiveNav(lastHref || root.location.href);
+                    } catch (eAct) { /* ignore */ }
+                    var destLabel = '';
+                    try {
+                        var uMiss = new URL(href, root.location.href);
+                        var parts = String(uMiss.pathname || '').split('/').filter(Boolean);
+                        destLabel = parts.length ? parts[parts.length - 1] : '';
+                    } catch (eLab) { /* ignore */ }
+                    showNavToast(
+                        destLabel
+                            ? ('تعذر فتح «' + destLabel + '» أوفلاين — بقيت على الصفحة الحالية. وصّل النت دقيقة لإكمال التسخين.')
+                            : 'تعذر فتح الصفحة المطلوبة أوفلاين — بقيت على الصفحة الحالية. وصّل النت دقيقة لإكمال التسخين.',
+                        false
+                    );
                 } else {
                     showSoftNavMissToast(href);
                     lastSoftNavMissHref = '';
