@@ -1174,25 +1174,47 @@ if (!$ratebLocalAppliance) {
      * while SW negotiate a fresh document (user saw black after refresh / لوحة التحكم). */
   }
   window.__RATEB_ASSET_BUILD__ = NEED;
-  // Stale SW: soft update only — never forced reload (startup spin loops).
+  // Stale SW: activate new worker + one safe reload so online /admin bypass takes effect.
   try {
     if ('serviceWorker' in navigator && navigator.onLine !== false) {
       navigator.serviceWorker.getRegistrations().then(function (regs) {
         (regs || []).forEach(function (reg) {
-          var script = '';
           try {
-            script = (reg.active && reg.active.scriptURL) || (reg.waiting && reg.waiting.scriptURL) || '';
-          } catch (eS) { script = ''; }
-          if (script && script.indexOf(NEED) === -1) {
-            try {
-              if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-              if (typeof reg.update === 'function') reg.update();
-            } catch (eU) {}
-          }
+            if (typeof reg.update === 'function') {
+              reg.update();
+            }
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            if (reg.active) {
+              reg.active.postMessage({ type: 'CLIENTS_CLAIM' });
+              reg.active.postMessage({ type: 'RATEB_CLOUD_ONLINE' });
+            }
+          } catch (eU) {}
         });
       }).catch(function () {});
-      /* Never auto-reload on controllerchange / cache-bust messages — that caused
-       * the black /admin tab after F5 (document unload while SW fetch hung). */
+      var reloadKey = 'rateb_sw_bypass_reload_' + NEED;
+      try {
+        if (!sessionStorage.getItem(reloadKey) && navigator.serviceWorker.controller) {
+          var ctrlUrl = '';
+          try {
+            ctrlUrl = String(navigator.serviceWorker.controller.scriptURL || '');
+          } catch (eUrl) { ctrlUrl = ''; }
+          if (ctrlUrl && ctrlUrl.indexOf('v108') === -1 && ctrlUrl.indexOf(NEED) === -1) {
+            sessionStorage.setItem(reloadKey, '1');
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              try {
+                location.reload();
+              } catch (eRel) { /* ignore */ }
+            }, { once: true });
+            navigator.serviceWorker.getRegistration().then(function (reg) {
+              if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            }).catch(function () {});
+          }
+        }
+      } catch (eReload) { /* ignore */ }
     }
   } catch (eForce) {}
   window.__RATEB_SW_READY_GATE__ = Promise.resolve({ reload: false, bump: prev !== NEED });

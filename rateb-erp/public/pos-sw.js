@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-admin-refresh-cache-clone-v107';
+var SW_BUILD_ID = '20260722-admin-nav-bypass-v108';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -28,7 +28,8 @@ var LAST_PROTECTED_CACHE_RESULT = null;
  * Without this, hung fetch() (no Abort) freezes the SW → minutes of black Admin.
  */
 var cloudDegradedUntil = 0;
-var CLOUD_DEGRADED_TTL_MS = 45000;
+/** Soft-offline latch for assets only — was 45s and poisoned every /admin refresh into a black cache path. */
+var CLOUD_DEGRADED_TTL_MS = 5000;
 
 /**
  * Phase OD — assets that MUST exist in Cache Storage before offline use.
@@ -2643,7 +2644,8 @@ function clearCloudNetworkDegraded() {
 
 /**
  * Cloud tab with no internet — use cache/shell fail-fast.
- * Includes soft-offline latch (Wi‑Fi dead, navigator.onLine still true).
+ * Soft-offline latch (Wi‑Fi dead, navigator.onLine still true) is for ASSETS only.
+ * Document navigations must NOT use the latch — false positives caused minutes of black /admin.
  * Never true on local appliance (PHP built-in server is still up).
  */
 function isCloudBrowserOffline() {
@@ -2654,6 +2656,18 @@ function isCloudBrowserOffline() {
         return true;
     }
     return Date.now() < cloudDegradedUntil;
+}
+
+/** Hard offline only — ignore soft latch (used for navigate/document FetchEvents). */
+function isHardBrowserOffline() {
+    if (isLocalApplianceOrigin()) {
+        return false;
+    }
+    try {
+        return !!(self.navigator && self.navigator.onLine === false);
+    } catch (eOff) {
+        return false;
+    }
 }
 
 /** Offline must not wait on hanging fetch(); online uses AbortController race. */
@@ -3909,6 +3923,12 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname)) {
+            // ONLINE / soft-latch: do NOT intercept — browser loads live HTML.
+            // Soft-offline latch used to force the empty-cache offline path → pure black «تحديث».
+            if (!isHardBrowserOffline()) {
+                releaseBackgroundWarmAfterFirstDocument();
+                return;
+            }
             respondWithDocumentAndReleaseWarmGate(
                 event,
                 navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
@@ -3922,13 +3942,9 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         // Soft-online non-admin: still use cache safety. Offline non-admin: fast fallback.
-        if (!isCloudBrowserOffline()) {
-            respondWithDocumentAndReleaseWarmGate(
-                event,
-                navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
-                    return erpInlineShellResponse();
-                })
-            );
+        if (!isHardBrowserOffline()) {
+            // Online: do not intercept non-admin HTML either (same black-screen class of bugs).
+            releaseBackgroundWarmAfterFirstDocument();
             return;
         }
     }

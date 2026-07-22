@@ -48,7 +48,7 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-admin-refresh-cache-clone-v107'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-admin-nav-bypass-v108'));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 assert('F5 clones response before deferred Cache.put', /Clone NOW[\s\S]*toCache = response\.clone\(\)[\s\S]*setTimeout/.test(source));
 assert('ops HTML put deferred past second F5', /setTimeout\(function \(\) \{[\s\S]*putErpOpsHtmlResponse[\s\S]*\}, 400\)/.test(source));
@@ -58,7 +58,9 @@ assert('offline finish flattens Promise responses', /Resolving a nested Promise 
 assert('offline header stamp is sync when body exists', /Sync stamp when body is readable[\s\S]*return new Response\(response\.body/.test(source));
 assert('navigate fetch aborts on timeout', /function fetchNavigateNetwork[\s\S]*AbortController[\s\S]*markCloudNetworkDegraded/.test(source));
 assert('soft-offline latch from client message', source.includes("data.type === 'RATEB_CLOUD_OFFLINE'"));
-assert('bare /admin soft-online uses passthrough on cache miss', /bareAdminPath[\s\S]*fetchNavigateNetworkPassthrough\(request, 8000\)/.test(source));
+assert('hard offline helper ignores soft latch', source.includes('function isHardBrowserOffline'));
+assert('online admin navigate bypasses SW intercept', /isHardBrowserOffline\(\)[\s\S]*releaseBackgroundWarmAfterFirstDocument\(\)[\s\S]*return;/.test(source));
+assert('soft-offline TTL is short', /CLOUD_DEGRADED_TTL_MS = 5000/.test(source));
 
 // Simulated cache recovery contract: invalid body must not be re-cached by put path.
 assert(
