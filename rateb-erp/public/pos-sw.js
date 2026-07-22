@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-admin-nav-bypass-v108';
+var SW_BUILD_ID = '20260722-offline-admin-shell-v109';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1011,6 +1011,126 @@ function neverFailNavigate(request, url) {
                 { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
             );
         }
+    });
+}
+
+/**
+ * Offline / soft-latch admin document navigate — always paint within ~250ms.
+ * Never leave respondWith pending (pure black tab). Prefer validated cache, else inline shell.
+ */
+function safeOfflineAdminNavigate(request, url, event) {
+    var pageUrl = '';
+    try {
+        pageUrl = String((request && request.url) || (url && url.href) || '');
+    } catch (e0) {
+        pageUrl = '';
+    }
+    var bareAdmin = false;
+    try {
+        bareAdmin = /\/admin$/i.test(String((url && url.pathname) || '').replace(/\/+$/, ''));
+    } catch (e1) {
+        bareAdmin = false;
+    }
+
+    return new Promise(function (resolve) {
+        var settled = false;
+        function finish(res) {
+            if (settled || !res) {
+                return;
+            }
+            Promise.resolve(res).then(function (real) {
+                if (settled || !real || typeof real.status !== 'number') {
+                    return;
+                }
+                settled = true;
+                resolve(real);
+            }).catch(function () { /* ignore */ });
+        }
+
+        function inlineNow() {
+            try {
+                finish(erpInlineShellResponse());
+            } catch (eShell) {
+                try {
+                    finish(uncachedAdminBrowseResponse(url));
+                } catch (eUn) {
+                    finish(new Response(
+                        '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                        + '<meta name="color-scheme" content="dark"><title>وضع عدم الاتصال</title></head>'
+                        + '<body style="margin:0;font-family:system-ui;background:#0f1117;color:#e8eaed;'
+                        + 'display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:2rem">'
+                        + '<div><h1>وضع عدم الاتصال</h1><p>افتح لوحة التحكم وأنت متصل مرة واحدة لحفظ الصفحة.</p></div>'
+                        + '</body></html>',
+                        { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+                    ));
+                }
+            }
+        }
+
+        // Absolute ceiling — never black for more than 250ms offline.
+        setTimeout(function () {
+            if (!settled) {
+                inlineNow();
+            }
+        }, 250);
+
+        function acceptCached(hit) {
+            if (!hit || settled) {
+                return Promise.resolve(null);
+            }
+            return hit.clone().text().then(function (html) {
+                if (settled) {
+                    return null;
+                }
+                var body = String(html || '');
+                if (!isValidErpOpsHtmlBody(pageUrl || (url && url.href) || '', body)) {
+                    return null;
+                }
+                // Thin / broken snapshots paint black (title only from prior tab) — skip them.
+                if (body.length < 8000) {
+                    return null;
+                }
+                var headers = new Headers({
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'X-Rateb-Offline': '1',
+                    'X-Rateb-Ops-Page': '1',
+                    'Cache-Control': 'no-store'
+                });
+                return new Response(body, { status: 200, statusText: 'OK', headers: headers });
+            }).catch(function () {
+                return null;
+            });
+        }
+
+        var cacheTry = matchSoftOnlineExactCache(request, url).catch(function () {
+            return null;
+        }).then(function (hit) {
+            return acceptCached(hit);
+        }).then(function (ok) {
+            if (ok) {
+                finish(ok);
+                return ok;
+            }
+            if (!bareAdmin) {
+                return null;
+            }
+            return matchCachedAdminDashboard(url).then(function (dash) {
+                return acceptCached(dash);
+            }).then(function (ok2) {
+                if (ok2) {
+                    finish(ok2);
+                }
+                return ok2;
+            });
+        }).catch(function () {
+            return null;
+        });
+
+        cacheTry.then(function (ok) {
+            if (!ok && !settled) {
+                inlineNow();
+            }
+        });
     });
 }
 
@@ -3923,27 +4043,27 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname)) {
-            // ONLINE / soft-latch: do NOT intercept — browser loads live HTML.
-            // Soft-offline latch used to force the empty-cache offline path → pure black «تحديث».
-            if (!isHardBrowserOffline()) {
+            // Truly online (onLine + no soft latch): bypass SW — live PHP, no black wait.
+            // Hard offline OR soft-latch (Wi‑Fi dead, onLine still true): MUST intercept —
+            // otherwise Chrome hangs the document fetch → pure black «تحديث» offline.
+            if (!isHardBrowserOffline() && !isCloudBrowserOffline()) {
                 releaseBackgroundWarmAfterFirstDocument();
                 return;
             }
             respondWithDocumentAndReleaseWarmGate(
                 event,
-                navigateErpCloudWithCacheSafety(event.request, url, event).catch(function () {
+                safeOfflineAdminNavigate(event.request, url, event).catch(function () {
                     try {
-                        return uncachedAdminBrowseResponse(url);
-                    } catch (eAdminFinal) {
                         return erpInlineShellResponse();
+                    } catch (eAdminFinal) {
+                        return uncachedAdminBrowseResponse(url);
                     }
                 })
             );
             return;
         }
-        // Soft-online non-admin: still use cache safety. Offline non-admin: fast fallback.
-        if (!isHardBrowserOffline()) {
-            // Online: do not intercept non-admin HTML either (same black-screen class of bugs).
+        // Soft-online non-admin: bypass. Soft-latch / hard offline: cache safety below.
+        if (!isHardBrowserOffline() && !isCloudBrowserOffline()) {
             releaseBackgroundWarmAfterFirstDocument();
             return;
         }

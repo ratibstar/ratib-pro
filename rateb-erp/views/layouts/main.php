@@ -1200,7 +1200,7 @@ if (!$ratebLocalAppliance) {
           try {
             ctrlUrl = String(navigator.serviceWorker.controller.scriptURL || '');
           } catch (eUrl) { ctrlUrl = ''; }
-          if (ctrlUrl && ctrlUrl.indexOf('v108') === -1 && ctrlUrl.indexOf(NEED) === -1) {
+          if (ctrlUrl && ctrlUrl.indexOf('v109') === -1 && ctrlUrl.indexOf(NEED) === -1) {
             sessionStorage.setItem(reloadKey, '1');
             navigator.serviceWorker.addEventListener('controllerchange', function () {
               try {
