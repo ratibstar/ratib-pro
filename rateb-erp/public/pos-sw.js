@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-auto-offline-pages-v115';
+var SW_BUILD_ID = '20260722-fix-second-f5-shell-v116';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1067,17 +1067,28 @@ function safeOfflineAdminNavigate(request, url, event) {
             }
         }
 
-        // Absolute ceiling — never black for more than 250ms offline.
+        // Bare /admin needs longer — Cache.put warm storms made 2nd F5 miss within 250ms.
+        var ceilingMs = bareAdmin ? 1200 : 400;
         setTimeout(function () {
             if (!settled) {
                 inlineNow();
             }
-        }, 250);
+        }, ceilingMs);
 
         function acceptCached(hit) {
             if (!hit || settled) {
                 return Promise.resolve(null);
             }
+            try {
+                if (hit.headers && String(hit.headers.get('X-Rateb-Inline-Shell') || '') === '1') {
+                    try {
+                        caches.open(ERP_OPS_PAGE_CACHE).then(function (c) {
+                            return c.delete(pageUrl || (url && url.href) || '');
+                        }).catch(function () { return null; });
+                    } catch (eDel) { /* ignore */ }
+                    return Promise.resolve(null);
+                }
+            } catch (eHdr) { /* ignore */ }
             return hit.clone().text().then(function (html) {
                 if (settled) {
                     return null;
@@ -1086,7 +1097,6 @@ function safeOfflineAdminNavigate(request, url, event) {
                 if (!isValidErpOpsHtmlBody(pageUrl || (url && url.href) || '', body)) {
                     return null;
                 }
-                // Thin / broken snapshots paint black (title only from prior tab) — skip them.
                 if (body.length < 8000) {
                     return null;
                 }
@@ -1102,26 +1112,22 @@ function safeOfflineAdminNavigate(request, url, event) {
             });
         }
 
-        var cacheTry = matchSoftOnlineExactCache(request, url).catch(function () {
+        // Prefer real dashboard snapshot for bare /admin before any other key.
+        var cacheTry = (bareAdmin
+            ? matchCachedAdminDashboard(url).then(function (dash) {
+                return acceptCached(dash).then(function (ok) {
+                    return ok || matchSoftOnlineExactCache(request, url).then(acceptCached);
+                });
+            })
+            : matchSoftOnlineExactCache(request, url).then(acceptCached)
+        ).catch(function () {
             return null;
-        }).then(function (hit) {
-            return acceptCached(hit);
         }).then(function (ok) {
             if (ok) {
                 finish(ok);
                 return ok;
             }
-            if (!bareAdmin) {
-                return null;
-            }
-            return matchCachedAdminDashboard(url).then(function (dash) {
-                return acceptCached(dash);
-            }).then(function (ok2) {
-                if (ok2) {
-                    finish(ok2);
-                }
-                return ok2;
-            });
+            return null;
         }).catch(function () {
             return null;
         });
@@ -1263,7 +1269,12 @@ function isValidErpOpsHtmlBody(pageUrl, html) {
         || /^<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())) {
         return false;
     }
-    var hasShell = /rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-pos-register|rateb-pos-register-config|لوحة التحكم/i.test(body);
+    var hasShell = /rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-rateb-app|data-pos-register|rateb-pos-register-config/i.test(body);
+    // Never treat the lean offline menu (erpInlineShell) as a real Admin snapshot.
+    if (/X-Rateb-Inline-Shell|data-rateb-inline-shell|<title>\s*RATEB ERP\s*[—\-]\s*Offline\s*<\/title>|وضع عدم الاتصال/i.test(body.slice(0, 2500))
+        && !/rateb-sidebar|__RATEB_ERP_SHELL/i.test(body)) {
+        return false;
+    }
     var isPosReg = /\/(?:admin\/ops\/)?pos(\/register)?$/i.test(pageUrl)
         && body.length >= 2500
         && /data-pos-register(?:\s|=|>)/i.test(body)
@@ -2396,9 +2407,8 @@ function matchCachedAdminDashboard(url) {
     });
 }
 
-/** Seed bare /admin keys with inline nav shell so offline home never shows «غير محفوظة». */
-function seedAdminHomeOfflineFallback() {
-    var res = erpInlineShellResponse();
+/** Purge lean offline menu that was wrongly stored under /admin ops keys (2nd F5 poison). */
+function purgeInlineShellFromAdminKeys() {
     var keys = [];
     try {
         keys.push(new URL('admin', self.registration.scope).href);
@@ -2410,18 +2420,33 @@ function seedAdminHomeOfflineFallback() {
     } catch (e1) { /* ignore */ }
     return caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
         return Promise.all(keys.filter(Boolean).map(function (key) {
-            return cache.match(key).then(function (existing) {
-                if (existing) {
+            return cache.match(key).then(function (hit) {
+                if (!hit) {
                     return null;
                 }
-                return cache.put(key, res.clone()).catch(function () { return null; });
-            }).catch(function () {
-                return cache.put(key, res.clone()).catch(function () { return null; });
-            });
+                try {
+                    if (String(hit.headers.get('X-Rateb-Inline-Shell') || '') === '1') {
+                        return cache.delete(key);
+                    }
+                } catch (eH) { /* ignore */ }
+                return hit.clone().text().then(function (html) {
+                    var body = String(html || '');
+                    if (!isValidErpOpsHtmlBody(key, body)
+                        || (/وضع عدم الاتصال/i.test(body) && !/rateb-sidebar/i.test(body))) {
+                        return cache.delete(key);
+                    }
+                    return null;
+                }).catch(function () { return null; });
+            }).catch(function () { return null; });
         }));
     }).catch(function () {
         return null;
     });
+}
+
+/** Legacy no-op — never seed thin inline shell into /admin ops keys. */
+function seedAdminHomeOfflineFallback() {
+    return purgeInlineShellFromAdminKeys();
 }
 
 function matchOfflineShellOrInline(request) {
