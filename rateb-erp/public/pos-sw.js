@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-auto-warm-pages-v113';
+var SW_BUILD_ID = '20260722-charts-before-warm-v114';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2662,8 +2662,7 @@ function warmErpOfflineShell(opts) {
     return ensureProtectedOfflineCache({ force: true }).then(function (protectedResult) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
-                // Never await HTML warm here — Cache API puts blocked F5 (black screen).
-                // Start after a short delay so the user's current navigation finishes first.
+                // HTML warm starts later so online /admin Chart.js paints first.
                 setTimeout(function () {
                     warmLeanOpsList(leanOpsCritical, 80).then(function () {
                         var rest = leanOps.filter(function (rel) {
@@ -2671,7 +2670,7 @@ function warmErpOfflineShell(opts) {
                         });
                         return warmLeanOpsList(rest, 150);
                     }).catch(function () { return null; });
-                }, 1200);
+                }, 20000);
                 return protectedResult;
             });
         }).then(function (result) {

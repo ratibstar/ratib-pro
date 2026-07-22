@@ -1092,16 +1092,31 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     if (document.readyState === 'complete') idleStart();
     else window.addEventListener('load', idleStart, { once: true });
   }
-  afterInteraction(function () {
-    chain(idleQueue, 0, function () {
-      if (chartQueue.length) {
-        if (window.requestIdleCallback) {
-          window.requestIdleCallback(function () { chain(chartQueue, 0); }, { timeout: 6000 });
-        } else {
-          setTimeout(function () { chain(chartQueue, 0); }, 800);
-        }
+  /* Dashboard charts BEFORE idleQueue — waiting behind bootstrap/lang left black canvases. */
+  function bootChartsNow() {
+    try {
+      if (typeof window.ratebChartsBoot === 'function') {
+        window.ratebChartsBoot();
       }
-    });
+      if (typeof window.ratebDashboardChartsBoot === 'function') {
+        window.ratebDashboardChartsBoot();
+      }
+    } catch (eBoot) { /* ignore */ }
+  }
+  if (chartQueue.length) {
+    var startCharts = function () {
+      chain(chartQueue, 0, bootChartsNow);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(startCharts, 0);
+      }, { once: true });
+    } else {
+      setTimeout(startCharts, 0);
+    }
+  }
+  afterInteraction(function () {
+    chain(idleQueue, 0);
   });
 })();
 </script><?php
@@ -1908,20 +1923,20 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   afterLoad(function () {
     /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
     loadGuard();
-    /* full-warm: start within a few seconds so offline pages work without visiting each one */
+    /* full-warm: AFTER first paint/charts — never compete with online dashboard Chart.js */
     var scheduleWarm = function () {
       setTimeout(function () {
         if (window.requestIdleCallback) {
-          window.requestIdleCallback(loadWarm, { timeout: 8000 });
+          window.requestIdleCallback(loadWarm, { timeout: 30000 });
         } else {
           loadWarm();
         }
-      }, 2500);
+      }, 45000);
     };
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(scheduleWarm, { timeout: 8000 });
+      window.requestIdleCallback(scheduleWarm, { timeout: 60000 });
     } else {
-      setTimeout(scheduleWarm, 2000);
+      setTimeout(scheduleWarm, 45000);
     }
   });
 })();

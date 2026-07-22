@@ -1095,19 +1095,19 @@
             return;
         }
         trackActivity();
-        // Auto-warm soon after load so offline works without visiting every page.
+        // Delay page warm so online dashboard Chart.js is not starved (was 2.5s).
         var idleKick = function () {
             var afterIdle = function () {
                 setTimeout(function () {
                     if (userStillActive()) {
                         kickIdle();
                     }
-                }, 2500);
+                }, 45000);
             };
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(afterIdle, { timeout: 8000 });
+                root.requestIdleCallback(afterIdle, { timeout: 60000 });
             } else {
-                setTimeout(afterIdle, 3000);
+                setTimeout(afterIdle, 45000);
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -1115,7 +1115,7 @@
         } else if (root.addEventListener) {
             root.addEventListener('load', idleKick, { once: true });
         } else {
-            setTimeout(idleKick, 4000);
+            setTimeout(idleKick, 50000);
         }
     }
 
