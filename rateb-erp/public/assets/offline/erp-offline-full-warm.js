@@ -1117,7 +1117,7 @@
             return;
         }
         trackActivity();
-        // After charts (~8s): auto-warm sidebar pages so offline works without visiting each one.
+        // After charts (~20s): auto-warm sidebar pages so offline works without starving online refresh.
         var idleKick = function () {
             var afterIdle = function () {
                 setTimeout(function () {
@@ -1125,6 +1125,20 @@
                         kickIdle();
                     }
                 }, 20000);
+            };
+            if (typeof root.requestIdleCallback === 'function') {
+                root.requestIdleCallback(afterIdle, { timeout: 30000 });
+            } else {
+                setTimeout(afterIdle, 20000);
+            }
+        };
+        if (root.document && root.document.readyState === 'complete') {
+            idleKick();
+        } else if (root.addEventListener) {
+            root.addEventListener('load', idleKick, { once: true });
+        } else {
+            setTimeout(idleKick, 10000);
+        }
     }
 
     root.RatebOfflineFullWarm = {
