@@ -5,47 +5,25 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 120;
+    var MAX_URLS = 280;
     var CONCURRENCY = 3;
-    var GAP_MS = 120;
-    var MIN_OK = 20;
+    var GAP_MS = 100;
+    /** Page HTML only — never count CSS/JS toward "offline ready". */
+    var MIN_OK = 40;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Bump so every client re-warms the full sidebar for offline-without-visit.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v23';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v23';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v23';
-    /** Certified offline-capable module HTML snapshots (Phase OH). */
+    // Bump so every client re-warms full lazy sidebar + expanded module set.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v24';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v24';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v24';
+    /** Certified offline-capable module HTML snapshots (lean product sidebar). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
         'admin/',
-        'admin/hr',
-        'admin/hr/attendance',
-        'admin/hr/holidays',
-        'admin/hr/leaves',
-        'admin/hr/employees',
-        'admin/hr/departments',
-        'admin/hr/job-titles',
-        'admin/hr/workplaces',
-        'admin/hr/permission-requests',
-        'admin/ops/inventory',
-        'admin/ops/warehouses',
-        'admin/ops/purchase-requests',
-        'admin/ops/purchase-orders',
-        'admin/ops/suppliers',
-        'admin/ops/stock-movements',
-        'admin/ops/journal-entries',
-        'admin/ops/access-control',
-        'admin/ops/access-control/matrix',
-        'admin/ops/accounting',
-        'admin/ops/pos/register',
-        'admin/ops/branch-dashboard',
-        'admin/ops/notifications',
-        'admin/accounting',
         'admin/companies',
         'admin/company-permissions',
         'admin/agency-updates',
@@ -59,15 +37,99 @@
         'admin/executive-dashboard',
         'admin/reports',
         'admin/cfo',
+        'admin/accounting',
         'admin/oversight/approvals',
         'admin/oversight/companies-approvals',
         'admin/oversight/procurement',
         'admin/oversight/rfq',
         'admin/oversight/inventory',
         'admin/oversight/supplier-evaluations',
+        'admin/hr',
+        'admin/hr/employees',
+        'admin/hr/departments',
+        'admin/hr/job-titles',
+        'admin/hr/holidays',
+        'admin/hr/workplaces',
+        'admin/hr/permission-requests',
+        'admin/hr/attendance',
+        'admin/hr/attendance/bulk',
+        'admin/hr/reports',
+        'admin/hr/leaves',
+        'admin/hr/leave-types',
+        'admin/hr/leaves/balances',
+        'admin/hr/reports/leaves',
+        'admin/hr/loans',
+        'admin/hr/loan-types',
+        'admin/hr/payroll',
+        'admin/hr/payroll/components',
+        'admin/hr/payroll/structure',
+        'admin/hr/documents',
+        'admin/hr/requests',
+        'admin/hr/fleet',
+        'admin/ops/branch-dashboard',
+        'admin/ops/branch-financial',
+        'admin/ops/branch-dashboard/compare',
+        'admin/ops/branch-dashboard/reports',
+        'admin/ops/branch-transfers',
+        'admin/ops/purchase-requests',
+        'admin/ops/purchase-orders',
+        'admin/ops/rfq',
+        'admin/ops/quotations',
+        'admin/ops/inventory',
+        'admin/ops/warehouses',
+        'admin/ops/warehouse-transfers',
+        'admin/ops/inventory-batches',
+        'admin/ops/inventory-audits',
+        'admin/ops/inventory-forecast',
+        'admin/ops/stock-movements',
+        'admin/ops/product-categories',
+        'admin/ops/suppliers',
+        'admin/ops/supplier-comms',
+        'admin/ops/supplier-evaluations',
+        'admin/ops/supplier-classifications',
+        'admin/ops/supplier-kpi',
+        'admin/ops/pos/register',
+        'admin/ops/journal-entries',
+        'admin/ops/accounting',
+        'admin/ops/accounting/cfo-dashboard',
+        'admin/ops/accounting/accounts-receivable',
+        'admin/ops/accounting/accounts-payable',
+        'admin/ops/accounting/reports',
+        'admin/ops/chart-of-accounts',
+        'admin/ops/accounting/coa-tree',
+        'admin/ops/cash-vouchers',
+        'admin/ops/accounting/supplier-payments',
+        'admin/ops/fiscal-periods',
+        'admin/ops/cost-centers',
+        'admin/ops/bank-accounts',
+        'admin/ops/accounting/bank-reconciliation',
+        'admin/ops/accounting-control',
+        'admin/ops/reports/cost-analysis',
+        'admin/ops/reports/inventory-valuation',
+        'admin/ops/asset-depreciation',
         'admin/ops/contracts',
+        'admin/ops/contract-renewals',
+        'admin/ops/tenders',
         'admin/ops/assets',
-        'admin/ops/contract-renewals'
+        'admin/ops/asset-maintenance',
+        'admin/ops/asset-assignments',
+        'admin/ops/medical-devices',
+        'admin/ops/device-maintenance',
+        'admin/ops/device-spare-parts',
+        'admin/ops/device-warranty',
+        'admin/ops/reports/procurement',
+        'admin/ops/reports/kpi',
+        'admin/ops/reports/supplier-performance',
+        'admin/ops/documents',
+        'admin/ops/access-control',
+        'admin/ops/access-control/matrix',
+        'admin/ops/roles',
+        'admin/ops/permissions',
+        'admin/ops/audit-logs',
+        'admin/ops/notifications',
+        'admin/ops/support-tickets',
+        'admin/ops/email-templates',
+        'admin/ops/sms-templates'
     ];
     var deadWarmUrls = {};
     var running = false;
@@ -391,16 +453,31 @@
         if (!root.document) {
             return;
         }
-        var links = root.document.querySelectorAll(
+        function harvest(anchors) {
+            Array.prototype.forEach.call(anchors, function (a) {
+                var raw = String(a.getAttribute('href') || '').trim();
+                if (!raw || raw === '#' || /^javascript:/i.test(raw)) {
+                    return;
+                }
+                pushUrl(seen, out, raw);
+            });
+        }
+        harvest(root.document.querySelectorAll(
             'aside.rateb-sidebar a[href], #rateb-sidebar a[href], nav a.rateb-nav-link[href], a.rateb-nav-link[href]'
-        );
-        Array.prototype.forEach.call(links, function (a) {
-            var raw = String(a.getAttribute('href') || '').trim();
-            if (!raw || raw === '#' || /^javascript:/i.test(raw)) {
-                return;
+        ));
+        // PERF-P3: collapsed groups keep links in <template data-rateb-nav-lazy> — must warm those too.
+        Array.prototype.forEach.call(
+            root.document.querySelectorAll('template[data-rateb-nav-lazy]'),
+            function (tpl) {
+                try {
+                    var frag = tpl.content || null;
+                    if (!frag) {
+                        return;
+                    }
+                    harvest(frag.querySelectorAll('a[href]'));
+                } catch (eTpl) { /* ignore */ }
             }
-            pushUrl(seen, out, raw);
-        });
+        );
     }
 
     /** Table "+ Create" / edit pencil links — warm without visiting each row online. */
@@ -446,13 +523,7 @@
     /** Allowlist warm disabled by default — it sprayed 400+ URLs and 404/500 noise.
      *  Enable with ?rateb_warm_full=1 when needed. */
     function loadAllowlistUrls(seen, out) {
-        try {
-            if (!/[?&]rateb_warm_full=1(?:&|$)/.test(String(root.location.search || ''))) {
-                return Promise.resolve(out);
-            }
-        } catch (eQ) {
-            return Promise.resolve(out);
-        }
+        // Always merge product allowlist routes (was gated on ?rateb_warm_full=1 and never ran).
         var url = publicBase() + 'assets/offline/ops-page-allowlist.json';
         var SKIP_LOGICAL = /^(recruitment|crm|projects|eam|eproc|mfg|qms|dms|bi|payroll|hrm)(\/|$)/i;
         return root.fetch(url, {
@@ -950,57 +1021,61 @@
             var seen = {};
             var urls = [];
             assetUrls.forEach(function (u) { seen[u] = true; });
-            // Sidebar first — every visible Admin link, so offline works without visiting each page.
-            collectSidebarUrls(seen, urls);
+            // Priority: certified hubs first, then full sidebar (incl. lazy templates), then allowlist.
             seedCoreUrls(seen, urls);
-            var posFirst = [
-                root.location.origin + publicBase() + 'admin/ops/pos/register',
-                root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
-                root.location.origin + publicBase() + 'admin/ops/access-control',
-                root.location.origin + publicBase() + 'admin/ops/accounting',
-                root.location.origin + publicBase() + 'admin/accounting',
-                root.location.origin + publicBase() + 'admin/ops/journal-entries',
-                root.location.origin + publicBase() + 'admin/ops/purchase-requests',
-                root.location.origin + publicBase() + 'admin/ops/inventory',
-                root.location.origin + publicBase() + 'admin/ops/warehouses',
-                root.location.origin + publicBase() + 'admin/hr/attendance',
-                root.location.origin + publicBase() + 'admin/ops/suppliers',
-                root.location.origin + publicBase() + 'admin/hr/employees',
-                root.location.origin + publicBase() + 'admin/notifications',
-                root.location.origin + publicBase() + 'admin/ops/notifications',
-                root.location.origin + publicBase() + 'admin/users',
-                root.location.origin + publicBase() + 'admin/branches',
-                root.location.origin + publicBase() + 'admin/customers',
-                root.location.origin + publicBase() + 'admin/cms',
-                root.location.origin + publicBase() + 'admin/executive-dashboard',
-                root.location.origin + publicBase() + 'admin/reports',
-                root.location.origin + publicBase() + 'admin/cfo',
-                root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
-                root.location.origin + publicBase() + 'admin/oversight/approvals',
-                root.location.origin + publicBase() + 'admin/agency-updates',
-                root.location.origin + publicBase() + 'admin/companies',
-                root.location.origin + publicBase() + 'admin/ops/stock-movements',
-                root.location.origin + publicBase() + 'admin/ops/branch-dashboard',
-                root.location.origin + publicBase() + 'admin/ops/contracts',
-                root.location.origin + publicBase() + 'admin/ops/assets'
-            ];
-            posFirst.forEach(function (u) {
-                pushUrl(seen, urls, u);
-            });
-            collectActionUrls(seen, urls);
-            return Promise.resolve(urls).then(function (list) {
+            collectSidebarUrls(seen, urls);
+            return loadAllowlistUrls(seen, urls).then(function (list) {
+                var posFirst = [
+                    root.location.origin + publicBase() + 'admin/ops/pos/register',
+                    root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
+                    root.location.origin + publicBase() + 'admin/ops/access-control',
+                    root.location.origin + publicBase() + 'admin/ops/accounting',
+                    root.location.origin + publicBase() + 'admin/accounting',
+                    root.location.origin + publicBase() + 'admin/ops/journal-entries',
+                    root.location.origin + publicBase() + 'admin/ops/purchase-requests',
+                    root.location.origin + publicBase() + 'admin/ops/inventory',
+                    root.location.origin + publicBase() + 'admin/ops/warehouses',
+                    root.location.origin + publicBase() + 'admin/ops/warehouse-transfers',
+                    root.location.origin + publicBase() + 'admin/hr/holidays',
+                    root.location.origin + publicBase() + 'admin/hr/attendance',
+                    root.location.origin + publicBase() + 'admin/ops/suppliers',
+                    root.location.origin + publicBase() + 'admin/hr/employees',
+                    root.location.origin + publicBase() + 'admin/hr/leaves',
+                    root.location.origin + publicBase() + 'admin/notifications',
+                    root.location.origin + publicBase() + 'admin/ops/notifications',
+                    root.location.origin + publicBase() + 'admin/users',
+                    root.location.origin + publicBase() + 'admin/branches',
+                    root.location.origin + publicBase() + 'admin/customers',
+                    root.location.origin + publicBase() + 'admin/cms',
+                    root.location.origin + publicBase() + 'admin/executive-dashboard',
+                    root.location.origin + publicBase() + 'admin/reports',
+                    root.location.origin + publicBase() + 'admin/cfo',
+                    root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
+                    root.location.origin + publicBase() + 'admin/oversight/approvals',
+                    root.location.origin + publicBase() + 'admin/agency-updates',
+                    root.location.origin + publicBase() + 'admin/companies',
+                    root.location.origin + publicBase() + 'admin/ops/stock-movements',
+                    root.location.origin + publicBase() + 'admin/ops/branch-dashboard',
+                    root.location.origin + publicBase() + 'admin/ops/contracts',
+                    root.location.origin + publicBase() + 'admin/ops/assets'
+                ];
+                posFirst.forEach(function (u) {
+                    pushUrl(seen, list, u);
+                });
+                collectActionUrls(seen, list);
+                deriveCreateUrls(seen, list);
                 warmQueueSeen = seen;
                 warmQueueList = list;
-                progress.ok = assetStats.ok || 0;
-                progress.finished = assetStats.ok || 0;
-                ensureProgressUi(list.length + (assetStats.total || 0));
+                progress.ok = 0;
+                progress.finished = 0;
+                ensureProgressUi(list.length);
                 try {
                     console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
                 } catch (eLog) { /* ignore */ }
                 return runQueue(list, { concurrency: CONCURRENCY, gapMs: GAP_MS, signal: signal }).then(function (pageStats) {
                     return {
                         total: (assetStats.total || 0) + (pageStats.total || 0),
-                        ok: (assetStats.ok || 0) + (pageStats.ok || 0),
+                        ok: pageStats.ok || 0,
                         aborted: !!pageStats.aborted,
                         assetsOk: assetStats.ok || 0,
                         pagesOk: pageStats.ok || 0
@@ -1011,7 +1086,8 @@
             warmQueueSeen = null;
             warmQueueList = null;
             if (!stats.aborted) {
-                markWarmed(stats.ok || 0);
+                // TTL skip must use HTML page count only (never assets).
+                markWarmed(stats.pagesOk != null ? stats.pagesOk : (stats.ok || 0));
             } else {
                 pendingResume = true;
             }
@@ -1027,8 +1103,8 @@
                         box2.textContent = 'توقف التسخين: ' + (stats.ok || 0) + '/' + (stats.total || 0) + ' — وصّل النت ليُكمل تلقائياً';
                         box2.style.background = '#7f1d1d';
                     } else {
-                        box2.textContent = 'أوفلاين جاهز: ' + (stats.ok || 0) + '/' + (stats.total || 0);
-                        box2.style.background = (stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
+                        box2.textContent = 'أوفلاين جاهز: ' + (stats.pagesOk || stats.ok || 0) + ' صفحة محفوظة';
+                        box2.style.background = (stats.pagesOk || stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
                         setTimeout(function () {
                             try { box2.remove(); } catch (eR) { /* ignore */ }
                         }, 8000);
@@ -1051,10 +1127,15 @@
                 killInFlightFetches();
                 stopWarmBannerIfOffline();
             });
-            // Phase OH — do NOT abort certified HTML warm on every sidebar click
-            // (that previously left only /admin/ cached). Abort on leave/offline only.
+            // Abort only on real document leave; resume after pageshow if still online.
             root.addEventListener('pagehide', function () {
                 killInFlightFetches();
+                pendingResume = true;
+            });
+            root.addEventListener('pageshow', function () {
+                if (pendingResume && !isBrowserOffline()) {
+                    setTimeout(function () { run(true); }, 2500);
+                }
             });
             root.addEventListener('online', function () {
                 if (pendingResume) {
