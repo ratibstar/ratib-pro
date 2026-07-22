@@ -48,7 +48,7 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-fix-online-charts-v117'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-offline-hr-holidays-v121'));
 assert('online charts never get empty stub', /isCriticalOnlineChartAsset[\s\S]*12000|chartCritical \? 12000/.test(source));
 assert('chart asset miss uses bare fetch online', /Last resort: bare fetch without abort[\s\S]*chartCritical/.test(source));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
@@ -63,13 +63,14 @@ assert('soft-offline latch from client message', source.includes("data.type === 
 assert('hard offline helper ignores soft latch', source.includes('function isHardBrowserOffline'));
 assert('safe offline admin navigate exists', source.includes('function safeOfflineAdminNavigate'));
 assert('admin document navigate always intercepts', source.includes('function adminDocumentNavigate'));
-assert('offline admin paints within ceiling', /ceilingMs = bareAdmin \? 1200 : 400/.test(source));
+assert('offline admin paints within ceiling', /ceilingMs = bareAdmin \? 1200 : \(isHardBrowserOffline\(\) \? 1600 : 400\)/.test(source));
 assert('soft-offline TTL is short', /CLOUD_DEGRADED_TTL_MS = 5000/.test(source));
 assert('admin nav never bypasses to Chrome interstitial', /ALWAYS respondWith — never fall through to Chrome/.test(source));
 assert('respondWith document gate never rejects', /respondWithDocumentAndReleaseWarmGate[\s\S]{0,800}?\.catch\(function/.test(source));
 assert('SW warms agency-updates for offline', /leanOpsCritical[\s\S]*admin\/agency-updates/.test(source));
 assert('SW warms companies-approvals for offline', source.includes("'admin/oversight/companies-approvals'"));
 assert('SW HTML warm delayed for online charts', /HTML warm ~8s after shell assets[\s\S]*8000/.test(source));
+assert('SW warms hr/holidays for offline', /leanOpsCritical[\s\S]*admin\/hr\/holidays/.test(source));
 assert('SW warms accounting hub', /leanOpsCritical[\s\S]*admin\/ops\/accounting/.test(source));
 assert('rejects inline offline shell as ops HTML', /Never treat the lean offline menu[\s\S]*return false/.test(source));
 assert('purges inline shell from admin keys', source.includes('function purgeInlineShellFromAdminKeys'));

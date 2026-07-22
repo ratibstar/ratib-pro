@@ -24,6 +24,7 @@ return [
         'inventory',
         'warehouses',
         'hr/attendance',
+        'hr/holidays',
         'hr/leaves',
         'purchase-requests',
         'purchase-orders',

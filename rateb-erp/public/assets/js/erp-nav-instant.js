@@ -1193,11 +1193,16 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Soft-nav miss: full navigation (SW serves warmed HTML / shell offline).
+            // Offline soft-nav miss: stay put — hardNavigate paints lean "وضع عدم الاتصال" menu.
+            // Online miss: full navigation (SW / network) as before.
             if (!(err && err.message === 'nav_superseded')) {
-                showSoftNavMissToast(href);
-                lastSoftNavMissHref = '';
-                hardNavigate(href);
+                if (isBrowserOffline()) {
+                    showNavToast('الصفحة غير محفوظة أوفلاين بعد. افتح النظام وأنت متصل دقيقة ليكتمل التسخين.', false);
+                } else {
+                    showSoftNavMissToast(href);
+                    lastSoftNavMissHref = '';
+                    hardNavigate(href);
+                }
             }
             return false;
         }).then(function (ok) {

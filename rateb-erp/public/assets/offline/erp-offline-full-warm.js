@@ -16,17 +16,22 @@
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
     // Bump so every client re-warms the full sidebar for offline-without-visit.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v22';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v22';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v22';
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v23';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v23';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v23';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
         'admin/',
         'admin/hr',
         'admin/hr/attendance',
+        'admin/hr/holidays',
         'admin/hr/leaves',
         'admin/hr/employees',
+        'admin/hr/departments',
+        'admin/hr/job-titles',
+        'admin/hr/workplaces',
+        'admin/hr/permission-requests',
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/purchase-requests',

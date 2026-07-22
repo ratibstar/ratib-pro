@@ -188,7 +188,8 @@
             { href: ops + 'product-categories', label: 'تصنيفات المنتجات' },
             { href: ops + 'suppliers', label: 'الموردون' },
             { href: ops + 'hr/attendance', label: 'الحضور' },
-            { href: ops + 'hr/leaves', label: 'الإجازات' },
+            { href: admin + 'hr/holidays', label: 'الإجازات' },
+            { href: admin + 'hr/leaves', label: 'طلبات الإجازات' },
             { href: admin + 'notifications', label: 'الإشعارات' },
             { href: admin + 'profile', label: 'إعدادات الملف' }
         ];

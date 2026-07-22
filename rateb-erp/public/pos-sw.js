@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-fix-online-charts-v117';
+var SW_BUILD_ID = '20260722-offline-hr-holidays-v121';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -375,6 +375,7 @@ var ERP_OPS_PATHS_SEED = [
     'inventory',
     'warehouses',
     'hr/attendance',
+    'hr/holidays',
     'hr/leaves',
     'purchase-requests',
     'purchase-orders',
@@ -707,7 +708,9 @@ function erpInlineShellResponse() {
         ['الموردون', 'admin/ops/suppliers'],
         ['نقطة البيع', 'admin/ops/pos/register'],
         ['الحضور', 'admin/hr/attendance'],
-        ['الإجازات', 'admin/hr/leaves'],
+        ['الإجازات', 'admin/hr/holidays'],
+        ['طلبات الإجازات', 'admin/hr/leaves'],
+        ['الموظفون', 'admin/hr/employees'],
         ['الإشعارات', 'admin/notifications'],
         ['الملف', 'admin/profile']
     ];
@@ -1068,7 +1071,8 @@ function safeOfflineAdminNavigate(request, url, event) {
         }
 
         // Bare /admin needs longer — Cache.put warm storms made 2nd F5 miss within 250ms.
-        var ceilingMs = bareAdmin ? 1200 : 400;
+        // Hard offline only: give Cache API more time before lean menu (never soft-latch).
+        var ceilingMs = bareAdmin ? 1200 : (isHardBrowserOffline() ? 1600 : 400);
         setTimeout(function () {
             if (!settled) {
                 inlineNow();
@@ -2574,8 +2578,13 @@ function warmErpOfflineShell(opts) {
         'admin/ops/notifications',
         'admin/hr',
         'admin/hr/attendance',
+        'admin/hr/holidays',
         'admin/hr/leaves',
         'admin/hr/employees',
+        'admin/hr/departments',
+        'admin/hr/job-titles',
+        'admin/hr/workplaces',
+        'admin/hr/permission-requests',
         'admin/ops',
         'admin/ops/branch-dashboard',
         'admin/ops/inventory',
@@ -2641,6 +2650,9 @@ function warmErpOfflineShell(opts) {
         'admin/accounting',
         'admin/ops/accounting',
         'admin/hr',
+        'admin/hr/holidays',
+        'admin/hr/leaves',
+        'admin/hr/attendance',
         'admin/ops/inventory',
         'admin/ops/access-control',
         'admin/oversight/approvals',
