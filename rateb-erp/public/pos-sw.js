@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-full-sidebar-v122';
+var SW_BUILD_ID = '20260722-offline-f5-latch-v124';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1070,9 +1070,9 @@ function safeOfflineAdminNavigate(request, url, event) {
             }
         }
 
-        // Bare /admin needs longer — Cache.put warm storms made 2nd F5 miss within 250ms.
-        // Hard offline only: give Cache API more time before lean menu (never soft-latch).
-        var ceilingMs = bareAdmin ? 1200 : (isHardBrowserOffline() ? 1600 : 400);
+        // Offline F5 #2+: Cache.put from prior paint can stall match — give Cache API time.
+        // Always use a real ceiling (never leave respondWith pending → black spinner).
+        var ceilingMs = bareAdmin ? 1800 : 2000;
         setTimeout(function () {
             if (!settled) {
                 inlineNow();
@@ -1116,15 +1116,33 @@ function safeOfflineAdminNavigate(request, url, event) {
             });
         }
 
-        // Prefer real dashboard snapshot for bare /admin before any other key.
-        var cacheTry = (bareAdmin
-            ? matchCachedAdminDashboard(url).then(function (dash) {
-                return acceptCached(dash).then(function (ok) {
-                    return ok || matchSoftOnlineExactCache(request, url).then(acceptCached);
-                });
-            })
-            : matchSoftOnlineExactCache(request, url).then(acceptCached)
-        ).catch(function () {
+        // Prefer ignoreSearch first offline — company_id variants + Cache.put contention.
+        var pathKey = '';
+        try {
+            pathKey = url && url.origin && url.pathname
+                ? (url.origin + url.pathname)
+                : '';
+        } catch (ePk) {
+            pathKey = '';
+        }
+        var cacheTry = caches.open(ERP_OPS_PAGE_CACHE).then(function (cache) {
+            var first = pathKey
+                ? cache.match(pathKey, { ignoreSearch: true }).catch(function () { return null; })
+                : Promise.resolve(null);
+            return first.then(function (hit) {
+                if (hit) {
+                    return acceptCached(hit);
+                }
+                if (bareAdmin) {
+                    return matchCachedAdminDashboard(url).then(function (dash) {
+                        return acceptCached(dash).then(function (ok) {
+                            return ok || matchSoftOnlineExactCache(request, url).then(acceptCached);
+                        });
+                    });
+                }
+                return matchSoftOnlineExactCache(request, url).then(acceptCached);
+            });
+        }).catch(function () {
             return null;
         }).then(function (ok) {
             if (ok) {
@@ -1171,7 +1189,7 @@ function adminDocumentNavigate(request, url, event) {
                         caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
                             return putErpOpsHtmlResponse(opsCache, pageUrl, toCache);
                         }).catch(function () { return null; }).then(resolve);
-                    }, 400);
+                    }, 800);
                 });
                 if (event && typeof event.waitUntil === 'function') {
                     event.waitUntil(store);
@@ -2917,8 +2935,11 @@ function isLocalApplianceOrigin() {
     }
 }
 
-function markCloudNetworkDegraded(/* reason */) {
-    cloudDegradedUntil = Date.now() + CLOUD_DEGRADED_TTL_MS;
+function markCloudNetworkDegraded(reason) {
+    // Client soft-offline badge must survive F5 (page unload clears JS; latch lives in SW).
+    // Timeout/probe latch stays short so true online is not poisoned.
+    var ttl = (reason === 'client') ? 120000 : CLOUD_DEGRADED_TTL_MS;
+    cloudDegradedUntil = Date.now() + ttl;
 }
 
 function clearCloudNetworkDegraded() {

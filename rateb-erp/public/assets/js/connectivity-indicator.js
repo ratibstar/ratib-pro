@@ -305,6 +305,25 @@
                 scheduleVerify(100);
             }
         });
+
+        // Keep SW soft-offline latch alive while badge is offline — F5 unloads JS;
+        // without a living latch the next document wait hangs ~8s on a dead network.
+        try {
+            setInterval(function () {
+                var node = el();
+                if (node && node.classList.contains('is-offline')) {
+                    notifySwCloudState(false);
+                }
+            }, 3000);
+        } catch (eHb) { /* ignore */ }
+        try {
+            window.addEventListener('pagehide', function () {
+                var node = el();
+                if ((node && node.classList.contains('is-offline')) || browserSaysOffline()) {
+                    notifySwCloudState(false);
+                }
+            });
+        } catch (ePh) { /* ignore */ }
     }
 
     function boot() {

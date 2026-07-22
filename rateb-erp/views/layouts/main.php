@@ -111,18 +111,39 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             if (typeof ev.stopImmediatePropagation === 'function') {
                 ev.stopImmediatePropagation();
             }
+            // Re-arm SW soft-offline latch before any accidental navigation.
+            try {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'RATEB_CLOUD_OFFLINE' });
+                }
+            } catch (eSw) { /* ignore */ }
             ratebBlockOfflineReloadToast();
         }, true);
         try {
             var _reload = window.location.reload.bind(window.location);
             window.location.reload = function () {
                 if (ratebOfflineNow()) {
+                    try {
+                        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({ type: 'RATEB_CLOUD_OFFLINE' });
+                        }
+                    } catch (eSw2) { /* ignore */ }
                     ratebBlockOfflineReloadToast();
                     return;
                 }
                 return _reload.apply(window.location, arguments);
             };
         } catch (eRel) { /* ignore */ }
+        try {
+            window.addEventListener('pagehide', function () {
+                if (!ratebOfflineNow()) return;
+                try {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({ type: 'RATEB_CLOUD_OFFLINE' });
+                    }
+                } catch (ePh) { /* ignore */ }
+            });
+        } catch (ePh2) { /* ignore */ }
         // No beforeunload trap — would block offline sidebar / soft-nav.
     })();
     </script>
