@@ -386,9 +386,9 @@
     }
 
     function scheduleModuleScripts(doc) {
-        // Offline / soft-offline: never inject module scripts — each page added hung <script>
-        // fetches that jammed the tab after a few navigations (sidebar stopped accepting clicks).
-        if (isBrowserOffline()) {
+        // Soft OR hard offline: never inject module scripts — hung <script> fetches
+        // jam the browser connection pool after a few soft-navs (sidebar dies).
+        if (isUiOffline()) {
             return;
         }
         // Paint first; start module scripts on next task (not idle — keeps forms interactive).
@@ -678,6 +678,9 @@
     }
 
     function ensureDashboardCharts() {
+        if (isUiOffline()) {
+            return;
+        }
         var rootDash = document.querySelector('[data-cm-dash][data-rateb-chartjs], [data-cm-dash="v5c"]');
         if (!rootDash || !document.querySelector('canvas[id^="chart-"]')) {
             return;
@@ -733,6 +736,10 @@
     }
 
     function reinitModuleUi() {
+        // Soft/hard offline: skip network-heavy reinits (stats/charts) that jam clicks.
+        if (isUiOffline()) {
+            return;
+        }
         // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
         try {
             if (typeof root.RatebBootModulePageStats === 'function') {
@@ -889,8 +896,11 @@
     }
 
     function fetchNetworkHtml(href) {
-        // Fetch timeout is the only online backstop (do not race-abort at 1.4s — that broke sidebar tabs).
-        var timeoutMs = isBareAdminHref(href) ? 10000 : (isHeavyNavHref(href) ? 20000 : 12000);
+        // Soft-offline: short timeout so hung cloud fetch cannot lock soft-nav / sidebar.
+        // True online keeps long budgets (do not race-abort healthy navigations).
+        var timeoutMs = isUiOffline()
+            ? 2800
+            : (isBareAdminHref(href) ? 10000 : (isHeavyNavHref(href) ? 20000 : 12000));
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -934,8 +944,8 @@
         });
 
         // Online: never abort early — Cache vs Network race resolves when either wins.
-        // The old 800–1400ms ceiling aborted good navigations (tabs looked broken; F5 felt fast).
-        var ceilingMs = isBrowserOffline() ? 2000 : 0;
+        // Soft-offline: short ceiling so hung network cannot freeze sidebar clicks.
+        var ceilingMs = isBrowserOffline() ? 2000 : (isUiOffline() ? 3200 : 0);
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = null;
@@ -1101,9 +1111,9 @@
         navigating = true;
         pendingNavHref = '';
         var navGen = (swapTo._gen = (swapTo._gen || 0) + 1);
-        // Safety unlock aligned with fetch timeout (was shorter → stuck chrome + dead clicks).
-        var unlockMs = isBrowserOffline()
-            ? 2500
+        // Soft/hard offline: unlock fast so sidebar never stays dead after hung fetch.
+        var unlockMs = (isBrowserOffline() || isUiOffline())
+            ? 3200
             : (isBareAdminHref(href) ? 11000 : (isHeavyNavHref(href) ? 21000 : 13000));
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
@@ -1414,6 +1424,18 @@
             } catch (eBadge) { /* ignore */ }
         });
         lastHref = root.location.href;
+        /* Soft/hard offline watchdog — force-unlock nav if a hung fetch left clicks dead. */
+        try {
+            root.setInterval(function () {
+                if (!navigating || !isUiOffline()) {
+                    return;
+                }
+                navigating = false;
+                setMainNavBusy(false);
+                clearNavPending();
+                inflightAbort = null;
+            }, 4000);
+        } catch (eWd) { /* ignore */ }
         /* Drain click held by early head interceptor (before this script loaded). */
         try {
             var pending = root.__RATEB_PENDING_NAV__ || '';
