@@ -1,5 +1,5 @@
 # FINAL ENTERPRISE CERTIFICATION
-# RATIB ERP — Online + Warm Offline + Cold Offline
+# RATEB ERP — Online + Warm Offline + Cold Offline
 
 **Audit type:** Independent third-party style, repository evidence only  
 **Date:** 2026-07-12  

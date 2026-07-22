@@ -1,4 +1,4 @@
--- RATIB Contact Center — 012 supervisor & workforce management (Phase 9)
+-- RATEB Contact Center — 012 supervisor & workforce management (Phase 9)
 
 CREATE TABLE IF NOT EXISTS rcc_wfm_shifts (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

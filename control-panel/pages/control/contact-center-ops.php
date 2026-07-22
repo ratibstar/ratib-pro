@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — Production Operations Center (Phase 8).
+ * RATEB Contact Center — Production Operations Center (Phase 8).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

@@ -1,4 +1,4 @@
--- RATIB Mobile Apps Management — per-company (tenant) white-label config.
+-- RATEB Mobile Apps Management — per-company (tenant) white-label config.
 -- Logical name: mobile_app_configs → physical: rateb_mobile_app_configs
 
 CREATE TABLE IF NOT EXISTS rateb_mobile_app_configs (

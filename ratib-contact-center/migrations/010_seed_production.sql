@@ -1,9 +1,9 @@
--- RATIB Contact Center — 010 production bootstrap (idempotent)
+-- RATEB Contact Center — 010 production bootstrap (idempotent)
 -- Seeds first tenant, agent, queue, and SIP extension placeholders.
 -- Change agent email/password via admin after first login.
 
 INSERT IGNORE INTO rcc_tenants (id, code, name, name_ar, erp_company_id, locale, timezone, status)
-VALUES (1, 'rateb', 'RATEB Contact Center', 'مركز اتصال راتب', 1, 'ar', 'Asia/Riyadh', 'active');
+VALUES (1, 'rateb', 'RATEB Contact Center', 'مركز اتصال رتب', 1, 'ar', 'Asia/Riyadh', 'active');
 
 INSERT IGNORE INTO rcc_users (id, tenant_id, email, password_hash, full_name, locale, status)
 VALUES (

@@ -1,4 +1,4 @@
--- RATIB Contact Center — 005 agents & queues
+-- RATEB Contact Center — 005 agents & queues
 
 CREATE TABLE IF NOT EXISTS rcc_agents (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

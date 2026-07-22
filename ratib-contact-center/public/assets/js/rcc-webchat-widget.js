@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Web Chat Widget (customer-facing)
+ * RATEB Contact Center — Web Chat Widget (customer-facing)
  */
 (function (global) {
     'use strict';

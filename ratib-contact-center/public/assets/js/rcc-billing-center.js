@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — SaaS Billing UI (Phase 11).
+ * RATEB Contact Center — SaaS Billing UI (Phase 11).
  */
 (function (global) {
     'use strict';

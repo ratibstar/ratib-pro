@@ -1,4 +1,4 @@
--- RATIB Contact Center — 007 AI routing engine
+-- RATEB Contact Center — 007 AI routing engine
 
 CREATE TABLE IF NOT EXISTS rcc_agent_skills (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

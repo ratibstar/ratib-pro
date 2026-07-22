@@ -89,7 +89,7 @@ audit_check($checks, $score, $max, 'Migration 012 supervisor', is_file(RCC_ROOT 
 
 $percent = $max > 0 ? (int) round(($score / $max) * 100) : 0;
 
-echo "RATIB Contact Center — Production Audit\n";
+echo "RATEB Contact Center — Production Audit\n";
 echo str_repeat('=', 40) . "\n";
 foreach ($checks as $c) {
     echo ($c['pass'] ? '[PASS]' : '[FAIL]') . ' ' . $c['name'];

@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — AI Copilot panel (EventBus-driven, advisory only).
+ * RATEB Contact Center — AI Copilot panel (EventBus-driven, advisory only).
  */
 (function (global) {
     'use strict';

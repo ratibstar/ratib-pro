@@ -1,4 +1,4 @@
--- RATIB Contact Center — 004 IVR runtime
+-- RATEB Contact Center — 004 IVR runtime
 
 CREATE TABLE IF NOT EXISTS rcc_ivr_flows (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

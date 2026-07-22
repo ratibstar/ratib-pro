@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — Enterprise CRM (Phase 10A).
+ * RATEB Contact Center — Enterprise CRM (Phase 10A).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

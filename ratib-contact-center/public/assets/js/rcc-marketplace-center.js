@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Marketplace UI (Phase 11).
+ * RATEB Contact Center — Marketplace UI (Phase 11).
  */
 (function () {
     'use strict';

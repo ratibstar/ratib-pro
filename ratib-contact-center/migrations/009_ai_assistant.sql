@@ -1,4 +1,4 @@
--- RATIB Contact Center — 009 AI assistant & tickets
+-- RATEB Contact Center — 009 AI assistant & tickets
 
 CREATE TABLE IF NOT EXISTS rcc_tickets (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

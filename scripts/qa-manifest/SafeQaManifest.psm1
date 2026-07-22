@@ -1,4 +1,4 @@
-# RATIB ERP Safe QA v2 — manifest module (single source of truth for created object IDs)
+# RATEB ERP Safe QA v2 — manifest module (single source of truth for created object IDs)
 
 Set-StrictMode -Version Latest
 

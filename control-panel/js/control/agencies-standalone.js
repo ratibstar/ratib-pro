@@ -22,7 +22,7 @@
 
     if (!tableBody) return;
 
-    window.RatibCpAgencies = window.RatibCpAgencies || {
+    window.RatebCpAgencies = window.RatebCpAgencies || {
         provisionProClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         provisionErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         resetErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
@@ -1229,10 +1229,10 @@
         erpResetConfirmBtn.addEventListener('click', runErpResetFromModal);
     }
 
-    window.RatibCpAgencies.provisionProClick = provisionProClick;
-    window.RatibCpAgencies.provisionErpClick = provisionErpClick;
-    window.RatibCpAgencies.resetErpClick = resetErpClick;
-    window.RatibCpAgencies.wireProvisionButtons = wireProvisionButtons;
+    window.RatebCpAgencies.provisionProClick = provisionProClick;
+    window.RatebCpAgencies.provisionErpClick = provisionErpClick;
+    window.RatebCpAgencies.resetErpClick = resetErpClick;
+    window.RatebCpAgencies.wireProvisionButtons = wireProvisionButtons;
     wireProvisionButtons();
 
     if (window.UserPermissions && typeof window.UserPermissions.applyPermissions === 'function') {

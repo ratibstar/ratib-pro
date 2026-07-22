@@ -2195,7 +2195,7 @@ return [
     'hr_mobile_console_setting_help' => 'مشغّل المنصة تحت الإدارة → HR Mobile. تفعيل كل شركة والعلامة التجارية عبر إدارة تطبيقات الجوال (rateb_mobile_app_configs). الافتراضي: معطّل.',
     'mobile_apps_nav' => 'تطبيقات الجوال',
     'mobile_apps_title' => 'إدارة تطبيقات الجوال',
-    'mobile_apps_intro' => 'تفعيل ووسم تطبيق RATIB Workforce المشترك لكل وكالة/شركة.',
+    'mobile_apps_intro' => 'تفعيل ووسم تطبيق RATEB Workforce المشترك لكل وكالة/شركة.',
     'mobile_apps_companies' => 'الشركات',
     'mobile_apps_empty' => 'لا توجد شركات.',
     'mobile_apps_edit' => 'إعدادات تطبيق الجوال',

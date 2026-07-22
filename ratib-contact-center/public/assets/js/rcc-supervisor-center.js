@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Supervisor & Workforce Management UI (Phase 9).
+ * RATEB Contact Center — Supervisor & Workforce Management UI (Phase 9).
  */
 (function (global) {
     'use strict';

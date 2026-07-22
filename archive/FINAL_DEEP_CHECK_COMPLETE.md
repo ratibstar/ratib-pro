@@ -1,5 +1,5 @@
 # ✅ FINAL DEEP CHECK - COMPLETE VERIFICATION
-## Ratib Program - https://rateb.sa/
+## Rateb Program - https://rateb.sa/
 ## Last Comprehensive Check - 100% Verified
 
 ---
@@ -35,7 +35,7 @@
 ```php
 ✅ SITE_URL: https://rateb.sa
 ✅ BASE_URL: '' (root deployment)
-✅ APP_NAME: Ratib Program
+✅ APP_NAME: Rateb Program
 ✅ APP_VERSION: 1.0.0
 ```
 
@@ -320,7 +320,7 @@ DB_PORT: 3306
 // Application
 SITE_URL: https://rateb.sa
 BASE_URL: '' (root deployment)
-APP_NAME: Ratib Program
+APP_NAME: Rateb Program
 APP_VERSION: 1.0.0
 
 // Security

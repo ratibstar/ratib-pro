@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — SaaS Billing & Subscriptions (Phase 11).
+ * RATEB Contact Center — SaaS Billing & Subscriptions (Phase 11).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

@@ -1,4 +1,4 @@
--- RATIB Contact Center — 013 CRM module (Phase 10A)
+-- RATEB Contact Center — 013 CRM module (Phase 10A)
 
 CREATE TABLE IF NOT EXISTS rcc_accounts (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

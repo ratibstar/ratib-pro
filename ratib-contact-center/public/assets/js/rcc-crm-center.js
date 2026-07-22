@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Enterprise CRM UI (Phase 10A).
+ * RATEB Contact Center — Enterprise CRM UI (Phase 10A).
  */
 (function (global) {
     'use strict';

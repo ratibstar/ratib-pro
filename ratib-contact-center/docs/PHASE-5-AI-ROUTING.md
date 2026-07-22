@@ -1,4 +1,4 @@
-# RATIB Contact Center — Phase 5: AI Routing Engine
+# RATEB Contact Center — Phase 5: AI Routing Engine
 
 **Status:** Implemented  
 **Model:** Rule-based scoring MVP (no ML) — configurable via `config/routing.php`

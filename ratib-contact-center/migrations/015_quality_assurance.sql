@@ -1,4 +1,4 @@
--- RATIB Contact Center — 015 quality assurance (Phase 10C)
+-- RATEB Contact Center — 015 quality assurance (Phase 10C)
 
 CREATE TABLE IF NOT EXISTS rcc_qa_forms (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

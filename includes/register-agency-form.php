@@ -15,7 +15,7 @@ $paymentSummaryFooter = $ratebHome['home.register.payment_summary.footer'] ?? 'S
     <div class="rateb-info">
         <h2 class="rateb-bilingual-heading">
             <span class="label-en"><i class="fas fa-info-circle me-2 register-info-icon"></i>Why RATEB?</span>
-            <span class="label-ar" dir="rtl" lang="ar">لماذا راتب؟</span>
+            <span class="label-ar" dir="rtl" lang="ar">لماذا رتب؟</span>
         </h2>
         <p class="rateb-bilingual-sub">
             <span class="label-en">Enterprise workforce program infrastructure for sending agencies.</span>

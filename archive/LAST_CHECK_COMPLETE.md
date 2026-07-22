@@ -1,5 +1,5 @@
 # ✅ LAST DEEP CHECK - COMPLETE
-## Ratib Program - https://rateb.sa/
+## Rateb Program - https://rateb.sa/
 ## Final Verification - All Issues Fixed
 
 ---

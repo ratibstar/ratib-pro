@@ -1,4 +1,4 @@
-# Ratib Program - Complete System Documentation
+# Rateb Program - Complete System Documentation
 
 ## Table of Contents
 
@@ -60,9 +60,9 @@
 
 ## System Overview
 
-### What is Ratib Program?
+### What is Rateb Program?
 
-**Ratib Program** is a comprehensive business management system designed for managing:
+**Rateb Program** is a comprehensive business management system designed for managing:
 
 - **Workers** - Complete worker lifecycle management
 - **Agents & Subagents** - Multi-level agent relationship management
@@ -235,7 +235,7 @@ define('DB_NAME', 'ratibprogram');
 
 ```php
 define('SITE_URL', 'http://localhost/ratibprogram');
-define('APP_NAME', 'Ratib Program');
+define('APP_NAME', 'Rateb Program');
 define('APP_VERSION', '1.0.0');
 ```
 
@@ -1380,7 +1380,7 @@ if (window.UserPermissions && window.UserPermissions.hasPermission('view_account
 
 ### Credits
 
-Developed for Ratib Program management system.
+Developed for Rateb Program management system.
 
 ### License
 
@@ -1968,7 +1968,7 @@ Run migrations to update database schema without losing data.
 ### Default Settings
 
 - **Site URL**: `http://localhost/ratibprogram`
-- **App Name**: `Ratib Program`
+- **App Name**: `Rateb Program`
 - **Version**: `1.0.0`
 
 ### Key Directories
@@ -2159,7 +2159,7 @@ The system includes default data in `database/init.sql`:
 - Role: Administrator
 
 **Default Office Manager**:
-- Office Name: Ratib Program Office
+- Office Name: Rateb Program Office
 - Manager Name: Office Manager
 - Contact: +1234567890
 - Email: manager@ratibprogram.com
@@ -2410,7 +2410,7 @@ To set up cron jobs, add entries to crontab:
 ### Default Settings
 
 - **Site URL**: `http://localhost/ratibprogram`
-- **App Name**: `Ratib Program`
+- **App Name**: `Rateb Program`
 - **Version**: `1.0.0`
 - **Default Admin**: `admin` / `admin123`
 
@@ -4717,7 +4717,7 @@ define('DB_NAME', 'ratibprogram');    // Database name
 
 ```php
 define('SITE_URL', 'http://localhost/ratibprogram');  // Site base URL
-define('APP_NAME', 'Ratib Program');                 // Application name
+define('APP_NAME', 'Rateb Program');                 // Application name
 define('APP_VERSION', '1.0.0');                       // Application version
 ```
 
@@ -4730,7 +4730,7 @@ define('SMTP_PORT', 587);                            // SMTP port (587 for TLS, 
 define('SMTP_USER', 'ratibstar1@gmail.com');         // SMTP username
 define('SMTP_PASS', 'vlqmdvojszsbhcqk');            // SMTP password (App Password for Gmail)
 define('SMTP_FROM_EMAIL', 'ratibstar1@gmail.com');   // From email address
-define('SMTP_FROM_NAME', 'Ratib Program');           // From name
+define('SMTP_FROM_NAME', 'Rateb Program');           // From name
 define('SMTP_SECURE', 'tls');                        // Security type ('tls' or 'ssl')
 ```
 

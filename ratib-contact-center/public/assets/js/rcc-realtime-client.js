@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center - WebSocket realtime client (auto-reconnect).
+ * RATEB Contact Center - WebSocket realtime client (auto-reconnect).
  * Consumes EventBus stream only - no polling.
  */
 (function (global) {

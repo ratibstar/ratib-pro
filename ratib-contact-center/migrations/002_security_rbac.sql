@@ -1,4 +1,4 @@
--- RATIB Contact Center — 002 security & RBAC
+-- RATEB Contact Center — 002 security & RBAC
 
 CREATE TABLE IF NOT EXISTS rcc_users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

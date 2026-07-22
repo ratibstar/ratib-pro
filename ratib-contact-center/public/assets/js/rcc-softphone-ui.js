@@ -1,5 +1,5 @@
 /**
- * RATIB Softphone UI bindings (external JS — no inline scripts in views).
+ * RATEB Softphone UI bindings (external JS — no inline scripts in views).
  */
 (function (global) {
     'use strict';

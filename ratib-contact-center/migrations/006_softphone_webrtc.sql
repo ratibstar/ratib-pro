@@ -1,4 +1,4 @@
--- RATIB Contact Center — 006 softphone & WebRTC
+-- RATEB Contact Center — 006 softphone & WebRTC
 
 CREATE TABLE IF NOT EXISTS rcc_sip_extensions (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

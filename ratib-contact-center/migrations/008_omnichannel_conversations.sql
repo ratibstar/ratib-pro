@@ -1,4 +1,4 @@
--- RATIB Contact Center — 008 omnichannel conversations
+-- RATEB Contact Center — 008 omnichannel conversations
 
 CREATE TABLE IF NOT EXISTS rcc_conversations (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

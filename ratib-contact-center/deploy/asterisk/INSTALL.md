@@ -1,4 +1,4 @@
-# Asterisk Deployment — RATIB Contact Center
+# Asterisk Deployment — RATEB Contact Center
 
 ## Prerequisites
 

@@ -21,7 +21,7 @@ Rateb Control Panel is the central administration portal for managing:
 The panel supports **country-based isolation**. If your account is restricted to one country (or you selected one country in session), you should only see that country data without overlap.
 
 ### AR
-لوحة تحكم راتب هي البوابة الإدارية المركزية لإدارة:
+لوحة تحكم رتب هي البوابة الإدارية المركزية لإدارة:
 - الدول
 - المكاتب (Agencies)
 - مستخدمي الدول

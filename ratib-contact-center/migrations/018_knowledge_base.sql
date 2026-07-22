@@ -1,4 +1,4 @@
--- RATIB Contact Center — 018 knowledge base (Phase 10F)
+-- RATEB Contact Center — 018 knowledge base (Phase 10F)
 
 CREATE TABLE IF NOT EXISTS rcc_kb_categories (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

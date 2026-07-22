@@ -1,7 +1,7 @@
-# RATIB Contact Center — Phase 1 Architecture & Database Design
+# RATEB Contact Center — Phase 1 Architecture & Database Design
 
-**Project:** RATIB Contact Center  
-**Parent:** RATIB ERP  
+**Project:** RATEB Contact Center  
+**Parent:** RATEB ERP  
 **Phase:** 1 — Architecture & Database Design Only (no implementation code)  
 **Database:** `ratib_contact_center` (dedicated, isolated)
 
@@ -1662,7 +1662,7 @@ Fast deploy picks up changes under `control-panel/` automatically.
 | Module structure | §3 |
 | Navigation integration plan | §8 |
 
-The module is designed as a **standalone, API-first, clean-architecture** system with its own database, RBAC, and voice/omnichannel adapter layers — integrated into the RATIB Control Panel without touching existing ERP tables.
+The module is designed as a **standalone, API-first, clean-architecture** system with its own database, RBAC, and voice/omnichannel adapter layers — integrated into the RATEB Control Panel without touching existing ERP tables.
 
 ---
 

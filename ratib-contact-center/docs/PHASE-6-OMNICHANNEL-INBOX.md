@@ -1,4 +1,4 @@
-# RATIB Contact Center — Phase 6: Unified Omnichannel Inbox
+# RATEB Contact Center — Phase 6: Unified Omnichannel Inbox
 
 **Status:** Implemented  
 **Principle:** Every interaction becomes one **Conversation Thread** — no standalone channels.

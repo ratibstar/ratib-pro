@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — WebRTC Softphone SDK
+ * RATEB Contact Center — WebRTC Softphone SDK
  * Requires: SIP.js (UserAgent), RccRealtimeClient (optional but recommended)
  * NO polling — EventBus WebSocket + SIP signaling only
  */

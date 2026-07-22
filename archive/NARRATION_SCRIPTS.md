@@ -1,4 +1,4 @@
-# Ratib Program - Narration Scripts for Voice Generation
+# Rateb Program - Narration Scripts for Voice Generation
 ## Ready-to-Use Scripts for AI Voice Tools or Voiceover Artists
 
 ---
@@ -29,12 +29,12 @@
 
 ### Opening (30 seconds)
 ```
-Welcome to the Ratib Program tutorial series. Ratib Program is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, and much more. In this first video, we'll cover how to access and log in to the system.
+Welcome to the Rateb Program tutorial series. Rateb Program is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, and much more. In this first video, we'll cover how to access and log in to the system.
 ```
 
-### What is Ratib Program? (1 minute)
+### What is Rateb Program? (1 minute)
 ```
-Ratib Program is a complete business management solution that includes:
+Rateb Program is a complete business management solution that includes:
 
 Workers Management - Complete lifecycle management for workers
 Agents and Subagents - Multi-level agent relationship management
@@ -50,7 +50,7 @@ The system features role-based access control, biometric authentication, documen
 
 ### Accessing the System (30 seconds)
 ```
-To access Ratib Program, navigate to your system URL. The default path is typically http://localhost/ratibprogram/ for local installations. When you first visit, you'll be redirected to the login page if you're not already authenticated.
+To access Rateb Program, navigate to your system URL. The default path is typically http://localhost/ratibprogram/ for local installations. When you first visit, you'll be redirected to the login page if you're not already authenticated.
 ```
 
 ### Login Page Overview (1 minute)
@@ -113,7 +113,7 @@ That's it for the login process. In the next video, we'll explore the dashboard 
 
 ### Opening (30 seconds)
 ```
-Welcome back! In this video, we'll explore the dashboard - your central command center in Ratib Program. The dashboard provides an overview of all system modules and key statistics.
+Welcome back! In this video, we'll explore the dashboard - your central command center in Rateb Program. The dashboard provides an overview of all system modules and key statistics.
 ```
 
 ### Dashboard Layout (1 minute)
@@ -261,7 +261,7 @@ The system will verify your current password before allowing the change.
 
 ### Biometric Authentication Setup (1.5 minutes)
 ```
-Ratib Program supports two types of biometric authentication:
+Rateb Program supports two types of biometric authentication:
 
 First, Fingerprint Authentication:
 

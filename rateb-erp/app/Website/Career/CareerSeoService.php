@@ -112,7 +112,7 @@ final class CareerSeoService
             ],
             'identifier' => [
                 '@type' => 'PropertyValue',
-                'name' => 'RATIB Career ID',
+                'name' => 'RATEB Career ID',
                 'value' => (string) ($job['id'] ?? ''),
             ],
             'url' => $canonical,

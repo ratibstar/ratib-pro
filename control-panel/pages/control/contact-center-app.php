@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — embedded agent workspace inside Control Panel.
+ * RATEB Contact Center — embedded agent workspace inside Control Panel.
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

@@ -172,7 +172,7 @@ $codePct = $codeMax > 0 ? round(($codeScore / $codeMax) * 100, 1) : 0;
 $infraPct = $infraMax > 0 ? round(($infraScore / $infraMax) * 100, 1) : 0;
 $pass = $codePct >= $target;
 
-echo "RATIB Contact Center — Final Production Audit (Phase 10–11)\n";
+echo "RATEB Contact Center — Final Production Audit (Phase 10–11)\n";
 echo str_repeat('=', 56) . "\n\n";
 
 foreach ($sections as $sec) {

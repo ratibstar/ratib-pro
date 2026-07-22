@@ -1,4 +1,4 @@
-# ✅ Production Deployment Checklist - Ratib Program
+# ✅ Production Deployment Checklist - Rateb Program
 
 ## 🎯 Deployment Target
 - **URL**: https://rateb.sa/

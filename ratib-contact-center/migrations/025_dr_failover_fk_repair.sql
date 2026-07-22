@@ -1,4 +1,4 @@
--- RATIB Contact Center — 025 DR failover FK repair (idempotent)
+-- RATEB Contact Center — 025 DR failover FK repair (idempotent)
 -- Repairs partial 022 apply; safe when FK is already correct (no-op).
 
 SET @drop_legacy = (

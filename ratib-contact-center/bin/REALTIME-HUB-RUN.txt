@@ -1,4 +1,4 @@
-# RATIB Contact Center — Live updates on rateb.sa
+# RATEB Contact Center — Live updates on rateb.sa
 
 ## ✅ موصى به (استضافة مشتركة): POLLING
 - لا تحتاج cron

@@ -1,4 +1,4 @@
--- RATIB Contact Center — 023 marketplace & add-ons (Phase 11)
+-- RATEB Contact Center — 023 marketplace & add-ons (Phase 11)
 
 CREATE TABLE IF NOT EXISTS rcc_marketplace_addons (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

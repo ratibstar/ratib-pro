@@ -1,4 +1,4 @@
--- RATIB Contact Center — 016 call recordings (Phase 10D)
+-- RATEB Contact Center — 016 call recordings (Phase 10D)
 
 CREATE TABLE IF NOT EXISTS rcc_recordings (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

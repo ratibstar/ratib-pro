@@ -1,4 +1,4 @@
--- RATIB Contact Center — 019 security hardening (Phase 10I)
+-- RATEB Contact Center — 019 security hardening (Phase 10I)
 
 CREATE TABLE IF NOT EXISTS rcc_audit_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

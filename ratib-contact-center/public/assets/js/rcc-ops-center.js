@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Production Operations Center UI (Phase 8).
+ * RATEB Contact Center — Production Operations Center UI (Phase 8).
  * WebSocket-driven updates; no polling when WS available.
  */
 (function (global) {

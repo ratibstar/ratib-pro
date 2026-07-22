@@ -2,7 +2,7 @@
 
 **Status:** IMPLEMENTED  
 **Effective:** 2026-07-17  
-**Governs:** RATIB ERP Offline V2 (`rateb-erp/public/v2`)  
+**Governs:** RATEB ERP Offline V2 (`rateb-erp/public/v2`)  
 **Binding architecture:** AF 2.1 / AF 2.1.1 (Architecture v1.3.1 remains Platform Catalog only)
 
 ## Scope

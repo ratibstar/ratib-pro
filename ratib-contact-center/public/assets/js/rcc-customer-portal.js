@@ -1,5 +1,5 @@
 /**
- * RATIB Customer Portal (Phase 11).
+ * RATEB Customer Portal (Phase 11).
  */
 (function () {
     'use strict';

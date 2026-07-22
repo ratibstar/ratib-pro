@@ -23,7 +23,7 @@ final class EmailOutboundService
         }
 
         $from = (string) ($email['from_email'] ?? 'noreply@rateb.sa');
-        $fromName = (string) ($email['from_name'] ?? 'RATIB');
+        $fromName = (string) ($email['from_name'] ?? 'RATEB');
         $subject = 'Re: Conversation #' . $conversationId;
 
         $sent = $this->smtpSend($email, $from, $fromName, $to, $subject, $message);

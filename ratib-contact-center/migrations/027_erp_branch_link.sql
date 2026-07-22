@@ -1,4 +1,4 @@
--- RATIB Contact Center — link agents, queues, calls to RATIB ERP branch_id
+-- RATEB Contact Center — link agents, queues, calls to RATEB ERP branch_id
 SET NAMES utf8mb4;
 
 SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rcc_agents' AND COLUMN_NAME = 'erp_branch_id');

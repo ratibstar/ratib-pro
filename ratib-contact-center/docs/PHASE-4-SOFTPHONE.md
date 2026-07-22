@@ -1,4 +1,4 @@
-# RATIB Contact Center — Phase 4: WebRTC Softphone
+# RATEB Contact Center — Phase 4: WebRTC Softphone
 
 **Status:** Implemented  
 **Media:** Browser ↔ PBX direct (WebRTC/RTP) — **no server-side audio**
@@ -255,4 +255,4 @@ Run realtime hub: `php bin/rcc-realtime-hub.php`
 
 ---
 
-*Phase 4 — WebRTC Softphone for RATIB RCC.*
+*Phase 4 — WebRTC Softphone for RATEB RCC.*

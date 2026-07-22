@@ -1,4 +1,4 @@
--- RATIB Contact Center — 003 realtime core
+-- RATEB Contact Center — 003 realtime core
 
 CREATE TABLE IF NOT EXISTS rcc_realtime_events (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

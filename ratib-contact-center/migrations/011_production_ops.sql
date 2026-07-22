@@ -1,4 +1,4 @@
--- RATIB Contact Center — 011 production operations layer (Phase 8)
+-- RATEB Contact Center — 011 production operations layer (Phase 8)
 
 CREATE TABLE IF NOT EXISTS rcc_pbx_servers (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

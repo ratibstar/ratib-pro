@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * RATIB Contact Center — Control Panel bridge (paths, DB, migrations, URLs).
+ * RATEB Contact Center — Control Panel bridge (paths, DB, migrations, URLs).
  */
 require_once dirname(__DIR__, 3) . '/config/env/directadmin_db.php';
 

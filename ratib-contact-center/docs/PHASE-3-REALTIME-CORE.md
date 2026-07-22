@@ -1,4 +1,4 @@
-# RATIB Contact Center — Phase 3: Real-Time Core Layer
+# RATEB Contact Center — Phase 3: Real-Time Core Layer
 
 **Status:** Implemented  
 **Transport:** WebSocket only (no polling)  
@@ -306,4 +306,4 @@ SLA alert thresholds:
 
 ---
 
-*Phase 3 — Real-Time Core Layer for RATIB RCC.*
+*Phase 3 — Real-Time Core Layer for RATEB RCC.*

@@ -1,6 +1,6 @@
 # Phase 9 — Supervisor & Workforce Management
 
-Production supervisor operations suite for RATIB Contact Center.
+Production supervisor operations suite for RATEB Contact Center.
 
 ## Entry points
 

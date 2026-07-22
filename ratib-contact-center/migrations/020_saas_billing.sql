@@ -1,4 +1,4 @@
--- RATIB Contact Center — 020 SaaS billing engine (Phase 11)
+-- RATEB Contact Center — 020 SaaS billing engine (Phase 11)
 
 ALTER TABLE rcc_tenants
     ADD COLUMN parent_tenant_id INT UNSIGNED NULL,

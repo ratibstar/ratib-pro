@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — Supervisor & Workforce Management (Phase 9).
+ * RATEB Contact Center — Supervisor & Workforce Management (Phase 9).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

@@ -1,5 +1,5 @@
 # ✅ Final Production Deployment Checklist
-## Ratib Program - https://rateb.sa/
+## Rateb Program - https://rateb.sa/
 
 ---
 

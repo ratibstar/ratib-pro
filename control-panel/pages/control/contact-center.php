@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — launcher inside Control Panel.
+ * RATEB Contact Center — launcher inside Control Panel.
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);
@@ -31,11 +31,11 @@ if ($installed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rcc_sta
 }
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('RATIB Contact Center', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
+startControlLayout('RATEB Contact Center', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
 ?>
 
 <p class="control-settings-intro mb-3">
-    <strong><i class="fas fa-headset me-2"></i>RATIB Contact Center</strong>
+    <strong><i class="fas fa-headset me-2"></i>RATEB Contact Center</strong>
     — IVR, AI routing, WebRTC softphone, and unified omnichannel agent inbox.
     Database: <code><?php echo htmlspecialchars(control_contact_center_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>
     · User: <code><?php echo htmlspecialchars(control_contact_center_db_user(), ENT_QUOTES, 'UTF-8'); ?></code>

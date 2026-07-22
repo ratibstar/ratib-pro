@@ -62,7 +62,7 @@ HEALTH_WEBHOOK_BACKLOG_WARN=500
 HEALTH_FAILURE_RATE_WARN_PCT=20
 
 # =============================================================================
-# RATIB Contact Center — admin_call-center
+# RATEB Contact Center — admin_call-center
 # cPanel → MySQL: أنشئ DB + User + ALL PRIVILEGES
 # =============================================================================
 
@@ -71,7 +71,7 @@ RATIB_CC_DB_USER=admin_call-center
 RATIB_CC_DB_PASS=CHANGE_ME_CALL_CENTER_MYSQL_PASSWORD
 RATIB_CC_DB_HOST=127.0.0.1
 RATIB_CC_DB_PORT=3306
-RATEB_CC_DB_PASS=CHANGE_ME_CALL_CENTER_MYSQL_PASSWORD
+RATIB_CC_DB_PASS=CHANGE_ME_CALL_CENTER_MYSQL_PASSWORD
 
 # Realtime — polling mode (recommended for rateb.sa: no port 9702 / firewall)
 RCC_REALTIME_MODE=polling

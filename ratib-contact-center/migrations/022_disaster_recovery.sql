@@ -1,4 +1,4 @@
--- RATIB Contact Center — 022 disaster recovery & HA monitoring (Phase 11)
+-- RATEB Contact Center — 022 disaster recovery & HA monitoring (Phase 11)
 
 CREATE TABLE IF NOT EXISTS rcc_backups (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

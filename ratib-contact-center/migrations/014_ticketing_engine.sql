@@ -1,4 +1,4 @@
--- RATIB Contact Center — 014 advanced ticketing (Phase 10B)
+-- RATEB Contact Center — 014 advanced ticketing (Phase 10B)
 
 CREATE TABLE IF NOT EXISTS rcc_ticket_categories (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

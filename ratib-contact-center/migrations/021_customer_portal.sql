@@ -1,4 +1,4 @@
--- RATIB Contact Center — 021 customer portal & white label & reseller (Phase 11)
+-- RATEB Contact Center — 021 customer portal & white label & reseller (Phase 11)
 
 CREATE TABLE IF NOT EXISTS rcc_portal_users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,

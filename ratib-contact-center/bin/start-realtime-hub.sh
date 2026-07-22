@@ -1,5 +1,5 @@
 #!/bin/bash
-# RATIB Contact Center — start WebSocket realtime hub (background)
+# RATEB Contact Center — start WebSocket realtime hub (background)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

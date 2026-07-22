@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * RATIB Contact Center — Customer Self-Service Portal (Phase 11).
+ * RATEB Contact Center — Customer Self-Service Portal (Phase 11).
  */
 define('RCC_SKIP_ORCHESTRATOR_BOOT', true);
 

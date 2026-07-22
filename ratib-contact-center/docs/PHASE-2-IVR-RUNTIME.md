@@ -1,4 +1,4 @@
-# RATIB Contact Center — Phase 2: IVR Runtime Engine
+# RATEB Contact Center — Phase 2: IVR Runtime Engine
 
 **Status:** Implemented  
 **Database:** `ratib_contact_center`  
@@ -362,4 +362,4 @@ $session = $manager->onIncomingCall(
 
 ---
 
-*Generated for RATIB Contact Center — IVR Runtime Engine Phase 2.*
+*Generated for RATEB Contact Center — IVR Runtime Engine Phase 2.*

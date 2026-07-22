@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — Executive Command Center (Phase 10H).
+ * RATEB Contact Center — Executive Command Center (Phase 10H).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);

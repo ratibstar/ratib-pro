@@ -1,4 +1,4 @@
-# Ratib Program - Complete Video Tutorial Script
+# Rateb Program - Complete Video Tutorial Script
 ## Comprehensive Guide for Creating Video Demonstrations
 
 ---
@@ -33,10 +33,10 @@
 **Duration: 3-4 minutes**
 
 ### Opening (30 seconds)
-"Welcome to the Ratib Program tutorial series. Ratib Program is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, and much more. In this first video, we'll cover how to access and log in to the system."
+"Welcome to the Rateb Program tutorial series. Rateb Program is a comprehensive business management system designed for managing workers, agents, subagents, accounting, HR, cases, and much more. In this first video, we'll cover how to access and log in to the system."
 
-### What is Ratib Program? (1 minute)
-"Ratib Program is a complete business management solution that includes:
+### What is Rateb Program? (1 minute)
+"Rateb Program is a complete business management solution that includes:
 
 - **Workers Management** - Complete lifecycle management for workers
 - **Agents & Subagents** - Multi-level agent relationship management
@@ -50,7 +50,7 @@
 The system features role-based access control, biometric authentication, document management, and multi-currency support."
 
 ### Accessing the System (30 seconds)
-"To access Ratib Program, navigate to your system URL. The default path is typically `http://localhost/ratibprogram/` for local installations. When you first visit, you'll be redirected to the login page if you're not already authenticated."
+"To access Rateb Program, navigate to your system URL. The default path is typically `http://localhost/ratibprogram/` for local installations. When you first visit, you'll be redirected to the login page if you're not already authenticated."
 
 ### Login Page Overview (1 minute)
 "The login page features:
@@ -101,7 +101,7 @@ Note: Fingerprint registration must be done first through your profile settings,
 **Duration: 4-5 minutes**
 
 ### Opening (30 seconds)
-"Welcome back! In this video, we'll explore the dashboard - your central command center in Ratib Program. The dashboard provides an overview of all system modules and key statistics."
+"Welcome back! In this video, we'll explore the dashboard - your central command center in Rateb Program. The dashboard provides an overview of all system modules and key statistics."
 
 ### Dashboard Layout (1 minute)
 "After logging in, you're automatically redirected to the dashboard. The dashboard consists of:
@@ -227,7 +227,7 @@ The profile page shows all your account information and settings."
 The system will verify your current password before allowing the change."
 
 ### Biometric Authentication Setup (1.5 minutes)
-"Ratib Program supports two types of biometric authentication:
+"Rateb Program supports two types of biometric authentication:
 
 **1. Fingerprint Authentication:**
 
@@ -567,7 +567,7 @@ When creating workers, you can select both Agent and Subagent, showing the relat
 **Duration: 4-5 minutes**
 
 ### Opening (30 seconds)
-"Welcome to Workers Management - one of the most comprehensive modules in Ratib Program. In this video, we'll cover the basics: accessing workers, understanding the interface, and viewing worker records."
+"Welcome to Workers Management - one of the most comprehensive modules in Rateb Program. In this video, we'll cover the basics: accessing workers, understanding the interface, and viewing worker records."
 
 ### Understanding Workers Module (1 minute)
 "The Workers module manages:
@@ -847,7 +847,7 @@ Provides full audit trail for compliance."
 "In this video, we'll explore Cases Management - a system for tracking and managing cases, issues, and tasks throughout your organization."
 
 ### Understanding Cases (1 minute)
-"Cases in Ratib Program represent:
+"Cases in Rateb Program represent:
 
 - **Customer Issues** - Problems or requests from clients
 - **Internal Tasks** - Tasks assigned to team members
@@ -1680,7 +1680,7 @@ Access individual reports from the respective module's 'View' or 'Report' button
 "In this video, we'll explore the Notifications system - how the system alerts you to important events and updates."
 
 ### Understanding Notifications (1 minute)
-"Notifications in Ratib Program include:
+"Notifications in Rateb Program include:
 
 - **System Alerts** - Important system events
 - **Task Reminders** - Pending tasks and follow-ups
@@ -1957,7 +1957,7 @@ Invalid settings are rejected with error messages."
 "In this final video, we'll explore Permissions and User Management - critical for system security and access control."
 
 ### Understanding Permissions (1 minute)
-"Ratib Program uses a **role-based access control (RBAC)** system:
+"Rateb Program uses a **role-based access control (RBAC)** system:
 
 - **Roles** - Groups of permissions (Admin, Manager, User, etc.)
 - **Permissions** - Specific actions users can perform
@@ -2076,7 +2076,7 @@ You'll see a list of all system users."
 - **Test Permissions** - Verify access controls work"
 
 ### Closing (30 seconds)
-"Congratulations! You've completed the complete Ratib Program tutorial series. You now understand:
+"Congratulations! You've completed the complete Rateb Program tutorial series. You now understand:
 
 - Login and authentication
 - Dashboard navigation

@@ -1,4 +1,4 @@
--- RATIB Contact Center — 017 BI analytics (Phase 10E)
+-- RATEB Contact Center — 017 BI analytics (Phase 10E)
 
 CREATE TABLE IF NOT EXISTS rcc_metrics_daily (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

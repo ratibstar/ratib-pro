@@ -1,4 +1,4 @@
-# RATIB Contact Center — Production Readiness Report
+# RATEB Contact Center — Production Readiness Report
 
 **Date:** 2026-06-22  
 **Mode:** Production Hardening (Phases A–L)

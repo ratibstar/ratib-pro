@@ -1,4 +1,4 @@
-# RATIB Contact Center — Production Readiness Audit
+# RATEB Contact Center — Production Readiness Audit
 
 **Date:** 2026-06-22  
 **Scope:** `ratib-contact-center/` + Control Panel bridge (`control-panel/includes/control/contact-center-bridge.php`, hub/migrate/app pages)  

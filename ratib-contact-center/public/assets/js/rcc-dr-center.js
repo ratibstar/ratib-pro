@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Backup & DR UI (Phase 11).
+ * RATEB Contact Center — Backup & DR UI (Phase 11).
  */
 (function (global) {
     'use strict';

@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Executive Command Center (Phase 10H).
+ * RATEB Contact Center — Executive Command Center (Phase 10H).
  */
 (function (global) {
     'use strict';

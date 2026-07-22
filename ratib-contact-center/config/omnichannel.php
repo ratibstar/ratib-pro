@@ -13,7 +13,7 @@ return [
         'smtp_user' => getenv('RCC_SMTP_USER') ?: getenv('SMTP_USER') ?: '',
         'smtp_pass' => getenv('RCC_SMTP_PASS') ?: getenv('SMTP_PASS') ?: '',
         'from_email' => getenv('RCC_SMTP_FROM') ?: getenv('SMTP_FROM') ?: 'noreply@rateb.sa',
-        'from_name' => getenv('RCC_SMTP_FROM_NAME') ?: 'RATIB Contact Center',
+        'from_name' => getenv('RCC_SMTP_FROM_NAME') ?: 'RATEB Contact Center',
         'imap_host' => getenv('RCC_IMAP_HOST') ?: '',
         'imap_port' => (int) (getenv('RCC_IMAP_PORT') ?: 993),
         'imap_user' => getenv('RCC_IMAP_USER') ?: '',

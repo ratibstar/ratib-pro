@@ -1,4 +1,4 @@
--- RATIB Contact Center — 024 migration reconcile (idempotent)
+-- RATEB Contact Center — 024 migration reconcile (idempotent)
 -- Retires legacy migration filenames on servers where fast-deploy left orphan SQL files.
 
 INSERT IGNORE INTO rcc_migration_log (migration, batch) VALUES

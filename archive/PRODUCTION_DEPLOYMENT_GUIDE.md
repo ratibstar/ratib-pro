@@ -1,5 +1,5 @@
 # 🚀 Production Deployment Guide
-## Ratib Program - https://rateb.sa/
+## Rateb Program - https://rateb.sa/
 
 ---
 

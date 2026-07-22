@@ -1,4 +1,4 @@
--- RATIB Contact Center — 001 core schema
+-- RATEB Contact Center — 001 core schema
 -- MySQL 8+ | Safe to run once per environment (tracked in rcc_migration_log)
 
 CREATE TABLE IF NOT EXISTS rcc_migration_log (

@@ -1,4 +1,4 @@
-# Ratib Program - Video Production Guide
+# Rateb Program - Video Production Guide
 ## Complete Guide for Creating Video Tutorials with Voice Narration
 
 ---
@@ -96,7 +96,7 @@
 **For Each Video:**
 
 1. **Record Screen Actions** (10-15 minutes)
-   - Open Ratib Program
+   - Open Rateb Program
    - Navigate to relevant section
    - Perform actions as described in script
    - Record at normal speed
@@ -199,8 +199,8 @@ The scripts in `VIDEO_TUTORIAL_SCRIPT.md` are already formatted for narration. H
 ### Example Format:
 
 ```
-Welcome to the Ratib Program tutorial series. 
-Ratib Program is a comprehensive business management system 
+Welcome to the Rateb Program tutorial series. 
+Rateb Program is a comprehensive business management system 
 designed for managing workers, agents, subagents, accounting, HR, cases, and much more. 
 In this first video, we'll cover how to access and log in to the system.
 ```

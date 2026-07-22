@@ -53,7 +53,7 @@ $ratebPaymentJsVer = (int) (@filemtime(dirname(__DIR__) . '/js/payment.js') ?: t
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register Your Agency | تسجيل وكالتك — RATEB</title>
-    <meta name="description" content="Register your workforce agency with RATEB — bilingual registration form. تسجيل وكالة العمالة مع راتب.">
+    <meta name="description" content="Register your workforce agency with RATEB — bilingual registration form. تسجيل وكالة العمالة مع رتب.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratebHomePublicCssQuery ?? $ratebRegCssQ, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/register-agency.css?v=<?php echo htmlspecialchars($ratebRegCssQ, ENT_QUOTES, 'UTF-8'); ?>">

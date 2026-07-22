@@ -1,5 +1,5 @@
 /**
- * RATIB Contact Center — Unified Agent Inbox (EventBus-driven, no polling).
+ * RATEB Contact Center — Unified Agent Inbox (EventBus-driven, no polling).
  */
 (function (global) {
     'use strict';

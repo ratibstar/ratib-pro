@@ -1,5 +1,5 @@
 [Unit]
-Description=RATIB Contact Center Realtime Hub (WebSocket 9702)
+Description=RATEB Contact Center Realtime Hub (WebSocket 9702)
 After=network.target mysql.service
 
 [Service]

@@ -1,6 +1,6 @@
 <?php
 /**
- * RATIB Contact Center — Marketplace & Add-ons (Phase 11).
+ * RATEB Contact Center — Marketplace & Add-ons (Phase 11).
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);
