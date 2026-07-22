@@ -76,7 +76,7 @@ class AttendanceState extends ChangeNotifier {
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      if (keepReady && EssFailureUi.isConnectivity(f)) {
+      if (EssFailureUi.isConnectivity(f)) {
         offlineDegraded = true;
         status = AttendanceLoadStatus.ready;
       } else {
@@ -107,9 +107,12 @@ class AttendanceState extends ChangeNotifier {
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      if (keepReady && EssFailureUi.isConnectivity(f)) {
+      if (EssFailureUi.isConnectivity(f)) {
         offlineDegraded = true;
         status = AttendanceLoadStatus.ready;
+        try {
+          pendingOfflineCount = await _repository.pendingOfflineCount();
+        } catch (_) {}
       } else {
         try {
           pendingOfflineCount = await _repository.pendingOfflineCount();

@@ -93,6 +93,15 @@ class DocumentsState extends ChangeNotifier {
       previewFilename = file.filename;
       return true;
     } catch (e) {
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
+      errorCode = f.code;
+      errorMessage = f.message;
+      if (EssFailureUi.isConnectivity(f)) {
+        offlineDegraded = true;
+        status = DocumentsLoadStatus.ready;
+        return false;
+      }
       _setError(e);
       return false;
     } finally {

@@ -41,7 +41,7 @@ class ProfileState extends ChangeNotifier {
     } catch (e) {
       final f = EssFailureUi.normalize(e);
       EssFailureUi.signalIfOffline(f);
-      if (keepReady && EssFailureUi.isConnectivity(f)) {
+      if (EssFailureUi.isConnectivity(f)) {
         offlineDegraded = true;
         status = ProfileLoadStatus.ready;
       } else {

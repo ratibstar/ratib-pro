@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       title: l10n.navProfile,
       body: _state.status == ProfileLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == ProfileLoadStatus.error
+          : (_state.status == ProfileLoadStatus.error && !_state.offlineDegraded)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(

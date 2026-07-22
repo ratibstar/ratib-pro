@@ -45,7 +45,18 @@ class _PayslipDetailScreenState extends State<PayslipDetailScreen> {
 
   Future<void> _open() async {
     final ok = await _state.openDownload(widget.payslipId);
-    if (!mounted || !ok) return;
+    if (!mounted) return;
+    if (!ok) {
+      final l10n = AppLocalizations.of(context);
+      DsSnackbar.show(
+        context,
+        message: EssFailureUi.isConnectivityCode(_state.errorCode)
+            ? l10n.offlineNeedsConnection
+            : l10n.genericLoadFailed,
+        kind: DsSnackbarKind.error,
+      );
+      return;
+    }
     final bytes = _state.previewBytes;
     if (bytes == null) return;
     final text = utf8.decode(bytes, allowMalformed: true);
@@ -72,7 +83,9 @@ class _PayslipDetailScreenState extends State<PayslipDetailScreen> {
       title: l10n.payslipDetailTitle,
       body: _state.status == PayslipLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == PayslipLoadStatus.error
+          : (_state.status == PayslipLoadStatus.error &&
+                  !_state.offlineDegraded &&
+                  _state.detail.isEmpty)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(
@@ -86,6 +99,11 @@ class _PayslipDetailScreenState extends State<PayslipDetailScreen> {
               : ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
+                    if (_state.offlineDegraded)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: DsGlassTile(child: Text(l10n.offlineCachedHint)),
+                      ),
                     DsSectionHeader(title: l10n.payslipDetailTitle),
                     DsCard(
                       child: Column(

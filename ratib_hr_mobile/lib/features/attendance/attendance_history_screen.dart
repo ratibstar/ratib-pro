@@ -48,7 +48,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       title: l10n.navAttendanceHistory,
       body: _state.status == AttendanceLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == AttendanceLoadStatus.error
+          : (_state.status == AttendanceLoadStatus.error &&
+                  !_state.offlineDegraded)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(
@@ -60,28 +61,49 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   onAction: _state.loadHistory,
                 )
               : _state.history.isEmpty
-                  ? DsEmptyState(title: l10n.attendanceHistoryEmpty)
+                  ? Column(
+                      children: [
+                        if (_state.offlineDegraded)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: DsGlassTile(
+                              child: Text(l10n.offlineCachedHint),
+                            ),
+                          ),
+                        Expanded(
+                          child: DsEmptyState(
+                            title: l10n.attendanceHistoryEmpty,
+                          ),
+                        ),
+                      ],
+                    )
                   : RefreshIndicator(
                       onRefresh: _state.loadHistory,
                       child: ListView.builder(
                         padding: const EdgeInsets.only(top: 8, bottom: 32),
                         itemCount: _state.history.length +
-                            (_state.pendingOfflineCount > 0 ? 1 : 0),
+                            (_state.pendingOfflineCount > 0 ||
+                                    _state.offlineDegraded
+                                ? 1
+                                : 0),
                         itemBuilder: (context, i) {
-                          if (_state.pendingOfflineCount > 0 && i == 0) {
+                          final showBanner = _state.pendingOfflineCount > 0 ||
+                              _state.offlineDegraded;
+                          if (showBanner && i == 0) {
                             return Padding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                               child: DsGlassTile(
                                 child: Text(
-                                  l10n.attendanceOfflineBanner(
-                                    _state.pendingOfflineCount,
-                                  ),
+                                  _state.pendingOfflineCount > 0
+                                      ? l10n.attendanceOfflineBanner(
+                                          _state.pendingOfflineCount,
+                                        )
+                                      : l10n.offlineCachedHint,
                                 ),
                               ),
                             );
                           }
-                          final idx =
-                              _state.pendingOfflineCount > 0 ? i - 1 : i;
+                          final idx = showBanner ? i - 1 : i;
                           final row = _state.history[idx];
                           final date =
                               (row['attendance_date'] ?? '').toString();

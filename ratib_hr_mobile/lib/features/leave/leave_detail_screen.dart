@@ -49,7 +49,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
       title: l10n.leaveDetailTitle,
       body: _state.status == LeaveLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == LeaveLoadStatus.error
+          : (_state.status == LeaveLoadStatus.error && !_state.offlineDegraded)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(
@@ -63,6 +63,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
               : ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
+                    if (_state.offlineDegraded)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: DsGlassTile(child: Text(l10n.offlineCachedHint)),
+                      ),
                     DsSectionHeader(title: l10n.requestStatus),
                     DsCard(
                       child: Column(

@@ -48,7 +48,7 @@ class _LeaveBalancesScreenState extends State<LeaveBalancesScreen> {
       title: l10n.leave,
       body: _state.status == LeaveLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == LeaveLoadStatus.error
+          : (_state.status == LeaveLoadStatus.error && !_state.offlineDegraded)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(

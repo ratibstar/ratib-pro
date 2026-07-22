@@ -29,14 +29,11 @@ final class ProfileRepository {
       if (e.code == 'network' || e.code == 'timeout') {
         _markOffline(e.message);
         final cached = await _readCache();
-        if (cached != null) {
-          return ProfileSnapshot(
-            profile: cached,
-            fromCache: true,
-            offlineDegraded: true,
-          );
-        }
-        rethrow;
+        return ProfileSnapshot(
+          profile: cached ?? const {},
+          fromCache: cached != null,
+          offlineDegraded: true,
+        );
       }
       rethrow;
     }

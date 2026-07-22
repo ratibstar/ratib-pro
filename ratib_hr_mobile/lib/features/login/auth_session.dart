@@ -75,7 +75,7 @@ final class AuthSession extends ChangeNotifier {
         await _registerPushSafe();
         status = AuthStatus.signedIn;
         offlineSession = false;
-        _warmEssCaches();
+        await _warmEssCaches();
       } on AppFailure catch (e) {
         lastError = e;
         if (_isConnectivityFailure(e)) {
@@ -143,7 +143,7 @@ final class AuthSession extends ChangeNotifier {
       await _registerDeviceSafe();
       await _registerPushSafe();
       status = AuthStatus.signedIn;
-      _warmEssCaches();
+      await _warmEssCaches();
       notifyListeners();
       return true;
     } catch (e) {
@@ -297,75 +297,79 @@ final class AuthSession extends ChangeNotifier {
 
   /// Prefetch ALL ESS read caches while online so every screen opens offline
   /// without requiring the user to visit that screen first.
-  void _warmEssCaches() {
-    Future<void>(() async {
-      Future<void> safe(Future<void> Function() fn) async {
-        try {
-          await fn();
-        } catch (_) {}
-      }
+  /// Awaited on login/restore so caches exist before the user goes offline.
+  Future<void> _warmEssCaches() async {
+    Future<void> safe(Future<void> Function() fn) async {
+      try {
+        await fn();
+      } catch (_) {}
+    }
 
-      await safe(() async {
+    await Future.wait<void>([
+      safe(() async {
         await AppLocator.attendanceRepository.loadToday();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.attendanceRepository.loadHistory();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.leaveRepository.loadBalances();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.leaveRepository.loadRequests();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.profileRepository.loadMine();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         final body = await AppLocator.dashboard.summary();
         await EssReadCache.writeMap(EssReadCache.dashboard, body);
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.documentsRepository.loadList();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await AppLocator.payslipRepository.loadList();
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchList(
           key: EssReadCache.permissionRequests,
           fetch: () => AppLocator.permissionRequests.listMine(),
         );
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchList(
           key: EssReadCache.employeeRequests,
           fetch: () => AppLocator.employeeRequests.listMine(),
         );
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchList(
           key: EssReadCache.notifications,
           fetch: () => AppLocator.notifications.listFiltered(''),
         );
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchMap(
           key: EssReadCache.ratings,
           fetch: () => AppLocator.ratings.summary(),
         );
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchList(
           key: EssReadCache.inquiries,
           fetch: () => AppLocator.inquiries.listMine(),
         );
-      });
-      await safe(() async {
+      }),
+      safe(() async {
         await EssReadCache.fetchMap(
           key: EssReadCache.payments,
           fetch: () => AppLocator.payments.list(),
         );
-      });
-    });
+      }),
+    ]).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () => <void>[],
+    );
   }
 }

@@ -43,15 +43,13 @@ class LeaveState extends ChangeNotifier {
       fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
-      if (keepReady) {
-        final f = EssFailureUi.normalize(e);
-        EssFailureUi.signalIfOffline(f);
-        if (EssFailureUi.isConnectivity(f)) {
-          offlineDegraded = true;
-          status = LeaveLoadStatus.ready;
-          notifyListeners();
-          return;
-        }
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
+      if (EssFailureUi.isConnectivity(f)) {
+        offlineDegraded = true;
+        status = LeaveLoadStatus.ready;
+        notifyListeners();
+        return;
       }
       _setError(e);
     }
@@ -74,7 +72,7 @@ class LeaveState extends ChangeNotifier {
       fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
-      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+      if (EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
         offlineDegraded = true;
         status = LeaveLoadStatus.ready;
       } else {
@@ -99,7 +97,7 @@ class LeaveState extends ChangeNotifier {
       fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
-      if (keepReady && EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
+      if (EssFailureUi.isConnectivity(EssFailureUi.normalize(e))) {
         offlineDegraded = true;
         status = LeaveLoadStatus.ready;
       } else {
@@ -139,6 +137,11 @@ class LeaveState extends ChangeNotifier {
   void _setError(Object e) {
     final f = EssFailureUi.normalize(e);
     EssFailureUi.signalIfOffline(f);
+    if (EssFailureUi.isConnectivity(f)) {
+      offlineDegraded = true;
+      status = LeaveLoadStatus.ready;
+      return;
+    }
     errorCode = f.code;
     errorMessage = f.message;
     status = LeaveLoadStatus.error;

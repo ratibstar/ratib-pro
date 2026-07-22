@@ -101,27 +101,53 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
           Expanded(
             child: _state.status == DocumentsLoadStatus.loading
                 ? DsLoadingState(message: l10n.genericLoading)
-                : _state.status == DocumentsLoadStatus.error
+                : (_state.status == DocumentsLoadStatus.error &&
+                        !_state.offlineDegraded)
                     ? DsErrorState(
                         title: l10n.genericLoadFailed,
                         message: EssFailureUi.fromStored(
-                    l10n,
-                    code: _state.errorCode,
-                    message: _state.errorMessage,
-                  ),
+                          l10n,
+                          code: _state.errorCode,
+                          message: _state.errorMessage,
+                        ),
                         actionLabel: l10n.homeRetry,
                         onAction: _state.loadList,
                       )
                     : visible.isEmpty
-                        ? DsEmptyState(title: l10n.documentsEmpty)
+                        ? Column(
+                            children: [
+                              if (_state.offlineDegraded)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                                  child: DsGlassTile(
+                                    child: Text(l10n.offlineCachedHint),
+                                  ),
+                                ),
+                              Expanded(
+                                child: DsEmptyState(title: l10n.documentsEmpty),
+                              ),
+                            ],
+                          )
                         : RefreshIndicator(
                             onRefresh: _state.loadList,
                             child: ListView.builder(
                               padding:
                                   const EdgeInsets.only(top: 8, bottom: 32),
-                              itemCount: visible.length,
+                              itemCount: visible.length +
+                                  (_state.offlineDegraded ? 1 : 0),
                               itemBuilder: (context, i) {
-                                final row = visible[i];
+                                if (_state.offlineDegraded && i == 0) {
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                    child: DsGlassTile(
+                                      child: Text(l10n.offlineCachedHint),
+                                    ),
+                                  );
+                                }
+                                final row = visible[
+                                    _state.offlineDegraded ? i - 1 : i];
                                 final id = (row['id'] ?? '').toString();
                                 final title =
                                     (row['title'] ?? l10n.navDocuments)

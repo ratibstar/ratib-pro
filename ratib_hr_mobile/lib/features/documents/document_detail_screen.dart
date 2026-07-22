@@ -48,9 +48,11 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     final ok = await _state.openFile(widget.documentId);
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).documentsNoFile)),
-      );
+      final l10n = AppLocalizations.of(context);
+      final msg = EssFailureUi.isConnectivityCode(_state.errorCode)
+          ? l10n.offlineNeedsConnection
+          : l10n.documentsNoFile;
+      DsSnackbar.show(context, message: msg, kind: DsSnackbarKind.error);
       return;
     }
     final bytes = _state.previewBytes;
@@ -98,7 +100,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       title: l10n.documentDetailTitle,
       body: _state.status == DocumentsLoadStatus.loading
           ? DsLoadingState(message: l10n.genericLoading)
-          : _state.status == DocumentsLoadStatus.error
+          : (_state.status == DocumentsLoadStatus.error &&
+                  !_state.offlineDegraded &&
+                  _state.detail.isEmpty)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
                   message: EssFailureUi.fromStored(
@@ -112,6 +116,11 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               : ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
+                    if (_state.offlineDegraded)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: DsGlassTile(child: Text(l10n.offlineCachedHint)),
+                      ),
                     DsSectionHeader(title: l10n.documentDetailTitle),
                     DsCard(
                       child: Column(
