@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-admin-refresh-ttfb-v106';
+var SW_BUILD_ID = '20260722-admin-refresh-cache-clone-v107';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1417,12 +1417,21 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         if (isCloudBrowserOffline()) {
             return response;
         }
-        // Defer Cache.put past this navigation (+ typical second F5).
-        // Immediate puts lock Cache API and made the *next* refresh wait on network.
+        // Clone NOW — deferring clone() until after respondWith consumes the body left
+        // the ops cache empty, so every «تحديث» waited on cold PHP (black tab).
+        var toCache = null;
+        try {
+            toCache = response.clone();
+        } catch (eClone) {
+            toCache = null;
+        }
+        if (!toCache) {
+            return response;
+        }
         var store = new Promise(function (resolve) {
             setTimeout(function () {
                 caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
-                    return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
+                    return putErpOpsHtmlResponse(opsCache, pageUrl, toCache);
                 }).catch(function () { return null; }).then(resolve);
             }, 400);
         });
@@ -1539,13 +1548,63 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         });
     }
 
-    // Soft-online F5: cache-first paint when available; on miss wait for real PHP
-    // (was 600ms network + 700ms shell ceiling → black/empty after «تحديث» while online).
+    // Soft-online F5: cache-first when hit; on miss wait for live PHP (no 600ms abort).
+    // Bare /admin uses the same passthrough pattern as online-only platform pages.
     var bareAdminPath = false;
     try {
         bareAdminPath = /\/admin$/i.test(String((url && url.pathname) || '').replace(/\/+$/, ''));
     } catch (eBare) { /* ignore */ }
-    var networkMs = bareAdminPath ? 8000 : 4500;
+
+    if (!isCloudBrowserOffline() && bareAdminPath) {
+        // Prefer any cached dashboard snapshot immediately; refresh network in background.
+        return matchSoftOnlineExactCache(request, url).catch(function () {
+            return null;
+        }).then(function (hit) {
+            if (hit) {
+                var cached = serveCachedFast(hit, false);
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(
+                        fetchNavigateNetworkPassthrough(request, 8000)
+                            .then(storeLive)
+                            .catch(function () { return null; })
+                    );
+                }
+                return cached;
+            }
+            return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+                storeLive(response);
+                return response;
+            }).catch(function () {
+                return matchCachedAdminDashboard(url).then(function (dash) {
+                    if (dash) {
+                        return serveCachedFast(dash, false) || dash;
+                    }
+                    return new Response(
+                        '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                        + '<meta name="color-scheme" content="dark">'
+                        + '<title>لوحة التحكم</title></head>'
+                        + '<body style="margin:0;font-family:Tajawal,system-ui,sans-serif;background:#0f1117;color:#e8eaed;'
+                        + 'display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:2rem">'
+                        + '<div><h1 style="font-size:1.15rem;margin:0 0 .75rem">جاري تحميل لوحة التحكم…</h1>'
+                        + '<p style="opacity:.8;margin:0 0 1rem">الاتصال بطيء — أعد المحاولة.</p>'
+                        + '<p><a style="color:#8ab4ff" href="javascript:location.reload()">تحديث</a></p></div>'
+                        + '</body></html>',
+                        {
+                            status: 503,
+                            headers: {
+                                'Content-Type': 'text/html; charset=utf-8',
+                                'Cache-Control': 'no-store',
+                                'X-Rateb-Online-Error': '1'
+                            }
+                        }
+                    );
+                });
+            });
+        });
+    }
+
+    var networkMs = 4500;
     var networkP = fetchNavigateNetwork(request, networkMs).then(storeLive).catch(function () {
         return null;
     });
@@ -1580,37 +1639,16 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 if (response && finish(response)) {
                     return;
                 }
-                // Online miss + network fail: prefer dashboard snapshot, then shell.
                 Promise.race([
                     neverFailNavigate(request, url),
                     new Promise(function (res) {
                         setTimeout(function () {
-                            if (bareAdminPath) {
-                                matchCachedAdminDashboard(url).then(function (dash) {
-                                    if (dash) {
-                                        res(serveCachedFast(dash, false) || dash);
-                                        return;
-                                    }
-                                    try {
-                                        res(erpInlineShellResponse());
-                                    } catch (eShell) {
-                                        res(uncachedAdminBrowseResponse(url));
-                                    }
-                                }).catch(function () {
-                                    try {
-                                        res(erpInlineShellResponse());
-                                    } catch (eShell2) {
-                                        res(uncachedAdminBrowseResponse(url));
-                                    }
-                                });
-                                return;
-                            }
                             try {
                                 res(erpInlineShellResponse());
-                            } catch (eShell3) {
+                            } catch (eShell) {
                                 res(uncachedAdminBrowseResponse(url));
                             }
-                        }, bareAdminPath ? 1200 : 400);
+                        }, 400);
                     })
                 ]).then(function (fallback) {
                     finish(fallback);
@@ -1618,7 +1656,6 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             });
         }
 
-        // Prefer cache; network paints only after an explicit miss (afterCacheMiss).
         cacheP.then(function (hit) {
             if (!hit) {
                 afterCacheMiss();
@@ -1635,8 +1672,6 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
             });
         });
 
-        // Ceiling: never leave black forever. Online /admin waits for network first.
-        var ceilingMs = bareAdminPath ? 8500 : 1200;
         setTimeout(function () {
             if (settled) {
                 return;
@@ -1660,34 +1695,6 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                         if (response && finish(response)) {
                             return;
                         }
-                        if (bareAdminPath) {
-                            matchCachedAdminDashboard(url).then(function (dash) {
-                                if (settled) {
-                                    return;
-                                }
-                                Promise.resolve(serveCachedFast(dash, false)).then(function (dashServed) {
-                                    if (settled) {
-                                        return;
-                                    }
-                                    if (dashServed) {
-                                        finish(dashServed);
-                                        return;
-                                    }
-                                    try {
-                                        finish(erpInlineShellResponse());
-                                    } catch (eShellDash) {
-                                        finish(uncachedAdminBrowseResponse(url));
-                                    }
-                                });
-                            }).catch(function () {
-                                try {
-                                    finish(erpInlineShellResponse());
-                                } catch (eShellDash2) {
-                                    finish(uncachedAdminBrowseResponse(url));
-                                }
-                            });
-                            return;
-                        }
                         try {
                             finish(erpInlineShellResponse());
                         } catch (eShell2) {
@@ -1696,7 +1703,7 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                     });
                 });
             });
-        }, ceilingMs);
+        }, 1200);
     });
 }
 
