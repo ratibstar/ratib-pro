@@ -48,7 +48,9 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-fix-second-f5-shell-v116'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-fix-online-charts-v117'));
+assert('online charts never get empty stub', /isCriticalOnlineChartAsset[\s\S]*12000|chartCritical \? 12000/.test(source));
+assert('chart asset miss uses bare fetch online', /Last resort: bare fetch without abort[\s\S]*chartCritical/.test(source));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 assert('F5 clones response before deferred Cache.put', /Clone NOW[\s\S]*toCache = response\.clone\(\)[\s\S]*setTimeout/.test(source));
 assert('ops HTML put deferred past second F5', /setTimeout\(function \(\) \{[\s\S]*putErpOpsHtmlResponse[\s\S]*\}, 400\)/.test(source));

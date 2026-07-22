@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-fix-second-f5-shell-v116';
+var SW_BUILD_ID = '20260722-fix-online-charts-v117';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3103,6 +3103,14 @@ function isErpOfflineAsset(url) {
     return false;
 }
 
+/** Dashboard Chart.js — never replace with offline stub while online (black canvases). */
+function isCriticalOnlineChartAsset(pathname) {
+    var p = String(pathname || '');
+    return /\/assets\/vendor\/chartjs\/.+\.js$/i.test(p)
+        || /\/assets\/js\/charts\.js$/i.test(p)
+        || /\/assets\/js\/dashboard-charts-defer\.js$/i.test(p);
+}
+
 function offlineHtmlResponse() {
     return new Response(OFFLINE_HTML, {
         status: 200,
@@ -3154,6 +3162,17 @@ function emptyAssetResponse(request) {
         // Missing cache must surface as 503, not a 28-byte fake that silently kills OA.
         if (isProtectedOfflineIdentityJs(path)) {
             return new Response('/* rateb offline identity missing from cache */', {
+                status: 503,
+                headers: {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'X-Rateb-Offline': '1',
+                    'Cache-Control': 'no-store'
+                }
+            });
+        }
+        // Chart.js stub executes as "success" and leaves black dashboard canvases online.
+        if (isCriticalOnlineChartAsset(path)) {
+            return new Response('/* rateb chart asset missing */', {
                 status: 503,
                 headers: {
                     'Content-Type': 'application/javascript; charset=utf-8',
@@ -4410,9 +4429,23 @@ self.addEventListener('fetch', function (event) {
             }
             if (!offline) {
                 // Prefer cache hit for instant paint; refresh in background.
+                var chartCritical = isCriticalOnlineChartAsset(url.pathname);
+                var netMs = chartCritical ? 12000 : 800;
                 return matchErpOfflineCached(event.request, url).then(function (cached) {
                     return rejectFakeOfflineIdentityJs(cached, url.pathname).then(function (real) {
-                        if (real) {
+                        // Never serve a prior empty chart stub from cache while online.
+                        if (real && chartCritical) {
+                            return real.clone().text().then(function (t) {
+                                var text = String(t || '');
+                                if (text.length < 500 || /rateb chart asset missing|rateb-pos offline stub/i.test(text)) {
+                                    return null;
+                                }
+                                return real;
+                            }).catch(function () { return real; });
+                        }
+                        return real;
+                    }).then(function (real) {
+                        if (real && !chartCritical) {
                             event.waitUntil(
                                 fetchErpAssetNetwork(event.request, 4000).then(function (fresh) {
                                     if (!fresh) {
@@ -4428,8 +4461,23 @@ self.addEventListener('fetch', function (event) {
                                 return c || real;
                             });
                         }
-                        // Soft-online miss: short race only — never hang for multi-second network.
-                        return fetchErpAssetNetwork(event.request, 800).then(function (response) {
+                        if (real && chartCritical) {
+                            event.waitUntil(
+                                fetchErpAssetNetwork(event.request, 8000).then(function (fresh) {
+                                    if (!fresh) {
+                                        return null;
+                                    }
+                                    return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                        return putBoth(cache, fresh.clone());
+                                    });
+                                }).catch(function () { return null; })
+                            );
+                            return asNonRedirectedResponse(real).then(function (c) {
+                                return c || real;
+                            });
+                        }
+                        // Soft-online miss: charts need a long network budget (800ms starved Chart.js).
+                        return fetchErpAssetNetwork(event.request, netMs).then(function (response) {
                             if (response && response.ok) {
                                 var forCache = response.clone();
                                 event.waitUntil(
@@ -4441,8 +4489,25 @@ self.addEventListener('fetch', function (event) {
                                     return clean || response;
                                 });
                             }
+                            if (chartCritical) {
+                                // Last resort: bare fetch without abort — never fake Chart.js online.
+                                return fetch(event.request, { credentials: 'same-origin', cache: 'no-store' })
+                                    .then(function (r) {
+                                        if (r && r.ok) {
+                                            event.waitUntil(
+                                                caches.open(ERP_COEXIST_CACHE).then(function (cache) {
+                                                    return putBoth(cache, r.clone());
+                                                }).catch(function () { return null; })
+                                            );
+                                        }
+                                        return r;
+                                    });
+                            }
                             return emptyAssetResponse(event.request);
                         }).catch(function () {
+                            if (chartCritical) {
+                                return fetch(event.request, { credentials: 'same-origin', cache: 'no-store' });
+                            }
                             return emptyAssetResponse(event.request);
                         });
                     });
