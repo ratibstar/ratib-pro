@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-admin-shell-v109';
+var SW_BUILD_ID = '20260722-always-intercept-admin-v110';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1131,6 +1131,48 @@ function safeOfflineAdminNavigate(request, url, event) {
                 inlineNow();
             }
         });
+    });
+}
+
+/**
+ * Every /admin document navigation — always handled by SW (never Chrome interstitial).
+ * Online: network first (passthrough). Offline/soft-latch/fail: safeOfflineAdminNavigate.
+ */
+function adminDocumentNavigate(request, url, event) {
+    var offlineNow = isHardBrowserOffline() || isCloudBrowserOffline();
+    if (offlineNow) {
+        return safeOfflineAdminNavigate(request, url, event);
+    }
+
+    var pageUrl = '';
+    try {
+        pageUrl = String((request && request.url) || (url && url.href) || '');
+    } catch (eP) {
+        pageUrl = '';
+    }
+
+    return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+        if (response && response.ok) {
+            try {
+                // Clone before respondWith consumes body (same bug as storeLive).
+                var toCache = response.clone();
+                var store = new Promise(function (resolve) {
+                    setTimeout(function () {
+                        caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
+                            return putErpOpsHtmlResponse(opsCache, pageUrl, toCache);
+                        }).catch(function () { return null; }).then(resolve);
+                    }, 400);
+                });
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(store);
+                }
+            } catch (eStore) { /* ignore */ }
+            return response;
+        }
+        return safeOfflineAdminNavigate(request, url, event);
+    }).catch(function () {
+        markCloudNetworkDegraded('admin-nav-fail');
+        return safeOfflineAdminNavigate(request, url, event);
     });
 }
 
@@ -4043,16 +4085,11 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname)) {
-            // Truly online (onLine + no soft latch): bypass SW — live PHP, no black wait.
-            // Hard offline OR soft-latch (Wi‑Fi dead, onLine still true): MUST intercept —
-            // otherwise Chrome hangs the document fetch → pure black «تحديث» offline.
-            if (!isHardBrowserOffline() && !isCloudBrowserOffline()) {
-                releaseBackgroundWarmAfterFirstDocument();
-                return;
-            }
+            // ALWAYS respondWith — never fall through to Chrome «لا يتوفر اتصال».
+            // Online: live network (8s) then cache/shell. Offline/soft-latch: shell within 250ms.
             respondWithDocumentAndReleaseWarmGate(
                 event,
-                safeOfflineAdminNavigate(event.request, url, event).catch(function () {
+                adminDocumentNavigate(event.request, url, event).catch(function () {
                     try {
                         return erpInlineShellResponse();
                     } catch (eAdminFinal) {
@@ -4062,7 +4099,7 @@ self.addEventListener('fetch', function (event) {
             );
             return;
         }
-        // Soft-online non-admin: bypass. Soft-latch / hard offline: cache safety below.
+        // Soft-online non-admin: bypass. Soft-latch / hard offline: handled below / residual.
         if (!isHardBrowserOffline() && !isCloudBrowserOffline()) {
             releaseBackgroundWarmAfterFirstDocument();
             return;

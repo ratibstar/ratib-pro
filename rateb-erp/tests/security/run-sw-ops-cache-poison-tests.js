@@ -48,7 +48,7 @@ assert('navigateErpCloudWithCacheSafety paints cache-first', /function navigateE
 assert('poisoned cache entries are deleted', source.includes('deletePoisonedErpOpsCacheEntries(pageUrl)'));
 assert('offline fallback uses neverFailNavigate after poison', /deletePoisonedErpOpsCacheEntries\(pageUrl\)[\s\S]*neverFailNavigate\(request, url\)/.test(source));
 assert('putErpOpsHtmlResponse reuses shared validator', /function putErpOpsHtmlResponse[\s\S]*isValidErpOpsHtmlBody\(pageUrl, body\)/.test(source));
-assert('SW build id bumped for upgrade path', source.includes('20260722-offline-admin-shell-v109'));
+assert('SW build id bumped for upgrade path', source.includes('20260722-always-intercept-admin-v110'));
 assert('activate migrates prior ops caches before delete', /Migrate prior ops-page HTML[\s\S]*caches\.delete\(name\)/.test(source));
 assert('F5 clones response before deferred Cache.put', /Clone NOW[\s\S]*toCache = response\.clone\(\)[\s\S]*setTimeout/.test(source));
 assert('ops HTML put deferred past second F5', /setTimeout\(function \(\) \{[\s\S]*putErpOpsHtmlResponse[\s\S]*\}, 400\)/.test(source));
@@ -60,9 +60,10 @@ assert('navigate fetch aborts on timeout', /function fetchNavigateNetwork[\s\S]*
 assert('soft-offline latch from client message', source.includes("data.type === 'RATEB_CLOUD_OFFLINE'"));
 assert('hard offline helper ignores soft latch', source.includes('function isHardBrowserOffline'));
 assert('safe offline admin navigate exists', source.includes('function safeOfflineAdminNavigate'));
+assert('admin document navigate always intercepts', source.includes('function adminDocumentNavigate'));
 assert('offline admin paints within 250ms ceiling', /Absolute ceiling — never black for more than 250ms offline[\s\S]*250/.test(source));
 assert('soft-offline TTL is short', /CLOUD_DEGRADED_TTL_MS = 5000/.test(source));
-assert('soft-latch still intercepts admin documents', /isHardBrowserOffline\(\) && !isCloudBrowserOffline\(\)/.test(source));
+assert('admin nav never bypasses to Chrome interstitial', /ALWAYS respondWith — never fall through to Chrome/.test(source));
 
 // Simulated cache recovery contract: invalid body must not be re-cached by put path.
 assert(
