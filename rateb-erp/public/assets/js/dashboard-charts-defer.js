@@ -75,40 +75,6 @@
         } catch (ePaint) { /* ignore */ }
     }
 
-    /** Progressive badge hydrate after HTML paint (counts deferred to avoid login black screen). */
-    function applyOversightBadges(menuCounts) {
-        if (!menuCounts || typeof menuCounts !== 'object') {
-            return;
-        }
-        var map = {
-            'admin/oversight/companies-approvals': menuCounts.company_pending || 0,
-            'admin/oversight/approvals': menuCounts.approvals || 0,
-            'admin/oversight/procurement': menuCounts.procurement || 0,
-            'admin/oversight/rfq': menuCounts.rfq || 0,
-            'admin/oversight/inventory': menuCounts.inventory || 0,
-            'admin/oversight/supplier-evaluations': menuCounts.supplier_evaluations || 0
-        };
-        Object.keys(map).forEach(function (route) {
-            var n = parseInt(map[route], 10) || 0;
-            var links = document.querySelectorAll('a[href*="' + route + '"], a[data-rateb-href*="' + route + '"]');
-            links.forEach(function (a) {
-                var badge = a.querySelector('.rateb-nav-badge');
-                if (n < 1) {
-                    if (badge) {
-                        badge.remove();
-                    }
-                    return;
-                }
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'rateb-nav-badge rateb-nav-badge--pending';
-                    a.appendChild(badge);
-                }
-                badge.textContent = String(n);
-            });
-        });
-    }
-
     function loadChartLibs(rootEl) {
         return new Promise(function (resolve) {
             if (typeof window.Chart !== 'undefined' && typeof window.ratebChartsBoot === 'function') {
@@ -190,10 +156,13 @@
                     return;
                 }
                 applyCharts(data.charts || {});
-                paintCharts();
-                if (data.menu_counts) {
-                    applyOversightBadges(data.menu_counts);
-                }
+                // Wait one tick so dataset.* reflects setAttribute before hasLabels().
+                setTimeout(function () {
+                    if (myGen !== bootGen) {
+                        return;
+                    }
+                    paintCharts();
+                }, 0);
             }).catch(function () { /* ignore */ }).finally(function () {
                 clearTimeout(timer);
             });
