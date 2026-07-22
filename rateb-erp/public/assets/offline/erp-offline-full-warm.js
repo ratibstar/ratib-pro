@@ -5,20 +5,20 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 80;
-    var CONCURRENCY = 2;
-    var GAP_MS = 200;
-    var MIN_OK = 12;
+    var MAX_URLS = 120;
+    var CONCURRENCY = 3;
+    var GAP_MS = 120;
+    var MIN_OK = 20;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Bump TTL keys so clients re-warm after auto-offline page coverage fix.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v21';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v21';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v21';
+    // Bump so every client re-warms the full sidebar for offline-without-visit.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v22';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v22';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v22';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -945,13 +945,13 @@
             var seen = {};
             var urls = [];
             assetUrls.forEach(function (u) { seen[u] = true; });
-            // Phase OH — certified module HTML snapshots first (seed + sidebar).
+            // Sidebar first — every visible Admin link, so offline works without visiting each page.
+            collectSidebarUrls(seen, urls);
             seedCoreUrls(seen, urls);
             var posFirst = [
                 root.location.origin + publicBase() + 'admin/ops/pos/register',
                 root.location.origin + publicBase() + 'admin/ops/access-control/matrix',
                 root.location.origin + publicBase() + 'admin/ops/access-control',
-                root.location.origin + publicBase() + 'admin/ops/accounting/platform',
                 root.location.origin + publicBase() + 'admin/ops/accounting',
                 root.location.origin + publicBase() + 'admin/accounting',
                 root.location.origin + publicBase() + 'admin/ops/journal-entries',
@@ -962,6 +962,7 @@
                 root.location.origin + publicBase() + 'admin/ops/suppliers',
                 root.location.origin + publicBase() + 'admin/hr/employees',
                 root.location.origin + publicBase() + 'admin/notifications',
+                root.location.origin + publicBase() + 'admin/ops/notifications',
                 root.location.origin + publicBase() + 'admin/users',
                 root.location.origin + publicBase() + 'admin/branches',
                 root.location.origin + publicBase() + 'admin/customers',
@@ -975,16 +976,12 @@
                 root.location.origin + publicBase() + 'admin/companies',
                 root.location.origin + publicBase() + 'admin/ops/stock-movements',
                 root.location.origin + publicBase() + 'admin/ops/branch-dashboard',
-                root.location.origin + publicBase() + 'admin/ops/accounting',
-                root.location.origin + publicBase() + 'admin/ops/notifications',
-                root.location.origin + publicBase() + 'admin/cms',
                 root.location.origin + publicBase() + 'admin/ops/contracts',
                 root.location.origin + publicBase() + 'admin/ops/assets'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
             });
-            collectSidebarUrls(seen, urls);
             collectActionUrls(seen, urls);
             return Promise.resolve(urls).then(function (list) {
                 warmQueueSeen = seen;

@@ -206,15 +206,22 @@
 
     var lastSoftNavMissHref = '';
 
+    function hasSwController() {
+        try {
+            return !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+        } catch (e) {
+            return false;
+        }
+    }
+
     function hardNavigate(href) {
-        // Soft-nav miss fallback only — full assign after a failed soft swap.
-        // NEVER hard-navigate while offline: Chrome paints «لا يتوفر اتصال بالإنترنت»
-        // when the Service Worker is missing or bypassed (Ctrl+F5 / no controller).
+        // Soft-nav miss fallback — full assign so SW can paint cache/shell offline.
+        // Only skip when offline AND no controller (Chrome interstitial risk).
         try {
             if (!href) {
                 return;
             }
-            if (isUiOffline()) {
+            if (isUiOffline() && !hasSwController()) {
                 try {
                     showSoftNavMissToast(href);
                 } catch (eToast) { /* ignore */ }
@@ -920,7 +927,7 @@
 
         // Online: never abort early — Cache vs Network race resolves when either wins.
         // The old 800–1400ms ceiling aborted good navigations (tabs looked broken; F5 felt fast).
-        var ceilingMs = isUiOffline() ? 900 : 0;
+        var ceilingMs = isUiOffline() ? 2000 : 0;
         return new Promise(function (resolve, reject) {
             var settled = false;
             var timer = null;
@@ -1178,13 +1185,11 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Soft-nav miss: online → full navigation. Offline → stay put (never Chrome interstitial).
+            // Soft-nav miss: full navigation (SW serves warmed HTML / shell offline).
             if (!(err && err.message === 'nav_superseded')) {
                 showSoftNavMissToast(href);
                 lastSoftNavMissHref = '';
-                if (!isUiOffline()) {
-                    hardNavigate(href);
-                }
+                hardNavigate(href);
             }
             return false;
         }).then(function (ok) {
