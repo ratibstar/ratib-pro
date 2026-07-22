@@ -208,9 +208,16 @@
 
     function hardNavigate(href) {
         // Soft-nav miss fallback only — full assign after a failed soft swap.
-        // (Previously blocked entirely; sidebar uses onclick=return false so users got stuck.)
+        // NEVER hard-navigate while offline: Chrome paints «لا يتوفر اتصال بالإنترنت»
+        // when the Service Worker is missing or bypassed (Ctrl+F5 / no controller).
         try {
             if (!href) {
+                return;
+            }
+            if (isUiOffline()) {
+                try {
+                    showSoftNavMissToast(href);
+                } catch (eToast) { /* ignore */ }
                 return;
             }
             root.location.href = href;
@@ -1158,11 +1165,13 @@
             } catch (eW) { /* ignore */ }
             setMainNavBusy(false);
             clearNavPending();
-            // Soft-nav miss: recover immediately with full navigation (sidebar onclick=return false).
+            // Soft-nav miss: online → full navigation. Offline → stay put (never Chrome interstitial).
             if (!(err && err.message === 'nav_superseded')) {
                 showSoftNavMissToast(href);
                 lastSoftNavMissHref = '';
-                hardNavigate(href);
+                if (!isUiOffline()) {
+                    hardNavigate(href);
+                }
             }
             return false;
         }).then(function (ok) {

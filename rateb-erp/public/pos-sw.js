@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-oversight-no-cold-count-v111';
+var SW_BUILD_ID = '20260722-offline-refresh-no-chrome-v112';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3491,6 +3491,7 @@ function releaseBackgroundWarmAfterFirstDocument() {
 /**
  * Commit document navigation response first; only then release the one-shot warm gate.
  * Must not start populate/verify/cache.put on the critical path of first open.
+ * NEVER reject — a rejected respondWith paints Chrome «لا يتوفر اتصال بالإنترنت».
  */
 function respondWithDocumentAndReleaseWarmGate(event, responsePromise) {
     event.respondWith(
@@ -3498,12 +3499,30 @@ function respondWithDocumentAndReleaseWarmGate(event, responsePromise) {
             setTimeout(function () {
                 releaseBackgroundWarmAfterFirstDocument();
             }, 0);
-            return response;
-        }, function (err) {
+            if (response && typeof response.status === 'number') {
+                return response;
+            }
+            try {
+                return erpInlineShellResponse();
+            } catch (eShell) {
+                return uncachedAdminBrowseResponse(null);
+            }
+        }).catch(function () {
             setTimeout(function () {
                 releaseBackgroundWarmAfterFirstDocument();
             }, 0);
-            return Promise.reject(err);
+            try {
+                return erpInlineShellResponse();
+            } catch (eShell2) {
+                return new Response(
+                    '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+                    + '<title>RATEB ERP — Offline</title></head>'
+                    + '<body style="margin:0;font-family:system-ui;background:#0f1117;color:#e8eaed;'
+                    + 'display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:2rem">'
+                    + '<div><h1>وضع عدم الاتصال</h1><p>افتح النظام وأنت متصل مرة واحدة.</p></div></body></html>',
+                    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+                );
+            }
         })
     );
 }
@@ -4051,9 +4070,11 @@ self.addEventListener('fetch', function (event) {
     // Cloud document navigations (ONLINE + OFFLINE):
     // Previously offline skipped this block and fell into neverFailNavigate + cache.keys()
     // scans → multi-second black screens. Always use the fast navigate helpers.
+    var isDocumentNav = event.request.mode === 'navigate'
+        || event.request.destination === 'document';
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
-        && event.request.mode === 'navigate') {
+        && isDocumentNav) {
         if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
             if (isCloudBrowserOffline()) {
                 respondWithDocumentAndReleaseWarmGate(
@@ -4123,6 +4144,13 @@ self.addEventListener('fetch', function (event) {
         if (swapFlag.indexOf('1') !== -1) {
             event.respondWith(
                 softNavAdminHtml(event.request, url, event).catch(function () {
+                    if (isHardBrowserOffline() || isCloudBrowserOffline()) {
+                        try {
+                            return erpInlineShellResponse();
+                        } catch (eSoftOff) {
+                            return uncachedAdminBrowseResponse(url);
+                        }
+                    }
                     return fetch(event.request);
                 })
             );

@@ -11,11 +11,11 @@
     // Soft actions (approve/delete/pay/decide) queue offline. Only period-close / wipe / file export stay hard-online.
     var ONLINE_ONLY_RE = /(?:close[-_]?period|wipe|payroll[-_]?calc|transfer[-_]?funds|void[-_]?payment|gl[-_]?post|journal[-_]?post)(\/|$|\?)/i;
     var DEFERRED_KEY = 'rateb_deferred_http_forms_v2';
-    var GUARD_BUILD = '20260719-block-offline-hard-refresh-v53';
+    var GUARD_BUILD = '20260722-offline-refresh-no-chrome-v112';
     var CACHE_NAMES = ['rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-coexist-v34'];
     var flushing = false;
 
-    /** Hard refresh / reload while offline blacks the page (Ctrl+F5 bypasses SW). */
+    /** Hard refresh / reload while offline → Chrome interstitial (Ctrl+F5 bypasses SW). */
     function blockOfflineHardRefresh() {
         function toastBlocked() {
             toast('التحديث غير متاح دون اتصال — تبقى على النسخة المحفوظة.', true);
@@ -24,6 +24,7 @@
             var key = String(ev.key || ev.code || '');
             var isF5 = key === 'F5' || key === 'f5';
             var isR = key === 'r' || key === 'R' || key === 'KeyR';
+            // Ctrl+Shift+R / Cmd+Shift+R bypasses the Service Worker entirely.
             return isF5 || ((ev.ctrlKey || ev.metaKey) && isR);
         }
         root.addEventListener('keydown', function (ev) {
@@ -32,6 +33,9 @@
             }
             ev.preventDefault();
             ev.stopPropagation();
+            if (typeof ev.stopImmediatePropagation === 'function') {
+                ev.stopImmediatePropagation();
+            }
             toastBlocked();
         }, true);
         try {

@@ -65,7 +65,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     (function () {
         /* Block hard refresh / reload while offline — Ctrl+F5 bypasses SW and blacks the page. */
         function ratebOfflineNow() {
-            try { return navigator.onLine === false; } catch (e0) { return false; }
+            try {
+                if (navigator.onLine === false) {
+                    return true;
+                }
+            } catch (e0) { /* ignore */ }
+            try {
+                var badge = document.querySelector('[data-rateb-connection-status], #rateb-connection-indicator');
+                if (badge && badge.classList.contains('is-offline')) {
+                    return true;
+                }
+            } catch (e1) { /* ignore */ }
+            return false;
         }
         function ratebBlockOfflineReloadToast() {
             try {
@@ -97,6 +108,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             if (!ratebOfflineNow() || !ratebIsReloadKey(ev)) return;
             ev.preventDefault();
             ev.stopPropagation();
+            if (typeof ev.stopImmediatePropagation === 'function') {
+                ev.stopImmediatePropagation();
+            }
             ratebBlockOfflineReloadToast();
         }, true);
         try {
@@ -1274,21 +1288,15 @@ if (!$ratebLocalAppliance) {
     return window.__RATEB_SW_REGISTER_PROMISE__;
   };
   window.__ratebErpScheduleSwRegister = function (swUrl, scope) {
+    // Register immediately — deferred idle left a window where offline refresh
+    // had no controller → Chrome «لا يتوفر اتصال بالإنترنت».
     var run = function () {
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(function () {
-          window.__ratebErpRegisterSwOnce(swUrl, scope);
-        }, { timeout: 3500 });
-      } else {
-        setTimeout(function () {
-          window.__ratebErpRegisterSwOnce(swUrl, scope);
-        }, 800);
-      }
+      window.__ratebErpRegisterSwOnce(swUrl, scope);
     };
-    if (document.readyState === 'complete') {
+    try {
       run();
-    } else {
-      window.addEventListener('load', run, { once: true });
+    } catch (eRun) {
+      setTimeout(run, 0);
     }
   };
 })();
@@ -1898,12 +1906,8 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
     else window.addEventListener('load', fn, { once: true });
   }
   afterLoad(function () {
-    /* nav-guard: idle, not on critical path */
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(loadGuard, { timeout: 10000 });
-    } else {
-      setTimeout(loadGuard, 3000);
-    }
+    /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
+    loadGuard();
     /* full-warm: idle + 20s + still active */
     var scheduleWarm = function () {
       setTimeout(function () {
