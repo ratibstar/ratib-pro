@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -50,7 +51,8 @@ class _InquiriesPageState extends State<InquiriesPage> {
       final f = e is AppFailure ? e : AppLocator.errors.map(e);
       if (!mounted) return;
       setState(() {
-        _error = f.message ?? f.code;
+        _error = EssFailureUi.message(AppLocalizations.of(context), f);
+        EssFailureUi.signalIfOffline(f);
         _loading = false;
       });
     }
@@ -84,7 +86,7 @@ class _InquiriesPageState extends State<InquiriesPage> {
       final f = e is AppFailure ? e : AppLocator.errors.map(e);
       DsSnackbar.show(
         context,
-        message: f.message ?? f.code,
+        message: EssFailureUi.message(AppLocalizations.of(context), f),
         kind: DsSnackbarKind.error,
       );
     }

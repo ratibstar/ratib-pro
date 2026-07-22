@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_repository.dart';
 
 enum LeaveLoadStatus { idle, loading, ready, error }
@@ -20,15 +20,22 @@ class LeaveState extends ChangeNotifier {
   Map<String, Object?> detail = const {};
   int pendingOfflineCount = 0;
   bool submitting = false;
+  bool offlineDegraded = false;
+  bool fromCache = false;
 
   Future<void> loadBalances() async {
     status = LeaveLoadStatus.loading;
     errorCode = null;
     errorMessage = null;
+    offlineDegraded = false;
+    fromCache = false;
     notifyListeners();
     try {
-      balances = await _repository.loadBalances();
-      pendingOfflineCount = await _repository.pendingOfflineCount();
+      final snap = await _repository.loadBalances();
+      balances = snap.balances;
+      pendingOfflineCount = snap.pendingOfflineCount;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = LeaveLoadStatus.ready;
     } catch (e) {
       _setError(e);
@@ -93,7 +100,8 @@ class LeaveState extends ChangeNotifier {
   }
 
   void _setError(Object e) {
-    final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+    final f = EssFailureUi.normalize(e);
+    EssFailureUi.signalIfOffline(f);
     errorCode = f.code;
     errorMessage = f.message;
     status = LeaveLoadStatus.error;

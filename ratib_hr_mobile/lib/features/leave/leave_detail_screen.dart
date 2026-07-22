@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_state.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
@@ -51,7 +52,11 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
           : _state.status == LeaveLoadStatus.error
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
-                  message: _state.errorMessage ?? _state.errorCode,
+                  message: EssFailureUi.fromStored(
+                    l10n,
+                    code: _state.errorCode,
+                    message: _state.errorMessage,
+                  ),
                   actionLabel: l10n.homeRetry,
                   onAction: () => _state.loadDetail(widget.requestId),
                 )

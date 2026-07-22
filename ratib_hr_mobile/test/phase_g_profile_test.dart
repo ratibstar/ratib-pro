@@ -81,10 +81,10 @@ void main() {
         'status': 'active',
       };
     final repo = ProfileRepository(profile: fake);
-    final map = await repo.loadMine();
-    expect(map['full_name'], 'Ali');
-    expect(map['department'], 'HR');
-    expect(map.containsKey('salary_base'), isFalse);
+    final snap = await repo.loadMine();
+    expect(snap.profile['full_name'], 'Ali');
+    expect(snap.profile['department'], 'HR');
+    expect(snap.profile.containsKey('salary_base'), isFalse);
   });
 
   test('ProfileState loads ready profile', () async {

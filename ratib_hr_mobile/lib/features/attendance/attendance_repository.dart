@@ -1,8 +1,11 @@
 /// Attendance repository — presentation orchestration over ports only.
 library;
 
+import 'dart:convert';
+
 import 'package:ratib_hr_mobile/core/adapters/erp_attendance_adapter.dart';
 import 'package:ratib_hr_mobile/core/contracts/attendance_port.dart';
+import 'package:ratib_hr_mobile/core/contracts/cache_store.dart';
 import 'package:ratib_hr_mobile/core/contracts/offline_queue_port.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
@@ -13,24 +16,47 @@ final class AttendanceRepository {
   AttendanceRepository({
     required AttendancePort attendance,
     required OfflineQueuePort offlineQueue,
+    CacheStore? cache,
   })  : _attendance = attendance,
-        _offlineQueue = offlineQueue;
+        _offlineQueue = offlineQueue,
+        _cache = cache;
+
+  static const todayCacheKey = 'ess.attendance.today.v1';
 
   final AttendancePort _attendance;
   final OfflineQueuePort _offlineQueue;
+  final CacheStore? _cache;
 
   Future<AttendanceSnapshot> loadToday() async {
-    final row = await _attendance.today();
-    final pending = await _pendingCount();
-    return AttendanceSnapshot(
-      today: row,
-      pendingOfflineCount: pending,
-    );
+    try {
+      final row = await _attendance.today();
+      await _writeTodayCache(row);
+      final pending = await _pendingCount();
+      return AttendanceSnapshot(
+        today: row,
+        pendingOfflineCount: pending,
+      );
+    } on AppFailure catch (e) {
+      if (e.code == 'network' || e.code == 'timeout') {
+        _markConnectivityOffline(e.message);
+        final pending = await _pendingCount();
+        final cached = await _readTodayCache();
+        return AttendanceSnapshot(
+          today: cached ?? const {},
+          pendingOfflineCount: pending,
+          fromCache: cached != null,
+          offlineDegraded: true,
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<List<Map<String, Object?>>> loadHistory() {
     return _attendance.history();
   }
+
+  Future<int> pendingOfflineCount() => _pendingCount();
 
   /// Online check-in; on network failure enqueue `attendance.create` only.
   Future<AttendancePunchResult> checkIn() async {
@@ -96,6 +122,37 @@ final class AttendanceRepository {
     }
   }
 
+  CacheStore? get _resolvedCache {
+    if (_cache != null) return _cache;
+    try {
+      return AppLocator.cache;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeTodayCache(Map<String, Object?> row) async {
+    final cache = _resolvedCache;
+    if (cache == null) return;
+    try {
+      await cache.write(todayCacheKey, jsonEncode(row));
+    } catch (_) {}
+  }
+
+  Future<Map<String, Object?>?> _readTodayCache() async {
+    final cache = _resolvedCache;
+    if (cache == null) return null;
+    try {
+      final raw = await cache.read(todayCacheKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return decoded.map((k, v) => MapEntry(k.toString(), v));
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Replays pending `attendance.create` via online check-in (no attendance.update).
   Future<void> _flushPendingCheckIns() async {
     final items = await _offlineQueue.pendingItems();
@@ -135,8 +192,12 @@ final class AttendanceSnapshot {
   const AttendanceSnapshot({
     required this.today,
     required this.pendingOfflineCount,
+    this.fromCache = false,
+    this.offlineDegraded = false,
   });
 
   final Map<String, Object?> today;
   final int pendingOfflineCount;
+  final bool fromCache;
+  final bool offlineDegraded;
 }

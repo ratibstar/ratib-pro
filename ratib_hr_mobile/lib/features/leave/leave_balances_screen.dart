@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/leave/leave_state.dart';
@@ -50,7 +51,11 @@ class _LeaveBalancesScreenState extends State<LeaveBalancesScreen> {
           : _state.status == LeaveLoadStatus.error
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
-                  message: _state.errorMessage ?? _state.errorCode,
+                  message: EssFailureUi.fromStored(
+                    l10n,
+                    code: _state.errorCode,
+                    message: _state.errorMessage,
+                  ),
                   actionLabel: l10n.homeRetry,
                   onAction: _state.loadBalances,
                 )
@@ -60,6 +65,17 @@ class _LeaveBalancesScreenState extends State<LeaveBalancesScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 32),
                     children: [
+                      if (_state.offlineDegraded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: DsGlassTile(
+                            child: Text(
+                              _state.fromCache
+                                  ? l10n.offlineLeaveMode
+                                  : l10n.offlineNeedsConnection,
+                            ),
+                          ),
+                        ),
                       if (_state.pendingOfflineCount > 0)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -71,7 +87,13 @@ class _LeaveBalancesScreenState extends State<LeaveBalancesScreen> {
                         ),
                       DsSectionHeader(title: l10n.homeLeaveBalance),
                       if (_state.balances.isEmpty)
-                        DsCard(child: Text(l10n.homeNoLeaveBalances))
+                        DsCard(
+                          child: Text(
+                            _state.offlineDegraded
+                                ? l10n.offlineNeedsConnection
+                                : l10n.homeNoLeaveBalances,
+                          ),
+                        )
                       else
                         for (final row in _state.balances)
                           DsKpiCard(

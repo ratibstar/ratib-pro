@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/profile/profile_state.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
@@ -52,7 +53,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : _state.status == ProfileLoadStatus.error
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
-                  message: _state.errorMessage ?? _state.errorCode,
+                  message: EssFailureUi.fromStored(
+                    l10n,
+                    code: _state.errorCode,
+                    message: _state.errorMessage,
+                  ),
                   actionLabel: l10n.homeRetry,
                   onAction: _state.load,
                 )
@@ -61,6 +66,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: ListView(
                     padding: const EdgeInsets.only(bottom: 32),
                     children: [
+                      if (_state.offlineDegraded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: DsGlassTile(
+                            child: Text(
+                              _state.fromCache
+                                  ? l10n.offlineCachedHint
+                                  : l10n.offlineNeedsConnection,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: AppSpacing.md),
                       Center(
                         child: _Avatar(

@@ -119,7 +119,7 @@ class _LeaveApplyScreenState extends State<LeaveApplyScreen> {
             : l10n.leaveFormRequired;
       case 'network':
       case 'timeout':
-        return l10n.loginNetworkError;
+        return l10n.offlineNeedsConnection;
       default:
         return f.message?.isNotEmpty == true
             ? f.message!

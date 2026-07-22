@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/documents/documents_state.dart';
@@ -103,7 +104,11 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
                 : _state.status == DocumentsLoadStatus.error
                     ? DsErrorState(
                         title: l10n.genericLoadFailed,
-                        message: _state.errorMessage ?? _state.errorCode,
+                        message: EssFailureUi.fromStored(
+                    l10n,
+                    code: _state.errorCode,
+                    message: _state.errorMessage,
+                  ),
                         actionLabel: l10n.homeRetry,
                         onAction: _state.loadList,
                       )

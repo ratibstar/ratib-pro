@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/features/documents/documents_repository.dart';
 
 enum DocumentsLoadStatus { idle, loading, ready, error }
@@ -78,7 +78,8 @@ class DocumentsState extends ChangeNotifier {
   }
 
   void _setError(Object e) {
-    final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+    final f = EssFailureUi.normalize(e);
+    EssFailureUi.signalIfOffline(f);
     errorCode = f.code;
     errorMessage = f.message;
     status = DocumentsLoadStatus.error;

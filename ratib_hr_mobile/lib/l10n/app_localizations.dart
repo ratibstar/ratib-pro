@@ -101,6 +101,13 @@ class AppLocalizations {
       'homePayrollPlaceholder': 'تفاصيل الراتب متاحة عند تفعيل وحدة الرواتب',
       'genericLoading': 'جاري التحميل…',
       'genericLoadFailed': 'تعذر التحميل',
+      'offlineNeedsConnection':
+          'لا يوجد اتصال بالإنترنت. أعد المحاولة عند توفر الشبكة.',
+      'offlineAttendanceMode':
+          'وضع عدم الاتصال — يمكنك تسجيل الحضور وسيُزامن لاحقاً',
+      'offlineLeaveMode':
+          'وضع عدم الاتصال — الأرصدة من آخر مزامنة؛ يمكنك تقديم طلب إجازة',
+      'offlineCachedHint': 'بيانات محفوظة من آخر اتصال',
       'requestsEmpty': 'لا توجد طلبات',
       'permissionRequestsSubtitle': 'طلبات الخروج القصير خلال الدوام',
       'employeeRequestsSubtitle': 'استفسارات وشكاوى الموظف',
@@ -327,6 +334,13 @@ class AppLocalizations {
           'Payslip detail is available when payroll is enabled',
       'genericLoading': 'Loading…',
       'genericLoadFailed': 'Could not load',
+      'offlineNeedsConnection':
+          'No internet connection. Try again when you are online.',
+      'offlineAttendanceMode':
+          'Offline mode — you can check in; it will sync later',
+      'offlineLeaveMode':
+          'Offline mode — balances from last sync; you can still apply leave',
+      'offlineCachedHint': 'Showing data from last successful sync',
       'requestsEmpty': 'No requests',
       'permissionRequestsSubtitle': 'Short-exit requests during work hours',
       'employeeRequestsSubtitle': 'Employee inquiries and complaints',
@@ -559,6 +573,10 @@ class AppLocalizations {
   String get homePayrollPlaceholder => _t('homePayrollPlaceholder');
   String get genericLoading => _t('genericLoading');
   String get genericLoadFailed => _t('genericLoadFailed');
+  String get offlineNeedsConnection => _t('offlineNeedsConnection');
+  String get offlineAttendanceMode => _t('offlineAttendanceMode');
+  String get offlineLeaveMode => _t('offlineLeaveMode');
+  String get offlineCachedHint => _t('offlineCachedHint');
   String get requestsEmpty => _t('requestsEmpty');
   String get permissionRequestsSubtitle => _t('permissionRequestsSubtitle');
   String get employeeRequestsSubtitle => _t('employeeRequestsSubtitle');

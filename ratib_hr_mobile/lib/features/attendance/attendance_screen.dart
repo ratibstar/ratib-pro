@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/core/routing/app_routes.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
@@ -101,11 +102,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         return l10n.attendanceInvalidState;
       case 'network':
       case 'timeout':
-        return l10n.loginNetworkError;
+        return l10n.offlineNeedsConnection;
       default:
-        return f.message?.isNotEmpty == true
-            ? f.message!
-            : l10n.genericLoadFailed;
+        return EssFailureUi.message(l10n, f);
     }
   }
 
@@ -125,10 +124,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ? DsLoadingState(message: l10n.genericLoading)
           : _state.status == AttendanceLoadStatus.error &&
                   _state.today.isEmpty &&
-                  !_state.punching
+                  !_state.punching &&
+                  !EssFailureUi.isConnectivityCode(_state.errorCode)
               ? DsErrorState(
                   title: l10n.genericLoadFailed,
-                  message: _state.errorMessage ?? _state.errorCode,
+                  message: EssFailureUi.fromStored(
+                    l10n,
+                    code: _state.errorCode,
+                    message: _state.errorMessage,
+                  ),
                   actionLabel: l10n.homeRetry,
                   onAction: _state.loadToday,
                 )
@@ -138,6 +142,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 32),
                     children: [
+                      if (_state.offlineDegraded)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: DsGlassTile(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              children: [
+                                const DsIconBadge(
+                                  icon: Icons.wifi_off_rounded,
+                                  color: AppColors.auroraAmber,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _state.fromCache
+                                        ? l10n.offlineCachedHint
+                                        : l10n.offlineAttendanceMode,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       if (_state.pendingOfflineCount > 0)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
+import 'package:ratib_hr_mobile/core/errors/ess_failure_ui.dart';
 import 'package:ratib_hr_mobile/features/attendance/attendance_repository.dart';
 
 enum AttendanceLoadStatus { idle, loading, ready, error }
@@ -20,6 +21,8 @@ class AttendanceState extends ChangeNotifier {
   List<Map<String, Object?>> history = const [];
   int pendingOfflineCount = 0;
   bool punching = false;
+  bool offlineDegraded = false;
+  bool fromCache = false;
 
   bool get hasCheckIn {
     final v = today['check_in']?.toString().trim() ?? '';
@@ -59,14 +62,19 @@ class AttendanceState extends ChangeNotifier {
     status = AttendanceLoadStatus.loading;
     errorCode = null;
     errorMessage = null;
+    offlineDegraded = false;
+    fromCache = false;
     notifyListeners();
     try {
       final snap = await _repository.loadToday();
       today = snap.today;
       pendingOfflineCount = snap.pendingOfflineCount;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = AttendanceLoadStatus.ready;
     } catch (e) {
-      final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       errorCode = f.code;
       errorMessage = f.message;
       status = AttendanceLoadStatus.error;
@@ -83,9 +91,16 @@ class AttendanceState extends ChangeNotifier {
       history = await _repository.loadHistory();
       final snap = await _repository.loadToday();
       pendingOfflineCount = snap.pendingOfflineCount;
+      offlineDegraded = snap.offlineDegraded;
+      fromCache = snap.fromCache;
       status = AttendanceLoadStatus.ready;
     } catch (e) {
-      final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
+      // History is online-only; still surface pending + degraded today if possible.
+      try {
+        pendingOfflineCount = await _repository.pendingOfflineCount();
+      } catch (_) {}
       errorCode = f.code;
       errorMessage = f.message;
       status = AttendanceLoadStatus.error;
@@ -101,7 +116,8 @@ class AttendanceState extends ChangeNotifier {
       await loadToday();
       return result;
     } catch (e) {
-      final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       errorCode = f.code;
       errorMessage = f.message;
       notifyListeners();
@@ -119,7 +135,8 @@ class AttendanceState extends ChangeNotifier {
       await _repository.checkOut();
       await loadToday();
     } catch (e) {
-      final f = e is AppFailure ? e : AppFailure(code: 'unknown', message: '$e');
+      final f = EssFailureUi.normalize(e);
+      EssFailureUi.signalIfOffline(f);
       errorCode = f.code;
       errorMessage = f.message;
       notifyListeners();
