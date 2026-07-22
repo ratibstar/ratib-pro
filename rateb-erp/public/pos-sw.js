@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-refresh-no-chrome-v112';
+var SW_BUILD_ID = '20260722-auto-warm-pages-v113';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2536,7 +2536,14 @@ function warmErpOfflineShell(opts) {
         'admin',
         'admin/',
         'admin/companies',
+        'admin/agency-updates',
+        'admin/company-permissions',
         'admin/oversight/approvals',
+        'admin/oversight/companies-approvals',
+        'admin/oversight/procurement',
+        'admin/oversight/rfq',
+        'admin/oversight/inventory',
+        'admin/oversight/supplier-evaluations',
         'admin/profile',
         'admin/notifications',
         'admin/ops/notifications',
@@ -2545,11 +2552,13 @@ function warmErpOfflineShell(opts) {
         'admin/hr/leaves',
         'admin/hr/employees',
         'admin/ops',
+        'admin/ops/branch-dashboard',
         'admin/ops/inventory',
         'admin/ops/warehouses',
         'admin/ops/purchase-requests',
         'admin/ops/purchase-orders',
         'admin/ops/suppliers',
+        'admin/ops/stock-movements',
         'admin/ops/journal-entries',
         'admin/ops/access-control',
         'admin/ops/access-control/matrix',
@@ -2598,6 +2607,7 @@ function warmErpOfflineShell(opts) {
         'admin',
         'admin/',
         'admin/companies',
+        'admin/agency-updates',
         'admin/ops/notifications',
         'admin/notifications',
         'admin/ops/pos/register',
@@ -2606,7 +2616,10 @@ function warmErpOfflineShell(opts) {
         'admin/hr',
         'admin/ops/inventory',
         'admin/ops/access-control',
-        'admin/oversight/approvals'
+        'admin/oversight/approvals',
+        'admin/oversight/companies-approvals',
+        'admin/ops/stock-movements',
+        'admin/ops/branch-dashboard'
     ];
     function warmLeanOpsList(list, gapMs) {
         return caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
@@ -2650,15 +2663,15 @@ function warmErpOfflineShell(opts) {
         return caches.open(ERP_COEXIST_CACHE).then(function (cache) {
             return cacheUrlList(cache, urls).then(function () {
                 // Never await HTML warm here — Cache API puts blocked F5 (black screen).
-                // Start after a delay so the user's current navigation finishes first.
+                // Start after a short delay so the user's current navigation finishes first.
                 setTimeout(function () {
-                    warmLeanOpsList(leanOpsCritical, 100).then(function () {
+                    warmLeanOpsList(leanOpsCritical, 80).then(function () {
                         var rest = leanOps.filter(function (rel) {
                             return leanOpsCritical.indexOf(rel) === -1;
                         });
-                        return warmLeanOpsList(rest, 250);
+                        return warmLeanOpsList(rest, 150);
                     }).catch(function () { return null; });
-                }, 3000);
+                }, 1200);
                 return protectedResult;
             });
         }).then(function (result) {

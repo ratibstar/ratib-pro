@@ -1908,20 +1908,20 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
   afterLoad(function () {
     /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
     loadGuard();
-    /* full-warm: idle + 20s + still active */
+    /* full-warm: start within a few seconds so offline pages work without visiting each one */
     var scheduleWarm = function () {
       setTimeout(function () {
         if (window.requestIdleCallback) {
-          window.requestIdleCallback(loadWarm, { timeout: 30000 });
+          window.requestIdleCallback(loadWarm, { timeout: 8000 });
         } else {
           loadWarm();
         }
-      }, 20000);
+      }, 2500);
     };
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(scheduleWarm, { timeout: 60000 });
+      window.requestIdleCallback(scheduleWarm, { timeout: 8000 });
     } else {
-      setTimeout(scheduleWarm, 5000);
+      setTimeout(scheduleWarm, 2000);
     }
   });
 })();

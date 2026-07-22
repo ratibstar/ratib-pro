@@ -5,20 +5,20 @@
 (function (root) {
     'use strict';
 
-    var MAX_URLS = 48;
-    var CONCURRENCY = 1;
-    var GAP_MS = 450;
-    var MIN_OK = 8;
+    var MAX_URLS = 80;
+    var CONCURRENCY = 2;
+    var GAP_MS = 200;
+    var MIN_OK = 12;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
     var MIN_ERP_HTML_BYTES = 8000;
     var WARM_TTL_MS = 6 * 60 * 60 * 1000;
     var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Phase OH — bump TTL keys so clients re-warm after offline speed parity.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v19';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v19';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v19';
+    // Bump TTL keys so clients re-warm after auto-offline page coverage fix.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v20';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v20';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v20';
     /** Certified offline-capable module HTML snapshots (Phase OH). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -39,6 +39,7 @@
         'admin/ops/accounting',
         'admin/ops/accounting/platform',
         'admin/ops/pos/register',
+        'admin/ops/branch-dashboard',
         'admin/accounting',
         'admin/companies',
         'admin/company-permissions',
@@ -56,7 +57,12 @@
         'admin/executive-dashboard',
         'admin/reports',
         'admin/cfo',
-        'admin/oversight/approvals'
+        'admin/oversight/approvals',
+        'admin/oversight/companies-approvals',
+        'admin/oversight/procurement',
+        'admin/oversight/rfq',
+        'admin/oversight/inventory',
+        'admin/oversight/supplier-evaluations'
     ];
     var deadWarmUrls = {};
     var running = false;
@@ -233,15 +239,9 @@
         if (isBrokenAccountingWarmPath(p)) {
             return true;
         }
-        // Agency push / SaaS forms — online only, do not warm.
-        if (/\/admin\/(agency-updates|company-permissions)(\/|$)/i.test(p + '/')) {
-            // Still allow index list warm for company-permissions (useful offline browse).
-            if (/\/admin\/agency-updates$/i.test(p)) {
-                return true;
-            }
-            if (/\/admin\/company-permissions\/\d+$/i.test(p)) {
-                return true;
-            }
+        // Per-company permission forms — online only (index list still warms).
+        if (/\/admin\/company-permissions\/\d+$/i.test(p)) {
+            return true;
         }
         return false;
     }
@@ -951,7 +951,10 @@
                 root.location.origin + publicBase() + 'admin/cfo',
                 root.location.origin + publicBase() + 'admin/oversight/companies-approvals',
                 root.location.origin + publicBase() + 'admin/oversight/approvals',
-                root.location.origin + publicBase() + 'admin/companies'
+                root.location.origin + publicBase() + 'admin/agency-updates',
+                root.location.origin + publicBase() + 'admin/companies',
+                root.location.origin + publicBase() + 'admin/ops/stock-movements',
+                root.location.origin + publicBase() + 'admin/ops/branch-dashboard'
             ];
             posFirst.forEach(function (u) {
                 pushUrl(seen, urls, u);
@@ -967,7 +970,7 @@
                 try {
                     console.info('[RATIB OFFLINE] page warm start', list.length, 'urls');
                 } catch (eLog) { /* ignore */ }
-                return runQueue(list, { concurrency: 1, gapMs: 450, signal: signal }).then(function (pageStats) {
+                return runQueue(list, { concurrency: CONCURRENCY, gapMs: GAP_MS, signal: signal }).then(function (pageStats) {
                     return {
                         total: (assetStats.total || 0) + (pageStats.total || 0),
                         ok: (assetStats.ok || 0) + (pageStats.ok || 0),
@@ -1092,19 +1095,19 @@
             return;
         }
         trackActivity();
-        // PERF-P3: requestIdleCallback AND minimum 20s AND user still active.
+        // Auto-warm soon after load so offline works without visiting every page.
         var idleKick = function () {
             var afterIdle = function () {
                 setTimeout(function () {
                     if (userStillActive()) {
                         kickIdle();
                     }
-                }, 20000);
+                }, 2500);
             };
             if (typeof root.requestIdleCallback === 'function') {
-                root.requestIdleCallback(afterIdle, { timeout: 60000 });
+                root.requestIdleCallback(afterIdle, { timeout: 8000 });
             } else {
-                setTimeout(afterIdle, 25000);
+                setTimeout(afterIdle, 3000);
             }
         };
         if (root.document && root.document.readyState === 'complete') {
@@ -1112,7 +1115,7 @@
         } else if (root.addEventListener) {
             root.addEventListener('load', idleKick, { once: true });
         } else {
-            setTimeout(idleKick, 30000);
+            setTimeout(idleKick, 4000);
         }
     }
 
