@@ -954,8 +954,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         <main class="rateb-content" id="rateb-main-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
             <?php
+            // Prefer views partial (reliable agency deploy); fall back to module banner.
+            $subscriptionAlertPartial = RATEB_VIEWS_PATH . '/partials/subscription-alert.php';
             $subscriptionAlertBanner = RATEB_ROOT . '/modules/subscription/views/alert-banner.php';
-            if (is_file($subscriptionAlertBanner)) {
+            if (is_file($subscriptionAlertPartial)) {
+                include $subscriptionAlertPartial;
+            } elseif (is_file($subscriptionAlertBanner)) {
                 include $subscriptionAlertBanner;
             }
             ?>
