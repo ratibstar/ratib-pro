@@ -24,7 +24,14 @@ $opsLink = static function (
     $route = rateb_app_route($resourcePath);
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
-    echo '<a href="' . rateb_app_url($resourcePath) . '" data-rateb-href="' . rateb_app_url($resourcePath) . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
+    $href = rateb_app_url($resourcePath);
+    // POS must full-document navigate (shell + SW). Soft-nav skips POS, so never use onclick=return false.
+    $isPos = (bool) preg_match('#(^|/)pos(/|$)#i', $resourcePath);
+    if ($isPos) {
+        echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '">';
+    } else {
+        echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
+    }
     echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
     if ($badge > 0) {
         echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';

@@ -1448,6 +1448,20 @@
         if (!a) {
             return;
         }
+        // POS links use onclick="return false" for soft-nav, but POS must full-load.
+        // Without this force, sidebar POS items appear dead.
+        try {
+            var posHref = navHrefOf(a);
+            if (posHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
+                var pu = new URL(posHref, root.location.href);
+                if (ADMIN_PATH_RE.test(pu.pathname) && POS_PATH_RE.test(pu.pathname)) {
+                    ev.preventDefault();
+                    try { ev.stopImmediatePropagation(); } catch (eSipPos) { ev.stopPropagation(); }
+                    root.location.href = posHref;
+                    return;
+                }
+            }
+        } catch (ePosNav) { /* fall through */ }
         // Buttons never full-navigate; still soft-swap.
         var isBtn = a.tagName === 'BUTTON' || a.getAttribute('data-rateb-dashboard-nav') === '1';
         if (!isBtn && !shouldIntercept(a, ev)) {
