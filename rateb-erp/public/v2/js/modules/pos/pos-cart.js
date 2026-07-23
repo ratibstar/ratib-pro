@@ -1,8 +1,10 @@
 /*!
- * RATEB Offline V2 — POS local cart / draft sale layer (Phase 3)
+ * RATEB Offline V2 — POS local cart / draft / complete sale (Phase 4)
  *
- * Entity types on existing entity_row: pos.sale_draft, pos.sale_line, pos.cart_session.
- * No payment, receipt, sync, inventory deduction, or network.
+ * Entity types on existing entity_row:
+ *   pos.sale_draft, pos.sale_line, pos.cart_session, pos.sale
+ * Completing a sale enqueues CREATE_POS_SALE on the sync outbox locally.
+ * No payment UI, no network push, no sync.start(), no inventory deduction.
  */
 (function (root) {
     'use strict';
@@ -15,13 +17,16 @@
     var ET = {
         draft: 'pos.sale_draft',
         line: 'pos.sale_line',
-        session: 'pos.cart_session'
+        session: 'pos.cart_session',
+        sale: 'pos.sale'
     };
 
     var STATUS = {
         OPEN: 'OPEN',
         COMPLETED: 'COMPLETED'
     };
+
+    var OUTBOX_OP = 'CREATE_POS_SALE';
 
     function nowIso() {
         return new Date().toISOString();
@@ -40,6 +45,17 @@
         return v;
     }
 
+    function getSyncApi() {
+        var rt = root.RatebOfflineV2Runtime;
+        var sync = rt && rt.services && typeof rt.services.tryGet === 'function'
+            ? rt.services.tryGet('sync')
+            : null;
+        if (!sync && root.RatebOfflineV2ActiveSync) {
+            sync = root.RatebOfflineV2ActiveSync;
+        }
+        return sync;
+    }
+
     function createPosCart(module) {
         var state = {
             store: null
@@ -53,7 +69,7 @@
             if (!db) {
                 return Promise.reject(new Error('pos_db_missing'));
             }
-            /* First cart action opens DB — not register/activate. */
+            /* First cart/checkout action opens DB — not register/activate. */
             return db.open().then(function () {
                 state.store = Business.createDocStore(db, {
                     ownedPrefix: 'pos.',
@@ -310,47 +326,234 @@
             });
         }
 
+        function linePayloadForSale(line, saleId) {
+            return {
+                id: line.id,
+                sale_id: saleId,
+                draft_id: line.draft_id,
+                product_id: line.product_id,
+                sku: line.sku || '',
+                name: line.name || '',
+                qty: line.qty,
+                unit_price: line.unit_price,
+                line_total: line.line_total,
+                currency: line.currency || 'SAR',
+                sort_order: line.sort_order
+            };
+        }
+
+        function enqueuePosSale(salePayload) {
+            var sync = getSyncApi();
+            if (!sync || typeof sync.enqueue !== 'function') {
+                return Promise.reject(new Error('pos_sync_not_ready'));
+            }
+            /* Local outbox only — never sync.start() / push / network. */
+            return sync.enqueue({
+                module: 'pos',
+                action: OUTBOX_OP,
+                entityType: ET.sale,
+                entityId: String(salePayload.id),
+                version: 1,
+                data: salePayload,
+                idempotencyKey: 'pos:' + OUTBOX_OP + ':' + salePayload.id
+            }).then(function (enq) {
+                return {
+                    ok: !!(enq && enq.ok),
+                    client_id: enq && enq.clientId,
+                    idempotency_key: enq && enq.idempotencyKey,
+                    entity_type: ET.sale,
+                    entity_id: String(salePayload.id),
+                    operation: OUTBOX_OP,
+                    payload: salePayload,
+                    status: 'pending',
+                    sync_started: !!(sync.isStarted && sync.isStarted())
+                };
+            });
+        }
+
+        function readOutboxRow(clientId) {
+            var db = module.ctx && module.ctx.db;
+            if (!db || !clientId || typeof db.exec !== 'function') {
+                return Promise.resolve(null);
+            }
+            return db.exec(
+                'SELECT client_id, module, action, payload_json, status, attempts, created_at ' +
+                'FROM sync_outbox WHERE client_id=? LIMIT 1',
+                [clientId]
+            ).then(function (rows) {
+                var row = rows && rows[0];
+                if (!row) {
+                    return null;
+                }
+                var payload = null;
+                try {
+                    payload = JSON.parse(row.payload_json || '{}');
+                } catch (e) {
+                    payload = null;
+                }
+                return {
+                    client_id: row.client_id,
+                    module: row.module,
+                    operation: row.action,
+                    entity_type: payload && payload.entity_type,
+                    entity_id: payload && payload.entity_id,
+                    payload: payload,
+                    status: row.status,
+                    attempts: row.attempts,
+                    created_at: row.created_at
+                };
+            });
+        }
+
         /**
-         * Placeholder complete — marks draft COMPLETED only.
-         * No payment, receipt, sync, or stock movement.
+         * Complete OPEN draft → COMPLETED sale + local outbox CREATE_POS_SALE.
+         * No network, no sync.start(), no inventory deduction.
          */
-        function completeDraftPlaceholder(idCtx) {
+        function completeSale(idCtx) {
             return ensureOpenDraft(idCtx).then(function (draft) {
                 return ensureStore().then(function (store) {
                     return listLinesForDraft(store, idCtx.company_id, draft.id).then(function (lines) {
                         if (!lines.length) {
                             return Promise.reject(new Error('pos_cart_empty'));
                         }
-                        var done = Object.assign({}, draft, {
+                        var totals = calcTotals(lines);
+                        var completedAt = nowIso();
+                        var saleId = uid('sale');
+                        var localTxnNo = 'POS-' + String(idCtx.company_id) + '-' +
+                            Date.now().toString(36).toUpperCase();
+                        var saleLines = lines.map(function (line) {
+                            return linePayloadForSale(line, saleId);
+                        });
+                        var sale = {
+                            id: saleId,
+                            local_txn_no: localTxnNo,
+                            draft_id: draft.id,
+                            company_id: idCtx.company_id,
+                            branch_id: idCtx.branch_id || 0,
+                            user_id: idCtx.user_id || null,
                             status: STATUS.COMPLETED,
-                            completed_at: nowIso(),
-                            updated_at: nowIso(),
+                            currency: draft.currency || 'SAR',
+                            line_count: totals.line_count,
+                            subtotal: totals.subtotal,
+                            total: totals.total,
+                            lines: saleLines,
+                            product_ids: saleLines.map(function (l) { return l.product_id; }),
+                            inventory_deducted: false,
+                            payment: null,
+                            receipt: null,
+                            synced: false,
+                            source: 'local',
+                            completed_at: completedAt,
+                            created_at: draft.created_at || completedAt,
+                            updated_at: completedAt,
+                            version: 1
+                        };
+                        var doneDraft = Object.assign({}, draft, {
+                            status: STATUS.COMPLETED,
+                            sale_id: saleId,
+                            local_txn_no: localTxnNo,
+                            line_count: totals.line_count,
+                            subtotal: totals.subtotal,
+                            total: totals.total,
+                            completed_at: completedAt,
+                            updated_at: completedAt,
                             payment: null,
                             receipt: null,
                             inventory_deducted: false,
-                            synced: false
+                            synced: false,
+                            outbox_operation: OUTBOX_OP
                         });
-                        return store.put(ET.draft, done.id, done, Number(done.version || 1) + 1)
+
+                        var lineChain = Promise.resolve();
+                        saleLines.forEach(function (sl, idx) {
+                            var src = lines[idx];
+                            lineChain = lineChain.then(function () {
+                                var nextLine = Object.assign({}, src, {
+                                    sale_id: saleId,
+                                    updated_at: completedAt
+                                });
+                                return store.put(ET.line, nextLine.id, nextLine, Number(nextLine.version || 1) + 1);
+                            });
+                        });
+
+                        return lineChain
+                            .then(function () {
+                                return store.put(ET.draft, doneDraft.id, doneDraft, Number(doneDraft.version || 1) + 1);
+                            })
+                            .then(function () {
+                                return store.put(ET.sale, sale.id, sale, 1);
+                            })
                             .then(function () {
                                 return store.put(ET.session, 'active', {
                                     company_id: idCtx.company_id,
                                     draft_id: null,
-                                    last_completed_draft_id: done.id,
-                                    updated_at: nowIso()
+                                    last_completed_draft_id: doneDraft.id,
+                                    last_sale_id: saleId,
+                                    last_local_txn_no: localTxnNo,
+                                    updated_at: completedAt
                                 }, 1);
                             })
                             .then(function () {
-                                return {
-                                    ok: true,
-                                    draft: done,
-                                    lines: lines,
-                                    placeholder: true,
-                                    payment: false,
-                                    receipt: false,
-                                    sync: false,
-                                    inventory_deducted: false
-                                };
+                                return enqueuePosSale(sale);
+                            })
+                            .then(function (outbox) {
+                                sale.outbox_client_id = outbox.client_id || null;
+                                sale.outbox_operation = OUTBOX_OP;
+                                sale.outbox_status = 'pending';
+                                return store.put(ET.sale, sale.id, sale, 2).then(function () {
+                                    return readOutboxRow(outbox.client_id).then(function (row) {
+                                        return {
+                                            ok: true,
+                                            sale: sale,
+                                            draft: doneDraft,
+                                            lines: saleLines,
+                                            local_txn_no: localTxnNo,
+                                            sale_id: saleId,
+                                            completed_at: completedAt,
+                                            outbox: outbox,
+                                            outbox_row: row,
+                                            payment: false,
+                                            receipt: false,
+                                            network: false,
+                                            sync_started: !!(outbox && outbox.sync_started),
+                                            inventory_deducted: false
+                                        };
+                                    });
+                                });
                             });
+                    });
+                });
+            });
+        }
+
+        /** Phase 3 compat — same as completeSale (now with outbox). */
+        function completeDraftPlaceholder(idCtx) {
+            return completeSale(idCtx);
+        }
+
+        function getSale(idCtx, saleId) {
+            if (!saleId) {
+                return Promise.reject(new Error('pos_sale_id_required'));
+            }
+            return ensureStore().then(function (store) {
+                return store.get(ET.sale, String(saleId), idCtx.company_id).then(function (row) {
+                    if (!row || !row.payload) {
+                        return null;
+                    }
+                    return row.payload;
+                });
+            });
+        }
+
+        function getLastCompletedSale(idCtx) {
+            return ensureStore().then(function (store) {
+                return store.get(ET.session, 'active', idCtx.company_id).then(function (sess) {
+                    var saleId = sess && sess.payload && sess.payload.last_sale_id;
+                    if (!saleId) {
+                        return null;
+                    }
+                    return store.get(ET.sale, String(saleId), idCtx.company_id).then(function (row) {
+                        return row && row.payload ? row.payload : null;
                     });
                 });
             });
@@ -359,13 +562,17 @@
         return {
             ET: ET,
             STATUS: STATUS,
+            OUTBOX_OP: OUTBOX_OP,
             ensureStore: ensureStore,
             ensureOpenDraft: ensureOpenDraft,
             getCart: getCart,
             addProduct: addProduct,
             removeLine: removeLine,
             updateQuantity: updateQuantity,
+            completeSale: completeSale,
             completeDraftPlaceholder: completeDraftPlaceholder,
+            getSale: getSale,
+            getLastCompletedSale: getLastCompletedSale,
             isStoreOpen: function () { return !!state.store; }
         };
     }
@@ -374,6 +581,7 @@
         __locked: true,
         create: createPosCart,
         entityTypes: ET,
-        STATUS: STATUS
+        STATUS: STATUS,
+        OUTBOX_OP: OUTBOX_OP
     };
 })(typeof window !== 'undefined' ? window : this);

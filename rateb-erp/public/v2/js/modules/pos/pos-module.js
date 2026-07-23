@@ -1,8 +1,9 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 3 Cart / Draft)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 4 Checkout / Outbox)
  *
- * Local catalog + cart/draft sale. No payment/receipt/sync/inventory deduction.
- * register/activate do not open DB; catalog/cart APIs open on demand.
+ * Local catalog + cart + complete sale + local sync outbox prep.
+ * No payment/receipt/network push/inventory deduction. sync.start() never called.
+ * register/activate do not open DB; cart/checkout open on demand.
  * Online ERP remains Authentication Authority (AF 2.1).
  */
 (function (root) {
@@ -14,14 +15,14 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.3.0-phase3-cart';
+    var POS_VERSION = '0.4.0-phase4-checkout';
 
     function PosModule() {
         BusinessModule.call(this, {
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — local catalog + draft cart (no payment/sync).',
+            description: 'Offline V2 POS — local complete sale + outbox prep (no sync start).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -29,7 +30,7 @@
             permissions: ['ui.contribute', 'services.register', 'db.read', 'sync.enqueue'],
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
-                'pos.shell', 'pos.catalog', 'pos.cart'
+                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -44,13 +45,14 @@
                 { id: 'pos.home', path: '/pos', title: 'POS Catalog' },
                 { id: 'pos.product', path: '/pos/product', title: 'POS Product' },
                 { id: 'pos.cart', path: '/pos/cart', title: 'POS Cart' },
+                { id: 'pos.checkout', path: '/pos/checkout', title: 'POS Checkout' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
             config: {
                 catalogReadOnly: true,
                 cartLocalOnly: true,
-                salesLogic: false,
+                salesLogic: true,
                 payment: false,
                 openDbOnRegister: false,
                 startSyncOnActivate: false,
@@ -60,6 +62,7 @@
         this._catalog = null;
         this._cart = null;
         this._selectedProductId = null;
+        this._lastCompleted = null;
         this._catalogUi = {
             q: '',
             category_id: ''
@@ -206,10 +209,32 @@
         });
     };
 
-    PosModule.prototype.completeDraftPlaceholder = function () {
+    PosModule.prototype.completeSale = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
-            return self._getCart().completeDraftPlaceholder(idCtx);
+            return self._getCart().completeSale(idCtx).then(function (result) {
+                self._lastCompleted = result;
+                return result;
+            });
+        });
+    };
+
+    PosModule.prototype.completeDraftPlaceholder = function () {
+        return this.completeSale();
+    };
+
+    PosModule.prototype.getLastCompletedSale = function () {
+        var self = this;
+        if (self._lastCompleted && self._lastCompleted.sale) {
+            return Promise.resolve(self._lastCompleted);
+        }
+        return this._gate().then(function (idCtx) {
+            return self._getCart().getLastCompletedSale(idCtx).then(function (sale) {
+                if (!sale) {
+                    return null;
+                }
+                return { ok: true, sale: sale, local_txn_no: sale.local_txn_no, sale_id: sale.id };
+            });
         });
     };
 
@@ -222,10 +247,13 @@
                 version: POS_VERSION,
                 catalogReadOnly: true,
                 cartLocalOnly: true,
-                salesLogic: false,
+                salesLogic: true,
                 payment: false,
+                inventoryDeduction: false,
+                syncStart: false,
                 catalogStoreOpen: !!(self._catalog && self._catalog.isStoreOpen()),
-                cartStoreOpen: !!(self._cart && self._cart.isStoreOpen())
+                cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
+                lastSaleId: self._lastCompleted && self._lastCompleted.sale_id || null
             };
         });
         self.exposeService('gate', function () {
@@ -258,20 +286,27 @@
         self.exposeService('updateCartQuantity', function (lineId, qty) {
             return self.updateCartQuantity(lineId, qty);
         });
+        self.exposeService('completeSale', function () {
+            return self.completeSale();
+        });
         self.exposeService('completeDraftPlaceholder', function () {
             return self.completeDraftPlaceholder();
         });
-        self.reportHealth('initialize', true, 'pos_cart_ready');
+        self.exposeService('getLastCompletedSale', function () {
+            return self.getLastCompletedSale();
+        });
+        self.reportHealth('initialize', true, 'pos_checkout_ready');
         return Promise.resolve();
     };
 
     PosModule.prototype.onMount = function () {
         this.contributeNav({ label: 'POS', path: '/pos', title: 'POS Catalog' });
         this.contributeNav({ label: 'POS Cart', path: '/pos/cart', title: 'POS Cart' });
+        this.contributeNav({ label: 'POS Checkout', path: '/pos/checkout', title: 'POS Checkout' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local catalog + draft cart — no payment/sync'
+            description: 'Local complete sale + outbox prep — no sync start'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -291,7 +326,8 @@
                 catalog_read_only: true,
                 cart_local_only: true,
                 payment: false,
-                sales_logic: false
+                sales_logic: true,
+                sync_start: false
             });
         }
         this.reportHealth('activate', true, 'ready');
@@ -522,10 +558,145 @@
             host.appendChild(self._el('p',
                 'Draft: ' + (cart.draft && cart.draft.id) +
                 ' · status=' + (cart.draft && cart.draft.status)));
+            var toCheckout = self._el('button', 'Checkout', {
+                type: 'button',
+                'data-pos-checkout': '1'
+            });
+            toCheckout.addEventListener('click', function () {
+                self._navigate('/pos/checkout');
+            });
+            host.appendChild(toCheckout);
         }
 
         /* First cart view action opens DB lazily via getCart. */
         return self._getCart().getCart(idCtx).then(paint);
+    };
+
+    PosModule.prototype._renderCheckout = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/checkout');
+        outlet.setAttribute('data-pos-view', 'checkout');
+        outlet.appendChild(self._el('h3', 'POS Checkout'));
+        outlet.appendChild(self._el('p',
+            'Complete local sale · outbox only · no payment / network / stock · company=' +
+            idCtx.company_id));
+
+        var nav = self._el('div');
+        var toCart = self._el('button', 'Cart', { type: 'button' });
+        toCart.addEventListener('click', function () { self._navigate('/pos/cart'); });
+        var toCat = self._el('button', 'Catalog', { type: 'button' });
+        toCat.addEventListener('click', function () { self._navigate('/pos'); });
+        nav.appendChild(toCart);
+        nav.appendChild(toCat);
+        outlet.appendChild(nav);
+
+        var host = self._el('div', null, { 'data-pos-checkout-host': '1' });
+        outlet.appendChild(host);
+
+        function paintSuccess(result) {
+            host.textContent = '';
+            host.setAttribute('data-pos-checkout-state', 'success');
+            host.setAttribute('data-pos-sale-id', String(result.sale_id || ''));
+            host.setAttribute('data-pos-local-txn', String(result.local_txn_no || ''));
+            host.appendChild(self._el('h4', 'Sale completed locally'));
+            host.appendChild(self._el('p',
+                'Local transaction: ' + (result.local_txn_no || result.sale_id)));
+            host.appendChild(self._el('p',
+                'Sale id: ' + result.sale_id +
+                ' · status=' + (result.sale && result.sale.status) +
+                ' · completed_at=' + (result.completed_at || '')));
+            host.appendChild(self._el('p',
+                'Lines: ' + (result.sale && result.sale.line_count) +
+                ' · Total: ' + (result.sale && result.sale.total) + ' ' +
+                ((result.sale && result.sale.currency) || '')));
+            var outbox = result.outbox || {};
+            host.appendChild(self._el('p',
+                'Outbox: ' + (outbox.operation || 'CREATE_POS_SALE') +
+                ' · status=' + (outbox.status || 'pending') +
+                ' · client_id=' + (outbox.client_id || '')));
+            host.appendChild(self._el('p',
+                'sync_started=false · inventory_deducted=false · network=false'));
+            var again = self._el('button', 'New sale', { type: 'button' });
+            again.addEventListener('click', function () { self._navigate('/pos'); });
+            host.appendChild(again);
+        }
+
+        function paintSummary(cart) {
+            host.textContent = '';
+            if (cart.empty) {
+                host.setAttribute('data-pos-checkout-state', 'empty');
+                host.appendChild(self._el('p', 'Cart is empty — add products before checkout.'));
+                var back = self._el('button', 'Open cart', { type: 'button' });
+                back.addEventListener('click', function () { self._navigate('/pos/cart'); });
+                host.appendChild(back);
+                return;
+            }
+            host.setAttribute('data-pos-checkout-state', 'summary');
+            host.appendChild(self._el('h4', 'Sale summary'));
+            var ul = self._el('ul');
+            (cart.lines || []).forEach(function (line) {
+                ul.appendChild(self._el('li',
+                    (line.name || line.product_id) + ' · ' + line.qty + ' × ' +
+                    line.unit_price + ' = ' + line.line_total + ' ' + (line.currency || '')));
+            });
+            host.appendChild(ul);
+            host.appendChild(self._el('p',
+                'Lines: ' + cart.line_count +
+                ' · Subtotal: ' + cart.subtotal +
+                ' · Total: ' + cart.total + ' ' + (cart.currency || '')));
+            host.appendChild(self._el('p',
+                'Draft: ' + (cart.draft && cart.draft.id) +
+                ' · status=' + (cart.draft && cart.draft.status)));
+
+            var msg = self._el('p', '', { 'data-pos-checkout-msg': '1' });
+            var completeBtn = self._el('button', 'Complete sale', {
+                type: 'button',
+                'data-pos-complete-sale': '1'
+            });
+            completeBtn.addEventListener('click', function () {
+                msg.textContent = 'Completing…';
+                completeBtn.disabled = true;
+                self.completeSale().then(function (result) {
+                    paintSuccess(result);
+                }).catch(function (err) {
+                    completeBtn.disabled = false;
+                    msg.textContent = String(err && err.message ? err.message : err);
+                });
+            });
+            host.appendChild(completeBtn);
+            host.appendChild(msg);
+        }
+
+        /* Checkout action opens DB lazily via getCart / completeSale. */
+        return self._getCart().getCart(idCtx).then(function (cart) {
+            if (!cart.empty) {
+                paintSummary(cart);
+                return;
+            }
+            if (self._lastCompleted && self._lastCompleted.sale) {
+                paintSuccess(self._lastCompleted);
+                return;
+            }
+            return self._getCart().getLastCompletedSale(idCtx).then(function (sale) {
+                if (sale) {
+                    paintSuccess({
+                        ok: true,
+                        sale: sale,
+                        sale_id: sale.id,
+                        local_txn_no: sale.local_txn_no,
+                        completed_at: sale.completed_at,
+                        outbox: {
+                            operation: 'CREATE_POS_SALE',
+                            status: 'pending',
+                            client_id: sale.outbox_client_id || ''
+                        }
+                    });
+                    return;
+                }
+                paintSummary(cart);
+            });
+        });
     };
 
     PosModule.prototype._renderSalesPlaceholder = function (outlet, idCtx) {
@@ -534,9 +705,9 @@
         outlet.setAttribute('data-pos-shell', '/pos/sales');
         outlet.appendChild(self._el('h3', 'POS Sales'));
         outlet.appendChild(self._el('p',
-            'Checkout/payment not implemented · use draft cart · company=' + idCtx.company_id));
-        var btn = self._el('button', 'Open cart', { type: 'button' });
-        btn.addEventListener('click', function () { self._navigate('/pos/cart'); });
+            'Local completed sales via checkout · no payment · company=' + idCtx.company_id));
+        var btn = self._el('button', 'Open checkout', { type: 'button' });
+        btn.addEventListener('click', function () { self._navigate('/pos/checkout'); });
         outlet.appendChild(btn);
     };
 
@@ -570,6 +741,9 @@
                     if (path === '/pos/cart') {
                         return self._renderCart(outlet, idCtx);
                     }
+                    if (path === '/pos/checkout') {
+                        return self._renderCheckout(outlet, idCtx);
+                    }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
                         return null;
@@ -592,19 +766,21 @@
         base.depends_on = ['identity'];
         base.catalog_read_only = true;
         base.cart_local_only = true;
-        base.sales_logic = false;
+        base.sales_logic = true;
         base.payment = false;
+        base.inventory_deduction = false;
         base.opens_db_on_register = false;
         base.starts_sync_on_activate = false;
         base.catalog_store_open = !!(this._catalog && this._catalog.isStoreOpen());
         base.cart_store_open = !!(this._cart && this._cart.isStoreOpen());
         base.never_stores_credentials = true;
         base.sqlite_tables_added = false;
+        base.outbox_operation = 'CREATE_POS_SALE';
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
-            'pos.sale_draft', 'pos.sale_line', 'pos.cart_session'
+            'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale'
         ];
-        base.storage = 'entity_row via pos.* prefix';
+        base.storage = 'entity_row via pos.* prefix + sync_outbox local enqueue';
         return base;
     };
 

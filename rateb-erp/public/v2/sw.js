@@ -15,8 +15,8 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-/* v11: POS cart / draft sale script under ./js/modules/pos/ */
-var CACHE = 'rateb-offline-v2-bootstrap-v11';
+/* v12: POS checkout / outbox prep under ./js/modules/pos/ */
+var CACHE = 'rateb-offline-v2-bootstrap-v12';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
