@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v8';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v9';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -592,7 +592,8 @@
                 accounting: true,
                 crm: true,
                 hr: true,
-                mfg: true
+                mfg: true,
+                pos: true
             };
             return supported[id] ? id : null;
         }
@@ -761,6 +762,14 @@
                 script: './js/business/manufacturing-module.js',
                 globalName: 'RatebOfflineV2Mfg',
                 dependencies: ['identity', 'inventory']
+            },
+            {
+                id: 'pos',
+                title: 'POS',
+                routes: ['/pos', '/pos/sales', '/pos/settings'],
+                script: './js/modules/pos/pos-module.js',
+                globalName: 'RatebOfflineV2Pos',
+                dependencies: ['identity']
             }
         ];
         var businessModuleById = Object.create(null);
@@ -781,7 +790,8 @@
             accounting: { title: 'Accounting', code: 'accounting_identity_not_enrolled' },
             crm: { title: 'CRM', code: 'crm_identity_not_enrolled' },
             hr: { title: 'HR', code: 'hr_identity_not_enrolled' },
-            mfg: { title: 'MFG', code: 'mfg_identity_not_enrolled' }
+            mfg: { title: 'MFG', code: 'mfg_identity_not_enrolled' },
+            pos: { title: 'POS', code: 'pos_identity_not_enrolled' }
         };
 
         function identityGateMeta(moduleId) {
@@ -847,6 +857,17 @@
             try {
                 router.unregisterRoute('lazy.' + moduleId);
             } catch (eUnreg) { /* ignore */ }
+            try {
+                var existing = router.listRoutes ? router.listRoutes() : [];
+                var prefix = 'lazy.' + moduleId;
+                existing.forEach(function (r) {
+                    if (r && r.id && (r.id === prefix || String(r.id).indexOf(prefix + '.') === 0)) {
+                        try {
+                            router.unregisterRoute(r.id);
+                        } catch (eOne) { /* ignore */ }
+                    }
+                });
+            } catch (eList) { /* ignore */ }
         }
 
         function registerLazyModuleStubs(router) {
@@ -854,42 +875,48 @@
                 return;
             }
             BUSINESS_MODULE_REGISTRY.forEach(function (entry) {
-                var stubId = 'lazy.' + entry.id;
-                var homePath = entry.routes && entry.routes[0] ? entry.routes[0] : ('/' + entry.id);
-                /* Avoid colliding with a real module route already registered. */
-                try {
-                    var existing = router.listRoutes ? router.listRoutes() : [];
-                    var alreadyStub = existing.some(function (r) {
-                        return r && r.id === stubId;
-                    });
-                    if (alreadyStub) {
-                        return;
-                    }
-                    var hasReal = existing.some(function (r) {
-                        return r && r.path === homePath && String(r.id || '').indexOf('lazy.') !== 0;
-                    });
-                    if (hasReal) {
-                        return;
-                    }
-                } catch (eList) { /* continue */ }
-                router.registerRoute({
-                    id: stubId,
-                    path: homePath,
-                    title: entry.title || entry.id,
-                    handler: stubId,
-                    meta: { moduleId: entry.id, lazyStub: true }
-                }, {
-                    init: function () { return Promise.resolve(); },
-                    mount: function (outlet) {
-                        if (outlet) {
-                            outlet.textContent = 'Loading ' + (entry.title || entry.id) + '…';
-                        }
-                        return ensureBusinessModulesForPath(homePath).then(function () {
-                            return router.navigate(homePath, { replace: true });
+                var paths = entry.routes && entry.routes.length
+                    ? entry.routes.slice()
+                    : ['/' + entry.id];
+                paths.forEach(function (routePath, idx) {
+                    var stubId = idx === 0
+                        ? ('lazy.' + entry.id)
+                        : ('lazy.' + entry.id + '.' + String(routePath).replace(/[^\w]+/g, '_'));
+                    /* Avoid colliding with a real module route already registered. */
+                    try {
+                        var existing = router.listRoutes ? router.listRoutes() : [];
+                        var alreadyStub = existing.some(function (r) {
+                            return r && r.id === stubId;
                         });
-                    },
-                    unmount: function () { return Promise.resolve(); },
-                    dispose: function () { return Promise.resolve(); }
+                        if (alreadyStub) {
+                            return;
+                        }
+                        var hasReal = existing.some(function (r) {
+                            return r && r.path === routePath && String(r.id || '').indexOf('lazy.') !== 0;
+                        });
+                        if (hasReal) {
+                            return;
+                        }
+                    } catch (eList) { /* continue */ }
+                    router.registerRoute({
+                        id: stubId,
+                        path: routePath,
+                        title: entry.title || entry.id,
+                        handler: stubId,
+                        meta: { moduleId: entry.id, lazyStub: true }
+                    }, {
+                        init: function () { return Promise.resolve(); },
+                        mount: function (outlet) {
+                            if (outlet) {
+                                outlet.textContent = 'Loading ' + (entry.title || entry.id) + '…';
+                            }
+                            return ensureBusinessModulesForPath(routePath).then(function () {
+                                return router.navigate(routePath, { replace: true });
+                            });
+                        },
+                        unmount: function () { return Promise.resolve(); },
+                        dispose: function () { return Promise.resolve(); }
+                    });
                 });
             });
             try {
