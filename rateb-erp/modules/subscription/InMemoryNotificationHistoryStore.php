@@ -33,6 +33,23 @@ final class InMemoryNotificationHistoryStore implements NotificationHistoryStore
         return $rows[0] ?? null;
     }
 
+    public function findLatestActiveByCompanyId(int $companyId): ?array
+    {
+        foreach ($this->listByCompanyId($companyId, 50) as $row) {
+            $status = (string) ($row['status'] ?? '');
+            $dismissed = $row['dismissed_at'] ?? null;
+            if ($status === NotificationHistoryRepository::STATUS_DISMISSED
+                || $status === NotificationHistoryRepository::STATUS_CANCELLED) {
+                continue;
+            }
+            if ($dismissed !== null && trim((string) $dismissed) !== '') {
+                continue;
+            }
+            return $row;
+        }
+        return null;
+    }
+
     public function existsForTrigger(int $companyId, string $notificationType, int $triggerDay): bool
     {
         foreach ($this->rows as $row) {

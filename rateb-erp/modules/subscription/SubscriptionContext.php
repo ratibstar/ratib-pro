@@ -22,6 +22,7 @@ final readonly class SubscriptionContext
         private ?string $expirationDate,
         private bool $hasRecord,
         private ?int $recordId = null,
+        private int $gracePeriodDays = 0,
     ) {
     }
 
@@ -41,7 +42,8 @@ final readonly class SubscriptionContext
             true,
             null,
             false,
-            null
+            null,
+            0
         );
     }
 
@@ -83,6 +85,8 @@ final readonly class SubscriptionContext
             $recordId = null;
         }
 
+        $gracePeriodDays = max(0, (int) ($row['grace_period_days'] ?? 0));
+
         return new self(
             $companyId,
             $status,
@@ -93,7 +97,8 @@ final readonly class SubscriptionContext
             $canAccessErp,
             $expirationDate,
             true,
-            $recordId
+            $recordId,
+            $gracePeriodDays
         );
     }
 
@@ -147,5 +152,10 @@ final readonly class SubscriptionContext
     public function hasRecord(): bool
     {
         return $this->hasRecord;
+    }
+
+    public function gracePeriodDays(): int
+    {
+        return $this->gracePeriodDays;
     }
 }

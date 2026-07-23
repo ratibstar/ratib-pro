@@ -56,6 +56,38 @@ final class NotificationHistoryRepository implements NotificationHistoryStore
         return $rows[0] ?? null;
     }
 
+    /**
+     * Latest history row still relevant for in-app display (not dismissed/cancelled).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findLatestActiveByCompanyId(int $companyId): ?array
+    {
+        if ($companyId < 1) {
+            return null;
+        }
+
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->prepare(
+                'SELECT id, company_id, subscription_id, notification_type, trigger_day,
+                        scheduled_date, generated_at, delivered_at, dismissed_at, status, created_at
+                 FROM rateb_subscription_notification_history
+                 WHERE company_id = :company_id
+                   AND status NOT IN (\'dismissed\', \'cancelled\')
+                   AND dismissed_at IS NULL
+                 ORDER BY id DESC
+                 LIMIT 1'
+            );
+            $stmt->execute(['company_id' => $companyId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return is_array($row) ? $row : null;
+        } catch (\Throwable $e) {
+            error_log('RATEB NotificationHistoryRepository::findLatestActiveByCompanyId: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     public function existsForTrigger(int $companyId, string $notificationType, int $triggerDay): bool
     {
         if ($companyId < 1 || $notificationType === '') {

@@ -7,14 +7,13 @@ declare(strict_types=1);
  * Examples:
  *   subscription()
  *   subscription()->status()
- *   subscription()->daysRemaining()
- *   subscription()->isExpired()
- *   subscription()->isInGrace()
- *   subscription()->canAccessERP()
+ *   subscription_alert()
  *
- * Phase 2: exposure only — never used to redirect, block, or notify.
+ * Phase 2/5: exposure / display only — never used to redirect or block.
  */
 
+use Rateb\App\Subscription\SubscriptionAlertService;
+use Rateb\App\Subscription\SubscriptionAlertViewModel;
 use Rateb\App\Subscription\SubscriptionBootstrap;
 use Rateb\App\Subscription\SubscriptionContext;
 use Rateb\App\Subscription\SubscriptionRuntime;
@@ -24,5 +23,12 @@ if (!function_exists('subscription')) {
     {
         SubscriptionBootstrap::ensureFromTenantContext();
         return SubscriptionRuntime::get();
+    }
+}
+
+if (!function_exists('subscription_alert')) {
+    function subscription_alert(): ?SubscriptionAlertViewModel
+    {
+        return (new SubscriptionAlertService())->current();
     }
 }

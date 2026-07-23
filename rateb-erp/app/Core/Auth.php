@@ -270,6 +270,9 @@ final class Auth
         if (class_exists(\Rateb\App\Subscription\SubscriptionRuntime::class)) {
             \Rateb\App\Subscription\SubscriptionRuntime::reset();
         }
+        if (class_exists(\Rateb\App\Subscription\SubscriptionAlertRuntime::class)) {
+            \Rateb\App\Subscription\SubscriptionAlertRuntime::reset();
+        }
     }
 
     /** Auto-login first active super admin when RATEB_ERP_LOGIN_BYPASS is enabled. */
@@ -366,6 +369,9 @@ final class Auth
         \Rateb\App\Core\BranchContext::reset();
         if (class_exists(\Rateb\App\Subscription\SubscriptionRuntime::class)) {
             \Rateb\App\Subscription\SubscriptionRuntime::reset();
+        }
+        if (class_exists(\Rateb\App\Subscription\SubscriptionAlertRuntime::class)) {
+            \Rateb\App\Subscription\SubscriptionAlertRuntime::reset();
         }
     }
 }

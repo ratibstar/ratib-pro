@@ -45,6 +45,10 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 if (isset($_GET['dismiss_approvals_alert']) && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
 }
+if (isset($_GET['dismiss_subscription_alert'])
+    && class_exists(\Rateb\App\Subscription\SubscriptionAlertService::class)) {
+    (new \Rateb\App\Subscription\SubscriptionAlertService())->handleDismissRequest();
+}
 $approvalsOversightJs = $erpRoute !== '' && (
     str_starts_with($erpRoute, 'admin/oversight/approvals')
     || str_starts_with($erpRoute, 'admin/oversight/companies-approvals')
@@ -948,6 +952,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         </header>
         <main class="rateb-content" id="rateb-main-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
+            <?php
+            $subscriptionAlertBanner = RATEB_ROOT . '/modules/subscription/views/alert-banner.php';
+            if (is_file($subscriptionAlertBanner)) {
+                include $subscriptionAlertBanner;
+            }
+            ?>
             <?php if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
                 $branchLabel = function_exists('rateb_portal_branch_label') ? rateb_portal_branch_label() : '';
                 if ($branchLabel !== '') { ?>

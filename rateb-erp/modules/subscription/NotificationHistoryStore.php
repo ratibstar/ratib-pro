@@ -14,6 +14,10 @@ interface NotificationHistoryStore
     /** @return array<string, mixed>|null */
     public function findLastByCompanyId(int $companyId): ?array;
 
+    /** Latest non-dismissed / non-cancelled history row for in-app display. */
+    /** @return array<string, mixed>|null */
+    public function findLatestActiveByCompanyId(int $companyId): ?array;
+
     public function existsForTrigger(int $companyId, string $notificationType, int $triggerDay): bool;
 
     public function recordGenerated(NotificationDecision $decision): int;
