@@ -1,0 +1,5 @@
+# SQLite browser dependencies — scoped MIME types for ESM and WASM.
+<IfModule mod_mime.c>
+    AddType application/javascript .mjs
+    AddType application/wasm .wasm
+</IfModule>

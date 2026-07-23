@@ -1,6 +1,12 @@
 # Offline V2 host — serve index.html for directory URL (SW scope + PWA start_url).
 DirectoryIndex index.html
 
+# SQLite vendor under ./vendor/sqlite — nosniff requires correct MIME for ESM/WASM.
+<IfModule mod_mime.c>
+    AddType application/javascript .mjs
+    AddType application/wasm .wasm
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{REQUEST_FILENAME} -f
