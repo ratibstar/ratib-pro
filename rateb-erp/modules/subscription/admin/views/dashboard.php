@@ -26,7 +26,7 @@ $statusBadge = static function (string $status): string {
 <div class="rateb-page-header mb-3">
     <h1 class="h4 mb-1"><i class="fas fa-heartbeat me-2"></i>Subscription Engine Admin</h1>
     <p class="text-muted small mb-0">Operational console for tenant subscription lifecycle. No payment or auto-billing.</p>
-    <p class="small text-muted mb-0 mt-1">Companies are auto-synced into the engine on open (insert-only; existing engine dates are not overwritten).</p>
+    <p class="small text-muted mb-0 mt-1">Companies auto-sync at most once per hour (insert-only; existing engine dates are not overwritten). Admin bell alerts fan out once per browser session per day.</p>
 </div>
 
 <?php if (!empty($syncInserted) && (int) $syncInserted > 0) { ?>

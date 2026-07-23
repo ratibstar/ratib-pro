@@ -155,12 +155,12 @@ final class NotificationScheduler
             'elapsed_seconds' => round(microtime(true) - $started, 4),
         ];
 
-        // Platform ops: fan-out in-app alerts to super-admins for any tenant in window.
+        // Platform ops: fan-out in-app alerts to super-admins (no session throttle in cron).
         if (!$dryRun) {
             try {
                 if (class_exists(\Rateb\App\Subscription\Admin\SubscriptionAdminNotifier::class)) {
                     $fan = (new \Rateb\App\Subscription\Admin\SubscriptionAdminNotifier())
-                        ->fanOutToPlatformAdmins($today);
+                        ->fanOutToPlatformAdmins($today, false);
                     $stats['admin_fanout_companies'] = (int) ($fan['companies'] ?? 0);
                     $stats['admin_fanout_notifications'] = (int) ($fan['notifications'] ?? 0);
                 }

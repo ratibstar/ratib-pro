@@ -44,6 +44,7 @@ final class SubscriptionAdminController extends Controller
 
         $dashboard = $this->service->dashboard();
         $list = $this->service->listTenants($page, $limit, $status !== '' ? $status : 'all', $search);
+        // Fan-out is session-throttled (once/day); still returns ops panel items every load.
         $adminAlerts = $this->service->fanOutAdminAlerts();
 
         $this->render('dashboard', [

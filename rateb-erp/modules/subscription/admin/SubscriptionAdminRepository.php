@@ -414,36 +414,60 @@ final class SubscriptionAdminRepository
      * Auto-bootstrap missing engine rows from rateb_companies (+ latest billing dates if any).
      * Insert-only — never overwrites existing engine lifecycle rows.
      *
-     * @return array{inserted:int,examined:int}
+     * Fast path: only companies without an engine row (NOT EXISTS). Billing lookup
+     * runs only for those IDs — avoids correlated subquery over the full company table.
+     *
+     * @return array{inserted:int,examined:int,skipped:bool}
      */
     public function syncMissingCompanies(string $todayYmd): array
     {
-        $out = ['inserted' => 0, 'examined' => 0];
+        $out = ['inserted' => 0, 'examined' => 0, 'skipped' => false];
         try {
             $pdo = Database::connection();
-            $stmt = $pdo->query(
-                'SELECT c.id AS company_id,
-                        s.starts_at AS billing_start,
-                        s.ends_at AS billing_end,
-                        s.status AS billing_status
+
+            // Cheap missing-id scan (no billing join).
+            $missingStmt = $pdo->query(
+                'SELECT c.id AS company_id
                  FROM rateb_companies c
-                 LEFT JOIN rateb_subscription_engine e ON e.company_id = c.id
-                 LEFT JOIN rateb_subscriptions s ON s.id = (
-                     SELECT s2.id FROM rateb_subscriptions s2
-                     WHERE s2.company_id = c.id
-                     ORDER BY s2.id DESC
-                     LIMIT 1
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM rateb_subscription_engine e WHERE e.company_id = c.id
                  )
-                 WHERE e.id IS NULL
                  ORDER BY c.id ASC
                  LIMIT 500'
             );
-            if ($stmt === false) {
+            if ($missingStmt === false) {
                 return $out;
             }
-            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            if (!is_array($rows) || $rows === []) {
+            $missingIds = [];
+            while ($row = $missingStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['company_id'] ?? 0);
+                if ($id > 0) {
+                    $missingIds[] = $id;
+                }
+            }
+            if ($missingIds === []) {
                 return $out;
+            }
+
+            $billingByCompany = [];
+            $placeholders = implode(',', array_fill(0, count($missingIds), '?'));
+            // Latest billing row per missing company only.
+            $billStmt = $pdo->prepare(
+                "SELECT s.company_id, s.starts_at AS billing_start, s.ends_at AS billing_end, s.status AS billing_status
+                 FROM rateb_subscriptions s
+                 INNER JOIN (
+                     SELECT company_id, MAX(id) AS max_id
+                     FROM rateb_subscriptions
+                     WHERE company_id IN ({$placeholders})
+                     GROUP BY company_id
+                 ) latest ON latest.max_id = s.id"
+            );
+            $billStmt->execute($missingIds);
+            while ($b = $billStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $cid = (int) ($b['company_id'] ?? 0);
+                if ($cid > 0) {
+                    $billingByCompany[$cid] = $b;
+                }
             }
 
             $insert = $pdo->prepare(
@@ -453,19 +477,16 @@ final class SubscriptionAdminRepository
                     (:company_id, :start, :end, 7, :status, :suspended_at, NOW())'
             );
 
-            foreach ($rows as $row) {
+            foreach ($missingIds as $companyId) {
                 $out['examined']++;
-                $companyId = (int) ($row['company_id'] ?? 0);
-                if ($companyId < 1) {
-                    continue;
-                }
+                $bill = $billingByCompany[$companyId] ?? [];
                 $dates = SubscriptionAdminViewModel::resolveBootstrapDates(
-                    isset($row['billing_start']) ? (string) $row['billing_start'] : null,
-                    isset($row['billing_end']) ? (string) $row['billing_end'] : null,
+                    isset($bill['billing_start']) ? (string) $bill['billing_start'] : null,
+                    isset($bill['billing_end']) ? (string) $bill['billing_end'] : null,
                     $todayYmd
                 );
                 $status = SubscriptionAdminViewModel::mapBillingStatusToEngine(
-                    isset($row['billing_status']) ? (string) $row['billing_status'] : null
+                    isset($bill['billing_status']) ? (string) $bill['billing_status'] : null
                 );
                 $suspendedAt = $status === SubscriptionStatus::SUSPENDED ? gmdate('Y-m-d H:i:s') : null;
                 try {

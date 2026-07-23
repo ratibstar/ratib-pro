@@ -49,23 +49,38 @@ final class SubscriptionAdminService
 
     /**
      * Ensure every company has an engine row (insert-only bootstrap from companies + billing dates).
+     * Throttled to once per browser session hour unless $force.
      *
-     * @return array{inserted:int,examined:int}
+     * @return array{inserted:int,examined:int,skipped:bool}
      */
-    public function syncMissingCompanies(?string $todayYmd = null): array
+    public function syncMissingCompanies(?string $todayYmd = null, bool $force = false): array
     {
-        return $this->repo->syncMissingCompanies($todayYmd ?? gmdate('Y-m-d'));
+        $today = $todayYmd ?? gmdate('Y-m-d');
+        $sessionKey = 'rateb_sub_engine_sync_at';
+        if (!$force && class_exists(\Rateb\App\Core\SessionManager::class)) {
+            $last = (int) \Rateb\App\Core\SessionManager::get($sessionKey, 0);
+            if ($last > 0 && (time() - $last) < 3600) {
+                return ['inserted' => 0, 'examined' => 0, 'skipped' => true];
+            }
+        }
+
+        $out = $this->repo->syncMissingCompanies($today);
+        $out['skipped'] = false;
+        if (class_exists(\Rateb\App\Core\SessionManager::class)) {
+            \Rateb\App\Core\SessionManager::set($sessionKey, time());
+        }
+        return $out;
     }
 
     /**
      * Notify platform super-admins about every company in the alert window
-     * (once per company per admin per day). Also returns items for the ops panel.
+     * (once per company per admin per day). Session-throttled write path.
      *
-     * @return array{companies:int,notifications:int,items:list<array<string,mixed>>}
+     * @return array{companies:int,notifications:int,items:list<array<string,mixed>>,skipped?:bool}
      */
-    public function fanOutAdminAlerts(?string $todayYmd = null): array
+    public function fanOutAdminAlerts(?string $todayYmd = null, bool $force = false): array
     {
-        return (new SubscriptionAdminNotifier())->fanOutToPlatformAdmins($todayYmd);
+        return (new SubscriptionAdminNotifier())->fanOutToPlatformAdmins($todayYmd, !$force);
     }
 
     /**
