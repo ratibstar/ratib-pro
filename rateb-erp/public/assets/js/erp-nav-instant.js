@@ -1,8 +1,8 @@
 /**
- * PERF-P3 — Instant ERP navigation (content-swap + gated prefetch).
+ * PERF-P3 / Fix4 — Instant ERP navigation (content-swap + gated prefetch).
  * Same tenant/session/shell only. Full reload fallback otherwise.
- * Prefetch: current module only until idle; never dashboard/profile/notifications/admin early.
- * Max 1 concurrent prefetch request.
+ * Prefetch: visible/high-pri only; max 1 concurrent; pause/abort on user nav.
+ * Idle wave runs once; deferred paths (profile/notifications/catalog) never auto-prefetch.
  */
 (function (root) {
     'use strict';
@@ -28,7 +28,14 @@
     var prefetchQueue = [];
     var prefetchInFlight = 0;
     var PREFETCH_MAX_PARALLEL = 1;
+    /** Idle wave: dashboard + at most one visible current-module link. */
+    var IDLE_PREFETCH_MAX_URLS = 2;
     var idlePrefetchUnlocked = false;
+    var idlePrefetchScheduled = false;
+    var idlePrefetchDone = false;
+    var idlePrefetchCancelled = false;
+    var prefetchPaused = false;
+    var prefetchAbortFn = null;
     var lastHref = '';
 
     /**
@@ -512,38 +519,95 @@
         prefetchQueue = [];
     }
 
+    function abortPrefetchInflight() {
+        if (typeof prefetchAbortFn === 'function') {
+            try { prefetchAbortFn(); } catch (eAb) { /* ignore */ }
+        }
+        prefetchAbortFn = null;
+    }
+
+    /** Pause queue + abort in-flight prefetch so user nav owns the network. */
+    function pausePrefetch() {
+        prefetchPaused = true;
+        clearPrefetchQueue();
+        abortPrefetchInflight();
+    }
+
+    function resumePrefetch() {
+        prefetchPaused = false;
+    }
+
+    function isPrefetchBlocked() {
+        return !!(navigating || prefetchPaused || isUiOffline());
+    }
+
+    function isNavLinkVisible(el) {
+        try {
+            if (!el || !el.getBoundingClientRect) {
+                return false;
+            }
+            var r = el.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2) {
+                return false;
+            }
+            var vh = root.innerHeight || document.documentElement.clientHeight || 0;
+            var vw = root.innerWidth || document.documentElement.clientWidth || 0;
+            return r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
+        } catch (eVis) {
+            return false;
+        }
+    }
+
     function runPrefetchQueue() {
         // Offline / soft-offline: never start hanging HTML fetches (starves every click).
-        if (isUiOffline()) {
+        if (isPrefetchBlocked()) {
             clearPrefetchQueue();
             return;
         }
         while (prefetchInFlight < PREFETCH_MAX_PARALLEL && prefetchQueue.length) {
+            if (isPrefetchBlocked()) {
+                clearPrefetchQueue();
+                return;
+            }
             var href = prefetchQueue.shift();
             prefetchInFlight += 1;
             postSw({ type: 'PREFETCH_ERP_OPS_URL', url: href });
             try {
-                fetchWithTimeout(href, {
+                var raw = fetchWithTimeout(href, {
                     credentials: 'same-origin',
                     headers: { Accept: 'text/html', 'X-Rateb-Prefetch': '1' }
-                }, 1500).then(function (res) {
+                }, 1500);
+                prefetchAbortFn = typeof raw._ratebAbort === 'function' ? raw._ratebAbort : null;
+                raw.then(function (res) {
+                    if (isPrefetchBlocked()) {
+                        return null;
+                    }
                     if (!res || !res.ok) {
                         return null;
                     }
                     return res.text().then(function (html) {
+                        if (isPrefetchBlocked()) {
+                            return;
+                        }
                         if (html && html.length >= 20000) {
+                            // Same cache strategy as before (SW + local Cache API).
                             postSw({ type: 'CACHE_ERP_OPS_PAGE', url: href, html: html });
+                            try {
+                                putHtmlLocally(href, html);
+                            } catch (ePut) { /* ignore */ }
                         }
                     });
                 }).catch(function () { /* ignore */ }).then(function () {
+                    prefetchAbortFn = null;
                     prefetchInFlight = Math.max(0, prefetchInFlight - 1);
-                    if (isUiOffline()) {
+                    if (isPrefetchBlocked()) {
                         clearPrefetchQueue();
                         return;
                     }
                     runPrefetchQueue();
                 });
             } catch (e2) {
+                prefetchAbortFn = null;
                 prefetchInFlight = Math.max(0, prefetchInFlight - 1);
             }
         }
@@ -553,7 +617,7 @@
         if (!href || prefetchSeen[href]) {
             return;
         }
-        if (isUiOffline()) {
+        if (isPrefetchBlocked()) {
             return;
         }
         opts = opts || {};
@@ -566,12 +630,15 @@
                 return;
             }
             if (!opts.force) {
+                // Deferred paths (profile/notifications/catalog/bare admin) never auto-prefetch —
+                // only explicit force (idle dashboard warm or hover لوحة التحكم).
+                if (isDeferredPrefetchPath(u.pathname)) {
+                    return;
+                }
                 if (!idlePrefetchUnlocked) {
-                    if (isDeferredPrefetchPath(u.pathname) || !isCurrentModuleHref(href)) {
+                    if (!isCurrentModuleHref(href)) {
                         return;
                     }
-                } else if (isDeferredPrefetchPath(u.pathname)) {
-                    // Idle unlocked: still only one concurrent; allow deferred paths once.
                 } else if (!isCurrentModuleHref(href) && !opts.allowOther) {
                     return;
                 }
@@ -580,7 +647,7 @@
             return;
         }
         prefetchSeen[href] = true;
-        /* PERF-P3: max 1 concurrent prefetch. */
+        /* PERF Fix4: max 1 concurrent prefetch; queue drains only when not navigating. */
         prefetchQueue.push(href);
         runPrefetchQueue();
     }
@@ -601,6 +668,9 @@
                     if (document.visibilityState && document.visibilityState !== 'visible') {
                         return;
                     }
+                    if (isPrefetchBlocked()) {
+                        return;
+                    }
                     var u = new URL(a.href, root.location.href);
                     if (u.origin !== root.location.origin) {
                         return;
@@ -614,7 +684,7 @@
                         prefetchUrl(u.href, { force: true });
                         return;
                     }
-                    /* Hover intent: only current module until idle unlock. */
+                    /* Hover intent: only current module; deferred paths blocked without force. */
                     prefetchUrl(u.href);
                 } catch (e) { /* ignore */ }
             };
@@ -626,24 +696,55 @@
 
     function idlePrefetchVisible() {
         try {
-            /* PERF-P3: unlock deferred paths only after idle; prefetch current module first. */
+            /* PERF Fix4: single idle wave; cancel on interaction; visible high-pri only. */
+            if (idlePrefetchScheduled) {
+                return;
+            }
+            idlePrefetchScheduled = true;
+
+            var onInteract = function () {
+                /* Cancel pending idle wave + abort any in-flight idle fetch.
+                 * Do NOT leave prefetchPaused stuck — hover warm must still work. */
+                idlePrefetchCancelled = true;
+                clearPrefetchQueue();
+                abortPrefetchInflight();
+            };
+            ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) {
+                root.addEventListener(ev, onInteract, { once: true, passive: true, capture: true });
+            });
+
             var unlockAndPrefetch = function () {
+                if (idlePrefetchDone || idlePrefetchCancelled) {
+                    return;
+                }
                 try {
                     if (document.visibilityState && document.visibilityState !== 'visible') {
                         return;
                     }
                 } catch (eVis) { /* ignore */ }
+                if (navigating || prefetchPaused) {
+                    // User already navigating — skip the idle wave entirely (no second wave later).
+                    idlePrefetchDone = true;
+                    idlePrefetchUnlocked = true;
+                    resumePrefetch();
+                    return;
+                }
+                idlePrefetchDone = true;
                 idlePrefetchUnlocked = true;
+
                 var side = document.getElementById('rateb-sidebar') || document;
                 var links = side.querySelectorAll('a.rateb-nav-link[href]');
                 if (!links.length) {
+                    resumePrefetch();
                     return;
                 }
-                // Warm لوحة التحكم once — soft-nav was cold while F5 used SW navigate cache.
                 var dashHref = '';
-                var currentFirst = [];
+                var visibleModule = [];
                 Array.prototype.forEach.call(links, function (a) {
                     try {
+                        if (!isNavLinkVisible(a)) {
+                            return;
+                        }
                         var u = new URL(a.href, root.location.href);
                         if (!ADMIN_PATH_RE.test(u.pathname) || POS_SHELL_RE.test(u.pathname)) {
                             return;
@@ -651,32 +752,40 @@
                         var bare = String(u.pathname || '').replace(/\/+$/, '');
                         if (/\/admin$/i.test(bare) && !dashHref) {
                             dashHref = u.href;
+                            return;
                         }
                         if (isDeferredPrefetchPath(u.pathname)) {
                             return;
                         }
                         if (isCurrentModuleHref(u.href)) {
-                            currentFirst.push(u.href);
+                            visibleModule.push(u.href);
                         }
                     } catch (e) { /* ignore */ }
                 });
-                if (dashHref) {
+
+                var budget = IDLE_PREFETCH_MAX_URLS;
+                if (dashHref && budget > 0) {
                     prefetchUrl(dashHref, { force: true });
+                    budget -= 1;
                 }
-                /* At most one auto-prefetch besides dashboard; hover covers the rest. */
-                currentFirst.slice(0, 1).forEach(function (href) {
-                    prefetchUrl(href, { force: false });
-                });
+                /* At most one visible current-module auto-prefetch; hover covers the rest. */
+                if (budget > 0 && visibleModule.length) {
+                    prefetchUrl(visibleModule[0], { force: false });
+                }
             };
+
             var kick = function () {
+                if (idlePrefetchCancelled || idlePrefetchDone) {
+                    return;
+                }
                 if (window.requestIdleCallback) {
-                    window.requestIdleCallback(unlockAndPrefetch, { timeout: 20000 });
+                    window.requestIdleCallback(unlockAndPrefetch, { timeout: 8000 });
                 } else {
-                    setTimeout(unlockAndPrefetch, 12000);
+                    setTimeout(unlockAndPrefetch, 4000);
                 }
             };
-            /* Quiet window after first paint / early navigation. */
-            setTimeout(kick, 12000);
+            /* Quiet window after first paint — do not race early navigations. */
+            setTimeout(kick, 10000);
         } catch (e3) { /* ignore */ }
     }
 
@@ -1377,6 +1486,7 @@
                 navigating = false;
                 setMainNavBusy(false);
                 clearNavPending();
+                resumePrefetch();
                 try {
                     console.warn('[RATEB NAV] unlock stuck navigating');
                 } catch (eU) { /* ignore */ }
@@ -1388,7 +1498,8 @@
         // Instant feedback — do not wait for HTML fetch.
         updateActiveNav(href);
         setMainNavBusy(true);
-        clearPrefetchQueue();
+        /* PERF Fix4: abort idle/hover prefetch so navigation owns bandwidth. */
+        pausePrefetch();
         try {
             runLifecycle('beforeLeave', { href: root.location.href, next: href });
         } catch (eLeave) { /* ignore */ }
@@ -1479,6 +1590,8 @@
             if (swapTo._gen === navGen) {
                 navigating = false;
                 inflightAbort = null;
+                /* Allow hover prefetch again; idle wave never re-runs. */
+                resumePrefetch();
             }
             drainPendingNav();
             return ok;
@@ -1677,10 +1790,12 @@
         prefetch: prefetchUrl,
         navigate: swapTo,
         bindPrefetch: bindPrefetch,
+        pausePrefetch: pausePrefetch,
         unlock: function () {
             navigating = false;
             pendingNavHref = '';
             cleanupSoftNavUiArtifacts();
+            resumePrefetch();
             drainPendingNav();
         },
         isNavigating: function () { return !!navigating; }
