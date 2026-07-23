@@ -15,8 +15,8 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-/* v9: POS Offline foundation module under ./js/modules/pos/ */
-var CACHE = 'rateb-offline-v2-bootstrap-v9';
+/* v10: POS local catalog script under ./js/modules/pos/ */
+var CACHE = 'rateb-offline-v2-bootstrap-v10';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -38,6 +38,7 @@ var PRECACHE = [
     './js/business/crm-module.js',
     './js/business/hr-module.js',
     './js/business/manufacturing-module.js',
+    './js/modules/pos/pos-catalog.js',
     './js/modules/pos/pos-module.js',
     './modules/module-manifest.example.json',
     './js/routes/route-manifest.json',

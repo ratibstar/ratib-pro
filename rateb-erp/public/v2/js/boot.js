@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v9';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v10';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -766,8 +766,12 @@
             {
                 id: 'pos',
                 title: 'POS',
-                routes: ['/pos', '/pos/sales', '/pos/settings'],
+                routes: ['/pos', '/pos/product', '/pos/sales', '/pos/settings'],
                 script: './js/modules/pos/pos-module.js',
+                scripts: [
+                    './js/modules/pos/pos-catalog.js',
+                    './js/modules/pos/pos-module.js'
+                ],
                 globalName: 'RatebOfflineV2Pos',
                 dependencies: ['identity']
             }
@@ -938,7 +942,16 @@
             var appShell = root.RatebOfflineV2AppShell;
             var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
 
-            return loadScript(entry.script).then(function () {
+            var scriptList = Array.isArray(entry.scripts) && entry.scripts.length
+                ? entry.scripts.slice()
+                : [entry.script];
+            var loadChain = Promise.resolve();
+            scriptList.forEach(function (url) {
+                loadChain = loadChain.then(function () {
+                    return loadScript(url);
+                });
+            });
+            return loadChain.then(function () {
                 var api = root[entry.globalName];
                 if (!api || typeof api.create !== 'function') {
                     throw new Error('module_factory_missing:' + moduleId);
