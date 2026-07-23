@@ -203,8 +203,4 @@ if (!empty($dashboardChartsUrl)) {
         <?php } ?>
     </div>
 </div>
-<script src="<?php echo rateb_chartjs('4.4.3'); ?>" defer></script>
-<script src="<?php echo rateb_asset('js/charts.js'); ?>" defer></script>
-<?php if (!empty($dashboardChartsUrl)) { ?>
-<script src="<?php echo rateb_asset('js/dashboard-charts-defer.js'); ?>" defer></script>
-<?php } ?>
+<?php /* Fix8: Chart.js / charts.js / dashboard-charts-defer load from main.php after paint+idle (DOM-gated). */ ?>

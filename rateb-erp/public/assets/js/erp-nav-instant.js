@@ -967,58 +967,72 @@
         if (isUiOffline()) {
             return;
         }
-        var rootDash = document.querySelector('[data-cm-dash][data-rateb-chartjs], [data-cm-dash="v5c"]');
-        if (!rootDash || !document.querySelector('canvas[id^="chart-"]')) {
-            return;
-        }
-        var chartjs = rootDash.getAttribute('data-rateb-chartjs') || '';
-        var charts = rootDash.getAttribute('data-rateb-charts') || '';
-        var deferSrc = '';
-        try {
-            if (charts) {
-                deferSrc = String(charts).replace(/charts\.js/i, 'dashboard-charts-defer.js');
+        var run = function () {
+            var rootDash = document.querySelector('[data-cm-dash][data-rateb-chartjs], [data-cm-dash="v5c"]');
+            if (!rootDash || !document.querySelector('canvas[id^="chart-"]')) {
+                return;
             }
-        } catch (eD) { /* ignore */ }
-        var load = function (src) {
-            return new Promise(function (resolve) {
-                if (!src) {
-                    resolve();
-                    return;
+            var chartjs = rootDash.getAttribute('data-rateb-chartjs') || '';
+            var charts = rootDash.getAttribute('data-rateb-charts') || '';
+            var deferSrc = '';
+            try {
+                if (charts) {
+                    deferSrc = String(charts).replace(/charts\.js/i, 'dashboard-charts-defer.js');
                 }
-                var key = scriptKey(src);
-                if (loadedScripts[key] && (
-                    (src.indexOf('dashboard-charts-defer') !== -1 && typeof root.ratebDashboardChartsBoot === 'function')
-                    || (src.indexOf('charts.js') !== -1 && typeof root.ratebChartsBoot === 'function')
-                    || (src.indexOf('chart') !== -1 && typeof root.Chart !== 'undefined')
-                )) {
-                    resolve();
-                    return;
-                }
-                var el = document.createElement('script');
-                el.src = src;
-                el.async = true;
-                el.onload = el.onerror = function () {
-                    loadedScripts[key] = true;
-                    resolve();
-                };
-                (document.body || document.documentElement).appendChild(el);
+            } catch (eD) { /* ignore */ }
+            var load = function (src) {
+                return new Promise(function (resolve) {
+                    if (!src) {
+                        resolve();
+                        return;
+                    }
+                    var key = scriptKey(src);
+                    if (loadedScripts[key] && (
+                        (src.indexOf('dashboard-charts-defer') !== -1 && typeof root.ratebDashboardChartsBoot === 'function')
+                        || (src.indexOf('charts.js') !== -1 && typeof root.ratebChartsBoot === 'function')
+                        || (src.indexOf('chart') !== -1 && typeof root.Chart !== 'undefined')
+                    )) {
+                        resolve();
+                        return;
+                    }
+                    var el = document.createElement('script');
+                    el.src = src;
+                    el.async = true;
+                    el.onload = el.onerror = function () {
+                        loadedScripts[key] = true;
+                        resolve();
+                    };
+                    (document.body || document.documentElement).appendChild(el);
+                });
+            };
+            load(chartjs).then(function () {
+                return load(charts);
+            }).then(function () {
+                return load(deferSrc);
+            }).then(function () {
+                root.setTimeout(function () {
+                    try {
+                        if (typeof root.ratebDashboardChartsBoot === 'function') {
+                            root.ratebDashboardChartsBoot();
+                        } else if (typeof root.ratebChartsBoot === 'function') {
+                            root.ratebChartsBoot();
+                        }
+                    } catch (eBoot) { /* ignore */ }
+                }, 0);
             });
         };
-        load(chartjs).then(function () {
-            return load(charts);
-        }).then(function () {
-            return load(deferSrc);
-        }).then(function () {
-            root.setTimeout(function () {
-                try {
-                    if (typeof root.ratebDashboardChartsBoot === 'function') {
-                        root.ratebDashboardChartsBoot();
-                    } else if (typeof root.ratebChartsBoot === 'function') {
-                        root.ratebChartsBoot();
-                    }
-                } catch (eBoot) { /* ignore */ }
-            }, 0);
-        });
+        /* Fix8: after soft-nav paint — do not compete with swap/click handlers. */
+        if (typeof root.requestAnimationFrame === 'function') {
+            root.requestAnimationFrame(function () {
+                if (typeof root.requestIdleCallback === 'function') {
+                    root.requestIdleCallback(run, { timeout: 2500 });
+                } else {
+                    root.setTimeout(run, 200);
+                }
+            });
+        } else {
+            root.setTimeout(run, 200);
+        }
     }
 
     function reinitModuleUi() {

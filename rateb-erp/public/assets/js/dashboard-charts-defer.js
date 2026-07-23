@@ -240,11 +240,8 @@
 
     window.ratebDashboardChartsBoot = boot;
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot, { once: true });
-    } else {
-        boot();
-    }
+    /* Fix8: do not auto-boot on DCL — layout/soft-nav call ratebDashboardChartsBoot after Chart.js is ready.
+     * Keep afterEnter for soft-nav content swaps when libs already loaded. */
     document.addEventListener('rateb:nav:afterEnter', boot);
     document.addEventListener('rateb:nav:beforeLeave', abortInflight);
 })();

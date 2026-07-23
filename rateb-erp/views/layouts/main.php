@@ -1241,12 +1241,16 @@ if ($navActive('admin/agency-updates')) {
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
 $deferAssetScripts = [];
-// Chart.js + charts.js strictly after first paint / idle (dashboard widgets).
+/* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
+ * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */
 if (!empty($layoutAssets['charts'])) {
     $deferAssetScripts[] = rateb_chartjs('4.4.3');
 }
 foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     $deferAssetScripts[] = rateb_asset('js/' . $deferFile);
+}
+if (!empty($layoutAssets['charts']) && ($erpRoute === 'admin' || $erpRoute === 'admin/executive-dashboard')) {
+    $deferAssetScripts[] = rateb_asset('js/dashboard-charts-defer.js');
 }
 /* PERF Fix2: preload critical scripts so downloads overlap; injector still controls exec order. */
 foreach ($ratebCriticalScripts as $ratebCritSrc) {
@@ -1320,8 +1324,18 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
     if (document.readyState === 'complete') idleStart();
     else window.addEventListener('load', idleStart, { once: true });
   }
-  /* Dashboard charts BEFORE idleQueue — waiting behind bootstrap/lang left black canvases.
-   * Chart lib must execute before charts boot file (sequential within chartQueue). */
+  /* Fix8: Chart.js after first paint + idle — never on DCL critical path.
+   * DOM gate: skip entirely when page has no chart containers (even if route flagged).
+   * Cancel if user soft-navs away before start. Soft-nav into charts uses erp-nav-instant. */
+  function pageHasChartContainers() {
+    try {
+      return !!(document.querySelector(
+        'canvas[id^="chart-"], canvas[id^="acc-chart-"], [data-chart-slot], [data-cm-dash][data-rateb-chartjs]'
+      ));
+    } catch (eHas) {
+      return false;
+    }
+  }
   function bootChartsNow() {
     try {
       if (typeof window.ratebChartsBoot === 'function') {
@@ -1333,15 +1347,40 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
     } catch (eBoot) { /* ignore */ }
   }
   if (chartQueue.length) {
+    var chartsCancelled = false;
+    var chartsStarted = false;
     var startCharts = function () {
+      if (chartsCancelled || chartsStarted) return;
+      if (!pageHasChartContainers()) return;
+      chartsStarted = true;
       chain(chartQueue, 0, bootChartsNow);
     };
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function () {
-        setTimeout(startCharts, 0);
+    var scheduleCharts = function () {
+      var go = function () {
+        if (chartsCancelled) return;
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(startCharts, { timeout: 3000 });
+        } else {
+          setTimeout(startCharts, 400);
+        }
+      };
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(go);
+        });
+      } else {
+        setTimeout(go, 0);
+      }
+    };
+    try {
+      document.addEventListener('rateb:nav:beforeLeave', function () {
+        chartsCancelled = true;
       }, { once: true });
+    } catch (eNav) { /* ignore */ }
+    if (document.readyState === 'complete') {
+      scheduleCharts();
     } else {
-      setTimeout(startCharts, 0);
+      window.addEventListener('load', scheduleCharts, { once: true });
     }
   }
   afterInteraction(function () {
