@@ -3,6 +3,8 @@
 /// Presentation-only model. No HR business rules.
 library;
 
+import 'package:ratib_hr_mobile/core/brand/brand_display.dart';
+
 /// Workspace role for future shell variants (Manager / HR / Supervisor / CEO).
 /// Today ESS uses [employee] only — ERP may supply a role later without redesign.
 enum AppWorkspaceRole {
@@ -69,9 +71,9 @@ final class MobileAppConfiguration {
   final Map<String, Object?> extensions;
 
   String get displayName {
-    final n = appName.trim();
+    final n = BrandDisplay.normalizeAppName(appName);
     if (n.isNotEmpty) return n;
-    return companyName.trim();
+    return BrandDisplay.normalizeAppName(companyName.trim());
   }
 
   bool isFeatureEnabled(String key) {
@@ -155,8 +157,12 @@ final class MobileAppConfiguration {
 
     return MobileAppConfiguration(
       companyId: _asInt(body['company_id']),
-      companyName: (body['company_name'] ?? '').toString(),
-      appName: (body['app_name'] ?? '').toString(),
+      companyName: BrandDisplay.normalizeAppName(
+        (body['company_name'] ?? '').toString(),
+      ),
+      appName: BrandDisplay.normalizeAppName(
+        (body['app_name'] ?? '').toString(),
+      ),
       logoUrl: (body['logo'] ?? '').toString(),
       iconUrl: (body['icon'] ?? '').toString(),
       splashUrl: (body['splash'] ?? '').toString(),

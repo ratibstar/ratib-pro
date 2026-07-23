@@ -24,7 +24,7 @@ final class DeviceRegistryService {
   Future<void> registerAndHeartbeat() async {
     final deviceId = await _deviceIds.getOrCreate();
     final platform = _platform();
-    const appVersion = '0.1.19';
+    const appVersion = '0.1.20';
 
     final registered = await _port.register(
       deviceId: deviceId,

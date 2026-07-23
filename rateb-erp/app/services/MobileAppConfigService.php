@@ -204,7 +204,11 @@ final class MobileAppConfigService
 
         $payload = [
             'company_id' => $companyId,
-            'app_name' => mb_substr(trim((string) ($input['app_name'] ?? ($company['name'] ?? ''))), 0, 150),
+            'app_name' => mb_substr(
+                self::normalizeBrandAppName(trim((string) ($input['app_name'] ?? ($company['name'] ?? '')))),
+                0,
+                150
+            ),
             'logo_path' => $this->nullablePath($input['logo_path'] ?? null),
             'icon_path' => $this->nullablePath($input['icon_path'] ?? null),
             'splash_path' => $this->nullablePath($input['splash_path'] ?? null),
@@ -256,6 +260,7 @@ final class MobileAppConfigService
             $appName = $this->isPlaceholderAppName($companyName, $companyName)
                 ? 'رتب — الموارد البشرية'
                 : ($companyName !== '' ? $companyName : 'رتب — الموارد البشرية');
+            $appName = self::normalizeBrandAppName($appName);
 
             return [
                 'status' => 200,
@@ -280,6 +285,7 @@ final class MobileAppConfigService
         if ($appName === '' || $this->isPlaceholderAppName($appName, $companyName)) {
             $appName = 'رتب — الموارد البشرية';
         }
+        $appName = self::normalizeBrandAppName($appName);
 
         return [
             'status' => 200,
@@ -323,5 +329,56 @@ final class MobileAppConfigService
         }
 
         return false;
+    }
+
+    /**
+     * Product brand only — never rewrite salary phrases (الراتب، كشف راتب، …).
+     */
+    public static function normalizeBrandAppName(string $appName): string
+    {
+        $s = trim($appName);
+        if ($s === '') {
+            return $s;
+        }
+
+        $exact = [
+            'راتب' => 'رتب',
+            'راتب — الموارد البشرية' => 'رتب — الموارد البشرية',
+            'راتب - الموارد البشرية' => 'رتب — الموارد البشرية',
+            'راتب – الموارد البشرية' => 'رتب — الموارد البشرية',
+            'RATIB' => 'RATEB',
+            'Ratib' => 'RATEB',
+            'ratib' => 'RATEB',
+            'RATIB HR' => 'RATEB HR',
+            'Ratib HR' => 'RATEB HR',
+            'RATIB - Human Resources' => 'RATEB - Human Resources',
+            'Ratib - Human Resources' => 'RATEB - Human Resources',
+        ];
+        if (isset($exact[$s])) {
+            return $exact[$s];
+        }
+
+        $pairs = [
+            'راتب — الموارد البشرية' => 'رتب — الموارد البشرية',
+            'راتب - الموارد البشرية' => 'رتب — الموارد البشرية',
+            'راتب – الموارد البشرية' => 'رتب — الموارد البشرية',
+            'راتب ERP' => 'رتب ERP',
+            'نظام راتب ERP' => 'نظام رتب ERP',
+            'نظام راتب' => 'نظام رتب',
+            'بحساب راتب' => 'بحساب رتب',
+            'RATIB ERP' => 'RATEB ERP',
+            'Ratib ERP' => 'RATEB ERP',
+            'RATIB HR' => 'RATEB HR',
+            'Ratib HR' => 'RATEB HR',
+            'RATIB' => 'RATEB',
+            'Ratib' => 'RATEB',
+        ];
+        foreach ($pairs as $from => $to) {
+            if ($from !== '' && str_contains($s, $from)) {
+                $s = str_replace($from, $to, $s);
+            }
+        }
+
+        return $s;
     }
 }

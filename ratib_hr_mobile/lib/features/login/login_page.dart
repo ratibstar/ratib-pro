@@ -181,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'رتب جديد 0.1.19',
+                'رتب جديد 0.1.20',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFFFF0000),
