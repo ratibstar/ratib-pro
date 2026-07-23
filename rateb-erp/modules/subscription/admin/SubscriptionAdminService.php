@@ -12,6 +12,7 @@ use Rateb\App\Subscription\RenewalEngine;
 use Rateb\App\Subscription\RenewalRepository;
 use Rateb\App\Subscription\RenewalRequest;
 use Rateb\App\Subscription\RenewalResult;
+use Rateb\App\Subscription\SubscriptionAgencyMirror;
 use Rateb\App\Subscription\SubscriptionBootstrap;
 use Rateb\App\Subscription\SubscriptionStatus;
 
@@ -164,10 +165,12 @@ final class SubscriptionAdminService
             $this->notifications->recordGenerated($decision);
         }
 
+        $mirrored = $this->mirrorLifecycle($companyId, $startYmd, $endYmd, $status);
+
         return [
             'success' => true,
             'code' => 'created',
-            'message' => 'Engine row created',
+            'message' => 'Engine row created' . ($mirrored ? ' (mirrored to agency)' : ''),
             'company_id' => $companyId,
             'engine_id' => $engineId,
         ];
@@ -258,13 +261,22 @@ final class SubscriptionAdminService
         }
 
         $engine = new RenewalEngine(null, null, $this->authorizer ?? new DefaultRenewalAuthorizer());
-        return $engine->renew(new RenewalRequest(
+        $result = $engine->renew(new RenewalRequest(
             $companyId,
             $newExpiryDate,
             $renewalPeriod !== '' ? $renewalPeriod : 'manual',
             $actorId,
             $reference
         ));
+        if ($result->success()) {
+            $this->mirrorLifecycle(
+                $companyId,
+                (string) ($result->previousExpiryDate() ?? gmdate('Y-m-d')),
+                (string) $result->newExpiryDate(),
+                SubscriptionStatus::ACTIVE
+            );
+        }
+        return $result;
     }
 
     /**
@@ -344,6 +356,13 @@ final class SubscriptionAdminService
             SubscriptionBootstrap::bindForCompany($companyId);
         }
 
+        $mirrored = $this->mirrorLifecycle(
+            $companyId,
+            substr((string) ($row['subscription_start'] ?? $newExpiryDate), 0, 10),
+            $newExpiryDate,
+            SubscriptionStatus::ACTIVE
+        );
+
         error_log(sprintf(
             'RATEB subscription extended: company_id=%d actor_id=%d new_expiry=%s',
             $companyId,
@@ -354,9 +373,52 @@ final class SubscriptionAdminService
         return [
             'success' => true,
             'code' => 'extended',
-            'message' => 'Expiry extended; tenant ACTIVE',
+            'message' => 'Expiry extended; tenant ACTIVE'
+                . ($mirrored ? ' (mirrored to agency ERP)' : ''),
             'new_expiry' => $newExpiryDate,
         ];
+    }
+
+    /**
+     * Push current engine row to linked agency ERP DB (test.rateb.sa etc.).
+     *
+     * @return array{success:bool,code:string,message:string}
+     */
+    public function pushToAgency(int $companyId, int $actorId): array
+    {
+        if (!$this->canManage($actorId)) {
+            return ['success' => false, 'code' => 'unauthorized', 'message' => 'Not authorized'];
+        }
+        $row = $this->repo->findTenant($companyId);
+        if ($row === null) {
+            return ['success' => false, 'code' => 'invalid_company', 'message' => 'No engine row'];
+        }
+        $ok = $this->mirrorLifecycle(
+            $companyId,
+            substr((string) ($row['subscription_start'] ?? ''), 0, 10),
+            substr((string) ($row['subscription_end'] ?? ''), 0, 10),
+            strtoupper((string) ($row['current_status'] ?? SubscriptionStatus::ACTIVE)),
+            $row['suspended_at'] ?? null
+        );
+        return $ok
+            ? ['success' => true, 'code' => 'mirrored', 'message' => 'Mirrored to linked agency ERP database']
+            : ['success' => false, 'code' => 'mirror_failed', 'message' => 'No linked agency DB or mirror failed (check migrations 210+ on agency)'];
+    }
+
+    private function mirrorLifecycle(
+        int $platformCompanyId,
+        string $startYmd,
+        string $endYmd,
+        string $status,
+        mixed $suspendedAt = null
+    ): bool {
+        return SubscriptionAgencyMirror::mirrorToLinkedAgency($platformCompanyId, [
+            'subscription_start' => $startYmd,
+            'subscription_end' => $endYmd,
+            'current_status' => $status,
+            'grace_period_days' => 7,
+            'suspended_at' => $suspendedAt,
+        ]);
     }
 
     public function canView(int $actorId = 0): bool

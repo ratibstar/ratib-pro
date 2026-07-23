@@ -86,6 +86,19 @@ $defaultExpiry = (string) ($tenant['subscription_end'] ?? gmdate('Y-m-d', strtot
                 </form>
             </div>
         </div>
+        <div class="rateb-card mt-3">
+            <div class="rateb-card-body">
+                <h2 class="h6">Push to agency ERP</h2>
+                <p class="small text-muted">
+                    Platform and agency use separate databases. Push lifecycle dates to the linked agency
+                    (e.g. test.rateb.sa) so the in-app alert appears on the tenant dashboard.
+                </p>
+                <form method="post" action="<?php echo $esc(rateb_url('admin/subscription-engine/' . $companyId . '/push-agency')); ?>">
+                    <input type="hidden" name="_csrf" value="<?php echo $esc($csrf); ?>">
+                    <button type="submit" class="btn btn-sm btn-warning">Push to linked agency now</button>
+                </form>
+            </div>
+        </div>
         <?php } else { ?>
         <div class="alert alert-secondary small mb-0">View-only. Renewal / extend require <code>subscriptions.manage</code>.</div>
         <?php } ?>

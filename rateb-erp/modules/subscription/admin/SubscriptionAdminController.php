@@ -139,6 +139,20 @@ final class SubscriptionAdminController extends Controller
         Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
     }
 
+    public function pushAgency(string $id): void
+    {
+        $this->assertCanManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            Response::redirect(rateb_url('admin/subscription-engine/' . (int) $id));
+            return;
+        }
+        $companyId = (int) $id;
+        $out = $this->service->pushToAgency($companyId, $this->actorId());
+        SessionManager::flash($out['success'] ? 'success' : 'error', $out['message']);
+        Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
+    }
+
     public function create(): void
     {
         $this->assertCanManage();

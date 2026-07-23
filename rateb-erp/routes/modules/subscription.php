@@ -34,3 +34,4 @@ $router->post('/admin/subscription-engine/create', [SubscriptionAdminController:
 $router->get('/admin/subscription-engine/{id}', [SubscriptionAdminController::class, 'show'], $viewMw);
 $router->post('/admin/subscription-engine/{id}/renew', [SubscriptionAdminController::class, 'renew'], $manageMw);
 $router->post('/admin/subscription-engine/{id}/extend', [SubscriptionAdminController::class, 'extend'], $manageMw);
+$router->post('/admin/subscription-engine/{id}/push-agency', [SubscriptionAdminController::class, 'pushAgency'], $manageMw);

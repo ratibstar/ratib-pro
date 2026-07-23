@@ -1626,6 +1626,20 @@ def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:
         "config/env/agency_lookup.php",
         "config/env/control_db_for_lookup.php",
     ]
+    # Keep subscription in-app alert path current on the agency test tree.
+    sub_root = "rateb-erp/modules/subscription"
+    if os.path.isdir(sub_root):
+        for dirpath, _dirnames, filenames in os.walk(sub_root):
+            for name in filenames:
+                if name.endswith(".php") or name.endswith(".md"):
+                    rel = os.path.join(dirpath, name).replace("\\", "/")
+                    mirror.append(rel)
+    for extra in (
+        "rateb-erp/views/layouts/main.php",
+        "rateb-erp/public/index.php",
+    ):
+        if extra not in mirror:
+            mirror.append(extra)
     ordered = [rel for rel in mirror if os.path.isfile(rel)]
     if not ordered:
         return
