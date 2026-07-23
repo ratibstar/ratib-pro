@@ -8,8 +8,9 @@ use Rateb\App\Core\Database;
 /**
  * Persistence boundary for Subscription Engine state.
  *
- * Phase 2: read-only SELECT against rateb_subscription_engine.
- * Writes (save) remain unimplemented.
+ * Reads against rateb_subscription_engine.
+ * Lifecycle writes for renewal/reactivation go through RenewalRepository (Phase 8).
+ * Generic save() remains unimplemented.
  *
  * MUST NOT touch billing tables or other ERP modules.
  */

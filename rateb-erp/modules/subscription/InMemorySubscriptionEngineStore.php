@@ -43,4 +43,21 @@ final class InMemorySubscriptionEngineStore implements SubscriptionEngineStore
         }
         return $out;
     }
+
+    /**
+     * Patch an existing company row (test / renewal harness).
+     *
+     * @param array<string, mixed> $patch
+     */
+    public function patchByCompanyId(int $companyId, array $patch): bool
+    {
+        foreach ($this->rows as $i => $row) {
+            if ((int) ($row['company_id'] ?? 0) !== $companyId) {
+                continue;
+            }
+            $this->rows[$i] = array_merge($row, $patch);
+            return true;
+        }
+        return false;
+    }
 }
