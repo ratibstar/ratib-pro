@@ -194,6 +194,10 @@ final class ApiAuthMiddleware implements MiddlewareInterface
         \Rateb\App\Core\BranchContext::reset();
         \Rateb\App\Core\TenantContext::setApiUserId($userId > 0 ? $userId : null);
         (new \Rateb\App\Services\BranchAccessService())->bootstrapForApi($companyId, $userId, $tokenBranchId);
+        // Phase 2 — read-only SubscriptionContext for API bearer tenants (no access change).
+        if (class_exists(\Rateb\App\Subscription\SubscriptionBootstrap::class)) {
+            \Rateb\App\Subscription\SubscriptionBootstrap::bindForCompany($companyId);
+        }
         return true;
     }
 }

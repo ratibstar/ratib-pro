@@ -155,6 +155,12 @@ final class Auth
         if (function_exists('rateb_ensure_agency_access_permissions_once')) {
             rateb_ensure_agency_access_permissions_once();
         }
+        // Phase 2 — read-only bind after tenant identity is established (no enforcement).
+        if (class_exists(\Rateb\App\Subscription\SubscriptionBootstrap::class)) {
+            \Rateb\App\Subscription\SubscriptionBootstrap::bindForCompany(
+                $companyId > 0 ? $companyId : null
+            );
+        }
     }
 
     public static function homePath(): string
@@ -261,6 +267,9 @@ final class Auth
         TenantContext::setCompanyId(null);
         TenantContext::setSuperAdmin(false);
         \Rateb\App\Core\BranchContext::reset();
+        if (class_exists(\Rateb\App\Subscription\SubscriptionRuntime::class)) {
+            \Rateb\App\Subscription\SubscriptionRuntime::reset();
+        }
     }
 
     /** Auto-login first active super admin when RATEB_ERP_LOGIN_BYPASS is enabled. */
@@ -335,6 +344,13 @@ final class Auth
             SessionManager::forget('rateb_portal_branch_id');
             \Rateb\App\Core\BranchContext::reset();
         }
+
+        // Phase 2 — read-only SubscriptionContext bind (no redirects / blocking).
+        if (class_exists(\Rateb\App\Subscription\SubscriptionBootstrap::class)) {
+            \Rateb\App\Subscription\SubscriptionBootstrap::bindForCompany(
+                $companyId !== null ? (int) $companyId : null
+            );
+        }
     }
 
     /** Clear stale ERP session keys without audit/remember-me side effects (safe during bootstrap). */
@@ -348,5 +364,8 @@ final class Auth
         TenantContext::setSuperAdmin(false);
         TenantContext::setCompanyId(null);
         \Rateb\App\Core\BranchContext::reset();
+        if (class_exists(\Rateb\App\Subscription\SubscriptionRuntime::class)) {
+            \Rateb\App\Subscription\SubscriptionRuntime::reset();
+        }
     }
 }

@@ -122,6 +122,12 @@ try {
         error_log('Mobile device registry boot: ' . $registryBootEx->getMessage());
     }
 
+    $subscriptionModule = dirname(__FILE__, 2) . '/modules/subscription/SubscriptionModule.php';
+    if (is_file($subscriptionModule)) {
+        require_once $subscriptionModule;
+        \Rateb\App\Subscription\SubscriptionModule::init();
+    }
+
     $posModule = dirname(__FILE__, 2) . '/modules/pos/PosModule.php';
     if (is_file($posModule)) {
         require_once $posModule;

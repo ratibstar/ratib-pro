@@ -6,10 +6,10 @@ namespace Rateb\App\Subscription;
 /**
  * Subscription Engine module bootstrap — isolated under modules/subscription/.
  *
- * Phase 1 foundation only:
+ * Phase 2:
  * - Registers module-local PSR-4 autoload for Rateb\App\Subscription\*
- * - Does NOT register routes, middleware, cron, UI, or login hooks
- * - Must NOT be required from public/index.php until a later approved phase
+ * - Loads public subscription() helper
+ * - Does NOT register routes, cron, UI, redirects, or access blocking
  */
 final class SubscriptionModule
 {
@@ -24,6 +24,10 @@ final class SubscriptionModule
         }
         self::$booted = true;
         self::registerAutoload();
+        $helpers = self::rootPath() . '/helpers.php';
+        if (is_file($helpers)) {
+            require_once $helpers;
+        }
     }
 
     public static function rootPath(): string
