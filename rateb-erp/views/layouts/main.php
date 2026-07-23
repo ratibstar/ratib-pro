@@ -533,10 +533,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
     <?php
-    /* PERF-P3 / Fix5 / Fix6: one tiny blocking shell stylesheet; async CSS via preload→swap.
+    /* PERF-P3 / Fix5 / Fix6 / Fix7: one tiny blocking shell stylesheet; async CSS via preload→swap.
      * Tajawal 400 is inlined below (not in this list) so first paint is not blocked by
      * a second stylesheet or by 500/700 downloads. Rest weights load after load+idle.
-     * FA: shell subset early (sidebar/topbar); full pack after load+idle — not in async wave. */
+     * FA: shell subset early (sidebar/topbar); full pack after load+idle — not in async wave.
+     * Bootstrap (~233KB): preload only during first paint; promote to stylesheet after paint
+     * so CSSOM parse does not delay FCP. critical-shell covers topbar Bootstrap classes. */
     $ratebThemeDarkCss = rateb_asset('css/dark.css');
     $ratebThemeLightCss = rateb_asset('css/light.css');
     $ratebTajawalRestCss = rateb_tajawal_font_rest_css();
@@ -544,8 +546,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     $ratebFaShellCss = rateb_fontawesome_css();
     $ratebFaFullCss = rateb_fontawesome_full_css();
     $ratebFaSolidWoff = rateb_vendor_asset('fontawesome/6.5.2/webfonts/fa-solid-900.woff2');
+    $ratebBootstrapCss = rateb_bootstrap_css();
     $ratebAsyncStyles = [
-        rateb_bootstrap_css(),
+        /* Fix7: Bootstrap removed from this wave — see post-paint promote below. */
         rateb_asset('css/variables.css'),
         rateb_asset('css/main.css'),
         rateb_asset('css/components.css'),
@@ -575,6 +578,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <?php /* Fix6: solid icons font + shell CSS start before Bootstrap/theme wave. */ ?>
     <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebFaSolidWoff); ?>" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebFaShellCss); ?>" as="style" id="rateb-fa-shell" onload="this.onload=null;this.rel='stylesheet'">
+    <?php /* Fix7: start Bootstrap download immediately; do NOT promote until after first paint. */ ?>
+    <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebBootstrapCss); ?>" as="style" id="rateb-bootstrap-css">
     <style id="rateb-tajawal-critical-face">
     /* Inline @font-face — same family/stack as critical-shell; avoids extra CSS round-trip. */
     @font-face {
@@ -587,7 +592,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     </style>
     <script>
     (function () {
-      /* PERF-P3 / Fix5 / Fix6: preload → stylesheet swap (non-blocking). */
+      /* PERF-P3 / Fix5 / Fix6 / Fix7: preload → stylesheet swap (non-blocking). */
       var sheets = <?php echo json_encode(array_values(array_filter($ratebAsyncStyles, static function ($h) use ($ratebThemeDarkCss, $ratebThemeLightCss) {
           return $h !== $ratebThemeDarkCss && $h !== $ratebThemeLightCss;
       })), JSON_UNESCAPED_SLASHES); ?>;
@@ -596,6 +601,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       var tajawalRest = <?php echo json_encode($ratebTajawalRestCss, JSON_UNESCAPED_SLASHES); ?>;
       var faShell = <?php echo json_encode($ratebFaShellCss, JSON_UNESCAPED_SLASHES); ?>;
       var faFull = <?php echo json_encode($ratebFaFullCss, JSON_UNESCAPED_SLASHES); ?>;
+      var bootstrapHref = <?php echo json_encode($ratebBootstrapCss, JSON_UNESCAPED_SLASHES); ?>;
       var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
       function swapIn(href, id) {
         if (!href) return;
@@ -633,6 +639,39 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           swapIn(faShell, 'rateb-fa-shell');
         }
       })();
+      /* Fix7: apply Bootstrap only after first paint (or offline / safety timeout). */
+      function promoteBootstrap() {
+        var el = document.getElementById('rateb-bootstrap-css');
+        if (!el) {
+          if (!bootstrapHref) return;
+          el = document.createElement('link');
+          el.id = 'rateb-bootstrap-css';
+          el.rel = 'stylesheet';
+          el.href = bootstrapHref;
+          document.head.appendChild(el);
+          return;
+        }
+        if (el.rel !== 'stylesheet') {
+          el.rel = 'stylesheet';
+        }
+      }
+      function scheduleBootstrap() {
+        var offline = false;
+        try { offline = navigator.onLine === false; } catch (eOff) { offline = false; }
+        if (offline) {
+          promoteBootstrap();
+          return;
+        }
+        if (window.requestAnimationFrame) {
+          window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(promoteBootstrap);
+          });
+        } else {
+          setTimeout(promoteBootstrap, 0);
+        }
+        setTimeout(promoteBootstrap, 2500);
+      }
+      scheduleBootstrap();
       swapIn(bs === 'light' ? themeLight : themeDark, 'rateb-theme-css');
       sheets.forEach(function (href) { swapIn(href); });
       /* Fix5: 500/600/700/800 after first paint — do not inflate document.fonts.ready. */

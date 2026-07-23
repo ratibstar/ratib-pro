@@ -1,6 +1,8 @@
 /**
- * PERF-P3 — Above-the-fold Admin shell only (inline / single blocking sheet).
- * Full theme CSS loads via preload→stylesheet swap after first paint.
+ * PERF-P3 / Fix7 — Above-the-fold Admin shell only (single blocking sheet).
+ * Full theme + Bootstrap CSS load via preload→stylesheet after first paint.
+ * Fix7 stubs: Bootstrap utility/btn classes used in topbar so FCP is not blocked
+ * by bootstrap.rtl.min.css (~233KB). Full Bootstrap still loads and owns final look.
  */
 :root,[data-theme="dark"]{
   --rateb-primary:#3b82f6;--rateb-primary-dark:#2563eb;--rateb-accent:#2dd4bf;
@@ -52,3 +54,25 @@ button.rateb-nav-link{width:calc(100% - 1rem);background:transparent;border-top:
   .rateb-sidebar.show,.rateb-sidebar.open{transform:translateX(0)}
   .rateb-main{margin-left:0;margin-right:0;width:100%;max-width:100%}
 }
+/* Fix7 — first-paint bridges for Bootstrap classes in chrome (overridden by full BS). */
+.d-flex{display:flex!important}
+.align-items-center{align-items:center!important}
+.gap-2{gap:.5rem!important}
+.gap-3{gap:1rem!important}
+.d-none{display:none!important}
+.mb-0{margin-bottom:0!important}
+.mb-3{margin-bottom:1rem!important}
+.ms-1{margin-inline-start:.25rem!important}
+.py-2{padding-top:.5rem!important;padding-bottom:.5rem!important}
+.h5{font-size:1.25rem;font-weight:500;line-height:1.2;margin-top:0}
+.btn{display:inline-block;font-family:inherit;font-size:.875rem;font-weight:400;line-height:1.5;text-align:center;text-decoration:none;vertical-align:middle;cursor:pointer;user-select:none;border:1px solid transparent;padding:.375rem .75rem;border-radius:.375rem;background:transparent;color:inherit}
+.btn-sm{padding:.25rem .5rem;font-size:.875rem;border-radius:.25rem}
+.btn-group{display:inline-flex;vertical-align:middle}
+.btn-group>.btn{position:relative;flex:0 1 auto}
+.btn-group-sm>.btn{padding:.25rem .5rem;font-size:.875rem;border-radius:.25rem}
+.btn-outline-secondary{color:var(--rateb-text-muted);border-color:var(--rateb-border)}
+.btn-outline-secondary:hover,.btn-outline-secondary.active{color:var(--rateb-text);background:var(--rateb-surface-elevated)}
+.btn-outline-danger{color:var(--rateb-danger);border-color:var(--rateb-danger)}
+.alert{position:relative;padding:.75rem 1rem;margin-bottom:1rem;border:1px solid var(--rateb-border);border-radius:.375rem;background:var(--rateb-surface-elevated);color:var(--rateb-text)}
+@media (min-width:768px){.d-md-inline{display:inline!important}}
+@media (min-width:992px){.d-lg-none{display:none!important}}
