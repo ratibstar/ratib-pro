@@ -165,6 +165,7 @@
         opts = opts || {};
         var transport = opts.transport || createLoopTransport();
         var onlineOverride = null;
+        var registered = false;
         var started = false;
         var disposed = false;
         var running = false;
@@ -175,6 +176,10 @@
         var defaultStrategy = opts.defaultStrategy || STRATEGIES.LWW;
         var onOnline = null;
         var onOffline = null;
+        var connectivityBound = false;
+        var resumeArmed = false;
+        var startInFlight = null;
+        /* Fix2: registration is cheap; activation (DB sync SQL / timers) is deferred. */
 
         function isOnline() {
             if (onlineOverride !== null) {
@@ -272,6 +277,9 @@
             }).then(function () {
                 return audit('outbox_enqueue', { clientId: clientId, entityType: entityType, entityId: entityId });
             }).then(function () {
+                /* Offline changes exist — arm connectivity resume without activating yet. */
+                resumeArmed = true;
+                bindConnectivityHandlers();
                 emit('sync:enqueued', { clientId: clientId });
                 return { ok: true, clientId: clientId, idempotencyKey: idem };
             });
@@ -578,7 +586,7 @@
             });
         }
 
-        function syncOnce() {
+        function syncOnceCore() {
             if (running) {
                 return Promise.resolve({ ok: true, busy: true });
             }
@@ -615,7 +623,7 @@
                 if (!isOnline()) {
                     return;
                 }
-                syncOnce().catch(function () { /* audited via events */ });
+                syncOnceCore().catch(function () { /* audited via events */ });
             }, intervalMs);
         }
 
@@ -626,10 +634,112 @@
             }
         }
 
+        function bindConnectivityHandlers() {
+            if (connectivityBound || disposed || !root.addEventListener) {
+                return;
+            }
+            connectivityBound = true;
+            onOnline = function () {
+                /* Registered-only: ignore online until sync was armed or activated. */
+                if (!started && !resumeArmed) {
+                    return;
+                }
+                ensureStarted({ skipImmediateCycle: true, reason: 'connectivity' }).then(function () {
+                    return audit('reconnect', { source: 'window.online' }).then(function () {
+                        return syncOnceCore();
+                    });
+                }).catch(function () { /* ignore */ });
+            };
+            onOffline = function () {
+                if (!started) {
+                    emit('sync:offline', { phase: 'signal' });
+                    return;
+                }
+                audit('offline', { source: 'window.offline' }).then(function () {
+                    emit('sync:offline', { phase: 'signal' });
+                }).catch(function () {
+                    emit('sync:offline', { phase: 'signal' });
+                });
+            };
+            root.addEventListener('online', onOnline);
+            root.addEventListener('offline', onOffline);
+        }
+
+        function unbindConnectivityHandlers() {
+            if (!connectivityBound) {
+                return;
+            }
+            connectivityBound = false;
+            if (root.removeEventListener) {
+                if (onOnline) {
+                    root.removeEventListener('online', onOnline);
+                }
+                if (onOffline) {
+                    root.removeEventListener('offline', onOffline);
+                }
+            }
+            onOnline = null;
+            onOffline = null;
+        }
+
+        /**
+         * Register Sync with the runtime locator without opening sync tables /
+         * running outbox-inbox cycles. Safe on every cold BusinessModule route.
+         */
+        function register(regOpts) {
+            regOpts = regOpts || {};
+            if (disposed) {
+                return Promise.reject(new Error('sync_disposed'));
+            }
+            if (regOpts.transport) {
+                transport = regOpts.transport;
+            }
+            if (regOpts.intervalMs) {
+                intervalMs = regOpts.intervalMs;
+            }
+            var rt = runtimeApi();
+            if (rt && rt.services) {
+                rt.services.register('sync', api, { replace: true });
+            }
+            registered = true;
+            emit('sync:registered', { version: SYNC_VERSION });
+            return Promise.resolve({
+                ok: true,
+                registered: true,
+                started: started,
+                version: SYNC_VERSION
+            });
+        }
+
+        function ensureStarted(startOpts) {
+            if (started) {
+                return Promise.resolve({ ok: true, already: true, version: SYNC_VERSION });
+            }
+            if (startInFlight) {
+                return startInFlight;
+            }
+            startInFlight = start(startOpts || {}).then(function (res) {
+                startInFlight = null;
+                return res;
+            }, function (err) {
+                startInFlight = null;
+                throw err;
+            });
+            return startInFlight;
+        }
+
         function start(startOpts) {
             startOpts = startOpts || {};
             if (disposed) {
                 return Promise.reject(new Error('sync_disposed'));
+            }
+            if (started) {
+                return Promise.resolve({
+                    ok: true,
+                    already: true,
+                    version: SYNC_VERSION,
+                    offline: !isOnline()
+                });
             }
             if (startOpts.transport) {
                 transport = startOpts.transport;
@@ -643,35 +753,35 @@
                 }
                 return dbApi().open();
             }).then(function () {
+                return register(startOpts);
+            }).then(function () {
                 var rt = runtimeApi();
-                if (rt && rt.services) {
-                    rt.services.register('sync', api, { replace: true });
-                }
                 if (rt && typeof rt.start === 'function') {
                     return rt.start().catch(function () { return null; });
                 }
+                return null;
             }).then(function () {
                 started = true;
-                onOnline = function () {
-                    audit('reconnect', { source: 'window.online' }).then(function () {
-                        return syncOnce();
-                    }).catch(function () { /* ignore */ });
-                };
-                onOffline = function () {
-                    audit('offline', { source: 'window.offline' }).then(function () {
-                        emit('sync:offline', { phase: 'signal' });
-                    });
-                };
-                if (root.addEventListener) {
-                    root.addEventListener('online', onOnline);
-                    root.addEventListener('offline', onOffline);
-                }
+                resumeArmed = true;
+                bindConnectivityHandlers();
                 startBackground();
-                return audit('sync_started', { transport: transport.name || 'custom' }).then(function () {
+                return audit('sync_started', {
+                    transport: transport.name || 'custom',
+                    reason: startOpts.reason || 'start'
+                }).then(function () {
                     emit('sync:started', { version: SYNC_VERSION });
+                    if (startOpts.skipImmediateCycle) {
+                        return {
+                            ok: true,
+                            version: SYNC_VERSION,
+                            resumed: false,
+                            deferredCycle: true,
+                            offline: !isOnline()
+                        };
+                    }
                     /* Resume: drain ready outbox/inbox when online */
                     if (isOnline()) {
-                        return syncOnce().then(function (cycle) {
+                        return syncOnceCore().then(function (cycle) {
                             return { ok: true, version: SYNC_VERSION, resumed: true, cycle: cycle };
                         });
                     }
@@ -681,18 +791,15 @@
         }
 
         function stop() {
+            var wasStarted = started;
             started = false;
             stopBackground();
-            if (root.removeEventListener) {
-                if (onOnline) {
-                    root.removeEventListener('online', onOnline);
-                }
-                if (onOffline) {
-                    root.removeEventListener('offline', onOffline);
-                }
+            unbindConnectivityHandlers();
+            resumeArmed = false;
+            if (!wasStarted) {
+                emit('sync:stopped', {});
+                return Promise.resolve({ ok: true });
             }
-            onOnline = null;
-            onOffline = null;
             return audit('sync_stopped', {}).then(function () {
                 emit('sync:stopped', {});
                 return { ok: true };
@@ -705,6 +812,7 @@
             }
             return stop().then(function () {
                 disposed = true;
+                registered = false;
                 var rt = runtimeApi();
                 if (rt && rt.services && rt.services.has('sync')) {
                     rt.services.unregister('sync');
@@ -714,36 +822,65 @@
         }
 
         function getStatus() {
-            return Promise.all([
-                q('SELECT COUNT(*) AS c FROM sync_outbox WHERE status IN (\'pending\',\'retry\')'),
-                q('SELECT COUNT(*) AS c FROM sync_inbox WHERE applied=0'),
-                q('SELECT COUNT(*) AS c FROM sync_conflict WHERE status=\'open\''),
-                getCheckpoint(STREAM_PUSH),
-                getCheckpoint(STREAM_PULL)
-            ]).then(function (parts) {
-                return {
-                    version: SYNC_VERSION,
-                    started: started,
-                    disposed: disposed,
-                    online: isOnline(),
-                    pendingOutbox: parts[0] && parts[0][0] ? Number(parts[0][0].c) : 0,
-                    pendingInbox: parts[1] && parts[1][0] ? Number(parts[1][0].c) : 0,
-                    openConflicts: parts[2] && parts[2][0] ? Number(parts[2][0].c) : 0,
-                    pushCheckpoint: parts[3],
-                    pullCheckpoint: parts[4],
-                    transport: transport.name || 'custom'
-                };
+            /* Sync Center / status UI activates engine; cold routes must not call this. */
+            return ensureStarted({ skipImmediateCycle: true, reason: 'getStatus' }).then(function () {
+                return Promise.all([
+                    q('SELECT COUNT(*) AS c FROM sync_outbox WHERE status IN (\'pending\',\'retry\')'),
+                    q('SELECT COUNT(*) AS c FROM sync_inbox WHERE applied=0'),
+                    q('SELECT COUNT(*) AS c FROM sync_conflict WHERE status=\'open\''),
+                    getCheckpoint(STREAM_PUSH),
+                    getCheckpoint(STREAM_PULL)
+                ]).then(function (parts) {
+                    return {
+                        version: SYNC_VERSION,
+                        registered: registered,
+                        started: started,
+                        disposed: disposed,
+                        online: isOnline(),
+                        pendingOutbox: parts[0] && parts[0][0] ? Number(parts[0][0].c) : 0,
+                        pendingInbox: parts[1] && parts[1][0] ? Number(parts[1][0].c) : 0,
+                        openConflicts: parts[2] && parts[2][0] ? Number(parts[2][0].c) : 0,
+                        pushCheckpoint: parts[3],
+                        pullCheckpoint: parts[4],
+                        transport: transport.name || 'custom'
+                    };
+                });
+            });
+        }
+
+        function syncOnce(opts) {
+            opts = opts || {};
+            return ensureStarted({
+                skipImmediateCycle: true,
+                reason: opts.reason || 'syncOnce',
+                intervalMs: opts.intervalMs,
+                transport: opts.transport
+            }).then(function () {
+                return syncOnceCore();
+            });
+        }
+
+        function pushPublic() {
+            return ensureStarted({ skipImmediateCycle: true, reason: 'push' }).then(function () {
+                return push();
+            });
+        }
+
+        function pullPublic() {
+            return ensureStarted({ skipImmediateCycle: true, reason: 'pull' }).then(function () {
+                return pull();
             });
         }
 
         var api = {
             version: SYNC_VERSION,
+            register: register,
             start: start,
             stop: stop,
             dispose: dispose,
             enqueue: enqueue,
-            push: push,
-            pull: pull,
+            push: pushPublic,
+            pull: pullPublic,
             syncOnce: syncOnce,
             applyInbox: applyInbox,
             resolveConflict: resolveConflict,
@@ -752,6 +889,8 @@
             getStatus: getStatus,
             verifyCompat: verifyCompat,
             isOnline: isOnline,
+            isRegistered: function () { return !!registered; },
+            isStarted: function () { return !!started; },
             setOnlineOverride: function (v) {
                 onlineOverride = v === null ? null : !!v;
                 return onlineOverride;

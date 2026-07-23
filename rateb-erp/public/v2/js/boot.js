@@ -658,17 +658,21 @@
                 if (!syncApi || typeof syncApi.create !== 'function') {
                     throw new Error('sync_bootstrap_failed');
                 }
-                /* PX4: Sync must be created and started before any BusinessModule writer runs. */
+                /* Fix2: register Sync for writers (enqueue) without activating DB sync cycles. */
                 var sync = syncApi.create({ intervalMs: 60000 });
                 root.RatebOfflineV2ActiveSync = sync;
-                return sync.start({ intervalMs: 60000 }).then(function (started) {
+                var registerFn = typeof sync.register === 'function'
+                    ? sync.register.bind(sync)
+                    : sync.start.bind(sync);
+                return registerFn({ intervalMs: 60000 }).then(function (reg) {
                     if (!runtime.services.has('sync')) {
                         throw new Error('sync_not_registered');
                     }
                     mark('background-platform-done');
                     ready('sync', {
-                        started: !!(started && started.ok),
-                        offline: !!(started && started.offline)
+                        registered: !!(reg && reg.ok !== false),
+                        started: !!(sync.isStarted && sync.isStarted()),
+                        offline: typeof navigator !== 'undefined' ? navigator.onLine === false : null
                     });
                     return { pm: pm, db: db, sync: sync };
                 });
