@@ -21,6 +21,7 @@ final readonly class SubscriptionContext
         private bool $canAccessErp,
         private ?string $expirationDate,
         private bool $hasRecord,
+        private ?int $recordId = null,
     ) {
     }
 
@@ -39,7 +40,8 @@ final readonly class SubscriptionContext
             false,
             true,
             null,
-            false
+            false,
+            null
         );
     }
 
@@ -76,6 +78,11 @@ final readonly class SubscriptionContext
         // Advisory only — Phase 2 never enforces. Absent suspension ⇒ accessible.
         $canAccessErp = !$suspended;
 
+        $recordId = isset($row['id']) ? (int) $row['id'] : 0;
+        if ($recordId < 1) {
+            $recordId = null;
+        }
+
         return new self(
             $companyId,
             $status,
@@ -85,13 +92,20 @@ final readonly class SubscriptionContext
             $suspended,
             $canAccessErp,
             $expirationDate,
-            true
+            true,
+            $recordId
         );
     }
 
     public function companyId(): int
     {
         return $this->companyId;
+    }
+
+    /** rateb_subscription_engine.id when present. */
+    public function recordId(): ?int
+    {
+        return $this->recordId;
     }
 
     public function status(): string
