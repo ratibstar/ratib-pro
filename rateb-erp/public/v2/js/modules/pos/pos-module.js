@@ -1,8 +1,8 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 5 Stock Snapshot)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 6 Reservation)
  *
- * Local catalog + cart + complete sale + outbox + read-only stock snapshot.
- * No payment/receipt/network push/inventory deduction/reservation. sync.start() never called.
+ * Local catalog + cart + complete sale + outbox + stock snapshot + local reservations.
+ * No payment/receipt/network push/inv.* writes. sync.start() never called.
  * register/activate do not open DB; stock/cart/checkout open on demand.
  * Does not load Inventory BusinessModule. Online ERP = Authentication Authority (AF 2.1).
  */
@@ -15,14 +15,19 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.5.0-phase5-stock';
+    var POS_VERSION = '0.6.0-phase6-reservation';
+
+    function posUid(prefix) {
+        return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
+            Math.random().toString(36).slice(2, 8);
+    }
 
     function PosModule() {
         BusinessModule.call(this, {
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — local stock snapshot read-only (no Inventory module).',
+            description: 'Offline V2 POS — local stock reservation (no Inventory module).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -30,7 +35,7 @@
             permissions: ['ui.contribute', 'services.register', 'db.read', 'sync.enqueue'],
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
-                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock'
+                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock', 'pos.reservation'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -250,8 +255,12 @@
     PosModule.prototype.completeSale = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
-            /* Soft stock check: warn only — do not block / reserve / deduct. */
+            /*
+             * Flow: OPEN cart → stock check → reservation → sale completed → outbox.
+             * Soft stock warnings only; reservations are POS-local (inv.* untouched).
+             */
             return self._getCart().getCart(idCtx).then(function (cart) {
+                var saleId = posUid('sale');
                 return self._getStock().checkLines(idCtx.company_id, cart.lines || [])
                     .catch(function () {
                         return {
@@ -264,19 +273,42 @@
                         };
                     })
                     .then(function (stockCheck) {
-                        return self._getCart().completeSale(idCtx).then(function (result) {
-                            result.stock_warnings = (stockCheck && stockCheck.warnings) || [];
-                            result.stock_warning_count = result.stock_warnings.length;
-                            result.stock_blocked = false;
-                            result.stock_reserved = false;
-                            result.inventory_deducted = false;
-                            if (result.sale) {
-                                result.sale.stock_warnings = result.stock_warnings;
-                                result.sale.stock_check_ok = !(stockCheck && stockCheck.warnings &&
-                                    stockCheck.warnings.length);
-                            }
-                            self._lastCompleted = result;
-                            return result;
+                        return self._getStock().reserveForSale(idCtx, {
+                            sale_id: saleId,
+                            lines: cart.lines || []
+                        }).then(function (reservation) {
+                            var reservationIds = (reservation.reservations || []).map(function (r) {
+                                return r.reservation_id;
+                            });
+                            return self._getCart().completeSale(idCtx, {
+                                sale_id: saleId,
+                                reservation_ids: reservationIds,
+                                stock_reserved: true
+                            }).then(function (result) {
+                                result.stock_warnings = (stockCheck && stockCheck.warnings) || [];
+                                result.stock_warning_count = result.stock_warnings.length;
+                                result.stock_blocked = false;
+                                result.stock_reserved = true;
+                                result.reservations = reservation.reservations || [];
+                                result.reservation_count = reservation.reserved_count || 0;
+                                result.reservation_availability = reservation.availability || [];
+                                result.inventory_deducted = false;
+                                result.inventory_touched = false;
+                                if (result.sale) {
+                                    result.sale.stock_warnings = result.stock_warnings;
+                                    result.sale.stock_check_ok = !(stockCheck && stockCheck.warnings &&
+                                        stockCheck.warnings.length);
+                                    result.sale.reservation_ids = reservationIds;
+                                    result.sale.stock_reserved = true;
+                                }
+                                self._lastCompleted = result;
+                                return result;
+                            }, function (err) {
+                                return self._getStock().getReservation()
+                                    .releaseForSale(idCtx, saleId)
+                                    .catch(function () { return null; })
+                                    .then(function () { throw err; });
+                            });
                         });
                     });
             });
@@ -316,6 +348,7 @@
                 payment: false,
                 inventoryDeduction: false,
                 inventoryModuleRequired: false,
+                localReservation: true,
                 syncStart: false,
                 catalogStoreOpen: !!(self._catalog && self._catalog.isStoreOpen()),
                 cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
@@ -677,7 +710,7 @@
         outlet.setAttribute('data-pos-view', 'stock');
         outlet.appendChild(self._el('h3', 'POS Stock'));
         outlet.appendChild(self._el('p',
-            'Local snapshot read-only · no Inventory module · no deduction · company=' +
+            'Local snapshot · POS reservations reduce available only · inv.* untouched · company=' +
             idCtx.company_id));
 
         var nav = self._el('div');
@@ -706,23 +739,23 @@
                 var li = self._el('li', null, {
                     'data-product-id': row.product_id,
                     'data-available': row.available ? '1' : '0',
-                    'data-qty': String(row.available_qty)
+                    'data-qty': String(row.available_qty),
+                    'data-reserved': String(row.reserved_qty || 0),
+                    'data-on-hand': String(row.on_hand_qty || 0)
                 });
-                if (!row.available) {
-                    li.appendChild(self._el('span',
-                        (row.name || row.product_id) + ' · UNAVAILABLE · qty=0' +
-                        (row.warehouse_id ? (' · wh=' + row.warehouse_id) : '')));
-                } else {
-                    li.appendChild(self._el('span',
-                        (row.name || row.product_id) + ' · available=' + row.available_qty +
-                        (row.warehouse_id ? (' · wh=' + row.warehouse_id) : '') +
-                        ' · ' + (row.source || '')));
-                }
+                li.appendChild(self._el('span',
+                    (row.name || row.product_id) +
+                    ' · on_hand=' + (row.on_hand_qty != null ? row.on_hand_qty : row.available_qty) +
+                    ' · reserved=' + (row.reserved_qty || 0) +
+                    ' · available_after=' + row.available_qty +
+                    (row.available ? '' : ' · UNAVAILABLE') +
+                    (row.warehouse_id ? (' · wh=' + row.warehouse_id) : '')));
                 ul.appendChild(li);
             });
             host.appendChild(ul);
             host.appendChild(self._el('p',
-                'Rows: ' + rows.length + ' · read_only=true · inventory_module=false'));
+                'Rows: ' + rows.length +
+                ' · available = on_hand − ACTIVE reservations · inventory_module=false'));
         });
     };
 
@@ -771,6 +804,15 @@
                 ' · client_id=' + (outbox.client_id || '')));
             host.appendChild(self._el('p',
                 'sync_started=false · inventory_deducted=false · network=false'));
+            if (result.reservation_count) {
+                host.appendChild(self._el('p',
+                    'Reservations: ' + result.reservation_count + ' ACTIVE · stock_reserved=true'));
+                (result.reservation_availability || []).forEach(function (a) {
+                    host.appendChild(self._el('p',
+                        a.product_id + ' · reserved=' + a.reserved_qty +
+                        ' · available_after=' + a.available_after_reservation));
+                });
+            }
             if (result.stock_warnings && result.stock_warnings.length) {
                 host.appendChild(self._el('p',
                     'Stock warnings at complete: ' + result.stock_warning_count +
@@ -957,10 +999,11 @@
         base.never_stores_credentials = true;
         base.sqlite_tables_added = false;
         base.outbox_operation = 'CREATE_POS_SALE';
+        base.local_reservation = true;
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
-            'pos.stock_snapshot', 'pos.stock_meta'
+            'pos.stock_snapshot', 'pos.stock_meta', 'pos.stock_reservation'
         ];
         base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
         return base;

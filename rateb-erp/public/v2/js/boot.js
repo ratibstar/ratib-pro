@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v13';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v14';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -771,6 +771,7 @@
                 scripts: [
                     './js/modules/pos/pos-catalog.js',
                     './js/modules/pos/pos-cart.js',
+                    './js/modules/pos/pos-reservation.js',
                     './js/modules/pos/pos-stock.js',
                     './js/modules/pos/pos-module.js'
                 ],

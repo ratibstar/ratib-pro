@@ -408,8 +408,10 @@
         /**
          * Complete OPEN draft → COMPLETED sale + local outbox CREATE_POS_SALE.
          * No network, no sync.start(), no inventory deduction.
+         * opts.sale_id — optional pre-assigned id (Phase 6 reservation attaches first).
          */
-        function completeSale(idCtx) {
+        function completeSale(idCtx, opts) {
+            opts = opts || {};
             return ensureOpenDraft(idCtx).then(function (draft) {
                 return ensureStore().then(function (store) {
                     return listLinesForDraft(store, idCtx.company_id, draft.id).then(function (lines) {
@@ -418,9 +420,9 @@
                         }
                         var totals = calcTotals(lines);
                         var completedAt = nowIso();
-                        var saleId = uid('sale');
-                        var localTxnNo = 'POS-' + String(idCtx.company_id) + '-' +
-                            Date.now().toString(36).toUpperCase();
+                        var saleId = opts.sale_id ? String(opts.sale_id) : uid('sale');
+                        var localTxnNo = opts.local_txn_no || ('POS-' + String(idCtx.company_id) + '-' +
+                            Date.now().toString(36).toUpperCase());
                         var saleLines = lines.map(function (line) {
                             return linePayloadForSale(line, saleId);
                         });
@@ -438,6 +440,8 @@
                             total: totals.total,
                             lines: saleLines,
                             product_ids: saleLines.map(function (l) { return l.product_id; }),
+                            reservation_ids: opts.reservation_ids || [],
+                            stock_reserved: !!opts.stock_reserved,
                             inventory_deducted: false,
                             payment: null,
                             receipt: null,

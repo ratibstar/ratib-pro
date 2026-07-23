@@ -1,9 +1,9 @@
 /*!
- * RATEB Offline V2 — POS local stock snapshot (Phase 5, read-only)
+ * RATEB Offline V2 — POS local stock snapshot + reservation-aware availability (Phase 6)
  *
- * Entity: pos.stock_snapshot on existing entity_row.
- * Optionally overlays read-only inv.item rows (SELECT only) — never loads Inventory module,
- * never writes inv.*, never reserves/deducts stock.
+ * Entities: pos.stock_snapshot, pos.stock_meta on existing entity_row.
+ * Available qty = snapshot/on_hand − ACTIVE pos.stock_reservation (calculated only).
+ * Optionally overlays read-only inv.item (SELECT). Never writes inv.*, never loads Inventory.
  */
 (function (root) {
     'use strict';
@@ -34,8 +34,21 @@
     function createPosStock(module) {
         var state = {
             store: null,
-            seedPromise: null
+            seedPromise: null,
+            reservation: null
         };
+
+        function getReservation() {
+            if (state.reservation) {
+                return state.reservation;
+            }
+            var api = root.RatebOfflineV2PosReservation;
+            if (!api || typeof api.create !== 'function') {
+                throw new Error('pos_reservation_missing');
+            }
+            state.reservation = api.create(module);
+            return state.reservation;
+        }
 
         function ensureStore() {
             if (state.store) {
@@ -45,7 +58,7 @@
             if (!db) {
                 return Promise.reject(new Error('pos_db_missing'));
             }
-            /* Stock screen / check opens DB — not register/activate. */
+            /* Stock screen / check / reserve opens DB — not register/activate. */
             return db.open().then(function () {
                 state.store = Business.createDocStore(db, {
                     ownedPrefix: 'pos.',
@@ -85,13 +98,11 @@
                     };
                 }).filter(Boolean);
             }).catch(function () {
-                /* Table/column missing or empty — POS snapshot still works. */
                 return [];
             });
         }
 
         function localSeedRows(companyId) {
-            /* Demo snapshot for catalog products — POS-owned only. */
             return [
                 {
                     id: 'prod-water-500',
@@ -217,9 +228,23 @@
             });
         }
 
+        function applyReservations(rows, reservedMap) {
+            return (rows || []).map(function (row) {
+                var onHand = qtyNum(row.on_hand_qty != null ? row.on_hand_qty : row.available_qty);
+                var reserved = qtyNum(reservedMap[String(row.product_id)] || 0);
+                var available = Math.max(0, onHand - reserved);
+                return Object.assign({}, row, {
+                    on_hand_qty: onHand,
+                    reserved_qty: reserved,
+                    available_qty: available,
+                    available_after_reservation: available,
+                    available: available > 0
+                });
+            });
+        }
+
         /**
-         * Build availability list: POS snapshot + read-only inv.item overlay.
-         * Prefer inv.item quantity when a product mapping exists (still no writes to inv).
+         * Snapshot on-hand + ACTIVE reservation reduction (POS calculated only).
          */
         function listStock(companyId) {
             return ensureSeed(companyId).then(function () {
@@ -227,11 +252,13 @@
                     return Promise.all([
                         store.list(ET.snapshot, companyId),
                         loadProductIndexes(store, companyId),
-                        readInvItemsReadonly(companyId)
+                        readInvItemsReadonly(companyId),
+                        getReservation().reservedByProduct(companyId)
                     ]).then(function (parts) {
                         var snapRows = parts[0] || [];
                         var indexes = parts[1];
                         var invRows = parts[2] || [];
+                        var reservedMap = parts[3] || Object.create(null);
                         var byProduct = Object.create(null);
 
                         snapRows.forEach(function (r) {
@@ -239,14 +266,15 @@
                             if (!p || !p.product_id) {
                                 return;
                             }
-                            var available = qtyNum(p.available_qty);
+                            var onHand = qtyNum(p.available_qty);
                             byProduct[String(p.product_id)] = {
                                 product_id: String(p.product_id),
                                 name: p.name || p.product_id,
                                 sku: p.sku || '',
-                                available_qty: available,
+                                on_hand_qty: onHand,
+                                available_qty: onHand,
                                 warehouse_id: p.warehouse_id || null,
-                                available: available > 0,
+                                available: onHand > 0,
                                 source: p.source || 'pos.stock_snapshot',
                                 read_only: true
                             };
@@ -259,19 +287,20 @@
                             }
                             var prev = byProduct[pid];
                             var prod = indexes.byId[pid];
+                            var onHand = qtyNum(inv.available_qty);
                             byProduct[pid] = {
                                 product_id: pid,
                                 name: (prod && prod.name) || inv.name || pid,
                                 sku: (prod && prod.sku) || inv.sku || '',
-                                available_qty: qtyNum(inv.available_qty),
+                                on_hand_qty: onHand,
+                                available_qty: onHand,
                                 warehouse_id: inv.warehouse_id || (prev && prev.warehouse_id) || null,
-                                available: qtyNum(inv.available_qty) > 0,
+                                available: onHand > 0,
                                 source: 'inv.item(read)',
                                 read_only: true
                             };
                         });
 
-                        /* Ensure catalog products appear even without snapshot (unavailable). */
                         Object.keys(indexes.byId).forEach(function (pid) {
                             if (byProduct[pid]) {
                                 return;
@@ -281,6 +310,7 @@
                                 product_id: pid,
                                 name: prod.name || pid,
                                 sku: prod.sku || '',
+                                on_hand_qty: 0,
                                 available_qty: 0,
                                 warehouse_id: null,
                                 available: false,
@@ -289,9 +319,10 @@
                             };
                         });
 
-                        return Object.keys(byProduct).sort().map(function (k) {
+                        var list = Object.keys(byProduct).sort().map(function (k) {
                             return byProduct[k];
                         });
+                        return applyReservations(list, reservedMap);
                     });
                 });
             });
@@ -311,7 +342,10 @@
                     product_id: String(productId),
                     name: String(productId),
                     sku: '',
+                    on_hand_qty: 0,
+                    reserved_qty: 0,
                     available_qty: 0,
+                    available_after_reservation: 0,
                     warehouse_id: null,
                     available: false,
                     source: 'missing',
@@ -320,9 +354,6 @@
             });
         }
 
-        /**
-         * Soft cart check — warns on insufficient qty; never blocks / reserves.
-         */
         function checkLines(companyId, lines) {
             return listStock(companyId).then(function (stock) {
                 var byId = Object.create(null);
@@ -343,12 +374,15 @@
                             name: (line.name || (snap && snap.name) || pid),
                             requested_qty: need,
                             available_qty: have,
+                            reserved_qty: snap ? qtyNum(snap.reserved_qty) : 0,
+                            on_hand_qty: snap ? qtyNum(snap.on_hand_qty) : 0,
                             warehouse_id: snap ? snap.warehouse_id : null,
                             code: have <= 0 ? 'pos_stock_unavailable' : 'pos_stock_insufficient',
                             message: have <= 0
                                 ? ('Unavailable: ' + (line.name || pid))
                                 : ('Insufficient stock for ' + (line.name || pid) +
-                                    ' (need ' + need + ', have ' + have + ')')
+                                    ' (need ' + need + ', have ' + have +
+                                    ', reserved ' + (snap ? snap.reserved_qty : 0) + ')')
                         });
                     }
                 });
@@ -364,12 +398,63 @@
             });
         }
 
+        /**
+         * Create POS-local ACTIVE reservations for a sale. Snapshot on_hand unchanged;
+         * calculated available drops via reserved_qty.
+         */
+        function reserveForSale(idCtx, spec) {
+            return listStock(idCtx.company_id).then(function (stock) {
+                var byId = Object.create(null);
+                stock.forEach(function (s) {
+                    byId[String(s.product_id)] = s;
+                });
+                var lines = (spec && spec.lines) || [];
+                var enriched = lines.map(function (line) {
+                    var snap = byId[String(line.product_id)];
+                    return {
+                        product_id: line.product_id,
+                        qty: line.qty,
+                        warehouse_id: (snap && snap.warehouse_id) || line.warehouse_id || null,
+                        name: line.name
+                    };
+                });
+                return getReservation().reserveForSale(idCtx, {
+                    sale_id: spec.sale_id,
+                    lines: enriched,
+                    warehouse_id: spec.warehouse_id || null
+                }).then(function (res) {
+                    return listStock(idCtx.company_id).then(function (after) {
+                        var afterById = Object.create(null);
+                        after.forEach(function (s) {
+                            afterById[String(s.product_id)] = s;
+                        });
+                        var availability = enriched.map(function (line) {
+                            var s = afterById[String(line.product_id)];
+                            return {
+                                product_id: line.product_id,
+                                reserved_qty: s ? s.reserved_qty : qtyNum(line.qty),
+                                available_after_reservation: s ? s.available_qty : 0,
+                                on_hand_qty: s ? s.on_hand_qty : 0,
+                                warehouse_id: s ? s.warehouse_id : line.warehouse_id
+                            };
+                        });
+                        return Object.assign({}, res, {
+                            availability: availability,
+                            inventory_touched: false
+                        });
+                    });
+                });
+            });
+        }
+
         return {
             ET: ET,
             ensureStore: ensureStore,
             listStock: listStock,
             getAvailability: getAvailability,
             checkLines: checkLines,
+            reserveForSale: reserveForSale,
+            getReservation: getReservation,
             isStoreOpen: function () { return !!state.store; }
         };
     }
