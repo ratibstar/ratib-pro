@@ -580,6 +580,7 @@ return [
         'admin/journal-entries' => 'accounting.view',
         'admin/subscriptions' => 'subscriptions.manage',
         'admin/subscription-engine' => 'subscriptions.view',
+        'admin/subscription-engine/create' => 'subscriptions.manage',
         'admin/subscription-engine/{id}' => 'subscriptions.view',
         'admin/subscription-engine/{id}/renew' => 'subscriptions.manage',
         'admin/subscription-engine/{id}/extend' => 'subscriptions.manage',
