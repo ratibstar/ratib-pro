@@ -1,8 +1,8 @@
 (function (root) {
     'use strict';
 
-    /** PERF-P4: metrics are progressive enhancement — never gate perceived page load.
-     * Fail-soft quickly so skeleton never sticks after soft-nav (critical JS is post-DCL).
+    /** PERF-P4 / Fix10: metrics are progressive enhancement — never gate perceived page load.
+     * One request per navigation URL; abort on leave; reuse cache when available.
      */
     var FAILSOFT_MS = 450;
     var HARD_CLEAR_MS = 900;
@@ -10,6 +10,11 @@
     var bootTimer = null;
     var hardClearTimer = null;
     var observerBound = false;
+    /** @type {Object.<string, {metrics: Array, at: number}>} */
+    var cacheByUrl = {};
+    /** @type {Object.<string, {ctrl: AbortController|null, waiters: Array}>} */
+    var inflightByUrl = {};
+    var navGen = 0;
 
     function renderStrip(container, metrics) {
         if (!metrics || !metrics.length) {
@@ -129,7 +134,27 @@
         }
     }
 
-    function scheduleSilentRetry(container) {
+    function cacheKey(url) {
+        try {
+            var u = new URL(url, root.location.href);
+            u.searchParams.delete('_');
+            return u.pathname + u.search;
+        } catch (eK) {
+            return String(url || '');
+        }
+    }
+
+    function abortAllInflight() {
+        Object.keys(inflightByUrl).forEach(function (k) {
+            var slot = inflightByUrl[k];
+            if (slot && slot.ctrl) {
+                try { slot.ctrl.abort(); } catch (eAb) { /* ignore */ }
+            }
+            delete inflightByUrl[k];
+        });
+    }
+
+    function scheduleSilentRetry(container, url) {
         if (!container || container.getAttribute('data-rateb-metrics-retry') === '1') {
             return;
         }
@@ -137,7 +162,11 @@
             return;
         }
         container.setAttribute('data-rateb-metrics-retry', '1');
+        var gen = navGen;
         setTimeout(function () {
+            if (gen !== navGen) {
+                return;
+            }
             if (!container.isConnected) {
                 return;
             }
@@ -148,18 +177,30 @@
                 return;
             }
             container.removeAttribute('data-rateb-metrics-inflight');
-            loadMetrics(container, { silent: true });
+            loadMetrics(container, { silent: true, url: url });
         }, SILENT_RETRY_MS);
     }
 
     function loadMetrics(container, opts) {
         opts = opts || {};
-        var url = withCompanyId(container.getAttribute('data-module-metrics-url'));
+        var url = withCompanyId(opts.url || container.getAttribute('data-module-metrics-url'));
         if (!url) {
             renderPlaceholder(container);
             return;
         }
-        if (container.getAttribute('data-rateb-metrics-inflight') === '1') {
+        var key = cacheKey(url);
+        var cached = cacheByUrl[key];
+        if (cached && cached.metrics && cached.metrics.length) {
+            renderStrip(container, cached.metrics);
+            return;
+        }
+        if (container.getAttribute('data-rateb-metrics-inflight') === '1' && inflightByUrl[key]) {
+            return;
+        }
+        if (inflightByUrl[key]) {
+            /* Join in-flight request for same URL — do not start a duplicate. */
+            container.setAttribute('data-rateb-metrics-inflight', '1');
+            inflightByUrl[key].waiters.push(container);
             return;
         }
         container.setAttribute('data-rateb-metrics-inflight', '1');
@@ -169,22 +210,31 @@
             return;
         }
 
+        var myGen = navGen;
         var settled = false;
         var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        inflightByUrl[key] = { ctrl: ctrl, waiters: [container] };
+
         var failSoft = setTimeout(function () {
-            if (settled) {
+            if (settled || myGen !== navGen) {
                 return;
             }
             try { if (ctrl) ctrl.abort(); } catch (eAb) { /* ignore */ }
-            renderPlaceholder(container);
-            scheduleSilentRetry(container);
+            var slot = inflightByUrl[key];
+            delete inflightByUrl[key];
+            (slot && slot.waiters ? slot.waiters : [container]).forEach(function (el) {
+                if (el && el.isConnected) {
+                    renderPlaceholder(el);
+                    scheduleSilentRetry(el, url);
+                }
+            });
         }, FAILSOFT_MS);
 
         fetch(url, {
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             signal: ctrl ? ctrl.signal : undefined,
-            cache: 'no-store'
+            cache: 'default'
         })
             .then(function (res) {
                 if (!res || !res.ok) {
@@ -195,20 +245,40 @@
             .then(function (data) {
                 settled = true;
                 clearTimeout(failSoft);
-                container.removeAttribute('data-rateb-metrics-inflight');
+                var slot = inflightByUrl[key];
+                delete inflightByUrl[key];
+                if (myGen !== navGen) {
+                    return;
+                }
+                var waiters = (slot && slot.waiters) ? slot.waiters : [container];
                 if (data && data.ok && data.metrics && data.metrics.length) {
-                    renderStrip(container, data.metrics);
+                    cacheByUrl[key] = { metrics: data.metrics, at: Date.now() };
+                    waiters.forEach(function (el) {
+                        if (el && el.isConnected) {
+                            renderStrip(el, data.metrics);
+                        }
+                    });
+                    return;
+                }
+                waiters.forEach(function (el) {
+                    if (el && el.isConnected) {
+                        renderPlaceholder(el);
+                        scheduleSilentRetry(el, url);
+                    }
+                });
+            })
+            .catch(function (err) {
+                settled = true;
+                clearTimeout(failSoft);
+                delete inflightByUrl[key];
+                if (myGen !== navGen) {
+                    return;
+                }
+                if (err && err.name === 'AbortError') {
                     return;
                 }
                 renderPlaceholder(container);
-                scheduleSilentRetry(container);
-            })
-            .catch(function () {
-                settled = true;
-                clearTimeout(failSoft);
-                container.removeAttribute('data-rateb-metrics-inflight');
-                renderPlaceholder(container);
-                scheduleSilentRetry(container);
+                scheduleSilentRetry(container, url);
             });
     }
 
@@ -234,10 +304,19 @@
                 return;
             }
             el.setAttribute('data-rateb-metrics-bound', '1');
-            // Allow re-fetch after soft-nav (new node may copy nothing; clear stale flags).
-            if (el.getAttribute('data-rateb-metrics-inflight') === '1'
-                && !el.querySelector('.cm-strip--skeleton, .cm-strip__item--skeleton')) {
-                // Inflight without skeleton — leave alone briefly.
+            el.removeAttribute('data-rateb-metrics-retry');
+            /* Do not clear inflight for a URL that is already fetching — join that flight. */
+            var url = withCompanyId(el.getAttribute('data-module-metrics-url'));
+            var key = url ? cacheKey(url) : '';
+            if (key && inflightByUrl[key]) {
+                el.setAttribute('data-rateb-metrics-inflight', '1');
+                if (inflightByUrl[key].waiters.indexOf(el) === -1) {
+                    inflightByUrl[key].waiters.push(el);
+                }
+                return;
+            }
+            if (key && cacheByUrl[key] && cacheByUrl[key].metrics) {
+                renderStrip(el, cacheByUrl[key].metrics);
                 return;
             }
             el.removeAttribute('data-rateb-metrics-inflight');
@@ -289,11 +368,13 @@
         bindObserver();
         scheduleBoot();
     }
+    /* Fix10: single soft-nav hook (afterEnter only) — enter + afterEnter caused duplicate fetches. */
+    document.addEventListener('rateb:nav:beforeLeave', function () {
+        navGen += 1;
+        abortAllInflight();
+    });
     document.addEventListener('rateb:nav:afterEnter', function () {
         bindObserver();
-        scheduleBoot();
-    });
-    document.addEventListener('rateb:nav:enter', function () {
         scheduleBoot();
     });
 })(typeof window !== 'undefined' ? window : this);

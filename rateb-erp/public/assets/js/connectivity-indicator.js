@@ -11,6 +11,9 @@
  * FIX 2026-07-16 — Do NOT force "غير متصل" on boot when navigator.onLine is true.
  * PERF-P0.3-A had applied(false) for 8s+ before first probe; under idlePrefetch storms the
  * probe timed out and the badge stayed offline while Wi‑Fi worked and the page was live.
+ *
+ * Fix10 — Probe only on initial load, browser online/offline, or manual badge retry.
+ * Do not probe on every soft-nav.
  */
 (function () {
     'use strict';
@@ -19,6 +22,12 @@
     var verifying = false;
     var failStreak = 0;
     var FAIL_NEED = 2;
+    /** Fix10: do not probe on every soft-nav — throttle unless connection change / manual retry. */
+    var MIN_PROBE_GAP_MS = 45000;
+    var lastProbeAt = 0;
+    var lastProbeOk = null;
+    var softNavQuietUntil = 0;
+    var forceNextProbe = false;
 
     function el() {
         return document.querySelector('[data-rateb-connection-status]')
@@ -40,6 +49,10 @@
         } catch (e) {
             return false;
         }
+    }
+
+    function softNavQuiet() {
+        return Date.now() < softNavQuietUntil;
     }
 
     function notifySwCloudState(online) {
@@ -146,17 +159,29 @@
         }
     }
 
-    function verifyRealOnline() {
+    function verifyRealOnline(reason) {
         if (browserSaysOffline()) {
             failStreak = FAIL_NEED;
             markOfflineConfirmed();
             return;
         }
+        /* Fix10: never block / pile probes during soft-nav. */
+        if (softNavQuiet() && reason !== 'manual' && reason !== 'online' && reason !== 'offline') {
+            return;
+        }
         if (verifying) {
             return;
         }
+        var now = Date.now();
+        if (!forceNextProbe && reason !== 'manual' && reason !== 'online' && reason !== 'boot'
+            && lastProbeAt && (now - lastProbeAt) < MIN_PROBE_GAP_MS) {
+            return;
+        }
+        forceNextProbe = false;
         verifying = true;
+        lastProbeAt = now;
         networkProbe().then(function (ok) {
+            lastProbeOk = !!ok;
             if (ok) {
                 failStreak = 0;
                 apply(true);
@@ -166,18 +191,21 @@
             failStreak += 1;
             if (failStreak >= FAIL_NEED) {
                 markOfflineConfirmed();
-            } else if (!browserSaysOffline()) {
-                // Keep current optimistic online; retry soon.
-                scheduleVerify(2000);
+            } else if (!browserSaysOffline() && reason === 'boot') {
+                // Keep current optimistic online; one retry soon on first boot only.
+                scheduleVerify(2000, 'boot-retry');
             }
         }).finally(function () {
             verifying = false;
         });
     }
 
-    function scheduleVerify(delayMs) {
+    function scheduleVerify(delayMs, reason) {
         if (browserSaysOffline()) {
             markOfflineConfirmed();
+            return;
+        }
+        if (softNavQuiet() && reason !== 'manual' && reason !== 'online') {
             return;
         }
         if (verifyTimer) {
@@ -185,14 +213,14 @@
         }
         verifyTimer = setTimeout(function () {
             verifyTimer = null;
-            verifyRealOnline();
+            verifyRealOnline(reason || 'scheduled');
         }, delayMs || 0);
     }
 
     /** First probe soon after paint — not 8s later (false "غير متصل" while net works). */
     function scheduleVerifyAfterPaint() {
         var run = function () {
-            scheduleVerify(0);
+            scheduleVerify(0, 'boot');
         };
         var start = function () {
             setTimeout(function () {
@@ -237,9 +265,21 @@
             apply(false);
             return;
         }
+        if (softNavQuiet()) {
+            /* Soft-nav must not trigger probes; update badge only if clearly offline. */
+            if (!online) {
+                failStreak += 1;
+            }
+            return;
+        }
         if (online) {
             failStreak = 0;
-            scheduleVerify(0);
+            /* Already confirmed online recently — skip redundant probe. */
+            if (lastProbeOk === true && lastProbeAt && (Date.now() - lastProbeAt) < MIN_PROBE_GAP_MS) {
+                apply(true);
+                return;
+            }
+            scheduleVerify(0, 'sdk-online');
             return;
         }
         // Soft "offline" from SDK while browser still has net → verify, do not flip badge yet.
@@ -248,7 +288,14 @@
             apply(false);
             return;
         }
-        scheduleVerify(500);
+        scheduleVerify(500, 'sdk-soft-offline');
+    }
+
+    function manualRetry() {
+        failStreak = 0;
+        forceNextProbe = true;
+        softNavQuietUntil = 0;
+        scheduleVerify(0, 'manual');
     }
 
     function bootCloud() {
@@ -263,7 +310,8 @@
         window.addEventListener('online', function () {
             failStreak = 0;
             apply(true);
-            scheduleVerify(50);
+            forceNextProbe = true;
+            scheduleVerify(50, 'online');
         });
         window.addEventListener('offline', function () {
             failStreak = FAIL_NEED;
@@ -290,7 +338,7 @@
             });
         }
 
-        document.addEventListener('click', function () {
+        document.addEventListener('click', function (ev) {
             if (browserSaysOffline()) {
                 apply(false);
                 var c2 = window.RatebOfflineConnectivity;
@@ -298,12 +346,26 @@
                     c2.setOnline(false);
                 }
             }
+            /* Manual retry: click the connection badge. */
+            try {
+                var node = el();
+                var t = ev.target;
+                if (node && t && (t === node || (t.closest && t.closest('[data-rateb-connection-status], #rateb-connection-indicator')))) {
+                    manualRetry();
+                }
+            } catch (eClick) { /* ignore */ }
         }, true);
 
-        document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState === 'visible' && !browserSaysOffline()) {
-                scheduleVerify(100);
+        /* Fix10: no probe on soft-nav; quiet window around navigation. */
+        document.addEventListener('rateb:nav:beforeLeave', function () {
+            softNavQuietUntil = Date.now() + 2500;
+            if (verifyTimer) {
+                clearTimeout(verifyTimer);
+                verifyTimer = null;
             }
+        });
+        document.addEventListener('rateb:nav:afterEnter', function () {
+            softNavQuietUntil = Date.now() + 800;
         });
 
         // Keep SW soft-offline latch alive while badge is offline — F5 unloads JS;
@@ -324,6 +386,10 @@
                 }
             });
         } catch (ePh) { /* ignore */ }
+
+        window.RatebConnectivityIndicator = {
+            retry: manualRetry
+        };
     }
 
     function boot() {

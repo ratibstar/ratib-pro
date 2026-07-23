@@ -1041,17 +1041,13 @@
             return;
         }
         // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
-        try {
-            if (typeof root.RatebBootModulePageStats === 'function') {
-                root.RatebBootModulePageStats();
-            }
-        } catch (eMetrics) { /* ignore */ }
+        // Fix10: module-page-stats boots solely via rateb:nav:afterEnter (avoid duplicate module-metrics).
         try {
             document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
                 if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
                     return;
                 }
-                // module-page-stats listens for rateb:nav:enter / afterEnter
+                // module-page-stats listens for rateb:nav:afterEnter
             });
         } catch (e2) { /* ignore */ }
         ensureDashboardCharts();
