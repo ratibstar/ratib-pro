@@ -45,7 +45,8 @@ final class AccountingDashboardService
             'metrics' => $metrics,
             'trends' => $this->trends($companyId, $metrics),
             'kpis' => $this->kpiList($companyId, $metrics),
-            'charts' => $this->charts($companyId),
+            // Pass metrics so AR/AP chart reuses cfo totals already loaded (no second AR/AP pass).
+            'charts' => $this->charts($companyId, $metrics),
             'alerts' => $this->alerts($companyId, $metrics),
             'recent' => $this->recentActivity($companyId),
             'top_customers' => $this->topCustomers($companyId),
@@ -157,28 +158,14 @@ final class AccountingDashboardService
     public function trends(?int $companyId, ?array $metrics = null): array
     {
         $m = $metrics ?? $this->metrics($companyId);
-        $cidSql = $companyId !== null && $companyId > 0 ? ' AND company_id = ' . (int) $companyId : '';
-        $pdo = Database::connection();
         $thisMonth = date('Y-m');
         $lastMonth = date('Y-m', strtotime('-1 month'));
-
-        $revCur = (float) ($pdo->query(
-            "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments
-             WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='$thisMonth'" . $cidSql
-        )->fetch()['t'] ?? 0);
-        $revPrev = (float) ($pdo->query(
-            "SELECT COALESCE(SUM(amount),0) AS t FROM rateb_payments
-             WHERE status='completed' AND DATE_FORMAT(COALESCE(paid_at,created_at),'%Y-%m')='$lastMonth'" . $cidSql
-        )->fetch()['t'] ?? 0);
-
-        $expCur = (float) ($pdo->query(
-            "SELECT COALESCE(SUM(total_amount),0) AS t FROM rateb_purchase_orders
-             WHERE status IN ('received','confirmed','partial') AND DATE_FORMAT(order_date,'%Y-%m')='$thisMonth'" . $cidSql
-        )->fetch()['t'] ?? 0);
-        $expPrev = (float) ($pdo->query(
-            "SELECT COALESCE(SUM(total_amount),0) AS t FROM rateb_purchase_orders
-             WHERE status IN ('received','confirmed','partial') AND DATE_FORMAT(order_date,'%Y-%m')='$lastMonth'" . $cidSql
-        )->fetch()['t'] ?? 0);
+        $pay = $this->paymentTotalsForMonths($companyId, $thisMonth, $lastMonth);
+        $exp = $this->poExpenseTotalsForMonths($companyId, $thisMonth, $lastMonth);
+        $revCur = (float) ($pay[$thisMonth] ?? 0);
+        $revPrev = (float) ($pay[$lastMonth] ?? 0);
+        $expCur = (float) ($exp[$thisMonth] ?? 0);
+        $expPrev = (float) ($exp[$lastMonth] ?? 0);
 
         return [
             'revenue' => $this->pctChange($revCur, $revPrev),
@@ -331,16 +318,26 @@ final class AccountingDashboardService
     /** @return array{unpaid: int, overdue: int} */
     private function platformInvoiceStats(): array
     {
-        $pdo = Database::connection();
-        $today = date('Y-m-d');
-        $unpaid = (int) (($pdo->query(
-            "SELECT COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','draft','overdue') AND payment_status IN ('unpaid','partial')"
-        )->fetch()['c'] ?? 0));
-        $overdue = (int) (($pdo->query(
-            "SELECT COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','overdue') AND payment_status IN ('unpaid','partial')
-             AND due_date IS NOT NULL AND due_date < '$today'"
-        )->fetch()['c'] ?? 0));
-        return ['unpaid' => $unpaid, 'overdue' => $overdue];
+        return self::requestMemo('platformInvoiceStats', static function (): array {
+            $pdo = Database::connection();
+            $today = date('Y-m-d');
+            $row = $pdo->query(
+                "SELECT
+                    COALESCE(SUM(CASE
+                        WHEN status IN ('sent','draft','overdue')
+                         AND payment_status IN ('unpaid','partial') THEN 1 ELSE 0 END), 0) AS unpaid,
+                    COALESCE(SUM(CASE
+                        WHEN status IN ('sent','overdue')
+                         AND payment_status IN ('unpaid','partial')
+                         AND due_date IS NOT NULL AND due_date < '{$today}' THEN 1 ELSE 0 END), 0) AS overdue
+                 FROM rateb_invoices"
+            )->fetch() ?: [];
+
+            return [
+                'unpaid' => (int) ($row['unpaid'] ?? 0),
+                'overdue' => (int) ($row['overdue'] ?? 0),
+            ];
+        });
     }
 
     /** @return array<int, array{key: string, label: string, value: string, trend: string, icon: string}> */
@@ -367,8 +364,11 @@ final class AccountingDashboardService
         ];
     }
 
-    /** @return array<string, array<int, array<string, mixed>>> */
-    public function charts(?int $companyId): array
+    /**
+     * @param array<string, mixed>|null $metrics When provided (build path), reuse ar_open/ap_open.
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function charts(?int $companyId, ?array $metrics = null): array
     {
         $cidSql = $companyId !== null && $companyId > 0 ? ' AND company_id = ' . (int) $companyId : '';
 
@@ -397,12 +397,23 @@ final class AccountingDashboardService
         $arAp = [];
         if ($companyId !== null && $companyId > 0) {
             try {
-                $arData = $this->acct->accountsReceivable($companyId);
-                $apData = $this->acct->accountsPayable($companyId);
-                $arAp = [
-                    ['label' => 'ar_open', 'value' => (float) ($arData['total_open'] ?? 0)],
-                    ['label' => 'ap_open', 'value' => (float) ($apData['total_open'] ?? 0)],
-                ];
+                if (
+                    is_array($metrics)
+                    && array_key_exists('ar_open', $metrics)
+                    && array_key_exists('ap_open', $metrics)
+                ) {
+                    $arAp = [
+                        ['label' => 'ar_open', 'value' => (float) $metrics['ar_open']],
+                        ['label' => 'ap_open', 'value' => (float) $metrics['ap_open']],
+                    ];
+                } else {
+                    $arData = $this->acct->accountsReceivable($companyId);
+                    $apData = $this->acct->accountsPayable($companyId);
+                    $arAp = [
+                        ['label' => 'ar_open', 'value' => (float) ($arData['total_open'] ?? 0)],
+                        ['label' => 'ap_open', 'value' => (float) ($apData['total_open'] ?? 0)],
+                    ];
+                }
             } catch (\Throwable $e) {
                 error_log('AccountingDashboardService::charts ar/ap: ' . $e->getMessage());
             }
@@ -553,49 +564,125 @@ final class AccountingDashboardService
         return (new JournalEntry())->query($sql, ['cid' => $companyId]);
     }
 
+    /**
+     * Completed payment totals for two calendar months — one query, request-memoized.
+     * Shared by trends() and revenueGrowth() (identical filters).
+     *
+     * @return array<string, float> month (Y-m) => total
+     */
+    private function paymentTotalsForMonths(?int $companyId, string $monthA, string $monthB): array
+    {
+        $cidKey = self::companyMemoKey($companyId);
+        $memoKey = 'payMonths:' . $cidKey . ':' . $monthA . ':' . $monthB;
+
+        return self::requestMemo($memoKey, function () use ($companyId, $monthA, $monthB): array {
+            $pdo = Database::connection();
+            $sql = "SELECT DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') AS month,
+                           COALESCE(SUM(amount), 0) AS total
+                    FROM rateb_payments
+                    WHERE status = 'completed'
+                      AND DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') IN (:m1, :m2)";
+            $params = ['m1' => $monthA, 'm2' => $monthB];
+            if ($companyId !== null && $companyId > 0) {
+                $sql .= ' AND company_id = :cid';
+                $params['cid'] = $companyId;
+            }
+            $sql .= ' GROUP BY DATE_FORMAT(COALESCE(paid_at, created_at), \'%Y-%m\')';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $byMonth = [$monthA => 0.0, $monthB => 0.0];
+            foreach ($stmt->fetchAll() ?: [] as $row) {
+                $byMonth[(string) $row['month']] = (float) ($row['total'] ?? 0);
+            }
+
+            return $byMonth;
+        });
+    }
+
+    /**
+     * PO expense totals for two calendar months — one query, request-memoized.
+     *
+     * @return array<string, float>
+     */
+    private function poExpenseTotalsForMonths(?int $companyId, string $monthA, string $monthB): array
+    {
+        $cidKey = self::companyMemoKey($companyId);
+        $memoKey = 'poExpMonths:' . $cidKey . ':' . $monthA . ':' . $monthB;
+
+        return self::requestMemo($memoKey, function () use ($companyId, $monthA, $monthB): array {
+            $pdo = Database::connection();
+            $sql = "SELECT DATE_FORMAT(order_date, '%Y-%m') AS month,
+                           COALESCE(SUM(total_amount), 0) AS total
+                    FROM rateb_purchase_orders
+                    WHERE status IN ('received','confirmed','partial')
+                      AND DATE_FORMAT(order_date, '%Y-%m') IN (:m1, :m2)";
+            $params = ['m1' => $monthA, 'm2' => $monthB];
+            if ($companyId !== null && $companyId > 0) {
+                $sql .= ' AND company_id = :cid';
+                $params['cid'] = $companyId;
+            }
+            $sql .= ' GROUP BY DATE_FORMAT(order_date, \'%Y-%m\')';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $byMonth = [$monthA => 0.0, $monthB => 0.0];
+            foreach ($stmt->fetchAll() ?: [] as $row) {
+                $byMonth[(string) $row['month']] = (float) ($row['total'] ?? 0);
+            }
+
+            return $byMonth;
+        });
+    }
+
     /** @return array{unpaid: int, overdue: int} */
     private function invoiceStats(int $companyId): array
     {
-        $pdo = Database::connection();
-        $today = date('Y-m-d');
-        $unpaid = $pdo->prepare(
-            "SELECT COUNT(*) AS c FROM rateb_invoices
-             WHERE company_id = :cid AND status IN ('sent','draft','overdue')
-               AND payment_status IN ('unpaid','partial')"
-        );
-        $unpaid->execute(['cid' => $companyId]);
-        $overdue = $pdo->prepare(
-            "SELECT COUNT(*) AS c FROM rateb_invoices
-             WHERE company_id = :cid AND status IN ('sent','overdue')
-               AND payment_status IN ('unpaid','partial')
-               AND due_date IS NOT NULL AND due_date < :today"
-        );
-        $overdue->execute(['cid' => $companyId, 'today' => $today]);
+        return self::requestMemo('invoiceStats:' . $companyId, function () use ($companyId): array {
+            $pdo = Database::connection();
+            $today = date('Y-m-d');
+            // One round-trip — same predicates as the previous two COUNT queries.
+            $stmt = $pdo->prepare(
+                "SELECT
+                    COALESCE(SUM(CASE
+                        WHEN status IN ('sent','draft','overdue')
+                         AND payment_status IN ('unpaid','partial') THEN 1 ELSE 0 END), 0) AS unpaid,
+                    COALESCE(SUM(CASE
+                        WHEN status IN ('sent','overdue')
+                         AND payment_status IN ('unpaid','partial')
+                         AND due_date IS NOT NULL AND due_date < :today THEN 1 ELSE 0 END), 0) AS overdue
+                 FROM rateb_invoices
+                 WHERE company_id = :cid"
+            );
+            $stmt->execute(['cid' => $companyId, 'today' => $today]);
+            $row = $stmt->fetch() ?: [];
 
-        return [
-            'unpaid' => (int) (($unpaid->fetch()['c'] ?? 0)),
-            'overdue' => (int) (($overdue->fetch()['c'] ?? 0)),
-        ];
+            return [
+                'unpaid' => (int) ($row['unpaid'] ?? 0),
+                'overdue' => (int) ($row['overdue'] ?? 0),
+            ];
+        });
     }
 
     /** @return array{draft_journals: int, pending_vouchers: int} */
     private function workflowCounts(int $companyId): array
     {
-        $pdo = Database::connection();
-        $draftJ = $pdo->prepare(
-            "SELECT COUNT(*) AS c FROM rateb_journal_entries WHERE company_id = :cid AND status = 'draft'"
-        );
-        $draftJ->execute(['cid' => $companyId]);
-        $pendingV = $pdo->prepare(
-            "SELECT COUNT(*) AS c FROM rateb_cash_vouchers
-             WHERE company_id = :cid AND status = 'draft' AND submitted_for_approval_at IS NOT NULL"
-        );
-        $pendingV->execute(['cid' => $companyId]);
+        return self::requestMemo('workflowCounts:' . $companyId, function () use ($companyId): array {
+            $pdo = Database::connection();
+            $stmt = $pdo->prepare(
+                "SELECT
+                    (SELECT COUNT(*) FROM rateb_journal_entries
+                     WHERE company_id = :cid AND status = 'draft') AS draft_journals,
+                    (SELECT COUNT(*) FROM rateb_cash_vouchers
+                     WHERE company_id = :cid2 AND status = 'draft'
+                       AND submitted_for_approval_at IS NOT NULL) AS pending_vouchers"
+            );
+            $stmt->execute(['cid' => $companyId, 'cid2' => $companyId]);
+            $row = $stmt->fetch() ?: [];
 
-        return [
-            'draft_journals' => (int) (($draftJ->fetch()['c'] ?? 0)),
-            'pending_vouchers' => (int) (($pendingV->fetch()['c'] ?? 0)),
-        ];
+            return [
+                'draft_journals' => (int) ($row['draft_journals'] ?? 0),
+                'pending_vouchers' => (int) ($row['pending_vouchers'] ?? 0),
+            ];
+        });
     }
 
     private function revenueGrowth(?int $companyId): string
@@ -603,22 +690,9 @@ final class AccountingDashboardService
         if ($companyId === null || $companyId < 1) {
             return '';
         }
-        $pdo = Database::connection();
         $thisMonth = date('Y-m');
         $lastMonth = date('Y-m', strtotime('-1 month'));
-        $stmt = $pdo->prepare(
-            "SELECT DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') AS month,
-                    COALESCE(SUM(amount), 0) AS total
-             FROM rateb_payments
-             WHERE company_id = :cid AND status = 'completed'
-               AND DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m') IN (:m1, :m2)
-             GROUP BY DATE_FORMAT(COALESCE(paid_at, created_at), '%Y-%m')"
-        );
-        $stmt->execute(['cid' => $companyId, 'm1' => $thisMonth, 'm2' => $lastMonth]);
-        $byMonth = [];
-        foreach ($stmt->fetchAll() ?: [] as $row) {
-            $byMonth[(string) $row['month']] = (float) ($row['total'] ?? 0);
-        }
+        $byMonth = $this->paymentTotalsForMonths($companyId, $thisMonth, $lastMonth);
         $cur = (float) ($byMonth[$thisMonth] ?? 0);
         $prev = (float) ($byMonth[$lastMonth] ?? 0);
         if ($prev <= 0) {

@@ -1691,17 +1691,17 @@ final class AccountingService
         $cidSql = $companyId !== null ? ' AND company_id = ' . (int) $companyId : '';
         $cidParam = $companyId !== null ? ['cid' => $companyId] : [];
 
-        $invoicePaid = $pdo->query(
-            "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = 'paid'" . $cidSql
-        )->fetch() ?: ['t' => 0, 'c' => 0];
-
-        $invoiceOpen = $pdo->query(
-            "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','overdue','draft')" . $cidSql
-        )->fetch() ?: ['t' => 0, 'c' => 0];
-
-        $payments = $pdo->query(
-            "SELECT COALESCE(SUM(amount), 0) AS t, COUNT(*) AS c FROM rateb_payments WHERE status = 'completed'" . $cidSql
-        )->fetch() ?: ['t' => 0, 'c' => 0];
+        // One round-trip for the unscoped aggregates (same predicates as before).
+        $agg = $pdo->query(
+            "SELECT
+                (SELECT COALESCE(SUM(total_amount), 0) FROM rateb_invoices WHERE status = 'paid'{$cidSql}) AS paid_t,
+                (SELECT COUNT(*) FROM rateb_invoices WHERE status = 'paid'{$cidSql}) AS paid_c,
+                (SELECT COALESCE(SUM(total_amount), 0) FROM rateb_invoices WHERE status IN ('sent','overdue','draft'){$cidSql}) AS open_t,
+                (SELECT COUNT(*) FROM rateb_invoices WHERE status IN ('sent','overdue','draft'){$cidSql}) AS open_c,
+                (SELECT COALESCE(SUM(amount), 0) FROM rateb_payments WHERE status = 'completed'{$cidSql}) AS pay_t,
+                (SELECT COUNT(*) FROM rateb_payments WHERE status = 'completed'{$cidSql}) AS pay_c,
+                (SELECT COALESCE(SUM(total_amount), 0) FROM rateb_purchase_orders WHERE status IN ('received','confirmed'){$cidSql}) AS po_t"
+        )->fetch() ?: [];
 
         $journal = $this->journalScopedQueryOne(
             'SELECT COUNT(*) AS c FROM rateb_journal_entries e WHERE e.status = :st' . ($companyId !== null ? ' AND e.company_id = :cid' : ''),
@@ -1713,20 +1713,16 @@ final class AccountingService
             $cidParam
         ) ?: ['c' => 0];
 
-        $poReceived = $pdo->query(
-            "SELECT COALESCE(SUM(total_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed')" . $cidSql
-        )->fetch() ?: ['t' => 0];
-
         return [
-            'invoices_paid_total' => (float) ($invoicePaid['t'] ?? 0),
-            'invoices_paid_count' => (int) ($invoicePaid['c'] ?? 0),
-            'invoices_open_total' => (float) ($invoiceOpen['t'] ?? 0),
-            'invoices_open_count' => (int) ($invoiceOpen['c'] ?? 0),
-            'payments_total' => (float) ($payments['t'] ?? 0),
-            'payments_count' => (int) ($payments['c'] ?? 0),
+            'invoices_paid_total' => (float) ($agg['paid_t'] ?? 0),
+            'invoices_paid_count' => (int) ($agg['paid_c'] ?? 0),
+            'invoices_open_total' => (float) ($agg['open_t'] ?? 0),
+            'invoices_open_count' => (int) ($agg['open_c'] ?? 0),
+            'payments_total' => (float) ($agg['pay_t'] ?? 0),
+            'payments_count' => (int) ($agg['pay_c'] ?? 0),
             'journal_posted' => (int) ($journal['c'] ?? 0),
             'accounts_active' => (int) ($accounts['c'] ?? 0),
-            'procurement_received' => (float) ($poReceived['t'] ?? 0),
+            'procurement_received' => (float) ($agg['po_t'] ?? 0),
         ];
         });
     }
@@ -1896,7 +1892,6 @@ final class AccountingService
             [$invSql, $invParams] = $this->scopeOperationalSql($invSql, $invParams, '', 'rateb_invoices');
         }
         [$poSql, $poParams] = $this->scopeOperationalSql($poSql, $poParams, '', 'rateb_purchase_orders');
-        $pdo = Database::connection();
         $invStmt = $pdo->prepare($invSql);
         $invStmt->execute($invParams);
         $poStmt = $pdo->prepare($poSql);
@@ -2750,16 +2745,21 @@ final class AccountingService
         if ($accountId < 1) {
             return $opening;
         }
-        $row = $this->journalScopedQueryOne(
-            'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
-             FROM rateb_journal_lines l
-             JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
-             WHERE l.account_id = :aid AND e.company_id <=> :cid',
-            ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId]
-        );
-        $dr = (float) ($row['dr'] ?? 0);
-        $cr = (float) ($row['cr'] ?? 0);
-        return $opening + $dr - $cr;
+        $memoKey = 'chartBal:' . $this->coaMapKey($companyId) . ':' . $accountId . ':' . sprintf('%.4F', $opening);
+
+        return self::requestMemo($memoKey, function () use ($companyId, $accountId, $opening): float {
+            $row = $this->journalScopedQueryOne(
+                'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
+                 FROM rateb_journal_lines l
+                 JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+                 WHERE l.account_id = :aid AND e.company_id <=> :cid',
+                ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId]
+            );
+            $dr = (float) ($row['dr'] ?? 0);
+            $cr = (float) ($row['cr'] ?? 0);
+
+            return $opening + $dr - $cr;
+        });
     }
 
     private function nextBankAccountCode(?int $companyId): string
