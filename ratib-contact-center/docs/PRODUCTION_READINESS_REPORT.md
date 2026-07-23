@@ -106,7 +106,7 @@ These require **server configuration**, not additional application code:
 ## Deployment Checklist
 
 - [ ] Push code to `main` (auto-deploy `ratib-contact-center/`)
-- [ ] Set `.env`: `RATIB_CC_DB_*`, `RCC_AMI_*`, `RCC_REALTIME_MODE=websocket`
+- [ ] Set `.env`: `RATEB_CC_DB_*`, `RCC_AMI_*`, `RCC_REALTIME_MODE=websocket`
 - [ ] Run migrations via Control Panel
 - [ ] Verify: `php tools/production-audit.php` ≥ 80%
 - [ ] Install Asterisk configs from `deploy/asterisk/`

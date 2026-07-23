@@ -438,7 +438,7 @@ These are **not** code gaps alone — they need production configuration and dae
 | Task | Action |
 |------|--------|
 | **Run RCC migrations** | Control Panel → Contact Center → Database setup (applies `010_seed_production.sql` on fresh DB) |
-| **MySQL** | `RATIB_CC_DB_*` in server `.env` |
+| **MySQL** | `RATEB_CC_DB_*` in server `.env` |
 | **AMI worker** | `php bin/rcc-voice-worker.php` as persistent process / systemd |
 | **Realtime hub** | `php bin/rcc-realtime-hub.php` or cron per `bin/REALTIME-HUB-RUN.txt` |
 | **Asterisk** | Install `deploy/asterisk/*`, AMI credentials, PJSIP/WebRTC |

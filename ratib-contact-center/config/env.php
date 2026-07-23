@@ -40,38 +40,38 @@ $envVal = static function (string $key, $default = '') {
     return $default;
 };
 
-if (!defined('RATIB_CC_DB_NAME')) {
+if (!defined('RATEB_CC_DB_NAME')) {
     $defaultDb = function_exists('rateb_contact_center_database_name')
         ? rateb_contact_center_database_name()
         : 'admin_call-center';
-    define('RATIB_CC_DB_NAME', (string) $envVal('RATIB_CC_DB_NAME', $defaultDb));
+    define('RATEB_CC_DB_NAME', (string) $envVal('RATEB_CC_DB_NAME', $defaultDb));
 }
-if (!defined('RATIB_CC_DB_USER')) {
+if (!defined('RATEB_CC_DB_USER')) {
     $defaultUser = function_exists('rateb_contact_center_db_user')
         ? rateb_contact_center_db_user()
-        : RATIB_CC_DB_NAME;
-    define('RATIB_CC_DB_USER', (string) $envVal('RATIB_CC_DB_USER', $defaultUser));
+        : RATEB_CC_DB_NAME;
+    define('RATEB_CC_DB_USER', (string) $envVal('RATEB_CC_DB_USER', $defaultUser));
 }
-if (!defined('RATIB_CC_DB_PASS')) {
-    $pass = $envVal('RATIB_CC_DB_PASS', '');
+if (!defined('RATEB_CC_DB_PASS')) {
+    $pass = $envVal('RATEB_CC_DB_PASS', '');
     if ($pass === '' || $pass === null) {
         $pass = $envVal('RATEB_CC_DB_PASS', $envVal('DB_PASS', ''));
     }
-    define('RATIB_CC_DB_PASS', (string) $pass);
+    define('RATEB_CC_DB_PASS', (string) $pass);
 }
-if (!defined('RATIB_CC_DB_HOST')) {
-    define('RATIB_CC_DB_HOST', (string) $envVal('RATIB_CC_DB_HOST', $envVal('DB_HOST', '127.0.0.1')));
+if (!defined('RATEB_CC_DB_HOST')) {
+    define('RATEB_CC_DB_HOST', (string) $envVal('RATEB_CC_DB_HOST', $envVal('DB_HOST', '127.0.0.1')));
 }
-if (!defined('RATIB_CC_DB_PORT')) {
-    define('RATIB_CC_DB_PORT', (int) $envVal('RATIB_CC_DB_PORT', $envVal('DB_PORT', 3306)));
+if (!defined('RATEB_CC_DB_PORT')) {
+    define('RATEB_CC_DB_PORT', (int) $envVal('RATEB_CC_DB_PORT', $envVal('DB_PORT', 3306)));
 }
 
 foreach ([
-    'RATIB_CC_DB_NAME' => RATIB_CC_DB_NAME,
-    'RATIB_CC_DB_USER' => RATIB_CC_DB_USER,
-    'RATIB_CC_DB_PASS' => RATIB_CC_DB_PASS,
-    'RATIB_CC_DB_HOST' => RATIB_CC_DB_HOST,
-    'RATIB_CC_DB_PORT' => (string) RATIB_CC_DB_PORT,
+    'RATEB_CC_DB_NAME' => RATEB_CC_DB_NAME,
+    'RATEB_CC_DB_USER' => RATEB_CC_DB_USER,
+    'RATEB_CC_DB_PASS' => RATEB_CC_DB_PASS,
+    'RATEB_CC_DB_HOST' => RATEB_CC_DB_HOST,
+    'RATEB_CC_DB_PORT' => (string) RATEB_CC_DB_PORT,
 ] as $key => $value) {
     if (getenv($key) === false) {
         putenv($key . '=' . $value);

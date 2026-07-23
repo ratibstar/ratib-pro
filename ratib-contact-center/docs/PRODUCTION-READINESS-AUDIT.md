@@ -32,7 +32,7 @@ The project has **substantial PHP/JS domain logic** across Phases 1–7 (IVR eng
 |-------|-------|
 | **STATUS** | **BROKEN** |
 | **FILES** | `app/Core/Database.php`, `config/database.php`, 12 repositories under `app/Infrastructure/Persistence/Repositories/`, `control-panel/includes/control/contact-center-bridge.php` (`control_contact_center_run_migrations`), `control-panel/pages/control/contact-center-migrate.php` |
-| **DEPENDENCIES** | MySQL DB `admin_call-center` (configurable), `RATIB_CC_DB_*` in `.env`, migration SQL files |
+| **DEPENDENCIES** | MySQL DB `admin_call-center` (configurable), `RATEB_CC_DB_*` in `.env`, migration SQL files |
 | **ISSUES** | `ratib-contact-center/migrations/` is **empty** (0 `.sql` files). Migrate UI references `001`–`009` but nothing to apply. All repositories assume `rcc_*` tables. `.gitignore` allows `!ratib-contact-center/migrations/*.sql` but no files exist. |
 | **RISK** | **CRITICAL** |
 

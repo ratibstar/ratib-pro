@@ -8,7 +8,7 @@ if (!defined('RCC_ROOT')) {
 require_once __DIR__ . '/config/env.php';
 
 /**
- * PSR-4 autoloader for Ratib\ContactCenter\App\
+ * PSR-4 autoloader for Rateb\ContactCenter\App\
  */
 spl_autoload_register(static function (string $class): void {
     $prefix = 'Ratib\\ContactCenter\\App\\';
@@ -23,5 +23,5 @@ spl_autoload_register(static function (string $class): void {
 });
 
 if (!defined('RCC_SKIP_ORCHESTRATOR_BOOT')) {
-    Ratib\ContactCenter\App\Application\Services\RealtimeOrchestrator::boot();
+    Rateb\ContactCenter\App\Application\Services\RealtimeOrchestrator::boot();
 }
