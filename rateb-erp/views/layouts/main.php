@@ -65,6 +65,23 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="color-scheme" content="dark light">
     <meta name="rateb-csrf" content="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
+    <style id="rateb-click-guard">
+      /* Inline + !important so stale SW-cached CSS cannot freeze Admin clicks. */
+      .rateb-content.is-nav-busy { pointer-events: auto !important; opacity: 0.92; }
+    </style>
+    <script>
+    (function () {
+      /* Watchdog: strip stuck is-nav-busy every 1.5s (multi-tab soft-nav hang). */
+      setInterval(function () {
+        try {
+          document.querySelectorAll('.is-nav-busy').forEach(function (el) {
+            el.classList.remove('is-nav-busy');
+            el.removeAttribute('aria-busy');
+          });
+        } catch (e) { /* ignore */ }
+      }, 1500);
+    })();
+    </script>
     <script>
     (function () {
         /* Block hard refresh / reload while offline — Ctrl+F5 bypasses SW and blacks the page. */

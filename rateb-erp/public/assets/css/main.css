@@ -281,9 +281,10 @@ body.rateb-app {
     outline-offset: -1px;
 }
 
-/* Soft-nav in-flight: block double-clicks only — never dim/flash the page. */
+/* Soft-nav in-flight: visual only — NEVER block clicks (was freezing the whole Admin UI). */
 .rateb-content.is-nav-busy {
-    pointer-events: none;
+    pointer-events: auto;
+    opacity: 0.92;
 }
 
 .rateb-nav-link.rateb-nav-logout {

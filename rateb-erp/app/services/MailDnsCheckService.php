@@ -20,15 +20,82 @@ final class MailDnsCheckService
             $domain = 'rateb.sa';
         }
         $sessionKey = 'rateb_mail_dns_' . md5($domain);
+        $fileKey = sys_get_temp_dir() . '/rateb_mail_dns_' . md5($domain) . '.json';
+
         if (!$refresh) {
             $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
             if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
                 return $raw['data'];
             }
+            if (is_file($fileKey)) {
+                $mtime = (int) @filemtime($fileKey);
+                if ($mtime > 0 && (time() - $mtime) < 3600) {
+                    $decoded = json_decode((string) @file_get_contents($fileKey), true);
+                    if (is_array($decoded) && isset($decoded['domain'])) {
+                        \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 600, 'data' => $decoded]);
+                        return $decoded;
+                    }
+                }
+            }
         }
-        $data = $this->check($domain);
+
+        // Hard wall-clock budget — never hold a PHP-FPM worker for DNS forever.
+        $data = $this->checkFast($domain);
         \Rateb\App\Core\SessionManager::set($sessionKey, ['exp' => time() + 600, 'data' => $data]);
+        @file_put_contents($fileKey, json_encode($data, JSON_UNESCAPED_UNICODE));
         return $data;
+    }
+
+    /**
+     * Fast DNS panel path: SPF/MX/DMARC + first DKIM hit only.
+     * Skips PTR + port25 (those hung shared-host PHP workers and froze Admin).
+     *
+     * @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>}
+     */
+    public function checkFast(string $domain = 'rateb.sa'): array
+    {
+        $domain = strtolower(trim($domain));
+        if ($domain === '') {
+            $domain = 'rateb.sa';
+        }
+        $mailCfg = new MailConfigService();
+        $smtpHost = trim((string) ($mailCfg->resolve()['host'] ?? ''));
+        $usesRelay = $mailCfg->isSmtpRelayHost($smtpHost);
+
+        $spf = $this->checkSpf($domain);
+        $dkim = $this->checkDkimFast($domain);
+        $dmarc = $this->checkDmarc($domain);
+        $mx = $this->checkMx($domain);
+        $ptr = ['ok' => true, 'detail' => 'skipped (fast check)'];
+        $port25 = [
+            'ok' => true,
+            'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost !== '' ? $smtpHost : $domain]),
+            'skipped' => true,
+        ];
+
+        $warnings = [];
+        if (($spf['count'] ?? 0) > 1) {
+            $warnings[] = __('mail_dns_warn_spf_duplicate');
+        }
+        if (!$dmarc['ok']) {
+            $warnings[] = __('mail_dns_warn_dmarc');
+        }
+
+        $dnsOk = $spf['ok'] && $dkim['ok'] && $mx['ok'];
+        return [
+            'domain' => $domain,
+            'spf' => $spf,
+            'dkim' => $dkim,
+            'dmarc' => $dmarc,
+            'mx' => $mx,
+            'ptr' => $ptr,
+            'port25' => $port25,
+            'smtp_host' => $smtpHost,
+            'smtp_relay' => $usesRelay,
+            'warnings' => $warnings,
+            'ready_for_external' => $dnsOk,
+            'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok'], $usesRelay),
+        ];
     }
 
     /** @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>} */
@@ -157,18 +224,6 @@ final class MailDnsCheckService
             }
         }
         if ($ptrHost === '') {
-            $records = @dns_get_record($rev, DNS_PTR);
-            if (is_array($records)) {
-                foreach ($records as $row) {
-                    $target = rtrim((string) ($row['target'] ?? ''), '.');
-                    if ($target !== '') {
-                        $ptrHost = $target;
-                        break;
-                    }
-                }
-            }
-        }
-        if ($ptrHost === '') {
             return ['ok' => false, 'detail' => __('mail_dns_ptr_missing')];
         }
         $expected = strtolower($mailHost);
@@ -193,9 +248,30 @@ final class MailDnsCheckService
     }
 
     /** @return array{ok:bool,detail:string,selector:?string} */
+    private function checkDkimFast(string $domain): array
+    {
+        foreach (['x', 'default'] as $selector) {
+            $host = $selector . '._domainkey.' . $domain;
+            foreach ($this->txtRecords($host) as $txt) {
+                if (stripos($txt, 'v=DKIM1') !== false || stripos($txt, 'k=rsa') !== false) {
+                    return ['ok' => true, 'detail' => $selector . '._domainkey', 'selector' => $selector];
+                }
+            }
+        }
+        return ['ok' => false, 'detail' => __('mail_dns_dkim_missing'), 'selector' => null];
+    }
+
+    /** @return array{ok:bool,detail:string,selector:?string} */
     private function checkDkim(string $domain): array
     {
+        $fast = $this->checkDkimFast($domain);
+        if ($fast['ok']) {
+            return $fast;
+        }
         foreach (self::DKIM_SELECTORS as $selector) {
+            if ($selector === 'x' || $selector === 'default') {
+                continue;
+            }
             $host = $selector . '._domainkey.' . $domain;
             foreach ($this->txtRecords($host) as $txt) {
                 if (stripos($txt, 'v=DKIM1') !== false || stripos($txt, 'k=rsa') !== false) {
@@ -245,17 +321,8 @@ final class MailDnsCheckService
         if ($parts !== []) {
             return array_values(array_unique($parts));
         }
-        $records = @dns_get_record($domain, DNS_MX);
-        if (!is_array($records)) {
-            return [];
-        }
-        foreach ($records as $row) {
-            $host = (string) ($row['target'] ?? '');
-            if ($host !== '') {
-                $parts[] = $host;
-            }
-        }
-        return array_values(array_unique($parts));
+        // Never call dns_get_record() — can hang PHP-FPM with no timeout on shared hosts.
+        return [];
     }
 
     /** @return list<string> */
@@ -264,19 +331,6 @@ final class MailDnsCheckService
         $out = [];
         foreach ($this->dnsAnswers($host, 16) as $row) {
             $txt = $this->decodeTxt((string) ($row['data'] ?? ''));
-            if ($txt !== '') {
-                $out[] = $txt;
-            }
-        }
-        if ($out !== []) {
-            return $out;
-        }
-        $records = @dns_get_record($host, DNS_TXT);
-        if (!is_array($records)) {
-            return [];
-        }
-        foreach ($records as $row) {
-            $txt = (string) ($row['txt'] ?? '');
             if ($txt !== '') {
                 $out[] = $txt;
             }
@@ -292,14 +346,6 @@ final class MailDnsCheckService
                 return $ip;
             }
         }
-        $ips = @gethostbynamel($host);
-        if (is_array($ips)) {
-            foreach ($ips as $ip) {
-                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    return $ip;
-                }
-            }
-        }
         return '';
     }
 
@@ -311,7 +357,10 @@ final class MailDnsCheckService
             return $this->dnsAnswerCache[$cacheKey];
         }
         $url = 'https://dns.google/resolve?name=' . rawurlencode($name) . '&type=' . $type;
-        $ctx = stream_context_create(['http' => ['timeout' => 2.5, 'header' => "Accept: application/dns-json\r\n"]]);
+        $ctx = stream_context_create(['http' => [
+            'timeout' => 1.2,
+            'header' => "Accept: application/dns-json\r\n",
+        ]]);
         $raw = @file_get_contents($url, false, $ctx);
         if (!is_string($raw) || $raw === '') {
             $this->dnsAnswerCache[$cacheKey] = [];

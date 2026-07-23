@@ -1,3 +1,7 @@
+/**
+ * Async mail DNS panel — never hang the Admin UI.
+ * Auto-load with hard client timeout; fall back to manual retry.
+ */
 (function () {
     'use strict';
 
@@ -29,29 +33,76 @@
         });
     }
 
+    function failHtml(host, msg) {
+        var fail = host.getAttribute('data-mail-dns-fail') || 'DNS check failed';
+        var url = host.getAttribute('data-mail-dns-url') || '';
+        return '<p class="text-warning small mb-2">' + (msg || fail) + '</p>'
+            + (url
+                ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-mail-dns-retry="1">'
+                    + 'Retry DNS check</button>'
+                : '');
+    }
+
     function loadDnsPanel(host) {
         var url = host.getAttribute('data-mail-dns-url');
-        if (!url) {
+        if (!url || host.getAttribute('data-mail-dns-loading') === '1') {
             return;
         }
-        fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        host.setAttribute('data-mail-dns-loading', '1');
+        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var timer = setTimeout(function () {
+            if (ctrl) {
+                try { ctrl.abort(); } catch (e) { /* ignore */ }
+            }
+        }, 4000);
+
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+            signal: ctrl ? ctrl.signal : undefined
+        })
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (!data || !data.ok || !data.html) {
-                    host.innerHTML = '<p class="text-danger small mb-0">' + (host.getAttribute('data-mail-dns-fail') || 'DNS check failed') + '</p>';
+                    host.innerHTML = failHtml(host);
+                    bindRetry(host);
                     return;
                 }
                 host.outerHTML = data.html;
                 bindCopyButtons(document);
             })
             .catch(function () {
-                host.innerHTML = '<p class="text-danger small mb-0">' + (host.getAttribute('data-mail-dns-fail') || 'DNS check failed') + '</p>';
+                host.innerHTML = failHtml(host);
+                bindRetry(host);
+            })
+            .finally(function () {
+                clearTimeout(timer);
+                host.removeAttribute('data-mail-dns-loading');
             });
     }
 
+    function bindRetry(host) {
+        var btn = host.querySelector('[data-mail-dns-retry]');
+        if (!btn) {
+            return;
+        }
+        btn.addEventListener('click', function () {
+            host.innerHTML = '<p class="text-muted small mb-0">Checking DNS…</p>';
+            loadDnsPanel(host);
+        });
+    }
+
     function boot() {
-        document.querySelectorAll('[data-mail-dns-async]').forEach(loadDnsPanel);
-        bindCopyButtons(document);
+        // Defer DNS until idle so settings page paints and stays clickable first.
+        var run = function () {
+            document.querySelectorAll('[data-mail-dns-async]').forEach(loadDnsPanel);
+            bindCopyButtons(document);
+        };
+        if (window.requestIdleCallback) {
+            window.requestIdleCallback(run, { timeout: 2500 });
+        } else {
+            setTimeout(run, 800);
+        }
     }
 
     if (document.readyState === 'loading') {
@@ -59,4 +110,7 @@
     } else {
         boot();
     }
+    document.addEventListener('rateb:nav:afterEnter', function () {
+        setTimeout(boot, 300);
+    });
 })();
