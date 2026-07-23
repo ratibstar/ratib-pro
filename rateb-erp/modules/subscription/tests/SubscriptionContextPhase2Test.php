@@ -8,6 +8,9 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__, 3);
 require_once $root . '/modules/subscription/SubscriptionStatus.php';
+require_once $root . '/modules/subscription/GracePeriodStatus.php';
+require_once $root . '/modules/subscription/GracePeriodPolicy.php';
+require_once $root . '/modules/subscription/GracePeriodEngine.php';
 require_once $root . '/modules/subscription/SubscriptionContext.php';
 
 use Rateb\App\Subscription\SubscriptionContext;
@@ -64,12 +67,15 @@ expect($suspended->canAccessERP() === false, 'suspended advisory canAccessERP fa
 expect($suspended->isInGrace() === false, 'suspended not grace');
 
 $grace = SubscriptionContext::fromEngineRow(2, [
-    'current_status' => 'GRACE',
+    'current_status' => 'ACTIVE',
     'subscription_end' => '2026-07-20',
+    'grace_period_days' => 7,
     'suspended_at' => null,
 ], '2026-07-23');
 expect($grace->isInGrace() === true, 'grace status');
 expect($grace->canAccessERP() === true, 'grace still advisory accessible');
+expect($grace->graceDaysRemaining() === 4, 'grace days remaining to Jul 27');
+expect($grace->graceEndDate() === '2026-07-27', 'grace end date');
 
 // Immutability: readonly class — no setters exist.
 expect(!method_exists($ctx, 'setStatus'), 'no setStatus');

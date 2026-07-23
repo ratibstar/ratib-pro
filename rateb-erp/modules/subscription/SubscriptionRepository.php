@@ -28,20 +28,33 @@ final class SubscriptionRepository implements SubscriptionEngineStore
 
         try {
             $pdo = Database::connection();
-            $stmt = $pdo->prepare(
-                'SELECT id, company_id, subscription_start, subscription_end, grace_period_days,
-                        current_status, suspended_at, renewed_at,
-                        next_notification_date, last_notification_date,
-                        created_at, updated_at
-                 FROM rateb_subscription_engine
-                 WHERE company_id = :company_id
-                 LIMIT 1'
-            );
-            $stmt->execute(['company_id' => $companyId]);
+            try {
+                $stmt = $pdo->prepare(
+                    'SELECT id, company_id, subscription_start, subscription_end, grace_period_days,
+                            grace_started_at, grace_end_at,
+                            current_status, suspended_at, renewed_at,
+                            next_notification_date, last_notification_date,
+                            created_at, updated_at
+                     FROM rateb_subscription_engine
+                     WHERE company_id = :company_id
+                     LIMIT 1'
+                );
+                $stmt->execute(['company_id' => $companyId]);
+            } catch (\Throwable $colEx) {
+                $stmt = $pdo->prepare(
+                    'SELECT id, company_id, subscription_start, subscription_end, grace_period_days,
+                            current_status, suspended_at, renewed_at,
+                            next_notification_date, last_notification_date,
+                            created_at, updated_at
+                     FROM rateb_subscription_engine
+                     WHERE company_id = :company_id
+                     LIMIT 1'
+                );
+                $stmt->execute(['company_id' => $companyId]);
+            }
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return is_array($row) ? $row : null;
         } catch (\Throwable $e) {
-            // Table may not exist yet on lagging deploys — never break the request.
             error_log('RATEB SubscriptionRepository::findByCompanyId: ' . $e->getMessage());
             return null;
         }

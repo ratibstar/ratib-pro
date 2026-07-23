@@ -6,8 +6,8 @@ namespace Rateb\App\Subscription;
 /**
  * Immutable, read-only snapshot of tenant subscription state for one request.
  *
- * Built by SubscriptionEngine from repository data. Never mutates after creation.
- * Does not enforce access, redirect, notify, or change ERP behavior.
+ * Phase 6: grace window derived via GracePeriodEngine (calculation only).
+ * Does not enforce access, redirect, or suspend.
  */
 final readonly class SubscriptionContext
 {
@@ -23,13 +23,12 @@ final readonly class SubscriptionContext
         private bool $hasRecord,
         private ?int $recordId = null,
         private int $gracePeriodDays = 0,
+        private ?string $graceStartedAt = null,
+        private ?string $graceEndAt = null,
+        private int $graceDaysRemaining = 0,
     ) {
     }
 
-    /**
-     * Safe absent snapshot when no engine row exists (or table not ready).
-     * Preserves current ERP behavior: access is not denied by this module.
-     */
     public static function absent(int $companyId): self
     {
         return new self(
@@ -43,6 +42,9 @@ final readonly class SubscriptionContext
             null,
             false,
             null,
+            0,
+            null,
+            null,
             0
         );
     }
@@ -52,9 +54,9 @@ final readonly class SubscriptionContext
      */
     public static function fromEngineRow(int $companyId, array $row, string $todayYmd): self
     {
-        $status = strtoupper(trim((string) ($row['current_status'] ?? SubscriptionStatus::ACTIVE)));
-        if (!SubscriptionStatus::isKnown($status)) {
-            $status = SubscriptionStatus::ACTIVE;
+        $storedStatus = strtoupper(trim((string) ($row['current_status'] ?? SubscriptionStatus::ACTIVE)));
+        if (!SubscriptionStatus::isKnown($storedStatus)) {
+            $storedStatus = SubscriptionStatus::ACTIVE;
         }
 
         $endRaw = trim((string) ($row['subscription_end'] ?? ''));
@@ -71,21 +73,76 @@ final readonly class SubscriptionContext
             }
         }
 
+        $rowGraceDays = max(0, (int) ($row['grace_period_days'] ?? 0));
+        $graceEngine = new GracePeriodEngine();
+        $gracePeriodDays = $graceEngine->policy()->resolveGraceDays($rowGraceDays);
+
+        $storedGraceStart = self::nullableDate($row['grace_started_at'] ?? null);
+        $storedGraceEnd = self::nullableDate($row['grace_end_at'] ?? null);
+
+        $graceStartedAt = null;
+        $graceEndAt = null;
+        $graceDaysRemaining = 0;
+        $inGrace = false;
+        $status = $storedStatus;
+
+        if ($expirationDate !== null) {
+            $graceStartedAt = $storedGraceStart
+                ?? $graceEngine->calculateGraceStart($expirationDate, $gracePeriodDays);
+            $graceEndAt = $storedGraceEnd
+                ?? $graceEngine->calculateGraceEnd($expirationDate, $gracePeriodDays);
+
+            if ($storedStatus !== SubscriptionStatus::SUSPENDED) {
+                $status = $graceEngine->resolveLifecycleStatus(
+                    $expirationDate,
+                    $todayYmd,
+                    $gracePeriodDays,
+                    $storedStatus
+                );
+            }
+
+            $inGrace = $graceEngine->isInGracePeriod(
+                $expirationDate,
+                $todayYmd,
+                $gracePeriodDays,
+                $graceStartedAt,
+                $graceEndAt
+            );
+            $graceDaysRemaining = $graceEngine->daysRemaining(
+                $expirationDate,
+                $todayYmd,
+                $gracePeriodDays,
+                $graceEndAt
+            );
+            if (!$inGrace) {
+                $graceDaysRemaining = max(0, $graceDaysRemaining);
+                if ($graceEngine->hasGraceExpired(
+                    $expirationDate,
+                    $todayYmd,
+                    $gracePeriodDays,
+                    $graceEndAt
+                )) {
+                    $graceDaysRemaining = 0;
+                }
+                if ($todayYmd <= $expirationDate) {
+                    $graceDaysRemaining = 0;
+                }
+            } else {
+                $graceDaysRemaining = max(0, $graceDaysRemaining);
+            }
+        }
+
         $suspendedAt = $row['suspended_at'] ?? null;
         $suspended = $status === SubscriptionStatus::SUSPENDED
             || ($suspendedAt !== null && trim((string) $suspendedAt) !== '');
 
-        $inGrace = $status === SubscriptionStatus::GRACE;
-
-        // Advisory only — Phase 2 never enforces. Absent suspension ⇒ accessible.
+        // Grace + suspension-pending: still fully accessible (no enforcement).
         $canAccessErp = !$suspended;
 
         $recordId = isset($row['id']) ? (int) $row['id'] : 0;
         if ($recordId < 1) {
             $recordId = null;
         }
-
-        $gracePeriodDays = max(0, (int) ($row['grace_period_days'] ?? 0));
 
         return new self(
             $companyId,
@@ -98,7 +155,10 @@ final readonly class SubscriptionContext
             $expirationDate,
             true,
             $recordId,
-            $gracePeriodDays
+            $gracePeriodDays,
+            $graceStartedAt,
+            $graceEndAt,
+            $graceDaysRemaining
         );
     }
 
@@ -107,7 +167,6 @@ final readonly class SubscriptionContext
         return $this->companyId;
     }
 
-    /** rateb_subscription_engine.id when present. */
     public function recordId(): ?int
     {
         return $this->recordId;
@@ -133,9 +192,29 @@ final readonly class SubscriptionContext
         return $this->inGrace;
     }
 
+    public function graceDaysRemaining(): int
+    {
+        return $this->graceDaysRemaining;
+    }
+
+    public function graceEndDate(): ?string
+    {
+        return $this->graceEndAt;
+    }
+
+    public function graceStartedAt(): ?string
+    {
+        return $this->graceStartedAt;
+    }
+
     public function isSuspended(): bool
     {
         return $this->suspended;
+    }
+
+    public function isSuspensionPending(): bool
+    {
+        return $this->status === SubscriptionStatus::SUSPENSION_PENDING;
     }
 
     public function canAccessERP(): bool
@@ -143,7 +222,6 @@ final readonly class SubscriptionContext
         return $this->canAccessErp;
     }
 
-    /** Y-m-d subscription_end, or null when absent. */
     public function expirationDate(): ?string
     {
         return $this->expirationDate;
@@ -157,5 +235,15 @@ final readonly class SubscriptionContext
     public function gracePeriodDays(): int
     {
         return $this->gracePeriodDays;
+    }
+
+    private static function nullableDate(mixed $raw): ?string
+    {
+        $v = trim((string) ($raw ?? ''));
+        if ($v === '') {
+            return null;
+        }
+        $ymd = substr($v, 0, 10);
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $ymd) === 1 ? $ymd : null;
     }
 }

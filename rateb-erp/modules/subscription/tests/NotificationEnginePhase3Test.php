@@ -10,6 +10,9 @@ $root = dirname(__DIR__, 3);
 foreach ([
     'SubscriptionStatus.php',
     'SubscriptionModule.php',
+    'GracePeriodStatus.php',
+    'GracePeriodPolicy.php',
+    'GracePeriodEngine.php',
     'SubscriptionContext.php',
     'NotificationType.php',
     'NotificationChannel.php',

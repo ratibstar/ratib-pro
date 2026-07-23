@@ -14,6 +14,9 @@ if (!defined('RATEB_ROOT')) {
 
 foreach ([
     'SubscriptionStatus.php',
+    'GracePeriodStatus.php',
+    'GracePeriodPolicy.php',
+    'GracePeriodEngine.php',
     'SubscriptionContext.php',
     'SubscriptionRuntime.php',
     'SubscriptionAlertRuntime.php',
@@ -116,9 +119,13 @@ expect(str_contains($alert3->message(), '3 days'), 'message 3 days');
 
 // Grace message
 SubscriptionAlertRuntime::reset();
-SubscriptionRuntime::bind(new SubscriptionContext(
-    55, SubscriptionStatus::GRACE, -1, true, true, false, true, '2026-07-22', true, 9, 7
-));
+SubscriptionRuntime::bind(SubscriptionContext::fromEngineRow(55, [
+    'id' => 9,
+    'current_status' => SubscriptionStatus::ACTIVE,
+    'subscription_end' => '2026-07-22',
+    'grace_period_days' => 7,
+    'suspended_at' => null,
+], '2026-07-23'));
 $history->recordGenerated(
     \Rateb\App\Subscription\NotificationDecision::eligible(
         55, 9, NotificationType::GRACE, -1, '2026-07-23', 'test', []
@@ -129,7 +136,7 @@ $grace = $svc->current();
 expect($grace !== null, 'grace alert');
 expect($grace->severity() === SubscriptionAlertViewModel::SEVERITY_CRITICAL_WARNING, 'grace severity');
 expect($grace->isDismissible() === false, 'grace not dismissible');
-expect(str_contains($grace->message(), 'Grace period'), 'grace message');
+expect(str_contains($grace->message(), 'days remaining in grace period'), 'grace message');
 expect(str_contains($grace->message(), '6 days remaining'), 'grace remaining 6');
 
 // Far future → skip history query path (no alert even with history for other triggers)

@@ -15,6 +15,9 @@ if (!defined('RATEB_ROOT')) {
 foreach ([
     'SubscriptionStatus.php',
     'SubscriptionModule.php',
+    'GracePeriodStatus.php',
+    'GracePeriodPolicy.php',
+    'GracePeriodEngine.php',
     'SubscriptionContext.php',
     'SubscriptionPolicy.php',
     'SubscriptionEngineStore.php',

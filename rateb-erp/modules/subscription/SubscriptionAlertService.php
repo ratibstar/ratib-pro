@@ -106,7 +106,7 @@ final class SubscriptionAlertService
         [$severity, $css] = $this->severityForType($type);
         $status = $context->hasRecord() ? $context->status() : $type;
         $expiration = $context->hasRecord() ? $context->expirationDate() : null;
-        $graceDays = $context->hasRecord() ? $context->gracePeriodDays() : 0;
+        $graceDays = $context->hasRecord() ? $context->graceDaysRemaining() : 0;
         $createdAt = isset($row['created_at']) ? (string) $row['created_at'] : null;
         if ($createdAt === '') {
             $createdAt = isset($row['generated_at']) ? (string) $row['generated_at'] : null;
@@ -117,7 +117,7 @@ final class SubscriptionAlertService
             $type,
             $severity,
             $css,
-            $this->buildMessage($type, $daysRemaining, $graceDays),
+            $this->buildMessage($type, $daysRemaining, $graceDays, $context),
             $daysRemaining,
             $expiration,
             $status,
@@ -172,18 +172,26 @@ final class SubscriptionAlertService
         };
     }
 
-    private function buildMessage(string $type, int $daysRemaining, int $gracePeriodDays): string
-    {
+    private function buildMessage(
+        string $type,
+        int $daysRemaining,
+        int $graceDaysRemaining,
+        ?SubscriptionContext $context = null
+    ): string {
         if ($type === NotificationType::SUSPENSION) {
             return 'Your subscription is suspended.';
         }
 
-        if ($type === NotificationType::GRACE || $daysRemaining < 0) {
-            $graceRemaining = max(0, $gracePeriodDays + $daysRemaining);
-            if ($gracePeriodDays > 0) {
-                return 'Subscription expired. Grace period: ' . $graceRemaining . ' days remaining';
+        if ($type === NotificationType::GRACE || ($context !== null && $context->isInGrace())) {
+            $remaining = $graceDaysRemaining;
+            if ($remaining < 1 && $context !== null) {
+                $remaining = $context->graceDaysRemaining();
             }
-            return 'Subscription expired. You are in the grace period.';
+            return 'Subscription expired. ' . max(0, $remaining) . ' days remaining in grace period.';
+        }
+
+        if ($daysRemaining < 0) {
+            return 'Subscription expired. ' . max(0, $graceDaysRemaining) . ' days remaining in grace period.';
         }
 
         if ($daysRemaining === 0) {

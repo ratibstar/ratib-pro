@@ -4,22 +4,20 @@ declare(strict_types=1);
 namespace Rateb\App\Subscription;
 
 /**
- * Canonical subscription lifecycle statuses.
+ * Grace-period lifecycle vocabulary (calculation only — no enforcement).
  *
- * Isolation: this class must never reference HR, POS, Inventory, Accounting,
- * Payroll, CRM, Procurement, Employees, Attendance, or any UI class.
+ * Flow: ACTIVE → WARNING → CRITICAL → GRACE → SUSPENSION_PENDING
  */
-final class SubscriptionStatus
+final class GracePeriodStatus
 {
     public const ACTIVE = 'ACTIVE';
     public const WARNING = 'WARNING';
     public const CRITICAL = 'CRITICAL';
     public const GRACE = 'GRACE';
     public const SUSPENSION_PENDING = 'SUSPENSION_PENDING';
-    public const SUSPENDED = 'SUSPENDED';
 
     /** @return list<string> */
-    public static function all(): array
+    public static function flow(): array
     {
         return [
             self::ACTIVE,
@@ -27,12 +25,16 @@ final class SubscriptionStatus
             self::CRITICAL,
             self::GRACE,
             self::SUSPENSION_PENDING,
-            self::SUSPENDED,
         ];
     }
 
-    public static function isKnown(string $status): bool
+    public static function isGrace(string $status): bool
     {
-        return in_array($status, self::all(), true);
+        return strtoupper($status) === self::GRACE;
+    }
+
+    public static function isSuspensionPending(string $status): bool
+    {
+        return strtoupper($status) === self::SUSPENSION_PENDING;
     }
 }
