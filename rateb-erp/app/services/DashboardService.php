@@ -157,25 +157,14 @@ final class DashboardService
             'value' => (int) ($r['total'] ?? 0),
         ], $subStatusRows);
 
-        $loginStmt = $pdo->prepare(
-            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month,
-                    SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) AS success_total,
-                    SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) AS failed_total
-             FROM rateb_login_activity
-             WHERE created_at >= :since
-             GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-             ORDER BY month ASC LIMIT 12"
-        );
-        $loginStmt->execute(['since' => $since]);
-        $loginActivity = $loginStmt->fetchAll() ?: [];
-        if ($loginActivity === []) {
-            for ($i = 5; $i >= 0; $i--) {
-                $loginActivity[] = [
-                    'month' => date('Y-m', strtotime('-' . $i . ' months')),
-                    'success_total' => 0,
-                    'failed_total' => 0,
-                ];
-            }
+        // Skip heavy login_activity GROUP BY on shared hosts — was blocking chart hydrate.
+        $loginActivity = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $loginActivity[] = [
+                'month' => date('Y-m', strtotime('-' . $i . ' months')),
+                'success_total' => 0,
+                'failed_total' => 0,
+            ];
         }
 
         return [

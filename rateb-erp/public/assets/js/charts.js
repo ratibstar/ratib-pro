@@ -1,6 +1,14 @@
 (function () {
     'use strict';
 
+    if (window.__RATEB_CHARTS_BOUND__) {
+        // Soft-nav / double inject — keep existing mounts; refresh when asked.
+        if (typeof window.ratebChartsBoot === 'function') {
+            return;
+        }
+    }
+    window.__RATEB_CHARTS_BOUND__ = true;
+
     var charts = {};
     var pendingInits = {};
 
@@ -121,15 +129,11 @@
     }
 
     function lightAnim(stagger) {
+        // Instant paint — staggered 1100ms animations froze the UI after soft-nav.
         return {
-            duration: 1100,
-            easing: 'easeOutQuart',
-            delay: function (ctx) {
-                if (!stagger || ctx.type !== 'data' || ctx.mode !== 'default') {
-                    return 0;
-                }
-                return ctx.dataIndex * 55 + ctx.datasetIndex * 90;
-            }
+            duration: 0,
+            easing: 'linear',
+            delay: 0
         };
     }
 

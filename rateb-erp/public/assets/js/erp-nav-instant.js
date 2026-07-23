@@ -906,7 +906,7 @@
                         main.classList.remove('is-nav-busy');
                         main.removeAttribute('aria-busy');
                     } catch (eC) { /* ignore */ }
-                }, 3000);
+                }, 2000);
             } else {
                 root.clearTimeout(setMainNavBusy._clearTimer);
                 main.classList.remove('is-nav-busy');
@@ -1247,7 +1247,7 @@
         // Soft/hard offline: unlock fast so sidebar never stays dead after hung fetch.
         var unlockMs = (isBrowserOffline() || isUiOffline())
             ? 3200
-            : (isBareAdminHref(href) ? 11000 : (isHeavyNavHref(href) ? 21000 : 13000));
+            : (isBareAdminHref(href) ? 4500 : (isHeavyNavHref(href) ? 12000 : 7000));
         var unlockTimer = root.setTimeout(function () {
             if (navigating && swapTo._gen === navGen) {
                 navigating = false;

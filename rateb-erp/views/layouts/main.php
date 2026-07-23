@@ -209,6 +209,20 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     var main = document.querySelector('#rateb-main-content, main.rateb-content');
                     if (main) {
                         main.classList.add('is-nav-busy');
+                        // HARD deadline — early path used to leave pointer-events:none forever
+                        // when erp-nav-instant was slow/stuck (blank UI, can't click tabs).
+                        clearTimeout(window.__RATEB_EARLY_BUSY_T__);
+                        window.__RATEB_EARLY_BUSY_T__ = setTimeout(function () {
+                            try {
+                                main.classList.remove('is-nav-busy');
+                                main.removeAttribute('aria-busy');
+                                if (!window.__RATEB_NAV_READY__ && window.__RATEB_PENDING_NAV__) {
+                                    var go = window.__RATEB_PENDING_NAV__;
+                                    window.__RATEB_PENDING_NAV__ = '';
+                                    location.href = go;
+                                }
+                            } catch (eClear) { /* ignore */ }
+                        }, 2000);
                     }
                 } catch (eUi) { /* ignore */ }
             } catch (eEarly) { /* ignore */ }

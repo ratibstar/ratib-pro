@@ -1,11 +1,18 @@
 /**
  * Hydrate admin dashboard charts after lite HTML paint.
- * Also re-runs on soft-nav (rateb:nav:afterEnter) — script tags in swapped HTML do not re-execute.
+ * Soft-nav safe: single boot pipeline, aborts stale fetches, debounced.
  */
 (function () {
     'use strict';
 
+    if (window.__RATEB_DASH_CHARTS_DEFER_BOUND__) {
+        return;
+    }
+    window.__RATEB_DASH_CHARTS_DEFER_BOUND__ = true;
+
     var bootGen = 0;
+    var bootTimer = null;
+    var inflightCtrl = null;
 
     function setJsonAttr(el, name, value) {
         if (!el) {
@@ -111,13 +118,27 @@
                         res();
                         return;
                     }
-                    var exists = document.querySelector('script[src="' + src.replace(/"/g, '') + '"]');
-                    if (exists && typeof window.Chart !== 'undefined' && src.indexOf('chart') !== -1) {
+                    if (typeof window.Chart !== 'undefined' && src.indexOf('chart.umd') !== -1) {
                         res();
                         return;
                     }
                     if (typeof window.ratebChartsBoot === 'function' && src.indexOf('charts.js') !== -1) {
                         res();
+                        return;
+                    }
+                    var exists = document.querySelector('script[src="' + src.replace(/"/g, '') + '"]');
+                    if (exists) {
+                        // Script tag present but may still be loading — wait briefly.
+                        var n = 0;
+                        var wait = setInterval(function () {
+                            n++;
+                            if ((src.indexOf('chart') !== -1 && typeof window.Chart !== 'undefined')
+                                || (src.indexOf('charts.js') !== -1 && typeof window.ratebChartsBoot === 'function')
+                                || n > 40) {
+                                clearInterval(wait);
+                                res();
+                            }
+                        }, 50);
                         return;
                     }
                     var el = document.createElement('script');
@@ -131,11 +152,19 @@
         });
     }
 
-    function boot() {
+    function abortInflight() {
+        if (inflightCtrl) {
+            try { inflightCtrl.abort(); } catch (eAb) { /* ignore */ }
+            inflightCtrl = null;
+        }
+    }
+
+    function bootNow() {
         var root = document.querySelector('[data-cm-dash="v5c"]');
         if (!root || !document.querySelector('canvas[id^="chart-"]')) {
             return;
         }
+        abortInflight();
         var myGen = ++bootGen;
         var url = root.getAttribute('data-charts-url');
         markCharts('loading');
@@ -144,7 +173,10 @@
             if (myGen !== bootGen) {
                 return;
             }
-            // Paint whatever labels are already on the canvas (lite HTML), then refresh from API.
+            if (typeof window.Chart === 'undefined') {
+                markCharts('empty');
+                return;
+            }
             paintCharts();
             if (!url) {
                 markCharts('ready');
@@ -156,13 +188,15 @@
                     return;
                 }
             } catch (eOff) { /* continue */ }
+
             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-            // Was 2500ms — aborted on shared-host COUNT/login_activity and left black chart boxes.
+            inflightCtrl = ctrl;
             var timer = setTimeout(function () {
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 15000);
+            }, 6000);
+
             fetch(url, {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
@@ -174,11 +208,10 @@
                     return;
                 }
                 if (!data || !data.ok) {
-                    markCharts('ready');
+                    markCharts('empty');
                     return;
                 }
                 applyCharts(data.charts || {});
-                // Wait one tick so dataset.* reflects setAttribute before hasLabels().
                 setTimeout(function () {
                     if (myGen !== bootGen) {
                         return;
@@ -186,11 +219,23 @@
                     paintCharts();
                 }, 0);
             }).catch(function () {
-                markCharts('ready');
+                if (myGen === bootGen) {
+                    markCharts('empty');
+                }
             }).finally(function () {
                 clearTimeout(timer);
+                if (inflightCtrl === ctrl) {
+                    inflightCtrl = null;
+                }
             });
         });
+    }
+
+    function boot() {
+        if (bootTimer) {
+            clearTimeout(bootTimer);
+        }
+        bootTimer = setTimeout(bootNow, 80);
     }
 
     window.ratebDashboardChartsBoot = boot;
@@ -200,7 +245,6 @@
     } else {
         boot();
     }
-    document.addEventListener('rateb:nav:afterEnter', function () {
-        setTimeout(boot, 0);
-    });
+    document.addEventListener('rateb:nav:afterEnter', boot);
+    document.addEventListener('rateb:nav:beforeLeave', abortInflight);
 })();
