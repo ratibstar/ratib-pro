@@ -462,16 +462,8 @@
                         company_id: idCtx.company_id
                     });
                     sales.push(probe);
+                    /* extras already concatenated into reservations before buildContext */
                     var ctx = buildContext(idCtx.company_id, sales, products, reservations);
-                    if (extraReservations && extraReservations.length) {
-                        extraReservations.forEach(function (r) {
-                            var key = String(r.sale_id || probe.id);
-                            if (!ctx.rsvBySale[key]) {
-                                ctx.rsvBySale[key] = [];
-                            }
-                            ctx.rsvBySale[key].push(r);
-                        });
-                    }
                     var detected = collectSaleConflicts(probe, ctx);
                     return upsertOpenConflicts(idCtx, detected).then(function (res) {
                         return {
