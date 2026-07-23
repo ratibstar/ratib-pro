@@ -1448,16 +1448,19 @@
         if (!a) {
             return;
         }
-        // POS links use onclick="return false" for soft-nav, but POS must full-load.
-        // Without this force, sidebar POS items appear dead.
+        // Full-nav / POS: links often have onclick="return false" for soft-nav.
+        // Soft-nav skips these paths — must force a real document load or clicks are dead.
         try {
-            var posHref = navHrefOf(a);
-            if (posHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
-                var pu = new URL(posHref, root.location.href);
-                if (ADMIN_PATH_RE.test(pu.pathname) && POS_PATH_RE.test(pu.pathname)) {
+            var forceHref = navHrefOf(a);
+            if (forceHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
+                var fu = new URL(forceHref, root.location.href);
+                var forceFull = a.getAttribute('data-rateb-full-nav') === '1'
+                    || (ADMIN_PATH_RE.test(fu.pathname) && POS_PATH_RE.test(fu.pathname))
+                    || /\/(logout|login|password)(\/|$)/i.test(fu.pathname);
+                if (forceFull) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSipPos) { ev.stopPropagation(); }
-                    root.location.href = posHref;
+                    root.location.href = forceHref;
                     return;
                 }
             }

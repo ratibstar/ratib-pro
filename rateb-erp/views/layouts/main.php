@@ -187,10 +187,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (!a) {
                     return;
                 }
-                if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
+                if (a.target && a.target !== '' && a.target !== '_self') {
                     return;
                 }
-                if (a.target && a.target !== '' && a.target !== '_self') {
+                if (a.hasAttribute('download')) {
                     return;
                 }
                 var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
@@ -204,10 +204,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (!/\/admin(\/|$)/i.test(u.pathname)) {
                     return;
                 }
-                if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)) {
-                    return;
-                }
-                if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+                // Full document nav (POS / explicit) — never leave clicks dead behind onclick=return false.
+                if (a.getAttribute('data-rateb-full-nav') === '1'
+                    || /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)
+                    || /\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+                    ev.preventDefault();
+                    try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
+                    location.href = u.href;
                     return;
                 }
                 var cur = location.pathname.replace(/\/+$/, '');
@@ -827,7 +830,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
           return;
         }
-        if (a.getAttribute('data-rateb-full-nav') === '1' || a.hasAttribute('download')) {
+        if (a.hasAttribute('download')) {
+          return;
+        }
+        if (a.getAttribute('data-rateb-full-nav') === '1') {
+          ev.preventDefault();
+          try { ev.stopImmediatePropagation(); } catch (eF) { ev.stopPropagation(); }
+          location.href = (a.getAttribute('data-rateb-href') || a.getAttribute('href') || a.href);
           return;
         }
         if (a.target && a.target !== '' && a.target !== '_self') {
@@ -841,10 +850,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         if (u.origin !== location.origin || !/\/admin(\/|$)/i.test(u.pathname)) {
           return;
         }
-        if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)) {
-          return;
-        }
-        if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+        if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)
+            || /\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
+          ev.preventDefault();
+          try { ev.stopImmediatePropagation(); } catch (eP) { ev.stopPropagation(); }
+          location.href = u.href;
           return;
         }
         ev.preventDefault();
