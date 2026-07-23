@@ -1,10 +1,10 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 4 Checkout / Outbox)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 5 Stock Snapshot)
  *
- * Local catalog + cart + complete sale + local sync outbox prep.
- * No payment/receipt/network push/inventory deduction. sync.start() never called.
- * register/activate do not open DB; cart/checkout open on demand.
- * Online ERP remains Authentication Authority (AF 2.1).
+ * Local catalog + cart + complete sale + outbox + read-only stock snapshot.
+ * No payment/receipt/network push/inventory deduction/reservation. sync.start() never called.
+ * register/activate do not open DB; stock/cart/checkout open on demand.
+ * Does not load Inventory BusinessModule. Online ERP = Authentication Authority (AF 2.1).
  */
 (function (root) {
     'use strict';
@@ -15,14 +15,14 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.4.0-phase4-checkout';
+    var POS_VERSION = '0.5.0-phase5-stock';
 
     function PosModule() {
         BusinessModule.call(this, {
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — local complete sale + outbox prep (no sync start).',
+            description: 'Offline V2 POS — local stock snapshot read-only (no Inventory module).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -30,7 +30,7 @@
             permissions: ['ui.contribute', 'services.register', 'db.read', 'sync.enqueue'],
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
-                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout'
+                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -46,12 +46,14 @@
                 { id: 'pos.product', path: '/pos/product', title: 'POS Product' },
                 { id: 'pos.cart', path: '/pos/cart', title: 'POS Cart' },
                 { id: 'pos.checkout', path: '/pos/checkout', title: 'POS Checkout' },
+                { id: 'pos.stock', path: '/pos/stock', title: 'POS Stock' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
             config: {
                 catalogReadOnly: true,
                 cartLocalOnly: true,
+                stockReadOnly: true,
                 salesLogic: true,
                 payment: false,
                 openDbOnRegister: false,
@@ -61,6 +63,7 @@
         });
         this._catalog = null;
         this._cart = null;
+        this._stock = null;
         this._selectedProductId = null;
         this._lastCompleted = null;
         this._catalogUi = {
@@ -141,6 +144,18 @@
         return this._cart;
     };
 
+    PosModule.prototype._getStock = function () {
+        if (this._stock) {
+            return this._stock;
+        }
+        var api = root.RatebOfflineV2PosStock;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_stock_missing');
+        }
+        this._stock = api.create(this);
+        return this._stock;
+    };
+
     PosModule.prototype.listCategories = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
@@ -209,12 +224,61 @@
         });
     };
 
+    PosModule.prototype.listStock = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getStock().listStock(idCtx.company_id);
+        });
+    };
+
+    PosModule.prototype.getStockAvailability = function (productId) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getStock().getAvailability(idCtx.company_id, productId);
+        });
+    };
+
+    PosModule.prototype.checkCartStock = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getCart().getCart(idCtx).then(function (cart) {
+                return self._getStock().checkLines(idCtx.company_id, cart.lines || []);
+            });
+        });
+    };
+
     PosModule.prototype.completeSale = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
-            return self._getCart().completeSale(idCtx).then(function (result) {
-                self._lastCompleted = result;
-                return result;
+            /* Soft stock check: warn only — do not block / reserve / deduct. */
+            return self._getCart().getCart(idCtx).then(function (cart) {
+                return self._getStock().checkLines(idCtx.company_id, cart.lines || [])
+                    .catch(function () {
+                        return {
+                            ok: true,
+                            blocked: false,
+                            reserved: false,
+                            warnings: [],
+                            warning_count: 0,
+                            check_failed: true
+                        };
+                    })
+                    .then(function (stockCheck) {
+                        return self._getCart().completeSale(idCtx).then(function (result) {
+                            result.stock_warnings = (stockCheck && stockCheck.warnings) || [];
+                            result.stock_warning_count = result.stock_warnings.length;
+                            result.stock_blocked = false;
+                            result.stock_reserved = false;
+                            result.inventory_deducted = false;
+                            if (result.sale) {
+                                result.sale.stock_warnings = result.stock_warnings;
+                                result.sale.stock_check_ok = !(stockCheck && stockCheck.warnings &&
+                                    stockCheck.warnings.length);
+                            }
+                            self._lastCompleted = result;
+                            return result;
+                        });
+                    });
             });
         });
     };
@@ -247,12 +311,15 @@
                 version: POS_VERSION,
                 catalogReadOnly: true,
                 cartLocalOnly: true,
+                stockReadOnly: true,
                 salesLogic: true,
                 payment: false,
                 inventoryDeduction: false,
+                inventoryModuleRequired: false,
                 syncStart: false,
                 catalogStoreOpen: !!(self._catalog && self._catalog.isStoreOpen()),
                 cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
+                stockStoreOpen: !!(self._stock && self._stock.isStoreOpen()),
                 lastSaleId: self._lastCompleted && self._lastCompleted.sale_id || null
             };
         });
@@ -295,7 +362,16 @@
         self.exposeService('getLastCompletedSale', function () {
             return self.getLastCompletedSale();
         });
-        self.reportHealth('initialize', true, 'pos_checkout_ready');
+        self.exposeService('listStock', function () {
+            return self.listStock();
+        });
+        self.exposeService('getStockAvailability', function (productId) {
+            return self.getStockAvailability(productId);
+        });
+        self.exposeService('checkCartStock', function () {
+            return self.checkCartStock();
+        });
+        self.reportHealth('initialize', true, 'pos_stock_ready');
         return Promise.resolve();
     };
 
@@ -303,14 +379,20 @@
         this.contributeNav({ label: 'POS', path: '/pos', title: 'POS Catalog' });
         this.contributeNav({ label: 'POS Cart', path: '/pos/cart', title: 'POS Cart' });
         this.contributeNav({ label: 'POS Checkout', path: '/pos/checkout', title: 'POS Checkout' });
+        this.contributeNav({ label: 'POS Stock', path: '/pos/stock', title: 'POS Stock' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local complete sale + outbox prep — no sync start'
+            description: 'Local sale + read-only stock snapshot — no Inventory module'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
             label: 'Cart local only',
+            value: true
+        });
+        this.contributeSettings({
+            id: 'pos.stock_read_only',
+            label: 'Stock read only',
             value: true
         });
         this.reportHealth('mount', true, 'contributions');
@@ -318,16 +400,18 @@
     };
 
     PosModule.prototype.onActivate = function (ctx) {
-        /* UI prep only — do not open catalog/cart stores. */
+        /* UI prep only — do not open catalog/cart/stock stores. */
         if (ctx && ctx.events) {
             ctx.events.emit('pos:ready', {
                 version: POS_VERSION,
                 depends_on: ['identity'],
                 catalog_read_only: true,
                 cart_local_only: true,
+                stock_read_only: true,
                 payment: false,
                 sales_logic: true,
-                sync_start: false
+                sync_start: false,
+                inventory_module: false
             });
         }
         this.reportHealth('activate', true, 'ready');
@@ -372,7 +456,10 @@
 
         var toCart = self._el('button', 'Open cart', { type: 'button' });
         toCart.addEventListener('click', function () { self._navigate('/pos/cart'); });
+        var toStock = self._el('button', 'Stock', { type: 'button' });
+        toStock.addEventListener('click', function () { self._navigate('/pos/stock'); });
         outlet.appendChild(toCart);
+        outlet.appendChild(toStock);
 
         var controls = self._el('div', null, { 'data-pos-catalog-controls': '1' });
         var search = self._el('input', null, {
@@ -566,10 +653,77 @@
                 self._navigate('/pos/checkout');
             });
             host.appendChild(toCheckout);
+            return self._getStock().checkLines(idCtx.company_id, cart.lines || []).then(function (check) {
+                if (check && check.warnings && check.warnings.length) {
+                    var warn = self._el('div', null, { 'data-pos-stock-warn': '1' });
+                    warn.appendChild(self._el('p',
+                        'Stock warnings (sale not blocked): ' + check.warning_count));
+                    check.warnings.forEach(function (w) {
+                        warn.appendChild(self._el('p', w.message));
+                    });
+                    host.appendChild(warn);
+                }
+            }).catch(function () { /* soft */ });
         }
 
         /* First cart view action opens DB lazily via getCart. */
         return self._getCart().getCart(idCtx).then(paint);
+    };
+
+    PosModule.prototype._renderStock = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/stock');
+        outlet.setAttribute('data-pos-view', 'stock');
+        outlet.appendChild(self._el('h3', 'POS Stock'));
+        outlet.appendChild(self._el('p',
+            'Local snapshot read-only · no Inventory module · no deduction · company=' +
+            idCtx.company_id));
+
+        var nav = self._el('div');
+        var toCat = self._el('button', 'Catalog', { type: 'button' });
+        toCat.addEventListener('click', function () { self._navigate('/pos'); });
+        var toCart = self._el('button', 'Cart', { type: 'button' });
+        toCart.addEventListener('click', function () { self._navigate('/pos/cart'); });
+        nav.appendChild(toCat);
+        nav.appendChild(toCart);
+        outlet.appendChild(nav);
+
+        var host = self._el('div', null, { 'data-pos-stock-host': '1' });
+        outlet.appendChild(host);
+
+        /* Stock screen opens DB lazily. */
+        return self._getStock().listStock(idCtx.company_id).then(function (rows) {
+            host.textContent = '';
+            host.setAttribute('data-pos-stock-count', String(rows.length));
+            if (!rows.length) {
+                host.setAttribute('data-pos-stock-empty', '1');
+                host.appendChild(self._el('p', 'No stock snapshot rows.'));
+                return;
+            }
+            var ul = self._el('ul');
+            rows.forEach(function (row) {
+                var li = self._el('li', null, {
+                    'data-product-id': row.product_id,
+                    'data-available': row.available ? '1' : '0',
+                    'data-qty': String(row.available_qty)
+                });
+                if (!row.available) {
+                    li.appendChild(self._el('span',
+                        (row.name || row.product_id) + ' · UNAVAILABLE · qty=0' +
+                        (row.warehouse_id ? (' · wh=' + row.warehouse_id) : '')));
+                } else {
+                    li.appendChild(self._el('span',
+                        (row.name || row.product_id) + ' · available=' + row.available_qty +
+                        (row.warehouse_id ? (' · wh=' + row.warehouse_id) : '') +
+                        ' · ' + (row.source || '')));
+                }
+                ul.appendChild(li);
+            });
+            host.appendChild(ul);
+            host.appendChild(self._el('p',
+                'Rows: ' + rows.length + ' · read_only=true · inventory_module=false'));
+        });
     };
 
     PosModule.prototype._renderCheckout = function (outlet, idCtx) {
@@ -617,6 +771,14 @@
                 ' · client_id=' + (outbox.client_id || '')));
             host.appendChild(self._el('p',
                 'sync_started=false · inventory_deducted=false · network=false'));
+            if (result.stock_warnings && result.stock_warnings.length) {
+                host.appendChild(self._el('p',
+                    'Stock warnings at complete: ' + result.stock_warning_count +
+                    ' · blocked=false'));
+                result.stock_warnings.forEach(function (w) {
+                    host.appendChild(self._el('p', w.message));
+                });
+            }
             var again = self._el('button', 'New sale', { type: 'button' });
             again.addEventListener('click', function () { self._navigate('/pos'); });
             host.appendChild(again);
@@ -648,6 +810,19 @@
             host.appendChild(self._el('p',
                 'Draft: ' + (cart.draft && cart.draft.id) +
                 ' · status=' + (cart.draft && cart.draft.status)));
+
+            var warnHost = self._el('div', null, { 'data-pos-stock-warn': '1' });
+            host.appendChild(warnHost);
+            self._getStock().checkLines(idCtx.company_id, cart.lines || []).then(function (check) {
+                warnHost.textContent = '';
+                if (check && check.warnings && check.warnings.length) {
+                    warnHost.appendChild(self._el('p',
+                        'Stock warnings (sale will NOT be blocked): ' + check.warning_count));
+                    check.warnings.forEach(function (w) {
+                        warnHost.appendChild(self._el('p', w.message));
+                    });
+                }
+            }).catch(function () { /* soft */ });
 
             var msg = self._el('p', '', { 'data-pos-checkout-msg': '1' });
             var completeBtn = self._el('button', 'Complete sale', {
@@ -744,6 +919,9 @@
                     if (path === '/pos/checkout') {
                         return self._renderCheckout(outlet, idCtx);
                     }
+                    if (path === '/pos/stock') {
+                        return self._renderStock(outlet, idCtx);
+                    }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
                         return null;
@@ -766,21 +944,25 @@
         base.depends_on = ['identity'];
         base.catalog_read_only = true;
         base.cart_local_only = true;
+        base.stock_read_only = true;
         base.sales_logic = true;
         base.payment = false;
         base.inventory_deduction = false;
+        base.inventory_module_required = false;
         base.opens_db_on_register = false;
         base.starts_sync_on_activate = false;
         base.catalog_store_open = !!(this._catalog && this._catalog.isStoreOpen());
         base.cart_store_open = !!(this._cart && this._cart.isStoreOpen());
+        base.stock_store_open = !!(this._stock && this._stock.isStoreOpen());
         base.never_stores_credentials = true;
         base.sqlite_tables_added = false;
         base.outbox_operation = 'CREATE_POS_SALE';
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
-            'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale'
+            'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
+            'pos.stock_snapshot', 'pos.stock_meta'
         ];
-        base.storage = 'entity_row via pos.* prefix + sync_outbox local enqueue';
+        base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
         return base;
     };
 
