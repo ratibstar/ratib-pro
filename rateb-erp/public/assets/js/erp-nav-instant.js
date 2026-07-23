@@ -13,7 +13,8 @@
     root.__RATEB_NAV_INSTANT__ = true;
 
     var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet|module-page-stats)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
-    var POS_PATH_RE = /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i;
+    /** Selling shell only — dashboard/settings/orders stay in Admin soft-nav (keep sidebar). */
+    var POS_SHELL_RE = /\/(?:admin\/ops\/)?pos(?:\/register)?\/?(?:$|\?)/i;
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
     /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
     var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
@@ -531,7 +532,7 @@
             if (u.origin !== root.location.origin) {
                 return;
             }
-            if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+            if (!ADMIN_PATH_RE.test(u.pathname) || POS_SHELL_RE.test(u.pathname)) {
                 return;
             }
             if (!opts.force) {
@@ -574,7 +575,7 @@
                     if (u.origin !== root.location.origin) {
                         return;
                     }
-                    if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+                    if (!ADMIN_PATH_RE.test(u.pathname) || POS_SHELL_RE.test(u.pathname)) {
                         return;
                     }
                     /* Hover لوحة التحكم: always warm — soft-nav must match F5 cache hit. */
@@ -614,7 +615,7 @@
                 Array.prototype.forEach.call(links, function (a) {
                     try {
                         var u = new URL(a.href, root.location.href);
-                        if (!ADMIN_PATH_RE.test(u.pathname) || POS_PATH_RE.test(u.pathname)) {
+                        if (!ADMIN_PATH_RE.test(u.pathname) || POS_SHELL_RE.test(u.pathname)) {
                             return;
                         }
                         var bare = String(u.pathname || '').replace(/\/+$/, '');
@@ -1421,7 +1422,7 @@
             if (!ADMIN_PATH_RE.test(u.pathname)) {
                 return false;
             }
-            if (POS_PATH_RE.test(u.pathname)) {
+            if (POS_SHELL_RE.test(u.pathname)) {
                 return false;
             }
             // Full document navigation required (session end / auth pages).
@@ -1448,14 +1449,14 @@
         if (!a) {
             return;
         }
-        // Full-nav / POS: links often have onclick="return false" for soft-nav.
-        // Soft-nav skips these paths — must force a real document load or clicks are dead.
+        // Full-nav only for selling shell / logout / explicit flag.
+        // Other POS admin pages (dashboard, settings, orders…) soft-nav with sidebar kept.
         try {
             var forceHref = navHrefOf(a);
             if (forceHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
                 var fu = new URL(forceHref, root.location.href);
                 var forceFull = a.getAttribute('data-rateb-full-nav') === '1'
-                    || (ADMIN_PATH_RE.test(fu.pathname) && POS_PATH_RE.test(fu.pathname))
+                    || (ADMIN_PATH_RE.test(fu.pathname) && POS_SHELL_RE.test(fu.pathname))
                     || /\/(logout|login|password)(\/|$)/i.test(fu.pathname);
                 if (forceFull) {
                     ev.preventDefault();

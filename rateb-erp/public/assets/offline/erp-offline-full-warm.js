@@ -6,8 +6,8 @@
     'use strict';
 
     var MAX_URLS = 320;
-    var CONCURRENCY = 4;
-    var GAP_MS = 80;
+    var CONCURRENCY = 2;
+    var GAP_MS = 180;
     /** Page HTML only — never count CSS/JS toward "offline ready". */
     var MIN_OK = 55;
     // Lean shells (companies etc.) are valid with sidebar markers below ~20KB.
@@ -962,6 +962,14 @@
                     }
                     return;
                 }
+                // Yield while soft-nav is swapping — warm was starving Admin clicks/TTFB.
+                try {
+                    if (root.RatebNavInstant && typeof root.RatebNavInstant.isNavigating === 'function'
+                        && root.RatebNavInstant.isNavigating()) {
+                        setTimeout(pump, 450);
+                        return;
+                    }
+                } catch (eNavPause) { /* ignore */ }
                 if (finished >= urls.length && active === 0) {
                     finish({ total: urls.length, ok: ok });
                     return;

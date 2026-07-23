@@ -204,9 +204,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (!/\/admin(\/|$)/i.test(u.pathname)) {
                     return;
                 }
-                // Full document nav (POS / explicit) — never leave clicks dead behind onclick=return false.
+                // Full document nav only for selling shell / logout / explicit flag.
+                // Other POS admin pages soft-nav and keep the sidebar.
                 if (a.getAttribute('data-rateb-full-nav') === '1'
-                    || /\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)
+                    || /\/(?:admin\/ops\/)?pos(?:\/register)?\/?(?:$|\?)/i.test(u.pathname)
                     || /\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
@@ -850,7 +851,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         if (u.origin !== location.origin || !/\/admin(\/|$)/i.test(u.pathname)) {
           return;
         }
-        if (/\/(?:admin\/ops\/)?pos(\/register)?(\/|$|\?)/i.test(u.pathname)
+        if (/\/(?:admin\/ops\/)?pos(?:\/register)?\/?(?:$|\?)/i.test(u.pathname)
             || /\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
           ev.preventDefault();
           try { ev.stopImmediatePropagation(); } catch (eP) { ev.stopPropagation(); }

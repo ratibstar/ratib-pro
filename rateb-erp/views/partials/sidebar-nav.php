@@ -25,9 +25,12 @@ $opsLink = static function (
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
     $href = rateb_app_url($resourcePath);
-    // POS must full-document navigate (shell + SW). Soft-nav skips POS, so never use onclick=return false.
-    $isPos = (bool) preg_match('#(^|/)pos(/|$)#i', $resourcePath);
-    if ($isPos) {
+    // Only the selling register shell needs a full document load (pos-shell layout).
+    // POS dashboard/settings/orders soft-nav inside Admin so the sidebar stays.
+    $isPosShell = $resourcePath === 'pos'
+        || $resourcePath === 'pos/register'
+        || str_starts_with($resourcePath, 'pos/register/');
+    if ($isPosShell) {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
