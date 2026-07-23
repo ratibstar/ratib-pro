@@ -533,13 +533,17 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
     <?php
-    /* PERF-P3 / Fix5: one tiny blocking shell stylesheet; async CSS via preload→swap.
+    /* PERF-P3 / Fix5 / Fix6: one tiny blocking shell stylesheet; async CSS via preload→swap.
      * Tajawal 400 is inlined below (not in this list) so first paint is not blocked by
-     * a second stylesheet or by 500/700 downloads. Rest weights load after load+idle. */
+     * a second stylesheet or by 500/700 downloads. Rest weights load after load+idle.
+     * FA: shell subset early (sidebar/topbar); full pack after load+idle — not in async wave. */
     $ratebThemeDarkCss = rateb_asset('css/dark.css');
     $ratebThemeLightCss = rateb_asset('css/light.css');
     $ratebTajawalRestCss = rateb_tajawal_font_rest_css();
     $ratebTajawal400Woff = rateb_vendor_asset('fonts/tajawal/tajawal-400.woff2');
+    $ratebFaShellCss = rateb_fontawesome_css();
+    $ratebFaFullCss = rateb_fontawesome_full_css();
+    $ratebFaSolidWoff = rateb_vendor_asset('fontawesome/6.5.2/webfonts/fa-solid-900.woff2');
     $ratebAsyncStyles = [
         rateb_bootstrap_css(),
         rateb_asset('css/variables.css'),
@@ -547,7 +551,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         rateb_asset('css/components.css'),
         $ratebThemeDarkCss,
         rateb_asset('css/rtl.css'),
-        rateb_fontawesome_css(),
     ];
     if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) {
         $ratebAsyncStyles[] = rateb_asset('css/dashboard.css');
@@ -569,6 +572,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <link id="rateb-critical-shell" href="<?php echo rateb_asset('css/critical-shell.css'); ?>" rel="stylesheet">
     <?php /* Preload only critical weight; rest fonts must not compete with first paint. */ ?>
     <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebTajawal400Woff); ?>" as="font" type="font/woff2" crossorigin>
+    <?php /* Fix6: solid icons font + shell CSS start before Bootstrap/theme wave. */ ?>
+    <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebFaSolidWoff); ?>" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebFaShellCss); ?>" as="style" id="rateb-fa-shell" onload="this.onload=null;this.rel='stylesheet'">
     <style id="rateb-tajawal-critical-face">
     /* Inline @font-face — same family/stack as critical-shell; avoids extra CSS round-trip. */
     @font-face {
@@ -581,13 +587,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     </style>
     <script>
     (function () {
-      /* PERF-P3 / Fix5: preload → stylesheet swap (non-blocking). */
+      /* PERF-P3 / Fix5 / Fix6: preload → stylesheet swap (non-blocking). */
       var sheets = <?php echo json_encode(array_values(array_filter($ratebAsyncStyles, static function ($h) use ($ratebThemeDarkCss, $ratebThemeLightCss) {
           return $h !== $ratebThemeDarkCss && $h !== $ratebThemeLightCss;
       })), JSON_UNESCAPED_SLASHES); ?>;
       var themeDark = <?php echo json_encode($ratebThemeDarkCss, JSON_UNESCAPED_SLASHES); ?>;
       var themeLight = <?php echo json_encode($ratebThemeLightCss, JSON_UNESCAPED_SLASHES); ?>;
       var tajawalRest = <?php echo json_encode($ratebTajawalRestCss, JSON_UNESCAPED_SLASHES); ?>;
+      var faShell = <?php echo json_encode($ratebFaShellCss, JSON_UNESCAPED_SLASHES); ?>;
+      var faFull = <?php echo json_encode($ratebFaFullCss, JSON_UNESCAPED_SLASHES); ?>;
       var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
       function swapIn(href, id) {
         if (!href) return;
@@ -614,6 +622,17 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           }
         }, swapMs);
       }
+      /* Fix6: promote FA shell preload → stylesheet if onload missed; never duplicate. */
+      (function ensureFaShell() {
+        var el = document.getElementById('rateb-fa-shell');
+        if (el && el.rel === 'preload') {
+          var promote = function () { if (el.rel === 'preload') el.rel = 'stylesheet'; };
+          el.addEventListener('load', function () { el.onload = null; promote(); });
+          setTimeout(promote, 3000);
+        } else if (!el && faShell) {
+          swapIn(faShell, 'rateb-fa-shell');
+        }
+      })();
       swapIn(bs === 'light' ? themeLight : themeDark, 'rateb-theme-css');
       sheets.forEach(function (href) { swapIn(href); });
       /* Fix5: 500/600/700/800 after first paint — do not inflate document.fonts.ready. */
@@ -634,10 +653,33 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           setTimeout(loadTajawalRest, 1000);
         }
       }
+      /* Fix6: full FA after load+idle — page icons beyond shell; soft-nav keeps one copy. */
+      function loadFaFull() {
+        if (!faFull || document.getElementById('rateb-fa-full')) {
+          return;
+        }
+        var link = document.createElement('link');
+        link.id = 'rateb-fa-full';
+        link.rel = 'stylesheet';
+        link.href = faFull;
+        document.head.appendChild(link);
+      }
+      function scheduleFaFull() {
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(loadFaFull, { timeout: 2500 });
+        } else {
+          setTimeout(loadFaFull, 1000);
+        }
+      }
+      window.addEventListener('rateb:nav:afterEnter', loadFaFull, { once: true });
       if (document.readyState === 'complete') {
         scheduleTajawalRest();
+        scheduleFaFull();
       } else {
-        window.addEventListener('load', scheduleTajawalRest, { once: true });
+        window.addEventListener('load', function () {
+          scheduleTajawalRest();
+          scheduleFaFull();
+        }, { once: true });
       }
     })();
     </script>
@@ -646,6 +688,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       <link href="<?php echo rateb_tajawal_font_rest_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_fontawesome_full_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
       <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
       <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">

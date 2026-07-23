@@ -45,6 +45,7 @@ fa-gear
 fa-gears
 fa-globe
 fa-hand-holding-dollar
+fa-heartbeat
 fa-hospital
 fa-images
 fa-key
@@ -53,6 +54,8 @@ fa-life-ring
 fa-list
 fa-list-check
 fa-magnifying-glass
+fa-mobile-screen
+fa-mobile-screen-button
 fa-money-bill-wave
 fa-moon
 fa-newspaper
@@ -86,3 +89,4 @@ fa-user-shield
 fa-user-tie
 fa-warehouse
 fa-wrench
+fa-xmark
