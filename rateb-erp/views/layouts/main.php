@@ -533,11 +533,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <meta name="apple-mobile-web-app-title" content="RATEB ERP">
     <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
     <?php
-    /* PERF-P3: one tiny blocking shell stylesheet (cached); everything else preload→swap. */
+    /* PERF-P3 / Fix5: one tiny blocking shell stylesheet; async CSS via preload→swap.
+     * Tajawal 400 is inlined below (not in this list) so first paint is not blocked by
+     * a second stylesheet or by 500/700 downloads. Rest weights load after load+idle. */
     $ratebThemeDarkCss = rateb_asset('css/dark.css');
     $ratebThemeLightCss = rateb_asset('css/light.css');
+    $ratebTajawalRestCss = rateb_tajawal_font_rest_css();
+    $ratebTajawal400Woff = rateb_vendor_asset('fonts/tajawal/tajawal-400.woff2');
     $ratebAsyncStyles = [
-        rateb_tajawal_font_css(),
         rateb_bootstrap_css(),
         rateb_asset('css/variables.css'),
         rateb_asset('css/main.css'),
@@ -562,18 +565,29 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     )) {
         $ratebAsyncStyles[] = rateb_asset('css/agent-apps.css');
     }
-    $ratebAsyncStyles[] = rateb_tajawal_font_rest_css();
     ?>
     <link id="rateb-critical-shell" href="<?php echo rateb_asset('css/critical-shell.css'); ?>" rel="stylesheet">
-    <link rel="preload" href="<?php echo rateb_vendor_asset('fonts/tajawal/tajawal-400.woff2'); ?>" as="font" type="font/woff2" crossorigin>
+    <?php /* Preload only critical weight; rest fonts must not compete with first paint. */ ?>
+    <link rel="preload" href="<?php echo Rateb\App\Core\View::escape($ratebTajawal400Woff); ?>" as="font" type="font/woff2" crossorigin>
+    <style id="rateb-tajawal-critical-face">
+    /* Inline @font-face — same family/stack as critical-shell; avoids extra CSS round-trip. */
+    @font-face {
+      font-family: 'Tajawal';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('<?php echo Rateb\App\Core\View::escape($ratebTajawal400Woff); ?>') format('woff2');
+    }
+    </style>
     <script>
     (function () {
-      /* PERF-P3: preload → stylesheet swap (non-blocking). */
+      /* PERF-P3 / Fix5: preload → stylesheet swap (non-blocking). */
       var sheets = <?php echo json_encode(array_values(array_filter($ratebAsyncStyles, static function ($h) use ($ratebThemeDarkCss, $ratebThemeLightCss) {
           return $h !== $ratebThemeDarkCss && $h !== $ratebThemeLightCss;
       })), JSON_UNESCAPED_SLASHES); ?>;
       var themeDark = <?php echo json_encode($ratebThemeDarkCss, JSON_UNESCAPED_SLASHES); ?>;
       var themeLight = <?php echo json_encode($ratebThemeLightCss, JSON_UNESCAPED_SLASHES); ?>;
+      var tajawalRest = <?php echo json_encode($ratebTajawalRestCss, JSON_UNESCAPED_SLASHES); ?>;
       var bs = window.__RATEB_ERP_THEME_BS__ || 'dark';
       function swapIn(href, id) {
         if (!href) return;
@@ -602,10 +616,34 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       }
       swapIn(bs === 'light' ? themeLight : themeDark, 'rateb-theme-css');
       sheets.forEach(function (href) { swapIn(href); });
+      /* Fix5: 500/600/700/800 after first paint — do not inflate document.fonts.ready. */
+      function loadTajawalRest() {
+        if (!tajawalRest || document.getElementById('rateb-tajawal-rest')) {
+          return;
+        }
+        var link = document.createElement('link');
+        link.id = 'rateb-tajawal-rest';
+        link.rel = 'stylesheet';
+        link.href = tajawalRest;
+        document.head.appendChild(link);
+      }
+      function scheduleTajawalRest() {
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(loadTajawalRest, { timeout: 2500 });
+        } else {
+          setTimeout(loadTajawalRest, 1000);
+        }
+      }
+      if (document.readyState === 'complete') {
+        scheduleTajawalRest();
+      } else {
+        window.addEventListener('load', scheduleTajawalRest, { once: true });
+      }
     })();
     </script>
     <noscript>
       <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
+      <link href="<?php echo rateb_tajawal_font_rest_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_fontawesome_css(); ?>" rel="stylesheet">
       <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">

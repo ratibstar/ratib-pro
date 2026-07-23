@@ -1,4 +1,5 @@
-/* Self-hosted Tajawal — offline branch appliance (Phase D.1) */
+/* Self-hosted Tajawal — full bundle (offline warm / appliance).
+ * Weights: 400, 500, 700 real files; 600→500, 800→700 aliases. */
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
@@ -16,7 +17,21 @@
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('tajawal-500.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
     font-weight: 700;
+    font-display: swap;
+    src: url('tajawal-700.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 800;
     font-display: swap;
     src: url('tajawal-700.woff2') format('woff2');
 }

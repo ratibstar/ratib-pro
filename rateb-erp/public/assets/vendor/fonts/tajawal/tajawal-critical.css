@@ -1,4 +1,6 @@
-/* PERF-P3 — Tajawal critical weight only (400). Extra weights load after idle. */
+/* PERF Fix5 — Tajawal critical weight only (400).
+ * Loaded via inline @font-face in Admin main.php + this sheet for other layouts.
+ * font-display: swap — show fallback immediately, swap to Tajawal when ready (Arabic-safe). */
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
