@@ -675,87 +675,300 @@
             });
         }
 
-        function initializeBusinessModules(path, platform) {
-            var requestedId = moduleFromPath(path);
-            /*
-             * Offline Bootstrap contract: every installed route is registered from
-             * precached code on first launch. Identity is always first and remains
-             * the sole published local-identity API boundary for BusinessModules.
-             */
-            var order = [
-                'identity',
-                'inventory',
-                'procurement',
-                'sales',
-                'accounting',
-                'crm',
-                'hr',
-                'mfg'
-            ];
-            var globals = {
-                identity: 'RatebOfflineV2Identity',
-                inventory: 'RatebOfflineV2Inventory',
-                procurement: 'RatebOfflineV2Procurement',
-                sales: 'RatebOfflineV2Sales',
-                accounting: 'RatebOfflineV2Accounting',
-                crm: 'RatebOfflineV2Crm',
-                hr: 'RatebOfflineV2Hr',
-                mfg: 'RatebOfflineV2Mfg'
-            };
-            var scripts = {
-                identity: '../assets/offline/platform/identity/identity-module.js',
-                inventory: './js/business/inventory-module.js',
-                procurement: './js/business/procurement-module.js',
-                sales: './js/business/sales-module.js',
-                accounting: './js/business/accounting-module.js',
-                crm: './js/business/crm-module.js',
-                hr: './js/business/hr-module.js',
-                mfg: './js/business/manufacturing-module.js'
-            };
+        /*
+         * Fix1: route-based BusinessModule registry.
+         * Cold boot loads only the requested module + declared dependencies.
+         * Other modules load on navigate (shell stubs + wrapped router.navigate).
+         * Identity remains the sole published local-identity API boundary.
+         */
+        var BUSINESS_MODULE_REGISTRY = [
+            {
+                id: 'identity',
+                title: 'Identity',
+                routes: ['/identity'],
+                script: '../assets/offline/platform/identity/identity-module.js',
+                globalName: 'RatebOfflineV2Identity',
+                dependencies: []
+            },
+            {
+                id: 'inventory',
+                title: 'Inventory',
+                routes: ['/inventory'],
+                script: './js/business/inventory-module.js',
+                globalName: 'RatebOfflineV2Inventory',
+                dependencies: ['identity']
+            },
+            {
+                id: 'procurement',
+                title: 'Procurement',
+                routes: ['/procurement'],
+                script: './js/business/procurement-module.js',
+                globalName: 'RatebOfflineV2Procurement',
+                dependencies: ['identity', 'inventory']
+            },
+            {
+                id: 'sales',
+                title: 'Sales',
+                routes: ['/sales'],
+                script: './js/business/sales-module.js',
+                globalName: 'RatebOfflineV2Sales',
+                dependencies: ['identity', 'inventory']
+            },
+            {
+                id: 'accounting',
+                title: 'Accounting',
+                routes: ['/accounting'],
+                script: './js/business/accounting-module.js',
+                globalName: 'RatebOfflineV2Accounting',
+                dependencies: ['identity', 'inventory']
+            },
+            {
+                id: 'crm',
+                title: 'CRM',
+                routes: ['/crm'],
+                script: './js/business/crm-module.js',
+                globalName: 'RatebOfflineV2Crm',
+                dependencies: ['identity']
+            },
+            {
+                id: 'hr',
+                title: 'HR',
+                routes: ['/hr'],
+                script: './js/business/hr-module.js',
+                globalName: 'RatebOfflineV2Hr',
+                dependencies: ['identity']
+            },
+            {
+                id: 'mfg',
+                title: 'Manufacturing',
+                routes: ['/mfg'],
+                script: './js/business/manufacturing-module.js',
+                globalName: 'RatebOfflineV2Mfg',
+                dependencies: ['identity', 'inventory']
+            }
+        ];
+        var businessModuleById = Object.create(null);
+        BUSINESS_MODULE_REGISTRY.forEach(function (entry) {
+            businessModuleById[entry.id] = entry;
+        });
+        var businessActivateState = Object.create(null);
+        var businessEnsureTail = Promise.resolve();
+        var lazyNavigateWrapped = false;
 
-            return Promise.all(order.map(function (id) {
-                return loadScript(scripts[id]);
-            })).then(function () {
-                var business = root.RatebOfflineV2Business;
-                if (!business || !business.create) {
-                    throw new Error('business_framework_missing');
+        function resolveModuleLoadOrder(targetId) {
+            var order = [];
+            var seen = Object.create(null);
+            function visit(id) {
+                if (!id || seen[id]) {
+                    return;
                 }
-                var fw = business.create();
-                root.RatebOfflineV2ActiveBusiness = fw;
-                return fw.start().then(function () {
+                var entry = businessModuleById[id];
+                if (!entry) {
+                    throw new Error('bm_registry_unknown:' + id);
+                }
+                seen[id] = true;
+                (entry.dependencies || []).forEach(visit);
+                order.push(id);
+            }
+            visit(targetId);
+            return order;
+        }
+
+        function resolveModuleOrderForPath(path) {
+            var id = moduleFromPath(path);
+            if (!id) {
+                return [];
+            }
+            return resolveModuleLoadOrder(id);
+        }
+
+        function ensureBusinessFramework() {
+            if (root.RatebOfflineV2ActiveBusiness) {
+                return Promise.resolve(root.RatebOfflineV2ActiveBusiness);
+            }
+            var business = root.RatebOfflineV2Business;
+            if (!business || !business.create) {
+                return Promise.reject(new Error('business_framework_missing'));
+            }
+            var fw = business.create();
+            root.RatebOfflineV2ActiveBusiness = fw;
+            return fw.start().then(function () {
+                return fw;
+            });
+        }
+
+        function removeLazyModuleStub(router, moduleId) {
+            if (!router || typeof router.unregisterRoute !== 'function') {
+                return;
+            }
+            try {
+                router.unregisterRoute('lazy.' + moduleId);
+            } catch (eUnreg) { /* ignore */ }
+        }
+
+        function registerLazyModuleStubs(router) {
+            if (!router || typeof router.registerRoute !== 'function') {
+                return;
+            }
+            BUSINESS_MODULE_REGISTRY.forEach(function (entry) {
+                var stubId = 'lazy.' + entry.id;
+                var homePath = entry.routes && entry.routes[0] ? entry.routes[0] : ('/' + entry.id);
+                /* Avoid colliding with a real module route already registered. */
+                try {
+                    var existing = router.listRoutes ? router.listRoutes() : [];
+                    var alreadyStub = existing.some(function (r) {
+                        return r && r.id === stubId;
+                    });
+                    if (alreadyStub) {
+                        return;
+                    }
+                    var hasReal = existing.some(function (r) {
+                        return r && r.path === homePath && String(r.id || '').indexOf('lazy.') !== 0;
+                    });
+                    if (hasReal) {
+                        return;
+                    }
+                } catch (eList) { /* continue */ }
+                router.registerRoute({
+                    id: stubId,
+                    path: homePath,
+                    title: entry.title || entry.id,
+                    handler: stubId,
+                    meta: { moduleId: entry.id, lazyStub: true }
+                }, {
+                    init: function () { return Promise.resolve(); },
+                    mount: function (outlet) {
+                        if (outlet) {
+                            outlet.textContent = 'Loading ' + (entry.title || entry.id) + '…';
+                        }
+                        return ensureBusinessModulesForPath(homePath).then(function () {
+                            return router.navigate(homePath, { replace: true });
+                        });
+                    },
+                    unmount: function () { return Promise.resolve(); },
+                    dispose: function () { return Promise.resolve(); }
+                });
+            });
+            try {
+                var shell = root.RatebOfflineV2AppShell;
+                if (shell && typeof shell.renderNav === 'function') {
+                    shell.renderNav();
+                }
+            } catch (eNav) { /* ignore */ }
+        }
+
+        function loadAndActivateBusinessModule(fw, moduleId) {
+            if (businessActivateState[moduleId] === 'active') {
+                return Promise.resolve(moduleId);
+            }
+            var entry = businessModuleById[moduleId];
+            if (!entry) {
+                return Promise.reject(new Error('bm_registry_unknown:' + moduleId));
+            }
+            var appShell = root.RatebOfflineV2AppShell;
+            var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
+
+            return loadScript(entry.script).then(function () {
+                var api = root[entry.globalName];
+                if (!api || typeof api.create !== 'function') {
+                    throw new Error('module_factory_missing:' + moduleId);
+                }
+                var existing = fw.getModule ? fw.getModule(moduleId) : null;
+                var registerPromise = Promise.resolve();
+                if (!existing || existing.state === 'disposed') {
+                    registerPromise = fw.register(api.create());
+                }
+                return registerPromise.then(function () {
+                    var rec = fw.getModule ? fw.getModule(moduleId) : null;
+                    if (rec && rec.state === 'active') {
+                        businessActivateState[moduleId] = 'active';
+                        removeLazyModuleStub(router, moduleId);
+                        return moduleId;
+                    }
+                    removeLazyModuleStub(router, moduleId);
+                    return fw.activate(moduleId).then(function () {
+                        businessActivateState[moduleId] = 'active';
+                        try {
+                            var shell = root.RatebOfflineV2AppShell;
+                            if (shell && typeof shell.renderNav === 'function') {
+                                shell.renderNav();
+                            }
+                        } catch (eRender) { /* ignore */ }
+                        return moduleId;
+                    });
+                });
+            });
+        }
+
+        function ensureBusinessModulesForPath(path) {
+            var order = resolveModuleOrderForPath(path);
+            businessEnsureTail = businessEnsureTail.then(function () {
+                return ensureBusinessFramework().then(function (fw) {
+                    if (!order.length) {
+                        return [];
+                    }
                     var chain = Promise.resolve();
                     order.forEach(function (id) {
                         chain = chain.then(function () {
-                            var api = root[globals[id]];
-                            if (!api || typeof api.create !== 'function') {
-                                throw new Error('module_factory_missing:' + id);
-                            }
-                            return fw.register(api.create()).then(function () {
-                                return fw.activate(id);
-                            });
+                            return loadAndActivateBusinessModule(fw, id);
                         });
                     });
-                    return chain;
-                }).then(function () {
-                    var appShell = root.RatebOfflineV2AppShell;
-                    var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
+                    return chain.then(function () {
+                        return order.slice();
+                    });
+                });
+            });
+            return businessEnsureTail;
+        }
+
+        function installLazyNavigateWrapper(router) {
+            if (!router || lazyNavigateWrapped || typeof router.navigate !== 'function') {
+                return;
+            }
+            lazyNavigateWrapped = true;
+            var origNavigate = router.navigate.bind(router);
+            router.navigate = function (toPath, opts) {
+                return ensureBusinessModulesForPath(toPath).then(function () {
+                    return origNavigate(toPath, opts);
+                });
+            };
+            root.RatebOfflineV2EnsureModules = ensureBusinessModulesForPath;
+        }
+
+        function initializeBusinessModules(path, platform) {
+            var requestedId = moduleFromPath(path);
+
+            return ensureBusinessFramework().then(function (fw) {
+                var appShell = root.RatebOfflineV2AppShell;
+                var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
+                installLazyNavigateWrapper(router);
+                registerLazyModuleStubs(router);
+
+                return ensureBusinessModulesForPath(path).then(function (loaded) {
                     if (router && typeof router.navigate === 'function') {
-                        return router.navigate(path, { replace: true });
+                        return router.navigate(path, { replace: true }).then(function () {
+                            return loaded;
+                        });
                     }
-                    return null;
-                }).then(function () {
-                    var activeId = requestedId || 'identity';
+                    return loaded;
+                }).then(function (loaded) {
+                    var activeId = requestedId || null;
+                    var registered = loaded && loaded.length ? loaded.slice() : [];
                     ready('active-module', {
                         moduleId: activeId,
-                        registeredModules: order.slice()
+                        registeredModules: registered
                     });
                     try {
-                        root.document.documentElement.setAttribute('data-rateb-v2-active-module', activeId);
+                        if (activeId) {
+                            root.document.documentElement.setAttribute('data-rateb-v2-active-module', activeId);
+                        } else {
+                            root.document.documentElement.removeAttribute('data-rateb-v2-active-module');
+                        }
                         root.document.documentElement.setAttribute('data-rateb-v2-business-modules-ready', '1');
                     } catch (eAttr) { /* ignore */ }
                     return {
                         id: activeId,
-                        registeredModules: order.slice(),
+                        registeredModules: registered,
                         framework: fw,
                         platform: platform
                     };
