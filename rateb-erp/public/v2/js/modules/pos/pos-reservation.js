@@ -1,9 +1,8 @@
 /*!
- * RATEB Offline V2 — POS local stock reservation (Phase 6)
+ * RATEB Offline V2 — POS local stock reservation lifecycle (Phase 7)
  *
  * Entity: pos.stock_reservation on existing entity_row.
- * Reserves qty for completed local sales. Does not touch inv.*, start sync,
- * call APIs, or load Inventory BusinessModule.
+ * Create ACTIVE · Release ACTIVE→RELEASED. No inv.*, sync.start(), API, or Inventory module.
  */
 (function (root) {
     'use strict';
@@ -93,13 +92,29 @@
             });
         }
 
+        function markReleased(store, row, reason) {
+            if (!row || row.status === STATUS.RELEASED) {
+                return Promise.resolve(null);
+            }
+            var next = Object.assign({}, row, {
+                status: STATUS.RELEASED,
+                released_at: nowIso(),
+                release_reason: reason || 'released',
+                updated_at: nowIso()
+            });
+            return store.put(ET.reservation, next.id, next, Number(next.version || 1) + 1)
+                .then(function () {
+                    return next;
+                });
+        }
+
         /**
          * Create ACTIVE reservations for sale lines (POS-local only).
-         * Does not write inv.*, does not start sync.
          */
         function reserveForSale(idCtx, spec) {
             spec = spec || {};
             var saleId = String(spec.sale_id || '');
+            var draftId = spec.draft_id ? String(spec.draft_id) : null;
             var lines = spec.lines || [];
             if (!saleId) {
                 return Promise.reject(new Error('pos_reservation_sale_required'));
@@ -129,6 +144,7 @@
                             reservation_id: reservationId,
                             company_id: idCtx.company_id,
                             sale_id: saleId,
+                            draft_id: draftId,
                             product_id: String(line.product_id),
                             qty: qty,
                             warehouse_id: line.warehouse_id || spec.warehouse_id || null,
@@ -147,6 +163,7 @@
                     return {
                         ok: true,
                         sale_id: saleId,
+                        draft_id: draftId,
                         reservations: created,
                         reserved_count: created.length,
                         inventory_touched: false,
@@ -157,7 +174,28 @@
             });
         }
 
-        function releaseForSale(idCtx, saleId) {
+        function releaseReservation(idCtx, reservationId, reason) {
+            if (!reservationId) {
+                return Promise.reject(new Error('pos_reservation_id_required'));
+            }
+            return ensureStore().then(function (store) {
+                return store.get(ET.reservation, String(reservationId), idCtx.company_id).then(function (row) {
+                    if (!row || !row.payload) {
+                        return Promise.reject(new Error('pos_reservation_not_found'));
+                    }
+                    return markReleased(store, row.payload, reason || 'manual_release').then(function (released) {
+                        return {
+                            ok: true,
+                            released: released ? [released] : [],
+                            released_count: released ? 1 : 0,
+                            already_released: !released
+                        };
+                    });
+                });
+            });
+        }
+
+        function releaseForSale(idCtx, saleId, reason) {
             if (!saleId) {
                 return Promise.reject(new Error('pos_reservation_sale_required'));
             }
@@ -169,23 +207,53 @@
                         if (!row || String(row.sale_id) !== String(saleId)) {
                             return;
                         }
-                        if (row.status === STATUS.RELEASED) {
-                            return;
-                        }
                         chain = chain.then(function () {
-                            var next = Object.assign({}, row, {
-                                status: STATUS.RELEASED,
-                                released_at: nowIso(),
-                                updated_at: nowIso()
+                            return markReleased(store, row, reason || 'sale_release').then(function (r) {
+                                if (r) {
+                                    released.push(r);
+                                }
                             });
-                            return store.put(ET.reservation, next.id, next, Number(next.version || 1) + 1)
-                                .then(function () {
-                                    released.push(next);
-                                });
                         });
                     });
                     return chain.then(function () {
-                        return { ok: true, released: released, released_count: released.length };
+                        return {
+                            ok: true,
+                            sale_id: String(saleId),
+                            released: released,
+                            released_count: released.length
+                        };
+                    });
+                });
+            });
+        }
+
+        function releaseForDraft(idCtx, draftId, reason) {
+            if (!draftId) {
+                return Promise.reject(new Error('pos_reservation_draft_required'));
+            }
+            return ensureStore().then(function (store) {
+                return listAll(idCtx.company_id).then(function (rows) {
+                    var chain = Promise.resolve();
+                    var released = [];
+                    rows.forEach(function (row) {
+                        if (!row || String(row.draft_id || '') !== String(draftId)) {
+                            return;
+                        }
+                        chain = chain.then(function () {
+                            return markReleased(store, row, reason || 'cart_cancel').then(function (r) {
+                                if (r) {
+                                    released.push(r);
+                                }
+                            });
+                        });
+                    });
+                    return chain.then(function () {
+                        return {
+                            ok: true,
+                            draft_id: String(draftId),
+                            released: released,
+                            released_count: released.length
+                        };
                     });
                 });
             });
@@ -199,15 +267,61 @@
             });
         }
 
+        /**
+         * Find ACTIVE reservations that do not match a valid COMPLETED sale.
+         * saleById: map sale_id → sale payload (or null).
+         */
+        function findOrphanActive(companyId, saleById) {
+            saleById = saleById || Object.create(null);
+            return listActive(companyId).then(function (rows) {
+                return rows.filter(function (r) {
+                    var sale = saleById[String(r.sale_id)];
+                    if (!sale) {
+                        return true;
+                    }
+                    if (sale.status === 'CANCELLED') {
+                        return true;
+                    }
+                    if (sale.status !== 'COMPLETED') {
+                        return true;
+                    }
+                    return false;
+                });
+            });
+        }
+
+        function releaseMany(idCtx, reservationIds, reason) {
+            var ids = reservationIds || [];
+            var chain = Promise.resolve();
+            var released = [];
+            ids.forEach(function (id) {
+                chain = chain.then(function () {
+                    return releaseReservation(idCtx, id, reason).then(function (res) {
+                        if (res && res.released) {
+                            released = released.concat(res.released);
+                        }
+                    }).catch(function () { /* skip missing */ });
+                });
+            });
+            return chain.then(function () {
+                return { ok: true, released: released, released_count: released.length };
+            });
+        }
+
         return {
             ET: ET,
             STATUS: STATUS,
             ensureStore: ensureStore,
+            listAll: listAll,
             listActive: listActive,
             reservedByProduct: reservedByProduct,
             reserveForSale: reserveForSale,
+            releaseReservation: releaseReservation,
             releaseForSale: releaseForSale,
+            releaseForDraft: releaseForDraft,
+            releaseMany: releaseMany,
             listForSale: listForSale,
+            findOrphanActive: findOrphanActive,
             isStoreOpen: function () { return !!state.store; }
         };
     }

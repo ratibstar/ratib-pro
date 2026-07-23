@@ -420,6 +420,7 @@
                 });
                 return getReservation().reserveForSale(idCtx, {
                     sale_id: spec.sale_id,
+                    draft_id: spec.draft_id || null,
                     lines: enriched,
                     warehouse_id: spec.warehouse_id || null
                 }).then(function (res) {

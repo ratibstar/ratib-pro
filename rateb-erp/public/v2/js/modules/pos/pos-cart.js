@@ -1,10 +1,9 @@
 /*!
- * RATEB Offline V2 — POS local cart / draft / complete sale (Phase 4)
+ * RATEB Offline V2 — POS local cart / draft / complete / cancel (Phase 7)
  *
  * Entity types on existing entity_row:
  *   pos.sale_draft, pos.sale_line, pos.cart_session, pos.sale
- * Completing a sale enqueues CREATE_POS_SALE on the sync outbox locally.
- * No payment UI, no network push, no sync.start(), no inventory deduction.
+ * Cancel keeps draft/sale history. No inv.* writes, sync.start(), or network push.
  */
 (function (root) {
     'use strict';
@@ -23,7 +22,8 @@
 
     var STATUS = {
         OPEN: 'OPEN',
-        COMPLETED: 'COMPLETED'
+        COMPLETED: 'COMPLETED',
+        CANCELLED: 'CANCELLED'
     };
 
     var OUTBOX_OP = 'CREATE_POS_SALE';
@@ -563,6 +563,176 @@
             });
         }
 
+        function listDrafts(idCtx) {
+            return ensureStore().then(function (store) {
+                return store.list(ET.draft, idCtx.company_id).then(function (rows) {
+                    return (rows || []).map(function (r) { return r.payload; }).filter(Boolean);
+                });
+            });
+        }
+
+        function listSales(idCtx) {
+            return ensureStore().then(function (store) {
+                return store.list(ET.sale, idCtx.company_id).then(function (rows) {
+                    return (rows || []).map(function (r) { return r.payload; }).filter(Boolean);
+                });
+            });
+        }
+
+        function getActiveSession(idCtx) {
+            return ensureStore().then(function (store) {
+                return store.get(ET.session, 'active', idCtx.company_id).then(function (row) {
+                    return row && row.payload ? row.payload : null;
+                });
+            });
+        }
+
+        /**
+         * Cancel OPEN cart/draft: keep history as CANCELLED, clear active session.
+         * Caller should release reservations for draft_id.
+         */
+        function cancelCart(idCtx, reason) {
+            return ensureStore().then(function (store) {
+                return store.get(ET.session, 'active', idCtx.company_id).then(function (sess) {
+                    var draftId = sess && sess.payload && sess.payload.draft_id;
+                    if (!draftId) {
+                        return {
+                            ok: true,
+                            cancelled: false,
+                            draft: null,
+                            reason: 'no_active_draft'
+                        };
+                    }
+                    return store.get(ET.draft, String(draftId), idCtx.company_id).then(function (row) {
+                        if (!row || !row.payload) {
+                            return store.put(ET.session, 'active', {
+                                company_id: idCtx.company_id,
+                                draft_id: null,
+                                updated_at: nowIso()
+                            }, 1).then(function () {
+                                return { ok: true, cancelled: false, draft: null, reason: 'draft_missing' };
+                            });
+                        }
+                        var draft = row.payload;
+                        if (draft.status !== STATUS.OPEN) {
+                            return {
+                                ok: true,
+                                cancelled: false,
+                                draft: draft,
+                                reason: 'draft_not_open'
+                            };
+                        }
+                        return listLinesForDraft(store, idCtx.company_id, draft.id).then(function (lines) {
+                            var cancelledAt = nowIso();
+                            var next = Object.assign({}, draft, {
+                                status: STATUS.CANCELLED,
+                                cancelled_at: cancelledAt,
+                                cancel_reason: reason || 'cart_cancel',
+                                line_count: lines.length,
+                                updated_at: cancelledAt,
+                                audit: {
+                                    action: 'cart_cancel',
+                                    previous_status: STATUS.OPEN,
+                                    at: cancelledAt,
+                                    keep_history: true
+                                }
+                            });
+                            return store.put(ET.draft, next.id, next, Number(next.version || 1) + 1)
+                                .then(function () {
+                                    return store.put(ET.session, 'active', {
+                                        company_id: idCtx.company_id,
+                                        draft_id: null,
+                                        last_cancelled_draft_id: next.id,
+                                        updated_at: cancelledAt
+                                    }, 1);
+                                })
+                                .then(function () {
+                                    return {
+                                        ok: true,
+                                        cancelled: true,
+                                        draft: next,
+                                        draft_id: next.id,
+                                        lines: lines,
+                                        keep_history: true
+                                    };
+                                });
+                        });
+                    });
+                });
+            });
+        }
+
+        /**
+         * Cancel a local COMPLETED sale (unsynced only): audit + CANCELLED.
+         * Caller releases ACTIVE reservations for sale_id.
+         */
+        function cancelSale(idCtx, saleId, reason) {
+            if (!saleId) {
+                return Promise.reject(new Error('pos_sale_id_required'));
+            }
+            return ensureStore().then(function (store) {
+                return store.get(ET.sale, String(saleId), idCtx.company_id).then(function (row) {
+                    if (!row || !row.payload) {
+                        return Promise.reject(new Error('pos_sale_not_found'));
+                    }
+                    var sale = row.payload;
+                    if (sale.status === STATUS.CANCELLED) {
+                        return {
+                            ok: true,
+                            cancelled: false,
+                            sale: sale,
+                            reason: 'already_cancelled',
+                            release_allowed: false
+                        };
+                    }
+                    if (sale.status !== STATUS.COMPLETED) {
+                        return Promise.reject(new Error('pos_sale_cancel_not_allowed'));
+                    }
+                    if (sale.synced === true) {
+                        return Promise.reject(new Error('pos_sale_synced_locked'));
+                    }
+                    var cancelledAt = nowIso();
+                    var next = Object.assign({}, sale, {
+                        status: STATUS.CANCELLED,
+                        cancelled_at: cancelledAt,
+                        cancel_reason: reason || 'sale_cancel',
+                        previous_status: STATUS.COMPLETED,
+                        updated_at: cancelledAt,
+                        audit: {
+                            action: 'sale_cancel',
+                            previous_status: STATUS.COMPLETED,
+                            at: cancelledAt,
+                            reservations_release_allowed: true
+                        }
+                    });
+                    return store.put(ET.sale, next.id, next, Number(next.version || 1) + 1).then(function () {
+                        return {
+                            ok: true,
+                            cancelled: true,
+                            sale: next,
+                            sale_id: next.id,
+                            release_allowed: true,
+                            keep_history: true
+                        };
+                    });
+                });
+            });
+        }
+
+        /**
+         * OPEN drafts that are not the active session cart (abandoned).
+         */
+        function listAbandonedDrafts(idCtx) {
+            return Promise.all([listDrafts(idCtx), getActiveSession(idCtx)]).then(function (parts) {
+                var drafts = parts[0] || [];
+                var sess = parts[1];
+                var activeId = sess && sess.draft_id ? String(sess.draft_id) : null;
+                return drafts.filter(function (d) {
+                    return d && d.status === STATUS.OPEN && String(d.id) !== activeId;
+                });
+            });
+        }
+
         return {
             ET: ET,
             STATUS: STATUS,
@@ -577,6 +747,12 @@
             completeDraftPlaceholder: completeDraftPlaceholder,
             getSale: getSale,
             getLastCompletedSale: getLastCompletedSale,
+            listDrafts: listDrafts,
+            listSales: listSales,
+            getActiveSession: getActiveSession,
+            cancelCart: cancelCart,
+            cancelSale: cancelSale,
+            listAbandonedDrafts: listAbandonedDrafts,
             isStoreOpen: function () { return !!state.store; }
         };
     }

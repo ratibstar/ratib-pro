@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v14';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v15';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -766,7 +766,7 @@
             {
                 id: 'pos',
                 title: 'POS',
-                routes: ['/pos', '/pos/product', '/pos/cart', '/pos/checkout', '/pos/stock', '/pos/sales', '/pos/settings'],
+                routes: ['/pos', '/pos/product', '/pos/cart', '/pos/checkout', '/pos/stock', '/pos/recovery', '/pos/sales', '/pos/settings'],
                 script: './js/modules/pos/pos-module.js',
                 scripts: [
                     './js/modules/pos/pos-catalog.js',

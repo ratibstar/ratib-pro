@@ -1,9 +1,9 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 6 Reservation)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 7 Reservation Lifecycle)
  *
- * Local catalog + cart + complete sale + outbox + stock snapshot + local reservations.
+ * Local catalog + cart + complete/cancel + outbox + stock + reservation recovery.
  * No payment/receipt/network push/inv.* writes. sync.start() never called.
- * register/activate do not open DB; stock/cart/checkout open on demand.
+ * register/activate do not open DB synchronously; recovery scan is deferred/lazy.
  * Does not load Inventory BusinessModule. Online ERP = Authentication Authority (AF 2.1).
  */
 (function (root) {
@@ -15,7 +15,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.6.0-phase6-reservation';
+    var POS_VERSION = '0.7.0-phase7-recovery';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -27,7 +27,7 @@
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — local stock reservation (no Inventory module).',
+            description: 'Offline V2 POS — reservation lifecycle + recovery (no Inventory module).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -35,7 +35,8 @@
             permissions: ['ui.contribute', 'services.register', 'db.read', 'sync.enqueue'],
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
-                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock', 'pos.reservation'
+                'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock',
+                'pos.reservation', 'pos.recovery'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -52,6 +53,7 @@
                 { id: 'pos.cart', path: '/pos/cart', title: 'POS Cart' },
                 { id: 'pos.checkout', path: '/pos/checkout', title: 'POS Checkout' },
                 { id: 'pos.stock', path: '/pos/stock', title: 'POS Stock' },
+                { id: 'pos.recovery', path: '/pos/recovery', title: 'POS Recovery' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
@@ -71,6 +73,8 @@
         this._stock = null;
         this._selectedProductId = null;
         this._lastCompleted = null;
+        this._recoveryReport = null;
+        this._recoveryScanPromise = null;
         this._catalogUi = {
             q: '',
             category_id: ''
@@ -275,6 +279,7 @@
                     .then(function (stockCheck) {
                         return self._getStock().reserveForSale(idCtx, {
                             sale_id: saleId,
+                            draft_id: cart.draft && cart.draft.id,
                             lines: cart.lines || []
                         }).then(function (reservation) {
                             var reservationIds = (reservation.reservations || []).map(function (r) {
@@ -319,6 +324,193 @@
         return this.completeSale();
     };
 
+    PosModule.prototype.cancelCart = function (reason) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getCart().cancelCart(idCtx, reason || 'cart_cancel').then(function (cancelled) {
+                var draftId = cancelled && cancelled.draft_id;
+                var releaseP = draftId
+                    ? self._getStock().getReservation().releaseForDraft(idCtx, draftId, 'cart_cancel')
+                    : Promise.resolve({ ok: true, released_count: 0, released: [] });
+                return releaseP.then(function (released) {
+                    self._recoveryReport = null;
+                    return {
+                        ok: true,
+                        cancelled: !!(cancelled && cancelled.cancelled),
+                        draft: cancelled && cancelled.draft,
+                        draft_id: draftId || null,
+                        keep_history: true,
+                        reservations_released: released.released_count || 0,
+                        released: released.released || [],
+                        inventory_touched: false,
+                        sync_started: false
+                    };
+                });
+            });
+        });
+    };
+
+    PosModule.prototype.cancelSale = function (saleId, reason) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getCart().cancelSale(idCtx, saleId, reason || 'sale_cancel').then(function (cancelled) {
+                if (!cancelled.release_allowed) {
+                    return {
+                        ok: true,
+                        cancelled: !!(cancelled && cancelled.cancelled),
+                        sale: cancelled.sale,
+                        reservations_released: 0,
+                        release_allowed: false,
+                        reason: cancelled.reason || null
+                    };
+                }
+                return self._getStock().getReservation()
+                    .releaseForSale(idCtx, saleId, reason || 'sale_cancel')
+                    .then(function (released) {
+                        self._recoveryReport = null;
+                        if (self._lastCompleted && self._lastCompleted.sale_id === saleId) {
+                            self._lastCompleted = null;
+                        }
+                        return {
+                            ok: true,
+                            cancelled: true,
+                            sale: cancelled.sale,
+                            sale_id: saleId,
+                            release_allowed: true,
+                            reservations_released: released.released_count || 0,
+                            released: released.released || [],
+                            audit: cancelled.sale && cancelled.sale.audit,
+                            inventory_touched: false,
+                            sync_started: false
+                        };
+                    });
+            });
+        });
+    };
+
+    PosModule.prototype.releaseReservation = function (reservationId, reason) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getStock().getReservation()
+                .releaseReservation(idCtx, reservationId, reason || 'manual_release')
+                .then(function (res) {
+                    self._recoveryReport = null;
+                    return res;
+                });
+        });
+    };
+
+    PosModule.prototype.scanRecovery = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            var cart = self._getCart();
+            var resApi = self._getStock().getReservation();
+            return Promise.all([
+                cart.listAbandonedDrafts(idCtx),
+                cart.listSales(idCtx),
+                cart.getActiveSession(idCtx),
+                resApi.listActive(idCtx.company_id),
+                cart.listDrafts(idCtx)
+            ]).then(function (parts) {
+                var abandoned = parts[0] || [];
+                var sales = parts[1] || [];
+                var session = parts[2];
+                var activeRes = parts[3] || [];
+                var drafts = parts[4] || [];
+                var saleById = Object.create(null);
+                sales.forEach(function (s) {
+                    if (s && s.id) {
+                        saleById[String(s.id)] = s;
+                    }
+                });
+                var orphanReservations = activeRes.filter(function (r) {
+                    var sale = saleById[String(r.sale_id)];
+                    if (!sale) {
+                        return true;
+                    }
+                    return sale.status !== 'COMPLETED';
+                });
+                var openDrafts = drafts.filter(function (d) {
+                    return d && d.status === 'OPEN';
+                });
+                var report = {
+                    ok: true,
+                    scanned_at: new Date().toISOString(),
+                    active_draft_id: session && session.draft_id || null,
+                    abandoned_carts: abandoned,
+                    abandoned_count: abandoned.length,
+                    open_draft_count: openDrafts.length,
+                    active_reservations: activeRes,
+                    active_reservation_count: activeRes.length,
+                    orphan_reservations: orphanReservations,
+                    orphan_count: orphanReservations.length,
+                    completed_sales: sales.filter(function (s) {
+                        return s && s.status === 'COMPLETED';
+                    }).length,
+                    inventory_touched: false,
+                    sync_started: false
+                };
+                self._recoveryReport = report;
+                return report;
+            });
+        });
+    };
+
+    PosModule.prototype.runRecoveryCleanup = function () {
+        var self = this;
+        return this.scanRecovery().then(function (report) {
+            return self._gate().then(function (idCtx) {
+                var resApi = self._getStock().getReservation();
+                var orphanIds = (report.orphan_reservations || []).map(function (r) {
+                    return r.reservation_id || r.id;
+                });
+                var cart = self._getCart();
+                var chain = Promise.resolve();
+                var cancelledDrafts = [];
+                (report.abandoned_carts || []).forEach(function (draft) {
+                    chain = chain.then(function () {
+                        /* Mark abandoned OPEN draft CANCELLED (history kept). */
+                        return cart.ensureStore().then(function (store) {
+                            var next = Object.assign({}, draft, {
+                                status: 'CANCELLED',
+                                cancelled_at: new Date().toISOString(),
+                                cancel_reason: 'recovery_abandoned',
+                                updated_at: new Date().toISOString(),
+                                audit: {
+                                    action: 'recovery_abandoned',
+                                    previous_status: 'OPEN',
+                                    at: new Date().toISOString(),
+                                    keep_history: true
+                                }
+                            });
+                            return store.put('pos.sale_draft', next.id, next, Number(next.version || 1) + 1)
+                                .then(function () {
+                                    cancelledDrafts.push(next.id);
+                                    return resApi.releaseForDraft(idCtx, next.id, 'recovery_abandoned');
+                                });
+                        });
+                    });
+                });
+                return chain.then(function () {
+                    return resApi.releaseMany(idCtx, orphanIds, 'recovery_orphan');
+                }).then(function (released) {
+                    return self.scanRecovery().then(function (after) {
+                        return {
+                            ok: true,
+                            cancelled_abandoned_drafts: cancelledDrafts,
+                            reservations_released: released.released_count || 0,
+                            released: released.released || [],
+                            report_before: report,
+                            report_after: after,
+                            inventory_touched: false,
+                            sync_started: false
+                        };
+                    });
+                });
+            });
+        });
+    };
+
     PosModule.prototype.getLastCompletedSale = function () {
         var self = this;
         if (self._lastCompleted && self._lastCompleted.sale) {
@@ -349,11 +541,14 @@
                 inventoryDeduction: false,
                 inventoryModuleRequired: false,
                 localReservation: true,
+                recovery: true,
                 syncStart: false,
                 catalogStoreOpen: !!(self._catalog && self._catalog.isStoreOpen()),
                 cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
                 stockStoreOpen: !!(self._stock && self._stock.isStoreOpen()),
-                lastSaleId: self._lastCompleted && self._lastCompleted.sale_id || null
+                lastSaleId: self._lastCompleted && self._lastCompleted.sale_id || null,
+                recoveryAbandoned: self._recoveryReport ? self._recoveryReport.abandoned_count : null,
+                recoveryOrphans: self._recoveryReport ? self._recoveryReport.orphan_count : null
             };
         });
         self.exposeService('gate', function () {
@@ -404,7 +599,25 @@
         self.exposeService('checkCartStock', function () {
             return self.checkCartStock();
         });
-        self.reportHealth('initialize', true, 'pos_stock_ready');
+        self.exposeService('cancelCart', function (reason) {
+            return self.cancelCart(reason);
+        });
+        self.exposeService('cancelSale', function (saleId, reason) {
+            return self.cancelSale(saleId, reason);
+        });
+        self.exposeService('releaseReservation', function (reservationId, reason) {
+            return self.releaseReservation(reservationId, reason);
+        });
+        self.exposeService('scanRecovery', function () {
+            return self.scanRecovery();
+        });
+        self.exposeService('runRecoveryCleanup', function () {
+            return self.runRecoveryCleanup();
+        });
+        self.exposeService('getRecoveryReport', function () {
+            return self._recoveryReport;
+        });
+        self.reportHealth('initialize', true, 'pos_recovery_ready');
         return Promise.resolve();
     };
 
@@ -413,10 +626,11 @@
         this.contributeNav({ label: 'POS Cart', path: '/pos/cart', title: 'POS Cart' });
         this.contributeNav({ label: 'POS Checkout', path: '/pos/checkout', title: 'POS Checkout' });
         this.contributeNav({ label: 'POS Stock', path: '/pos/stock', title: 'POS Stock' });
+        this.contributeNav({ label: 'POS Recovery', path: '/pos/recovery', title: 'POS Recovery' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local sale + read-only stock snapshot — no Inventory module'
+            description: 'Local sale + reservation lifecycle + recovery — no Inventory module'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -433,7 +647,8 @@
     };
 
     PosModule.prototype.onActivate = function (ctx) {
-        /* UI prep only — do not open catalog/cart/stock stores. */
+        var self = this;
+        /* Sync path: UI prep only — no DB open. Deferred recovery scan is lazy. */
         if (ctx && ctx.events) {
             ctx.events.emit('pos:ready', {
                 version: POS_VERSION,
@@ -444,10 +659,27 @@
                 payment: false,
                 sales_logic: true,
                 sync_start: false,
-                inventory_module: false
+                inventory_module: false,
+                recovery_deferred: true
             });
         }
-        this.reportHealth('activate', true, 'ready');
+        self.reportHealth('activate', true, 'ready');
+        if (!self._recoveryScanPromise) {
+            self._recoveryScanPromise = Promise.resolve().then(function () {
+                return self.scanRecovery().catch(function () {
+                    return null;
+                });
+            }).then(function (report) {
+                if (report && ctx && ctx.events) {
+                    ctx.events.emit('pos:recovery:scanned', {
+                        abandoned_count: report.abandoned_count,
+                        orphan_count: report.orphan_count,
+                        active_reservation_count: report.active_reservation_count
+                    });
+                }
+                return report;
+            });
+        }
         return Promise.resolve();
     };
 
@@ -686,6 +918,18 @@
                 self._navigate('/pos/checkout');
             });
             host.appendChild(toCheckout);
+            var cancelBtn = self._el('button', 'Cancel cart', {
+                type: 'button',
+                'data-pos-cancel-cart': '1'
+            });
+            cancelBtn.addEventListener('click', function () {
+                self.cancelCart('cart_cancel').then(function () {
+                    return self._getCart().getCart(idCtx).then(paint);
+                }).catch(function (err) {
+                    host.appendChild(self._el('p', String(err && err.message ? err.message : err)));
+                });
+            });
+            host.appendChild(cancelBtn);
             return self._getStock().checkLines(idCtx.company_id, cart.lines || []).then(function (check) {
                 if (check && check.warnings && check.warnings.length) {
                     var warn = self._el('div', null, { 'data-pos-stock-warn': '1' });
@@ -759,6 +1003,108 @@
         });
     };
 
+    PosModule.prototype._renderRecovery = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/recovery');
+        outlet.setAttribute('data-pos-view', 'recovery');
+        outlet.appendChild(self._el('h3', 'POS Recovery'));
+        outlet.appendChild(self._el('p',
+            'Abandoned carts + ACTIVE reservations · release locally · inv.* untouched · company=' +
+            idCtx.company_id));
+
+        var nav = self._el('div');
+        var toStock = self._el('button', 'Stock', { type: 'button' });
+        toStock.addEventListener('click', function () { self._navigate('/pos/stock'); });
+        var toCart = self._el('button', 'Cart', { type: 'button' });
+        toCart.addEventListener('click', function () { self._navigate('/pos/cart'); });
+        nav.appendChild(toStock);
+        nav.appendChild(toCart);
+        outlet.appendChild(nav);
+
+        var host = self._el('div', null, { 'data-pos-recovery-host': '1' });
+        outlet.appendChild(host);
+
+        function paint(report) {
+            host.textContent = '';
+            host.setAttribute('data-abandoned', String(report.abandoned_count || 0));
+            host.setAttribute('data-active-rsv', String(report.active_reservation_count || 0));
+            host.setAttribute('data-orphan-rsv', String(report.orphan_count || 0));
+
+            host.appendChild(self._el('h4', 'Abandoned carts (' + (report.abandoned_count || 0) + ')'));
+            if (!(report.abandoned_carts || []).length) {
+                host.appendChild(self._el('p', 'None.'));
+            } else {
+                var ul = self._el('ul');
+                (report.abandoned_carts || []).forEach(function (d) {
+                    ul.appendChild(self._el('li',
+                        d.id + ' · status=' + d.status +
+                        ' · lines=' + (d.line_count || 0) +
+                        ' · updated=' + (d.updated_at || '')));
+                });
+                host.appendChild(ul);
+            }
+
+            host.appendChild(self._el('h4',
+                'Active reservations (' + (report.active_reservation_count || 0) + ')'));
+            if (!(report.active_reservations || []).length) {
+                host.appendChild(self._el('p', 'None.'));
+            } else {
+                var rul = self._el('ul');
+                (report.active_reservations || []).forEach(function (r) {
+                    var li = self._el('li', null, {
+                        'data-reservation-id': r.reservation_id || r.id
+                    });
+                    li.appendChild(self._el('span',
+                        (r.reservation_id || r.id) +
+                        ' · product=' + r.product_id +
+                        ' · qty=' + r.qty +
+                        ' · sale=' + r.sale_id +
+                        ' · status=' + r.status));
+                    var rel = self._el('button', 'Release', { type: 'button' });
+                    rel.addEventListener('click', function () {
+                        self.releaseReservation(r.reservation_id || r.id, 'manual_release')
+                            .then(function () { return self.scanRecovery(); })
+                            .then(paint);
+                    });
+                    li.appendChild(rel);
+                    rul.appendChild(li);
+                });
+                host.appendChild(rul);
+            }
+
+            host.appendChild(self._el('h4', 'Orphan reservations (' + (report.orphan_count || 0) + ')'));
+            host.appendChild(self._el('p',
+                'ACTIVE without valid COMPLETED sale — cleanup releases these.'));
+
+            var cleanup = self._el('button', 'Run recovery cleanup', {
+                type: 'button',
+                'data-pos-recovery-cleanup': '1'
+            });
+            var msg = self._el('p', '', { 'data-pos-recovery-msg': '1' });
+            cleanup.addEventListener('click', function () {
+                msg.textContent = 'Cleaning…';
+                self.runRecoveryCleanup().then(function (res) {
+                    msg.textContent = 'Released ' + (res.reservations_released || 0) +
+                        ' · abandoned cancelled ' + (res.cancelled_abandoned_drafts || []).length;
+                    paint(res.report_after);
+                }).catch(function (err) {
+                    msg.textContent = String(err && err.message ? err.message : err);
+                });
+            });
+            host.appendChild(cleanup);
+            host.appendChild(msg);
+
+            var refresh = self._el('button', 'Rescan', { type: 'button' });
+            refresh.addEventListener('click', function () {
+                self.scanRecovery().then(paint);
+            });
+            host.appendChild(refresh);
+        }
+
+        return self.scanRecovery().then(paint);
+    };
+
     PosModule.prototype._renderCheckout = function (outlet, idCtx) {
         var self = this;
         outlet.textContent = '';
@@ -812,6 +1158,21 @@
                         a.product_id + ' · reserved=' + a.reserved_qty +
                         ' · available_after=' + a.available_after_reservation));
                 });
+                var cancelSaleBtn = self._el('button', 'Cancel this sale', {
+                    type: 'button',
+                    'data-pos-cancel-sale': '1'
+                });
+                cancelSaleBtn.addEventListener('click', function () {
+                    self.cancelSale(result.sale_id, 'sale_cancel').then(function (c) {
+                        host.appendChild(self._el('p',
+                            'Sale cancelled · reservations released=' +
+                            (c.reservations_released || 0)));
+                    }).catch(function (err) {
+                        host.appendChild(self._el('p',
+                            String(err && err.message ? err.message : err)));
+                    });
+                });
+                host.appendChild(cancelSaleBtn);
             }
             if (result.stock_warnings && result.stock_warnings.length) {
                 host.appendChild(self._el('p',
@@ -964,6 +1325,9 @@
                     if (path === '/pos/stock') {
                         return self._renderStock(outlet, idCtx);
                     }
+                    if (path === '/pos/recovery') {
+                        return self._renderRecovery(outlet, idCtx);
+                    }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
                         return null;
@@ -1000,6 +1364,8 @@
         base.sqlite_tables_added = false;
         base.outbox_operation = 'CREATE_POS_SALE';
         base.local_reservation = true;
+        base.reservation_lifecycle = true;
+        base.recovery = true;
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
