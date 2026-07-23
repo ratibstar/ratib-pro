@@ -84,3 +84,5 @@ php rateb-erp/modules/subscription/tests/SubscriptionAdminPhase9Test.php
 1. Deploy code  
 2. Run migration `215_subscription_admin_permissions.sql`  
 3. Open **Admin oversight → Subscription Engine**
+
+Deploy marker: Phase 9 shipped on `main` (subscription-engine admin console).
