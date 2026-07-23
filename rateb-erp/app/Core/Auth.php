@@ -11,6 +11,9 @@ use Rateb\App\Services\RememberMeService;
 final class Auth
 {
     private static ?string $lastLoginFailureReason = null;
+    /** @var array<string, mixed>|null|false false = unset */
+    private static $userCache = false;
+    private static ?int $userCacheId = null;
 
     public static function consumeLoginFailureReason(): ?string
     {
@@ -138,6 +141,8 @@ final class Auth
         SessionManager::set('rateb_is_super_admin', $isSuper);
         SessionManager::set('rateb_portal', $portal);
         SessionManager::set('rateb_user_email', (string) ($user['email'] ?? ''));
+        self::$userCacheId = (int) $user['id'];
+        self::$userCache = $user;
         SessionManager::set('rateb_user_display', (string) ($user['name'] ?? $user['display_name'] ?? ''));
         TenantContext::setSuperAdmin($isSuper);
         TenantContext::setCompanyId($companyId > 0 ? $companyId : null);
@@ -245,9 +250,18 @@ final class Auth
     {
         $id = SessionManager::get('rateb_user_id');
         if (!$id) {
+            self::$userCache = null;
+            self::$userCacheId = null;
             return null;
         }
-        return (new User())->find((int) $id);
+        $id = (int) $id;
+        if (self::$userCacheId === $id && self::$userCache !== false) {
+            return is_array(self::$userCache) ? self::$userCache : null;
+        }
+        self::$userCacheId = $id;
+        $found = (new User())->find($id);
+        self::$userCache = is_array($found) ? $found : null;
+        return self::$userCache;
     }
 
     public static function check(): bool
@@ -255,8 +269,15 @@ final class Auth
         return self::user() !== null;
     }
 
+    public static function clearUserCache(): void
+    {
+        self::$userCache = false;
+        self::$userCacheId = null;
+    }
+
     public static function logout(): void
     {
+        self::clearUserCache();
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId > 0) {
             (new RememberMeService())->revokeAllForUser($userId);

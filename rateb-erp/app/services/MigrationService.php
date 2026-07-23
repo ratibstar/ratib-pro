@@ -157,6 +157,11 @@ final class MigrationService
             return $localLog;
         }
 
+        // Web requests: ONLY the live ERP DB. Multi-candidate openMigrationPdo
+        // was connecting to every agency DB on first admin hit of the day and
+        // hung /admin for tens of seconds (blank tab until TTFB).
+        $webOnly = PHP_SAPI !== 'cli';
+
         $checked = [];
         try {
             $live = Database::connection();
@@ -168,6 +173,11 @@ final class MigrationService
             }
         } catch (\Throwable $e) {
             $log[] = 'Branch schema live check skipped: ' . $e->getMessage();
+        }
+
+        if ($webOnly) {
+            Database::clearColumnCache();
+            return $localLog;
         }
 
         $candidates = function_exists('rateb_erp_database_candidates')

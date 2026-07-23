@@ -104,7 +104,7 @@ if (!function_exists('rateb_tenant_permission_catalog_locked')) {
 }
 
 if (!function_exists('rateb_ensure_erp_branch_schema')) {
-    /** Idempotent branch_id catchup — once per PHP request, once per session/day. */
+    /** Idempotent branch_id catchup — once per PHP request, once per session/day. Live DB only on web. */
     function rateb_ensure_erp_branch_schema(): void
     {
         static $ran = false;
@@ -116,9 +116,10 @@ if (!function_exists('rateb_ensure_erp_branch_schema')) {
         if (\Rateb\App\Core\SessionManager::get('rateb_branch_schema_ok') === $day) {
             return;
         }
+        // Mark early so concurrent tabs do not all run SHOW COLUMNS / ALTERs.
+        \Rateb\App\Core\SessionManager::set('rateb_branch_schema_ok', $day);
         try {
             (new \Rateb\App\Services\MigrationService())->repairBranchOpsSchemaIfNeeded();
-            \Rateb\App\Core\SessionManager::set('rateb_branch_schema_ok', $day);
         } catch (\Throwable $e) {
             error_log('rateb_ensure_erp_branch_schema: ' . $e->getMessage());
         }
@@ -145,7 +146,8 @@ if (!function_exists('rateb_ensure_agency_schema_once')) {
         }
         try {
             $migration = new \Rateb\App\Services\MigrationService();
-            if ($migration->hasPending()) {
+            // Never runAll() on a web request — pending migrations can block /admin for minutes.
+            if (PHP_SAPI === 'cli' && $migration->hasPending()) {
                 $migration->runAll();
             } else {
                 $migration->repairMarketingPlansCanonicalIfNeeded();
@@ -206,6 +208,7 @@ if (!function_exists('rateb_is_agency_company_ops_admin')) {
     /** Primary company admin — agency, dedicated, or main SaaS tenant (full-access / access-manager). */
     function rateb_is_agency_company_ops_admin(?int $userId = null): bool
     {
+        static $cache = [];
         if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled()) {
             return false;
         }
@@ -216,20 +219,23 @@ if (!function_exists('rateb_is_agency_company_ops_admin')) {
         if ($userId < 1) {
             return false;
         }
+        if (array_key_exists($userId, $cache)) {
+            return $cache[$userId];
+        }
         try {
             $user = (new \Rateb\App\Models\User())->find($userId);
             if (!$user || !empty($user['is_super_admin'])) {
-                return false;
+                return $cache[$userId] = false;
             }
             $companyId = (int) ($user['company_id'] ?? 0);
             if ($companyId < 1) {
                 $email = strtolower(trim((string) ($user['email'] ?? '')));
                 $name = strtolower(trim((string) ($user['name'] ?? '')));
                 if ($email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+')) {
-                    return true;
+                    return $cache[$userId] = true;
                 }
 
-                return false;
+                return $cache[$userId] = false;
             }
             $row = (new \Rateb\App\Models\Role())->queryOne(
                 "SELECT 1 FROM rateb_user_roles ur
@@ -240,13 +246,13 @@ if (!function_exists('rateb_is_agency_company_ops_admin')) {
                 ['uid' => $userId, 'cid' => $companyId]
             );
             if ($row !== null) {
-                return true;
+                return $cache[$userId] = true;
             }
         } catch (\Throwable $e) {
             error_log('rateb_is_agency_company_ops_admin: ' . $e->getMessage());
         }
 
-        return false;
+        return $cache[$userId] = false;
     }
 }
 
