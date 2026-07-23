@@ -523,6 +523,42 @@
             flags[name] = !!value;
         }
 
+        /**
+         * Fix6: mount a one-shot message route (identity gate) without a BusinessModule.
+         * Does not bypass guards — navigate() still runs beforeEach / requiresFlag.
+         */
+        function mountMessageRoute(path, msgOpts) {
+            msgOpts = msgOpts || {};
+            var p = normalizePath(path);
+            var id = msgOpts.id || ('msg.' + p.replace(/[^\w]+/g, '_'));
+            if (registry[id]) {
+                unregisterRoute(id);
+            }
+            registerRoute({
+                id: id,
+                path: p,
+                title: msgOpts.title || id,
+                handler: id,
+                meta: msgOpts.meta || { messageRoute: true }
+            }, {
+                init: function () { return Promise.resolve(); },
+                mount: function (outlet) {
+                    if (outlet) {
+                        outlet.textContent = msgOpts.message != null ? String(msgOpts.message) : '';
+                        if (msgOpts.dataAttrs && typeof msgOpts.dataAttrs === 'object') {
+                            Object.keys(msgOpts.dataAttrs).forEach(function (key) {
+                                outlet.setAttribute(key, String(msgOpts.dataAttrs[key]));
+                            });
+                        }
+                    }
+                    return Promise.resolve();
+                },
+                unmount: function () { return Promise.resolve(); },
+                dispose: function () { return Promise.resolve(); }
+            });
+            return id;
+        }
+
         var api = {
             version: ROUTER_VERSION,
             init: init,
@@ -530,6 +566,7 @@
             completeInitialNavigation: completeInitialNavigation,
             isInitialNavigationDeferred: isInitialNavigationDeferred,
             getPendingStartPath: getPendingStartPath,
+            mountMessageRoute: mountMessageRoute,
             dispose: dispose,
             beforeEach: beforeEach,
             setFlag: setFlag,

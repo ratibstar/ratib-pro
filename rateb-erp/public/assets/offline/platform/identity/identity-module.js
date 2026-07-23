@@ -584,6 +584,32 @@
         });
     };
 
+    /**
+     * Fix6: lightweight readiness probe (session + claims only).
+     * Does not change enrollment rules — enrolled still means company_id present.
+     * Separates bootstrap/check from Identity UI/route features.
+     */
+    IdentityModule.prototype.checkReadiness = function () {
+        var self = this;
+        return Promise.all([
+            self.getLocalSession(),
+            self.getClaims()
+        ]).then(function (parts) {
+            var session = parts[0] || { unlocked: false };
+            var claims = parts[1] || null;
+            var enrolled = !!(claims && claims.company_id);
+            return {
+                ok: true,
+                enrolled: enrolled,
+                unlocked: !!(session && session.unlocked),
+                session: session,
+                claims: claims,
+                authority: 'online_erp',
+                stores_credentials: false
+            };
+        });
+    };
+
     IdentityModule.prototype.getRbacSnapshot = function () {
         return this._ensureStore().then(function (store) {
             return store.getRbac();
@@ -686,6 +712,9 @@
             });
             self.exposeService('claims', function () {
                 return self.getClaims();
+            });
+            self.exposeService('checkReadiness', function () {
+                return self.checkReadiness();
             });
             self.exposeService('rbac', function () {
                 return self.getRbacSnapshot();
@@ -1012,6 +1041,32 @@
         return new IdentityModule();
     }
 
+    /**
+     * Fix6: published readiness check — prefers active module service, else fails closed.
+     * Callers must activate Identity before relying on this (boot does that).
+     */
+    function checkReadiness() {
+        try {
+            if (Business && typeof Business.invokePublished === 'function') {
+                return Business.invokePublished('identity', 'checkReadiness').then(function (ready) {
+                    return ready || { ok: false, enrolled: false, unlocked: false };
+                });
+            }
+        } catch (eInvoke) { /* fall through */ }
+        try {
+            var services = root.RatebOfflineV2Runtime && root.RatebOfflineV2Runtime.services;
+            if (services && typeof services.get === 'function' && services.has('module.identity.checkReadiness')) {
+                return Promise.resolve(services.get('module.identity.checkReadiness')());
+            }
+        } catch (eSvc) { /* fall through */ }
+        return Promise.resolve({
+            ok: false,
+            enrolled: false,
+            unlocked: false,
+            reason: 'identity_not_ready'
+        });
+    }
+
     root.RatebOfflineV2Identity = {
         __locked: true,
         version: IDENTITY_VERSION,
@@ -1019,6 +1074,7 @@
         IdentityModule: IdentityModule,
         create: createIdentityModule,
         createSyntheticEnrollment: createSyntheticEnrollment,
+        checkReadiness: checkReadiness,
         runSelfTest: runSelfTest,
         forbiddenKeys: FORBIDDEN_KEYS.slice()
     };

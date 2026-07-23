@@ -770,6 +770,33 @@
         var businessActivateState = Object.create(null);
         var businessEnsureTail = Promise.resolve();
         var lazyNavigateWrapped = false;
+        /*
+         * Gate copy must match BusinessModule createRouteHandler catch text + error codes.
+         * Do not soften or rename codes — security/UX contract.
+         */
+        var IDENTITY_GATE_BY_MODULE = {
+            inventory: { title: 'Inventory', code: 'inv_identity_not_enrolled' },
+            procurement: { title: 'Procurement', code: 'proc_identity_not_enrolled' },
+            sales: { title: 'Sales', code: 'sales_identity_not_enrolled' },
+            accounting: { title: 'Accounting', code: 'accounting_identity_not_enrolled' },
+            crm: { title: 'CRM', code: 'crm_identity_not_enrolled' },
+            hr: { title: 'HR', code: 'hr_identity_not_enrolled' },
+            mfg: { title: 'MFG', code: 'mfg_identity_not_enrolled' }
+        };
+
+        function identityGateMeta(moduleId) {
+            return moduleId && IDENTITY_GATE_BY_MODULE[moduleId]
+                ? IDENTITY_GATE_BY_MODULE[moduleId]
+                : null;
+        }
+
+        function identityGateMessage(moduleId) {
+            var meta = identityGateMeta(moduleId);
+            if (!meta) {
+                return null;
+            }
+            return meta.title + ': ' + meta.code;
+        }
 
         function resolveModuleLoadOrder(targetId) {
             var order = [];
@@ -937,6 +964,120 @@
             return businessEnsureTail;
         }
 
+        /**
+         * Fix6: activate Identity only, then probe enrollment — before other modules.
+         */
+        function bootstrapIdentityReadiness() {
+            return ensureBusinessFramework().then(function (fw) {
+                return loadAndActivateBusinessModule(fw, 'identity').then(function () {
+                    var api = root.RatebOfflineV2Identity;
+                    if (api && typeof api.checkReadiness === 'function') {
+                        return api.checkReadiness();
+                    }
+                    return root.RatebOfflineV2Business.invokePublished('identity', 'checkReadiness');
+                });
+            }).then(function (ready) {
+                return ready || { ok: false, enrolled: false, unlocked: false };
+            }).catch(function () {
+                /* Fail closed — same as not enrolled for business routes. */
+                return { ok: false, enrolled: false, unlocked: false, reason: 'identity_check_failed' };
+            });
+        }
+
+        function clearIdentityGateRoute(router, moduleId) {
+            if (!router || !moduleId || typeof router.unregisterRoute !== 'function') {
+                return;
+            }
+            try {
+                router.unregisterRoute('identity.gate.' + moduleId);
+            } catch (eClear) { /* ignore */ }
+        }
+
+        function installIdentityGateRoute(router, path, moduleId) {
+            var meta = identityGateMeta(moduleId);
+            if (!router || !meta) {
+                return null;
+            }
+            var message = identityGateMessage(moduleId);
+            var norm = router.normalizePath ? router.normalizePath(path) : path;
+            removeLazyModuleStub(router, moduleId);
+            clearIdentityGateRoute(router, moduleId);
+            if (typeof router.mountMessageRoute === 'function') {
+                return router.mountMessageRoute(norm, {
+                    id: 'identity.gate.' + moduleId,
+                    title: meta.title,
+                    message: message,
+                    meta: {
+                        moduleId: moduleId,
+                        identityGate: true,
+                        code: meta.code
+                    },
+                    dataAttrs: {
+                        'data-identity-gate': meta.code,
+                        'data-identity-gate-module': moduleId
+                    }
+                });
+            }
+            router.registerRoute({
+                id: 'identity.gate.' + moduleId,
+                path: norm,
+                title: meta.title,
+                handler: 'identity.gate.' + moduleId,
+                meta: { moduleId: moduleId, identityGate: true, code: meta.code }
+            }, {
+                init: function () { return Promise.resolve(); },
+                mount: function (outlet) {
+                    if (outlet) {
+                        outlet.textContent = message;
+                        outlet.setAttribute('data-identity-gate', meta.code);
+                    }
+                    return Promise.resolve();
+                },
+                unmount: function () { return Promise.resolve(); },
+                dispose: function () { return Promise.resolve(); }
+            });
+            return 'identity.gate.' + moduleId;
+        }
+
+        /**
+         * Fix6: for BusinessModule paths, check identity before loading the target module.
+         * Enrolled → load deps as before. Not enrolled → identity gate only (same messages).
+         */
+        function ensureModulesOrIdentityGate(path) {
+            var moduleId = moduleFromPath(path);
+            var gate = identityGateMeta(moduleId);
+            if (!gate) {
+                return ensureBusinessModulesForPath(path).then(function (loaded) {
+                    return { loaded: loaded, gated: false, enrolled: true };
+                });
+            }
+            return bootstrapIdentityReadiness().then(function (ready) {
+                var appShell = root.RatebOfflineV2AppShell;
+                var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
+                if (ready && ready.enrolled) {
+                    clearIdentityGateRoute(router, moduleId);
+                    return ensureBusinessModulesForPath(path).then(function (loaded) {
+                        try {
+                            root.document.documentElement.removeAttribute('data-rateb-v2-identity-gate');
+                        } catch (eAttr) { /* ignore */ }
+                        return { loaded: loaded, gated: false, enrolled: true, readiness: ready };
+                    });
+                }
+                installIdentityGateRoute(router, path, moduleId);
+                try {
+                    root.document.documentElement.setAttribute('data-rateb-v2-identity-gate', gate.code);
+                } catch (eGate) { /* ignore */ }
+                return {
+                    loaded: ['identity'],
+                    gated: true,
+                    enrolled: false,
+                    readiness: ready,
+                    gateCode: gate.code,
+                    gateMessage: identityGateMessage(moduleId)
+                };
+            });
+        }
+
         function installLazyNavigateWrapper(router) {
             if (!router || lazyNavigateWrapped || typeof router.navigate !== 'function') {
                 return;
@@ -944,11 +1085,12 @@
             lazyNavigateWrapped = true;
             var origNavigate = router.navigate.bind(router);
             router.navigate = function (toPath, opts) {
-                return ensureBusinessModulesForPath(toPath).then(function () {
+                return ensureModulesOrIdentityGate(toPath).then(function () {
                     return origNavigate(toPath, opts);
                 });
             };
             root.RatebOfflineV2EnsureModules = ensureBusinessModulesForPath;
+            root.RatebOfflineV2EnsureModulesOrGate = ensureModulesOrIdentityGate;
         }
 
         function initializeBusinessModules(path, platform) {
@@ -960,28 +1102,31 @@
                 installLazyNavigateWrapper(router);
                 registerLazyModuleStubs(router);
 
-                return ensureBusinessModulesForPath(path).then(function (loaded) {
-                    /*
-                     * Fix5: single cold activation — complete deferred init mount
-                     * (or no-op when init already mounted the same path).
-                     */
+                /*
+                 * Fix6: identity readiness before expensive BusinessModule init.
+                 * Fix5: single cold activation via completeInitialNavigation.
+                 */
+                return ensureModulesOrIdentityGate(path).then(function (result) {
+                    var loaded = result && result.loaded ? result.loaded : [];
                     if (router && typeof router.completeInitialNavigation === 'function') {
                         return router.completeInitialNavigation({ path: path }).then(function () {
-                            return loaded;
+                            return result;
                         });
                     }
                     if (router && typeof router.navigate === 'function') {
                         return router.navigate(path, { replace: true }).then(function () {
-                            return loaded;
+                            return result;
                         });
                     }
-                    return loaded;
-                }).then(function (loaded) {
+                    return result;
+                }).then(function (result) {
+                    var loaded = result && result.loaded ? result.loaded : [];
                     var activeId = requestedId || null;
-                    var registered = loaded && loaded.length ? loaded.slice() : [];
                     ready('active-module', {
                         moduleId: activeId,
-                        registeredModules: registered
+                        registeredModules: loaded,
+                        identityGated: !!(result && result.gated),
+                        identityEnrolled: !(result && result.gated)
                     });
                     try {
                         if (activeId) {
@@ -990,10 +1135,14 @@
                             root.document.documentElement.removeAttribute('data-rateb-v2-active-module');
                         }
                         root.document.documentElement.setAttribute('data-rateb-v2-business-modules-ready', '1');
+                        if (result && result.gated) {
+                            root.document.documentElement.setAttribute('data-rateb-v2-identity-gate', result.gateCode || '1');
+                        }
                     } catch (eAttr) { /* ignore */ }
                     return {
                         id: activeId,
-                        registeredModules: registered,
+                        registeredModules: loaded,
+                        identityGated: !!(result && result.gated),
                         framework: fw,
                         platform: platform
                     };
