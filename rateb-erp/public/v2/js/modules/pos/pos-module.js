@@ -1,10 +1,8 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 8 Sync Contract Prep)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 9 Conflict Rules)
  *
- * Local catalog + cart + complete/cancel + outbox + stock + recovery + sync preview.
- * Sync adapter prepares/validates payloads only — never starts sync or calls APIs.
- * register/activate do not open DB synchronously. No Inventory BusinessModule.
- * Online ERP = Authentication Authority (AF 2.1).
+ * Local catalog + cart + sync prep + local conflict detection/resolution.
+ * Never starts sync, calls APIs, or loads Inventory. Online ERP = Auth Authority (AF 2.1).
  */
 (function (root) {
     'use strict';
@@ -15,7 +13,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.8.0-phase8-sync-prep';
+    var POS_VERSION = '0.9.0-phase9-conflicts';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -27,7 +25,7 @@
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — sync contract preparation only (no network sync).',
+            description: 'Offline V2 POS — local conflict rules engine (no network sync).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -36,7 +34,7 @@
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
                 'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock',
-                'pos.reservation', 'pos.recovery', 'pos.sync_prep'
+                'pos.reservation', 'pos.recovery', 'pos.sync_prep', 'pos.conflicts'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -55,6 +53,7 @@
                 { id: 'pos.stock', path: '/pos/stock', title: 'POS Stock' },
                 { id: 'pos.recovery', path: '/pos/recovery', title: 'POS Recovery' },
                 { id: 'pos.sync_preview', path: '/pos/sync-preview', title: 'POS Sync Preview' },
+                { id: 'pos.conflicts', path: '/pos/conflicts', title: 'POS Conflicts' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
@@ -74,11 +73,13 @@
         this._cart = null;
         this._stock = null;
         this._syncAdapter = null;
+        this._conflict = null;
         this._selectedProductId = null;
         this._lastCompleted = null;
         this._recoveryReport = null;
         this._recoveryScanPromise = null;
         this._lastSyncPreview = null;
+        this._lastConflictScan = null;
         this._catalogUi = {
             q: '',
             category_id: ''
@@ -179,6 +180,18 @@
         }
         this._syncAdapter = api.create(this);
         return this._syncAdapter;
+    };
+
+    PosModule.prototype._getConflict = function () {
+        if (this._conflict) {
+            return this._conflict;
+        }
+        var api = root.RatebOfflineV2PosConflict;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_conflict_missing');
+        }
+        this._conflict = api.create(this);
+        return this._conflict;
     };
 
     PosModule.prototype.listCategories = function () {
@@ -421,14 +434,59 @@
         return this._gate().then(function (idCtx) {
             /* Local prepare only — never sync.start() / push / API. */
             var sync = root.RatebOfflineV2ActiveSync;
-            if (sync && sync.isStarted && sync.isStarted()) {
-                /* Still allow preview; report engine state. Do not start or stop. */
-            }
             return self._getSyncAdapter().preparePreview(idCtx).then(function (preview) {
                 preview.sync_started = !!(sync && sync.isStarted && sync.isStarted());
                 self._lastSyncPreview = preview;
                 return preview;
             });
+        });
+    };
+
+    PosModule.prototype.scanConflicts = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().scanConflicts(idCtx).then(function (scan) {
+                self._lastConflictScan = scan;
+                return scan;
+            });
+        });
+    };
+
+    PosModule.prototype.listConflicts = function (filters) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().listConflicts(idCtx, filters || {});
+        });
+    };
+
+    PosModule.prototype.markConflictReviewed = function (conflictId) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().markReviewed(idCtx, conflictId);
+        });
+    };
+
+    PosModule.prototype.ignoreConflict = function (conflictId, reason) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().ignoreConflict(idCtx, conflictId, reason);
+        });
+    };
+
+    PosModule.prototype.retryConflictValidation = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().retryValidation(idCtx).then(function (res) {
+                self._lastConflictScan = res;
+                return res;
+            });
+        });
+    };
+
+    PosModule.prototype.evaluateConflictPayload = function (salePayload, extraReservations) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getConflict().evaluatePayload(idCtx, salePayload, extraReservations || []);
         });
     };
 
@@ -658,7 +716,25 @@
         self.exposeService('getSyncPreview', function () {
             return self._lastSyncPreview;
         });
-        self.reportHealth('initialize', true, 'pos_sync_prep_ready');
+        self.exposeService('scanConflicts', function () {
+            return self.scanConflicts();
+        });
+        self.exposeService('listConflicts', function (filters) {
+            return self.listConflicts(filters);
+        });
+        self.exposeService('markConflictReviewed', function (conflictId) {
+            return self.markConflictReviewed(conflictId);
+        });
+        self.exposeService('ignoreConflict', function (conflictId, reason) {
+            return self.ignoreConflict(conflictId, reason);
+        });
+        self.exposeService('retryConflictValidation', function () {
+            return self.retryConflictValidation();
+        });
+        self.exposeService('evaluateConflictPayload', function (salePayload, extraReservations) {
+            return self.evaluateConflictPayload(salePayload, extraReservations);
+        });
+        self.reportHealth('initialize', true, 'pos_conflicts_ready');
         return Promise.resolve();
     };
 
@@ -669,10 +745,11 @@
         this.contributeNav({ label: 'POS Stock', path: '/pos/stock', title: 'POS Stock' });
         this.contributeNav({ label: 'POS Recovery', path: '/pos/recovery', title: 'POS Recovery' });
         this.contributeNav({ label: 'POS Sync Preview', path: '/pos/sync-preview', title: 'POS Sync Preview' });
+        this.contributeNav({ label: 'POS Conflicts', path: '/pos/conflicts', title: 'POS Conflicts' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local sale + sync contract prep only — no network sync'
+            description: 'Local sale + conflict rules — no network sync'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -1043,6 +1120,96 @@
                 'Rows: ' + rows.length +
                 ' · available = on_hand − ACTIVE reservations · inventory_module=false'));
         });
+    };
+
+    PosModule.prototype._renderConflicts = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/conflicts');
+        outlet.setAttribute('data-pos-view', 'conflicts');
+        outlet.appendChild(self._el('h3', 'POS Conflicts'));
+        outlet.appendChild(self._el('p',
+            'Local conflict rules · no push · no API · company=' + idCtx.company_id));
+
+        var nav = self._el('div');
+        var toSync = self._el('button', 'Sync preview', { type: 'button' });
+        toSync.addEventListener('click', function () { self._navigate('/pos/sync-preview'); });
+        var toRecovery = self._el('button', 'Recovery', { type: 'button' });
+        toRecovery.addEventListener('click', function () { self._navigate('/pos/recovery'); });
+        nav.appendChild(toSync);
+        nav.appendChild(toRecovery);
+        outlet.appendChild(nav);
+
+        var host = self._el('div', null, { 'data-pos-conflicts-host': '1' });
+        outlet.appendChild(host);
+
+        function paint(scan) {
+            var list = (scan && scan.conflicts) || scan || [];
+            host.textContent = '';
+            host.setAttribute('data-open-count', String(list.length));
+            host.appendChild(self._el('p',
+                'Open conflicts: ' + list.length +
+                ' · sync_started=false · inventory_module=false'));
+
+            if (!list.length) {
+                host.appendChild(self._el('p', 'No OPEN conflicts.'));
+                return;
+            }
+
+            var ul = self._el('ul');
+            list.forEach(function (c) {
+                var li = self._el('li', null, {
+                    'data-conflict-id': c.conflict_id || c.id,
+                    'data-severity': c.severity || '',
+                    'data-conflict-type': c.conflict_type || ''
+                });
+                li.appendChild(self._el('span',
+                    '[' + c.severity + '] ' + c.conflict_type +
+                    ' · ' + c.entity_type + '/' + c.entity_id +
+                    ' · ' + (c.message || '') +
+                    ' · status=' + c.status));
+
+                var review = self._el('button', 'Mark reviewed', { type: 'button' });
+                review.addEventListener('click', function () {
+                    self.markConflictReviewed(c.conflict_id || c.id)
+                        .then(function () { return self.listConflicts({ status: 'OPEN' }); })
+                        .then(function (rows) { paint({ conflicts: rows }); });
+                });
+
+                var ignore = self._el('button', 'Ignore', { type: 'button' });
+                ignore.addEventListener('click', function () {
+                    self.ignoreConflict(c.conflict_id || c.id, 'ui_ignore')
+                        .then(function () { return self.listConflicts({ status: 'OPEN' }); })
+                        .then(function (rows) { paint({ conflicts: rows }); });
+                });
+
+                li.appendChild(review);
+                li.appendChild(ignore);
+                ul.appendChild(li);
+            });
+            host.appendChild(ul);
+        }
+
+        var actions = self._el('div');
+        var scanBtn = self._el('button', 'Scan conflicts', {
+            type: 'button',
+            'data-pos-conflict-scan': '1'
+        });
+        scanBtn.addEventListener('click', function () {
+            self.scanConflicts().then(paint);
+        });
+        var retryBtn = self._el('button', 'Retry validation', {
+            type: 'button',
+            'data-pos-conflict-retry': '1'
+        });
+        retryBtn.addEventListener('click', function () {
+            self.retryConflictValidation().then(paint);
+        });
+        actions.appendChild(scanBtn);
+        actions.appendChild(retryBtn);
+        outlet.appendChild(actions);
+
+        return self.scanConflicts().then(paint);
     };
 
     PosModule.prototype._renderSyncPreview = function (outlet, idCtx) {
@@ -1454,6 +1621,9 @@
                     if (path === '/pos/sync-preview') {
                         return self._renderSyncPreview(outlet, idCtx);
                     }
+                    if (path === '/pos/conflicts') {
+                        return self._renderConflicts(outlet, idCtx);
+                    }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
                         return null;
@@ -1493,12 +1663,13 @@
         base.reservation_lifecycle = true;
         base.recovery = true;
         base.sync_prep_only = true;
+        base.conflict_rules = true;
         base.starts_sync_on_activate = false;
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
             'pos.stock_snapshot', 'pos.stock_meta', 'pos.stock_reservation',
-            'pos.sync_prep'
+            'pos.sync_prep', 'pos.sync_conflict'
         ];
         base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
         return base;
