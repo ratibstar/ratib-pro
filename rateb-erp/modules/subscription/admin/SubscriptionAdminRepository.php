@@ -13,86 +13,6 @@ use Rateb\App\Subscription\SubscriptionStatus;
 final class SubscriptionAdminRepository
 {
     /**
-     * Create a new engine row for a company (ops bootstrap — not billing sync).
-     *
-     * @return int new engine id, or 0 on failure
-     */
-    public function createEngineRow(
-        int $companyId,
-        string $startYmd,
-        string $endYmd,
-        string $status,
-        int $graceDays = 7
-    ): int {
-        if ($companyId < 1
-            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startYmd)
-            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endYmd)) {
-            return 0;
-        }
-        $status = strtoupper($status);
-        if (!SubscriptionStatus::isKnown($status)) {
-            $status = SubscriptionStatus::ACTIVE;
-        }
-        $graceDays = max(0, min(90, $graceDays));
-
-        try {
-            $pdo = Database::connection();
-            // Verify company exists (avoid opaque FK errors).
-            $chk = $pdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
-            $chk->execute(['id' => $companyId]);
-            if (!$chk->fetchColumn()) {
-                return 0;
-            }
-
-            $graceStart = null;
-            $graceEnd = null;
-            if ($endYmd < gmdate('Y-m-d') || $status === SubscriptionStatus::GRACE) {
-                $graceStart = gmdate('Y-m-d', strtotime($endYmd . ' +1 day') ?: time());
-                $graceEnd = gmdate('Y-m-d', strtotime($endYmd . ' +' . $graceDays . ' days') ?: time());
-            }
-
-            try {
-                $stmt = $pdo->prepare(
-                    'INSERT INTO rateb_subscription_engine
-                        (company_id, subscription_start, subscription_end, grace_period_days,
-                         grace_started_at, grace_end_at, current_status, created_at)
-                     VALUES
-                        (:company_id, :start, :end, :grace_days,
-                         :grace_start, :grace_end, :status, NOW())'
-                );
-                $stmt->execute([
-                    'company_id' => $companyId,
-                    'start' => $startYmd,
-                    'end' => $endYmd,
-                    'grace_days' => $graceDays,
-                    'grace_start' => $graceStart,
-                    'grace_end' => $graceEnd,
-                    'status' => $status,
-                ]);
-            } catch (\Throwable $colEx) {
-                $stmt = $pdo->prepare(
-                    'INSERT INTO rateb_subscription_engine
-                        (company_id, subscription_start, subscription_end, grace_period_days,
-                         current_status, created_at)
-                     VALUES
-                        (:company_id, :start, :end, :grace_days, :status, NOW())'
-                );
-                $stmt->execute([
-                    'company_id' => $companyId,
-                    'start' => $startYmd,
-                    'end' => $endYmd,
-                    'grace_days' => $graceDays,
-                    'status' => $status,
-                ]);
-            }
-            return (int) $pdo->lastInsertId();
-        } catch (\Throwable $e) {
-            error_log('RATEB SubscriptionAdminRepository::createEngineRow: ' . $e->getMessage());
-            return 0;
-        }
-    }
-
-    /**
      * Dashboard aggregates from rateb_subscription_engine only.
      */
     public function dashboardCounts(string $todayYmd, int $expiringSoonDays = 14): SubscriptionAdminDashboard
@@ -409,5 +329,84 @@ final class SubscriptionAdminRepository
             error_log('RATEB SubscriptionAdminRepository::insertLifecycleAudit: ' . $e->getMessage());
             return 0;
         }
+    }
+
+    /**
+     * Auto-bootstrap missing engine rows from rateb_companies (+ latest billing dates if any).
+     * Insert-only — never overwrites existing engine lifecycle rows.
+     *
+     * @return array{inserted:int,examined:int}
+     */
+    public function syncMissingCompanies(string $todayYmd): array
+    {
+        $out = ['inserted' => 0, 'examined' => 0];
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->query(
+                'SELECT c.id AS company_id,
+                        s.starts_at AS billing_start,
+                        s.ends_at AS billing_end,
+                        s.status AS billing_status
+                 FROM rateb_companies c
+                 LEFT JOIN rateb_subscription_engine e ON e.company_id = c.id
+                 LEFT JOIN rateb_subscriptions s ON s.id = (
+                     SELECT s2.id FROM rateb_subscriptions s2
+                     WHERE s2.company_id = c.id
+                     ORDER BY s2.id DESC
+                     LIMIT 1
+                 )
+                 WHERE e.id IS NULL
+                 ORDER BY c.id ASC
+                 LIMIT 500'
+            );
+            if ($stmt === false) {
+                return $out;
+            }
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            if (!is_array($rows) || $rows === []) {
+                return $out;
+            }
+
+            $insert = $pdo->prepare(
+                'INSERT INTO rateb_subscription_engine
+                    (company_id, subscription_start, subscription_end, grace_period_days, current_status, suspended_at, created_at)
+                 VALUES
+                    (:company_id, :start, :end, 7, :status, :suspended_at, NOW())'
+            );
+
+            foreach ($rows as $row) {
+                $out['examined']++;
+                $companyId = (int) ($row['company_id'] ?? 0);
+                if ($companyId < 1) {
+                    continue;
+                }
+                $dates = SubscriptionAdminViewModel::resolveBootstrapDates(
+                    isset($row['billing_start']) ? (string) $row['billing_start'] : null,
+                    isset($row['billing_end']) ? (string) $row['billing_end'] : null,
+                    $todayYmd
+                );
+                $status = SubscriptionAdminViewModel::mapBillingStatusToEngine(
+                    isset($row['billing_status']) ? (string) $row['billing_status'] : null
+                );
+                $suspendedAt = $status === SubscriptionStatus::SUSPENDED ? gmdate('Y-m-d H:i:s') : null;
+                try {
+                    $insert->execute([
+                        'company_id' => $companyId,
+                        'start' => $dates['start'],
+                        'end' => $dates['end'],
+                        'status' => $status,
+                        'suspended_at' => $suspendedAt,
+                    ]);
+                    if ($insert->rowCount() > 0) {
+                        $out['inserted']++;
+                    }
+                } catch (\Throwable $rowEx) {
+                    error_log('RATEB syncMissingCompanies row ' . $companyId . ': ' . $rowEx->getMessage());
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('RATEB SubscriptionAdminRepository::syncMissingCompanies: ' . $e->getMessage());
+        }
+        return $out;
     }
 }

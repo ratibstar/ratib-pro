@@ -25,6 +25,15 @@ final class SubscriptionAdminController extends Controller
     {
         $this->assertCanView();
 
+        $sync = $this->service->syncMissingCompanies();
+        if (($sync['inserted'] ?? 0) > 0) {
+            SessionManager::flash(
+                'success',
+                'Synced ' . (int) $sync['inserted'] . ' compan' . ((int) $sync['inserted'] === 1 ? 'y' : 'ies')
+                . ' into subscription engine (from companies + billing dates).'
+            );
+        }
+
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $limit = function_exists('rateb_list_per_page') ? rateb_list_per_page() : 25;
         if (isset($_GET['per_page'])) {
@@ -46,6 +55,7 @@ final class SubscriptionAdminController extends Controller
             'statusFilter' => $list['status'],
             'search' => $list['search'],
             'canManage' => $this->service->canManage($this->actorId()),
+            'syncInserted' => (int) ($sync['inserted'] ?? 0),
             'csrf' => Csrf::token(),
         ]);
     }
@@ -127,46 +137,6 @@ final class SubscriptionAdminController extends Controller
         }
 
         Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
-    }
-
-    public function create(): void
-    {
-        $this->assertCanManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', 'Invalid CSRF token');
-            Response::redirect(rateb_url('admin/subscription-engine'));
-            return;
-        }
-
-        $companyId = (int) ($_POST['company_id'] ?? 0);
-        $start = substr(trim((string) ($_POST['subscription_start'] ?? '')), 0, 10);
-        $end = substr(trim((string) ($_POST['subscription_end'] ?? '')), 0, 10);
-        $seedAlert = !isset($_POST['seed_alert']) || (string) $_POST['seed_alert'] === '1';
-
-        if ($start === '') {
-            $start = gmdate('Y-m-d');
-        }
-
-        $out = $this->service->createTenant(
-            $companyId,
-            $start,
-            $end,
-            $this->actorId(),
-            $seedAlert
-        );
-
-        if ($out['success']) {
-            SessionManager::flash(
-                'success',
-                'Created engine row for company #' . $companyId
-                . ($seedAlert ? ' (alert seeded if in warning window)' : '')
-            );
-            Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
-            return;
-        }
-
-        SessionManager::flash('error', 'Create failed: ' . $out['message']);
-        Response::redirect(rateb_url('admin/subscription-engine'));
     }
 
     private function assertCanView(): void

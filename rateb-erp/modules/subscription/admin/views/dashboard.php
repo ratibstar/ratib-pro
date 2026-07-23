@@ -26,46 +26,11 @@ $statusBadge = static function (string $status): string {
 <div class="rateb-page-header mb-3">
     <h1 class="h4 mb-1"><i class="fas fa-heartbeat me-2"></i>Subscription Engine Admin</h1>
     <p class="text-muted small mb-0">Operational console for tenant subscription lifecycle. No payment or auto-billing.</p>
+    <p class="small text-muted mb-0 mt-1">Companies are auto-synced into the engine on open (insert-only; existing engine dates are not overwritten).</p>
 </div>
 
-<?php if ($canManage) {
-    $defaultEnd = gmdate('Y-m-d', strtotime('+3 days') ?: time());
-    $defaultStart = gmdate('Y-m-d', strtotime('-30 days') ?: time());
-    ?>
-<div class="rateb-card mb-3 border-primary">
-    <div class="rateb-card-body py-3">
-        <h2 class="h6 mb-2">Create engine record</h2>
-        <p class="small text-muted mb-2">
-            Table is empty until you create a row here. Use a company ID from
-            <a href="<?php echo $esc(rateb_url('admin/companies')); ?>">Companies</a>
-            (e.g. 29). Set end date soon/past to test the in-app alert.
-        </p>
-        <form method="post" action="<?php echo $esc(rateb_url('admin/subscription-engine/create')); ?>" class="row g-2 align-items-end">
-            <input type="hidden" name="_csrf" value="<?php echo $esc((string) ($csrf ?? '')); ?>">
-            <div class="col-md-2">
-                <label class="form-label small mb-1">Company ID</label>
-                <input type="number" min="1" name="company_id" class="form-control form-control-sm" required placeholder="29">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small mb-1">Start</label>
-                <input type="date" name="subscription_start" class="form-control form-control-sm" value="<?php echo $esc($defaultStart); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small mb-1">Expiry</label>
-                <input type="date" name="subscription_end" class="form-control form-control-sm" required value="<?php echo $esc($defaultEnd); ?>">
-            </div>
-            <div class="col-md-3">
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" name="seed_alert" value="1" id="seedAlert" checked>
-                    <label class="form-check-label small" for="seedAlert">Seed in-app alert history</label>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-sm btn-primary">Create</button>
-            </div>
-        </form>
-    </div>
-</div>
+<?php if (!empty($syncInserted) && (int) $syncInserted > 0) { ?>
+<div class="alert alert-success py-2">Synced <?php echo (int) $syncInserted; ?> compan<?php echo (int) $syncInserted === 1 ? 'y' : 'ies'; ?> into the subscription engine.</div>
 <?php } ?>
 
 <div class="row g-2 mb-3">

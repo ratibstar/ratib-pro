@@ -179,6 +179,40 @@ final class SubscriptionAdminViewModel
         ];
     }
 
+    /**
+     * Map billing subscription status → engine lifecycle status.
+     */
+    public static function mapBillingStatusToEngine(?string $billingStatus): string
+    {
+        $s = strtolower(trim((string) $billingStatus));
+        return match ($s) {
+            'cancelled', 'expired' => 'SUSPENDED',
+            default => 'ACTIVE',
+        };
+    }
+
+    /**
+     * Resolve start/end for a new engine row (billing preferred, else defaults).
+     *
+     * @return array{start:string,end:string}
+     */
+    public static function resolveBootstrapDates(
+        ?string $billingStart,
+        ?string $billingEnd,
+        string $todayYmd,
+        int $defaultDays = 365
+    ): array {
+        $start = self::ymd($billingStart) ?? $todayYmd;
+        $end = self::ymd($billingEnd);
+        if ($end === null) {
+            $ts = strtotime($start . ' 00:00:00');
+            $end = $ts === false
+                ? $todayYmd
+                : gmdate('Y-m-d', $ts + (max(1, $defaultDays) * 86400));
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
     private static function ymd(mixed $raw): ?string
     {
         $v = trim((string) ($raw ?? ''));

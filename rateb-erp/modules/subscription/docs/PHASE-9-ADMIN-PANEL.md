@@ -79,6 +79,17 @@ Paginated; filter by status / search name or company id. Queries use `rateb_subs
 php rateb-erp/modules/subscription/tests/SubscriptionAdminPhase9Test.php
 ```
 
+## Auto-sync (companies → engine)
+
+Opening `/admin/subscription-engine` **inserts missing** `rateb_subscription_engine` rows for companies in `rateb_companies`:
+
+- Prefers latest `rateb_subscriptions.starts_at` / `ends_at` when present
+- Else defaults: start = today, end = today + 365 days
+- Billing `cancelled` / `expired` → engine `SUSPENDED`; otherwise `ACTIVE`
+- **Insert-only** — never overwrites existing engine dates/status (renewals stay authoritative)
+
+Why the list was empty before: engine table had zero rows until this bootstrap ran.
+
 ## Ops
 
 1. Deploy code  

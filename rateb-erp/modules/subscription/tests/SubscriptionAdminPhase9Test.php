@@ -111,6 +111,16 @@ $timeline = SubscriptionAdminViewModel::buildTimeline(
 expect(count($timeline) >= 4, 'timeline has events');
 expect(($timeline[0]['type'] ?? '') === 'EXTENDED' || str_contains((string) ($timeline[0]['at'] ?? ''), '2026-08-05'), 'timeline newest first');
 
+// Bootstrap mapping (auto-sync)
+expect(SubscriptionAdminViewModel::mapBillingStatusToEngine('trial') === 'ACTIVE', 'trial → ACTIVE');
+expect(SubscriptionAdminViewModel::mapBillingStatusToEngine('active') === 'ACTIVE', 'active → ACTIVE');
+expect(SubscriptionAdminViewModel::mapBillingStatusToEngine('expired') === 'SUSPENDED', 'expired → SUSPENDED');
+expect(SubscriptionAdminViewModel::mapBillingStatusToEngine('cancelled') === 'SUSPENDED', 'cancelled → SUSPENDED');
+$dates = SubscriptionAdminViewModel::resolveBootstrapDates('2026-01-01', '2026-07-20', '2026-08-10');
+expect($dates['start'] === '2026-01-01' && $dates['end'] === '2026-07-20', 'billing dates preferred');
+$defaults = SubscriptionAdminViewModel::resolveBootstrapDates(null, null, '2026-08-10', 365);
+expect($defaults['start'] === '2026-08-10' && $defaults['end'] === '2027-08-10', 'default +365d');
+
 if ($failed > 0) {
     echo "\n{$failed} failure(s)\n";
     exit(1);
