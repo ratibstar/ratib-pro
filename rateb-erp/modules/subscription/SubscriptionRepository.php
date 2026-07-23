@@ -13,7 +13,7 @@ use Rateb\App\Core\Database;
  *
  * MUST NOT touch billing tables or other ERP modules.
  */
-final class SubscriptionRepository
+final class SubscriptionRepository implements SubscriptionEngineStore
 {
     /**
      * Load engine row for a tenant company, or null if none / table unavailable.
@@ -71,5 +71,37 @@ final class SubscriptionRepository
         }
         $status = strtoupper(trim((string) ($row['current_status'] ?? '')));
         return $status !== '' ? $status : null;
+    }
+
+    /**
+     * Batch-load subscription engine rows only (no HR/users/permissions/finance).
+     * Cursor pagination by primary key for safe multi-run processing.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listEngineRowsAfterId(int $afterId, int $limit): array
+    {
+        $afterId = max(0, $afterId);
+        $limit = max(1, min(500, $limit));
+
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->prepare(
+                'SELECT id, company_id, subscription_start, subscription_end, grace_period_days,
+                        current_status, suspended_at, renewed_at,
+                        next_notification_date, last_notification_date,
+                        created_at, updated_at
+                 FROM rateb_subscription_engine
+                 WHERE id > :after_id
+                 ORDER BY id ASC
+                 LIMIT ' . $limit
+            );
+            $stmt->execute(['after_id' => $afterId]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            error_log('RATEB SubscriptionRepository::listEngineRowsAfterId: ' . $e->getMessage());
+            return [];
+        }
     }
 }

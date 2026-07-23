@@ -15,14 +15,14 @@ namespace Rateb\App\Subscription;
  */
 final class SubscriptionEngine
 {
-    private SubscriptionRepository $repository;
+    private SubscriptionEngineStore $repository;
     private SubscriptionPolicy $policy;
 
-    /** @var array<int, SubscriptionContext> */
+    /** @var array<string, SubscriptionContext> */
     private array $contextCache = [];
 
     public function __construct(
-        ?SubscriptionRepository $repository = null,
+        ?SubscriptionEngineStore $repository = null,
         ?SubscriptionPolicy $policy = null
     ) {
         $this->repository = $repository ?? new SubscriptionRepository();
@@ -40,24 +40,40 @@ final class SubscriptionEngine
     /**
      * Build immutable request snapshot (one repository read, cached per engine instance).
      */
-    public function contextFor(int $companyId): SubscriptionContext
+    public function contextFor(int $companyId, ?string $todayYmd = null): SubscriptionContext
     {
         if ($companyId < 1) {
             return SubscriptionContext::absent(0);
         }
 
-        if (isset($this->contextCache[$companyId])) {
-            return $this->contextCache[$companyId];
+        $today = $todayYmd ?? gmdate('Y-m-d');
+        $cacheKey = $companyId . ':' . $today;
+        if (isset($this->contextCache[$cacheKey])) {
+            return $this->contextCache[$cacheKey];
         }
 
         $row = $this->repository->findByCompanyId($companyId);
-        $today = gmdate('Y-m-d');
         $context = $row === null
             ? SubscriptionContext::absent($companyId)
             : SubscriptionContext::fromEngineRow($companyId, $row, $today);
 
-        $this->contextCache[$companyId] = $context;
+        $this->contextCache[$cacheKey] = $context;
         return $context;
+    }
+
+    /**
+     * Build context from an already-loaded engine row (batch / scheduler path).
+     *
+     * @param array<string, mixed> $row
+     */
+    public function contextFromRow(array $row, ?string $todayYmd = null): SubscriptionContext
+    {
+        $companyId = (int) ($row['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return SubscriptionContext::absent(0);
+        }
+        $today = $todayYmd ?? gmdate('Y-m-d');
+        return SubscriptionContext::fromEngineRow($companyId, $row, $today);
     }
 
     public function getStatus(int $companyId): string
