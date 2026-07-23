@@ -504,7 +504,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     })();
     </script>
     <?php } ?>
-    <?php /* PERF-P3: console-quiet after DCL — defer in <head> delays DOMContentLoaded */ ?>
+    <?php /* PERF Fix2: console-quiet after load idle — not on critical/DCL path */ ?>
     <script>
     (function () {
       function loadQuiet() {
@@ -512,11 +512,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         s.src = <?php echo json_encode(rateb_asset('js/rateb-console-quiet.js'), JSON_UNESCAPED_SLASHES); ?>;
         document.head.appendChild(s);
       }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadQuiet, { once: true });
-      } else {
-        loadQuiet();
+      function schedule() {
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(loadQuiet, { timeout: 5000 });
+        } else {
+          setTimeout(loadQuiet, 1500);
+        }
       }
+      if (document.readyState === 'complete') schedule();
+      else window.addEventListener('load', schedule, { once: true });
     })();
     </script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
@@ -1066,7 +1070,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 <?php Rateb\App\Core\View::partial('entity-documents-modal-shell'); ?>
 <?php Rateb\App\Core\View::partial('rateb-confirm-modal'); ?>
 <?php
-/* PERF-P3: critical-path scripts only before paint settles; rest after interaction/idle. */
+/* PERF-P3 / Fix2: critical-path scripts only before paint settles; rest after interaction/idle.
+ * Membership unchanged — loading order/waves optimized in the injector below. */
 $ratebCriticalScripts = [
     // FIRST — soft-nav must bind before theme/app so لوحة التحكم never full-navigates to black.
     rateb_asset('js/erp-nav-instant.js'),
@@ -1077,12 +1082,12 @@ $ratebCriticalScripts = [
     // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
     rateb_asset('js/approvals-oversight.js'),
 ];
+/* Idle order: bootstrap → modal/confirm deps → page tools → connectivity last (network probe). */
 $ratebIdleScripts = [
     rateb_bootstrap_js(),
-    rateb_asset('js/connectivity-indicator.js'),
-    rateb_asset('js/lang.js'),
     rateb_asset('js/rateb-modal.js'),
     rateb_asset('js/rateb-confirm.js'),
+    rateb_asset('js/lang.js'),
 ];
 if (!empty($layoutAssets['bulkDelete'])) {
     $ratebIdleScripts[] = rateb_asset('js/rateb-bulk-delete.js');
@@ -1114,9 +1119,7 @@ if (!empty($layoutAssets['cmsAdmin'])) {
 if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
 }
-foreach ($ratebCriticalScripts as $ratebCritSrc) {
-    /* listed for post-DCL inject — do not emit defer (defer delays DCL). */
-}
+$ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
 $deferAssetScripts = [];
 // Chart.js + charts.js strictly after first paint / idle (dashboard widgets).
 if (!empty($layoutAssets['charts'])) {
@@ -1125,10 +1128,14 @@ if (!empty($layoutAssets['charts'])) {
 foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     $deferAssetScripts[] = rateb_asset('js/' . $deferFile);
 }
+/* PERF Fix2: preload critical scripts so downloads overlap; injector still controls exec order. */
+foreach ($ratebCriticalScripts as $ratebCritSrc) {
+    echo '<link rel="preload" href="' . htmlspecialchars((string) $ratebCritSrc, ENT_QUOTES, 'UTF-8') . '" as="script">' . "\n";
+}
 ?>
 <script>
 (function () {
-  /* PERF-P3: critical JS AFTER DOMContentLoaded so DCL is not blocked by defer scripts. */
+  /* PERF Fix2: shorten critical/idle waterfalls — parallel waves, preserve required order. */
   var critical = <?php echo json_encode(array_values($ratebCriticalScripts), JSON_UNESCAPED_SLASHES); ?>;
   var idleQueue = <?php echo json_encode(array_values($ratebIdleScripts), JSON_UNESCAPED_SLASHES); ?>;
   var chartQueue = <?php echo json_encode(array_values($deferAssetScripts), JSON_UNESCAPED_SLASHES); ?>;
@@ -1142,9 +1149,32 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     if (i >= list.length) { if (done) done(); return; }
     inject(list[i], function () { chain(list, i + 1, done); });
   }
+  /** Load all URLs in parallel; done when every script settles (order of exec ≈ race). */
+  function parallel(list, done) {
+    if (!list || !list.length) { if (done) done(); return; }
+    var left = list.length;
+    var tick = function () {
+      left -= 1;
+      if (left <= 0 && done) done();
+    };
+    list.forEach(function (src) { inject(src, tick); });
+  }
+  function isModalSrc(src) {
+    return /\/rateb-modal\.js(\?|$)/.test(String(src));
+  }
+  function isConfirmSrc(src) {
+    return /\/rateb-confirm\.js(\?|$)/.test(String(src));
+  }
   function loadCritical() {
-    chain(critical, 0, function () {
-      try { window.dispatchEvent(new Event('rateb-critical-js-ready')); } catch (e) {}
+    if (!critical.length) {
+      try { window.dispatchEvent(new Event('rateb-critical-js-ready')); } catch (e0) {}
+      return;
+    }
+    /* Wave 1: soft-nav FIRST (required). Wave 2: theme/app/metrics/approvals in parallel. */
+    inject(critical[0], function () {
+      parallel(critical.slice(1), function () {
+        try { window.dispatchEvent(new Event('rateb-critical-js-ready')); } catch (e1) {}
+      });
     });
   }
   /* Start NOW (script is after sidebar in body). Waiting for DCL delayed soft-nav
@@ -1162,15 +1192,16 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     });
     var idleStart = function () {
       if (window.requestIdleCallback) {
-        window.requestIdleCallback(go, { timeout: 4000 });
+        window.requestIdleCallback(go, { timeout: 2500 });
       } else {
-        setTimeout(go, 1200);
+        setTimeout(go, 900);
       }
     };
     if (document.readyState === 'complete') idleStart();
     else window.addEventListener('load', idleStart, { once: true });
   }
-  /* Dashboard charts BEFORE idleQueue — waiting behind bootstrap/lang left black canvases. */
+  /* Dashboard charts BEFORE idleQueue — waiting behind bootstrap/lang left black canvases.
+   * Chart lib must execute before charts boot file (sequential within chartQueue). */
   function bootChartsNow() {
     try {
       if (typeof window.ratebChartsBoot === 'function') {
@@ -1194,7 +1225,26 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
     }
   }
   afterInteraction(function () {
-    chain(idleQueue, 0);
+    if (!idleQueue.length) return;
+    /* Wave A: bootstrap first (rateb-modal / confirm require it). */
+    inject(idleQueue[0], function () {
+      var rest = idleQueue.slice(1);
+      var modalSrc = null;
+      var confirmSrc = null;
+      var others = [];
+      rest.forEach(function (src) {
+        if (isModalSrc(src)) modalSrc = src;
+        else if (isConfirmSrc(src)) confirmSrc = src;
+        else others.push(src);
+      });
+      /* Wave B: modal + independent idle scripts in parallel. */
+      var waveB = others.slice();
+      if (modalSrc) waveB.unshift(modalSrc);
+      parallel(waveB, function () {
+        /* Wave C: confirm after modal (uses ratebModalPrepare + bootstrap.Modal). */
+        if (confirmSrc) inject(confirmSrc);
+      });
+    });
   });
 })();
 </script><?php
