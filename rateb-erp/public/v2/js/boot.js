@@ -961,6 +961,15 @@
                 registerLazyModuleStubs(router);
 
                 return ensureBusinessModulesForPath(path).then(function (loaded) {
+                    /*
+                     * Fix5: single cold activation — complete deferred init mount
+                     * (or no-op when init already mounted the same path).
+                     */
+                    if (router && typeof router.completeInitialNavigation === 'function') {
+                        return router.completeInitialNavigation({ path: path }).then(function () {
+                            return loaded;
+                        });
+                    }
                     if (router && typeof router.navigate === 'function') {
                         return router.navigate(path, { replace: true }).then(function () {
                             return loaded;
@@ -1035,6 +1044,14 @@
         var path = requestedPath();
         var requestedModuleId = moduleFromPath(path);
         var routeSeen = false;
+        /*
+         * Fix5: tell router to hold the first mount for BusinessModule deep-links
+         * so init does not fall back to home and rewrite the hash.
+         */
+        root.RatebOfflineV2BootOptions = {
+            requestedPath: path,
+            deferInitialNavigation: !!requestedModuleId
+        };
         var swPromise = registerSw().then(function (sw) {
             setState('sw', !!sw.ok, sw.ok
                 ? ('scope ' + sw.scope + ' · cached ' + sw.cached + '/' + sw.required)

@@ -102,6 +102,9 @@
         var navigating = false;
         var historyBound = false;
         var flags = Object.create(null);
+        /* Fix5: deep-link start path held until boot registers module routes. */
+        var pendingStartPath = null;
+        var initialNavigationDeferred = false;
 
         function emit(ev, payload) {
             if (layer && layer.emit) {
@@ -337,7 +340,46 @@
 
                 emit('init', { version: ROUTER_VERSION, routes: Object.keys(registry).length });
 
-                var startPath = opts.startPath || pathFromLocation();
+                var startPath = normalizePath(opts.startPath || pathFromLocation());
+                pendingStartPath = startPath;
+
+                /*
+                 * Fix5: cold deep-links to BusinessModules register routes after shell mount.
+                 * Defer the first mount so we do not fall back to defaultRoute (home) and
+                 * then navigate again — preserves hash and yields a single activation.
+                 */
+                var deferInitial = opts.deferInitialNavigation === true;
+                if (!deferInitial && opts.deferInitialNavigation !== false) {
+                    try {
+                        var bootOpts = root.RatebOfflineV2BootOptions;
+                        if (bootOpts && bootOpts.deferInitialNavigation) {
+                            deferInitial = true;
+                            if (bootOpts.requestedPath) {
+                                startPath = normalizePath(bootOpts.requestedPath);
+                                pendingStartPath = startPath;
+                            }
+                        }
+                    } catch (eBootOpts) { /* ignore */ }
+                }
+
+                if (deferInitial) {
+                    initialNavigationDeferred = true;
+                    if (outlet) {
+                        outlet.setAttribute('data-route', 'boot.pending');
+                        outlet.textContent = '';
+                    }
+                    /* Do not setHistory — keep the requested hash/path intact. */
+                    return {
+                        ok: true,
+                        manifest: man,
+                        navigation: {
+                            ok: true,
+                            deferred: true,
+                            path: startPath
+                        }
+                    };
+                }
+
                 if (!findByPath(startPath) && man.defaultRoute && findById(man.defaultRoute)) {
                     startPath = findById(man.defaultRoute).path;
                 }
@@ -345,6 +387,77 @@
                     return { ok: true, manifest: man, navigation: nav };
                 });
             });
+        }
+
+        /**
+         * Fix5: finish deferred cold start, or no-op when already on the target route.
+         * Unknown paths still fall through to defaultRoute / notfound (unchanged policy).
+         */
+        function completeInitialNavigation(navOpts) {
+            navOpts = navOpts || {};
+            if (disposed) {
+                return Promise.reject(new Error('router_disposed'));
+            }
+            if (!inited) {
+                return Promise.reject(new Error('router_not_inited'));
+            }
+
+            var path = normalizePath(navOpts.path || pendingStartPath || pathFromLocation());
+            pendingStartPath = path;
+
+            if (!initialNavigationDeferred) {
+                if (current && normalizePath(current.path) === path) {
+                    return Promise.resolve({
+                        ok: true,
+                        already: true,
+                        deferred: false,
+                        route: current,
+                        path: path
+                    });
+                }
+                if (findByPath(path) && (!current || normalizePath(current.path) !== path)) {
+                    return navigate(path, { replace: true }).then(function (nav) {
+                        return nav;
+                    });
+                }
+                return Promise.resolve({
+                    ok: true,
+                    already: true,
+                    deferred: false,
+                    route: current,
+                    path: current ? current.path : path
+                });
+            }
+
+            initialNavigationDeferred = false;
+
+            if (!findByPath(path)) {
+                emit('notfound', { path: path });
+                if (manifest && manifest.defaultRoute && findById(manifest.defaultRoute)) {
+                    var fallbackPath = findById(manifest.defaultRoute).path;
+                    return navigate(fallbackPath, { replace: true }).then(function (nav) {
+                        if (nav && typeof nav === 'object') {
+                            nav.requestedPath = path;
+                            nav.fellBack = true;
+                        }
+                        return nav;
+                    });
+                }
+                if (outlet) {
+                    outlet.removeAttribute('data-route');
+                }
+                return Promise.resolve({ ok: false, reason: 'notfound', path: path });
+            }
+
+            return navigate(path, { replace: true });
+        }
+
+        function isInitialNavigationDeferred() {
+            return !!initialNavigationDeferred;
+        }
+
+        function getPendingStartPath() {
+            return pendingStartPath;
         }
 
         function dispose() {
@@ -414,6 +527,9 @@
             version: ROUTER_VERSION,
             init: init,
             navigate: navigate,
+            completeInitialNavigation: completeInitialNavigation,
+            isInitialNavigationDeferred: isInitialNavigationDeferred,
+            getPendingStartPath: getPendingStartPath,
             dispose: dispose,
             beforeEach: beforeEach,
             setFlag: setFlag,
