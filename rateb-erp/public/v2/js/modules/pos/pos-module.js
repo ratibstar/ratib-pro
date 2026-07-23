@@ -1,10 +1,10 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 7 Reservation Lifecycle)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 8 Sync Contract Prep)
  *
- * Local catalog + cart + complete/cancel + outbox + stock + reservation recovery.
- * No payment/receipt/network push/inv.* writes. sync.start() never called.
- * register/activate do not open DB synchronously; recovery scan is deferred/lazy.
- * Does not load Inventory BusinessModule. Online ERP = Authentication Authority (AF 2.1).
+ * Local catalog + cart + complete/cancel + outbox + stock + recovery + sync preview.
+ * Sync adapter prepares/validates payloads only — never starts sync or calls APIs.
+ * register/activate do not open DB synchronously. No Inventory BusinessModule.
+ * Online ERP = Authentication Authority (AF 2.1).
  */
 (function (root) {
     'use strict';
@@ -15,7 +15,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.7.0-phase7-recovery';
+    var POS_VERSION = '0.8.0-phase8-sync-prep';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -27,7 +27,7 @@
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — reservation lifecycle + recovery (no Inventory module).',
+            description: 'Offline V2 POS — sync contract preparation only (no network sync).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -36,7 +36,7 @@
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
                 'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock',
-                'pos.reservation', 'pos.recovery'
+                'pos.reservation', 'pos.recovery', 'pos.sync_prep'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -54,6 +54,7 @@
                 { id: 'pos.checkout', path: '/pos/checkout', title: 'POS Checkout' },
                 { id: 'pos.stock', path: '/pos/stock', title: 'POS Stock' },
                 { id: 'pos.recovery', path: '/pos/recovery', title: 'POS Recovery' },
+                { id: 'pos.sync_preview', path: '/pos/sync-preview', title: 'POS Sync Preview' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
@@ -65,16 +66,19 @@
                 payment: false,
                 openDbOnRegister: false,
                 startSyncOnActivate: false,
+                syncPrepOnly: true,
                 identityDependency: 'identity'
             }
         });
         this._catalog = null;
         this._cart = null;
         this._stock = null;
+        this._syncAdapter = null;
         this._selectedProductId = null;
         this._lastCompleted = null;
         this._recoveryReport = null;
         this._recoveryScanPromise = null;
+        this._lastSyncPreview = null;
         this._catalogUi = {
             q: '',
             category_id: ''
@@ -163,6 +167,18 @@
         }
         this._stock = api.create(this);
         return this._stock;
+    };
+
+    PosModule.prototype._getSyncAdapter = function () {
+        if (this._syncAdapter) {
+            return this._syncAdapter;
+        }
+        var api = root.RatebOfflineV2PosSyncAdapter;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_sync_adapter_missing');
+        }
+        this._syncAdapter = api.create(this);
+        return this._syncAdapter;
     };
 
     PosModule.prototype.listCategories = function () {
@@ -400,6 +416,22 @@
         });
     };
 
+    PosModule.prototype.prepareSyncPreview = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            /* Local prepare only — never sync.start() / push / API. */
+            var sync = root.RatebOfflineV2ActiveSync;
+            if (sync && sync.isStarted && sync.isStarted()) {
+                /* Still allow preview; report engine state. Do not start or stop. */
+            }
+            return self._getSyncAdapter().preparePreview(idCtx).then(function (preview) {
+                preview.sync_started = !!(sync && sync.isStarted && sync.isStarted());
+                self._lastSyncPreview = preview;
+                return preview;
+            });
+        });
+    };
+
     PosModule.prototype.scanRecovery = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
@@ -542,13 +574,16 @@
                 inventoryModuleRequired: false,
                 localReservation: true,
                 recovery: true,
+                syncPrepOnly: true,
                 syncStart: false,
                 catalogStoreOpen: !!(self._catalog && self._catalog.isStoreOpen()),
                 cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
                 stockStoreOpen: !!(self._stock && self._stock.isStoreOpen()),
+                syncAdapterOpen: !!(self._syncAdapter && self._syncAdapter.isStoreOpen()),
                 lastSaleId: self._lastCompleted && self._lastCompleted.sale_id || null,
                 recoveryAbandoned: self._recoveryReport ? self._recoveryReport.abandoned_count : null,
-                recoveryOrphans: self._recoveryReport ? self._recoveryReport.orphan_count : null
+                recoveryOrphans: self._recoveryReport ? self._recoveryReport.orphan_count : null,
+                pendingSyncSales: self._lastSyncPreview ? self._lastSyncPreview.pending_sales_count : null
             };
         });
         self.exposeService('gate', function () {
@@ -617,7 +652,13 @@
         self.exposeService('getRecoveryReport', function () {
             return self._recoveryReport;
         });
-        self.reportHealth('initialize', true, 'pos_recovery_ready');
+        self.exposeService('prepareSyncPreview', function () {
+            return self.prepareSyncPreview();
+        });
+        self.exposeService('getSyncPreview', function () {
+            return self._lastSyncPreview;
+        });
+        self.reportHealth('initialize', true, 'pos_sync_prep_ready');
         return Promise.resolve();
     };
 
@@ -627,10 +668,11 @@
         this.contributeNav({ label: 'POS Checkout', path: '/pos/checkout', title: 'POS Checkout' });
         this.contributeNav({ label: 'POS Stock', path: '/pos/stock', title: 'POS Stock' });
         this.contributeNav({ label: 'POS Recovery', path: '/pos/recovery', title: 'POS Recovery' });
+        this.contributeNav({ label: 'POS Sync Preview', path: '/pos/sync-preview', title: 'POS Sync Preview' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local sale + reservation lifecycle + recovery — no Inventory module'
+            description: 'Local sale + sync contract prep only — no network sync'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -1003,6 +1045,87 @@
         });
     };
 
+    PosModule.prototype._renderSyncPreview = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/sync-preview');
+        outlet.setAttribute('data-pos-view', 'sync-preview');
+        outlet.appendChild(self._el('h3', 'POS Sync Preview'));
+        outlet.appendChild(self._el('p',
+            'Contract preparation only · no push · no sync.start · company=' + idCtx.company_id));
+
+        var nav = self._el('div');
+        var toRecovery = self._el('button', 'Recovery', { type: 'button' });
+        toRecovery.addEventListener('click', function () { self._navigate('/pos/recovery'); });
+        var toCart = self._el('button', 'Cart', { type: 'button' });
+        toCart.addEventListener('click', function () { self._navigate('/pos/cart'); });
+        nav.appendChild(toRecovery);
+        nav.appendChild(toCart);
+        outlet.appendChild(nav);
+
+        var host = self._el('div', null, { 'data-pos-sync-preview-host': '1' });
+        outlet.appendChild(host);
+
+        function paint(preview) {
+            host.textContent = '';
+            host.setAttribute('data-pending-sales', String(preview.pending_sales_count || 0));
+            host.setAttribute('data-ready', String(preview.ready_count || 0));
+            host.setAttribute('data-invalid', String(preview.invalid_count || 0));
+            host.setAttribute('data-outbox-pending', String(preview.outbox_pending_count || 0));
+
+            host.appendChild(self._el('p',
+                'Pending sales: ' + (preview.pending_sales_count || 0) +
+                ' · ready=' + (preview.ready_count || 0) +
+                ' · invalid=' + (preview.invalid_count || 0) +
+                ' · outbox_pending=' + (preview.outbox_pending_count || 0)));
+            host.appendChild(self._el('p',
+                'sync_started=' + !!preview.sync_started +
+                ' · pushed=false · network=false · inventory_module=false'));
+
+            (preview.items || []).forEach(function (item) {
+                var box = self._el('div', null, {
+                    'data-sync-sale-id': item.sale_id,
+                    'data-sync-status': item.sync_status
+                });
+                box.appendChild(self._el('h4',
+                    item.local_txn_no || item.sale_id + ' · ' + item.sync_status));
+                box.appendChild(self._el('p',
+                    'local_id=' + (item.conflict_metadata && item.conflict_metadata.local_id) +
+                    ' · device_id=' + (item.conflict_metadata && item.conflict_metadata.device_id) +
+                    ' · created_at=' + (item.conflict_metadata && item.conflict_metadata.created_at)));
+                if (item.validation_errors && item.validation_errors.length) {
+                    var errUl = self._el('ul', null, { 'data-sync-errors': '1' });
+                    item.validation_errors.forEach(function (e) {
+                        errUl.appendChild(self._el('li', e.code + ': ' + e.message));
+                    });
+                    box.appendChild(errUl);
+                } else {
+                    box.appendChild(self._el('p', 'Validation: OK'));
+                }
+                var pre = root.document.createElement('pre');
+                pre.setAttribute('data-sync-payload', '1');
+                pre.textContent = JSON.stringify(item.outgoing, null, 2);
+                box.appendChild(pre);
+                host.appendChild(box);
+            });
+
+            if (!(preview.items || []).length) {
+                host.appendChild(self._el('p', 'No pending COMPLETED sales to prepare.'));
+            }
+        }
+
+        var refresh = self._el('button', 'Prepare preview', {
+            type: 'button',
+            'data-pos-sync-prepare': '1'
+        });
+        refresh.addEventListener('click', function () {
+            self.prepareSyncPreview().then(paint);
+        });
+        outlet.appendChild(refresh);
+
+        return self.prepareSyncPreview().then(paint);
+    };
+
     PosModule.prototype._renderRecovery = function (outlet, idCtx) {
         var self = this;
         outlet.textContent = '';
@@ -1328,6 +1451,9 @@
                     if (path === '/pos/recovery') {
                         return self._renderRecovery(outlet, idCtx);
                     }
+                    if (path === '/pos/sync-preview') {
+                        return self._renderSyncPreview(outlet, idCtx);
+                    }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
                         return null;
@@ -1366,10 +1492,13 @@
         base.local_reservation = true;
         base.reservation_lifecycle = true;
         base.recovery = true;
+        base.sync_prep_only = true;
+        base.starts_sync_on_activate = false;
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
-            'pos.stock_snapshot', 'pos.stock_meta', 'pos.stock_reservation'
+            'pos.stock_snapshot', 'pos.stock_meta', 'pos.stock_reservation',
+            'pos.sync_prep'
         ];
         base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
         return base;
