@@ -33,6 +33,45 @@ $statusBadge = static function (string $status): string {
 <div class="alert alert-success py-2">Synced <?php echo (int) $syncInserted; ?> compan<?php echo (int) $syncInserted === 1 ? 'y' : 'ies'; ?> into the subscription engine.</div>
 <?php } ?>
 
+<?php if ($canManage) {
+    $defaultEnd = gmdate('Y-m-d', strtotime('+3 days') ?: time());
+    $defaultStart = gmdate('Y-m-d', strtotime('-30 days') ?: time());
+    ?>
+<div class="rateb-card mb-3 border-primary">
+    <div class="rateb-card-body py-3">
+        <h2 class="h6 mb-2">Create / test engine record</h2>
+        <p class="small text-muted mb-2">
+            Companies auto-sync on page open. Use this form to create a missing company with a custom expiry
+            and optionally seed an in-app alert (for testing).
+        </p>
+        <form method="post" action="<?php echo $esc(rateb_url('admin/subscription-engine/create')); ?>" class="row g-2 align-items-end">
+            <input type="hidden" name="_csrf" value="<?php echo $esc((string) ($csrf ?? '')); ?>">
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Company ID</label>
+                <input type="number" min="1" name="company_id" class="form-control form-control-sm" required placeholder="29">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Start</label>
+                <input type="date" name="subscription_start" class="form-control form-control-sm" value="<?php echo $esc($defaultStart); ?>">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1">Expiry</label>
+                <input type="date" name="subscription_end" class="form-control form-control-sm" required value="<?php echo $esc($defaultEnd); ?>">
+            </div>
+            <div class="col-md-3">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" name="seed_alert" value="1" id="seedAlert" checked>
+                    <label class="form-check-label small" for="seedAlert">Seed in-app alert history</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php } ?>
+
 <div class="row g-2 mb-3">
     <?php
     $cards = [

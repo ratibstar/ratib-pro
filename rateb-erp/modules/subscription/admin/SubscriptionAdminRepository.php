@@ -13,6 +13,85 @@ use Rateb\App\Subscription\SubscriptionStatus;
 final class SubscriptionAdminRepository
 {
     /**
+     * Create a new engine row for a company (ops bootstrap — not billing sync).
+     *
+     * @return int new engine id, or 0 on failure
+     */
+    public function createEngineRow(
+        int $companyId,
+        string $startYmd,
+        string $endYmd,
+        string $status,
+        int $graceDays = 7
+    ): int {
+        if ($companyId < 1
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startYmd)
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endYmd)) {
+            return 0;
+        }
+        $status = strtoupper($status);
+        if (!SubscriptionStatus::isKnown($status)) {
+            $status = SubscriptionStatus::ACTIVE;
+        }
+        $graceDays = max(0, min(90, $graceDays));
+
+        try {
+            $pdo = Database::connection();
+            $chk = $pdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
+            $chk->execute(['id' => $companyId]);
+            if (!$chk->fetchColumn()) {
+                return 0;
+            }
+
+            $graceStart = null;
+            $graceEnd = null;
+            if ($endYmd < gmdate('Y-m-d') || $status === SubscriptionStatus::GRACE) {
+                $graceStart = gmdate('Y-m-d', strtotime($endYmd . ' +1 day') ?: time());
+                $graceEnd = gmdate('Y-m-d', strtotime($endYmd . ' +' . $graceDays . ' days') ?: time());
+            }
+
+            try {
+                $stmt = $pdo->prepare(
+                    'INSERT INTO rateb_subscription_engine
+                        (company_id, subscription_start, subscription_end, grace_period_days,
+                         grace_started_at, grace_end_at, current_status, created_at)
+                     VALUES
+                        (:company_id, :start, :end, :grace_days,
+                         :grace_start, :grace_end, :status, NOW())'
+                );
+                $stmt->execute([
+                    'company_id' => $companyId,
+                    'start' => $startYmd,
+                    'end' => $endYmd,
+                    'grace_days' => $graceDays,
+                    'grace_start' => $graceStart,
+                    'grace_end' => $graceEnd,
+                    'status' => $status,
+                ]);
+            } catch (\Throwable $colEx) {
+                $stmt = $pdo->prepare(
+                    'INSERT INTO rateb_subscription_engine
+                        (company_id, subscription_start, subscription_end, grace_period_days,
+                         current_status, created_at)
+                     VALUES
+                        (:company_id, :start, :end, :grace_days, :status, NOW())'
+                );
+                $stmt->execute([
+                    'company_id' => $companyId,
+                    'start' => $startYmd,
+                    'end' => $endYmd,
+                    'grace_days' => $graceDays,
+                    'status' => $status,
+                ]);
+            }
+            return (int) $pdo->lastInsertId();
+        } catch (\Throwable $e) {
+            error_log('RATEB SubscriptionAdminRepository::createEngineRow: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Dashboard aggregates from rateb_subscription_engine only.
      */
     public function dashboardCounts(string $todayYmd, int $expiringSoonDays = 14): SubscriptionAdminDashboard

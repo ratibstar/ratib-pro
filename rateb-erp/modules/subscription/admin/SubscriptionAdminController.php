@@ -139,6 +139,46 @@ final class SubscriptionAdminController extends Controller
         Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
     }
 
+    public function create(): void
+    {
+        $this->assertCanManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            Response::redirect(rateb_url('admin/subscription-engine'));
+            return;
+        }
+
+        $companyId = (int) ($_POST['company_id'] ?? 0);
+        $start = substr(trim((string) ($_POST['subscription_start'] ?? '')), 0, 10);
+        $end = substr(trim((string) ($_POST['subscription_end'] ?? '')), 0, 10);
+        $seedAlert = !isset($_POST['seed_alert']) || (string) $_POST['seed_alert'] === '1';
+
+        if ($start === '') {
+            $start = gmdate('Y-m-d');
+        }
+
+        $out = $this->service->createTenant(
+            $companyId,
+            $start,
+            $end,
+            $this->actorId(),
+            $seedAlert
+        );
+
+        if ($out['success']) {
+            SessionManager::flash(
+                'success',
+                'Created engine row for company #' . $companyId
+                . ($seedAlert ? ' (alert seeded if in warning window)' : '')
+            );
+            Response::redirect(rateb_url('admin/subscription-engine/' . $companyId));
+            return;
+        }
+
+        SessionManager::flash('error', 'Create failed: ' . $out['message']);
+        Response::redirect(rateb_url('admin/subscription-engine'));
+    }
+
     private function assertCanView(): void
     {
         if (!function_exists('rateb_can')

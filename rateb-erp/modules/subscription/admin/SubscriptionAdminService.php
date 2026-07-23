@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Rateb\App\Subscription\Admin;
 
 use Rateb\App\Subscription\DefaultRenewalAuthorizer;
+use Rateb\App\Subscription\NotificationDecision;
 use Rateb\App\Subscription\NotificationHistoryRepository;
+use Rateb\App\Subscription\NotificationType;
 use Rateb\App\Subscription\RenewalAuthorizer;
 use Rateb\App\Subscription\RenewalEngine;
 use Rateb\App\Subscription\RenewalRepository;
@@ -52,6 +54,123 @@ final class SubscriptionAdminService
     public function syncMissingCompanies(?string $todayYmd = null): array
     {
         return $this->repo->syncMissingCompanies($todayYmd ?? gmdate('Y-m-d'));
+    }
+
+    /**
+     * Bootstrap an engine row for a company (manual ops — optional alert seed).
+     *
+     * @return array{success:bool,code:string,message:string,company_id:int,engine_id:int}
+     */
+    public function createTenant(
+        int $companyId,
+        string $startYmd,
+        string $endYmd,
+        int $actorId,
+        bool $seedAlert = true,
+        ?string $todayYmd = null
+    ): array {
+        if (!$this->canManage($actorId)) {
+            return [
+                'success' => false,
+                'code' => 'unauthorized',
+                'message' => 'Actor not authorized',
+                'company_id' => $companyId,
+                'engine_id' => 0,
+            ];
+        }
+        if ($companyId < 1) {
+            return [
+                'success' => false,
+                'code' => 'invalid_company',
+                'message' => 'company_id required',
+                'company_id' => $companyId,
+                'engine_id' => 0,
+            ];
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startYmd)
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endYmd)) {
+            return [
+                'success' => false,
+                'code' => 'invalid_dates',
+                'message' => 'start/end must be Y-m-d',
+                'company_id' => $companyId,
+                'engine_id' => 0,
+            ];
+        }
+        if ($this->repo->findTenant($companyId) !== null) {
+            return [
+                'success' => false,
+                'code' => 'exists',
+                'message' => 'Engine row already exists for this company',
+                'company_id' => $companyId,
+                'engine_id' => 0,
+            ];
+        }
+
+        $today = $todayYmd ?? gmdate('Y-m-d');
+        $endTs = strtotime($endYmd . ' 00:00:00');
+        $todayTs = strtotime($today . ' 00:00:00');
+        $days = ($endTs !== false && $todayTs !== false)
+            ? (int) floor(($endTs - $todayTs) / 86400)
+            : 0;
+
+        if ($days < 0) {
+            $status = SubscriptionStatus::GRACE;
+            $type = NotificationType::GRACE;
+            $triggerDay = $days;
+        } elseif ($days <= 3) {
+            $status = SubscriptionStatus::CRITICAL;
+            $type = NotificationType::FINAL_WARNING;
+            $triggerDay = $days;
+        } elseif ($days <= 14) {
+            $status = SubscriptionStatus::WARNING;
+            $type = NotificationType::REMINDER;
+            $triggerDay = $days;
+        } else {
+            $status = SubscriptionStatus::ACTIVE;
+            $type = null;
+            $triggerDay = $days;
+        }
+
+        $engineId = $this->repo->createEngineRow($companyId, $startYmd, $endYmd, $status, 7);
+        if ($engineId < 1) {
+            return [
+                'success' => false,
+                'code' => 'persist_failed',
+                'message' => 'Could not create engine row (company missing or DB/migration issue)',
+                'company_id' => $companyId,
+                'engine_id' => 0,
+            ];
+        }
+
+        $this->repo->insertLifecycleAudit(
+            $companyId,
+            'CREATED',
+            'NONE',
+            $status,
+            $actorId
+        );
+
+        if ($seedAlert && $type !== null) {
+            $decision = NotificationDecision::eligible(
+                $companyId,
+                $engineId,
+                $type,
+                $triggerDay,
+                $today,
+                'admin_bootstrap',
+                ['in_app']
+            );
+            $this->notifications->recordGenerated($decision);
+        }
+
+        return [
+            'success' => true,
+            'code' => 'created',
+            'message' => 'Engine row created',
+            'company_id' => $companyId,
+            'engine_id' => $engineId,
+        ];
     }
 
     /**
