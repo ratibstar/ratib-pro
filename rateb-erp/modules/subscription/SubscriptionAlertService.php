@@ -212,23 +212,23 @@ final class SubscriptionAlertService
         return match ($type) {
             NotificationType::REMINDER => [
                 SubscriptionAlertViewModel::SEVERITY_NORMAL,
-                'alert-warning',
+                'rateb-sub-toast--warn',
             ],
             NotificationType::FINAL_WARNING => [
                 SubscriptionAlertViewModel::SEVERITY_HIGH,
-                'alert-warning rateb-sub-alert--high',
+                'rateb-sub-toast--high',
             ],
             NotificationType::GRACE => [
                 SubscriptionAlertViewModel::SEVERITY_CRITICAL_WARNING,
-                'alert-danger',
+                'rateb-sub-toast--critical',
             ],
             NotificationType::SUSPENSION => [
                 SubscriptionAlertViewModel::SEVERITY_CRITICAL,
-                'alert-danger rateb-sub-alert--critical',
+                'rateb-sub-toast--critical',
             ],
             default => [
                 SubscriptionAlertViewModel::SEVERITY_NORMAL,
-                'alert-warning',
+                'rateb-sub-toast--warn',
             ],
         };
     }

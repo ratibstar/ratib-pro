@@ -38,7 +38,7 @@ Accessor: `subscription_alert(): ?SubscriptionAlertViewModel`
 
 ## 3. UI integration
 
-- Banner: `modules/subscription/views/alert-banner.php`
+- Banner: `modules/subscription/views/alert-banner.php` — modern centered toast card (max ~36rem) at top of main content
 - Included in `views/layouts/main.php` **immediately after flash** (existing top content alert area).
 - No new nav item, no second notification system.
 
