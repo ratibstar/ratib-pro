@@ -25,13 +25,22 @@ final class SubscriptionAdminController extends Controller
     {
         $this->assertCanView();
 
-        $sync = $this->service->syncMissingCompanies();
-        if (($sync['inserted'] ?? 0) > 0) {
-            SessionManager::flash(
-                'success',
-                'Synced ' . (int) $sync['inserted'] . ' compan' . ((int) $sync['inserted'] === 1 ? 'y' : 'ies')
-                . ' into subscription engine (from companies + billing dates).'
-            );
+        // Optional explicit sync only — never block the page on auto-sync/fan-out.
+        $syncInserted = 0;
+        if (isset($_GET['sync']) && (string) $_GET['sync'] === '1' && $this->service->canManage($this->actorId())) {
+            $sync = $this->service->syncMissingCompanies(null, true);
+            $syncInserted = (int) ($sync['inserted'] ?? 0);
+            if ($syncInserted > 0) {
+                SessionManager::flash(
+                    'success',
+                    'Synced ' . $syncInserted . ' compan' . ($syncInserted === 1 ? 'y' : 'ies')
+                    . ' into subscription engine.'
+                );
+            } else {
+                SessionManager::flash('success', 'Sync complete — no missing companies.');
+            }
+            Response::redirect(rateb_url('admin/subscription-engine'));
+            return;
         }
 
         $page = max(1, (int) ($_GET['page'] ?? 1));
@@ -44,8 +53,8 @@ final class SubscriptionAdminController extends Controller
 
         $dashboard = $this->service->dashboard();
         $list = $this->service->listTenants($page, $limit, $status !== '' ? $status : 'all', $search);
-        // Fan-out is session-throttled (once/day); still returns ops panel items every load.
-        $adminAlerts = $this->service->fanOutAdminAlerts();
+        // Read-only ops panel — bell fan-out runs in Phase 4 scheduler only (not on page load).
+        $adminAlerts = $this->service->alertWindowForOps();
 
         $this->render('dashboard', [
             'title' => 'Subscription Engine Admin',
@@ -57,9 +66,29 @@ final class SubscriptionAdminController extends Controller
             'statusFilter' => $list['status'],
             'search' => $list['search'],
             'canManage' => $this->service->canManage($this->actorId()),
-            'syncInserted' => (int) ($sync['inserted'] ?? 0),
+            'syncInserted' => $syncInserted,
             'adminAlerts' => $adminAlerts,
             'csrf' => Csrf::token(),
+        ]);
+    }
+
+    /**
+     * Deferred admin bell fan-out (called after page paint via fetch).
+     * JSON only — never used for HTML render path.
+     */
+    public function fanout(): void
+    {
+        $this->assertCanView();
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'error' => 'csrf'], 419);
+            return;
+        }
+        $out = $this->service->fanOutAdminAlerts();
+        Response::json([
+            'ok' => true,
+            'companies' => (int) ($out['companies'] ?? 0),
+            'notifications' => (int) ($out['notifications'] ?? 0),
+            'skipped' => !empty($out['skipped']),
         ]);
     }
 

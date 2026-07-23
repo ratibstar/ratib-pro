@@ -73,8 +73,17 @@ final class SubscriptionAdminService
     }
 
     /**
-     * Notify platform super-admins about every company in the alert window
-     * (once per company per admin per day). Session-throttled write path.
+     * Ops panel rows only — no notification writes (keeps the admin page fast).
+     *
+     * @return array{companies:int,notifications:int,items:list<array<string,mixed>>}
+     */
+    public function alertWindowForOps(?string $todayYmd = null): array
+    {
+        return (new SubscriptionAdminNotifier())->alertWindowSummary($todayYmd);
+    }
+
+    /**
+     * Notify platform super-admins (scheduler / explicit ops). Not used on page render.
      *
      * @return array{companies:int,notifications:int,items:list<array<string,mixed>>,skipped?:bool}
      */

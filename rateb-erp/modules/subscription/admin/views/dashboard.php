@@ -23,10 +23,18 @@ $statusBadge = static function (string $status): string {
     return '<span class="badge bg-' . $cls . '">' . View::escape($status) . '</span>';
 };
 ?>
-<div class="rateb-page-header mb-3">
-    <h1 class="h4 mb-1"><i class="fas fa-heartbeat me-2"></i>Subscription Engine Admin</h1>
-    <p class="text-muted small mb-0">Operational console for tenant subscription lifecycle. No payment or auto-billing.</p>
-    <p class="small text-muted mb-0 mt-1">Companies auto-sync at most once per hour (insert-only; existing engine dates are not overwritten). Admin bell alerts fan out once per browser session per day.</p>
+<div class="rateb-page-header mb-3 d-flex flex-wrap justify-content-between align-items-start gap-2">
+    <div>
+        <h1 class="h4 mb-1"><i class="fas fa-heartbeat me-2"></i>Subscription Engine Admin</h1>
+        <p class="text-muted small mb-0">Operational console for tenant subscription lifecycle. No payment or auto-billing.</p>
+        <p class="small text-muted mb-0 mt-1">Page load is read-only (fast). Missing companies sync on demand. Admin bell alerts run after paint / via scheduler.</p>
+    </div>
+    <?php if (!empty($canManage)) { ?>
+    <a class="btn btn-sm btn-outline-secondary"
+       href="<?php echo $esc(rateb_url_query('admin/subscription-engine', ['sync' => 1])); ?>">
+        Sync missing companies
+    </a>
+    <?php } ?>
 </div>
 
 <?php if (!empty($syncInserted) && (int) $syncInserted > 0) { ?>
@@ -113,8 +121,8 @@ if ($adminAlertItems !== []) {
     <div class="rateb-card-body py-3">
         <h2 class="h6 mb-2">Create / test engine record</h2>
         <p class="small text-muted mb-2">
-            Companies auto-sync on page open. Use this form to create a missing company with a custom expiry
-            and optionally seed an in-app alert (for testing).
+            Use <strong>Sync missing companies</strong> above when needed. This form creates a custom expiry
+            and optionally seeds an in-app alert (for testing).
         </p>
         <form method="post" action="<?php echo $esc(rateb_url('admin/subscription-engine/create')); ?>" class="row g-2 align-items-end">
             <input type="hidden" name="_csrf" value="<?php echo $esc((string) ($csrf ?? '')); ?>">
@@ -266,3 +274,25 @@ if ($adminAlertItems !== []) {
 <?php if (!$canManage) { ?>
 <p class="small text-muted mt-2 mb-0">Read-only access (<code>subscriptions.view</code>). Manage actions require <code>subscriptions.manage</code>.</p>
 <?php } ?>
+<script>
+(function () {
+  var csrf = <?php echo json_encode((string) ($csrf ?? ''), JSON_UNESCAPED_UNICODE); ?>;
+  var url = <?php echo json_encode(rateb_url('admin/subscription-engine/fanout'), JSON_UNESCAPED_UNICODE); ?>;
+  if (!csrf || !url || !window.fetch) return;
+  var run = function () {
+    var body = new URLSearchParams();
+    body.set('_csrf', csrf);
+    fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    }).catch(function () {});
+  };
+  if (window.requestIdleCallback) {
+    requestIdleCallback(run, { timeout: 4000 });
+  } else {
+    setTimeout(run, 1500);
+  }
+})();
+</script>

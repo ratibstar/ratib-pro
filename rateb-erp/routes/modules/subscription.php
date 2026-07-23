@@ -31,6 +31,7 @@ $manageMw = rateb_platform_oversight_mw('subscriptions.manage');
 
 $router->get('/admin/subscription-engine', [SubscriptionAdminController::class, 'index'], $viewMw);
 $router->post('/admin/subscription-engine/create', [SubscriptionAdminController::class, 'create'], $manageMw);
+$router->post('/admin/subscription-engine/fanout', [SubscriptionAdminController::class, 'fanout'], $viewMw);
 $router->get('/admin/subscription-engine/{id}', [SubscriptionAdminController::class, 'show'], $viewMw);
 $router->post('/admin/subscription-engine/{id}/renew', [SubscriptionAdminController::class, 'renew'], $manageMw);
 $router->post('/admin/subscription-engine/{id}/extend', [SubscriptionAdminController::class, 'extend'], $manageMw);

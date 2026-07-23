@@ -39,7 +39,7 @@ Opening the console (and Phase 4 scheduler after a real run) fans out **in-app b
 - Trigger: `subscription_engine_alert`
 - Idempotent: one notification per admin × company × calendar day
 - Ops panel on the dashboard lists companies needing follow-up with deep links
-- **Perf:** company auto-sync throttled to once/hour per session (cheap `NOT EXISTS` scan); admin fan-out writes throttled to once/session/day with a single batch lookup for already-sent notifications
+- **Perf:** page load is **read-only** (dashboard + list + ops panel SELECT only). Sync is on-demand (`?sync=1`). Admin bell fan-out runs after paint via `POST .../fanout` and Phase 4 scheduler — never blocks HTML render.
 
 ## Dashboard counters
 

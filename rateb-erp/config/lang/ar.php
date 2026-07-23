@@ -16,7 +16,7 @@ return [
     'subscription_admin_alert_critical' => 'الشركة :company (#:id) ينتهي اشتراكها خلال :days يوم — حالة حرجة.',
     'subscription_admin_alert_warning' => 'الشركة :company (#:id) ينتهي اشتراكها خلال :days يوم — نافذة التجديد.',
     'subscription_admin_ops_panel_title' => 'شركات تحتاج متابعة',
-    'subscription_admin_ops_panel_help' => 'يصل إشعار في جرس الإشعارات لكل سوبر أدمن (مرة واحدة لكل شركة يومياً).',
+    'subscription_admin_ops_panel_help' => 'تظهر هنا للمتابعة. إشعار الجرس يُرسل بعد تحميل الصفحة أو عبر المجدول (مرة لكل شركة يومياً).',
     'subscription_admin_ops_open' => 'فتح',
     'subscription_status_ACTIVE' => 'نشط',
     'subscription_status_WARNING' => 'تحذير',

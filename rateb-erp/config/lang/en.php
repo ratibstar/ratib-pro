@@ -16,7 +16,7 @@ return [
     'subscription_admin_alert_critical' => 'Company :company (#:id) expires in :days day(s) — critical.',
     'subscription_admin_alert_warning' => 'Company :company (#:id) expires in :days day(s) — renewal window.',
     'subscription_admin_ops_panel_title' => 'Companies needing follow-up',
-    'subscription_admin_ops_panel_help' => 'Each super-admin gets an in-app bell notification once per company per day.',
+    'subscription_admin_ops_panel_help' => 'Listed here for follow-up. Bell alerts are sent after page paint or via the scheduler (once per company per day).',
     'subscription_admin_ops_open' => 'Open',
     'subscription_status_ACTIVE' => 'Active',
     'subscription_status_WARNING' => 'Warning',
