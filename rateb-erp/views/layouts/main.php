@@ -1709,9 +1709,10 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     'pilot_ops_pages' => $ratebOfflineFlagSvc->isPilotOpsPagesEnabled(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>" defer></script>
 <?php
         $ratebOfflineLazyScripts = [];
+        /* Fix9: tenant-context first in idle SDK chain — not a parse-time <script defer>. */
+        $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-offline-tenant-context.js');
         if (!empty($_GET['rateb_offline_debug'])) {
             $ratebOfflineLazyScripts[] = rateb_asset('offline/erp-offline-debug.js');
         }
@@ -1771,13 +1772,13 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
   function afterInteractive(fn) {
     var kick = function () {
       try {
-        if (navigator.onLine === false) {
-          /* Offline: still post-paint but ASAP for SDK. */
+        if (navigator.onLine === false || /(?:\?|&)rateb_offline(?:=|&|$)/.test(String(location.search || ''))) {
+          /* Offline / explicit offline mode: still post-paint but ASAP for SDK. */
           setTimeout(fn, 50);
           return;
         }
       } catch (e0) {}
-      /* PERF-P3: do not start Offline SDK warm-path assets on first paint.
+      /* PERF-P3 / Fix9: do not start Offline SDK warm-path assets on first paint.
        * Delay online SDK boot until idle after load (timeout 8s). */
       if (window.requestIdleCallback) {
         window.requestIdleCallback(fn, { timeout: 8000 });
@@ -1826,7 +1827,38 @@ window.__RATEB_ERP_SHELL_OFFLINE__ = <?php echo json_encode([
     ],
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 </script>
-<script src="<?php echo rateb_asset('offline/erp-offline-tenant-context.js'); ?>" defer></script>
+<script>
+(function () {
+  /* Fix9: lite tenant-context after Online shell ready — not parse-time defer. */
+  var tenantUrl = <?php echo json_encode(rateb_asset('offline/erp-offline-tenant-context.js'), JSON_UNESCAPED_SLASHES); ?>;
+  function injectTenant() {
+    if (!tenantUrl || document.querySelector('script[data-rateb-offline-tenant]')) return;
+    var s = document.createElement('script');
+    s.src = tenantUrl;
+    s.async = true;
+    s.setAttribute('data-rateb-offline-tenant', '1');
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function scheduleTenant() {
+    try {
+      if (navigator.onLine === false || /(?:\?|&)rateb_offline(?:=|&|$)/.test(String(location.search || ''))) {
+        setTimeout(injectTenant, 50);
+        return;
+      }
+    } catch (eOff) { /* ignore */ }
+    var go = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(injectTenant, { timeout: 5000 });
+      } else {
+        setTimeout(injectTenant, 2000);
+      }
+    };
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+  }
+  scheduleTenant();
+})();
+</script>
 <script>
 (function () {
   var cfg = window.__RATEB_ERP_SHELL_OFFLINE__ || {};
@@ -2149,7 +2181,55 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 <?php
 }
 ?>
-<script src="<?php echo rateb_asset('offline/erp-pwa-install.js'); ?>" defer></script>
+<script>
+(function () {
+  /* Fix9: PWA install after Online shell ready — not parse-time defer (~367ms cold).
+   * Capture beforeinstallprompt early so a late script load does not miss the event. */
+  var pwaUrl = <?php echo json_encode(rateb_asset('offline/erp-pwa-install.js'), JSON_UNESCAPED_SLASHES); ?>;
+  var pwaLoaded = false;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    try { e.preventDefault(); } catch (ePrev) { /* ignore */ }
+    window.__RATEB_PWA_DEFERRED_PROMPT__ = e;
+    injectPwa();
+  });
+  function injectPwa() {
+    if (pwaLoaded || !pwaUrl) return;
+    pwaLoaded = true;
+    var s = document.createElement('script');
+    s.src = pwaUrl;
+    s.async = true;
+    s.setAttribute('data-rateb-pwa-install', '1');
+    s.onload = function () {
+      try {
+        var ev = window.__RATEB_PWA_DEFERRED_PROMPT__;
+        if (ev && window.RatebErpPwaInstall) {
+          /* Re-dispatch path: install script binds its own listener; hand off stored event via custom hook. */
+          window.dispatchEvent(new CustomEvent('rateb:pwa-deferred-prompt', { detail: ev }));
+        }
+      } catch (eHand) { /* ignore */ }
+    };
+    (document.body || document.documentElement).appendChild(s);
+  }
+  function schedulePwa() {
+    try {
+      if (navigator.onLine === false) {
+        setTimeout(injectPwa, 100);
+        return;
+      }
+    } catch (eOff) { /* ignore */ }
+    var go = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(injectPwa, { timeout: 5000 });
+      } else {
+        setTimeout(injectPwa, 2000);
+      }
+    };
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+  }
+  schedulePwa();
+})();
+</script>
 <?php if (!$ratebLocalAppliance) { ?>
 <script>
 /* Legacy kill: stale nav-guards used toast+preventDefault on create/edit.
@@ -2164,9 +2244,8 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
 </script>
 <script>
 (function () {
-  /* PERF-P3: do NOT load full-warm during first online page.
-   * Inject only after: requestIdleCallback AND min 20s AND user still active.
-   * nav-guard can load earlier (idle) — it does not warm assets. */
+  /* PERF-P3 / Fix9: do NOT load full-warm / nav-guard during first online paint.
+   * Inject after idle when Online shell is ready; ASAP when already offline. */
   var warmUrl = <?php echo json_encode(rateb_asset('offline/erp-offline-full-warm.js'), JSON_UNESCAPED_SLASHES); ?>;
   var guardUrl = <?php echo json_encode(rateb_asset('offline/erp-offline-nav-guard.js'), JSON_UNESCAPED_SLASHES); ?>;
   function inject(src) {
@@ -2208,10 +2287,22 @@ if (window.__RATEB_ERP_SHELL_OFFLINE__ && window.__RATEB_ERP_SHELL_OFFLINE__.fla
     else window.addEventListener('load', fn, { once: true });
   }
   afterLoad(function () {
-    /* nav-guard ASAP — blocks offline toolbar/F5 paths that need the full guard */
-    loadGuard();
-    /* full-warm: start ~4s after load so offline works without visiting each page.
-     * (Was 20s+20s idle — warm rarely finished before users went offline.) */
+    var offlineNow = false;
+    try { offlineNow = navigator.onLine === false; } catch (eN) { offlineNow = false; }
+    if (offlineNow) {
+      loadGuard();
+      return;
+    }
+    /* Online: idle after shell ready — do not compete with first paint / soft-nav. */
+    var armGuard = function () {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(loadGuard, { timeout: 5000 });
+      } else {
+        setTimeout(loadGuard, 2000);
+      }
+    };
+    armGuard();
+    /* full-warm: start ~4s after load so offline works without visiting each page. */
     setTimeout(function () {
       if (!userActive()) {
         return;

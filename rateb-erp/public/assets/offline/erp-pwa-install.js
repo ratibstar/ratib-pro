@@ -77,4 +77,22 @@
             } catch (e) { /* ignore */ }
         }
     };
+
+    /* Fix9: layout may inject this script after beforeinstallprompt — adopt stored event. */
+    try {
+        if (root.__RATEB_PWA_DEFERRED_PROMPT__) {
+            deferred = root.__RATEB_PWA_DEFERRED_PROMPT__;
+            showBanner();
+        }
+    } catch (eBoot) { /* ignore */ }
+    try {
+        root.addEventListener('rateb:pwa-deferred-prompt', function (ev) {
+            try {
+                deferred = (ev && ev.detail) || root.__RATEB_PWA_DEFERRED_PROMPT__ || deferred;
+                if (deferred) {
+                    showBanner();
+                }
+            } catch (eEv) { /* ignore */ }
+        });
+    } catch (eListen) { /* ignore */ }
 })(typeof window !== 'undefined' ? window : globalThis);
