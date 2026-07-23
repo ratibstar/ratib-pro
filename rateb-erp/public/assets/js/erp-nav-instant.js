@@ -974,6 +974,71 @@
         });
     }
 
+    /**
+     * Online Cache API helper — parallel key matches with key-order priority.
+     * Wall time ≈ max(match) not sum(match). Key[0] HIT resolves immediately
+     * (does not wait for sibling misses) so warm navigation stays as fast as before.
+     * Same preference as the old sequential chain: earlier key wins over later.
+     */
+    function matchKeysParallel(cache, keyList, matchOpts) {
+        if (!cache || !keyList || !keyList.length) {
+            return Promise.resolve(null);
+        }
+        return new Promise(function (resolve) {
+            var n = keyList.length;
+            var left = n;
+            var slots = new Array(n);
+            var settled = false;
+
+            function pick() {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                for (var i = 0; i < n; i++) {
+                    if (slots[i]) {
+                        resolve(slots[i]);
+                        return;
+                    }
+                }
+                resolve(null);
+            }
+
+            function afterSlot() {
+                if (settled) {
+                    return;
+                }
+                // Resolve as soon as the highest-priority hit is known
+                // (all earlier keys confirmed miss/null).
+                for (var i = 0; i < n; i++) {
+                    if (slots[i] === undefined) {
+                        return;
+                    }
+                    if (slots[i]) {
+                        pick();
+                        return;
+                    }
+                }
+                if (left === 0) {
+                    pick();
+                }
+            }
+
+            keyList.forEach(function (k, i) {
+                var req = matchOpts ? cache.match(k, matchOpts) : cache.match(k);
+                req.then(function (hit) {
+                    slots[i] = hit || null;
+                    left -= 1;
+                    afterSlot();
+                }).catch(function () {
+                    slots[i] = null;
+                    left -= 1;
+                    afterSlot();
+                });
+            });
+        });
+    }
+
     function matchCachedHtml(href) {
         if (!root.caches) {
             return Promise.resolve(null);
@@ -1000,9 +1065,10 @@
             return true;
         });
         // Offline: pathname + ignoreSearch first (warm stores bare paths; sidebar has ?company_id=).
+        // Offline branch intentionally unchanged (Online Performance Fix 1 scope).
         var offlineFast = isUiOffline();
-        var primary = root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
-            if (offlineFast) {
+        if (offlineFast) {
+            var primaryOffline = root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
                 return cache.match(keys[0], { ignoreSearch: true }).then(function (hit) {
                     if (hit) {
                         return hit;
@@ -1015,32 +1081,46 @@
                     });
                     return chain;
                 });
-            }
-            var chain = Promise.resolve(null);
-            keys.slice(0, 2).forEach(function (k) {
-                chain = chain.then(function (hit) {
-                    return hit || cache.match(k);
-                });
-            });
-            return chain;
-        }).catch(function () { return null; });
+            }).catch(function () { return null; });
 
-        return primary.then(function (fastHit) {
+            return primaryOffline.then(function (fastHit) {
+                if (fastHit) {
+                    return fastHit;
+                }
+                // One ignoreSearch on pathname only — skip coexist fan-out offline.
+                return root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
+                    return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
+                }).catch(function () { return null; });
+            }).catch(function () {
+                return null;
+            });
+        }
+
+        // Online: parallel key matches (eliminate sequential miss stacking).
+        // Preference unchanged: v36 primary keys[0..1], then one older warm bucket.
+        // Open fallback while primary matches — no network, no duplicate fetch.
+        var onlineKeys = keys.slice(0, 2);
+        var fallbackName = OPS_PAGE_CACHE_FALLBACKS[0];
+        var fallbackOpen = fallbackName
+            ? root.caches.open(fallbackName).catch(function () { return null; })
+            : Promise.resolve(null);
+
+        return root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
+            return matchKeysParallel(cache, onlineKeys);
+        }).catch(function () {
+            return null;
+        }).then(function (fastHit) {
             if (fastHit) {
                 return fastHit;
             }
-            // Online miss on v36: try one older warm bucket (devices mid-upgrade).
-            if (!offlineFast) {
-                return root.caches.open(OPS_PAGE_CACHE_FALLBACKS[0]).then(function (cache) {
-                    return cache.match(keys[0]).then(function (hit) {
-                        return hit || (keys[1] ? cache.match(keys[1]) : null);
-                    });
-                }).catch(function () { return null; });
-            }
-            // One ignoreSearch on pathname only — skip coexist fan-out offline.
-            return root.caches.open(OPS_PAGE_CACHE).then(function (cache) {
-                return cache.match(keys[0], { ignoreSearch: true }).catch(function () { return null; });
-            }).catch(function () { return null; });
+            return fallbackOpen.then(function (cache) {
+                if (!cache) {
+                    return null;
+                }
+                return matchKeysParallel(cache, onlineKeys);
+            }).catch(function () {
+                return null;
+            });
         }).catch(function () {
             return null;
         });
