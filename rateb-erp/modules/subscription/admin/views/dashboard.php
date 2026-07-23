@@ -33,6 +33,78 @@ $statusBadge = static function (string $status): string {
 <div class="alert alert-success py-2">Synced <?php echo (int) $syncInserted; ?> compan<?php echo (int) $syncInserted === 1 ? 'y' : 'ies'; ?> into the subscription engine.</div>
 <?php } ?>
 
+<?php
+$adminAlertItems = is_array($adminAlerts['items'] ?? null) ? $adminAlerts['items'] : [];
+$adminAlertNotifs = (int) ($adminAlerts['notifications'] ?? 0);
+if ($adminAlertItems !== []) {
+    $panelTitle = function_exists('__') ? (string) __('subscription_admin_ops_panel_title') : 'Companies needing follow-up';
+    $panelHelp = function_exists('__') ? (string) __('subscription_admin_ops_panel_help') : '';
+    $openLabel = function_exists('__') ? (string) __('subscription_admin_ops_open') : 'Open';
+    ?>
+<div class="rateb-card mb-3 border-danger">
+    <div class="rateb-card-body py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+                <h2 class="h6 mb-1 text-danger">
+                    <i class="fas fa-bell me-1"></i><?php echo $esc($panelTitle); ?>
+                    <span class="badge bg-danger ms-1"><?php echo count($adminAlertItems); ?></span>
+                </h2>
+                <?php if ($panelHelp !== '') { ?>
+                    <p class="small text-muted mb-0"><?php echo $esc($panelHelp); ?></p>
+                <?php } ?>
+                <?php if ($adminAlertNotifs > 0) { ?>
+                    <p class="small text-success mb-0 mt-1">
+                        <?php echo (int) $adminAlertNotifs; ?> notification(s) sent to super-admin inbox.
+                    </p>
+                <?php } ?>
+            </div>
+            <a class="btn btn-sm btn-outline-danger"
+               href="<?php echo $esc(rateb_url_query('admin/subscription-engine', ['status' => 'expiring_soon', 'page' => 1])); ?>">
+                Expiring soon
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Days left</th>
+                    <th>Expiry</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach (array_slice($adminAlertItems, 0, 12) as $item) {
+                    $cid = (int) ($item['company_id'] ?? 0);
+                    $kind = (string) ($item['kind'] ?? 'warning');
+                    $badge = match ($kind) {
+                        'suspended' => 'dark',
+                        'grace' => 'info',
+                        'critical' => 'danger',
+                        default => 'warning',
+                    };
+                    ?>
+                    <tr>
+                        <td><?php echo $esc((string) ($item['company_name'] ?? '')); ?> <span class="text-muted">(#<?php echo $cid; ?>)</span></td>
+                        <td><span class="badge bg-<?php echo $esc($badge); ?>"><?php echo $esc(strtoupper((string) ($item['status'] ?? $kind))); ?></span></td>
+                        <td><?php echo (int) ($item['days_remaining'] ?? 0); ?></td>
+                        <td><?php echo $esc((string) ($item['expiry'] ?? '')); ?></td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="<?php echo $esc(rateb_url('admin/subscription-engine/' . $cid)); ?>">
+                                <?php echo $esc($openLabel); ?>
+                            </a>
+                        </td>
+                    </tr>
+                <?php } ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<?php } ?>
+
 <?php if ($canManage) {
     $defaultEnd = gmdate('Y-m-d', strtotime('+3 days') ?: time());
     $defaultStart = gmdate('Y-m-d', strtotime('-30 days') ?: time());

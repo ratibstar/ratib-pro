@@ -155,6 +155,21 @@ final class NotificationScheduler
             'elapsed_seconds' => round(microtime(true) - $started, 4),
         ];
 
+        // Platform ops: fan-out in-app alerts to super-admins for any tenant in window.
+        if (!$dryRun) {
+            try {
+                if (class_exists(\Rateb\App\Subscription\Admin\SubscriptionAdminNotifier::class)) {
+                    $fan = (new \Rateb\App\Subscription\Admin\SubscriptionAdminNotifier())
+                        ->fanOutToPlatformAdmins($today);
+                    $stats['admin_fanout_companies'] = (int) ($fan['companies'] ?? 0);
+                    $stats['admin_fanout_notifications'] = (int) ($fan['notifications'] ?? 0);
+                }
+            } catch (\Throwable $e) {
+                $stats['admin_fanout_error'] = $e->getMessage();
+                error_log('RATEB NotificationScheduler admin fan-out: ' . $e->getMessage());
+            }
+        }
+
         error_log('RATEB NotificationScheduler finished: ' . json_encode($stats));
 
         return $stats;

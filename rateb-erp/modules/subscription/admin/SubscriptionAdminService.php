@@ -58,6 +58,17 @@ final class SubscriptionAdminService
     }
 
     /**
+     * Notify platform super-admins about every company in the alert window
+     * (once per company per admin per day). Also returns items for the ops panel.
+     *
+     * @return array{companies:int,notifications:int,items:list<array<string,mixed>>}
+     */
+    public function fanOutAdminAlerts(?string $todayYmd = null): array
+    {
+        return (new SubscriptionAdminNotifier())->fanOutToPlatformAdmins($todayYmd);
+    }
+
+    /**
      * Bootstrap an engine row for a company (manual ops — optional alert seed).
      *
      * @return array{success:bool,code:string,message:string,company_id:int,engine_id:int}

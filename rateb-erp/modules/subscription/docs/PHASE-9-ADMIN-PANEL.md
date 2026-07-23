@@ -24,12 +24,21 @@ Distinct from billing CRUD at `/admin/subscriptions` (plans/amount).
 modules/subscription/admin/
   SubscriptionAdminController.php
   SubscriptionAdminService.php
+  SubscriptionAdminNotifier.php
   SubscriptionAdminViewModel.php
   SubscriptionAdminRepository.php
   SubscriptionAdminDashboard.php
   views/dashboard.php
   views/detail.php
 ```
+
+## Platform admin notifications
+
+Opening the console (and Phase 4 scheduler after a real run) fans out **in-app bell notifications** to every active `is_super_admin` user for each company in the alert window (≤14 days, grace, suspended).
+
+- Trigger: `subscription_engine_alert`
+- Idempotent: one notification per admin × company × calendar day
+- Ops panel on the dashboard lists companies needing follow-up with deep links
 
 ## Dashboard counters
 

@@ -10,11 +10,14 @@ $mod = dirname(__DIR__);
 foreach ([
     'admin/SubscriptionAdminDashboard.php',
     'admin/SubscriptionAdminViewModel.php',
+    'admin/SubscriptionAdminNotifier.php',
+    'SubscriptionStatus.php',
 ] as $file) {
     require_once $mod . '/' . $file;
 }
 
 use Rateb\App\Subscription\Admin\SubscriptionAdminDashboard;
+use Rateb\App\Subscription\Admin\SubscriptionAdminNotifier;
 use Rateb\App\Subscription\Admin\SubscriptionAdminViewModel;
 
 $failed = 0;
@@ -120,6 +123,13 @@ $dates = SubscriptionAdminViewModel::resolveBootstrapDates('2026-01-01', '2026-0
 expect($dates['start'] === '2026-01-01' && $dates['end'] === '2026-07-20', 'billing dates preferred');
 $defaults = SubscriptionAdminViewModel::resolveBootstrapDates(null, null, '2026-08-10', 365);
 expect($defaults['start'] === '2026-08-10' && $defaults['end'] === '2027-08-10', 'default +365d');
+
+// Admin notifier classification
+expect(SubscriptionAdminNotifier::classify(['suspended_at' => null], 10, 'ACTIVE') === 'warning', 'classify warning');
+expect(SubscriptionAdminNotifier::classify(['suspended_at' => null], 2, 'CRITICAL') === 'critical', 'classify critical');
+expect(SubscriptionAdminNotifier::classify(['suspended_at' => null], -1, 'GRACE') === 'grace', 'classify grace');
+expect(SubscriptionAdminNotifier::classify(['suspended_at' => '2026-08-01'], 0, 'ACTIVE') === 'suspended', 'classify suspended');
+expect(SubscriptionAdminNotifier::TRIGGER === 'subscription_engine_alert', 'admin notify trigger');
 
 if ($failed > 0) {
     echo "\n{$failed} failure(s)\n";

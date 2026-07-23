@@ -44,6 +44,7 @@ final class SubscriptionAdminController extends Controller
 
         $dashboard = $this->service->dashboard();
         $list = $this->service->listTenants($page, $limit, $status !== '' ? $status : 'all', $search);
+        $adminAlerts = $this->service->fanOutAdminAlerts();
 
         $this->render('dashboard', [
             'title' => 'Subscription Engine Admin',
@@ -56,6 +57,7 @@ final class SubscriptionAdminController extends Controller
             'search' => $list['search'],
             'canManage' => $this->service->canManage($this->actorId()),
             'syncInserted' => (int) ($sync['inserted'] ?? 0),
+            'adminAlerts' => $adminAlerts,
             'csrf' => Csrf::token(),
         ]);
     }
