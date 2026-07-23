@@ -9,7 +9,7 @@ use Rateb\App\Pos\PosModule;
 /** Renders views from modules/pos/views — keeps POS isolated from RATEB_VIEWS_PATH. */
 final class PosView
 {
-    public static function render(string $view, array $data = [], ?string $layout = 'pos-admin'): void
+    public static function render(string $view, array $data = [], ?string $layout = 'pos-pages-shell'): void
     {
         $viewFile = PosModule::viewsPath() . '/' . str_replace('.', '/', $view) . '.php';
         if (!is_file($viewFile)) {

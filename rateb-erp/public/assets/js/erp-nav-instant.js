@@ -146,8 +146,38 @@
         return root.__RATEB_ERP_SHELL_OFFLINE__ || {};
     }
 
+    function isPosPagesShellBody(body) {
+        return !!(body && /rateb-pos-shell--pages/i.test(body.className || ''));
+    }
+
+    function isOnPosPagesShell() {
+        return isPosPagesShellBody(document.body);
+    }
+
+    function contentMainSel() {
+        return '#rateb-pos-app, main.rateb-pos-pages-main, #rateb-main-content, main.rateb-content';
+    }
+
     function sameShell(doc) {
         try {
+            var curPosPages = isOnPosPagesShell();
+            var nextPosPages = isPosPagesShellBody(doc.body);
+            // POS pages shell ↔ POS pages shell: keep RATEB POS header, swap #rateb-pos-app.
+            if (curPosPages || nextPosPages) {
+                if (!(curPosPages && nextPosPages)) {
+                    return false;
+                }
+                if (!doc.querySelector('#rateb-pos-app, main.rateb-pos-pages-main')) {
+                    return false;
+                }
+                if (doc.querySelector('body[data-rateb-uncached-page], [data-rateb-uncached-page="1"]')) {
+                    return false;
+                }
+                if (doc.querySelector('#login-form, form#password-form, [data-rateb-login]')) {
+                    return false;
+                }
+                return true;
+            }
             var side = doc.querySelector('#rateb-sidebar, aside.rateb-sidebar, .rateb-sidebar');
             var main = doc.querySelector('#rateb-main-content, main.rateb-content');
             if (!side || !main) {
@@ -159,11 +189,11 @@
             if (doc.querySelector('#login-form, form#password-form, [data-rateb-login]')) {
                 return false;
             }
-            // POS register uses a different shell — never content-swap into it.
+            // POS register / biometric shell — never content-swap into it from ERP Admin.
             if (doc.body && /rateb-pos-shell/i.test(doc.body.className || '')) {
                 return false;
             }
-            if (doc.querySelector('main#rateb-pos-app, [data-pos-register="1"]')) {
+            if (doc.querySelector('[data-pos-register="1"]')) {
                 return false;
             }
             // Do NOT compare company_id across inline scripts — first match is fragile and
@@ -683,7 +713,7 @@
      */
     function paintOfflinePageStub(href, opts) {
         opts = opts || {};
-        var curMain = document.querySelector('#rateb-main-content, main.rateb-content');
+        var curMain = document.querySelector(contentMainSel());
         if (!curMain) {
             return false;
         }
@@ -797,6 +827,19 @@
                 curH1.textContent = (nextH1.textContent || '').trim();
             }
         } catch (eH1) { /* ignore */ }
+        // POS pages shell: title + header nav live outside #rateb-pos-app.
+        try {
+            var nextPosTitle = doc.querySelector('.rateb-pos__pages-title');
+            var curPosTitle = document.querySelector('.rateb-pos__pages-title');
+            if (nextPosTitle && curPosTitle) {
+                curPosTitle.textContent = (nextPosTitle.textContent || '').trim();
+            }
+            var nextPosNav = doc.querySelector('.rateb-pos__pages-nav');
+            var curPosNav = document.querySelector('.rateb-pos__pages-nav');
+            if (nextPosNav && curPosNav) {
+                curPosNav.innerHTML = nextPosNav.innerHTML;
+            }
+        } catch (ePosH) { /* ignore */ }
     }
 
     function runLifecycle(name, detail) {
@@ -893,7 +936,7 @@
 
     function setMainNavBusy(busy) {
         try {
-            var main = document.querySelector('#rateb-main-content, main.rateb-content');
+            var main = document.querySelector(contentMainSel());
             if (!main) {
                 return;
             }
@@ -1279,8 +1322,8 @@
             if (!sameShell(doc)) {
                 throw new Error('shell_mismatch');
             }
-            var nextMain = doc.querySelector('#rateb-main-content, main.rateb-content');
-            var curMain = document.querySelector('#rateb-main-content, main.rateb-content');
+            var nextMain = doc.querySelector(contentMainSel());
+            var curMain = document.querySelector(contentMainSel());
             if (!nextMain || !curMain) {
                 throw new Error('missing_main');
             }
@@ -1433,6 +1476,10 @@
                 && u.search === root.location.search) {
                 return false;
             }
+            // Inside RATEB POS pages shell: soft-nav POS admin pages only (keep header).
+            if (isOnPosPagesShell()) {
+                return /\/(?:admin\/ops\/)?pos(\/|$)/i.test(u.pathname);
+            }
             if (!document.querySelector('#rateb-sidebar, .rateb-sidebar')) {
                 return false;
             }
@@ -1520,7 +1567,7 @@
     }
 
     function onPopState() {
-        if (!document.querySelector('#rateb-sidebar, .rateb-sidebar')) {
+        if (!isOnPosPagesShell() && !document.querySelector('#rateb-sidebar, .rateb-sidebar')) {
             return;
         }
         swapTo(root.location.href, { popstate: true });
@@ -1562,7 +1609,11 @@
     function boot() {
         rememberExistingScripts();
         cleanupSoftNavUiArtifacts();
-        bindPrefetch(document.getElementById('rateb-sidebar') || document);
+        bindPrefetch(
+            document.getElementById('rateb-sidebar')
+            || document.querySelector('.rateb-pos__header--pages')
+            || document
+        );
         document.addEventListener('click', onClick, true);
         window.__RATEB_NAV_READY__ = true;
         root.addEventListener('popstate', onPopState);

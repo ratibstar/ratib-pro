@@ -231,7 +231,15 @@ body.rateb-pos-shell--pages {
     top: 0;
 }
 
-.rateb-pos__header-back {
+.rateb-pos__pages-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.rateb-pos__header-back,
+.rateb-pos__header-nav {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -244,9 +252,16 @@ body.rateb-pos-shell--pages {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.rateb-pos__header-back:hover {
+.rateb-pos__header-back:hover,
+.rateb-pos__header-nav:hover {
     background: rgba(255, 255, 255, 0.18);
     color: inherit;
+}
+
+.rateb-pos__header-back.is-active,
+.rateb-pos__header-nav.is-active {
+    background: rgba(96, 165, 250, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.45);
 }
 
 .rateb-pos__pages-title {
@@ -261,6 +276,11 @@ body.rateb-pos-shell--pages {
     margin: 0 auto;
     padding: 20px 16px 40px;
     color: var(--pos-text);
+}
+
+.rateb-pos-pages-main.is-nav-busy {
+    opacity: 0.72;
+    transition: opacity 0.12s ease;
 }
 
 .rateb-pos-pages-main .rateb-pos-page {

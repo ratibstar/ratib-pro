@@ -83,8 +83,18 @@ $shiftStatus = $shift ? (string) ($shift['status'] ?? '') : '';
         <h2 class="rateb-pos-settings__h"><?php echo __('pos_settings_links_title'); ?></h2>
         <p class="rateb-pos-settings__hint"><?php echo __('pos_settings_links_hint'); ?></p>
         <div class="rateb-pos-settings__links">
-            <?php foreach ($links as $link): ?>
-                <a class="rateb-pos-settings__link" href="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['url'] ?? '#')); ?>">
+            <?php foreach ($links as $link):
+                $url = (string) ($link['url'] ?? '#');
+                $isRegister = (bool) preg_match('#/(?:admin/ops/)?pos(?:/register)?/?(\?|$)#i', $url);
+                ?>
+                <a class="rateb-pos-settings__link"
+                   href="<?php echo \Rateb\App\Pos\Support\PosView::escape($url); ?>"
+                   <?php if ($isRegister): ?>
+                   data-rateb-full-nav="1"
+                   <?php else: ?>
+                   data-rateb-href="<?php echo \Rateb\App\Pos\Support\PosView::escape($url); ?>"
+                   onclick="return false;"
+                   <?php endif; ?>>
                     <span class="rateb-pos-settings__link-title"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['title'] ?? '')); ?></span>
                     <span class="rateb-pos-settings__link-hint"><?php echo \Rateb\App\Pos\Support\PosView::escape((string) ($link['hint'] ?? '')); ?></span>
                 </a>
