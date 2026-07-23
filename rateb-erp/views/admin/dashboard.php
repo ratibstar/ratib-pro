@@ -83,19 +83,19 @@ if (!empty($dashboardChartsUrl)) {
         <div class="cm-viz-grid cm-viz-grid--3">
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('company_growth'); ?></h2></header>
-                <div class="cm-chart cm-chart--lg">
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
                     <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
                 </div>
             </section>
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('subscription_growth'); ?></h2></header>
-                <div class="cm-chart cm-chart--lg">
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
                     <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
                 </div>
             </section>
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('user_growth'); ?></h2></header>
-                <div class="cm-chart cm-chart--lg">
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
                     <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('user_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($userLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
                 </div>
             </section>

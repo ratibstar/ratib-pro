@@ -68,13 +68,14 @@ final class DashboardController extends Controller
         if (SessionManager::get('rateb_is_super_admin')) {
             if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
                 $service = new DashboardService();
-                // Embed charts in first HTML — deferred hydrate left empty black canvases on slow API.
-                $dash = $service->adminBuild();
+                // Fast first paint (metrics only); charts hydrate via /admin/api/dashboard-charts.
+                $dash = $service->adminBuildLite();
                 $this->view('admin/dashboard', [
                     'title' => __('dashboard'),
                     'dash' => $dash,
                     'metrics' => $dash['metrics'],
                     'charts' => $dash['charts'],
+                    'dashboardChartsUrl' => rateb_url('admin/api/dashboard-charts'),
                     'csrf' => Csrf::token(),
                 ], 'main');
 

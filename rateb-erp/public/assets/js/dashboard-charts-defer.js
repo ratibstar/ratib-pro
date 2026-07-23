@@ -65,6 +65,23 @@
         setJsonAttr(loginEl, 'data-failed', nums(login, 'failed_total'));
     }
 
+    function markCharts(state) {
+        try {
+            document.querySelectorAll('[data-chart-slot], .cm-chart').forEach(function (el) {
+                if (state === 'loading') {
+                    el.classList.add('is-loading');
+                    el.classList.remove('is-empty');
+                } else if (state === 'ready') {
+                    el.classList.remove('is-loading');
+                    el.classList.remove('is-empty');
+                } else if (state === 'empty') {
+                    el.classList.remove('is-loading');
+                    el.classList.add('is-empty');
+                }
+            });
+        } catch (eMark) { /* ignore */ }
+    }
+
     function paintCharts() {
         try {
             if (typeof window.ratebChartsBoot === 'function') {
@@ -72,6 +89,7 @@
             } else if (typeof window.ratebChartInitPane === 'function') {
                 window.ratebChartInitPane(document);
             }
+            markCharts('ready');
         } catch (ePaint) { /* ignore */ }
     }
 
@@ -120,6 +138,7 @@
         }
         var myGen = ++bootGen;
         var url = root.getAttribute('data-charts-url');
+        markCharts('loading');
 
         loadChartLibs(root).then(function () {
             if (myGen !== bootGen) {
@@ -128,10 +147,12 @@
             // Paint whatever labels are already on the canvas (lite HTML), then refresh from API.
             paintCharts();
             if (!url) {
+                markCharts('ready');
                 return;
             }
             try {
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                    markCharts('ready');
                     return;
                 }
             } catch (eOff) { /* continue */ }
@@ -153,6 +174,7 @@
                     return;
                 }
                 if (!data || !data.ok) {
+                    markCharts('ready');
                     return;
                 }
                 applyCharts(data.charts || {});
@@ -163,7 +185,9 @@
                     }
                     paintCharts();
                 }, 0);
-            }).catch(function () { /* ignore */ }).finally(function () {
+            }).catch(function () {
+                markCharts('ready');
+            }).finally(function () {
                 clearTimeout(timer);
             });
         });

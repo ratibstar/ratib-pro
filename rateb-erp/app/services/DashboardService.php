@@ -257,6 +257,7 @@ final class DashboardService
             'SELECT la.email, la.success, la.created_at, u.name AS user_name
              FROM rateb_login_activity la
              LEFT JOIN rateb_users u ON u.id = la.user_id
+             WHERE la.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
              ORDER BY la.created_at DESC LIMIT 8'
         );
     }
@@ -510,13 +511,20 @@ final class DashboardService
     /** @param array<int, array<string, mixed>> $rows */
     private function padMonthlySeries(array $rows): array
     {
-        if ($rows !== []) {
-            return $rows;
+        $byMonth = [];
+        foreach ($rows as $row) {
+            $m = (string) ($row['month'] ?? '');
+            if ($m === '') {
+                continue;
+            }
+            $byMonth[$m] = (int) ($row['total'] ?? 0);
         }
         $out = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $out[] = ['month' => date('Y-m', strtotime('-' . $i . ' months')), 'total' => 0];
+        for ($i = 11; $i >= 0; $i--) {
+            $month = date('Y-m', strtotime('-' . $i . ' months'));
+            $out[] = ['month' => $month, 'total' => $byMonth[$month] ?? 0];
         }
+
         return $out;
     }
 }
