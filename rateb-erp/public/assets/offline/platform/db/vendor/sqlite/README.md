@@ -1,6 +1,8 @@
-# Vendored @sqlite.org/sqlite-wasm
+﻿# Moved (Offline Fix 4)
 
-Source: `@sqlite.org/sqlite-wasm@3.53.0-build1`  
-License: see upstream package (SQLite blessing / Apache-2.0 for glue as applicable)
+SQLite WASM vendor now lives at:
 
-Used by Offline V2 L3 only (`public/v2/js/db/sqlite-runtime.js`).
+`rateb-erp/public/v2/vendor/sqlite/`
+
+Reason: V2 Service Worker scope is `/v2/` only — WASM must be under that
+prefix for precache + fetch cache hits. Engine files are unchanged.

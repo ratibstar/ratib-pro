@@ -4,7 +4,11 @@
  * Prefers OPFS VFS; falls back to in-memory + HCI byte persist (no COOP required).
  * Does NOT use IndexedDB or Cache API for business data.
  */
-import sqlite3InitModule from './vendor/sqlite/index.mjs';
+/*
+ * Vendor lives under /v2/vendor/sqlite/ so the V2 Service Worker (scope /v2/)
+ * can precache and serve WASM/index.mjs. Engine files are unchanged.
+ */
+import sqlite3InitModule from '../../../../v2/vendor/sqlite/index.mjs';
 import { MIGRATIONS } from './migrations.js';
 
 var DB_VERSION_TARGET = 3;
@@ -27,23 +31,48 @@ var state = {
     db: null,
     mode: null, // 'opfs' | 'hci-persist'
     open: false,
-    opening: null
+    opening: null,
+    initPromise: null
 };
 
+function wasmUrl(path) {
+    return new URL('../../../../v2/vendor/sqlite/' + path, import.meta.url).href;
+}
+
+/**
+ * Fix4: singleton WASM/runtime init. Safe to call from register() warm-up
+ * and from open() — callers share one in-flight promise.
+ */
 function initSqlite3() {
     if (state.sqlite3) {
         return Promise.resolve(state.sqlite3);
     }
-    return sqlite3InitModule({
+    if (state.initPromise) {
+        return state.initPromise;
+    }
+    state.initPromise = sqlite3InitModule({
         print: function () { /* quiet */ },
         printErr: function () { /* quiet */ },
         locateFile: function (path) {
-            return new URL('./vendor/sqlite/' + path, import.meta.url).href;
+            return wasmUrl(path);
         }
     }).then(function (sqlite3) {
         state.sqlite3 = sqlite3;
         return sqlite3;
+    }).catch(function (err) {
+        state.initPromise = null;
+        throw err;
     });
+    return state.initPromise;
+}
+
+/**
+ * Warm WASM/runtime without opening the DB.
+ * Uses the same singleton as open() — do not issue a separate fetch() or we
+ * double-download sqlite3.wasm / index.mjs.
+ */
+function warmRuntime() {
+    return initSqlite3();
 }
 
 function openOpfs(sqlite3) {
@@ -191,14 +220,23 @@ function migrate() {
         'ON CONFLICT(key) DO UPDATE SET value=excluded.value',
         ['schema_version', String(current)]
     );
+    var result = {
+        ok: true,
+        schemaVersion: current,
+        target: DB_VERSION_TARGET,
+        applied: applied
+    };
+    /*
+     * Fix4: skip full export/persist when nothing migrated.
+     * OPFS is already durable; hci-persist only needs a checkpoint when schema changed.
+     */
+    if (applied.length === 0) {
+        result.persist = { ok: true, skipped: true, reason: 'no_migration', mode: state.mode };
+        return Promise.resolve(result);
+    }
     return checkpointPersist().then(function (persisted) {
-        return {
-            ok: true,
-            schemaVersion: current,
-            target: DB_VERSION_TARGET,
-            applied: applied,
-            persist: persisted
-        };
+        result.persist = persisted;
+        return result;
     });
 }
 
@@ -210,6 +248,22 @@ function integrityCheck() {
 
 function syncInstallPointerFromActiveJson() {
     return hci().readActivePointer().then(function (ptr) {
+        var prev = null;
+        try {
+            var rows = exec(
+                'SELECT active_slot, previous_slot, install_id FROM v2_install_pointer WHERE id=1'
+            );
+            prev = rows && rows[0] ? rows[0] : null;
+        } catch (eRead) {
+            prev = null;
+        }
+        var same = !!(prev &&
+            String(prev.active_slot || '') === String(ptr.activeSlot || '') &&
+            String(prev.previous_slot || '') === String(ptr.previousSlot || '') &&
+            String(prev.install_id || '') === String(ptr.installId || ''));
+        if (same) {
+            return { ok: true, pointer: ptr, unchanged: true };
+        }
         exec(
             'INSERT INTO v2_install_pointer(id, active_slot, previous_slot, install_id, updated_at) ' +
             'VALUES (1, ?, ?, ?, ?) ' +
@@ -223,6 +277,10 @@ function syncInstallPointerFromActiveJson() {
                 ptr.updatedAt || nowIso()
             ]
         );
+        /* OPFS writes are durable; avoid export/persist on every open. */
+        if (state.mode === 'opfs') {
+            return { ok: true, pointer: ptr, persist: { ok: true, skipped: true, reason: 'opfs_durable' } };
+        }
         return checkpointPersist().then(function () {
             return { ok: true, pointer: ptr };
         });
@@ -240,9 +298,12 @@ function open() {
     if (state.opening) {
         return state.opening;
     }
-    state.opening = hci().ensureLayout().then(function () {
-        return initSqlite3();
-    }).then(function (sqlite3) {
+    /* Fix4: layout + WASM init are independent — run in parallel. */
+    state.opening = Promise.all([
+        hci().ensureLayout(),
+        initSqlite3()
+    ]).then(function (parts) {
+        var sqlite3 = parts[1];
         return openOpfs(sqlite3).catch(function () {
             return openHciPersist(sqlite3);
         });
@@ -274,14 +335,18 @@ function open() {
 }
 
 /**
- * Fix3: register the DB API without WASM/open/migrate.
- * First consumer calls open() (singleton promise) or uses exec()/migrate() wrappers.
+ * Fix3/4: register the DB API without opening.
+ * Warm-starts WASM fetch/compile so the first store open overlaps platform work.
  */
 function register() {
+    try {
+        warmRuntime();
+    } catch (eWarm) { /* ignore — open() will retry */ }
     return Promise.resolve({
         ok: true,
         registered: true,
         open: !!state.open,
+        warming: !state.sqlite3 && !!state.initPromise,
         version: DB_API_VERSION,
         mode: state.mode
     });
@@ -425,7 +490,13 @@ var api = {
     runSelfTest: runSelfTest,
     getMode: function () { return state.mode; },
     isOpen: function () { return !!state.open; },
-    isOpening: function () { return !!state.opening; }
+    isOpening: function () { return !!state.opening; },
+    isRuntimeReady: function () { return !!state.sqlite3; },
+    warmRuntime: function () {
+        return warmRuntime().then(function () {
+            return { ok: true, ready: true };
+        });
+    }
 };
 
 globalThis.RatebOfflineV2DB = api;

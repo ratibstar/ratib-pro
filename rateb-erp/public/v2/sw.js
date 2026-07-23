@@ -15,7 +15,8 @@
  * Offline Bootstrap: installation is complete only when every boot asset is cached.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE = 'rateb-offline-v2-bootstrap-v6';
+/* v8: sqlite vendor under /v2/vendor (SW scope) for real cache hits on WASM */
+var CACHE = 'rateb-offline-v2-bootstrap-v8';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',
@@ -41,10 +42,10 @@ var PRECACHE = [
     './js/routes/route-manifest.json',
     '../assets/offline/platform/db/migrations.js',
     '../assets/offline/platform/db/sqlite-runtime.js',
-    '../assets/offline/platform/db/vendor/sqlite/index.mjs',
-    '../assets/offline/platform/db/vendor/sqlite/sqlite3.wasm',
-    '../assets/offline/platform/db/vendor/sqlite/sqlite3-opfs-async-proxy.js',
-    '../assets/offline/platform/db/vendor/sqlite/sqlite3-worker1.mjs',
+    './vendor/sqlite/index.mjs',
+    './vendor/sqlite/sqlite3.wasm',
+    './vendor/sqlite/sqlite3-opfs-async-proxy.js',
+    './vendor/sqlite/sqlite3-worker1.mjs',
     './css/host.css',
     './css/shell.css'
 ];
@@ -114,16 +115,17 @@ self.addEventListener('fetch', function (event) {
     var req = event.request;
     var url = new URL(req.url);
 
-    // Never handle requests outside this SW's scope path segment /v2/
     if (url.origin !== self.location.origin) {
-        return;
-    }
-    if (url.pathname.indexOf('/v2/') === -1 && !/\/v2$/.test(url.pathname)) {
         return;
     }
 
     // Never treat admin/PHP/offline-shell as app documents
     if (/\/admin(\/|$)/i.test(url.pathname) || /offline-shell\.html$/i.test(url.pathname)) {
+        return;
+    }
+
+    var isV2 = url.pathname.indexOf('/v2/') !== -1 || /\/v2$/.test(url.pathname);
+    if (!isV2) {
         return;
     }
 

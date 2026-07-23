@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v6';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v8';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }
@@ -161,7 +161,7 @@
                 }
                 probeStarted = true;
                 var vendorUrl = new URL(
-                    '../assets/offline/platform/db/vendor/sqlite/index.mjs',
+                    './vendor/sqlite/index.mjs',
                     root.location.href
                 ).href;
                 root.fetch(vendorUrl, { method: 'HEAD', cache: 'no-cache', credentials: 'same-origin' })
