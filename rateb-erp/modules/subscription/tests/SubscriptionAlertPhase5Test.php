@@ -76,7 +76,12 @@ $ctx = new SubscriptionContext(
 );
 SubscriptionRuntime::bind($ctx);
 
-expect($svc->current() === null, 'no history → no alert');
+SubscriptionAlertRuntime::reset();
+$fallback = $svc->current();
+expect($fallback !== null, 'no history but 14 days → context fallback alert');
+expect($fallback->notificationType() === NotificationType::REMINDER, 'fallback REMINDER');
+expect(str_contains($fallback->message(), '14 days'), 'fallback message 14 days');
+expect($fallback->historyId() === 0, 'fallback history id 0');
 SubscriptionAlertRuntime::reset();
 
 // Seed history via recordGenerated path fields
@@ -101,6 +106,7 @@ expect(str_contains($alert->message(), '14 days'), 'message has 14 days');
 expect($alert->isDismissible() === true, '14 days dismissible');
 expect($alert->expirationDate() === '2026-08-06', 'expiry from context');
 expect($alert->subscriptionStatus() === SubscriptionStatus::WARNING, 'status from context');
+expect($alert->historyId() > 0, 'history-backed alert has id');
 
 // Request cache
 $again = $svc->current();
@@ -116,6 +122,18 @@ $alert3 = $svc->current();
 expect($alert3 !== null, '3-day alert present');
 expect($alert3->isDismissible() === false, '3 days not dismissible');
 expect(str_contains($alert3->message(), '3 days'), 'message 3 days');
+
+// Expires today via context fallback (no history for company 99)
+SubscriptionAlertRuntime::reset();
+$emptyHistory = new InMemoryNotificationHistoryStore();
+$svcToday = new SubscriptionAlertService($emptyHistory);
+SubscriptionRuntime::bind(new SubscriptionContext(
+    99, SubscriptionStatus::CRITICAL, 0, false, false, false, true, '2026-07-23', true, 1, 7
+));
+$todayAlert = $svcToday->current();
+expect($todayAlert !== null, 'expires today fallback');
+expect(str_contains($todayAlert->message(), 'today'), 'expires today message');
+expect($todayAlert->notificationType() === NotificationType::FINAL_WARNING, 'today = FINAL_WARNING');
 
 // Grace message
 SubscriptionAlertRuntime::reset();

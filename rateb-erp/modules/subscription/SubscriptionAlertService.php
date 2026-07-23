@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Rateb\App\Subscription;
 
 /**
- * Builds in-app subscription alerts from notification history only.
+ * Builds in-app subscription alerts from notification history, with a
+ * context fallback when history is missing but the tenant is inside the
+ * expiry / grace / suspension window (so ops date changes show immediately).
  *
  * Must NOT call SubscriptionEngine, NotificationPolicy, or SubscriptionRepository.
  * May read SubscriptionRuntime (already bound in Phase 2) for live days/expiry/status.
@@ -13,6 +15,7 @@ final class SubscriptionAlertService
 {
     private const DISMISS_SESSION_KEY = 'rateb_subscription_alert_dismissed_id';
     private const PERSISTENT_DAYS_THRESHOLD = 3;
+    private const CONTEXT_FALLBACK_HISTORY_ID = 0;
 
     private NotificationHistoryStore $history;
 
@@ -71,7 +74,7 @@ final class SubscriptionAlertService
             return null;
         }
 
-        // Skip history query when far from any policy window (uses request context only).
+        // Skip when far from any policy window (uses request context only).
         if ($context->hasRecord()
             && $context->daysRemaining() > 14
             && !$context->isSuspended()
@@ -80,10 +83,22 @@ final class SubscriptionAlertService
         }
 
         $row = $this->history->findLatestActiveByCompanyId($context->companyId());
-        if ($row === null) {
-            return null;
+        if ($row !== null) {
+            $fromHistory = $this->fromHistoryRow($row, $context);
+            if ($fromHistory !== null) {
+                return $fromHistory;
+            }
         }
 
+        // No usable history — derive from live SubscriptionContext (engine dates).
+        return $this->fromContextFallback($context);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function fromHistoryRow(array $row, SubscriptionContext $context): ?SubscriptionAlertViewModel
+    {
         $historyId = (int) ($row['id'] ?? 0);
         if ($historyId < 1) {
             return null;
@@ -126,12 +141,58 @@ final class SubscriptionAlertService
         );
     }
 
+    private function fromContextFallback(SubscriptionContext $context): ?SubscriptionAlertViewModel
+    {
+        if (!$context->hasRecord() && !$context->isSuspended()) {
+            return null;
+        }
+
+        $type = $this->typeFromContext($context);
+        if ($type === null) {
+            return null;
+        }
+
+        $daysRemaining = $context->daysRemaining();
+        [$severity, $css] = $this->severityForType($type);
+
+        // Context fallback stays visible (not session-dismissible) until dates move out of window.
+        return new SubscriptionAlertViewModel(
+            self::CONTEXT_FALLBACK_HISTORY_ID,
+            $type,
+            $severity,
+            $css,
+            $this->buildMessage($type, $daysRemaining, $context->graceDaysRemaining(), $context),
+            $daysRemaining,
+            $context->expirationDate(),
+            $context->status(),
+            null,
+            false
+        );
+    }
+
+    private function typeFromContext(SubscriptionContext $context): ?string
+    {
+        if ($context->isSuspended()) {
+            return NotificationType::SUSPENSION;
+        }
+        if ($context->isInGrace() || $context->daysRemaining() < 0) {
+            return NotificationType::GRACE;
+        }
+        $days = $context->daysRemaining();
+        if ($days > 14) {
+            return null;
+        }
+        if ($days <= 3) {
+            return NotificationType::FINAL_WARNING;
+        }
+        return NotificationType::REMINDER;
+    }
+
     private function isDismissible(string $type, int $daysRemaining): bool
     {
         if ($type === NotificationType::GRACE || $type === NotificationType::SUSPENSION) {
             return false;
         }
-        // Before 3 days of expiry → dismissible; at/under 3 days → persistent.
         return $daysRemaining > self::PERSISTENT_DAYS_THRESHOLD;
     }
 

@@ -11,6 +11,7 @@
 `SubscriptionAlertService`
 
 - Reads **only** `NotificationHistoryRepository` (+ optional `SubscriptionRuntime` for live days/expiry/status).
+- **Fallback:** if no history row but `SubscriptionRuntime` is inside the ≤14-day / grace / suspended window, builds an ephemeral alert from context (so engine date changes show immediately without waiting for the scheduler).
 - **Never** calls `SubscriptionEngine`, `NotificationPolicy`, or `SubscriptionRepository`.
 - Caches result in `SubscriptionAlertRuntime` (one resolve per request).
 - Soft dismiss via session (`?dismiss_subscription_alert={id}`) when dismissible.
