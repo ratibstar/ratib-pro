@@ -1,0 +1,152 @@
+<?php
+/** @var \Rateb\App\Subscription\Admin\SubscriptionAdminDashboard $dashboard */
+/** @var list<array<string, mixed>> $tenants */
+/** @var int $total */
+/** @var int $page */
+/** @var int $limit */
+/** @var string $statusFilter */
+/** @var string $search */
+/** @var bool $canManage */
+use Rateb\App\Core\View;
+
+$esc = static fn ($v): string => View::escape((string) $v);
+$statusBadge = static function (string $status): string {
+    $map = [
+        'ACTIVE' => 'success',
+        'WARNING' => 'warning',
+        'CRITICAL' => 'danger',
+        'GRACE' => 'info',
+        'SUSPENSION_PENDING' => 'secondary',
+        'SUSPENDED' => 'dark',
+    ];
+    $cls = $map[$status] ?? 'secondary';
+    return '<span class="badge bg-' . $cls . '">' . View::escape($status) . '</span>';
+};
+?>
+<div class="rateb-page-header mb-3">
+    <h1 class="h4 mb-1"><i class="fas fa-heartbeat me-2"></i>Subscription Engine Admin</h1>
+    <p class="text-muted small mb-0">Operational console for tenant subscription lifecycle. No payment or auto-billing.</p>
+</div>
+
+<div class="row g-2 mb-3">
+    <?php
+    $cards = [
+        ['Total tenants', $dashboard->totalTenants(), 'secondary', 'all'],
+        ['Active', $dashboard->active(), 'success', 'ACTIVE'],
+        ['Warning', $dashboard->warning(), 'warning', 'warning'],
+        ['Grace', $dashboard->grace(), 'info', 'grace'],
+        ['Suspended', $dashboard->suspended(), 'dark', 'SUSPENDED'],
+        ['Expiring soon', $dashboard->expiringSoon(), 'danger', 'expiring_soon'],
+    ];
+    foreach ($cards as [$label, $count, $color, $filter]) {
+        $href = rateb_url_query('admin/subscription-engine', ['status' => $filter, 'page' => 1]);
+        ?>
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="<?php echo $esc($href); ?>" class="text-decoration-none">
+            <div class="rateb-card h-100">
+                <div class="rateb-card-body py-3 text-center">
+                    <div class="fs-4 fw-semibold text-<?php echo $esc($color); ?>"><?php echo (int) $count; ?></div>
+                    <div class="small text-muted"><?php echo $esc($label); ?></div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <?php } ?>
+</div>
+
+<div class="rateb-card mb-3">
+    <div class="rateb-card-body py-3">
+        <form method="get" action="<?php echo $esc(rateb_url('admin/subscription-engine')); ?>" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small mb-1" for="subAdminSearch">Search</label>
+                <input type="text" class="form-control form-control-sm" id="subAdminSearch" name="q"
+                       value="<?php echo $esc($search); ?>" placeholder="Company name or ID">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1" for="subAdminStatus">Status</label>
+                <select class="form-select form-select-sm" id="subAdminStatus" name="status">
+                    <?php
+                    $opts = [
+                        'all' => 'All',
+                        'ACTIVE' => 'Active',
+                        'warning' => 'Warning / Critical',
+                        'grace' => 'Grace / Pending',
+                        'SUSPENDED' => 'Suspended',
+                        'expiring_soon' => 'Expiring soon',
+                    ];
+                    foreach ($opts as $val => $lab) {
+                        $sel = $statusFilter === $val ? ' selected' : '';
+                        echo '<option value="' . $esc($val) . '"' . $sel . '>' . $esc($lab) . '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter me-1"></i>Filter</button>
+                <a class="btn btn-sm btn-outline-secondary" href="<?php echo $esc(rateb_url('admin/subscription-engine')); ?>">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="rateb-card">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead>
+            <tr>
+                <th>Company</th>
+                <th>Status</th>
+                <th>Start</th>
+                <th>Expiry</th>
+                <th>Days left</th>
+                <th>Grace</th>
+                <th>Suspension</th>
+                <th>Last renewal</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php if ($tenants === []) { ?>
+                <tr><td colspan="9" class="text-muted text-center py-4">No subscription engine records.</td></tr>
+            <?php } ?>
+            <?php foreach ($tenants as $t) {
+                $cid = (int) ($t['company_id'] ?? 0);
+                $days = $t['days_remaining'];
+                $daysLabel = $days === null ? '—' : (string) (int) $days;
+                ?>
+            <tr class="<?php echo !empty($t['expiring_soon']) ? 'table-warning' : ''; ?>">
+                <td>
+                    <a href="<?php echo $esc(rateb_url('admin/subscription-engine/' . $cid)); ?>">
+                        <?php echo $esc((string) $t['company_name']); ?>
+                    </a>
+                    <div class="small text-muted">#<?php echo $cid; ?></div>
+                </td>
+                <td><?php echo $statusBadge((string) $t['status']); ?></td>
+                <td><?php echo $esc((string) ($t['subscription_start'] ?? '—')); ?></td>
+                <td><?php echo $esc((string) ($t['subscription_end'] ?? '—')); ?></td>
+                <td><?php echo $esc($daysLabel); ?></td>
+                <td><span class="small"><?php echo $esc((string) $t['grace_status']); ?></span></td>
+                <td><span class="small"><?php echo $esc((string) $t['suspension_status']); ?></span></td>
+                <td class="small"><?php echo $esc((string) ($t['last_renewal'] ?? $t['renewed_at'] ?? '—')); ?></td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" href="<?php echo $esc(rateb_url('admin/subscription-engine/' . $cid)); ?>">
+                        View
+                    </a>
+                </td>
+            </tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
+    $routePrefix = 'admin/subscription-engine';
+    $preserveQuery = array_filter([
+        'status' => $statusFilter !== 'all' ? $statusFilter : null,
+        'q' => $search !== '' ? $search : null,
+    ], static fn ($v) => $v !== null && $v !== '');
+    require RATEB_VIEWS_PATH . '/components/pagination.php';
+    ?>
+</div>
+<?php if (!$canManage) { ?>
+<p class="small text-muted mt-2 mb-0">Read-only access (<code>subscriptions.view</code>). Manage actions require <code>subscriptions.manage</code>.</p>
+<?php } ?>

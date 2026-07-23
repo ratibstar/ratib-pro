@@ -5,6 +5,7 @@ return [
     'dashboard' => 'لوحة التحكم',
     'companies' => 'الشركات',
     'subscriptions' => 'الاشتراكات',
+    'subscription_engine_admin' => 'محرك الاشتراكات',
     'plans' => 'الباقات',
     'users' => 'المستخدمون',
     'permissions' => 'الصلاحيات',

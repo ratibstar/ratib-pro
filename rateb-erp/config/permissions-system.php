@@ -82,6 +82,7 @@ return [
      * @var array<string, list<string>>
      */
     'permission_implies' => [
+        'subscriptions.manage' => ['subscriptions.view'],
         'access.manage' => ['users.manage', 'roles.manage', 'permissions.manage'],
         'branch.financial.consolidated' => ['branch.financial.interbranch'],
         'workflows.manage' => ['oversight.approve'],
@@ -524,6 +525,7 @@ return [
         'companies.manage',
         'company_plans.manage',
         'subscriptions.manage',
+        'subscriptions.view',
         'plans.manage',
         'settings.manage',
         'access.manage',
@@ -577,6 +579,10 @@ return [
         'admin/coa-tree' => 'accounting.view',
         'admin/journal-entries' => 'accounting.view',
         'admin/subscriptions' => 'subscriptions.manage',
+        'admin/subscription-engine' => 'subscriptions.view',
+        'admin/subscription-engine/{id}' => 'subscriptions.view',
+        'admin/subscription-engine/{id}/renew' => 'subscriptions.manage',
+        'admin/subscription-engine/{id}/extend' => 'subscriptions.manage',
         'admin/plans' => 'plans.manage',
         'admin/users' => 'access.manage',
         'admin/roles' => 'access.manage',

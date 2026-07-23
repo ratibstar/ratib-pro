@@ -5,6 +5,7 @@ return [
     'dashboard' => 'Dashboard',
     'companies' => 'Companies',
     'subscriptions' => 'Subscriptions',
+    'subscription_engine_admin' => 'Subscription Engine',
     'plans' => 'Plans',
     'users' => 'Users',
     'permissions' => 'Permissions',

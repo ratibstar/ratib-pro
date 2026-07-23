@@ -9,6 +9,7 @@ return [
     'dashboard.view' => ['View Dashboard', 'Access the main dashboard'],
     'companies.manage' => ['Manage Companies', 'Full company administration'],
     'companies.view' => ['View Companies', 'View company list and details'],
+    'subscriptions.view' => ['View Subscriptions', 'View subscription engine ops console'],
     'subscriptions.manage' => ['Manage Subscriptions', 'Manage company subscriptions'],
     'plans.manage' => ['Manage Plans', 'Manage subscription plans'],
     'users.manage' => ['Manage Users', 'Manage platform users (included in Access Control)'],

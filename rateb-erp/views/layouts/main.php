@@ -663,6 +663,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     'icon' => 'fa-eye',
                     'links' => [
                         ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
+                        ['admin/subscription-engine', 'subscription_engine_admin', 'fa-heartbeat', 'subscriptions.view'],
                         ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
                         ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                         ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],

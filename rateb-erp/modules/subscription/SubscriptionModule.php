@@ -45,6 +45,10 @@ final class SubscriptionModule
             }
             $relative = str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
             $path = $root . '/' . $relative;
+            // Phase 9: Admin\* maps to lowercase admin/ on disk.
+            if (!is_file($path) && str_starts_with($relative, 'Admin/')) {
+                $path = $root . '/admin/' . substr($relative, strlen('Admin/'));
+            }
             if (is_file($path)) {
                 require_once $path;
             }
