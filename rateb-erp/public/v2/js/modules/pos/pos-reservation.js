@@ -43,6 +43,16 @@
             store: null
         };
 
+        function softAudit(idCtx, eventType, entityType, entityId, metadata) {
+            try {
+                if (module && typeof module._auditEvent === 'function') {
+                    return module._auditEvent(idCtx, eventType, entityType, entityId, metadata)
+                        .catch(function () { return null; });
+                }
+            } catch (e) { /* ignore */ }
+            return Promise.resolve(null);
+        }
+
         function ensureStore() {
             if (state.store) {
                 return Promise.resolve(state.store);
@@ -92,7 +102,7 @@
             });
         }
 
-        function markReleased(store, row, reason) {
+        function markReleased(store, row, reason, idCtx) {
             if (!row || row.status === STATUS.RELEASED) {
                 return Promise.resolve(null);
             }
@@ -104,7 +114,15 @@
             });
             return store.put(ET.reservation, next.id, next, Number(next.version || 1) + 1)
                 .then(function () {
-                    return next;
+                    if (!idCtx) {
+                        return next;
+                    }
+                    return softAudit(idCtx, 'RESERVATION_RELEASED', ET.reservation, next.id, {
+                        sale_id: next.sale_id,
+                        reason: reason || 'released'
+                    }).then(function () {
+                        return next;
+                    });
                 });
         }
 
@@ -156,6 +174,11 @@
                         };
                         return store.put(ET.reservation, reservationId, row, 1).then(function () {
                             created.push(row);
+                            return softAudit(idCtx, 'RESERVATION_CREATED', ET.reservation, reservationId, {
+                                sale_id: saleId,
+                                product_id: row.product_id,
+                                qty: row.qty
+                            });
                         });
                     });
                 });
@@ -183,14 +206,15 @@
                     if (!row || !row.payload) {
                         return Promise.reject(new Error('pos_reservation_not_found'));
                     }
-                    return markReleased(store, row.payload, reason || 'manual_release').then(function (released) {
-                        return {
-                            ok: true,
-                            released: released ? [released] : [],
-                            released_count: released ? 1 : 0,
-                            already_released: !released
-                        };
-                    });
+                    return markReleased(store, row.payload, reason || 'manual_release', idCtx)
+                        .then(function (released) {
+                            return {
+                                ok: true,
+                                released: released ? [released] : [],
+                                released_count: released ? 1 : 0,
+                                already_released: !released
+                            };
+                        });
                 });
             });
         }
@@ -208,7 +232,7 @@
                             return;
                         }
                         chain = chain.then(function () {
-                            return markReleased(store, row, reason || 'sale_release').then(function (r) {
+                            return markReleased(store, row, reason || 'sale_release', idCtx).then(function (r) {
                                 if (r) {
                                     released.push(r);
                                 }
@@ -240,7 +264,7 @@
                             return;
                         }
                         chain = chain.then(function () {
-                            return markReleased(store, row, reason || 'cart_cancel').then(function (r) {
+                            return markReleased(store, row, reason || 'cart_cancel', idCtx).then(function (r) {
                                 if (r) {
                                     released.push(r);
                                 }

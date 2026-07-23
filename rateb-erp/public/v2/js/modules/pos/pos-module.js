@@ -1,7 +1,7 @@
 /*!
- * RATEB Offline V2 — POS Offline BusinessModule (Phase 9 Conflict Rules)
+ * RATEB Offline V2 — POS Offline BusinessModule (Phase 10 Hardening)
  *
- * Local catalog + cart + sync prep + local conflict detection/resolution.
+ * Local catalog + cart + device identity + audit + certification harness.
  * Never starts sync, calls APIs, or loads Inventory. Online ERP = Auth Authority (AF 2.1).
  */
 (function (root) {
@@ -13,7 +13,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.9.0-phase9-conflicts';
+    var POS_VERSION = '0.10.0-phase10-hardening';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -25,7 +25,7 @@
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — local conflict rules engine (no network sync).',
+            description: 'Offline V2 POS — hardened local sales (no network sync).',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -34,7 +34,8 @@
             capabilities: [
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
                 'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock',
-                'pos.reservation', 'pos.recovery', 'pos.sync_prep', 'pos.conflicts'
+                'pos.reservation', 'pos.recovery', 'pos.sync_prep', 'pos.conflicts',
+                'pos.device', 'pos.audit', 'pos.cert'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -54,6 +55,7 @@
                 { id: 'pos.recovery', path: '/pos/recovery', title: 'POS Recovery' },
                 { id: 'pos.sync_preview', path: '/pos/sync-preview', title: 'POS Sync Preview' },
                 { id: 'pos.conflicts', path: '/pos/conflicts', title: 'POS Conflicts' },
+                { id: 'pos.cert', path: '/pos/cert', title: 'POS Certification' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
             ],
@@ -74,12 +76,17 @@
         this._stock = null;
         this._syncAdapter = null;
         this._conflict = null;
+        this._device = null;
+        this._audit = null;
+        this._cert = null;
+        this._completeInFlight = null;
         this._selectedProductId = null;
         this._lastCompleted = null;
         this._recoveryReport = null;
         this._recoveryScanPromise = null;
         this._lastSyncPreview = null;
         this._lastConflictScan = null;
+        this._lastCertReport = null;
         this._catalogUi = {
             q: '',
             category_id: ''
@@ -194,6 +201,63 @@
         return this._conflict;
     };
 
+    PosModule.prototype._getDevice = function () {
+        if (this._device) {
+            return this._device;
+        }
+        var api = root.RatebOfflineV2PosDevice;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_device_missing');
+        }
+        this._device = api.create(this);
+        return this._device;
+    };
+
+    PosModule.prototype._getAudit = function () {
+        if (this._audit) {
+            return this._audit;
+        }
+        var api = root.RatebOfflineV2PosAudit;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_audit_missing');
+        }
+        this._audit = api.create(this);
+        return this._audit;
+    };
+
+    PosModule.prototype._getCert = function () {
+        if (this._cert) {
+            return this._cert;
+        }
+        var api = root.RatebOfflineV2PosCert;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_cert_missing');
+        }
+        this._cert = api.create(this);
+        return this._cert;
+    };
+
+    PosModule.prototype._auditEvent = function (idCtx, eventType, entityType, entityId, metadata) {
+        var self = this;
+        return self._getDevice().ensureIdentity(idCtx).then(function (device) {
+            return self._getAudit().record(idCtx, {
+                event_type: eventType,
+                entity_type: entityType,
+                entity_id: entityId,
+                device_id: device.device_uuid,
+                metadata: metadata || null
+            });
+        }).catch(function () {
+            return self._getAudit().record(idCtx, {
+                event_type: eventType,
+                entity_type: entityType,
+                entity_id: entityId,
+                device_id: null,
+                metadata: metadata || null
+            });
+        });
+    };
+
     PosModule.prototype.listCategories = function () {
         var self = this;
         return this._gate().then(function (idCtx) {
@@ -287,12 +351,39 @@
 
     PosModule.prototype.completeSale = function () {
         var self = this;
-        return this._gate().then(function (idCtx) {
+        if (self._completeInFlight) {
+            return self._completeInFlight;
+        }
+        var work = this._gate().then(function (idCtx) {
             /*
-             * Flow: OPEN cart → stock check → reservation → sale completed → outbox.
-             * Soft stock warnings only; reservations are POS-local (inv.* untouched).
+             * Flow: OPEN → COMPLETED → SYNC_PENDING (+ local outbox).
+             * Module lock + cart idempotency prevent duplicate complete clicks.
              */
-            return self._getCart().getCart(idCtx).then(function (cart) {
+            return self._getDevice().ensureIdentity(idCtx).then(function () {
+                return self._getCart().getCart(idCtx);
+            }).then(function (cart) {
+                if (cart && cart.draft && cart.draft.status === 'COMPLETED' && cart.draft.sale_id) {
+                    return self._getCart().getSale(idCtx, cart.draft.sale_id).then(function (sale) {
+                        if (!sale) {
+                            throw new Error('pos_sale_missing_after_complete');
+                        }
+                        var result = {
+                            ok: true,
+                            sale: sale,
+                            sale_id: sale.id,
+                            local_txn_no: sale.local_txn_no,
+                            sync_key: sale.sync_key,
+                            sync_status: sale.sync_status,
+                            completed_at: sale.completed_at,
+                            idempotent: true,
+                            inventory_deducted: false,
+                            inventory_touched: false,
+                            sync_started: false
+                        };
+                        self._lastCompleted = result;
+                        return result;
+                    });
+                }
                 var saleId = posUid('sale');
                 return self._getStock().checkLines(idCtx.company_id, cart.lines || [])
                     .catch(function () {
@@ -346,7 +437,15 @@
                         });
                     });
             });
+        }).then(function (result) {
+            self._completeInFlight = null;
+            return result;
+        }, function (err) {
+            self._completeInFlight = null;
+            throw err;
         });
+        self._completeInFlight = work;
+        return work;
     };
 
     PosModule.prototype.completeDraftPlaceholder = function () {
@@ -487,6 +586,30 @@
         var self = this;
         return this._gate().then(function (idCtx) {
             return self._getConflict().evaluatePayload(idCtx, salePayload, extraReservations || []);
+        });
+    };
+
+    PosModule.prototype.getDeviceIdentity = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getDevice().ensureIdentity(idCtx);
+        });
+    };
+
+    PosModule.prototype.listAuditEvents = function (filters) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getAudit().listEvents(idCtx, filters || {});
+        });
+    };
+
+    PosModule.prototype.runCertification = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getCert().runAll(idCtx).then(function (report) {
+                self._lastCertReport = report;
+                return report;
+            });
         });
     };
 
@@ -734,7 +857,16 @@
         self.exposeService('evaluateConflictPayload', function (salePayload, extraReservations) {
             return self.evaluateConflictPayload(salePayload, extraReservations);
         });
-        self.reportHealth('initialize', true, 'pos_conflicts_ready');
+        self.exposeService('getDeviceIdentity', function () {
+            return self.getDeviceIdentity();
+        });
+        self.exposeService('listAuditEvents', function (filters) {
+            return self.listAuditEvents(filters);
+        });
+        self.exposeService('runCertification', function () {
+            return self.runCertification();
+        });
+        self.reportHealth('initialize', true, 'pos_hardening_ready');
         return Promise.resolve();
     };
 
@@ -746,10 +878,11 @@
         this.contributeNav({ label: 'POS Recovery', path: '/pos/recovery', title: 'POS Recovery' });
         this.contributeNav({ label: 'POS Sync Preview', path: '/pos/sync-preview', title: 'POS Sync Preview' });
         this.contributeNav({ label: 'POS Conflicts', path: '/pos/conflicts', title: 'POS Conflicts' });
+        this.contributeNav({ label: 'POS Cert', path: '/pos/cert', title: 'POS Certification' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Local sale + conflict rules — no network sync'
+            description: 'Hardened local sales — no network sync'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -1567,6 +1700,49 @@
         });
     };
 
+    PosModule.prototype._renderCert = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/cert');
+        outlet.appendChild(self._el('h3', 'POS Certification'));
+        outlet.appendChild(self._el('p',
+            'Local hardening checks · crash · duplicate · reservation · conflict · isolation · timing'));
+        var deviceHost = self._el('pre', 'Loading device…', { 'data-pos-device': '1' });
+        outlet.appendChild(deviceHost);
+        var host = self._el('pre', 'Ready.', { 'data-pos-cert-report': '1' });
+        outlet.appendChild(host);
+        var runBtn = self._el('button', 'Run certification', {
+            type: 'button',
+            'data-pos-cert-run': '1'
+        });
+        runBtn.addEventListener('click', function () {
+            runBtn.disabled = true;
+            host.textContent = 'Running…';
+            self.runCertification().then(function (report) {
+                host.textContent = JSON.stringify(report, null, 2);
+                runBtn.disabled = false;
+            }).catch(function (err) {
+                host.textContent = String(err && err.message ? err.message : err);
+                runBtn.disabled = false;
+            });
+        });
+        outlet.appendChild(runBtn);
+        return self.getDeviceIdentity().then(function (device) {
+            deviceHost.textContent = JSON.stringify({
+                device_uuid: device.device_uuid,
+                installation_id: device.installation_id,
+                created_at: device.created_at,
+                last_activity_at: device.last_activity_at,
+                company_binding: device.company_binding,
+                branch_binding: device.branch_binding,
+                registered_server: false
+            }, null, 2);
+            if (self._lastCertReport) {
+                host.textContent = JSON.stringify(self._lastCertReport, null, 2);
+            }
+        });
+    };
+
     PosModule.prototype._renderSalesPlaceholder = function (outlet, idCtx) {
         var self = this;
         outlet.textContent = '';
@@ -1586,12 +1762,17 @@
         outlet.appendChild(self._el('h3', 'POS Settings'));
         var statusHost = self._el('pre', 'Loading…');
         outlet.appendChild(statusHost);
-        return self._getCatalog().getCatalogStatus(idCtx.company_id).then(function (st) {
+        return Promise.all([
+            self._getCatalog().getCatalogStatus(idCtx.company_id),
+            self.getDeviceIdentity().catch(function () { return null; })
+        ]).then(function (parts) {
             statusHost.textContent = JSON.stringify({
-                catalog: st,
+                catalog: parts[0],
+                device: parts[1],
                 cartStoreOpen: !!(self._cart && self._cart.isStoreOpen()),
                 payment: false,
-                sync: false
+                sync: false,
+                version: POS_VERSION
             }, null, 2);
         });
     };
@@ -1623,6 +1804,9 @@
                     }
                     if (path === '/pos/conflicts') {
                         return self._renderConflicts(outlet, idCtx);
+                    }
+                    if (path === '/pos/cert') {
+                        return self._renderCert(outlet, idCtx);
                     }
                     if (path === '/pos/sales') {
                         self._renderSalesPlaceholder(outlet, idCtx);
@@ -1664,12 +1848,17 @@
         base.recovery = true;
         base.sync_prep_only = true;
         base.conflict_rules = true;
+        base.device_identity = true;
+        base.audit_trail = true;
+        base.certification = true;
         base.starts_sync_on_activate = false;
+        base.lifecycle = 'OPEN→COMPLETED→SYNC_PENDING→SYNCED';
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
             'pos.stock_snapshot', 'pos.stock_meta', 'pos.stock_reservation',
-            'pos.sync_prep', 'pos.sync_conflict'
+            'pos.sync_prep', 'pos.sync_conflict',
+            'pos.device_identity', 'pos.audit_event'
         ];
         base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
         return base;

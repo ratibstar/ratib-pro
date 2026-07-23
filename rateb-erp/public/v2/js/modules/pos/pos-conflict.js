@@ -1,5 +1,5 @@
 /*!
- * RATEB Offline V2 — POS local conflict rules engine (Phase 9)
+ * RATEB Offline V2 — POS local conflict rules engine (Phase 9–10)
  *
  * Detects sync-prep conflicts locally. Entity: pos.sync_conflict.
  * No API calls, outbox push, Inventory writes, or sync.start().
@@ -32,6 +32,7 @@
     var TYPE = {
         DUPLICATE_SALE_ID: 'duplicate_sale_local_id',
         DUPLICATE_TXN: 'duplicate_transaction_number',
+        DUPLICATE_SYNC_KEY: 'duplicate_sync_key',
         MISSING_PRODUCT: 'missing_product_reference',
         INVALID_QTY: 'invalid_quantity',
         RESERVATION_MISMATCH: 'reservation_mismatch',
@@ -65,6 +66,16 @@
         var state = {
             store: null
         };
+
+        function softAudit(idCtx, eventType, entityType, entityId, metadata) {
+            try {
+                if (module && typeof module._auditEvent === 'function') {
+                    return module._auditEvent(idCtx, eventType, entityType, entityId, metadata)
+                        .catch(function () { return null; });
+                }
+            } catch (e) { /* ignore */ }
+            return Promise.resolve(null);
+        }
 
         function ensureStore() {
             if (state.store) {
@@ -122,6 +133,7 @@
             var productById = ctx.productById;
             var txnCounts = ctx.txnCounts;
             var idCounts = ctx.idCounts;
+            var syncKeyCounts = ctx.syncKeyCounts;
             var rsvList = ctx.rsvBySale[saleId] || [];
 
             if (idCounts[saleId] && idCounts[saleId] > 1) {
@@ -145,6 +157,19 @@
                     severity: SEVERITY.ERROR,
                     message: 'Duplicate transaction number: ' + txn,
                     details: { local_txn_no: txn, sale_ids: txnCounts[String(txn)] }
+                }));
+            }
+
+            var syncKey = sale.sync_key;
+            if (syncKey && syncKeyCounts[String(syncKey)] && syncKeyCounts[String(syncKey)].length > 1) {
+                found.push(makeConflict({
+                    company_id: ctx.companyId,
+                    entity_type: 'pos.sale',
+                    entity_id: saleId,
+                    conflict_type: TYPE.DUPLICATE_SYNC_KEY,
+                    severity: SEVERITY.ERROR,
+                    message: 'Duplicate sync_key: ' + syncKey,
+                    details: { sync_key: syncKey, sale_ids: syncKeyCounts[String(syncKey)] }
                 }));
             }
 
@@ -288,6 +313,7 @@
             });
             var txnCounts = Object.create(null);
             var idCounts = Object.create(null);
+            var syncKeyCounts = Object.create(null);
             (sales || []).forEach(function (s) {
                 if (!s || !s.id) {
                     return;
@@ -300,6 +326,13 @@
                         txnCounts[t] = [];
                     }
                     txnCounts[t].push(sid);
+                }
+                if (s.sync_key) {
+                    var sk = String(s.sync_key);
+                    if (!syncKeyCounts[sk]) {
+                        syncKeyCounts[sk] = [];
+                    }
+                    syncKeyCounts[sk].push(sid);
                 }
             });
             var rsvBySale = Object.create(null);
@@ -318,6 +351,7 @@
                 productById: productById,
                 txnCounts: txnCounts,
                 idCounts: idCounts,
+                syncKeyCounts: syncKeyCounts,
                 rsvBySale: rsvBySale
             };
         }
@@ -372,7 +406,14 @@
                         } else {
                             chain = chain.then(function () {
                                 return store.put(ET.conflict, c.id, c, 1)
-                                    .then(function () { written.push(c); });
+                                    .then(function () {
+                                        written.push(c);
+                                        return softAudit(idCtx, 'CONFLICT_CREATED', ET.conflict, c.id, {
+                                            conflict_type: c.conflict_type,
+                                            entity_type: c.entity_type,
+                                            entity_id: c.entity_id
+                                        });
+                                    });
                             });
                         }
                     });
@@ -501,7 +542,11 @@
                     });
                     return store.put(ET.conflict, next.id, next, Number(next.version || 1) + 1)
                         .then(function () {
-                            return { ok: true, conflict: next };
+                            return softAudit(idCtx, 'CONFLICT_RESOLVED', ET.conflict, next.id, {
+                                resolution: 'reviewed'
+                            }).then(function () {
+                                return { ok: true, conflict: next };
+                            });
                         });
                 });
             });
@@ -525,7 +570,12 @@
                     });
                     return store.put(ET.conflict, next.id, next, Number(next.version || 1) + 1)
                         .then(function () {
-                            return { ok: true, conflict: next };
+                            return softAudit(idCtx, 'CONFLICT_RESOLVED', ET.conflict, next.id, {
+                                resolution: 'ignored',
+                                audit_reason: String(reason)
+                            }).then(function () {
+                                return { ok: true, conflict: next };
+                            });
                         });
                 });
             });

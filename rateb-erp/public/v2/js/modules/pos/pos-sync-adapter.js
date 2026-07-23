@@ -1,5 +1,5 @@
 /*!
- * RATEB Offline V2 — POS sync contract preparation (Phase 8)
+ * RATEB Offline V2 — POS sync contract preparation (Phase 8–10)
  *
  * Builds/validates outgoing POS sale + reservation payloads locally.
  * Does NOT call APIs, start sync, push outbox, or load Inventory.
@@ -25,8 +25,6 @@
         INVALID: 'INVALID',
         BLOCKED: 'BLOCKED'
     };
-
-    var DEVICE_PLACEHOLDER = 'pos-device-placeholder';
 
     function nowIso() {
         return new Date().toISOString();
@@ -100,12 +98,23 @@
             });
         }
 
-        function resolveDeviceId(idCtx) {
-            var claims = idCtx && idCtx.claims;
-            if (claims && claims.device_id) {
-                return String(claims.device_id);
+        function resolveDeviceIdentity(idCtx) {
+            if (module && typeof module._getDevice === 'function') {
+                return module._getDevice().ensureIdentity(idCtx).catch(function () {
+                    return { device_uuid: null, installation_id: null };
+                });
             }
-            return DEVICE_PLACEHOLDER;
+            return Promise.resolve({ device_uuid: null, installation_id: null });
+        }
+
+        function softAudit(idCtx, eventType, entityType, entityId, metadata) {
+            try {
+                if (module && typeof module._auditEvent === 'function') {
+                    return module._auditEvent(idCtx, eventType, entityType, entityId, metadata)
+                        .catch(function () { return null; });
+                }
+            } catch (e) { /* ignore */ }
+            return Promise.resolve(null);
         }
 
         function buildReservationContract(rsv) {
@@ -148,7 +157,9 @@
                 entity: 'pos.sale',
                 sale_id: sale.id,
                 local_txn_no: sale.local_txn_no || null,
+                sync_key: sale.sync_key || null,
                 status: sale.status,
+                sync_status: sale.sync_status || 'SYNC_PENDING',
                 lines: lines,
                 totals: {
                     line_count: sale.line_count != null ? sale.line_count : lines.length,
@@ -159,15 +170,17 @@
                 warehouse_id: warehouseId,
                 reservations: (reservations || []).map(buildReservationContract),
                 company_id: sale.company_id,
-                completed_at: sale.completed_at || null
+                completed_at: sale.completed_at || null,
+                device_id: sale.device_id || null
             };
         }
 
-        function conflictMetadata(sale, idCtx, syncStatus) {
+        function conflictMetadata(sale, deviceId, syncStatus) {
             return {
                 local_id: String(sale.id),
                 created_at: sale.created_at || sale.completed_at || nowIso(),
-                device_id: resolveDeviceId(idCtx),
+                device_id: deviceId || sale.device_id || null,
+                sync_key: sale.sync_key || null,
                 sync_status: syncStatus
             };
         }
@@ -310,12 +323,14 @@
                     listEntity(store, ET.sale, idCtx.company_id),
                     listEntity(store, ET.product, idCtx.company_id),
                     listEntity(store, ET.reservation, idCtx.company_id),
-                    readPendingOutbox()
+                    readPendingOutbox(),
+                    resolveDeviceIdentity(idCtx)
                 ]).then(function (parts) {
                     var sales = parts[0] || [];
                     var products = parts[1] || [];
                     var reservations = parts[2] || [];
                     var outbox = parts[3] || [];
+                    var device = parts[4] || {};
                     var productById = Object.create(null);
                     products.forEach(function (p) {
                         if (p && p.id) {
@@ -334,27 +349,41 @@
                         rsvBySale[key].push(r);
                     });
                     var pendingSales = sales.filter(function (s) {
-                        return s && s.status === 'COMPLETED' && s.synced !== true;
+                        return s && s.status === 'COMPLETED' &&
+                            s.synced !== true &&
+                            s.sync_status !== 'SYNCED';
                     });
                     var txnInfo = buildTxnIndex(pendingSales);
                     var items = [];
                     var chain = Promise.resolve();
+                    var deviceId = device.device_uuid || null;
 
                     pendingSales.forEach(function (sale) {
                         chain = chain.then(function () {
                             var saleRsv = rsvBySale[String(sale.id)] || [];
                             var contract = buildSaleContract(sale, saleRsv);
+                            if (!contract.device_id && deviceId) {
+                                contract.device_id = deviceId;
+                            }
                             var errors = validateWithTxn(sale, contract, productById, txnInfo, saleRsv);
+                            if (!sale.sync_key) {
+                                errors.push({
+                                    code: 'pos_sync_key_missing',
+                                    message: 'Sale missing sync_key'
+                                });
+                            }
                             var syncStatus = errors.length ? SYNC_STATUS.INVALID : SYNC_STATUS.READY;
-                            var meta = conflictMetadata(sale, idCtx, syncStatus);
+                            var meta = conflictMetadata(sale, deviceId, syncStatus);
                             var prep = {
                                 id: String(sale.id),
                                 company_id: idCtx.company_id,
                                 sale_id: String(sale.id),
                                 local_id: meta.local_id,
+                                sync_key: sale.sync_key || null,
                                 created_at: meta.created_at,
                                 device_id: meta.device_id,
                                 sync_status: syncStatus,
+                                sale_sync_status: sale.sync_status || 'SYNC_PENDING',
                                 validation_errors: errors,
                                 outgoing: {
                                     sale: contract,
@@ -373,13 +402,20 @@
                             items.push({
                                 sale_id: sale.id,
                                 local_txn_no: sale.local_txn_no,
+                                sync_key: sale.sync_key || null,
                                 sync_status: syncStatus,
                                 validation_errors: errors,
                                 outgoing: prep.outgoing,
                                 conflict_metadata: meta,
                                 outbox_pending: prep.outbox_pending
                             });
-                            return store.put(ET.prep, prep.id, prep, 1);
+                            return store.put(ET.prep, prep.id, prep, 1).then(function () {
+                                return softAudit(idCtx, 'SYNC_PREPARED', ET.prep, prep.id, {
+                                    sale_id: sale.id,
+                                    sync_key: sale.sync_key || null,
+                                    sync_status: syncStatus
+                                });
+                            });
                         });
                     });
 
@@ -393,6 +429,7 @@
                             ready_count: ready.length,
                             invalid_count: invalid.length,
                             outbox_pending_count: outbox.length,
+                            device_id: deviceId,
                             outbox: outbox.map(function (o) {
                                 return {
                                     client_id: o.client_id,
@@ -422,7 +459,6 @@
         return {
             ET: ET,
             SYNC_STATUS: SYNC_STATUS,
-            DEVICE_PLACEHOLDER: DEVICE_PLACEHOLDER,
             ensureStore: ensureStore,
             preparePreview: preparePreview,
             getPrep: getPrep,
