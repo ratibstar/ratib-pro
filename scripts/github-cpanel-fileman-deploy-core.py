@@ -1637,9 +1637,13 @@ def mirror_test_rateb_entry_files(succeeded: set[str]) -> None:
     for extra in (
         "rateb-erp/views/layouts/main.php",
         "rateb-erp/views/partials/subscription-alert.php",
+        "rateb-erp/views/components/flash.php",
         "rateb-erp/public/index.php",
         "rateb-erp/modules/subscription/SubscriptionAlertService.php",
         "rateb-erp/modules/subscription/views/alert-banner.php",
+        "rateb-erp/app/Core/Middleware/Middleware.php",
+        "rateb-erp/config/lang/ar.php",
+        "rateb-erp/config/lang/en.php",
     ):
         if extra not in mirror:
             mirror.append(extra)

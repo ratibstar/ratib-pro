@@ -2,6 +2,13 @@
 $success = Rateb\App\Core\SessionManager::flash('success');
 $error = Rateb\App\Core\SessionManager::flash('error');
 $warning = Rateb\App\Core\SessionManager::flash('warning');
+// Suppress legacy platform-host flash leftovers on agency trees (replaced by in-app notification).
+if (is_string($error) && $error !== '') {
+    $platformMsg = function_exists('__') ? (string) __('platform_oversight_host_only') : '';
+    if ($platformMsg !== '' && (str_contains($error, 'rateb.sa') || $error === $platformMsg)) {
+        $error = null;
+    }
+}
 ?>
 <?php if ($success) { ?>
 <div class="alert alert-success rateb-flash alert-dismissible fade show" role="alert">

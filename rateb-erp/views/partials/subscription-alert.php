@@ -32,6 +32,11 @@ $msg = $subscriptionAlert->message();
 $days = $subscriptionAlert->daysRemaining();
 $expiry = $subscriptionAlert->expirationDate();
 $status = $subscriptionAlert->subscriptionStatus();
+$statusKey = 'subscription_status_' . strtoupper($status);
+$statusLabel = function_exists('__') ? (string) __($statusKey) : $status;
+if ($statusLabel === '' || $statusLabel === $statusKey) {
+    $statusLabel = $status;
+}
 $dismissible = $subscriptionAlert->isDismissible();
 $historyId = $subscriptionAlert->historyId();
 $severity = $subscriptionAlert->severity();
@@ -52,7 +57,7 @@ $icon = match ($severity) {
     default => 'fa-calendar-exclamation',
 };
 ?>
-<div class="rateb-sub-toast-wrap" data-subscription-alert="1" data-sub-toast-v="2" role="status"
+<div class="rateb-sub-toast-wrap" data-subscription-alert="1" data-sub-toast-v="3" role="status"
      data-severity="<?php echo View::escape($severity); ?>"
      data-type="<?php echo View::escape($subscriptionAlert->notificationType()); ?>">
     <div class="rateb-sub-toast <?php echo View::escape($css); ?>">
@@ -65,7 +70,7 @@ $icon = match ($severity) {
                 <?php if ($expiry !== null && $expiry !== '') { ?>
                     <span><?php echo View::escape(__('date') ?: 'Expiry'); ?>: <strong><?php echo View::escape($expiry); ?></strong></span>
                 <?php } ?>
-                <span><?php echo View::escape(__('status') ?: 'Status'); ?>: <strong><?php echo View::escape($status); ?></strong></span>
+                <span><?php echo View::escape(__('status') ?: 'Status'); ?>: <strong><?php echo View::escape($statusLabel); ?></strong></span>
                 <span><?php echo View::escape(__('days') ?: 'Days'); ?>: <strong><?php echo (int) $days; ?></strong></span>
             </div>
         </div>
@@ -79,13 +84,16 @@ $icon = match ($severity) {
         <?php } ?>
     </div>
 </div>
-<style id="rateb-sub-toast-css-v2">
+<style id="rateb-sub-toast-css-v3">
 .rateb-sub-toast-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 1045;
     display: flex !important;
     justify-content: center !important;
     width: 100%;
     margin: 0 0 1rem;
-    padding: 0 .25rem;
+    padding: .35rem .25rem 0;
 }
 .rateb-sub-toast {
     display: flex !important;

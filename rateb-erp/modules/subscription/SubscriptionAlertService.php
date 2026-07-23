@@ -239,8 +239,22 @@ final class SubscriptionAlertService
         int $graceDaysRemaining,
         ?SubscriptionContext $context = null
     ): string {
+        $t = static function (string $key, array $replace = [], string $fallback = '') use (&$t): string {
+            if (function_exists('__')) {
+                $out = (string) __($key, $replace);
+                if ($out !== '' && $out !== $key) {
+                    return $out;
+                }
+            }
+            $msg = $fallback !== '' ? $fallback : $key;
+            foreach ($replace as $k => $v) {
+                $msg = str_replace([':' . $k, '{' . $k . '}'], (string) $v, $msg);
+            }
+            return $msg;
+        };
+
         if ($type === NotificationType::SUSPENSION) {
-            return 'Your subscription is suspended.';
+            return $t('subscription_alert_suspended', [], 'Your subscription is suspended.');
         }
 
         if ($type === NotificationType::GRACE || ($context !== null && $context->isInGrace())) {
@@ -248,17 +262,31 @@ final class SubscriptionAlertService
             if ($remaining < 1 && $context !== null) {
                 $remaining = $context->graceDaysRemaining();
             }
-            return 'Subscription expired. ' . max(0, $remaining) . ' days remaining in grace period.';
+            $remaining = max(0, $remaining);
+            return $t(
+                'subscription_alert_grace',
+                ['days' => $remaining],
+                'Subscription expired. ' . $remaining . ' days remaining in grace period.'
+            );
         }
 
         if ($daysRemaining < 0) {
-            return 'Subscription expired. ' . max(0, $graceDaysRemaining) . ' days remaining in grace period.';
+            $remaining = max(0, $graceDaysRemaining);
+            return $t(
+                'subscription_alert_grace',
+                ['days' => $remaining],
+                'Subscription expired. ' . $remaining . ' days remaining in grace period.'
+            );
         }
 
         if ($daysRemaining === 0) {
-            return 'Your subscription expires today.';
+            return $t('subscription_alert_expires_today', [], 'Your subscription expires today.');
         }
 
-        return 'Your subscription expires in ' . $daysRemaining . ' days';
+        return $t(
+            'subscription_alert_expires_in',
+            ['days' => $daysRemaining],
+            'Your subscription expires in ' . $daysRemaining . ' days'
+        );
     }
 }

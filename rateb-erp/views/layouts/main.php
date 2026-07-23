@@ -952,9 +952,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </div>
         </header>
         <main class="rateb-content" id="rateb-main-content">
-            <?php Rateb\App\Core\View::partial('flash'); ?>
             <?php
-            // Prefer views partial (reliable agency deploy); fall back to module banner.
+            // Subscription toast first (top of page), then flash.
             $subscriptionAlertPartial = RATEB_VIEWS_PATH . '/partials/subscription-alert.php';
             $subscriptionAlertBanner = RATEB_ROOT . '/modules/subscription/views/alert-banner.php';
             if (is_file($subscriptionAlertPartial)) {
@@ -963,6 +962,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 include $subscriptionAlertBanner;
             }
             ?>
+            <?php Rateb\App\Core\View::partial('flash'); ?>
             <?php if (function_exists('rateb_is_portal_branch_session') && rateb_is_portal_branch_session()) {
                 $branchLabel = function_exists('rateb_portal_branch_label') ? rateb_portal_branch_label() : '';
                 if ($branchLabel !== '') { ?>

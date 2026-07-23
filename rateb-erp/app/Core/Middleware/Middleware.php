@@ -123,7 +123,29 @@ final class PlatformOversightHostMiddleware implements MiddlewareInterface
         if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
             return true;
         }
-        SessionManager::flash('error', __('platform_oversight_host_only'));
+
+        // Do not flash a full-page error banner on agency hosts — soft in-app notification instead.
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $throttleKey = 'rateb_platform_host_notice_' . gmdate('Y-m-d');
+        if ($userId > 0 && !SessionManager::get($throttleKey)) {
+            try {
+                if (class_exists(\Rateb\App\Services\NotificationService::class)) {
+                    (new \Rateb\App\Services\NotificationService())->notifyUser(
+                        $userId,
+                        $companyId > 0 ? $companyId : null,
+                        (string) __('platform_oversight_notice_title'),
+                        (string) __('platform_oversight_host_only'),
+                        'warning',
+                        'platform_host'
+                    );
+                }
+                SessionManager::set($throttleKey, 1);
+            } catch (\Throwable $e) {
+                error_log('RATEB platform host notice: ' . $e->getMessage());
+            }
+        }
+
         $path = function_exists('rateb_current_erp_route') ? trim((string) rateb_current_erp_route(), '/') : '';
         $target = function_exists('rateb_platform_oversight_public_url')
             ? rateb_platform_oversight_public_url($path !== '' ? $path : 'admin')
