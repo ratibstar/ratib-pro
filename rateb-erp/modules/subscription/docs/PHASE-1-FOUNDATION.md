@@ -1,6 +1,6 @@
 # Subscription Engine — Phase 1 Foundation
 
-**Status:** Architecture foundation (see also [PHASE-2](./PHASE-2-READ-ONLY-INTEGRATION.md), [PHASE-3](./PHASE-3-NOTIFICATION-ENGINE.md), [PHASE-4](./PHASE-4-NOTIFICATION-SCHEDULER.md), [PHASE-5](./PHASE-5-IN-APP-ALERTS.md), [PHASE-6](./PHASE-6-GRACE-PERIOD.md))  
+**Status:** Architecture foundation (see also [PHASE-2](./PHASE-2-READ-ONLY-INTEGRATION.md) … [PHASE-6](./PHASE-6-GRACE-PERIOD.md), [PHASE-7A](./PHASE-7A-SUSPENSION-SHADOW.md))  
 **Scope:** PHP Core, isolated module  
 **Non-goals:** business logic, UI, navbar, notifications, cron, billing, payment gateway, auto-renewal, subscription pages, license logic, login/middleware wiring, access blocking
 
