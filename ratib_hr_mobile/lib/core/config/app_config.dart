@@ -14,7 +14,7 @@ abstract final class AppConfig {
   static const String phase = 'L1';
   static const String versionLabel = '1.0.0';
   /// ASCII stamp — must appear in release libapp.so for install verification.
-  static const String buildStamp = '<<<RATEB_BUILD_NAME>>>';
+  static const String buildStamp = '<<<RATEB_BUILD_019>>>';
 
   /// ERP remains the single source of truth (documentation constant only).
   static const String sourceOfTruth = 'RATEB ERP';

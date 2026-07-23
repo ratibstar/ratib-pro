@@ -1,7 +1,7 @@
 name: ratib_hr_mobile
 description: RATEB HR Mobile — Enterprise Employee Self-Service (ESS). Presentation layer for RATEB ERP.
 publish_to: "none"
-version: 1.0.0+206
+version: 1.0.0+207
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
