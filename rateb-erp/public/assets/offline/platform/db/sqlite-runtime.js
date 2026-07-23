@@ -229,9 +229,13 @@ function syncInstallPointerFromActiveJson() {
     });
 }
 
+function ensureOpen() {
+    return open();
+}
+
 function open() {
     if (state.open) {
-        return Promise.resolve({ ok: true, mode: state.mode, alreadyOpen: true });
+        return Promise.resolve({ ok: true, mode: state.mode, alreadyOpen: true, schemaVersion: getSchemaVersion() });
     }
     if (state.opening) {
         return state.opening;
@@ -256,12 +260,31 @@ function open() {
         });
     }).then(function (result) {
         state.opening = null;
+        try {
+            globalThis.dispatchEvent(new CustomEvent('rateb-v2-db-open', {
+                detail: { mode: result.mode, schemaVersion: result.schemaVersion }
+            }));
+        } catch (eEvt) { /* ignore */ }
         return result;
     }).catch(function (err) {
         state.opening = null;
         throw err;
     });
     return state.opening;
+}
+
+/**
+ * Fix3: register the DB API without WASM/open/migrate.
+ * First consumer calls open() (singleton promise) or uses exec()/migrate() wrappers.
+ */
+function register() {
+    return Promise.resolve({
+        ok: true,
+        registered: true,
+        open: !!state.open,
+        version: DB_API_VERSION,
+        mode: state.mode
+    });
 }
 
 function close() {
@@ -364,25 +387,45 @@ var api = {
     __locked: true,
     version: DB_API_VERSION,
     targetSchemaVersion: DB_VERSION_TARGET,
+    register: register,
     open: open,
     close: close,
     exec: function (sql, bind) {
-        return Promise.resolve(exec(sql, bind));
+        return ensureOpen().then(function () {
+            return exec(sql, bind);
+        });
     },
-    migrate: migrate,
+    migrate: function () {
+        return ensureOpen().then(function () {
+            return migrate();
+        });
+    },
     getSchemaVersion: function () {
-        return Promise.resolve(getSchemaVersion());
+        return ensureOpen().then(function () {
+            return getSchemaVersion();
+        });
     },
     integrityCheck: function () {
-        return Promise.resolve(integrityCheck());
+        return ensureOpen().then(function () {
+            return integrityCheck();
+        });
     },
-    checkpointPersist: checkpointPersist,
+    checkpointPersist: function () {
+        return ensureOpen().then(function () {
+            return checkpointPersist();
+        });
+    },
     backup: backup,
     restore: restore,
-    syncInstallPointerFromActiveJson: syncInstallPointerFromActiveJson,
+    syncInstallPointerFromActiveJson: function () {
+        return ensureOpen().then(function () {
+            return syncInstallPointerFromActiveJson();
+        });
+    },
     runSelfTest: runSelfTest,
     getMode: function () { return state.mode; },
-    isOpen: function () { return !!state.open; }
+    isOpen: function () { return !!state.open; },
+    isOpening: function () { return !!state.opening; }
 };
 
 globalThis.RatebOfflineV2DB = api;

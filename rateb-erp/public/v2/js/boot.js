@@ -623,17 +623,29 @@
                 '../assets/offline/platform/db/sqlite-runtime.js',
                 root.location.href
             ).href;
+            /* Fix3: import + register DB API only — do not open WASM/SQLite until a store needs it. */
             var dbPromise = import(dbUrl).then(function (mod) {
                 var db = mod.default || root.RatebOfflineV2DB;
-                return db.open().then(function (opened) {
-                    if (runtime && runtime.services) {
-                        runtime.services.register('db', db, { replace: true });
-                    }
-                    setText('db-version', db.version);
-                    setState('db-selftest', true, 'open mode=' + opened.mode + ' schema=' + opened.schemaVersion);
-                    ready('db', { mode: opened.mode, schemaVersion: opened.schemaVersion });
-                    return db;
+                if (!db) {
+                    throw new Error('db_module_missing');
+                }
+                if (typeof db.register === 'function') {
+                    return db.register().then(function () {
+                        return db;
+                    });
+                }
+                return db;
+            }).then(function (db) {
+                if (runtime && runtime.services) {
+                    runtime.services.register('db', db, { replace: true });
+                }
+                setText('db-version', db.version);
+                setState('db-selftest', true, 'registered (lazy open)');
+                ready('db', {
+                    registered: true,
+                    open: !!(db.isOpen && db.isOpen())
                 });
+                return db;
             }).catch(function (err) {
                 setState('db-selftest', false, String(err && err.message ? err.message : err));
                 return null;
@@ -1094,7 +1106,7 @@
                         ready('offline-bootstrap', {
                             path: path,
                             identity: true,
-                            sqlite: true,
+                            sqlite: 'lazy',
                             businessModules: true
                         });
                     });
