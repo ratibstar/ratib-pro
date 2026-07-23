@@ -167,6 +167,12 @@ final class RouteModuleLoader
             return self::orderWant($want);
         }
 
+        if (str_starts_with($path, '/admin/subscription') || $path === '/admin/support') {
+            $want = ['auth' => true, 'subscription' => true];
+
+            return self::orderWant($want);
+        }
+
         if (self::isPlatformPath($path)) {
             $want = ['auth' => true, 'platform' => true];
 

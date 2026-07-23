@@ -198,6 +198,13 @@ final class ApiAuthMiddleware implements MiddlewareInterface
         if (class_exists(\Rateb\App\Subscription\SubscriptionBootstrap::class)) {
             \Rateb\App\Subscription\SubscriptionBootstrap::bindForCompany($companyId);
         }
+        // Phase 7B — feature-flagged suspension enforcement (default OFF).
+        if (class_exists(\Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class)) {
+            $ok = (new \Rateb\App\Subscription\SubscriptionEnforcementMiddleware())->handle();
+            if (!$ok) {
+                return false;
+            }
+        }
         return true;
     }
 }
@@ -384,6 +391,14 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
     {
         if (SessionManager::get('rateb_is_super_admin')) {
             rateb_resolve_ops_company_id();
+            $opsCompanyId = (int) SessionManager::get('rateb_company_id', 0);
+            // Tenant-level enforcement: no role bypass when a company context is active.
+            if ($opsCompanyId > 0) {
+                \Rateb\App\Core\TenantContext::setCompanyId($opsCompanyId);
+                if (class_exists(\Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class)) {
+                    return (new \Rateb\App\Subscription\SubscriptionEnforcementMiddleware())->handle();
+                }
+            }
             return true;
         }
 
@@ -407,6 +422,10 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
         }
 
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        // Phase 7B — feature-flagged suspension enforcement (default OFF).
+        if (class_exists(\Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class)) {
+            return (new \Rateb\App\Subscription\SubscriptionEnforcementMiddleware())->handle();
+        }
         return true;
     }
 }

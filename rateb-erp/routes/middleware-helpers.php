@@ -94,7 +94,7 @@ if (!function_exists('rateb_erp_mw')) {
      */
     function rateb_erp_mw(string $module = '', string $permission = '', string $resource = ''): array
     {
-        $stack = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class, BranchScopeMiddleware::class];
+        $stack = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class, \Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class, BranchScopeMiddleware::class];
         if ($module !== '') {
             $stack[] = [CompanyModuleMiddleware::class, $module];
         }
