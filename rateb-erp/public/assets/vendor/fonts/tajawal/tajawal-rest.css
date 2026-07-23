@@ -1,31 +1,31 @@
-/* PERF Fix5 — Non-critical Tajawal weights (idle / post-load only).
+/* PERF Fix5 / Fix11 — Non-critical Tajawal weights (post-interaction / long idle only).
  * Used: 500, 700 (real files). 600→500 and 800→700 aliases avoid faux-bold from 400.
- * Not on the first-paint critical path — Admin main.php injects this after load+idle. */
+ * font-display: optional — never cause late text swap on bold UI. */
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
     font-weight: 500;
-    font-display: swap;
+    font-display: optional;
     src: url('tajawal-500.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
     font-weight: 600;
-    font-display: swap;
+    font-display: optional;
     src: url('tajawal-500.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
     font-weight: 700;
-    font-display: swap;
+    font-display: optional;
     src: url('tajawal-700.woff2') format('woff2');
 }
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
     font-weight: 800;
-    font-display: swap;
+    font-display: optional;
     src: url('tajawal-700.woff2') format('woff2');
 }

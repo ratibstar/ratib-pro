@@ -1,10 +1,10 @@
-/* PERF Fix5 — Tajawal critical weight only (400).
+/* PERF Fix5 / Fix11 — Tajawal critical weight only (400).
  * Loaded via inline @font-face in Admin main.php + this sheet for other layouts.
- * font-display: swap — show fallback immediately, swap to Tajawal when ready (Arabic-safe). */
+ * font-display: optional — with preload, usually applies before paint; never late-swaps text. */
 @font-face {
     font-family: 'Tajawal';
     font-style: normal;
     font-weight: 400;
-    font-display: swap;
+    font-display: optional;
     src: url('tajawal-400.woff2') format('woff2');
 }
