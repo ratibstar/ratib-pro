@@ -239,7 +239,6 @@ final class PosOfflineDeviceService
         $limit = max(1, min(500, $limit));
         $sql = 'SELECT d.*,
                        b.name AS branch_name,
-                       b.name_ar AS branch_name_ar,
                        u.name AS user_display,
                        u.email AS user_email,
                        act.name AS activated_by_name,
@@ -356,7 +355,7 @@ final class PosOfflineDeviceService
             return [];
         }
         $rows = (new OfflineDevice())->query(
-            'SELECT DISTINCT d.branch_id, b.name, b.name_ar, b.code
+            'SELECT DISTINCT d.branch_id, b.name, b.code
              FROM rateb_offline_devices d
              LEFT JOIN rateb_branches b ON b.id = d.branch_id AND b.company_id = d.company_id
              WHERE d.company_id = :cid AND d.branch_id IS NOT NULL AND d.branch_id > 0
@@ -369,7 +368,7 @@ final class PosOfflineDeviceService
             if ($id < 1) {
                 continue;
             }
-            $name = trim((string) ($row['name'] ?? $row['name_ar'] ?? ''));
+            $name = trim((string) ($row['name'] ?? ''));
             $code = trim((string) ($row['code'] ?? ''));
             $label = $name !== '' ? $name : ('#' . $id);
             if ($code !== '') {
@@ -445,7 +444,7 @@ final class PosOfflineDeviceService
     private function adminDevice(array $row): array
     {
         $public = $this->publicDevice($row);
-        $branchName = trim((string) ($row['branch_name'] ?? $row['branch_name_ar'] ?? ''));
+        $branchName = trim((string) ($row['branch_name'] ?? ''));
         $userLabel = trim((string) ($row['user_display'] ?? ''));
         if ($userLabel === '') {
             $userLabel = trim((string) ($row['user_email'] ?? ''));
