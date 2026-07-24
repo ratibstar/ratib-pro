@@ -1,8 +1,8 @@
 /*!
- * RATEB Offline V2 — POS controlled sync gateway (Phase 11–12)
+ * RATEB Offline V2 — POS controlled sync gateway (Phase 11–14.1)
  *
- * Manual pipeline: Prepare → Validate → Accept (WAITING_COMMIT).
- * Commit disabled. Never starts sync engine, SW push, or boot sync.
+ * Manual pipeline: Prepare → Validate → Accept → Commit → COMMITTED.
+ * Never starts sync engine, SW push, or boot sync.
  */
 (function (root) {
     'use strict';
@@ -18,15 +18,18 @@
         meta: 'pos.sync_center_meta'
     };
 
-    var MODE = 'ACCEPT_WAITING_COMMIT';
+    var MODE = 'ACCEPT_COMMIT';
     var VALIDATE_URL = '/rateb-erp/api/v1/pos/sync/validate';
     var ACCEPT_URL = '/rateb-erp/api/v1/pos/sync/accept';
+    var COMMIT_URL = '/rateb-erp/api/v1/pos/sync/commit';
 
     var SYNC_STATUS = {
         SYNC_PENDING: 'SYNC_PENDING',
         VALIDATING: 'VALIDATING',
         VALIDATED: 'VALIDATED',
         SERVER_ACCEPTED: 'SERVER_ACCEPTED',
+        COMMITTED: 'COMMITTED',
+        COMMIT_FAILED: 'COMMIT_FAILED',
         REJECTED: 'REJECTED'
     };
 
@@ -39,7 +42,9 @@
             SERVER_ACCEPTED: true
         },
         VALIDATED: { VALIDATING: true, SERVER_ACCEPTED: true },
-        SERVER_ACCEPTED: {},
+        SERVER_ACCEPTED: { COMMITTED: true, COMMIT_FAILED: true },
+        COMMIT_FAILED: { COMMITTED: true, COMMIT_FAILED: true },
+        COMMITTED: {},
         REJECTED: { SYNC_PENDING: true, VALIDATING: true }
     };
 
@@ -52,6 +57,7 @@
             store: null,
             apiHits: [],
             transport: null,
+            commitTransport: null,
             bearerToken: null,
             forceOffline: false,
             lastValidate: null
@@ -188,9 +194,13 @@
                 var from = sale.sync_status || SYNC_STATUS.SYNC_PENDING;
                 return assertSyncTransition(from, toStatus).then(function () {
                     return ensureStore().then(function (store) {
-                        var next = Object.assign({}, sale, extra || {}, {
+                        var patch = extra || {};
+                        var synced = patch.synced != null
+                            ? !!patch.synced
+                            : (toStatus === SYNC_STATUS.COMMITTED);
+                        var next = Object.assign({}, sale, patch, {
                             sync_status: toStatus,
-                            synced: false,
+                            synced: synced,
                             updated_at: nowIso()
                         });
                         return store.put(ET.sale, next.id, next, Number(next.version || 1) + 1)
@@ -198,6 +208,40 @@
                     });
                 });
             });
+        }
+
+        /**
+         * POS warehouse resolution — sale / identity / line stock warehouse.
+         * Does NOT infer from reservations.
+         */
+        function resolveWarehouseId(sale) {
+            var candidates = [
+                sale && sale.warehouse_id,
+                sale && sale.metadata && sale.metadata.warehouse_id
+            ];
+            var lines = (sale && sale.lines) || [];
+            for (var i = 0; i < lines.length; i++) {
+                candidates.push(lines[i] && lines[i].warehouse_id);
+            }
+            for (var j = 0; j < candidates.length; j++) {
+                var n = Number(candidates[j] || 0);
+                if (n > 0) {
+                    return n;
+                }
+            }
+            return null;
+        }
+
+        function resolveTerminalId(sale) {
+            var n = Number((sale && sale.terminal_id) ||
+                (sale && sale.metadata && sale.metadata.terminal_id) || 0);
+            return n > 0 ? n : null;
+        }
+
+        function resolveShiftId(sale) {
+            var n = Number((sale && sale.shift_id) ||
+                (sale && sale.metadata && sale.metadata.shift_id) || 0);
+            return n > 0 ? n : null;
         }
 
         function buildPayload(sale, device, reservations) {
@@ -213,13 +257,21 @@
                     currency: line.currency || sale.currency || 'SAR'
                 };
             });
-            return {
+            var warehouseId = resolveWarehouseId(sale);
+            var terminalId = resolveTerminalId(sale);
+            var shiftId = resolveShiftId(sale);
+            var branchId = Number(sale.branch_id || 0) || 0;
+            var payload = {
                 device_id: (device && device.device_uuid) || sale.device_id || null,
                 installation_id: (device && device.installation_id) || sale.installation_id || null,
                 sync_key: sale.sync_key || null,
                 sale_id: sale.id,
                 created_at: sale.created_at || sale.completed_at || nowIso(),
                 customer: sale.customer || null,
+                branch_id: branchId || null,
+                warehouse_id: warehouseId,
+                terminal_id: terminalId,
+                shift_id: shiftId,
                 lines: lines,
                 totals: {
                     line_count: sale.line_count != null ? sale.line_count : lines.length,
@@ -239,11 +291,15 @@
                 metadata: {
                     local_txn_no: sale.local_txn_no || null,
                     company_id: sale.company_id,
-                    branch_id: sale.branch_id || 0,
+                    branch_id: branchId,
+                    warehouse_id: warehouseId,
+                    terminal_id: terminalId,
+                    shift_id: shiftId,
                     mode: MODE,
                     source: 'pos_offline_v2'
                 }
             };
+            return payload;
         }
 
         function validateLocalContract(payload) {
@@ -275,6 +331,14 @@
             if (!payload.totals || !isFinite(Number(payload.totals.total))) {
                 errors.push({ code: 'invalid_totals', message: 'totals.total required' });
             }
+            if (!(Number(payload.warehouse_id || 0) > 0) &&
+                !(Number(payload.metadata && payload.metadata.warehouse_id || 0) > 0)) {
+                errors.push({ code: 'missing_warehouse_id', message: 'warehouse_id required' });
+            }
+            if (!(Number(payload.branch_id || 0) > 0) &&
+                !(Number(payload.metadata && payload.metadata.branch_id || 0) > 0)) {
+                errors.push({ code: 'missing_branch_id', message: 'branch_id required' });
+            }
             return errors;
         }
 
@@ -298,6 +362,31 @@
                     return {
                         http_status: res.status,
                         body: body
+                    };
+                });
+            });
+        }
+
+        function defaultCommitTransport(url, body, bearer) {
+            var headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+            if (bearer) {
+                headers.Authorization = 'Bearer ' + bearer;
+            }
+            return fetch(url, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'omit',
+                body: JSON.stringify(body || {})
+            }).then(function (res) {
+                return res.json().catch(function () {
+                    return { ok: false, accepted: false, error: 'bad_json' };
+                }).then(function (parsed) {
+                    return {
+                        http_status: res.status,
+                        body: parsed
                     };
                 });
             });
@@ -329,6 +418,28 @@
 
         function callAcceptApi(payload) {
             return callApi(ACCEPT_URL, payload);
+        }
+
+        function callCommitApi(body) {
+            var hit = {
+                at: nowIso(),
+                url: COMMIT_URL,
+                method: 'POST',
+                mode: MODE,
+                action: 'commit'
+            };
+            state.apiHits.push(hit);
+            /* Commit body is not {payload:...} — do not reuse accept transport. */
+            var transport = state.commitTransport || defaultCommitTransport;
+            return Promise.resolve()
+                .then(function () {
+                    return transport(COMMIT_URL, body, state.bearerToken);
+                })
+                .then(function (res) {
+                    hit.http_status = res && res.http_status;
+                    hit.ok = !!(res && res.body && (res.body.ok === true || res.body.accepted === true));
+                    return res;
+                });
         }
 
         /**
@@ -895,9 +1006,177 @@
             });
         }
 
-        /** Commit Sync — disabled until a future phase. */
-        function commitSync() {
-            return Promise.reject(new Error('pos_sync_commit_disabled'));
+        /**
+         * Manual Commit Sync — POST /sync/commit → COMMITTED (or retryable COMMIT_FAILED).
+         */
+        function commitSync(idCtx, saleId) {
+            if (!saleId) {
+                return Promise.reject(new Error('pos_sale_id_required'));
+            }
+            if (!isOnline() && !state.commitTransport) {
+                return softAudit(idCtx, 'SYNC_COMMIT_FAILED', ET.sale, saleId, {
+                    reason: 'offline',
+                    mode: MODE
+                }).then(function () {
+                    return {
+                        ok: false,
+                        offline: true,
+                        committed: false,
+                        sync_status: SYNC_STATUS.COMMIT_FAILED,
+                        api_called: false,
+                        sync_started: false,
+                        mode: MODE
+                    };
+                });
+            }
+
+            return getSale(idCtx, saleId).then(function (sale) {
+                if (!sale) {
+                    return Promise.reject(new Error('pos_sale_not_found'));
+                }
+                if (sale.status !== 'COMPLETED') {
+                    return Promise.reject(new Error('pos_sale_not_completed'));
+                }
+                if (sale.sync_status === SYNC_STATUS.COMMITTED && (sale.order_id || sale.synced)) {
+                    return {
+                        ok: true,
+                        committed: true,
+                        already_committed: true,
+                        order_id: sale.order_id || null,
+                        server_sync_id: sale.server_sync_id || null,
+                        sync_status: SYNC_STATUS.COMMITTED,
+                        api_called: false,
+                        sync_started: false,
+                        mode: MODE,
+                        sale: sale
+                    };
+                }
+                var from = sale.sync_status || SYNC_STATUS.SYNC_PENDING;
+                if (from !== SYNC_STATUS.SERVER_ACCEPTED && from !== SYNC_STATUS.COMMIT_FAILED) {
+                    return Promise.reject(new Error(
+                        'pos_invalid_sync_transition:' + from + '->COMMIT'
+                    ));
+                }
+                if (!sale.sync_key && !sale.server_sync_id) {
+                    return Promise.reject(new Error('pos_commit_selector_required'));
+                }
+
+                var body = {
+                    sync_key: sale.sync_key || null,
+                    server_sync_id: sale.server_sync_id || null,
+                    branch_id: Number(sale.branch_id || 0) || 0,
+                    device_id: sale.device_id || null,
+                    terminal_id: Number(sale.terminal_id || 0) || 0
+                };
+
+                return softAudit(idCtx, 'SYNC_COMMIT_STARTED', ET.sale, saleId, {
+                    sync_key: sale.sync_key,
+                    server_sync_id: sale.server_sync_id,
+                    mode: MODE
+                }).then(function () {
+                    return callCommitApi(body).then(function (res) {
+                        var resp = (res && res.body) || {};
+                        var http = res && res.http_status;
+                        var httpOk = http >= 200 && http < 300;
+                        var ok = resp.ok === true || resp.accepted === true;
+                        var status = String(resp.status || '');
+                        var already = !!resp.already_committed || status === 'COMMITTED';
+
+                        if (ok && httpOk && (status === 'COMMITTED' || already || resp.order_id)) {
+                            return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.COMMITTED, {
+                                order_id: resp.order_id || null,
+                                order_no: resp.order_no || null,
+                                server_sync_id: resp.server_sync_id || sale.server_sync_id || null,
+                                waiting_commit: false,
+                                last_commit_at: nowIso(),
+                                last_commit_error: null,
+                                synced: true
+                            }).then(function (updated) {
+                                return softAudit(idCtx, 'SYNC_COMMIT_SUCCESS', ET.sale, saleId, {
+                                    order_id: resp.order_id,
+                                    already_committed: already,
+                                    mode: MODE
+                                }).then(function () {
+                                    return writeMeta(idCtx, {
+                                        last_sync_at: nowIso(),
+                                        last_commit_at: nowIso(),
+                                        last_order_id: resp.order_id || null
+                                    }).then(function (meta) {
+                                        return {
+                                            ok: true,
+                                            committed: true,
+                                            already_committed: already,
+                                            order_id: resp.order_id || null,
+                                            order_no: resp.order_no || null,
+                                            server_sync_id: resp.server_sync_id || null,
+                                            sale: updated,
+                                            sync_status: SYNC_STATUS.COMMITTED,
+                                            api_called: true,
+                                            http_status: http,
+                                            sync_started: false,
+                                            mode: MODE,
+                                            meta: meta
+                                        };
+                                    });
+                                });
+                            });
+                        }
+
+                        var errCode = resp.error_code || resp.error || 'commit_failed';
+                        var retryable = http === 0 || http === 408 || http === 409 ||
+                            http >= 500 || !!resp.network_error ||
+                            errCode === 'in_progress' || errCode === 'checkout_failed';
+
+                        return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.COMMIT_FAILED, {
+                            last_commit_error: String(errCode),
+                            last_commit_at: nowIso(),
+                            waiting_commit: true,
+                            synced: false
+                        }).then(function (updated) {
+                            return softAudit(idCtx, 'SYNC_COMMIT_FAILED', ET.sale, saleId, {
+                                error_code: errCode,
+                                http_status: http,
+                                retryable: retryable,
+                                mode: MODE
+                            }).then(function () {
+                                return {
+                                    ok: false,
+                                    committed: false,
+                                    retryable: retryable,
+                                    reason: errCode,
+                                    error_code: errCode,
+                                    sale: updated,
+                                    sync_status: SYNC_STATUS.COMMIT_FAILED,
+                                    api_called: true,
+                                    http_status: http,
+                                    sync_started: false,
+                                    mode: MODE
+                                };
+                            });
+                        });
+                    }, function (err) {
+                        return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.COMMIT_FAILED, {
+                            last_commit_error: String(err && err.message ? err.message : err),
+                            last_commit_at: nowIso(),
+                            waiting_commit: true,
+                            synced: false
+                        }).then(function (updated) {
+                            return {
+                                ok: false,
+                                committed: false,
+                                retryable: true,
+                                reason: 'network',
+                                sale: updated,
+                                sync_status: SYNC_STATUS.COMMIT_FAILED,
+                                api_called: true,
+                                network_error: true,
+                                sync_started: false,
+                                mode: MODE
+                            };
+                        });
+                    });
+                });
+            });
         }
 
         function getSyncCenterStatus(idCtx) {
@@ -917,13 +1196,13 @@
                 var preview = parts[4] || {};
                 var pending = sales.filter(function (s) {
                     return s && s.status === 'COMPLETED' &&
-                        s.sync_status !== SYNC_STATUS.SERVER_ACCEPTED &&
+                        s.sync_status !== SYNC_STATUS.COMMITTED &&
                         s.synced !== true;
                 });
                 return {
                     ok: true,
                     mode: MODE,
-                    commit_enabled: false,
+                    commit_enabled: true,
                     device: {
                         device_uuid: device.device_uuid,
                         installation_id: device.installation_id,
@@ -942,7 +1221,9 @@
                             local_txn_no: s.local_txn_no,
                             sync_key: s.sync_key,
                             sync_status: s.sync_status || SYNC_STATUS.SYNC_PENDING,
-                            total: s.total
+                            total: s.total,
+                            server_sync_id: s.server_sync_id || null,
+                            order_id: s.order_id || null
                         };
                     }),
                     preview_ready_count: preview.ready_count || 0,
@@ -953,6 +1234,10 @@
                     automatic_sync: false
                 };
             });
+        }
+
+        function setCommitTransport(fn) {
+            state.commitTransport = typeof fn === 'function' ? fn : null;
         }
 
         return {
@@ -967,14 +1252,17 @@
             commitSync: commitSync,
             buildPayload: buildPayload,
             validateLocalContract: validateLocalContract,
+            resolveWarehouseId: resolveWarehouseId,
             getSyncCenterStatus: getSyncCenterStatus,
             setBearerToken: setBearerToken,
             setForceOffline: setForceOffline,
             setTransport: setTransport,
+            setCommitTransport: setCommitTransport,
             getApiHits: getApiHits,
             clearApiHits: clearApiHits,
             updateSaleSyncStatus: updateSaleSyncStatus,
             ACCEPT_URL: ACCEPT_URL,
+            COMMIT_URL: COMMIT_URL,
             isStoreOpen: function () { return !!state.store; }
         };
     }
@@ -984,6 +1272,7 @@
         create: createPosSyncGateway,
         MODE: MODE,
         SYNC_STATUS: SYNC_STATUS,
-        ACCEPT_URL: ACCEPT_URL
+        ACCEPT_URL: ACCEPT_URL,
+        COMMIT_URL: COMMIT_URL
     };
 })(typeof window !== 'undefined' ? window : this);

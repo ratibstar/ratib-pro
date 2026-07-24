@@ -37,6 +37,7 @@ final class CronService
             'spare_part_alerts' => (new AssetDeviceAutomationService())->processSparePartsLowStock(),
             'batch_expiry_alerts' => 0,
             'pos_sync_batches' => 0,
+            'pos_sync_reconcile' => 0,
             'invoice_overdue_marked' => (new BillingAutomationService())->markOverdueInvoices(),
             'invoice_due_reminders' => (new BillingAutomationService())->processDueReminders(),
             'cms_pages_published' => 0,
@@ -61,6 +62,7 @@ final class CronService
             $stats['low_stock_alerts'] += $invSvc->processLowStockAlerts($cid);
             $stats['batch_expiry_alerts'] += $invSvc->processBatchExpiryAlerts($cid);
             $stats['pos_sync_batches'] += $this->processPosSyncBatch($cid);
+            $stats['pos_sync_reconcile'] += $this->processPosSyncReconcile($cid);
         }
         TenantContext::setCompanyId(null);
 
@@ -87,5 +89,17 @@ final class CronService
         $result = (new \Rateb\App\Pos\Services\PosSyncBatchProcessorService())->processPending($companyId, 50);
 
         return (int) ($result['synced'] ?? 0);
+    }
+
+    /** Phase 14.1 — reconcile stale COMMITTING / FAILED acceptances (no duplicate checkout). */
+    private function processPosSyncReconcile(int $companyId): int
+    {
+        if ($companyId < 1 || !class_exists(\Rateb\App\Pos\Services\PosSyncAcceptanceReconcileService::class)) {
+            return 0;
+        }
+
+        $result = (new \Rateb\App\Pos\Services\PosSyncAcceptanceReconcileService())->reconcileCompany($companyId);
+
+        return (int) ($result['reconciled'] ?? 0) + (int) ($result['interrupted'] ?? 0);
     }
 }

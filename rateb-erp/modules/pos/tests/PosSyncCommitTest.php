@@ -26,6 +26,7 @@ final class PosSyncCommitTest
     public function run(): array
     {
         $this->testLifecycleTransitions();
+        $this->testMarkCommittedRequiresOrderId();
         $this->testPaymentDefaultCash();
         $this->testMissingWarehouse();
         $this->testTenantIsolationCompanyFromAuth();
@@ -37,6 +38,18 @@ final class PosSyncCommitTest
         $this->testCrashRecoveryReconcile();
 
         return $this->results;
+    }
+
+    private function testMarkCommittedRequiresOrderId(): void
+    {
+        $life = new PosSyncAcceptanceLifecycle();
+        $threw = false;
+        try {
+            $life->markCommitted(1, 1, 'tok', ['order_id' => 0]);
+        } catch (Throwable $e) {
+            $threw = str_contains($e->getMessage(), 'pos_commit_requires_order_id');
+        }
+        $this->record('markCommitted requires order_id', $threw, $threw ? 'rejected' : 'allowed');
     }
 
     private function testLifecycleTransitions(): void

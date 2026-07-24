@@ -25,7 +25,7 @@
     }
 
     function registerSw() {
-        var expectedCache = 'rateb-offline-v2-bootstrap-v20';
+        var expectedCache = 'rateb-offline-v2-bootstrap-v21';
         if (!('serviceWorker' in root.navigator)) {
             return Promise.resolve({ ok: false, error: 'sw_unsupported' });
         }

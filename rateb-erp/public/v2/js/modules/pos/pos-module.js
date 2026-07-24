@@ -13,7 +13,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.12.0-phase12-accept';
+    var POS_VERSION = '0.14.1-phase14-commit';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -136,6 +136,9 @@
                 rbac: rbac,
                 company_id: claims.company_id,
                 branch_id: claims.branch_id || 0,
+                warehouse_id: claims.warehouse_id || claims.default_warehouse_id || 0,
+                terminal_id: claims.terminal_id || 0,
+                shift_id: claims.shift_id || 0,
                 user_id: claims.user_id,
                 unlocked: !!(session && session.unlocked),
                 allowed: allowed,
@@ -695,8 +698,11 @@
         });
     };
 
-    PosModule.prototype.commitSync = function () {
-        return this._getSyncGateway().commitSync();
+    PosModule.prototype.commitSync = function (saleId) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getSyncGateway().commitSync(idCtx, saleId);
+        });
     };
 
     PosModule.prototype.setSyncBearerToken = function (token) {
@@ -992,8 +998,8 @@
         self.exposeService('acceptOnline', function (saleId) {
             return self.acceptOnline(saleId);
         });
-        self.exposeService('commitSync', function () {
-            return self.commitSync();
+        self.exposeService('commitSync', function (saleId) {
+            return self.commitSync(saleId);
         });
         self.exposeService('setSyncBearerToken', function (token) {
             return self.setSyncBearerToken(token);
@@ -1847,7 +1853,7 @@
         outlet.setAttribute('data-pos-shell', '/pos/sync');
         outlet.appendChild(self._el('h3', 'POS Sync Center'));
         outlet.appendChild(self._el('p',
-            'Manual gateway · Validate → Accept (WAITING_COMMIT) · Commit disabled · no boot/auto sync'));
+            'Manual gateway · Validate → Accept → Commit · no boot/auto sync'));
 
         var statusHost = self._el('pre', 'Loading…', { 'data-pos-sync-status': '1' });
         outlet.appendChild(statusHost);
@@ -1965,13 +1971,29 @@
             });
         });
 
-        var commitBtn = self._el('button', 'Commit Sync (disabled)', {
+        var commitBtn = self._el('button', 'Commit Sync', {
             type: 'button',
-            disabled: 'disabled',
             'data-pos-commit-sync': '1'
         });
         commitBtn.addEventListener('click', function () {
-            self.commitSync().catch(function (err) {
+            var token = tokenInput.value;
+            if (token) {
+                self.setSyncBearerToken(token);
+            }
+            var saleId = saleSelect.value;
+            if (!saleId) {
+                msg.textContent = 'Select a sale (SERVER_ACCEPTED or COMMIT_FAILED)';
+                return;
+            }
+            msg.textContent = 'Committing…';
+            self.commitSync(saleId).then(function (res) {
+                msg.textContent = 'Commit · ok=' + !!res.ok +
+                    ' · status=' + res.sync_status +
+                    ' · order_id=' + (res.order_id || '') +
+                    (res.already_committed ? ' · duplicate' : '') +
+                    (res.reason ? ' · ' + res.reason : '');
+                return refresh();
+            }).catch(function (err) {
                 msg.textContent = String(err && err.message ? err.message : err);
             });
         });
@@ -2209,7 +2231,7 @@
         base.sync_gateway_mode = 'ACCEPT_WAITING_COMMIT';
         base.commit_sync_enabled = false;
         base.starts_sync_on_activate = false;
-        base.lifecycle = 'OPEN→COMPLETED→SYNC_PENDING→VALIDATING→VALIDATED→SERVER_ACCEPTED';
+        base.lifecycle = 'OPEN→COMPLETED→SYNC_PENDING→VALIDATING→VALIDATED→SERVER_ACCEPTED→COMMITTED';
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',

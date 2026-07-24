@@ -3,8 +3,8 @@
  *
  * Entity types on existing entity_row:
  *   pos.sale_draft, pos.sale_line, pos.cart_session, pos.sale
- * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → VALIDATING → VALIDATED → SERVER_ACCEPTED.
- * Commit disabled. Cancel keeps history. No inv.* writes or auto sync.start().
+ * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → … → SERVER_ACCEPTED → COMMITTED.
+ * Cancel keeps history. No inv.* writes or auto sync.start().
  */
 (function (root) {
     'use strict';
@@ -27,12 +27,14 @@
         CANCELLED: 'CANCELLED'
     };
 
-    /** Sync lifecycle (Phase 12). SERVER_ACCEPTED = waiting_commit; no COMMITTED. */
+    /** Sync lifecycle (Phase 14.1). COMMITTED = server order posted. */
     var SYNC_STATUS = {
         SYNC_PENDING: 'SYNC_PENDING',
         VALIDATING: 'VALIDATING',
         VALIDATED: 'VALIDATED',
         SERVER_ACCEPTED: 'SERVER_ACCEPTED',
+        COMMITTED: 'COMMITTED',
+        COMMIT_FAILED: 'COMMIT_FAILED',
         REJECTED: 'REJECTED'
     };
 
@@ -58,7 +60,9 @@
             SERVER_ACCEPTED: true
         },
         VALIDATED: { VALIDATING: true, SERVER_ACCEPTED: true },
-        SERVER_ACCEPTED: {},
+        SERVER_ACCEPTED: { COMMITTED: true, COMMIT_FAILED: true },
+        COMMIT_FAILED: { COMMITTED: true, COMMIT_FAILED: true },
+        COMMITTED: {},
         REJECTED: { SYNC_PENDING: true, VALIDATING: true }
     };
 
@@ -411,6 +415,7 @@
                 unit_price: line.unit_price,
                 line_total: line.line_total,
                 currency: line.currency || 'SAR',
+                warehouse_id: line.warehouse_id || null,
                 sort_order: line.sort_order
             };
         }
@@ -613,12 +618,43 @@
                                             var saleLines = lines.map(function (line) {
                                                 return linePayloadForSale(line, saleId);
                                             });
+                                            var saleWarehouse = Number(
+                                                opts.warehouse_id ||
+                                                idCtx.warehouse_id ||
+                                                (idCtx.claims && idCtx.claims.warehouse_id) ||
+                                                draft.warehouse_id ||
+                                                0
+                                            ) || null;
+                                            var saleTerminal = Number(
+                                                opts.terminal_id ||
+                                                idCtx.terminal_id ||
+                                                (idCtx.claims && idCtx.claims.terminal_id) ||
+                                                0
+                                            ) || null;
+                                            var saleShift = Number(
+                                                opts.shift_id ||
+                                                idCtx.shift_id ||
+                                                (idCtx.claims && idCtx.claims.shift_id) ||
+                                                0
+                                            ) || null;
+                                            if (!saleWarehouse) {
+                                                for (var wi = 0; wi < saleLines.length; wi++) {
+                                                    var lw = Number(saleLines[wi].warehouse_id || 0);
+                                                    if (lw > 0) {
+                                                        saleWarehouse = lw;
+                                                        break;
+                                                    }
+                                                }
+                                            }
                                             var sale = {
                                                 id: saleId,
                                                 local_txn_no: localTxnNo,
                                                 draft_id: draft.id,
                                                 company_id: idCtx.company_id,
                                                 branch_id: idCtx.branch_id || 0,
+                                                warehouse_id: saleWarehouse,
+                                                terminal_id: saleTerminal,
+                                                shift_id: saleShift,
                                                 user_id: idCtx.user_id || null,
                                                 status: STATUS.COMPLETED,
                                                 sync_status: SYNC_STATUS.SYNC_PENDING,
@@ -733,9 +769,29 @@
             return work;
         }
 
-        /** Commit / SYNCED disabled until a future phase. */
-        function markSaleSynced() {
-            return Promise.reject(new Error('pos_sync_commit_disabled'));
+        /** Local mark after server commit success (gateway owns API). */
+        function markSaleSynced(idCtx, saleId, extra) {
+            if (!saleId) {
+                return Promise.reject(new Error('pos_sale_id_required'));
+            }
+            return ensureStore().then(function (store) {
+                return store.get(ET.sale, String(saleId), idCtx.company_id).then(function (row) {
+                    if (!row || !row.payload) {
+                        return Promise.reject(new Error('pos_sale_not_found'));
+                    }
+                    var sale = row.payload;
+                    var from = sale.sync_status || SYNC_STATUS.SYNC_PENDING;
+                    return assertSyncTransition(from, SYNC_STATUS.COMMITTED).then(function () {
+                        var next = Object.assign({}, sale, extra || {}, {
+                            sync_status: SYNC_STATUS.COMMITTED,
+                            synced: true,
+                            updated_at: nowIso()
+                        });
+                        return store.put(ET.sale, next.id, next, Number(next.version || 1) + 1)
+                            .then(function () { return next; });
+                    });
+                });
+            });
         }
 
         /** Phase 3 compat — same as completeSale (now with outbox). */

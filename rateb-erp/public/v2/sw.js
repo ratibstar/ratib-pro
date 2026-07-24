@@ -16,7 +16,7 @@
  */
 /* eslint-disable no-restricted-globals */
 /* v20: POS Phase 12 server acceptance WAITING_COMMIT under ./js/modules/pos/ */
-var CACHE = 'rateb-offline-v2-bootstrap-v20';
+var CACHE = 'rateb-offline-v2-bootstrap-v21';
 var PRECACHE = [
     './index.html',
     './manifest.webmanifest',

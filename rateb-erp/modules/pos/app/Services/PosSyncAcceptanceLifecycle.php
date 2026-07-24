@@ -117,6 +117,10 @@ class PosSyncAcceptanceLifecycle
     public function markCommitted(int $companyId, int $acceptanceId, string $commitToken, array $fields): bool
     {
         $this->assertTransition(self::COMMITTING, self::COMMITTED);
+        $orderId = (int) ($fields['order_id'] ?? 0);
+        if ($orderId < 1) {
+            throw new \RuntimeException('pos_commit_requires_order_id');
+        }
         $now = date('Y-m-d H:i:s');
         $stmt = Database::connection()->prepare(
             'UPDATE rateb_pos_sync_acceptances
@@ -132,7 +136,7 @@ class PosSyncAcceptanceLifecycle
         );
         $stmt->execute([
             'st' => self::COMMITTED,
-            'oid' => (int) ($fields['order_id'] ?? 0) ?: null,
+            'oid' => $orderId,
             'cat' => $now,
             'ms' => isset($fields['processing_ms']) ? (int) $fields['processing_ms'] : null,
             'cid' => $companyId,

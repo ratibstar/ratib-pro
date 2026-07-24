@@ -270,6 +270,26 @@ class PosSyncCommitService
 
         $orderId = (int) ($result['order_id'] ?? 0);
         $ms = $this->elapsedMs($started);
+        if ($orderId < 1) {
+            $this->lifecycle->markFailed($companyId, $acceptanceId, $commitToken, [
+                'last_error' => 'checkout returned no order_id',
+                'error_code' => 'missing_order_id',
+                'processing_ms' => $ms,
+            ]);
+            $this->audit->log('COMMIT_FAILED', 'pos.sync_acceptance', $acceptanceId, [
+                'sync_key' => $syncKey,
+                'server_sync_id' => $claimed['server_sync_id'] ?? null,
+                'retry_count' => $retryCount,
+                'error_code' => 'missing_order_id',
+                'processing_ms' => $ms,
+            ]);
+
+            return $this->failResponse('missing_order_id', 'Checkout returned no order_id', 500, $started, [
+                'server_sync_id' => $claimed['server_sync_id'] ?? null,
+                'sync_key' => $syncKey,
+            ]);
+        }
+
         $this->lifecycle->markCommitted($companyId, $acceptanceId, $commitToken, [
             'order_id' => $orderId,
             'processing_ms' => $ms,
