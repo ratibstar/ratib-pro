@@ -1038,20 +1038,17 @@
     }
 
     function reinitModuleUi() {
-        // Soft/hard offline: skip network-heavy reinits (stats/charts) that jam clicks.
-        if (isUiOffline()) {
-            return;
+        // Soft badge must NOT skip chart hydrate (needs hard refresh otherwise).
+        if (!isUiOffline()) {
+            try {
+                document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
+                    if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
+                        return;
+                    }
+                    // module-page-stats listens for rateb:nav:afterEnter
+                });
+            } catch (e2) { /* ignore */ }
         }
-        // RatebApp.reinit runs once via rateb:nav:afterEnter — do not call it here (was double work).
-        // Fix10: module-page-stats boots solely via rateb:nav:afterEnter (avoid duplicate module-metrics).
-        try {
-            document.querySelectorAll('[data-module-metrics-async]').forEach(function (el) {
-                if (el.getAttribute('data-rateb-metrics-loaded') === '1') {
-                    return;
-                }
-                // module-page-stats listens for rateb:nav:afterEnter
-            });
-        } catch (e2) { /* ignore */ }
         ensureDashboardCharts();
     }
 
@@ -1586,7 +1583,8 @@
             // Soft OR hard offline miss: open destination inside current Admin shell
             // (sidebar stays). Never lean "وضع عدم الاتصال" menu / never trap on previous page.
             if (!(err && err.message === 'nav_superseded')) {
-                if (isBrowserOffline() || isUiOffline()) {
+                // Soft "offline" badge must NOT trap online users on a stub / black page.
+                if (isBrowserOffline()) {
                     if (!paintOfflinePageStub(href, opts)) {
                         showNavToast('تعذر فتح الصفحة أوفلاين من الشيل الحالي.', true);
                     }

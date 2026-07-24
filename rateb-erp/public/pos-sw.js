@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260724-pos-admin-erp-shell-v129';
+var SW_BUILD_ID = '20260724-pos-admin-passthrough-v130';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3830,7 +3830,13 @@ function shellFallback(request) {
         if (href) {
             var p = new URL(href, self.location.origin).pathname;
             if (isPosAdminCrudPath(p)) {
-                return Promise.resolve(posAdminConnectionRequiredResponse());
+                // Never paint "connection required" unless the browser is actually offline.
+                if (isHardBrowserOffline()) {
+                    return Promise.resolve(posAdminConnectionRequiredResponse());
+                }
+                return fetch(typeof request === 'string' ? request : request).catch(function () {
+                    return posAdminConnectionRequiredResponse();
+                });
             }
         }
     } catch (eCrudShell) { /* ignore */ }
@@ -4492,12 +4498,17 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isPosNavigation(url)) {
-            // POS admin CRUD (pos-pages-shell): live network only; never soft-latch → bio/shell.
+            // POS admin CRUD now uses Admin ERP HTML. Online: never intercept (no false
+            // "connection required" when Wi‑Fi is up). Hard offline only → message page.
             if (isPosAdminCrudPath(url.pathname) || !isPosRuntimePath(url.pathname)) {
-                respondWithDocumentAndReleaseWarmGate(
-                    event,
-                    navigatePosAdminCrudDocument(event.request)
-                );
+                if (isHardBrowserOffline()) {
+                    respondWithDocumentAndReleaseWarmGate(
+                        event,
+                        Promise.resolve(posAdminConnectionRequiredResponse())
+                    );
+                    return;
+                }
+                releaseBackgroundWarmAfterFirstDocument();
                 return;
             }
             respondWithDocumentAndReleaseWarmGate(
@@ -4552,8 +4563,8 @@ self.addEventListener('fetch', function (event) {
                 softNavAdminHtml(event.request, url, event).catch(function () {
                     // NEVER return lean inline shell to soft-nav — that HTML has no
                     // #rateb-sidebar → shell_mismatch → hardNavigate → black/lean menu.
-                    // Reject so client soft-nav stays on current Admin chrome + toast.
-                    if (isHardBrowserOffline() || isCloudBrowserOffline()) {
+                    // Soft latch must NOT block live Admin/POS-admin HTML while online.
+                    if (isHardBrowserOffline()) {
                         return Promise.reject(new Error('soft-nav-offline-miss'));
                     }
                     return fetch(event.request);
@@ -4604,10 +4615,14 @@ self.addEventListener('fetch', function (event) {
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
         if (isPosAdminCrudPath(url.pathname) || !isPosRuntimePath(url.pathname)) {
-            respondWithDocumentAndReleaseWarmGate(
-                event,
-                navigatePosAdminCrudDocument(event.request)
-            );
+            if (isHardBrowserOffline()) {
+                respondWithDocumentAndReleaseWarmGate(
+                    event,
+                    Promise.resolve(posAdminConnectionRequiredResponse())
+                );
+                return;
+            }
+            releaseBackgroundWarmAfterFirstDocument();
             return;
         }
         respondWithDocumentAndReleaseWarmGate(

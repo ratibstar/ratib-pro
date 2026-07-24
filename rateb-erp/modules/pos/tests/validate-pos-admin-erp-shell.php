@@ -37,7 +37,11 @@ assert_true('biometric still uses pos-shell', str_contains($bio, "'pos-shell'"))
 assert_true('sidebar full-nav only register/biometric', str_contains($side, "pos/register") && !preg_match("/str_starts_with\(\\\$resourcePath, 'pos\/'\);/", $side));
 assert_true('nav soft-nav Admin POS (no POS_ADMIN forceFull)', !str_contains($nav, 'POS_ADMIN_PAGES_RE'));
 assert_true('SW soft-nav allows POS admin HTML', str_contains($sw, 'isPosRuntimePath(url.pathname)'));
-assert_true('SW build bumped', str_contains($sw, 'pos-admin-erp-shell-v129'));
+assert_true('SW build bumped', str_contains($sw, 'pos-admin-passthrough-v130'));
+assert_true(
+    'online POS admin does not respondWith navigatePosAdminCrudDocument',
+    (bool) preg_match('/isPosAdminCrudPath[\s\S]{0,400}isHardBrowserOffline[\s\S]{0,200}releaseBackgroundWarmAfterFirstDocument/', $sw)
+);
 
 echo PHP_EOL . ($fail === 0 ? 'ALL PASSED' : "FAILED {$fail}") . PHP_EOL;
 exit($fail > 0 ? 1 : 0);
