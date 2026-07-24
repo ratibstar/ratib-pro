@@ -3,8 +3,8 @@
  *
  * Entity types on existing entity_row:
  *   pos.sale_draft, pos.sale_line, pos.cart_session, pos.sale
- * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → SYNCED (SYNCED reserved for future sync).
- * Cancel keeps draft/sale history. No inv.* writes, sync.start(), or network push.
+ * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → VALIDATING → VALIDATED|REJECTED.
+ * Commit/SYNCED disabled. Cancel keeps history. No inv.* writes or auto sync.start().
  */
 (function (root) {
     'use strict';
@@ -27,10 +27,12 @@
         CANCELLED: 'CANCELLED'
     };
 
-    /** Sync lifecycle on completed sales (local prep only — never auto SYNCED). */
+    /** Sync lifecycle (Phase 11). Commit/SYNCED not enabled yet. */
     var SYNC_STATUS = {
         SYNC_PENDING: 'SYNC_PENDING',
-        SYNCED: 'SYNCED'
+        VALIDATING: 'VALIDATING',
+        VALIDATED: 'VALIDATED',
+        REJECTED: 'REJECTED'
     };
 
     var OUTBOX_OP = 'CREATE_POS_SALE';
@@ -47,8 +49,10 @@
     };
 
     var ALLOWED_SYNC_TRANSITIONS = {
-        SYNC_PENDING: { SYNCED: true },
-        SYNCED: {}
+        SYNC_PENDING: { VALIDATING: true },
+        VALIDATING: { VALIDATED: true, REJECTED: true, SYNC_PENDING: true },
+        VALIDATED: {},
+        REJECTED: { SYNC_PENDING: true, VALIDATING: true }
     };
 
     function nowIso() {
@@ -722,29 +726,9 @@
             return work;
         }
 
-        /** Future sync only — never called automatically in Phase 10. */
-        function markSaleSynced(idCtx, saleId) {
-            return ensureStore().then(function (store) {
-                return store.get(ET.sale, String(saleId), idCtx.company_id).then(function (row) {
-                    if (!row || !row.payload) {
-                        return Promise.reject(new Error('pos_sale_not_found'));
-                    }
-                    var sale = row.payload;
-                    var from = sale.sync_status || SYNC_STATUS.SYNC_PENDING;
-                    return assertSyncTransition(from, SYNC_STATUS.SYNCED).then(function () {
-                        var next = Object.assign({}, sale, {
-                            sync_status: SYNC_STATUS.SYNCED,
-                            synced: true,
-                            synced_at: nowIso(),
-                            updated_at: nowIso()
-                        });
-                        return store.put(ET.sale, next.id, next, Number(next.version || 1) + 1)
-                            .then(function () {
-                                return { ok: true, sale: next };
-                            });
-                    });
-                });
-            });
+        /** Commit / SYNCED disabled until a future phase. */
+        function markSaleSynced() {
+            return Promise.reject(new Error('pos_sync_commit_disabled'));
         }
 
         /** Phase 3 compat — same as completeSale (now with outbox). */
@@ -911,8 +895,8 @@
                     if (sale.status !== STATUS.COMPLETED) {
                         return Promise.reject(new Error('pos_sale_cancel_not_allowed'));
                     }
-                    if (sale.synced === true || sale.sync_status === SYNC_STATUS.SYNCED) {
-                        return Promise.reject(new Error('pos_sale_synced_locked'));
+                    if (sale.synced === true || sale.sync_status === SYNC_STATUS.VALIDATED) {
+                        return Promise.reject(new Error('pos_sale_validated_locked'));
                     }
                     return assertSaleTransition(STATUS.COMPLETED, STATUS.CANCELLED).then(function () {
                         var cancelledAt = nowIso();

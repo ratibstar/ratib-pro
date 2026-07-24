@@ -7,6 +7,7 @@ use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosHardwareManager;
 use Rateb\App\Pos\Services\PosOfflineSyncService;
 use Rateb\App\Pos\Services\PosPricingService;
+use Rateb\App\Pos\Services\PosSyncValidateService;
 
 final class PosApiController extends PosBaseController
 {
@@ -28,6 +29,36 @@ final class PosApiController extends PosBaseController
         $this->json([
             'ok' => true,
             'status' => $service->status($companyId > 0 ? $companyId : null),
+        ]);
+    }
+
+    /**
+     * Phase 11 — dry-run validate only. No invoice / inventory / accounting / synced mark.
+     */
+    public function syncValidate(): void
+    {
+        $this->bootstrapPos();
+        $body = $this->jsonBody();
+        $payload = is_array($body['payload'] ?? null) ? $body['payload'] : $body;
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+        $service = new PosSyncValidateService();
+        $result = $service->validate($payload, [
+            'company_id' => $this->companyId(),
+        ]);
+        $this->json([
+            'ok' => true,
+            'accepted' => (bool) ($result['accepted'] ?? false),
+            'conflicts' => $result['conflicts'] ?? [],
+            'warnings' => $result['warnings'] ?? [],
+            'dry_run' => true,
+            'mode' => 'DRY_RUN_ONLY',
+            'inventory_deducted' => false,
+            'accounting_posted' => false,
+            'invoice_created' => false,
+            'marked_synced' => false,
+            'echo' => $result['echo'] ?? null,
         ]);
     }
 
