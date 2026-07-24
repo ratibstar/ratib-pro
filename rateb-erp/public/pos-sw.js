@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260722-offline-open-all-v127';
+var SW_BUILD_ID = '20260724-pos-admin-crud-nav-v128';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -549,6 +549,20 @@ function isPosNavigation(url) {
     return /\/(?:admin\/ops\/)?pos(?:\/|$)/i.test(p);
 }
 
+/**
+ * POS admin CRUD / hub pages (pos-pages-shell). Not offline register runtime.
+ * Must never receive biometricRequiredOfflineResponse / certified register shell.
+ */
+function isPosAdminCrudPath(pathname) {
+    var p = String(pathname || '');
+    return /\/(?:admin\/ops\/)?pos\/(dashboard|terminals|devices|settings|shifts|reports|orders|cash-drawers|sync|returns)(\/|$)/i.test(p);
+}
+
+/** Selling runtime only: bare /pos, /register, /biometric. */
+function isPosRuntimePath(pathname) {
+    return isRegisterShellPath(pathname) || isBiometricGatePath(pathname);
+}
+
 /** Register shell: /pos, /pos/register (with optional public prefix) */
 function isRegisterShellPath(pathname) {
     var p = String(pathname || '').replace(/\/+$/, '');
@@ -559,6 +573,92 @@ function isRegisterShellPath(pathname) {
 function isBiometricGatePath(pathname) {
     var p = String(pathname || '').replace(/\/+$/, '');
     return /\/pos\/biometric$/i.test(p);
+}
+
+/** Hard-offline HTML for POS admin CRUD — not unlock / biometric flow. */
+function posAdminConnectionRequiredResponse() {
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>POS — يلزم الاتصال</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
+        + 'h1{font-size:1.2rem;margin:0 0 .75rem}p{opacity:.9;line-height:1.55;max-width:28rem;margin:.6rem auto}'
+        + 'a{color:#8ab4ff}</style></head>'
+        + '<body data-rateb-pos-admin-offline="1">'
+        + '<h1>يلزم الاتصال بالإنترنت لفتح هذه الصفحة</h1>'
+        + '<p>Connection required to open this POS admin page.</p>'
+        + '<p>الشاشات الإدارية (الأجهزة، النهايات، الإعدادات، التقارير) تحتاج شبكة. شاشة البيع أوفلاين منفصلة.</p>'
+        + '<p><a id="a-admin" href="#">لوحة التحكم</a> · <a id="a-reg" href="#">شاشة البيع</a></p>'
+        + '<script>(function(){try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";'
+        + 'var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/(dashboard|terminals|devices|settings|shifts|reports|orders|cash-drawers|sync|returns)(\\/.*)?$/i,"");'
+        + 'var a1=document.getElementById("a-admin");var a2=document.getElementById("a-reg");'
+        + 'if(a1)a1.href=u.origin+u.pathname.replace(/\\/admin\\/ops\\/pos.*/i,"/admin/");'
+        + 'if(a2)a2.href=base.replace(/\\/?$/,"")+"/register"+q;}catch(e){}})();<\/script>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Rateb-Offline': '1',
+            'X-Rateb-Pos-Admin-Offline': '1'
+        }
+    });
+}
+
+/**
+ * Network-first document fetch for POS admin CRUD.
+ * Ignores soft cloud-degraded latch (assets-only). Never falls to biometric shell.
+ */
+function fetchPosAdminCrudNetwork(request, timeoutMs) {
+    if (isLocalApplianceOrigin()) {
+        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+            return res || Promise.reject(new Error('empty-response'));
+        });
+    }
+    if (isHardBrowserOffline()) {
+        return Promise.reject(new Error('hard-offline'));
+    }
+    var ms = typeof timeoutMs === 'number' ? timeoutMs : 8000;
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        if (ctrl) {
+            try { ctrl.abort(); } catch (eAb) { /* ignore */ }
+        }
+    }, ms);
+    return fetch(navigateFetchInput(request), {
+        signal: ctrl ? ctrl.signal : undefined
+    }).then(asNonRedirectedResponse).then(function (response) {
+        clearTimeout(timer);
+        if (!response || !response.ok) {
+            return Promise.reject(new Error('bad-navigate-status'));
+        }
+        clearCloudNetworkDegraded();
+        return response;
+    }).catch(function (err) {
+        clearTimeout(timer);
+        return Promise.reject(err || new Error('crud-navigate-fail'));
+    });
+}
+
+function navigatePosAdminCrudDocument(request) {
+    if (isHardBrowserOffline()) {
+        return Promise.resolve(posAdminConnectionRequiredResponse());
+    }
+    return fetchPosAdminCrudNetwork(request, 8000).catch(function () {
+        if (isHardBrowserOffline()) {
+            return posAdminConnectionRequiredResponse();
+        }
+        // Soft latch / transient miss: one more plain network attempt (no latch gate).
+        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+            if (res && res.ok) {
+                clearCloudNetworkDegraded();
+                return res;
+            }
+            return posAdminConnectionRequiredResponse();
+        }).catch(function () {
+            return posAdminConnectionRequiredResponse();
+        });
+    });
 }
 
 function registerPathFromBiometric(url) {
@@ -2116,9 +2216,8 @@ function navigatePosCloudWithCacheSafety(request, url) {
     var shellReq = request;
     if (isBiometricGatePath(url.pathname)) {
         shellReq = shellLookupRequest(registerPathFromBiometric(url).href, request);
-    } else if (/\/pos\/(dashboard|reports|settings|shifts|terminals)(\/|$)/i.test(url.pathname)) {
-        shellReq = shellLookupRequest(posOfflineRegisterUrl(url).href, request);
     }
+    // Admin CRUD pages never rewrite to register / cert shell (handled by navigatePosAdminCrudDocument).
     function fromCacheOrFallback() {
         return matchCertifiedPosShellSnapshot(shellReq).then(function (hit) {
             return hit || shellFallback(shellReq);
@@ -3661,16 +3760,17 @@ function serveCertifiedShellOrBioRequired(request) {
     });
 }
 
-/** Offline POS: dashboard/reports → prefer cached register shell. */
+/** Offline POS: legacy helper — register shell only. CRUD admin pages must not call this. */
 function posOfflineRegisterUrl(url) {
     try {
         var u = new URL(url.href || url);
         u.pathname = String(u.pathname || '')
-            .replace(/\/+$/, '')
-            .replace(/\/(reports|settings|dashboard|shifts|terminals)(\/.*)?$/i, '/register');
+            .replace(/\/+$/, '');
         if (!/\/register$/i.test(u.pathname)) {
             if (/\/pos$/i.test(u.pathname)) {
                 u.pathname = u.pathname + '/register';
+            } else if (/\/pos\/biometric$/i.test(u.pathname)) {
+                u.pathname = u.pathname.replace(/\/biometric$/i, '/register');
             }
         }
         return u;
@@ -3725,6 +3825,15 @@ function shellLookupRequest(urlHref, sourceRequest) {
 }
 
 function shellFallback(request) {
+    try {
+        var href = typeof request === 'string' ? request : (request && request.url ? request.url : '');
+        if (href) {
+            var p = new URL(href, self.location.origin).pathname;
+            if (isPosAdminCrudPath(p)) {
+                return Promise.resolve(posAdminConnectionRequiredResponse());
+            }
+        }
+    } catch (eCrudShell) { /* ignore */ }
     return serveCertifiedShellOrBioRequired(request);
 }
 
@@ -4383,6 +4492,14 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isPosNavigation(url)) {
+            // POS admin CRUD (pos-pages-shell): live network only; never soft-latch → bio/shell.
+            if (isPosAdminCrudPath(url.pathname) || !isPosRuntimePath(url.pathname)) {
+                respondWithDocumentAndReleaseWarmGate(
+                    event,
+                    navigatePosAdminCrudDocument(event.request)
+                );
+                return;
+            }
             respondWithDocumentAndReleaseWarmGate(
                 event,
                 (isCloudBrowserOffline()
@@ -4486,6 +4603,13 @@ self.addEventListener('fetch', function (event) {
         } catch (eProbe) { /* ignore */ }
 
     if (event.request.mode === 'navigate' && isPosNavigation(url)) {
+        if (isPosAdminCrudPath(url.pathname) || !isPosRuntimePath(url.pathname)) {
+            respondWithDocumentAndReleaseWarmGate(
+                event,
+                navigatePosAdminCrudDocument(event.request)
+            );
+            return;
+        }
         respondWithDocumentAndReleaseWarmGate(
             event,
             fetchNavigateNetwork(event.request, 2500).then(function (response) {
@@ -4499,10 +4623,6 @@ self.addEventListener('fetch', function (event) {
                 if (isBiometricGatePath(url.pathname)) {
                     var regUrl = registerPathFromBiometric(url);
                     return shellFallback(shellLookupRequest(regUrl.href, event.request));
-                }
-                if (/\/pos\/(dashboard|reports|settings|shifts|terminals)(\/|$)/i.test(url.pathname)) {
-                    var regFromDash = posOfflineRegisterUrl(url);
-                    return shellFallback(shellLookupRequest(regFromDash.href, event.request));
                 }
                 return shellFallback(event.request);
             })

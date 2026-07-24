@@ -25,12 +25,14 @@ $opsLink = static function (
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
     $href = rateb_app_url($resourcePath);
-    // Only the selling register shell needs a full document load (pos-shell layout).
-    // POS dashboard/settings/orders soft-nav inside Admin so the sidebar stays.
-    $isPosShell = $resourcePath === 'pos'
+    // Selling register/biometric = full document load (pos-shell).
+    // All other POS admin links (pos-pages-shell) also full-nav from Admin sidebar
+    // to avoid soft-nav shell_mismatch (Admin chrome ↔ dark POS pages shell).
+    $isPosFullNav = $resourcePath === 'pos'
         || $resourcePath === 'pos/register'
-        || str_starts_with($resourcePath, 'pos/register/');
-    if ($isPosShell) {
+        || str_starts_with($resourcePath, 'pos/register/')
+        || str_starts_with($resourcePath, 'pos/');
+    if ($isPosFullNav) {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
