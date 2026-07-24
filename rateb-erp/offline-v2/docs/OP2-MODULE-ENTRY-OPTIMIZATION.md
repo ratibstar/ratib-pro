@@ -35,3 +35,18 @@ node phase-op2-module-entry-bench.js
 ```
 
 Marks: `shell-ready`, `identity-ready`, `gate-visible`, `route-ready`, `module-ready`
+
+### Measured (production, commit `fc94dec2`, identity gate)
+
+| Module | Shell | Identity ready | Gate visible | Route ready | ActiveSync |
+|--------|------:|---------------:|-------------:|------------:|:----------:|
+| Inventory | 707 | 1671 | 1672 | 1673 | no |
+| Sales | 523 | 1497 | 1497 | 1498 | no |
+| HR | 532 | 1478 | 1478 | 1479 | no |
+| Accounting | 538 | 1448 | 1449 | 1450 | no |
+| POS | 522 | 1481 | 1482 | 1482 | no |
+
+**Before (OP1 audit):** Route Ready ~2500 ms (incl. ≤1200 ms idle)  
+**After OP2:** Route Ready ~1450–1670 ms · post-shell gap ~950 ms · stubs early · Sync deferred  
+
+Regressions: none (`phase-op2-module-entry-1784902999789.json`).
