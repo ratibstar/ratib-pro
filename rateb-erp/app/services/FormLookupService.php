@@ -823,6 +823,7 @@ final class FormLookupService
             return [];
         }
         if ($companyId > 0) {
+            // Forms / setup only — ensure default warehouse may create WH-MAIN.
             (new WarehouseService())->ensureDefaultWarehouse($companyId);
             $rows = (new WarehouseService())->listActiveForCompany($companyId);
         } else {
@@ -835,6 +836,108 @@ final class FormLookupService
                 : (string) ($row['name'] ?? '');
             $out[] = ['value' => (int) $row['id'], 'label' => $label];
         }
+        return $out;
+    }
+
+    /**
+     * Read-only warehouse labels for displayed IDs (CRUD index). No GET_LOCK / create / backfill.
+     *
+     * @param list<int> $ids
+     * @return array<string, string>
+     */
+    private function warehouseLabelsByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $companyId = $this->resolveLookupCompanyId();
+        $params = [];
+        $placeholders = [];
+        foreach ($ids as $i => $id) {
+            $key = 'wid_' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+        $sql = 'SELECT id, code, name FROM rateb_warehouses WHERE id IN (' . implode(',', $placeholders) . ')';
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $rows = (new Warehouse())->query($sql, $params);
+        $map = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $code = trim((string) ($row['code'] ?? ''));
+            $name = (string) ($row['name'] ?? '');
+            $map[(string) $id] = $code !== '' ? ($code . ' — ' . $name) : $name;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Read-only branch labels for displayed IDs (CRUD index).
+     *
+     * @param list<int> $ids
+     * @return array<string, string>
+     */
+    private function branchLabelsByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $companyId = $this->resolveLookupCompanyId();
+        $params = [];
+        $placeholders = [];
+        foreach ($ids as $i => $id) {
+            $key = 'bid_' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+        $sql = 'SELECT id, name, name_ar, code FROM rateb_branches WHERE id IN (' . implode(',', $placeholders) . ')';
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $rows = (new Branch())->query($sql, $params);
+        $map = [];
+        $ar = function_exists('rateb_locale') && rateb_locale() === 'ar';
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $name = $ar && !empty($row['name_ar']) ? (string) $row['name_ar'] : (string) ($row['name'] ?? '');
+            $code = trim((string) ($row['code'] ?? ''));
+            $map[(string) $id] = $code !== '' ? ($code . ' — ' . $name) : $name;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array<string, string>
+     */
+    private function filterValueLabelMapByIds(string $lookup, array $ids): array
+    {
+        $wanted = [];
+        foreach ($ids as $id) {
+            $wanted[(string) (int) $id] = true;
+        }
+        $full = $this->valueLabelMap($lookup);
+        $out = [];
+        foreach ($full as $key => $label) {
+            if (isset($wanted[$key])) {
+                $out[$key] = $label;
+            }
+        }
+
         return $out;
     }
 
@@ -1301,10 +1404,53 @@ final class FormLookupService
         return $map;
     }
 
+    /**
+     * Read-only FK labels for CRUD index rows — only IDs present on the page.
+     * Never calls WarehouseService::ensureDefaultWarehouse / GET_LOCK / backfill.
+     *
+     * @param list<int|string> $ids
+     * @return array<string, string>
+     */
+    public function valueLabelMapForIds(string $lookup, array $ids): array
+    {
+        $wanted = [];
+        foreach ($ids as $id) {
+            $i = (int) $id;
+            if ($i > 0) {
+                $wanted[$i] = true;
+            }
+        }
+        if ($wanted === []) {
+            return [];
+        }
+        $idList = array_keys($wanted);
+        $this->bootstrapTenantForLookups();
+
+        return match ($lookup) {
+            'warehouses' => $this->warehouseLabelsByIds($idList),
+            'branches' => $this->branchLabelsByIds($idList),
+            default => $this->filterValueLabelMapByIds($lookup, $idList),
+        };
+    }
+
     public function resolveFkLabel(string $lookup, mixed $value): string
     {
         $id = (int) $value;
         if ($id < 1) {
+            return '';
+        }
+        // Avoid full warehouse option lists (those run ensureDefaultWarehouse).
+        if ($lookup === 'warehouses' || $lookup === 'branches') {
+            $direct = $this->fetchFkLabelDirect($lookup, $id);
+            if ($direct !== '') {
+                return $direct;
+            }
+            if ($lookup === 'warehouses') {
+                $map = $this->warehouseLabelsByIds([$id]);
+
+                return $map[(string) $id] ?? '';
+            }
+
             return '';
         }
         $label = $this->valueLabelMap($lookup)[(string) $id] ?? '';

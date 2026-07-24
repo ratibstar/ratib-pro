@@ -40,9 +40,23 @@ $documentEntityType = (string) ($documentEntityType ?? '');
 $fkLabelMaps = [];
 if ($columns !== []) {
     $lookupSvc = new \Rateb\App\Services\FormLookupService();
+    $indexItems = isset($items) && is_array($items) ? $items : [];
     foreach ($columns as $col) {
         if ((string) ($col['type'] ?? '') === 'fk' && !empty($col['lookup'])) {
-            $fkLabelMaps[(string) $col['name']] = $lookupSvc->valueLabelMap((string) $col['lookup']);
+            $colName = (string) ($col['name'] ?? '');
+            $lookup = (string) $col['lookup'];
+            $ids = [];
+            foreach ($indexItems as $row) {
+                if (!is_array($row) || $colName === '' || !isset($row[$colName])) {
+                    continue;
+                }
+                $fkId = (int) $row[$colName];
+                if ($fkId > 0) {
+                    $ids[] = $fkId;
+                }
+            }
+            // Read-only: labels for displayed IDs only (no warehouse ensure/GET_LOCK).
+            $fkLabelMaps[$colName] = $lookupSvc->valueLabelMapForIds($lookup, $ids);
         }
     }
 }
