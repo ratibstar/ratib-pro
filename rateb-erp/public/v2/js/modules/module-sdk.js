@@ -134,6 +134,59 @@
             if (rt && rt.services && rt.services.has('sync')) {
                 return rt.services.get('sync');
             }
+            if (root.RatebOfflineV2ActiveSync) {
+                return root.RatebOfflineV2ActiveSync;
+            }
+            /*
+             * OP2: Sync script may be loaded for compat, but ActiveSync is deferred
+             * until enqueue / push / pull / manual sync. Proxy loads on first use.
+             */
+            if (typeof root.RatebOfflineV2EnsureSync === 'function') {
+                return {
+                    enqueue: function () {
+                        var args = arguments;
+                        return root.RatebOfflineV2EnsureSync().then(function (sync) {
+                            return sync.enqueue.apply(sync, args);
+                        });
+                    },
+                    push: function () {
+                        var args = arguments;
+                        return root.RatebOfflineV2EnsureSync().then(function (sync) {
+                            return sync.push.apply(sync, args);
+                        });
+                    },
+                    pull: function () {
+                        var args = arguments;
+                        return root.RatebOfflineV2EnsureSync().then(function (sync) {
+                            return sync.pull.apply(sync, args);
+                        });
+                    },
+                    syncOnce: function () {
+                        var args = arguments;
+                        return root.RatebOfflineV2EnsureSync().then(function (sync) {
+                            return sync.syncOnce.apply(sync, args);
+                        });
+                    },
+                    start: function () {
+                        var args = arguments;
+                        return root.RatebOfflineV2EnsureSync().then(function (sync) {
+                            return sync.start.apply(sync, args);
+                        });
+                    },
+                    getStatus: function () {
+                        if (root.RatebOfflineV2ActiveSync) {
+                            return root.RatebOfflineV2ActiveSync.getStatus();
+                        }
+                        return { registered: false, started: false, deferred: true };
+                    },
+                    isStarted: function () {
+                        return !!(root.RatebOfflineV2ActiveSync && root.RatebOfflineV2ActiveSync.isStarted());
+                    },
+                    isRegistered: function () {
+                        return !!(root.RatebOfflineV2ActiveSync && root.RatebOfflineV2ActiveSync.isRegistered());
+                    }
+                };
+            }
             return root.RatebOfflineV2Sync || null;
         }
 

@@ -563,11 +563,17 @@
         }
 
         function scheduleBackground(fn) {
+            /* Home warming / diagnostics only — never module-critical work. */
             if (typeof root.requestIdleCallback === 'function') {
                 root.requestIdleCallback(function () { fn(); }, { timeout: 1200 });
             } else {
                 root.setTimeout(fn, 0);
             }
+        }
+
+        /* OP2: module deep-link / first click — start immediately (no idle tax). */
+        function scheduleImmediate(fn) {
+            root.setTimeout(fn, 0);
         }
 
         function requestedPath() {
@@ -615,8 +621,8 @@
             mark('background-start');
 
             /*
-             * OP1 Phase 7 — Home startup must not load PM / Sync / SDK / Framework.
-             * Module routes (or explicit force) pull only what they need.
+             * OP1/OP2 — Home startup must not load PM / Sync / SDK / Framework.
+             * Module routes use ensurePlatformForModules / bootstrapIdentityReadiness.
              */
             if (!opts.forModules && !opts.force) {
                 mark('background-platform-done');
@@ -633,25 +639,54 @@
                 });
             }
 
-            return ensureDbApi().then(function (db) {
+            /* OP2: parallel DB + SDK/Framework; Sync instance deferred until enqueue. */
+            return ensurePlatformForModules().then(function (platform) {
+                mark('background-platform-done');
+                ready('background-platform', { forModules: true, sync: 'deferred' });
+                return platform;
+            });
+        }
+
+        /**
+         * OP2 — independent platform pieces only (safe Promise.all).
+         * Does not start Sync cycles or open SQLite.
+         */
+        function ensurePlatformForModules() {
+            return Promise.all([
+                ensureDbApi(),
+                ensureSdkAndFramework(),
+                ensureCompatScripts()
+            ]).then(function (parts) {
+                var db = parts[0];
                 if (!db) {
                     throw new Error('db_bootstrap_failed');
                 }
-                return ensureSdkAndFramework().then(function () {
-                    /* Sync register (enqueue) only when a module is requested — not on Home. */
-                    return ensureSyncEngine().then(function (sync) {
-                        mark('background-platform-done');
-                        ready('background-platform', { forModules: true });
-                        return {
-                            pm: null,
-                            db: db,
-                            sync: sync,
-                            deferred: true,
-                            modulesOnly: true
-                        };
-                    });
-                });
+                return {
+                    pm: root.RatebOfflineV2PM || null,
+                    db: db,
+                    sync: null,
+                    deferred: true,
+                    modulesOnly: true
+                };
             });
+        }
+
+        /** Sync + PM scripts for module compat checks — no ActiveSync / no PM activate. */
+        function ensureCompatScripts() {
+            var tasks = [];
+            if (!root.RatebOfflineV2Sync) {
+                tasks.push(loadScript('../assets/offline/platform/sync/sync-engine.js'));
+            }
+            if (!root.RatebOfflineV2PM) {
+                tasks.push(loadScript('./js/package-manager.js').then(function () {
+                    if (root.RatebOfflineV2PM && runtime && runtime.services) {
+                        runtime.services.register('pm', root.RatebOfflineV2PM, { replace: true });
+                    }
+                    ready('pm', { scriptOnly: true });
+                    return root.RatebOfflineV2PM;
+                }));
+            }
+            return tasks.length ? Promise.all(tasks) : Promise.resolve([]);
         }
 
         function ensureDbApi() {
@@ -741,18 +776,15 @@
         }
 
         function ensureSdkAndFramework() {
-            var chain = Promise.resolve();
+            /* OP2: load SDK + Framework scripts in parallel when both missing. */
+            var tasks = [];
             if (!root.RatebOfflineV2Modules) {
-                chain = chain.then(function () {
-                    return loadScript('./js/modules/module-sdk.js');
-                });
+                tasks.push(loadScript('./js/modules/module-sdk.js'));
             }
             if (!root.RatebOfflineV2Business) {
-                chain = chain.then(function () {
-                    return loadScript('../assets/offline/platform/support/business-module-framework.js');
-                });
+                tasks.push(loadScript('../assets/offline/platform/support/business-module-framework.js'));
             }
-            return chain;
+            return tasks.length ? Promise.all(tasks) : Promise.resolve([]);
         }
 
         /*
@@ -1021,13 +1053,15 @@
             var scriptList = Array.isArray(entry.scripts) && entry.scripts.length
                 ? entry.scripts.slice()
                 : [entry.script];
-            var loadChain = Promise.resolve();
-            scriptList.forEach(function (url) {
-                loadChain = loadChain.then(function () {
-                    return loadScript(url);
-                });
-            });
-            return loadChain.then(function () {
+            /*
+             * OP2: POS (and multi-script modules) — parallel script fetch/parse.
+             * create() runs only after all scripts resolve (behavior unchanged).
+             */
+            var loadScripts = scriptList.length > 1
+                ? Promise.all(scriptList.map(function (url) { return loadScript(url); }))
+                : loadScript(scriptList[0]);
+
+            return loadScripts.then(function () {
                 var api = root[entry.globalName];
                 if (!api || typeof api.create !== 'function') {
                     throw new Error('module_factory_missing:' + moduleId);
@@ -1059,30 +1093,66 @@
             });
         }
 
+        /**
+         * OP2: preload scripts for pending modules in parallel, then activate in
+         * dependency order (Identity → Inventory services → target). Activation
+         * order stays serial for framework/RBAC correctness.
+         */
+        function preloadModuleScripts(moduleIds) {
+            var seen = Object.create(null);
+            var urls = [];
+            (moduleIds || []).forEach(function (id) {
+                if (!id || businessActivateState[id] === 'active') {
+                    return;
+                }
+                var entry = businessModuleById[id];
+                if (!entry) {
+                    return;
+                }
+                var list = Array.isArray(entry.scripts) && entry.scripts.length
+                    ? entry.scripts
+                    : [entry.script];
+                list.forEach(function (url) {
+                    if (!url || seen[url]) {
+                        return;
+                    }
+                    seen[url] = true;
+                    urls.push(url);
+                });
+            });
+            if (!urls.length) {
+                return Promise.resolve([]);
+            }
+            return Promise.all(urls.map(function (url) { return loadScript(url); }));
+        }
+
         function ensureBusinessModulesForPath(path) {
             var order = resolveModuleOrderForPath(path);
             businessEnsureTail = businessEnsureTail.then(function () {
-                return ensureDbApi().then(function () {
-                    return ensureSdkAndFramework();
-                }).then(function () {
-                    /* Sync enqueue support when a module is actually requested. */
-                    return ensureSyncEngine().catch(function () {
-                        return null;
-                    });
-                }).then(function () {
+                return ensurePlatformForModules().then(function () {
                     return ensureBusinessFramework();
                 }).then(function (fw) {
                     if (!order.length) {
                         return [];
                     }
-                    var chain = Promise.resolve();
-                    order.forEach(function (id) {
-                        chain = chain.then(function () {
-                            return loadAndActivateBusinessModule(fw, id);
-                        });
+                    /*
+                     * OP2 #6 — Inventory is a service dependency for Sales/Proc/Acct/MFG.
+                     * Preload all pending scripts in parallel; activate in order
+                     * (inventory services before target — no Inventory route required).
+                     */
+                    var pending = order.filter(function (id) {
+                        return businessActivateState[id] !== 'active';
                     });
-                    return chain.then(function () {
-                        return order.slice();
+                    return preloadModuleScripts(pending).then(function () {
+                        var chain = Promise.resolve();
+                        order.forEach(function (id) {
+                            chain = chain.then(function () {
+                                return loadAndActivateBusinessModule(fw, id);
+                            });
+                        });
+                        return chain.then(function () {
+                            return order.slice();
+                        });
                     });
                 });
             });
@@ -1090,11 +1160,11 @@
         }
 
         /**
-         * OP1 Phase 5 / Fix6: activate Identity only when unlock/auth route needs it —
-         * never before shell paint. Called from ensureModulesOrIdentityGate after Shell Ready.
+         * OP2 #4 — Identity gate priority: platform + Identity only.
+         * No ActiveSync. No target/Inventory modules yet.
          */
         function bootstrapIdentityReadiness() {
-            return ensureDbApi().then(function () {
+            return ensurePlatformForModules().then(function () {
                 return ensureBusinessFramework();
             }).then(function (fw) {
                 return loadAndActivateBusinessModule(fw, 'identity').then(function () {
@@ -1191,9 +1261,23 @@
                 var router = appShell && appShell.getRouter ? appShell.getRouter() : null;
                 if (ready && ready.enrolled) {
                     clearIdentityGateRoute(router, moduleId);
+                    /* OP2 #6: show target shell pending before Inventory/service deps finish. */
+                    try {
+                        var outlet = root.document.getElementById('rateb-v2-shell-outlet');
+                        if (outlet && gate) {
+                            outlet.textContent = 'Loading ' + gate.title + '…';
+                            outlet.setAttribute('data-route', 'boot.module-pending');
+                        }
+                        if (root.performance && performance.mark) {
+                            performance.mark('rateb-v2-module-shell-pending');
+                        }
+                    } catch (ePend) { /* ignore */ }
                     return ensureBusinessModulesForPath(path).then(function (loaded) {
                         try {
                             root.document.documentElement.removeAttribute('data-rateb-v2-identity-gate');
+                            if (root.performance && performance.mark) {
+                                performance.mark('rateb-v2-module-ready');
+                            }
                         } catch (eAttr) { /* ignore */ }
                         return { loaded: loaded, gated: false, enrolled: true, readiness: ready };
                     });
@@ -1201,6 +1285,9 @@
                 installIdentityGateRoute(router, path, moduleId);
                 try {
                     root.document.documentElement.setAttribute('data-rateb-v2-identity-gate', gate.code);
+                    if (root.performance && performance.mark) {
+                        performance.mark('rateb-v2-gate-visible');
+                    }
                 } catch (eGate) { /* ignore */ }
                 return {
                     loaded: ['identity'],
@@ -1398,51 +1485,42 @@
             root.document.documentElement.setAttribute('data-rateb-v2-shell-ready', '1');
             ready('shell', { path: path });
 
-            scheduleBackground(function () {
-                hciHousekeeping();
-                swPromise.then(function () {
-                    /*
-                     * OP1 Phase 7: Home skips PM/SDK/Sync/DB. Module deep-links
-                     * load DB API + SDK/Framework only; Identity activates later
-                     * inside ensureModulesOrIdentityGate (after shell render).
-                     */
-                    var platformOpts = requestedModuleId
-                        ? { forModules: true }
-                        : {};
-                    return initializeStorageAndPlatform(platformOpts).then(function (platform) {
-                        if (!requestedModuleId) {
-                            mark('background-ready');
-                            root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
-                            ready('offline-bootstrap', {
-                                path: path,
-                                identity: false,
-                                sqlite: 'deferred',
-                                businessModules: false,
-                                skippedHeavy: true
-                            });
-                            /* OP1: stubs only — SDK/Framework/Identity load on first module navigate. */
-                            try {
-                                var appShell2 = root.RatebOfflineV2AppShell;
-                                var router2 = appShell2 && appShell2.getRouter
-                                    ? appShell2.getRouter()
-                                    : null;
-                                installLazyNavigateWrapper(router2);
-                                registerLazyModuleStubs(router2);
-                            } catch (eHome) { /* ignore */ }
-                            return platform;
-                        }
-                        return initializeBusinessModules(path, platform).then(function () {
-                            runDeferredDiagnostics(platform);
-                            mark('background-ready');
-                            root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
-                            ready('offline-bootstrap', {
-                                path: path,
-                                identity: true,
-                                sqlite: 'lazy',
-                                businessModules: true
-                            });
-                            return platform;
-                        });
+            /*
+             * OP2 #2 — Install module stubs/wrapper at Shell Ready (never after idle).
+             * First module click must not wait for background initialization.
+             */
+            try {
+                var routerReady = appShell.getRouter ? appShell.getRouter() : null;
+                installLazyNavigateWrapper(routerReady);
+                registerLazyModuleStubs(routerReady);
+            } catch (eStubs) { /* ignore */ }
+
+            function runModuleEntryWork() {
+                /*
+                 * OP2 #1/#4/#5: hydrate Identity/modules immediately.
+                 * SW verification races in parallel — does not gate Identity.
+                 * No ActiveSync until enqueue.
+                 */
+                var modulesPromise = initializeBusinessModules(path, {
+                    deferred: true,
+                    sync: 'lazy'
+                });
+                return Promise.all([
+                    swPromise.catch(function () { return null; }),
+                    modulesPromise
+                ]).then(function () {
+                    runDeferredDiagnostics({
+                        db: root.RatebOfflineV2DB || null,
+                        pm: root.RatebOfflineV2PM || null
+                    });
+                    mark('background-ready');
+                    root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
+                    ready('offline-bootstrap', {
+                        path: path,
+                        identity: true,
+                        sqlite: 'lazy',
+                        sync: 'lazy',
+                        businessModules: true
                     });
                 }).catch(function (err) {
                     root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '0');
@@ -1453,10 +1531,30 @@
                         failedStatus.className = 'status fail';
                     }
                     try {
-                        console.warn('[RATEB V2 PERF] background init', err && err.message);
+                        console.warn('[RATEB V2 PERF] module entry', err && err.message);
                     } catch (eLog) { /* ignore */ }
                 });
-            });
+            }
+
+            if (requestedModuleId) {
+                /* OP2 #1 — no idle delay for BusinessModule deep-links. */
+                scheduleImmediate(runModuleEntryWork);
+            } else {
+                mark('background-ready');
+                root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
+                ready('offline-bootstrap', {
+                    path: path,
+                    identity: false,
+                    sqlite: 'deferred',
+                    businessModules: false,
+                    skippedHeavy: true
+                });
+                /* Home: idle only for HCI housekeeping / optional warm. */
+                scheduleBackground(function () {
+                    hciHousekeeping();
+                    swPromise.catch(function () { /* ignore */ });
+                });
+            }
         }).catch(function (err) {
             setText('boot-status', 'Boot failed: ' + String(err && err.message ? err.message : err));
             var status = $('boot-status');
