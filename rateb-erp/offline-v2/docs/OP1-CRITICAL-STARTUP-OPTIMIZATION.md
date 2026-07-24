@@ -68,13 +68,15 @@ Marks:
 | Identity | Activated on module routes after platform load |
 | Home background complete | ~353 ms |
 
-### After (expected)
+### After (measured — production, commit `6af8a23d`)
+
+Evidence: `tools/boot-bench/reports/phase-op1-startup-1784901197799.json`
 
 | Metric | After |
 |--------|--------|
-| Shell Ready | Critical services only (~5–30 ms after paint) |
-| Runtime Ready (critical) | Register services only |
-| Runtime Fully Ready | Deferred; not on shell critical path |
-| SQLite on Home | Not opened / not warmed |
-| Identity on Home | Not activated |
-| PM/Sync/SDK on Home | Not loaded until module/package/sync request |
+| Shell Ready | **22.1 ms** (was 66 ms) |
+| Interactive | 21.1 ms |
+| Runtime Ready (critical) | 21.2 ms |
+| SQLite on Home | **null** (not opened) |
+| Identity on Home | **null** (not activated) |
+| PM/Sync/SDK on Home | Deferred until module/package/sync request |
