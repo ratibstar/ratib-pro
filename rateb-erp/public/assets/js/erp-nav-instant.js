@@ -1012,14 +1012,29 @@
                         resolve();
                         return;
                     }
-                    var el = document.createElement('script');
-                    el.src = src;
-                    el.async = true;
-                    el.onload = el.onerror = function () {
+                    // Stale mark without globals (failed/stub inject) — force reload.
+                    if (loadedScripts[key] && (
+                        (src.indexOf('dashboard-charts-defer') !== -1 && typeof root.ratebDashboardChartsBoot !== 'function')
+                        || (src.indexOf('charts.js') !== -1 && typeof root.ratebChartsBoot !== 'function')
+                        || (/chart\.umd/i.test(src) && typeof root.Chart === 'undefined')
+                    )) {
+                        delete loadedScripts[key];
+                    }
+                    var done = false;
+                    var finish = function () {
+                        if (done) {
+                            return;
+                        }
+                        done = true;
                         loadedScripts[key] = true;
                         resolve();
                     };
+                    var el = document.createElement('script');
+                    el.src = src;
+                    el.async = true;
+                    el.onload = el.onerror = finish;
                     (document.body || document.documentElement).appendChild(el);
+                    root.setTimeout(finish, 5000);
                 });
             };
             load(chartjs).then(function () {
@@ -1033,22 +1048,34 @@
                             root.ratebDashboardChartsBoot();
                         } else if (typeof root.ratebChartsBoot === 'function') {
                             root.ratebChartsBoot();
+                            try {
+                                document.querySelectorAll('.cm-chart.is-loading, [data-chart-slot].is-loading')
+                                    .forEach(function (el) {
+                                        el.classList.remove('is-loading');
+                                    });
+                            } catch (eClr) { /* ignore */ }
+                        } else {
+                            try {
+                                document.querySelectorAll('.cm-chart.is-loading, [data-chart-slot].is-loading')
+                                    .forEach(function (el) {
+                                        el.classList.remove('is-loading');
+                                        el.classList.add('is-empty');
+                                        if (!el.getAttribute('data-empty-label')) {
+                                            el.setAttribute('data-empty-label', '—');
+                                        }
+                                    });
+                            } catch (eEmpty) { /* ignore */ }
                         }
                     } catch (eBoot) { /* ignore */ }
                 }, 0);
             });
         };
-        /* Fix8: after soft-nav paint — do not compete with swap/click handlers. */
+        /* Soft-nav into dashboard: start ASAP (idle alone left shimmer forever). */
+        root.setTimeout(run, 0);
         if (typeof root.requestAnimationFrame === 'function') {
             root.requestAnimationFrame(function () {
-                if (typeof root.requestIdleCallback === 'function') {
-                    root.requestIdleCallback(run, { timeout: 1200 });
-                } else {
-                    root.setTimeout(run, 120);
-                }
+                root.setTimeout(run, 120);
             });
-        } else {
-            root.setTimeout(run, 120);
         }
     }
 

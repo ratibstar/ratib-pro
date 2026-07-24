@@ -1395,11 +1395,17 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
     try {
       document.addEventListener('rateb:nav:beforeLeave', function () {
         chartsCancelled = true;
-      }, { once: true });
-      // Soft-nav back to a chart page: allow a fresh start via ensureDashboardCharts,
-      // and reset cancel so a full reload of this layout can schedule again if needed.
+      });
       document.addEventListener('rateb:nav:afterEnter', function () {
-        if (pageHasChartContainers() && typeof window.ratebDashboardChartsBoot === 'function') {
+        chartsCancelled = false;
+        if (!pageHasChartContainers()) {
+          return;
+        }
+        // Soft-nav into dashboard from a non-chart page never ran chartQueue — start now.
+        if (chartQueue.length && !chartsStarted) {
+          startCharts();
+        }
+        if (typeof window.ratebDashboardChartsBoot === 'function') {
           try { window.ratebDashboardChartsBoot(); } catch (eRe) { /* ignore */ }
         }
       });

@@ -2,8 +2,9 @@
     'use strict';
 
     if (window.__RATEB_CHARTS_BOUND__) {
-        // Soft-nav / double inject — keep existing mounts; refresh when asked.
+        // Soft-nav / double inject — re-run mount when asked.
         if (typeof window.ratebChartsBoot === 'function') {
+            try { window.ratebChartsBoot(); } catch (eRe) { /* ignore */ }
             return;
         }
     }

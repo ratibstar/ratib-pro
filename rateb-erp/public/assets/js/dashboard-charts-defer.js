@@ -1,11 +1,14 @@
 /**
  * Hydrate admin dashboard charts after lite HTML paint.
- * Soft-nav safe: single boot pipeline, aborts stale fetches, debounced.
+ * Soft-nav safe: boots itself when dash is present (does not rely only on layout chain).
  */
 (function () {
     'use strict';
 
     if (window.__RATEB_DASH_CHARTS_DEFER_BOUND__) {
+        if (typeof window.ratebDashboardChartsBoot === 'function') {
+            try { window.ratebDashboardChartsBoot(); } catch (eRe) { /* ignore */ }
+        }
         return;
     }
     window.__RATEB_DASH_CHARTS_DEFER_BOUND__ = true;
@@ -100,7 +103,9 @@
                 window.ratebChartInitPane(document);
             }
             markCharts('ready');
-        } catch (ePaint) { /* ignore */ }
+        } catch (ePaint) {
+            markCharts('empty');
+        }
     }
 
     function loadChartLibs(rootEl) {
@@ -131,13 +136,12 @@
                     }
                     var exists = document.querySelector('script[src="' + src.replace(/"/g, '') + '"]');
                     if (exists) {
-                        // Script tag present but may still be loading — wait briefly.
                         var n = 0;
                         var wait = setInterval(function () {
                             n++;
                             if ((src.indexOf('chart') !== -1 && typeof window.Chart !== 'undefined')
                                 || (src.indexOf('charts.js') !== -1 && typeof window.ratebChartsBoot === 'function')
-                                || n > 40) {
+                                || n > 60) {
                                 clearInterval(wait);
                                 res();
                             }
@@ -198,7 +202,7 @@
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 15000);
+            }, 12000);
 
             fetch(url, {
                 credentials: 'same-origin',
@@ -231,6 +235,10 @@
                     inflightCtrl = null;
                 }
             });
+        }).catch(function () {
+            if (myGen === bootGen) {
+                markCharts('empty');
+            }
         });
     }
 
@@ -238,43 +246,43 @@
         if (bootTimer) {
             clearTimeout(bootTimer);
         }
-        bootTimer = setTimeout(bootNow, 80);
+        bootTimer = setTimeout(bootNow, 40);
     }
 
     window.ratebDashboardChartsBoot = boot;
 
-    /* Fix8: do not auto-boot on DCL — layout/soft-nav call ratebDashboardChartsBoot after Chart.js is ready.
-     * Keep afterEnter for soft-nav content swaps when libs already loaded. */
     document.addEventListener('rateb:nav:afterEnter', boot);
     document.addEventListener('rateb:nav:beforeLeave', abortInflight);
 
-    /* Safety: if layout idle chain never boots (cancelled soft-nav / late scripts), stop infinite shimmer. */
-    function rescueStuckLoading() {
+    function kickIfDash() {
         try {
-            if (!document.querySelector('[data-cm-dash="v5c"]')) {
-                return;
-            }
-            if (!document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
-                return;
-            }
-            boot();
-        } catch (eR) { /* ignore */ }
-    }
-    function clearStuckLoading() {
-        try {
-            if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
-                markCharts('empty');
+            if (document.querySelector('[data-cm-dash="v5c"] canvas[id^="chart-"]')) {
                 boot();
             }
-        } catch (eC) { /* ignore */ }
+        } catch (eK) { /* ignore */ }
     }
-    if (document.readyState === 'complete') {
-        setTimeout(rescueStuckLoading, 1200);
-        setTimeout(clearStuckLoading, 8000);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', kickIfDash, { once: true });
     } else {
-        window.addEventListener('load', function () {
-            setTimeout(rescueStuckLoading, 1200);
-            setTimeout(clearStuckLoading, 8000);
-        }, { once: true });
+        kickIfDash();
     }
+    window.addEventListener('load', function () {
+        setTimeout(kickIfDash, 200);
+        setTimeout(function () {
+            try {
+                if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
+                    boot();
+                }
+            } catch (eR) { /* ignore */ }
+        }, 1500);
+        setTimeout(function () {
+            try {
+                if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
+                    markCharts('empty');
+                    boot();
+                }
+            } catch (eC) { /* ignore */ }
+        }, 6000);
+    }, { once: true });
 })();
