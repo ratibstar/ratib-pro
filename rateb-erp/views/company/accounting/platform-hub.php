@@ -1,5 +1,5 @@
 <?php
-/** Phase 16A — Accounting platform hub */
+/** Phase 16A — Accounting platform hub (theme-aware tiles). */
 $canCreate = !empty($canCreate);
 ?>
 <div class="container-fluid py-3">
@@ -25,10 +25,14 @@ $canCreate = !empty($canCreate);
         foreach ($cards as [$path, $label, $icon]):
         ?>
         <div class="col-md-4 col-lg-3">
-            <a class="text-decoration-none" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route($path)), ENT_QUOTES, 'UTF-8'); ?>">
-                <div class="border rounded p-3 h-100 bg-white">
-                    <i class="fas <?php echo htmlspecialchars($icon, ENT_QUOTES, 'UTF-8'); ?> text-primary mb-2"></i>
-                    <div class="fw-semibold text-dark"><?php echo htmlspecialchars(__($label), ENT_QUOTES, 'UTF-8'); ?></div>
+            <a class="text-decoration-none rateb-platform-hub-link" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route($path)), ENT_QUOTES, 'UTF-8'); ?>">
+                <div class="rateb-report-card h-100">
+                    <div class="rateb-report-card-icon">
+                        <i class="fas <?php echo htmlspecialchars($icon, ENT_QUOTES, 'UTF-8'); ?>"></i>
+                    </div>
+                    <div class="rateb-report-card-body">
+                        <div class="rateb-report-card-title"><?php echo htmlspecialchars(__($label), ENT_QUOTES, 'UTF-8'); ?></div>
+                    </div>
                 </div>
             </a>
         </div>

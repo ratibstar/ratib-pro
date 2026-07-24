@@ -1105,9 +1105,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 })();
                 </script>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
-                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
-                    <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
-                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="<?php echo __('theme_auto'); ?>"><i class="fas fa-circle-half-stroke"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>" aria-pressed="false"><i class="fas fa-sun"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>" aria-pressed="false"><i class="fas fa-moon"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="<?php echo __('theme_auto'); ?>" aria-pressed="false"><i class="fas fa-circle-half-stroke"></i></button>
                 </div>
                 <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" data-rateb-full-nav="1" title="<?php echo __('logout'); ?>">
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
@@ -1132,8 +1132,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 })();
 </script>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
+                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_url('locale/en'), ENT_QUOTES, 'UTF-8'); ?>"
+                       class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>"
+                       data-locale="en"
+                       data-locale-base="<?php echo htmlspecialchars(rateb_url('locale/en'), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-rateb-full-nav="1">EN</a>
+                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_url('locale/ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                       class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>"
+                       data-locale="ar"
+                       data-locale-base="<?php echo htmlspecialchars(rateb_url('locale/ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-rateb-full-nav="1">عربي</a>
                 </div>
             </div>
         </header>
@@ -1216,6 +1224,7 @@ $ratebCriticalScripts = [
     // FIRST — soft-nav must bind before theme/app so لوحة التحكم never full-navigates to black.
     rateb_asset('js/erp-nav-instant.js'),
     rateb_asset('js/theme.js'),
+    rateb_asset('js/lang.js'),
     rateb_asset('js/app.js'),
     // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
     rateb_asset('js/module-page-stats.js'),
@@ -1227,7 +1236,6 @@ $ratebIdleScripts = [
     rateb_bootstrap_js(),
     rateb_asset('js/rateb-modal.js'),
     rateb_asset('js/rateb-confirm.js'),
-    rateb_asset('js/lang.js'),
 ];
 if (!empty($layoutAssets['bulkDelete'])) {
     $ratebIdleScripts[] = rateb_asset('js/rateb-bulk-delete.js');
