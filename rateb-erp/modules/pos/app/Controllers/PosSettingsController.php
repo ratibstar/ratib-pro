@@ -85,6 +85,6 @@ final class PosSettingsController extends PosBaseController
             'flashSuccess' => SessionManager::flash('success'),
             'flashError' => SessionManager::flash('error'),
             'locale' => rateb_locale(),
-        ], 'pos-pages-shell');
+        ]);
     }
 }

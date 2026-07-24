@@ -13,7 +13,7 @@ use Rateb\App\Pos\Support\PosView;
 
 abstract class PosBaseController extends Controller
 {
-    protected function posView(string $view, array $data = [], ?string $layout = 'pos-pages-shell'): void
+    protected function posView(string $view, array $data = [], ?string $layout = 'pos-admin'): void
     {
         PosView::render($view, $data, $layout);
     }

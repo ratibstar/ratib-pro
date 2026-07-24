@@ -15,9 +15,7 @@
     var COMMON_SCRIPT_RE = /\/assets\/(?:js\/(?:theme|connectivity-indicator|lang|rateb-modal|rateb-confirm|app|rateb-console-quiet|module-page-stats)|offline\/(?:erp-offline-tenant-context|erp-pwa-install|erp-nav-instant|erp-offline-full-warm|erp-offline-nav-guard)|vendor\/bootstrap)\//i;
     /** Selling shell + biometric — always full document load. */
     var POS_RUNTIME_RE = /\/(?:admin\/ops\/)?pos(?:\/register|\/biometric)?\/?(?:$|\?)/i;
-    /** pos-pages-shell admin CRUD — full-nav from Admin; soft-nav only within same shell. */
-    var POS_ADMIN_PAGES_RE = /\/(?:admin\/ops\/)?pos\/(dashboard|terminals|devices|settings|shifts|reports|orders|cash-drawers|sync|returns)(\/|$)/i;
-    /** Prefetch filters: treat runtime shell like full-nav destinations. */
+    /** Prefetch filters + forceFull for selling shell only. */
     var POS_SHELL_RE = POS_RUNTIME_RE;
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
     /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
@@ -1675,10 +1673,6 @@
             if (POS_RUNTIME_RE.test(u.pathname)) {
                 return false;
             }
-            // From Admin chrome into pos-pages-shell: never soft-swap (shell_mismatch → black flash).
-            if (POS_ADMIN_PAGES_RE.test(u.pathname) && !isOnPosPagesShell()) {
-                return false;
-            }
             // Full document navigation required (session end / auth pages).
             if (/\/(logout|login|password)(\/|$)/i.test(u.pathname)) {
                 return false;
@@ -1687,7 +1681,8 @@
                 && u.search === root.location.search) {
                 return false;
             }
-            // Inside RATEB POS pages shell: soft-nav POS admin pages only (keep header).
+            // POS admin pages now use Admin main layout — soft-nav like other ERP modules.
+            // Legacy pos-pages-shell: soft-nav only within that shell (keep header).
             if (isOnPosPagesShell()) {
                 return /\/(?:admin\/ops\/)?pos(\/|$)/i.test(u.pathname)
                     && !POS_RUNTIME_RE.test(u.pathname);
@@ -1708,15 +1703,14 @@
         if (!a) {
             return;
         }
-        // Full-nav for selling shell / biometric / Admin→pos-pages-shell / logout.
-        // Soft-nav only when already on pos-pages-shell navigating to another pages-shell route.
+        // Full-nav for selling shell / biometric / logout only.
+        // POS admin CRUD soft-navs inside Admin chrome (same sidebar).
         try {
             var forceHref = navHrefOf(a);
             if (forceHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
                 var fu = new URL(forceHref, root.location.href);
                 var forceFull = a.getAttribute('data-rateb-full-nav') === '1'
                     || (ADMIN_PATH_RE.test(fu.pathname) && POS_RUNTIME_RE.test(fu.pathname))
-                    || (ADMIN_PATH_RE.test(fu.pathname) && POS_ADMIN_PAGES_RE.test(fu.pathname) && !isOnPosPagesShell())
                     || /\/(logout|login|password)(\/|$)/i.test(fu.pathname);
                 if (forceFull) {
                     ev.preventDefault();

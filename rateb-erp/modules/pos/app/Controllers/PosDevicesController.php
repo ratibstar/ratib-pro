@@ -39,7 +39,7 @@ final class PosDevicesController extends PosBaseController
             'canManage' => $this->canManageDevices(),
             'flashSuccess' => SessionManager::flash('success'),
             'flashError' => SessionManager::flash('error'),
-        ], 'pos-pages-shell');
+        ]);
     }
 
     public function activate(): void

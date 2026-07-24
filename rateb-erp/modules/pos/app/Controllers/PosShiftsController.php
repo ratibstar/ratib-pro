@@ -41,7 +41,7 @@ final class PosShiftsController extends PosBaseController
             'bulkEnabled' => false,
             'exportEnabled' => false,
             'createUrl' => rateb_app_url('pos/shifts/open'),
-        ], 'pos-pages-shell');
+        ]);
     }
 
     public function show(array $params): void
@@ -61,7 +61,7 @@ final class PosShiftsController extends PosBaseController
             'shift' => $shift,
             'csrf' => Csrf::token(),
             'canClose' => $canClose,
-        ], 'pos-pages-shell');
+        ]);
     }
 
     /** Legacy crud links — shifts are view/close only. */
@@ -82,7 +82,7 @@ final class PosShiftsController extends PosBaseController
             'title' => __('pos_shift_open'),
             'csrf' => Csrf::token(),
             'lookups' => $lookups,
-        ], 'pos-pages-shell');
+        ]);
     }
 
     public function openStore(): void
@@ -140,7 +140,7 @@ final class PosShiftsController extends PosBaseController
             'title' => __('pos_shift_close'),
             'shift' => $shift,
             'csrf' => Csrf::token(),
-        ], 'pos-pages-shell');
+        ]);
     }
 
     public function closeStore(array $params): void

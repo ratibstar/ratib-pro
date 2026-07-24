@@ -9,7 +9,7 @@ use Rateb\App\Pos\PosModule;
 /** Renders views from modules/pos/views — keeps POS isolated from RATEB_VIEWS_PATH. */
 final class PosView
 {
-    public static function render(string $view, array $data = [], ?string $layout = 'pos-pages-shell'): void
+    public static function render(string $view, array $data = [], ?string $layout = 'pos-admin'): void
     {
         $viewFile = PosModule::viewsPath() . '/' . str_replace('.', '/', $view) . '.php';
         if (!is_file($viewFile)) {
@@ -37,10 +37,20 @@ final class PosView
             return;
         }
 
-        $layoutFile = PosModule::viewsPath() . '/layouts/' . $layout . '.php';
-        if ($layout === 'main') {
-            $layoutFile = RATEB_VIEWS_PATH . '/layouts/main.php';
+        // Admin ERP chrome (sidebar) — same soft-nav shell as Inventory/HR/Accounting.
+        if ($layout === 'main' || $layout === 'pos-admin') {
+            $pageContent = $content();
+            if (function_exists('rateb_pos_asset')) {
+                $pageContent = '<link rel="stylesheet" href="'
+                    . htmlspecialchars(rateb_pos_asset('css/pos-module.css'), ENT_QUOTES, 'UTF-8')
+                    . '">' . $pageContent;
+            }
+            extract($data, EXTR_SKIP);
+            include RATEB_VIEWS_PATH . '/layouts/main.php';
+            return;
         }
+
+        $layoutFile = PosModule::viewsPath() . '/layouts/' . $layout . '.php';
         if (!is_file($layoutFile)) {
             echo $content();
             return;
@@ -48,10 +58,6 @@ final class PosView
 
         $pageContent = $content();
         extract($data, EXTR_SKIP);
-        if ($layout === 'main') {
-            include RATEB_VIEWS_PATH . '/layouts/main.php';
-            return;
-        }
         include $layoutFile;
     }
 
