@@ -1052,6 +1052,55 @@
         }
     }
 
+    function ensureMailDnsPanel() {
+        var hosts = document.querySelectorAll('[data-mail-dns-async]');
+        if (!hosts || !hosts.length) {
+            return;
+        }
+        // Prefer page module when present; always fall back here so soft-nav works
+        // even if scheduleModuleScripts skipped settings-mail-dns.js.
+        if (typeof root.ratebMailDnsBoot === 'function') {
+            try {
+                root.ratebMailDnsBoot({ immediate: true });
+                return;
+            } catch (eBoot) { /* fall through */ }
+        }
+        Array.prototype.forEach.call(hosts, function (host) {
+            var url = host.getAttribute('data-mail-dns-url') || '';
+            if (!url || host.getAttribute('data-mail-dns-loading') === '1') {
+                return;
+            }
+            host.setAttribute('data-mail-dns-loading', '1');
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timer = root.setTimeout(function () {
+                if (ctrl) {
+                    try { ctrl.abort(); } catch (eAb) { /* ignore */ }
+                }
+            }, 8000);
+            var failMsg = host.getAttribute('data-mail-dns-fail') || 'DNS check failed';
+            fetch(url, {
+                credentials: 'same-origin',
+                headers: { Accept: 'application/json' },
+                signal: ctrl ? ctrl.signal : undefined
+            }).then(function (res) {
+                return res.json();
+            }).then(function (data) {
+                if (data && data.ok && data.html) {
+                    host.outerHTML = data.html;
+                    return;
+                }
+                host.innerHTML = '<p class="text-warning small mb-0">' + failMsg + '</p>';
+            }).catch(function () {
+                host.innerHTML = '<p class="text-warning small mb-0">' + failMsg + '</p>';
+            }).finally(function () {
+                root.clearTimeout(timer);
+                try {
+                    host.removeAttribute('data-mail-dns-loading');
+                } catch (eFin) { /* ignore */ }
+            });
+        });
+    }
+
     function reinitModuleUi() {
         // Soft badge must NOT skip chart hydrate (needs hard refresh otherwise).
         if (!isUiOffline()) {
@@ -1066,10 +1115,7 @@
         }
         ensureDashboardCharts();
         try {
-            if (typeof root.ratebMailDnsBoot === 'function'
-                && document.querySelector('[data-mail-dns-async]')) {
-                root.ratebMailDnsBoot({ immediate: true });
-            }
+            ensureMailDnsPanel();
         } catch (eMailDns) { /* ignore */ }
     }
 
