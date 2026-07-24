@@ -10,10 +10,25 @@
         return;
     }
 
-    var ROUTER_VERSION = '1.0.0-phase5';
+    var ROUTER_VERSION = '1.0.1-op1';
     var MANIFEST_URL = new URL('../routes/route-manifest.json',
         (root.document && root.document.currentScript && root.document.currentScript.src) || root.location.href
     ).href;
+
+    /* OP1 Phase 6 — builtin routes inlined so shell can paint before manifest fetch. */
+    var BUILTIN_ROUTE_DEFS = [
+        { id: 'home', path: '/', title: 'Home', handler: 'builtin:home' },
+        { id: 'status', path: '/status', title: 'Runtime Status', handler: 'builtin:status' },
+        { id: 'health', path: '/health', title: 'Health', handler: 'builtin:health' },
+        {
+            id: 'guarded',
+            path: '/guarded',
+            title: 'Guarded',
+            handler: 'builtin:guarded',
+            meta: { requiresFlag: 'allowGuarded' }
+        }
+    ];
+    var BUILTIN_DEFAULT_ROUTE = 'home';
 
     function createBuiltinHandlers(layer) {
         function textHandler(title, bodyFn) {
@@ -285,10 +300,52 @@
                 }
                 manifest = json;
                 json.routes.forEach(function (r) {
-                    registerRoute(r);
+                    /* Do not clobber handlers already registered (builtins / modules). */
+                    if (r && r.id && !registry[r.id]) {
+                        registerRoute(r);
+                    } else if (r && r.id && registry[r.id] && r.path) {
+                        /* Keep existing registration; update title/meta if absent. */
+                        if (!registry[r.id].title && r.title) {
+                            registry[r.id].title = r.title;
+                        }
+                    }
                 });
                 return json;
             });
+        }
+
+        function registerBuiltinRoutes() {
+            BUILTIN_ROUTE_DEFS.forEach(function (r) {
+                if (!registry[r.id]) {
+                    registerRoute(r);
+                }
+            });
+            if (!manifest) {
+                manifest = {
+                    schema: 'rateb-offline-v2-routes/1',
+                    version: ROUTER_VERSION,
+                    defaultRoute: BUILTIN_DEFAULT_ROUTE,
+                    routes: BUILTIN_ROUTE_DEFS.slice(),
+                    source: 'builtin-inline'
+                };
+            }
+        }
+
+        function scheduleExtensionManifest(url) {
+            var run = function () {
+                loadManifest(url).then(function () {
+                    emit('manifest', { deferred: true, routes: Object.keys(registry).length });
+                }).catch(function (err) {
+                    emit('error', { error: err, phase: 'deferred_manifest' });
+                });
+            };
+            if (typeof root.requestAnimationFrame === 'function') {
+                root.requestAnimationFrame(function () {
+                    root.setTimeout(run, 0);
+                });
+            } else {
+                root.setTimeout(run, 0);
+            }
         }
 
         function init(opts) {
@@ -324,68 +381,80 @@
                 return true;
             });
 
-            return loadManifest(opts.manifestUrl).then(function (man) {
-                if (!historyBound) {
-                    root.addEventListener('popstate', onPopState);
-                    historyBound = true;
-                }
-                inited = true;
+            /*
+             * OP1 Phase 6 — register builtin routes synchronously so shell can
+             * paint and navigate before the extension manifest fetch.
+             */
+            registerBuiltinRoutes();
 
-                // Register with runtime locator (published API)
+            if (!historyBound) {
+                root.addEventListener('popstate', onPopState);
+                historyBound = true;
+            }
+            inited = true;
+
+            try {
+                root.RatebOfflineV2Runtime.services.register('router', api, { replace: true });
+            } catch (e) {
+                root.RatebOfflineV2Runtime.services.register('router', api, { replace: true });
+            }
+
+            emit('init', { version: ROUTER_VERSION, routes: Object.keys(registry).length, builtinOnly: true });
+
+            var deferManifest = opts.deferManifest !== false;
+            if (deferManifest) {
+                scheduleExtensionManifest(opts.manifestUrl);
+            }
+
+            var startPath = normalizePath(opts.startPath || pathFromLocation());
+            pendingStartPath = startPath;
+
+            var deferInitial = opts.deferInitialNavigation === true;
+            if (!deferInitial && opts.deferInitialNavigation !== false) {
                 try {
-                    root.RatebOfflineV2Runtime.services.register('router', api, { replace: true });
-                } catch (e) {
-                    root.RatebOfflineV2Runtime.services.register('router', api, { replace: true });
-                }
-
-                emit('init', { version: ROUTER_VERSION, routes: Object.keys(registry).length });
-
-                var startPath = normalizePath(opts.startPath || pathFromLocation());
-                pendingStartPath = startPath;
-
-                /*
-                 * Fix5: cold deep-links to BusinessModules register routes after shell mount.
-                 * Defer the first mount so we do not fall back to defaultRoute (home) and
-                 * then navigate again — preserves hash and yields a single activation.
-                 */
-                var deferInitial = opts.deferInitialNavigation === true;
-                if (!deferInitial && opts.deferInitialNavigation !== false) {
-                    try {
-                        var bootOpts = root.RatebOfflineV2BootOptions;
-                        if (bootOpts && bootOpts.deferInitialNavigation) {
-                            deferInitial = true;
-                            if (bootOpts.requestedPath) {
-                                startPath = normalizePath(bootOpts.requestedPath);
-                                pendingStartPath = startPath;
-                            }
+                    var bootOpts = root.RatebOfflineV2BootOptions;
+                    if (bootOpts && bootOpts.deferInitialNavigation) {
+                        deferInitial = true;
+                        if (bootOpts.requestedPath) {
+                            startPath = normalizePath(bootOpts.requestedPath);
+                            pendingStartPath = startPath;
                         }
-                    } catch (eBootOpts) { /* ignore */ }
-                }
-
-                if (deferInitial) {
-                    initialNavigationDeferred = true;
-                    if (outlet) {
-                        outlet.setAttribute('data-route', 'boot.pending');
-                        outlet.textContent = '';
                     }
-                    /* Do not setHistory — keep the requested hash/path intact. */
-                    return {
-                        ok: true,
-                        manifest: man,
-                        navigation: {
-                            ok: true,
-                            deferred: true,
-                            path: startPath
-                        }
-                    };
-                }
+                } catch (eBootOpts) { /* ignore */ }
+            }
 
-                if (!findByPath(startPath) && man.defaultRoute && findById(man.defaultRoute)) {
-                    startPath = findById(man.defaultRoute).path;
+            function finishInit(man, nav) {
+                if (!deferManifest) {
+                    return loadManifest(opts.manifestUrl).then(function (loaded) {
+                        return { ok: true, manifest: loaded, navigation: nav };
+                    });
                 }
-                return navigate(startPath, { replace: true }).then(function (nav) {
-                    return { ok: true, manifest: man, navigation: nav };
+                return Promise.resolve({
+                    ok: true,
+                    manifest: man || manifest,
+                    navigation: nav,
+                    manifestDeferred: true
                 });
+            }
+
+            if (deferInitial) {
+                initialNavigationDeferred = true;
+                if (outlet) {
+                    outlet.setAttribute('data-route', 'boot.pending');
+                    outlet.textContent = '';
+                }
+                return finishInit(manifest, {
+                    ok: true,
+                    deferred: true,
+                    path: startPath
+                });
+            }
+
+            if (!findByPath(startPath) && manifest.defaultRoute && findById(manifest.defaultRoute)) {
+                startPath = findById(manifest.defaultRoute).path;
+            }
+            return navigate(startPath, { replace: true }).then(function (nav) {
+                return finishInit(manifest, nav);
             });
         }
 

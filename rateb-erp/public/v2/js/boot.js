@@ -610,28 +610,69 @@
             });
         }
 
-        function initializeStorageAndPlatform() {
+        function initializeStorageAndPlatform(opts) {
+            opts = opts || {};
             mark('background-start');
-            var pmPromise = loadScript('./js/package-manager.js').then(function () {
-                if (root.RatebOfflineV2PM && runtime && runtime.services) {
-                    runtime.services.register('pm', root.RatebOfflineV2PM, { replace: true });
-                }
-                ready('pm');
-                return root.RatebOfflineV2PM;
-            });
 
+            /*
+             * OP1 Phase 7 — Home startup must not load PM / Sync / SDK / Framework.
+             * Module routes (or explicit force) pull only what they need.
+             */
+            if (!opts.forModules && !opts.force) {
+                mark('background-platform-done');
+                ready('background-platform', { skipped: true, reason: 'home_lazy_op1' });
+                ready('pm', { deferred: true });
+                ready('db', { deferred: true, open: false });
+                ready('sync', { deferred: true });
+                return Promise.resolve({
+                    pm: null,
+                    db: null,
+                    sync: null,
+                    deferred: true,
+                    skippedHeavy: true
+                });
+            }
+
+            return ensureDbApi().then(function (db) {
+                if (!db) {
+                    throw new Error('db_bootstrap_failed');
+                }
+                return ensureSdkAndFramework().then(function () {
+                    /* Sync register (enqueue) only when a module is requested — not on Home. */
+                    return ensureSyncEngine().then(function (sync) {
+                        mark('background-platform-done');
+                        ready('background-platform', { forModules: true });
+                        return {
+                            pm: null,
+                            db: db,
+                            sync: sync,
+                            deferred: true,
+                            modulesOnly: true
+                        };
+                    });
+                });
+            });
+        }
+
+        function ensureDbApi() {
+            if (root.RatebOfflineV2DB) {
+                if (runtime && runtime.services && !runtime.services.has('db')) {
+                    runtime.services.register('db', root.RatebOfflineV2DB, { replace: true });
+                }
+                return Promise.resolve(root.RatebOfflineV2DB);
+            }
             var dbUrl = new URL(
                 '../assets/offline/platform/db/sqlite-runtime.js',
                 root.location.href
             ).href;
-            /* Fix3: import + register DB API only — do not open WASM/SQLite until a store needs it. */
-            var dbPromise = import(dbUrl).then(function (mod) {
+            /* OP1 Phase 4: register only — never open or warm WASM until first DB request. */
+            return import(dbUrl).then(function (mod) {
                 var db = mod.default || root.RatebOfflineV2DB;
                 if (!db) {
                     throw new Error('db_module_missing');
                 }
                 if (typeof db.register === 'function') {
-                    return db.register().then(function () {
+                    return db.register({ warm: false }).then(function () {
                         return db;
                     });
                 }
@@ -651,45 +692,67 @@
                 setState('db-selftest', false, String(err && err.message ? err.message : err));
                 return null;
             });
+        }
 
-            var platformPromise = Promise.all([
-                loadScript('../assets/offline/platform/sync/sync-engine.js'),
-                loadScript('./js/modules/module-sdk.js'),
-                loadScript('../assets/offline/platform/support/business-module-framework.js')
-            ]).then(function () {
-                ready('background-platform');
-                return true;
-            });
-
-            return Promise.all([pmPromise, dbPromise, platformPromise]).then(function (parts) {
-                var pm = parts[0];
-                var db = parts[1];
-                if (!db) {
-                    throw new Error('db_bootstrap_failed');
+        function ensurePm() {
+            if (root.RatebOfflineV2PM) {
+                if (runtime && runtime.services && !runtime.services.has('pm')) {
+                    runtime.services.register('pm', root.RatebOfflineV2PM, { replace: true });
                 }
+                return Promise.resolve(root.RatebOfflineV2PM);
+            }
+            return loadScript('./js/package-manager.js').then(function () {
+                if (root.RatebOfflineV2PM && runtime && runtime.services) {
+                    runtime.services.register('pm', root.RatebOfflineV2PM, { replace: true });
+                }
+                ready('pm');
+                return root.RatebOfflineV2PM;
+            });
+        }
+
+        function ensureSyncEngine() {
+            if (root.RatebOfflineV2ActiveSync) {
+                return Promise.resolve(root.RatebOfflineV2ActiveSync);
+            }
+            return ensureDbApi().then(function () {
+                return loadScript('../assets/offline/platform/sync/sync-engine.js');
+            }).then(function () {
                 var syncApi = root.RatebOfflineV2Sync;
                 if (!syncApi || typeof syncApi.create !== 'function') {
                     throw new Error('sync_bootstrap_failed');
                 }
-                /* Fix2: register Sync for writers (enqueue) without activating DB sync cycles. */
                 var sync = syncApi.create({ intervalMs: 60000 });
                 root.RatebOfflineV2ActiveSync = sync;
                 var registerFn = typeof sync.register === 'function'
                     ? sync.register.bind(sync)
                     : sync.start.bind(sync);
                 return registerFn({ intervalMs: 60000 }).then(function (reg) {
-                    if (!runtime.services.has('sync')) {
+                    if (runtime && !runtime.services.has('sync')) {
                         throw new Error('sync_not_registered');
                     }
-                    mark('background-platform-done');
                     ready('sync', {
                         registered: !!(reg && reg.ok !== false),
                         started: !!(sync.isStarted && sync.isStarted()),
                         offline: typeof navigator !== 'undefined' ? navigator.onLine === false : null
                     });
-                    return { pm: pm, db: db, sync: sync };
+                    return sync;
                 });
             });
+        }
+
+        function ensureSdkAndFramework() {
+            var chain = Promise.resolve();
+            if (!root.RatebOfflineV2Modules) {
+                chain = chain.then(function () {
+                    return loadScript('./js/modules/module-sdk.js');
+                });
+            }
+            if (!root.RatebOfflineV2Business) {
+                chain = chain.then(function () {
+                    return loadScript('../assets/offline/platform/support/business-module-framework.js');
+                });
+            }
+            return chain;
         }
 
         /*
@@ -854,14 +917,16 @@
             if (root.RatebOfflineV2ActiveBusiness) {
                 return Promise.resolve(root.RatebOfflineV2ActiveBusiness);
             }
-            var business = root.RatebOfflineV2Business;
-            if (!business || !business.create) {
-                return Promise.reject(new Error('business_framework_missing'));
-            }
-            var fw = business.create();
-            root.RatebOfflineV2ActiveBusiness = fw;
-            return fw.start().then(function () {
-                return fw;
+            return ensureSdkAndFramework().then(function () {
+                var business = root.RatebOfflineV2Business;
+                if (!business || !business.create) {
+                    return Promise.reject(new Error('business_framework_missing'));
+                }
+                var fw = business.create();
+                root.RatebOfflineV2ActiveBusiness = fw;
+                return fw.start().then(function () {
+                    return fw;
+                });
             });
         }
 
@@ -997,7 +1062,16 @@
         function ensureBusinessModulesForPath(path) {
             var order = resolveModuleOrderForPath(path);
             businessEnsureTail = businessEnsureTail.then(function () {
-                return ensureBusinessFramework().then(function (fw) {
+                return ensureDbApi().then(function () {
+                    return ensureSdkAndFramework();
+                }).then(function () {
+                    /* Sync enqueue support when a module is actually requested. */
+                    return ensureSyncEngine().catch(function () {
+                        return null;
+                    });
+                }).then(function () {
+                    return ensureBusinessFramework();
+                }).then(function (fw) {
                     if (!order.length) {
                         return [];
                     }
@@ -1016,10 +1090,13 @@
         }
 
         /**
-         * Fix6: activate Identity only, then probe enrollment — before other modules.
+         * OP1 Phase 5 / Fix6: activate Identity only when unlock/auth route needs it —
+         * never before shell paint. Called from ensureModulesOrIdentityGate after Shell Ready.
          */
         function bootstrapIdentityReadiness() {
-            return ensureBusinessFramework().then(function (fw) {
+            return ensureDbApi().then(function () {
+                return ensureBusinessFramework();
+            }).then(function (fw) {
                 return loadAndActivateBusinessModule(fw, 'identity').then(function () {
                     var api = root.RatebOfflineV2Identity;
                     if (api && typeof api.checkReadiness === 'function') {
@@ -1027,8 +1104,15 @@
                     }
                     return root.RatebOfflineV2Business.invokePublished('identity', 'checkReadiness');
                 });
-            }).then(function (ready) {
-                return ready || { ok: false, enrolled: false, unlocked: false };
+            }).then(function (readyResult) {
+                try {
+                    if (root.performance && performance.mark) {
+                        performance.mark('rateb-v2-identity-ready');
+                    }
+                    root.document.documentElement.setAttribute('data-rateb-v2-identity-ready', '1');
+                } catch (eId) { /* ignore */ }
+                ready('identity', readyResult || {});
+                return readyResult || { ok: false, enrolled: false, unlocked: false };
             }).catch(function () {
                 /* Fail closed — same as not enrolled for business routes. */
                 return { ok: false, enrolled: false, unlocked: false, reason: 'identity_check_failed' };
@@ -1142,6 +1226,9 @@
             };
             root.RatebOfflineV2EnsureModules = ensureBusinessModulesForPath;
             root.RatebOfflineV2EnsureModulesOrGate = ensureModulesOrIdentityGate;
+            root.RatebOfflineV2EnsurePm = ensurePm;
+            root.RatebOfflineV2EnsureSync = ensureSyncEngine;
+            root.RatebOfflineV2EnsureDb = ensureDbApi;
         }
 
         function initializeBusinessModules(path, platform) {
@@ -1314,17 +1401,47 @@
             scheduleBackground(function () {
                 hciHousekeeping();
                 swPromise.then(function () {
-                    return initializeStorageAndPlatform();
-                }).then(function (platform) {
-                    return initializeBusinessModules(path, platform).then(function () {
-                        runDeferredDiagnostics(platform);
-                        mark('background-ready');
-                        root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
-                        ready('offline-bootstrap', {
-                            path: path,
-                            identity: true,
-                            sqlite: 'lazy',
-                            businessModules: true
+                    /*
+                     * OP1 Phase 7: Home skips PM/SDK/Sync/DB. Module deep-links
+                     * load DB API + SDK/Framework only; Identity activates later
+                     * inside ensureModulesOrIdentityGate (after shell render).
+                     */
+                    var platformOpts = requestedModuleId
+                        ? { forModules: true }
+                        : {};
+                    return initializeStorageAndPlatform(platformOpts).then(function (platform) {
+                        if (!requestedModuleId) {
+                            mark('background-ready');
+                            root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
+                            ready('offline-bootstrap', {
+                                path: path,
+                                identity: false,
+                                sqlite: 'deferred',
+                                businessModules: false,
+                                skippedHeavy: true
+                            });
+                            /* OP1: stubs only — SDK/Framework/Identity load on first module navigate. */
+                            try {
+                                var appShell2 = root.RatebOfflineV2AppShell;
+                                var router2 = appShell2 && appShell2.getRouter
+                                    ? appShell2.getRouter()
+                                    : null;
+                                installLazyNavigateWrapper(router2);
+                                registerLazyModuleStubs(router2);
+                            } catch (eHome) { /* ignore */ }
+                            return platform;
+                        }
+                        return initializeBusinessModules(path, platform).then(function () {
+                            runDeferredDiagnostics(platform);
+                            mark('background-ready');
+                            root.document.documentElement.setAttribute('data-rateb-v2-offline-ready', '1');
+                            ready('offline-bootstrap', {
+                                path: path,
+                                identity: true,
+                                sqlite: 'lazy',
+                                businessModules: true
+                            });
+                            return platform;
                         });
                     });
                 }).catch(function (err) {

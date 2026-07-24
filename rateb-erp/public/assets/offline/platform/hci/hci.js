@@ -6,12 +6,15 @@
 (function (root) {
     'use strict';
 
-    var HCI_VERSION = '1.2.0-phase3';
+    var HCI_VERSION = '1.2.1-op1';
     var LAYOUT_ID = 'P1-00A';
     var OPFS_APP_ROOT = 'rateb-offline-v2';
     var SQLITE_REL_PATH = 'database/rateb.sqlite';
     var SLOTS = ['slot-a', 'slot-b', 'slot-c'];
     var PACKAGE_TYPES = ['runtime', 'modules', 'language', 'assets'];
+    /* OP1 Phase 3 — warm-session layout memo (skip full OPFS walk). */
+    var LAYOUT_MEMO_KEY = 'rateb_v2_hci_layout';
+    var layoutSessionMemo = null;
 
     var TOP_LEVEL = [
         'runtime', 'packages', 'slots', 'database', 'vault',
@@ -321,7 +324,35 @@
         });
     }
 
-    function ensureLayout() {
+    function markLayoutEnsured() {
+        layoutSessionMemo = LAYOUT_ID;
+        try {
+            if (root.localStorage) {
+                root.localStorage.setItem(LAYOUT_MEMO_KEY, LAYOUT_ID);
+            }
+        } catch (eMemo) { /* ignore */ }
+    }
+
+    function readLayoutMemo() {
+        if (layoutSessionMemo === LAYOUT_ID) {
+            return LAYOUT_ID;
+        }
+        try {
+            if (root.localStorage) {
+                var stored = root.localStorage.getItem(LAYOUT_MEMO_KEY);
+                if (stored === LAYOUT_ID) {
+                    layoutSessionMemo = LAYOUT_ID;
+                    return LAYOUT_ID;
+                }
+            }
+        } catch (eRead) { /* ignore */ }
+        return null;
+    }
+
+    /**
+     * OP1 Phase 3 — full OPFS layout bootstrap (first install / version change only).
+     */
+    function ensureLayoutFull() {
         var created = [];
         return getOpfsRoot().then(function () {
             var dirChain = Promise.resolve();
@@ -354,13 +385,45 @@
             });
             return fileChain;
         }).then(function () {
+            markLayoutEnsured();
             return {
                 ok: true,
                 layout: LAYOUT_ID,
                 opfsRoot: OPFS_APP_ROOT,
-                created: created
+                created: created,
+                skipped: false
             };
         });
+    }
+
+    /**
+     * OP1 Phase 3 — run full ensure only on first installation or LAYOUT_ID change.
+     * Warm sessions (memo hit) skip the serial OPFS walk completely.
+     */
+    function ensureLayout() {
+        if (layoutSessionMemo === LAYOUT_ID) {
+            return Promise.resolve({
+                ok: true,
+                layout: LAYOUT_ID,
+                opfsRoot: OPFS_APP_ROOT,
+                created: [],
+                skipped: true,
+                reason: 'session_memo'
+            });
+        }
+        if (readLayoutMemo() === LAYOUT_ID) {
+            layoutSessionMemo = LAYOUT_ID;
+            return Promise.resolve({
+                ok: true,
+                layout: LAYOUT_ID,
+                opfsRoot: OPFS_APP_ROOT,
+                created: [],
+                skipped: true,
+                reason: 'warm_session'
+            });
+        }
+
+        return ensureLayoutFull();
     }
 
     function verifyLayout() {

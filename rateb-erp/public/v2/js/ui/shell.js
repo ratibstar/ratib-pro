@@ -299,41 +299,67 @@
 
             layer = opts.layer || root.RatebOfflineV2Runtime.layerApi();
             rootEl = host;
+            /* OP1 Phase 1 — paint interactive skeleton immediately (before Runtime/Router heavy work). */
             buildDom(host);
+            try {
+                if (root.performance && performance.mark) {
+                    performance.mark('rateb-v2-shell-paint');
+                }
+                root.document.documentElement.setAttribute('data-rateb-v2-shell-painted', '1');
+            } catch (ePaint) { /* ignore */ }
 
             router = opts.router || root.RatebOfflineV2Router.create();
             var outlet = root.document.getElementById('rateb-v2-shell-outlet');
 
-            return root.RatebOfflineV2Runtime.start().catch(function () {
-                return null;
-            }).then(function () {
-                return router.init({
-                    layer: layer,
-                    outlet: outlet,
-                    flags: opts.flags || { allowGuarded: false },
-                    startPath: opts.startPath || '/'
+            /*
+             * OP1: Runtime.start() critical path only (register services).
+             * Deferred HCI/package/health runs in background via whenFullyReady.
+             */
+            return Promise.resolve()
+                .then(function () {
+                    return root.RatebOfflineV2Runtime.start({ criticalOnly: true }).catch(function () {
+                        return null;
+                    });
+                })
+                .then(function () {
+                    return router.init({
+                        layer: layer,
+                        outlet: outlet,
+                        flags: opts.flags || { allowGuarded: false },
+                        startPath: opts.startPath || '/',
+                        /* OP1 Phase 6 — builtins first; extension manifest after paint. */
+                        deferManifest: true
+                    });
+                })
+                .then(function () {
+                    renderNav();
+                    if (root.RatebOfflineV2Runtime.events) {
+                        unsubNav = root.RatebOfflineV2Runtime.events.on('router:afterNavigate', function () {
+                            setLoading(false);
+                            renderNav();
+                        });
+                        unsubErr = root.RatebOfflineV2Runtime.events.on('router:error', function (payload) {
+                            setLoading(false);
+                            setError(payload && payload.error ? payload.error : 'router_error');
+                        });
+                    }
+                    try {
+                        root.RatebOfflineV2Runtime.services.register('shell', api, { replace: true });
+                    } catch (e) {
+                        root.RatebOfflineV2Runtime.services.register('shell', api, { replace: true });
+                    }
+                    mounted = true;
+                    toast('Shell ready', 'info');
+
+                    /* Background: finish deferred Runtime (layout/package/health). */
+                    try {
+                        if (typeof root.RatebOfflineV2Runtime.whenFullyReady === 'function') {
+                            root.RatebOfflineV2Runtime.whenFullyReady().catch(function () { /* non-fatal */ });
+                        }
+                    } catch (eFull) { /* ignore */ }
+
+                    return { ok: true, version: SHELL_VERSION };
                 });
-            }).then(function () {
-                renderNav();
-                if (root.RatebOfflineV2Runtime.events) {
-                    unsubNav = root.RatebOfflineV2Runtime.events.on('router:afterNavigate', function () {
-                        setLoading(false);
-                        renderNav();
-                    });
-                    unsubErr = root.RatebOfflineV2Runtime.events.on('router:error', function (payload) {
-                        setLoading(false);
-                        setError(payload && payload.error ? payload.error : 'router_error');
-                    });
-                }
-                try {
-                    root.RatebOfflineV2Runtime.services.register('shell', api, { replace: true });
-                } catch (e) {
-                    root.RatebOfflineV2Runtime.services.register('shell', api, { replace: true });
-                }
-                mounted = true;
-                toast('Shell ready', 'info');
-                return { ok: true, version: SHELL_VERSION };
-            });
         }
 
         function unmount() {

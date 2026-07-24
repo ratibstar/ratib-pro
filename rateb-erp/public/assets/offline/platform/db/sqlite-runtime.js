@@ -326,6 +326,11 @@ function open() {
                 detail: { mode: result.mode, schemaVersion: result.schemaVersion }
             }));
         } catch (eEvt) { /* ignore */ }
+        try {
+            if (typeof performance !== 'undefined' && performance.mark) {
+                performance.mark('rateb-v2-sqlite-ready');
+            }
+        } catch (eMark) { /* ignore */ }
         return result;
     }).catch(function (err) {
         state.opening = null;
@@ -335,18 +340,21 @@ function open() {
 }
 
 /**
- * Fix3/4: register the DB API without opening.
- * Warm-starts WASM fetch/compile so the first store open overlaps platform work.
+ * OP1 Phase 4 / Fix3: register the DB API without opening and without warming WASM.
+ * Open happens only on the first database request (ensureOpen → open).
  */
-function register() {
-    try {
-        warmRuntime();
-    } catch (eWarm) { /* ignore — open() will retry */ }
+function register(opts) {
+    opts = opts || {};
+    if (opts.warm === true) {
+        try {
+            warmRuntime();
+        } catch (eWarm) { /* ignore — open() will retry */ }
+    }
     return Promise.resolve({
         ok: true,
         registered: true,
         open: !!state.open,
-        warming: !state.sqlite3 && !!state.initPromise,
+        warming: !!(opts.warm && !state.sqlite3 && state.initPromise),
         version: DB_API_VERSION,
         mode: state.mode
     });

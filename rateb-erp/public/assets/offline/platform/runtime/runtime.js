@@ -133,6 +133,11 @@
     var activePackage = null;
     var startedAt = null;
     var healthSnapshot = null;
+    /* OP1: critical start vs deferred HCI/package/health. */
+    var criticalReady = false;
+    var deferredReadyPromise = null;
+    var deferredResult = null;
+    var startCriticalPromise = null;
 
     function hci() {
         var h = root.RatebOfflineV2HCI;
@@ -255,21 +260,15 @@
         });
     }
 
-    function start(opts) {
-        opts = opts || {};
-        if (state === STATES.READY || state === STATES.STARTING) {
-            return Promise.resolve({ ok: true, state: state, already: true });
-        }
-        lastError = null;
-        setState(STATES.STARTING);
-        startedAt = new Date().toISOString();
-
-        return isolate('start', function () {
-            registerCoreServices();
+    /**
+     * OP1 Phase 2 — deferred heavy work (HCI layout, package, health).
+     * Never blocks Shell paint. Resolves when background platform is fully ready.
+     */
+    function runDeferredStart() {
+        return isolate('startDeferred', function () {
             return hci().ensureLayout().then(function () {
                 return loadActivePackage();
             }).then(function (pkg) {
-                // Optional: align DB install pointer if DB already open (no architecture change).
                 var db = locator.tryGet('db');
                 var chain = Promise.resolve();
                 if (db && typeof db.isOpen === 'function' && db.isOpen() && typeof db.syncInstallPointerFromActiveJson === 'function') {
@@ -282,23 +281,133 @@
                 }).then(function (health) {
                     if (!health.ok) {
                         setState(STATES.DEGRADED, health);
-                    } else {
-                        setState(STATES.READY, { package: pkg });
+                    } else if (state !== STATES.DEGRADED && state !== STATES.FAILED) {
+                        setState(STATES.READY, { package: pkg, deferred: true });
                     }
-                    return {
+                    deferredResult = {
                         ok: health.ok,
                         state: state,
                         version: RUNTIME_VERSION,
                         package: pkg,
                         health: health,
-                        services: locator.list()
+                        services: locator.list(),
+                        deferred: true
                     };
+                    bus.emit('runtime:fullyReady', deferredResult);
+                    try {
+                        if (root.performance && performance.mark) {
+                            performance.mark('rateb-v2-runtime-fully-ready');
+                        }
+                    } catch (eMark) { /* ignore */ }
+                    return deferredResult;
                 });
             });
         }).catch(function (err) {
+            lastError = lastError || {
+                label: 'startDeferred',
+                message: String(err && err.message ? err.message : err),
+                at: new Date().toISOString()
+            };
+            if (state !== STATES.FAILED) {
+                setState(STATES.DEGRADED, lastError);
+            }
+            bus.emit('runtime:error', lastError);
+            throw err;
+        });
+    }
+
+    function whenFullyReady() {
+        if (deferredResult) {
+            return Promise.resolve(deferredResult);
+        }
+        if (deferredReadyPromise) {
+            return deferredReadyPromise;
+        }
+        if (criticalReady && (state === STATES.READY || state === STATES.DEGRADED)) {
+            deferredReadyPromise = runDeferredStart();
+            return deferredReadyPromise;
+        }
+        return start({ full: true });
+    }
+
+    /**
+     * OP1 Phase 2 — start() critical path registers services only.
+     * Heavy HCI/package/health work runs deferred unless opts.full === true.
+     */
+    function start(opts) {
+        opts = opts || {};
+        var wantFull = opts.full === true || opts.deferHeavy === false;
+
+        if (startCriticalPromise && !criticalReady) {
+            return startCriticalPromise.then(function (res) {
+                if (wantFull) {
+                    return whenFullyReady();
+                }
+                return res;
+            });
+        }
+
+        if (criticalReady && (state === STATES.READY || state === STATES.DEGRADED || state === STATES.STARTING)) {
+            if (wantFull) {
+                return whenFullyReady();
+            }
+            return Promise.resolve({
+                ok: true,
+                state: state,
+                already: true,
+                critical: true,
+                deferred: !!deferredReadyPromise || !!deferredResult
+            });
+        }
+
+        lastError = null;
+        setState(STATES.STARTING);
+        startedAt = new Date().toISOString();
+
+        startCriticalPromise = isolate('startCritical', function () {
+            registerCoreServices();
+            criticalReady = true;
+            setState(STATES.READY, { critical: true });
+            try {
+                if (root.performance && performance.mark) {
+                    performance.mark('rateb-v2-runtime-ready');
+                }
+            } catch (eMark2) { /* ignore */ }
+            bus.emit('runtime:criticalReady', { state: state, services: locator.list() });
+
+            if (!deferredReadyPromise && opts.skipDeferred !== true) {
+                deferredReadyPromise = runDeferredStart().catch(function (err) {
+                    /* Keep critical READY; deferred failures degrade in runDeferredStart. */
+                    return {
+                        ok: false,
+                        state: state,
+                        error: String(err && err.message ? err.message : err),
+                        deferred: true
+                    };
+                });
+            }
+
+            if (wantFull) {
+                return whenFullyReady();
+            }
+
+            return {
+                ok: true,
+                state: state,
+                version: RUNTIME_VERSION,
+                package: activePackage,
+                health: healthSnapshot,
+                services: locator.list(),
+                critical: true,
+                deferred: true
+            };
+        }).catch(function (err) {
+            startCriticalPromise = null;
             setState(STATES.FAILED, lastError);
             return Promise.reject(err);
         });
+
+        return startCriticalPromise;
     }
 
     function shutdown() {
@@ -310,6 +419,10 @@
             bus.emit('runtime:beforeShutdown', null);
             activePackage = null;
             healthSnapshot = null;
+            criticalReady = false;
+            deferredReadyPromise = null;
+            deferredResult = null;
+            startCriticalPromise = null;
             // Keep event listeners for diagnostics; clear service instances except we rebuild on start
             locator.clear();
             setState(STATES.STOPPED);
@@ -364,7 +477,7 @@
             : 0;
 
         return shutdown().catch(function () { /* ignore */ }).then(function () {
-            return start();
+            return start({ full: true });
         }).then(function (res) {
             note('start', res.ok || res.state === STATES.READY || res.state === STATES.DEGRADED, res.state);
             note('service_hci', locator.has('hci'), '');
@@ -385,7 +498,7 @@
                 return shutdown();
             }).then(function (sd) {
                 note('shutdown', sd.ok && sd.state === STATES.STOPPED, sd.state);
-                return start();
+                return start({ full: true });
             }).then(function (res2) {
                 note('restart', res2.ok || res2.state === STATES.READY || res2.state === STATES.DEGRADED, res2.state);
 
@@ -424,6 +537,8 @@
         version: RUNTIME_VERSION,
         STATES: STATES,
         start: start,
+        whenFullyReady: whenFullyReady,
+        isCriticalReady: function () { return !!criticalReady; },
         shutdown: shutdown,
         getStatus: getStatus,
         getState: function () { return state; },
