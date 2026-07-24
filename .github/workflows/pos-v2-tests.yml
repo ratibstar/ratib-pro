@@ -90,6 +90,14 @@ jobs:
         working-directory: rateb-erp
         run: php modules/pos/tests/run-all-pos-v2-tests.php
 
+      - name: Upload POS sync simulation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pos-sync-simulation-report
+          path: rateb-erp/modules/pos/tests/reports/pos-sync-simulation-latest.json
+          if-no-files-found: ignore
+
       - name: Upload benchmark report
         if: always()
         uses: actions/upload-artifact@v4

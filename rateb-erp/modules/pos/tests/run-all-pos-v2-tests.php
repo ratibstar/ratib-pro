@@ -20,6 +20,8 @@ $runners = [
     'security' => 'run-security-tests.php',
     'integration' => 'run-integration-tests.php',
     'e2e' => 'run-e2e-tests.php',
+    'pos-sync-commit-unit' => 'run-pos-sync-commit-tests.php',
+    'pos-sync-simulation' => 'run-pos-sync-production-simulation.php',
     'benchmarks' => 'run-benchmarks.php',
 ];
 
