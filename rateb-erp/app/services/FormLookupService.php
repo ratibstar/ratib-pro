@@ -899,20 +899,19 @@ final class FormLookupService
             $placeholders[] = ':' . $key;
             $params[$key] = $id;
         }
-        $sql = 'SELECT id, name, name_ar, code FROM rateb_branches WHERE id IN (' . implode(',', $placeholders) . ')';
+        $sql = 'SELECT id, name, code FROM rateb_branches WHERE id IN (' . implode(',', $placeholders) . ')';
         if ($companyId > 0) {
             $sql .= ' AND company_id = :cid';
             $params['cid'] = $companyId;
         }
         $rows = (new Branch())->query($sql, $params);
         $map = [];
-        $ar = function_exists('rateb_locale') && rateb_locale() === 'ar';
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
             if ($id < 1) {
                 continue;
             }
-            $name = $ar && !empty($row['name_ar']) ? (string) $row['name_ar'] : (string) ($row['name'] ?? '');
+            $name = (string) ($row['name'] ?? '');
             $code = trim((string) ($row['code'] ?? ''));
             $map[(string) $id] = $code !== '' ? ($code . ' — ' . $name) : $name;
         }
