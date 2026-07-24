@@ -39,8 +39,10 @@ assert_true('nav soft-nav Admin POS (no POS_ADMIN forceFull)', !str_contains($na
 assert_true('SW soft-nav allows POS admin HTML', str_contains($sw, 'isPosRuntimePath(url.pathname)'));
 assert_true('SW build bumped', str_contains($sw, 'pos-admin-passthrough-v130'));
 assert_true(
-    'online POS admin does not respondWith navigatePosAdminCrudDocument',
-    (bool) preg_match('/isPosAdminCrudPath[\s\S]{0,400}isHardBrowserOffline[\s\S]{0,200}releaseBackgroundWarmAfterFirstDocument/', $sw)
+    'online POS admin passthrough (hard-offline only)',
+    str_contains($sw, 'Online: never intercept')
+    && str_contains($sw, 'posAdminConnectionRequiredResponse')
+    && substr_count($sw, 'navigatePosAdminCrudDocument(event.request)') === 0
 );
 
 echo PHP_EOL . ($fail === 0 ? 'ALL PASSED' : "FAILED {$fail}") . PHP_EOL;
