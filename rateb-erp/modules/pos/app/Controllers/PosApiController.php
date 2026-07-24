@@ -7,6 +7,7 @@ use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosHardwareManager;
 use Rateb\App\Pos\Services\PosOfflineSyncService;
 use Rateb\App\Pos\Services\PosPricingService;
+use Rateb\App\Pos\Services\PosSyncAcceptanceService;
 use Rateb\App\Pos\Services\PosSyncValidateService;
 
 final class PosApiController extends PosBaseController
@@ -60,6 +61,30 @@ final class PosApiController extends PosBaseController
             'marked_synced' => false,
             'echo' => $result['echo'] ?? null,
         ]);
+    }
+
+    /**
+     * Phase 12 — accept Offline POS sale into WAITING_COMMIT store.
+     * No invoice / inventory / accounting / synced mark.
+     */
+    public function syncAccept(): void
+    {
+        $this->bootstrapPos();
+        $body = $this->jsonBody();
+        $payload = is_array($body['payload'] ?? null) ? $body['payload'] : $body;
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+        $service = new PosSyncAcceptanceService();
+        $result = $service->accept($payload, [
+            'company_id' => $this->companyId(),
+        ]);
+        $http = (int) ($result['http_status'] ?? 200);
+        unset($result['http_status']);
+        http_response_code($http > 0 ? $http : 200);
+        $this->json(array_merge([
+            'ok' => (bool) ($result['accepted'] ?? false),
+        ], $result));
     }
 
     public function syncPush(): void

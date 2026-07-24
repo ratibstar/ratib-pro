@@ -351,7 +351,7 @@
                     var pendingSales = sales.filter(function (s) {
                         return s && s.status === 'COMPLETED' &&
                             s.synced !== true &&
-                            s.sync_status !== 'VALIDATED';
+                            s.sync_status !== 'SERVER_ACCEPTED';
                     });
                     var txnInfo = buildTxnIndex(pendingSales);
                     var items = [];

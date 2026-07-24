@@ -231,6 +231,29 @@ final class PosSyncQueueItem extends Model
 
 
 
+/** Phase 12 — accepted Offline POS payloads waiting for future commit. */
+final class PosSyncAcceptance extends Model
+
+{
+
+    protected string $table = 'rateb_pos_sync_acceptances';
+
+    protected bool $tenantScoped = true;
+
+    protected bool $branchScoped = false;
+
+    protected array $fillable = [
+
+        'server_sync_id', 'company_id', 'sync_key', 'sale_id', 'device_id',
+
+        'installation_id', 'payload', 'status', 'accepted_at',
+
+    ];
+
+}
+
+
+
 final class PosSyncConflict extends Model
 
 {

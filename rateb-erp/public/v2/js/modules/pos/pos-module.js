@@ -13,7 +13,7 @@
     }
 
     var BusinessModule = Business.BusinessModule;
-    var POS_VERSION = '0.11.0-phase11-sync-gateway';
+    var POS_VERSION = '0.12.0-phase12-accept';
 
     function posUid(prefix) {
         return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
@@ -25,7 +25,7 @@
             id: 'pos',
             version: POS_VERSION,
             name: 'POS',
-            description: 'Offline V2 POS — controlled sync gateway (dry-run only).',
+            description: 'Offline V2 POS — server acceptance WAITING_COMMIT.',
             moduleKind: 'pos',
             dependencies: [
                 { id: 'identity', version: '>=1.0.0' }
@@ -35,7 +35,7 @@
                 'ui.nav', 'route.register', 'services', 'settings', 'workspace', 'diagnostics',
                 'pos.shell', 'pos.catalog', 'pos.cart', 'pos.checkout', 'pos.stock',
                 'pos.reservation', 'pos.recovery', 'pos.sync_prep', 'pos.conflicts',
-                'pos.device', 'pos.audit', 'pos.cert', 'pos.sync_gateway'
+                'pos.device', 'pos.audit', 'pos.cert', 'pos.sync_gateway', 'pos.accept'
             ],
             compat: {
                 sdk: '>=1.0.0',
@@ -57,6 +57,7 @@
                 { id: 'pos.conflicts', path: '/pos/conflicts', title: 'POS Conflicts' },
                 { id: 'pos.sync', path: '/pos/sync', title: 'POS Sync Center' },
                 { id: 'pos.sync_cert', path: '/pos/sync-cert', title: 'POS Sync Cert' },
+                { id: 'pos.accept_cert', path: '/pos/accept-cert', title: 'POS Accept Cert' },
                 { id: 'pos.cert', path: '/pos/cert', title: 'POS Certification' },
                 { id: 'pos.sales', path: '/pos/sales', title: 'POS Sales' },
                 { id: 'pos.settings', path: '/pos/settings', title: 'POS Settings' }
@@ -71,6 +72,7 @@
                 startSyncOnActivate: false,
                 syncPrepOnly: true,
                 syncGatewayDryRunOnly: true,
+                syncAcceptWaitingCommit: true,
                 identityDependency: 'identity'
             }
         });
@@ -80,6 +82,7 @@
         this._syncAdapter = null;
         this._syncGateway = null;
         this._syncCert = null;
+        this._acceptCert = null;
         this._conflict = null;
         this._device = null;
         this._audit = null;
@@ -94,6 +97,7 @@
         this._lastCertReport = null;
         this._lastSyncCenter = null;
         this._lastSyncCertReport = null;
+        this._lastAcceptCertReport = null;
         this._syncBearerMemory = null;
         this._catalogUi = {
             q: '',
@@ -270,6 +274,18 @@
         }
         this._syncCert = api.create(this);
         return this._syncCert;
+    };
+
+    PosModule.prototype._getAcceptCert = function () {
+        if (this._acceptCert) {
+            return this._acceptCert;
+        }
+        var api = root.RatebOfflineV2PosAcceptCert;
+        if (!api || typeof api.create !== 'function') {
+            throw new Error('pos_accept_cert_missing');
+        }
+        this._acceptCert = api.create(this);
+        return this._acceptCert;
     };
 
     PosModule.prototype._auditEvent = function (idCtx, eventType, entityType, entityId, metadata) {
@@ -672,6 +688,13 @@
         });
     };
 
+    PosModule.prototype.acceptOnline = function (saleId) {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getSyncGateway().acceptOnline(idCtx, saleId);
+        });
+    };
+
     PosModule.prototype.commitSync = function () {
         return this._getSyncGateway().commitSync();
     };
@@ -689,6 +712,16 @@
         return this._gate().then(function (idCtx) {
             return self._getSyncCert().runAll(idCtx).then(function (report) {
                 self._lastSyncCertReport = report;
+                return report;
+            });
+        });
+    };
+
+    PosModule.prototype.runAcceptCertification = function () {
+        var self = this;
+        return this._gate().then(function (idCtx) {
+            return self._getAcceptCert().runAll(idCtx).then(function (report) {
+                self._lastAcceptCertReport = report;
                 return report;
             });
         });
@@ -956,6 +989,9 @@
         self.exposeService('validateOnline', function (saleId) {
             return self.validateOnline(saleId);
         });
+        self.exposeService('acceptOnline', function (saleId) {
+            return self.acceptOnline(saleId);
+        });
         self.exposeService('commitSync', function () {
             return self.commitSync();
         });
@@ -965,7 +1001,10 @@
         self.exposeService('runSyncCertification', function () {
             return self.runSyncCertification();
         });
-        self.reportHealth('initialize', true, 'pos_sync_gateway_ready');
+        self.exposeService('runAcceptCertification', function () {
+            return self.runAcceptCertification();
+        });
+        self.reportHealth('initialize', true, 'pos_accept_ready');
         return Promise.resolve();
     };
 
@@ -979,11 +1018,12 @@
         this.contributeNav({ label: 'POS Conflicts', path: '/pos/conflicts', title: 'POS Conflicts' });
         this.contributeNav({ label: 'POS Sync', path: '/pos/sync', title: 'POS Sync Center' });
         this.contributeNav({ label: 'POS Sync Cert', path: '/pos/sync-cert', title: 'POS Sync Cert' });
+        this.contributeNav({ label: 'POS Accept Cert', path: '/pos/accept-cert', title: 'POS Accept Cert' });
         this.contributeNav({ label: 'POS Cert', path: '/pos/cert', title: 'POS Certification' });
         this.contributeWorkspace({
             id: 'pos.workspace',
             title: 'POS Offline',
-            description: 'Controlled sync gateway — dry-run only'
+            description: 'Server acceptance WAITING_COMMIT — no ERP posting'
         });
         this.contributeSettings({
             id: 'pos.cart_local_only',
@@ -1807,7 +1847,7 @@
         outlet.setAttribute('data-pos-shell', '/pos/sync');
         outlet.appendChild(self._el('h3', 'POS Sync Center'));
         outlet.appendChild(self._el('p',
-            'Manual controlled gateway · mode=DRY_RUN_ONLY · Commit disabled · no boot/auto sync'));
+            'Manual gateway · Validate → Accept (WAITING_COMMIT) · Commit disabled · no boot/auto sync'));
 
         var statusHost = self._el('pre', 'Loading…', { 'data-pos-sync-status': '1' });
         outlet.appendChild(statusHost);
@@ -1898,6 +1938,33 @@
             });
         });
 
+        var acceptBtn = self._el('button', 'Accept Sync', {
+            type: 'button',
+            'data-pos-accept-sync': '1'
+        });
+        acceptBtn.addEventListener('click', function () {
+            var token = tokenInput.value;
+            if (token) {
+                self.setSyncBearerToken(token);
+            }
+            var saleId = saleSelect.value;
+            if (!saleId) {
+                msg.textContent = 'Select a pending sale';
+                return;
+            }
+            msg.textContent = 'Accepting (WAITING_COMMIT)…';
+            self.acceptOnline(saleId).then(function (res) {
+                msg.textContent = 'Accept · accepted=' + !!res.accepted +
+                    ' · waiting_commit=' + !!res.waiting_commit +
+                    ' · server_sync_id=' + (res.server_sync_id || '') +
+                    ' · status=' + res.sync_status +
+                    (res.already_processed ? ' · duplicate' : '');
+                return refresh();
+            }).catch(function (err) {
+                msg.textContent = String(err && err.message ? err.message : err);
+            });
+        });
+
         var commitBtn = self._el('button', 'Commit Sync (disabled)', {
             type: 'button',
             disabled: 'disabled',
@@ -1911,6 +1978,7 @@
 
         outlet.appendChild(prepareBtn);
         outlet.appendChild(validateBtn);
+        outlet.appendChild(acceptBtn);
         outlet.appendChild(commitBtn);
         return refresh();
     };
@@ -1942,6 +2010,37 @@
         outlet.appendChild(runBtn);
         if (self._lastSyncCertReport) {
             host.textContent = JSON.stringify(self._lastSyncCertReport, null, 2);
+        }
+        return Promise.resolve();
+    };
+
+    PosModule.prototype._renderAcceptCert = function (outlet, idCtx) {
+        var self = this;
+        outlet.textContent = '';
+        outlet.setAttribute('data-pos-shell', '/pos/accept-cert');
+        outlet.appendChild(self._el('h3', 'POS Accept Certification'));
+        outlet.appendChild(self._el('p',
+            'A accept · B duplicate · C invalid · D permission · E network · F×10 · G large'));
+        var host = self._el('pre', 'Ready.', { 'data-pos-accept-cert-report': '1' });
+        outlet.appendChild(host);
+        var runBtn = self._el('button', 'Run accept certification', {
+            type: 'button',
+            'data-pos-accept-cert-run': '1'
+        });
+        runBtn.addEventListener('click', function () {
+            runBtn.disabled = true;
+            host.textContent = 'Running…';
+            self.runAcceptCertification().then(function (report) {
+                host.textContent = JSON.stringify(report, null, 2);
+                runBtn.disabled = false;
+            }).catch(function (err) {
+                host.textContent = String(err && err.message ? err.message : err);
+                runBtn.disabled = false;
+            });
+        });
+        outlet.appendChild(runBtn);
+        if (self._lastAcceptCertReport) {
+            host.textContent = JSON.stringify(self._lastAcceptCertReport, null, 2);
         }
         return Promise.resolve();
     };
@@ -2057,6 +2156,9 @@
                     if (path === '/pos/sync-cert') {
                         return self._renderSyncCert(outlet, idCtx);
                     }
+                    if (path === '/pos/accept-cert') {
+                        return self._renderAcceptCert(outlet, idCtx);
+                    }
                     if (path === '/pos/cert') {
                         return self._renderCert(outlet, idCtx);
                     }
@@ -2104,10 +2206,10 @@
         base.audit_trail = true;
         base.certification = true;
         base.sync_gateway = true;
-        base.sync_gateway_mode = 'DRY_RUN_ONLY';
+        base.sync_gateway_mode = 'ACCEPT_WAITING_COMMIT';
         base.commit_sync_enabled = false;
         base.starts_sync_on_activate = false;
-        base.lifecycle = 'OPEN→COMPLETED→SYNC_PENDING→VALIDATING→VALIDATED|REJECTED';
+        base.lifecycle = 'OPEN→COMPLETED→SYNC_PENDING→VALIDATING→VALIDATED→SERVER_ACCEPTED';
         base.entity_types = [
             'pos.category', 'pos.product', 'pos.catalog_meta',
             'pos.sale_draft', 'pos.sale_line', 'pos.cart_session', 'pos.sale',
@@ -2116,6 +2218,7 @@
             'pos.device_identity', 'pos.audit_event', 'pos.sync_center_meta'
         ];
         base.storage = 'entity_row via pos.* prefix + optional inv.item SELECT + sync_outbox enqueue';
+        base.server_acceptance_table = 'rateb_pos_sync_acceptances';
         return base;
     };
 

@@ -1,9 +1,8 @@
 /*!
- * RATEB Offline V2 — POS controlled sync gateway (Phase 11)
+ * RATEB Offline V2 — POS controlled sync gateway (Phase 11–12)
  *
- * Manual-only pipeline: Prepare → Validate Contract → Dry-Run API.
+ * Manual pipeline: Prepare → Validate → Accept (WAITING_COMMIT).
  * Commit disabled. Never starts sync engine, SW push, or boot sync.
- * Mode: DRY_RUN_ONLY — no server-side mutations expected.
  */
 (function (root) {
     'use strict';
@@ -19,20 +18,28 @@
         meta: 'pos.sync_center_meta'
     };
 
-    var MODE = 'DRY_RUN_ONLY';
+    var MODE = 'ACCEPT_WAITING_COMMIT';
     var VALIDATE_URL = '/rateb-erp/api/v1/pos/sync/validate';
+    var ACCEPT_URL = '/rateb-erp/api/v1/pos/sync/accept';
 
     var SYNC_STATUS = {
         SYNC_PENDING: 'SYNC_PENDING',
         VALIDATING: 'VALIDATING',
         VALIDATED: 'VALIDATED',
+        SERVER_ACCEPTED: 'SERVER_ACCEPTED',
         REJECTED: 'REJECTED'
     };
 
     var ALLOWED = {
         SYNC_PENDING: { VALIDATING: true },
-        VALIDATING: { VALIDATED: true, REJECTED: true, SYNC_PENDING: true },
-        VALIDATED: {},
+        VALIDATING: {
+            VALIDATED: true,
+            REJECTED: true,
+            SYNC_PENDING: true,
+            SERVER_ACCEPTED: true
+        },
+        VALIDATED: { VALIDATING: true, SERVER_ACCEPTED: true },
+        SERVER_ACCEPTED: {},
         REJECTED: { SYNC_PENDING: true, VALIDATING: true }
     };
 
@@ -296,10 +303,10 @@
             });
         }
 
-        function callValidateApi(payload) {
+        function callApi(url, payload) {
             var hit = {
                 at: nowIso(),
-                url: VALIDATE_URL,
+                url: url,
                 method: 'POST',
                 mode: MODE
             };
@@ -307,13 +314,21 @@
             var transport = state.transport || defaultTransport;
             return Promise.resolve()
                 .then(function () {
-                    return transport(VALIDATE_URL, payload, state.bearerToken);
+                    return transport(url, payload, state.bearerToken);
                 })
                 .then(function (res) {
                     hit.http_status = res && res.http_status;
                     hit.ok = !!(res && res.body && (res.body.accepted === true || res.body.ok === true));
                     return res;
                 });
+        }
+
+        function callValidateApi(payload) {
+            return callApi(VALIDATE_URL, payload);
+        }
+
+        function callAcceptApi(payload) {
+            return callApi(ACCEPT_URL, payload);
         }
 
         /**
@@ -584,6 +599,302 @@
             });
         }
 
+        /**
+         * Manual Accept Sync — POST /sync/accept → SERVER_ACCEPTED / WAITING_COMMIT.
+         * Network/5xx/validation failures return to SYNC_PENDING (no data loss).
+         */
+        function acceptOnline(idCtx, saleId) {
+            if (!saleId) {
+                return Promise.reject(new Error('pos_sale_id_required'));
+            }
+            if (!isOnline() && !state.transport) {
+                return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                    reason: 'offline',
+                    action: 'accept',
+                    mode: MODE
+                }).then(function () {
+                    return {
+                        ok: false,
+                        offline: true,
+                        accepted: false,
+                        waiting_commit: false,
+                        sync_status: SYNC_STATUS.SYNC_PENDING,
+                        api_called: false,
+                        sync_started: false,
+                        mode: MODE
+                    };
+                });
+            }
+
+            return softAudit(idCtx, 'SYNC_VALIDATION_STARTED', ET.sale, saleId, {
+                action: 'accept',
+                mode: MODE
+            }).then(function () {
+                return Promise.all([
+                    module._getConflict().scanConflicts(idCtx),
+                    getSale(idCtx, saleId),
+                    module._getDevice().ensureIdentity(idCtx),
+                    listReservationsForSale(idCtx, saleId)
+                ]);
+            }).then(function (parts) {
+                var scan = parts[0];
+                var sale = parts[1];
+                var device = parts[2];
+                var reservations = parts[3] || [];
+                if (!sale) {
+                    return Promise.reject(new Error('pos_sale_not_found'));
+                }
+                if (sale.status !== 'COMPLETED') {
+                    return Promise.reject(new Error('pos_sale_not_completed'));
+                }
+                if (sale.sync_status === SYNC_STATUS.SERVER_ACCEPTED && sale.server_sync_id) {
+                    return {
+                        ok: true,
+                        accepted: true,
+                        already_processed: true,
+                        server_sync_id: sale.server_sync_id,
+                        waiting_commit: true,
+                        sync_status: SYNC_STATUS.SERVER_ACCEPTED,
+                        api_called: false,
+                        sync_started: false,
+                        mode: MODE
+                    };
+                }
+                var saleSyncKey = sale.sync_key ? String(sale.sync_key) : '';
+                var blocking = (scan.conflicts || []).filter(function (c) {
+                    if (!c || c.severity !== 'ERROR') {
+                        return false;
+                    }
+                    if (String(c.entity_id) === String(saleId)) {
+                        return true;
+                    }
+                    if (c.conflict_type === 'duplicate_sync_key' && saleSyncKey &&
+                        c.details && String(c.details.sync_key || '') === saleSyncKey) {
+                        return true;
+                    }
+                    return false;
+                });
+                if (blocking.length) {
+                    return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                        reason: 'local_conflicts',
+                        action: 'accept',
+                        mode: MODE
+                    }).then(function () {
+                        return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.SYNC_PENDING, {
+                            last_accept_error: 'local_conflicts'
+                        }).catch(function () {
+                            return sale;
+                        }).then(function (updated) {
+                            return {
+                                ok: false,
+                                accepted: false,
+                                stopped: true,
+                                reason: 'local_conflicts',
+                                conflicts: blocking,
+                                sale: updated,
+                                sync_status: SYNC_STATUS.SYNC_PENDING,
+                                waiting_commit: false,
+                                api_called: false,
+                                sync_started: false,
+                                mode: MODE
+                            };
+                        });
+                    });
+                }
+
+                var payload = buildPayload(sale, device, reservations);
+                var localErrors = validateLocalContract(payload);
+                if (localErrors.length) {
+                    return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                        reason: 'local_contract',
+                        action: 'accept',
+                        errors: localErrors,
+                        mode: MODE
+                    }).then(function () {
+                        return ensurePending(idCtx, saleId).then(function (updated) {
+                            return {
+                                ok: false,
+                                accepted: false,
+                                reason: 'local_contract',
+                                conflicts: localErrors,
+                                sale: updated,
+                                sync_status: SYNC_STATUS.SYNC_PENDING,
+                                waiting_commit: false,
+                                api_called: false,
+                                sync_started: false,
+                                mode: MODE
+                            };
+                        });
+                    });
+                }
+
+                return enterValidating(idCtx, sale).then(function () {
+                    return callAcceptApi(payload).then(function (res) {
+                        var body = (res && res.body) || {};
+                        var http = res && res.http_status;
+                        var accepted = body.accepted === true;
+                        var httpOk = http >= 200 && http < 300;
+
+                        if (!httpOk && (http === 0 || http === 401 || http === 403 ||
+                            http === 408 || http >= 500 || body.network_error)) {
+                            return ensurePending(idCtx, saleId).then(function (updated) {
+                                return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                                    reason: 'network_or_auth',
+                                    http_status: http,
+                                    action: 'accept',
+                                    mode: MODE
+                                }).then(function () {
+                                    return {
+                                        ok: false,
+                                        accepted: false,
+                                        reason: http === 403 ? 'permission_denied' : 'network',
+                                        sale: updated,
+                                        sync_status: SYNC_STATUS.SYNC_PENDING,
+                                        waiting_commit: false,
+                                        api_called: true,
+                                        http_status: http,
+                                        network_error: http !== 403,
+                                        permission_denied: http === 403,
+                                        sync_started: false,
+                                        mode: MODE
+                                    };
+                                });
+                            });
+                        }
+
+                        if (!accepted || !httpOk) {
+                            return ensurePending(idCtx, saleId).then(function (updated) {
+                                return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                                    reason: 'server_rejected',
+                                    http_status: http,
+                                    conflicts: body.conflicts || [],
+                                    action: 'accept',
+                                    mode: MODE
+                                }).then(function () {
+                                    return {
+                                        ok: false,
+                                        accepted: false,
+                                        reason: 'server_rejected',
+                                        conflicts: body.conflicts || [],
+                                        warnings: body.warnings || [],
+                                        sale: updated,
+                                        sync_status: SYNC_STATUS.SYNC_PENDING,
+                                        waiting_commit: false,
+                                        api_called: true,
+                                        http_status: http,
+                                        sync_started: false,
+                                        mode: MODE
+                                    };
+                                });
+                            });
+                        }
+
+                        return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.SERVER_ACCEPTED, {
+                            server_sync_id: body.server_sync_id || null,
+                            waiting_commit: true,
+                            already_processed: !!body.already_processed,
+                            last_accept_at: nowIso(),
+                            synced: false
+                        }).then(function (updated) {
+                            return softAudit(idCtx, 'SYNC_VALIDATION_SUCCESS', ET.sale, saleId, {
+                                action: 'accept',
+                                server_sync_id: body.server_sync_id,
+                                already_processed: !!body.already_processed,
+                                waiting_commit: true,
+                                mode: MODE
+                            }).then(function () {
+                                return writeMeta(idCtx, {
+                                    last_sync_at: nowIso(),
+                                    last_accept_at: nowIso(),
+                                    last_server_sync_id: body.server_sync_id || null
+                                }).then(function (meta) {
+                                    return {
+                                        ok: true,
+                                        accepted: true,
+                                        already_processed: !!body.already_processed,
+                                        server_sync_id: body.server_sync_id || null,
+                                        warnings: body.warnings || [],
+                                        conflicts: body.conflicts || [],
+                                        waiting_commit: true,
+                                        sale: updated,
+                                        sync_status: SYNC_STATUS.SERVER_ACCEPTED,
+                                        payload: payload,
+                                        api_called: true,
+                                        http_status: http,
+                                        inventory_deducted: false,
+                                        accounting_posted: false,
+                                        invoice_created: false,
+                                        sync_started: false,
+                                        mode: MODE,
+                                        meta: meta
+                                    };
+                                });
+                            });
+                        });
+                    }, function (err) {
+                        return ensurePending(idCtx, saleId).then(function (updated) {
+                            return softAudit(idCtx, 'SYNC_VALIDATION_FAILED', ET.sale, saleId, {
+                                reason: 'network',
+                                error: String(err && err.message ? err.message : err),
+                                action: 'accept',
+                                mode: MODE
+                            }).then(function () {
+                                return {
+                                    ok: false,
+                                    accepted: false,
+                                    reason: 'network',
+                                    sale: updated,
+                                    sync_status: SYNC_STATUS.SYNC_PENDING,
+                                    waiting_commit: false,
+                                    api_called: true,
+                                    network_error: true,
+                                    sync_started: false,
+                                    mode: MODE
+                                };
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        function enterValidating(idCtx, sale) {
+            var from = sale.sync_status || SYNC_STATUS.SYNC_PENDING;
+            if (from === SYNC_STATUS.VALIDATING) {
+                return Promise.resolve(sale);
+            }
+            if (from === SYNC_STATUS.SYNC_PENDING || from === SYNC_STATUS.REJECTED ||
+                from === SYNC_STATUS.VALIDATED) {
+                return updateSaleSyncStatus(idCtx, sale.id, SYNC_STATUS.VALIDATING, {
+                    last_accept_started_at: nowIso()
+                });
+            }
+            return Promise.reject(new Error('pos_invalid_sync_transition:' + from + '->VALIDATING'));
+        }
+
+        function ensurePending(idCtx, saleId) {
+            return getSale(idCtx, saleId).then(function (sale) {
+                var from = (sale && sale.sync_status) || SYNC_STATUS.SYNC_PENDING;
+                if (!sale || from === SYNC_STATUS.SYNC_PENDING) {
+                    return sale;
+                }
+                if (from === SYNC_STATUS.VALIDATING || from === SYNC_STATUS.REJECTED) {
+                    return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.SYNC_PENDING, {
+                        last_accept_at: nowIso()
+                    });
+                }
+                if (from === SYNC_STATUS.VALIDATED) {
+                    return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.VALIDATING, {})
+                        .then(function () {
+                            return updateSaleSyncStatus(idCtx, saleId, SYNC_STATUS.SYNC_PENDING, {
+                                last_accept_at: nowIso()
+                            });
+                        });
+                }
+                return sale;
+            });
+        }
+
         /** Commit Sync — disabled until a future phase. */
         function commitSync() {
             return Promise.reject(new Error('pos_sync_commit_disabled'));
@@ -606,7 +917,7 @@
                 var preview = parts[4] || {};
                 var pending = sales.filter(function (s) {
                     return s && s.status === 'COMPLETED' &&
-                        s.sync_status !== SYNC_STATUS.VALIDATED &&
+                        s.sync_status !== SYNC_STATUS.SERVER_ACCEPTED &&
                         s.synced !== true;
                 });
                 return {
@@ -652,6 +963,7 @@
             ensureStore: ensureStore,
             prepareSync: prepareSync,
             validateOnline: validateOnline,
+            acceptOnline: acceptOnline,
             commitSync: commitSync,
             buildPayload: buildPayload,
             validateLocalContract: validateLocalContract,
@@ -662,6 +974,7 @@
             getApiHits: getApiHits,
             clearApiHits: clearApiHits,
             updateSaleSyncStatus: updateSaleSyncStatus,
+            ACCEPT_URL: ACCEPT_URL,
             isStoreOpen: function () { return !!state.store; }
         };
     }
@@ -670,6 +983,7 @@
         __locked: true,
         create: createPosSyncGateway,
         MODE: MODE,
-        SYNC_STATUS: SYNC_STATUS
+        SYNC_STATUS: SYNC_STATUS,
+        ACCEPT_URL: ACCEPT_URL
     };
 })(typeof window !== 'undefined' ? window : this);

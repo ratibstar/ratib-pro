@@ -3,8 +3,8 @@
  *
  * Entity types on existing entity_row:
  *   pos.sale_draft, pos.sale_line, pos.cart_session, pos.sale
- * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → VALIDATING → VALIDATED|REJECTED.
- * Commit/SYNCED disabled. Cancel keeps history. No inv.* writes or auto sync.start().
+ * Lifecycle: OPEN → COMPLETED → SYNC_PENDING → VALIDATING → VALIDATED → SERVER_ACCEPTED.
+ * Commit disabled. Cancel keeps history. No inv.* writes or auto sync.start().
  */
 (function (root) {
     'use strict';
@@ -27,11 +27,12 @@
         CANCELLED: 'CANCELLED'
     };
 
-    /** Sync lifecycle (Phase 11). Commit/SYNCED not enabled yet. */
+    /** Sync lifecycle (Phase 12). SERVER_ACCEPTED = waiting_commit; no COMMITTED. */
     var SYNC_STATUS = {
         SYNC_PENDING: 'SYNC_PENDING',
         VALIDATING: 'VALIDATING',
         VALIDATED: 'VALIDATED',
+        SERVER_ACCEPTED: 'SERVER_ACCEPTED',
         REJECTED: 'REJECTED'
     };
 
@@ -50,8 +51,14 @@
 
     var ALLOWED_SYNC_TRANSITIONS = {
         SYNC_PENDING: { VALIDATING: true },
-        VALIDATING: { VALIDATED: true, REJECTED: true, SYNC_PENDING: true },
-        VALIDATED: {},
+        VALIDATING: {
+            VALIDATED: true,
+            REJECTED: true,
+            SYNC_PENDING: true,
+            SERVER_ACCEPTED: true
+        },
+        VALIDATED: { VALIDATING: true, SERVER_ACCEPTED: true },
+        SERVER_ACCEPTED: {},
         REJECTED: { SYNC_PENDING: true, VALIDATING: true }
     };
 
@@ -895,8 +902,10 @@
                     if (sale.status !== STATUS.COMPLETED) {
                         return Promise.reject(new Error('pos_sale_cancel_not_allowed'));
                     }
-                    if (sale.synced === true || sale.sync_status === SYNC_STATUS.VALIDATED) {
-                        return Promise.reject(new Error('pos_sale_validated_locked'));
+                    if (sale.synced === true ||
+                        sale.sync_status === SYNC_STATUS.VALIDATED ||
+                        sale.sync_status === SYNC_STATUS.SERVER_ACCEPTED) {
+                        return Promise.reject(new Error('pos_sale_accepted_locked'));
                     }
                     return assertSaleTransition(STATUS.COMPLETED, STATUS.CANCELLED).then(function () {
                         var cancelledAt = nowIso();
