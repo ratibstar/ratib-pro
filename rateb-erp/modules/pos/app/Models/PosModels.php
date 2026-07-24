@@ -248,6 +248,10 @@ final class PosSyncAcceptance extends Model
 
         'installation_id', 'payload', 'status', 'accepted_at',
 
+        'order_id', 'committed_at', 'failed_at', 'last_error', 'error_code',
+
+        'retry_count', 'committing_at', 'processing_ms', 'commit_token',
+
     ];
 
 }

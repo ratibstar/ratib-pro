@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace Rateb\App\Pos\Controllers;
 
+use Rateb\App\Core\TenantContext;
 use Rateb\App\Pos\Services\PosContextService;
 use Rateb\App\Pos\Services\PosHardwareManager;
 use Rateb\App\Pos\Services\PosOfflineSyncService;
 use Rateb\App\Pos\Services\PosPricingService;
 use Rateb\App\Pos\Services\PosSyncAcceptanceService;
+use Rateb\App\Pos\Services\PosSyncCommitService;
 use Rateb\App\Pos\Services\PosSyncValidateService;
+use Rateb\App\Pos\Support\PosBranchScope;
 
 final class PosApiController extends PosBaseController
 {
@@ -85,6 +88,39 @@ final class PosApiController extends PosBaseController
         $this->json(array_merge([
             'ok' => (bool) ($result['accepted'] ?? false),
         ], $result));
+    }
+
+    /**
+     * Phase 13 — commit accepted sync payload via PosCheckoutService::complete().
+     */
+    public function syncCommit(): void
+    {
+        $this->bootstrapPos();
+        $this->guardPosPermission('pos.sale.complete', 'pos/sync');
+        $body = $this->jsonBody();
+        $companyId = $this->companyId();
+        $userId = (int) (TenantContext::apiUserId() ?? $this->userId());
+        $branchId = (int) ($body['branch_id'] ?? 0);
+        if ($branchId > 0) {
+            PosBranchScope::registerBranchId($branchId);
+        }
+        $selector = [
+            'id' => (int) ($body['id'] ?? $body['acceptance_id'] ?? 0),
+            'server_sync_id' => trim((string) ($body['server_sync_id'] ?? '')),
+            'sync_key' => trim((string) ($body['sync_key'] ?? '')),
+        ];
+        $service = new PosSyncCommitService();
+        $result = $service->commit($companyId, $selector, [
+            'company_id' => $companyId,
+            'user_id' => $userId,
+            'branch_id' => $branchId,
+            'device_id' => trim((string) ($body['device_id'] ?? '')),
+            'terminal_id' => (int) ($body['terminal_id'] ?? 0),
+        ]);
+        $http = (int) ($result['http_status'] ?? 200);
+        unset($result['http_status']);
+        http_response_code($http > 0 ? $http : 200);
+        $this->json($result);
     }
 
     public function syncPush(): void

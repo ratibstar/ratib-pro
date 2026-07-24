@@ -30,7 +30,7 @@ use Rateb\App\Pos\Support\PosDocumentCodes;
 
 /** Atomic POS checkout — single DB transaction for order, stock, payments. */
 
-final class PosCheckoutService
+final class PosCheckoutService implements PosCheckoutCompletePort
 
 {
 
@@ -711,23 +711,7 @@ final class PosCheckoutService
     /** @return array<string, mixed>|null */
     private function findCompletedOrderByIdempotencyKey(int $companyId, string $key, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT * FROM rateb_pos_orders WHERE company_id = :cid AND idempotency_key = :k LIMIT 1';
-        if ($forUpdate) {
-            $sql = 'SELECT * FROM rateb_pos_orders WHERE company_id = :cid AND idempotency_key = :k LIMIT 1 FOR UPDATE';
-        }
-        $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(['cid' => $companyId, 'k' => $key]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row) {
-            return null;
-        }
-        if ((string) ($row['status'] ?? '') === 'completed') {
-            return $row;
-        }
-        if ((string) ($row['status'] ?? '') === 'processing') {
-            throw new \RuntimeException(__('pos_checkout_in_progress'));
-        }
-        return null;
+        return (new PosOrderIdempotencyLookup())->findCompleted($companyId, $key, $forUpdate);
     }
 
     /** @param array<string, mixed> $orderRow @return array<string, mixed> */
