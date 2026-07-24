@@ -495,9 +495,26 @@
     }
 
     function rememberExistingScripts() {
+        // Call only on full-page boot (scripts in main have executed via defer).
+        // Never call after soft-nav swap — innerHTML leaves inert <script> tags that
+        // would poison loadedScripts and skip scheduleModuleScripts (mail DNS, etc.).
         document.querySelectorAll('script[src]').forEach(function (s) {
             loadedScripts[scriptKey(s.src)] = true;
         });
+    }
+
+    /** Remove inert <script> nodes from a soft-nav fragment after paint. */
+    function stripInertScripts(rootEl) {
+        if (!rootEl || !rootEl.querySelectorAll) {
+            return;
+        }
+        try {
+            Array.prototype.forEach.call(rootEl.querySelectorAll('script'), function (s) {
+                if (s.parentNode) {
+                    s.parentNode.removeChild(s);
+                }
+            });
+        } catch (eStrip) { /* ignore */ }
     }
 
     function postSw(msg) {
@@ -1048,6 +1065,12 @@
             } catch (e2) { /* ignore */ }
         }
         ensureDashboardCharts();
+        try {
+            if (typeof root.ratebMailDnsBoot === 'function'
+                && document.querySelector('[data-mail-dns-async]')) {
+                root.ratebMailDnsBoot({ immediate: true });
+            }
+        } catch (eMailDns) { /* ignore */ }
     }
 
     function setMainNavBusy(busy) {
@@ -1528,6 +1551,9 @@
             cleanupSoftNavUiArtifacts();
             ensureAgentAppsCss(pack.finalUrl || href);
             curMain.innerHTML = nextMain.innerHTML;
+            // Inert scripts from innerHTML never run — strip from painted main only.
+            // Keep scripts on `doc` so scheduleModuleScripts can inject them.
+            stripInertScripts(curMain);
             syncMeta(doc);
             updateActiveNav(pack.finalUrl);
             clearNavPending();
@@ -1539,7 +1565,8 @@
             }
             lastHref = pack.finalUrl;
             lastSoftNavMissHref = '';
-            rememberExistingScripts();
+            // Do NOT rememberExistingScripts() here — content scripts in `doc` are for
+            // scheduleModuleScripts; scanning the live main would be redundant.
             // Defer module script loads so paint wins (common libs already present).
             var afterScripts = function () {
                 if (swapTo._gen !== navGen) {

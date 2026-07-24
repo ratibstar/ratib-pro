@@ -1,12 +1,20 @@
 /**
  * Async mail DNS panel — never hang the Admin UI.
- * Auto-load with hard client timeout; fall back to manual retry.
+ * Soft-nav safe: boot on afterEnter + ratebMailDnsBoot from erp-nav-instant.
  */
-(function () {
+(function (root) {
     'use strict';
 
-    function bindCopyButtons(root) {
-        (root || document).querySelectorAll('[data-copy-target]').forEach(function (btn) {
+    if (root.__RATEB_MAIL_DNS_BOUND__) {
+        if (typeof root.ratebMailDnsBoot === 'function') {
+            root.ratebMailDnsBoot({ immediate: true });
+        }
+        return;
+    }
+    root.__RATEB_MAIL_DNS_BOUND__ = true;
+
+    function bindCopyButtons(scope) {
+        (scope || document).querySelectorAll('[data-copy-target]').forEach(function (btn) {
             if (btn.getAttribute('data-copy-bound') === '1') {
                 return;
             }
@@ -43,9 +51,12 @@
                 : '');
     }
 
-    function loadDnsPanel(host) {
+    function loadDnsPanel(host, force) {
         var url = host.getAttribute('data-mail-dns-url');
-        if (!url || host.getAttribute('data-mail-dns-loading') === '1') {
+        if (!url) {
+            return;
+        }
+        if (!force && host.getAttribute('data-mail-dns-loading') === '1') {
             return;
         }
         host.setAttribute('data-mail-dns-loading', '1');
@@ -54,7 +65,7 @@
             if (ctrl) {
                 try { ctrl.abort(); } catch (e) { /* ignore */ }
             }
-        }, 4000);
+        }, 8000);
 
         fetch(url, {
             credentials: 'same-origin',
@@ -77,40 +88,57 @@
             })
             .finally(function () {
                 clearTimeout(timer);
-                host.removeAttribute('data-mail-dns-loading');
+                try {
+                    host.removeAttribute('data-mail-dns-loading');
+                } catch (eFin) { /* ignore */ }
             });
     }
 
     function bindRetry(host) {
         var btn = host.querySelector('[data-mail-dns-retry]');
-        if (!btn) {
+        if (!btn || btn.getAttribute('data-retry-bound') === '1') {
             return;
         }
+        btn.setAttribute('data-retry-bound', '1');
         btn.addEventListener('click', function () {
             host.innerHTML = '<p class="text-muted small mb-0">Checking DNS…</p>';
-            loadDnsPanel(host);
+            host.removeAttribute('data-mail-dns-loading');
+            loadDnsPanel(host, true);
         });
     }
 
-    function boot() {
-        // Defer DNS until idle so settings page paints and stays clickable first.
+    function boot(opts) {
+        var immediate = !!(opts && opts.immediate);
         var run = function () {
-            document.querySelectorAll('[data-mail-dns-async]').forEach(loadDnsPanel);
+            document.querySelectorAll('[data-mail-dns-async]').forEach(function (host) {
+                if (immediate) {
+                    host.removeAttribute('data-mail-dns-loading');
+                    loadDnsPanel(host, true);
+                } else {
+                    loadDnsPanel(host, false);
+                }
+            });
             bindCopyButtons(document);
         };
-        if (window.requestIdleCallback) {
-            window.requestIdleCallback(run, { timeout: 2500 });
+        if (immediate) {
+            run();
+            return;
+        }
+        if (root.requestIdleCallback) {
+            root.requestIdleCallback(run, { timeout: 2500 });
         } else {
-            setTimeout(run, 800);
+            setTimeout(run, 400);
         }
     }
 
+    root.ratebMailDnsBoot = boot;
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
+        document.addEventListener('DOMContentLoaded', function () { boot(); });
     } else {
         boot();
     }
     document.addEventListener('rateb:nav:afterEnter', function () {
-        setTimeout(boot, 300);
+        boot({ immediate: true });
     });
-})();
+})(typeof window !== 'undefined' ? window : this);
