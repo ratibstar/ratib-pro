@@ -1132,15 +1132,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 })();
 </script>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
-                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_url('locale/en'), ENT_QUOTES, 'UTF-8'); ?>"
+                    <a href="<?php echo htmlspecialchars(rateb_locale_switch_url('en'), ENT_QUOTES, 'UTF-8'); ?>"
                        class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>"
                        data-locale="en"
-                       data-locale-base="<?php echo htmlspecialchars(rateb_url('locale/en'), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-locale-base="<?php echo htmlspecialchars(rateb_erp_locale_base_url('en'), ENT_QUOTES, 'UTF-8'); ?>"
                        data-rateb-full-nav="1">EN</a>
-                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_url('locale/ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                    <a href="<?php echo htmlspecialchars(rateb_locale_switch_url('ar'), ENT_QUOTES, 'UTF-8'); ?>"
                        class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>"
                        data-locale="ar"
-                       data-locale-base="<?php echo htmlspecialchars(rateb_url('locale/ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-locale-base="<?php echo htmlspecialchars(rateb_erp_locale_base_url('ar'), ENT_QUOTES, 'UTF-8'); ?>"
                        data-rateb-full-nav="1">عربي</a>
                 </div>
             </div>

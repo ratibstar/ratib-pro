@@ -22,6 +22,11 @@ final class LocaleController extends Controller
                 rateb_set_locale_cookie($locale);
             }
         }
+        // Locale pages must never be cached (SW / soft-nav HTML would keep old language).
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+        }
         Response::redirect($this->localeRedirectTarget());
     }
 

@@ -47,6 +47,9 @@ final class LoginController extends Controller
                 if ($user && Auth::loginUser($user)) {
                     if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
                         $_SESSION['rateb_locale'] = $user['locale'];
+                        if (function_exists('rateb_set_locale_cookie')) {
+                            rateb_set_locale_cookie((string) $user['locale']);
+                        }
                     }
                     (new User())->updateLastLogin((int) $user['id']);
                     (new AuditService())->log('login', 'user', (int) $user['id'], ['method' => 'barcode_pair']);
@@ -304,6 +307,9 @@ final class LoginController extends Controller
 
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $user['locale'];
+            if (function_exists('rateb_set_locale_cookie')) {
+                rateb_set_locale_cookie((string) $user['locale']);
+            }
         }
         if ($this->input('remember')) {
             (new RememberMeService())->issue((int) $user['id']);

@@ -27,16 +27,31 @@
         }
     }
 
+    /** Prefer /rateb-erp/public/locale/* so the ERP session cookie is included. */
+    function ensureAppPrefixLocaleBase(base, locale) {
+        try {
+            var u = new URL(base, window.location.href);
+            var loc = locale || 'ar';
+            // Domain-root /locale/x on rateb.sa does not receive path=/rateb-erp/public session.
+            if (/\/locale\/(en|ar)\/?$/i.test(u.pathname) && u.pathname.indexOf('/rateb-erp/public/') === -1) {
+                return u.origin + '/rateb-erp/public/locale/' + loc;
+            }
+            return u.href.split('?')[0];
+        } catch (e) {
+            return base;
+        }
+    }
+
     function buildLocaleUrl(anchor) {
         var locale = anchor.getAttribute('data-locale') || 'ar';
         var base = anchor.getAttribute('data-locale-base') || anchor.getAttribute('href') || '';
+        base = ensureAppPrefixLocaleBase(base, locale);
         var url;
         try {
             url = new URL(base, window.location.href);
         } catch (eUrl) {
             return base;
         }
-        // Strip prior next/company_id then set from current page (soft-nav safe).
         url.searchParams.delete('next');
         url.searchParams.delete('company_id');
         url.searchParams.set('next', erpNextPath());
@@ -47,6 +62,19 @@
             }
         } catch (eCid) { /* ignore */ }
         return url.toString();
+    }
+
+    function purgeHtmlCaches() {
+        try {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'PURGE_ERP_AUTH_CACHE' });
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'RATEB_HTML_CACHE_BUST',
+                    reason: 'locale-switch',
+                    at: Date.now()
+                });
+            }
+        } catch (eSw) { /* ignore */ }
     }
 
     function refreshLocaleHrefs() {
@@ -66,8 +94,9 @@
             return;
         }
         ev.preventDefault();
-        ev.stopPropagation();
+        try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
         var href = buildLocaleUrl(link);
+        purgeHtmlCaches();
         try {
             window.location.assign(href);
         } catch (eGo) {

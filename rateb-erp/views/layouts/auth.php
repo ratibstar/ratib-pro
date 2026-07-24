@@ -37,8 +37,12 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
         <div class="text-center mb-3">
             <div class="d-flex justify-content-center gap-2 mb-3">
                 <div class="btn-group btn-group-sm">
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>">عربي</a>
+                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_erp_locale_base_url('en'), ENT_QUOTES, 'UTF-8'); ?>"
+                       class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>"
+                       data-rateb-full-nav="1">EN</a>
+                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_erp_locale_base_url('ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                       class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>"
+                       data-rateb-full-nav="1">عربي</a>
                 </div>
             </div>
             <i class="fas fa-hospital fa-2x text-primary mb-2"></i>

@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260724-theme-lang-v130');
+define('RATEB_ASSET_BUILD', '20260724-locale-session-v131');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1308,20 +1308,42 @@ if (!function_exists('rateb_list_order_sql')) {
     }
 }
 
+if (!function_exists('rateb_erp_locale_base_url')) {
+    /**
+     * Locale switch under ERP app prefix so the rateb_erp session cookie is sent.
+     * Domain-root /locale/* on rateb.sa does not receive path=/rateb-erp/public cookies,
+     * so Admin switches appeared to "fail" (session stayed Arabic).
+     */
+    function rateb_erp_locale_base_url(string $locale): string
+    {
+        if (!in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
+            $locale = RATEB_DEFAULT_LOCALE;
+        }
+
+        return rateb_site_origin() . rtrim(rateb_erp_app_prefix(), '/') . '/locale/' . $locale;
+    }
+}
+
 if (!function_exists('rateb_init_marketing_locale')) {
     function rateb_init_marketing_locale(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             return;
         }
-        if (!empty($_SESSION['rateb_locale']) && in_array((string) $_SESSION['rateb_locale'], RATEB_SUPPORTED_LOCALES, true)) {
-            return;
-        }
+        // Explicit locale cookie (from /locale/{en|ar}) wins over a stale session value.
+        // Domain-root switches used to set the cookie while leaving the ERP session on "ar".
         if (!empty($_COOKIE['rateb_locale'])) {
             $cookieLang = strtolower(trim((string) $_COOKIE['rateb_locale']));
             if (in_array($cookieLang, RATEB_SUPPORTED_LOCALES, true)) {
-                $_SESSION['rateb_locale'] = $cookieLang;
+                if ((string) ($_SESSION['rateb_locale'] ?? '') !== $cookieLang) {
+                    $_SESSION['rateb_locale'] = $cookieLang;
+                }
+
+                return;
             }
+        }
+        if (!empty($_SESSION['rateb_locale']) && in_array((string) $_SESSION['rateb_locale'], RATEB_SUPPORTED_LOCALES, true)) {
+            return;
         }
     }
 }
@@ -1344,6 +1366,8 @@ if (!function_exists('rateb_set_locale_cookie')) {
         } else {
             setcookie('rateb_locale', $locale, time() + 86400 * 365, '/', '', $secure, false);
         }
+        // Also expose to this request so redirects in the same tick see English/Arabic.
+        $_COOKIE['rateb_locale'] = $locale;
     }
 }
 
@@ -1366,7 +1390,7 @@ if (!function_exists('rateb_locale_switch_url')) {
             }
         }
 
-        return rateb_url_query(rateb_url('locale/' . $locale), $query);
+        return rateb_url_query(rateb_erp_locale_base_url($locale), $query);
     }
 }
 
