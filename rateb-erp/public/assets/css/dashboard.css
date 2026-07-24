@@ -419,6 +419,18 @@
     pointer-events: none;
 }
 
+.cm-chart.is-empty::after {
+    content: attr(data-empty-label, '—');
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(148, 163, 184, 0.85);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
 @keyframes cm-chart-shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }

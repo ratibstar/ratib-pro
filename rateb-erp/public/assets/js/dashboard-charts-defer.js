@@ -84,6 +84,9 @@
                 } else if (state === 'empty') {
                     el.classList.remove('is-loading');
                     el.classList.add('is-empty');
+                    if (!el.getAttribute('data-empty-label')) {
+                        el.setAttribute('data-empty-label', '—');
+                    }
                 }
             });
         } catch (eMark) { /* ignore */ }
@@ -195,7 +198,7 @@
                 if (ctrl) {
                     try { ctrl.abort(); } catch (e) { /* ignore */ }
                 }
-            }, 6000);
+            }, 15000);
 
             fetch(url, {
                 credentials: 'same-origin',
@@ -244,4 +247,34 @@
      * Keep afterEnter for soft-nav content swaps when libs already loaded. */
     document.addEventListener('rateb:nav:afterEnter', boot);
     document.addEventListener('rateb:nav:beforeLeave', abortInflight);
+
+    /* Safety: if layout idle chain never boots (cancelled soft-nav / late scripts), stop infinite shimmer. */
+    function rescueStuckLoading() {
+        try {
+            if (!document.querySelector('[data-cm-dash="v5c"]')) {
+                return;
+            }
+            if (!document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
+                return;
+            }
+            boot();
+        } catch (eR) { /* ignore */ }
+    }
+    function clearStuckLoading() {
+        try {
+            if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
+                markCharts('empty');
+                boot();
+            }
+        } catch (eC) { /* ignore */ }
+    }
+    if (document.readyState === 'complete') {
+        setTimeout(rescueStuckLoading, 1200);
+        setTimeout(clearStuckLoading, 8000);
+    } else {
+        window.addEventListener('load', function () {
+            setTimeout(rescueStuckLoading, 1200);
+            setTimeout(clearStuckLoading, 8000);
+        }, { once: true });
+    }
 })();

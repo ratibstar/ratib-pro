@@ -966,9 +966,7 @@
     }
 
     function ensureDashboardCharts() {
-        if (isUiOffline()) {
-            return;
-        }
+        // Soft "offline" badge must not block chart hydrate (left shimmer forever).
         var run = function () {
             var rootDash = document.querySelector('[data-cm-dash][data-rateb-chartjs], [data-cm-dash="v5c"]');
             if (!rootDash || !document.querySelector('canvas[id^="chart-"]')) {
@@ -1027,13 +1025,13 @@
         if (typeof root.requestAnimationFrame === 'function') {
             root.requestAnimationFrame(function () {
                 if (typeof root.requestIdleCallback === 'function') {
-                    root.requestIdleCallback(run, { timeout: 2500 });
+                    root.requestIdleCallback(run, { timeout: 1200 });
                 } else {
-                    root.setTimeout(run, 200);
+                    root.setTimeout(run, 120);
                 }
             });
         } else {
-            root.setTimeout(run, 200);
+            root.setTimeout(run, 120);
         }
     }
 
