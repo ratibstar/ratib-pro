@@ -47,8 +47,8 @@ final class MailDnsCheckService
     }
 
     /**
-     * Fast DNS panel path: SPF/MX/DMARC + first DKIM hit only.
-     * Skips PTR + port25 (those hung shared-host PHP workers and froze Admin).
+     * Fast DNS panel path: SPF/MX/DMARC + first DKIM hit + port 25 probe.
+     * Port 25 probe uses a 2 s timeout to avoid hanging shared-host PHP workers.
      *
      * @return array{domain:string,spf:array{ok:bool,detail:string,count:int},dkim:array{ok:bool,detail:string,selector:?string},dmarc:array{ok:bool,detail:string},mx:array{ok:bool,detail:string},ptr:array{ok:bool,detail:string},port25:array{ok:bool,detail:string,skipped:bool},warnings:list<string>,ready_for_external:bool,recommendations:array<string,mixed>}
      */
@@ -67,11 +67,7 @@ final class MailDnsCheckService
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
         $ptr = ['ok' => true, 'detail' => 'skipped (fast check)'];
-        $port25 = [
-            'ok' => true,
-            'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost !== '' ? $smtpHost : $domain]),
-            'skipped' => true,
-        ];
+        $port25 = array_merge($this->checkPort25Outbound(), ['skipped' => false]);
 
         $warnings = [];
         if (($spf['count'] ?? 0) > 1) {
@@ -79,6 +75,9 @@ final class MailDnsCheckService
         }
         if (!$dmarc['ok']) {
             $warnings[] = __('mail_dns_warn_dmarc');
+        }
+        if (!$port25['ok']) {
+            $warnings[] = __('mail_port25_blocked_hint');
         }
 
         $dnsOk = $spf['ok'] && $dkim['ok'] && $mx['ok'];
@@ -93,7 +92,7 @@ final class MailDnsCheckService
             'smtp_host' => $smtpHost,
             'smtp_relay' => $usesRelay,
             'warnings' => $warnings,
-            'ready_for_external' => $dnsOk,
+            'ready_for_external' => $dnsOk && $port25['ok'],
             'recommendations' => $this->recommendedRecords($domain, $spf['ok'], $dkim['ok'], $usesRelay),
         ];
     }
@@ -108,16 +107,13 @@ final class MailDnsCheckService
         $mailCfg = new MailConfigService();
         $smtpHost = trim((string) ($mailCfg->resolve()['host'] ?? ''));
         $usesRelay = $mailCfg->isSmtpRelayHost($smtpHost);
-        $usesLocalMail = $mailCfg->isLocalRelayHost($smtpHost);
 
         $spf = $this->checkSpf($domain);
         $dkim = $this->checkDkim($domain);
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
         $ptr = $this->checkPtr($domain, $mx['detail'] ?? '');
-        $port25 = ($usesRelay || !$usesLocalMail)
-            ? ['ok' => true, 'detail' => __('mail_port25_relay_skip', ['host' => $smtpHost !== '' ? $smtpHost : $domain]), 'skipped' => true]
-            : array_merge($this->checkPort25Outbound(), ['skipped' => false]);
+        $port25 = array_merge($this->checkPort25Outbound(), ['skipped' => false]);
 
         $warnings = [];
         if (($spf['count'] ?? 0) > 1) {
@@ -241,7 +237,7 @@ final class MailDnsCheckService
             $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 2);
             if (is_resource($fp)) {
                 fclose($fp);
-                return ['ok' => true, 'detail' => $host . ':25'];
+                return ['ok' => true, 'detail' => __('mail_port25_active', ['host' => $host . ':25'])];
             }
         }
         return ['ok' => false, 'detail' => __('mail_port25_blocked_detail')];
