@@ -38,7 +38,10 @@ $dnsBadge = static function (bool $ok): string {
 $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendations'] : [];
 ?>
 <div class="border rounded p-2 mb-3 small rateb-mail-dns-panel">
-    <div class="fw-semibold mb-2"><i class="fas fa-globe"></i> <?php echo __('mail_dns_check_title'); ?> — <?php echo Rateb\App\Core\View::escape((string) ($mailDns['domain'] ?? 'rateb.sa')); ?></div>
+    <div class="fw-semibold mb-2 d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-globe"></i> <?php echo __('mail_dns_check_title'); ?> — <?php echo Rateb\App\Core\View::escape((string) ($mailDns['domain'] ?? 'rateb.sa')); ?></span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-mail-dns-refresh="1"><?php echo __('refresh'); ?></button>
+    </div>
     <ul class="list-unstyled mb-2">
         <li><span class="badge <?php echo $dnsBadge(!empty($mailDns['spf']['ok'])); ?>"><?php echo !empty($mailDns['spf']['ok']) ? 'SPF ✓' : 'SPF ✗'; ?></span>
             <?php echo Rateb\App\Core\View::escape((string) ($mailDns['spf']['detail'] ?? '')); ?></li>

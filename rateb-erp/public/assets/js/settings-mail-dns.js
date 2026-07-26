@@ -77,10 +77,12 @@
                 if (!data || !data.ok || !data.html) {
                     host.innerHTML = failHtml(host);
                     bindRetry(host);
+                    bindRefreshButtons(document);
                     return;
                 }
                 host.outerHTML = data.html;
                 bindCopyButtons(document);
+                bindRefreshButtons(document);
             })
             .catch(function () {
                 host.innerHTML = failHtml(host);
@@ -107,6 +109,30 @@
         });
     }
 
+    function bindRefreshButtons(scope) {
+        (scope || document).querySelectorAll('[data-mail-dns-refresh]').forEach(function (btn) {
+            if (btn.getAttribute('data-refresh-bound') === '1') {
+                return;
+            }
+            btn.setAttribute('data-refresh-bound', '1');
+            btn.addEventListener('click', function () {
+                var panel = btn.closest('.rateb-mail-dns-panel');
+                if (!panel) {
+                    return;
+                }
+                var url = panel.getAttribute('data-mail-dns-url') || '';
+                if (!url) {
+                    return;
+                }
+                var sep = url.indexOf('?') >= 0 ? '&' : '?';
+                panel.setAttribute('data-mail-dns-url', url + sep + 'refresh=1');
+                panel.innerHTML = '<p class="text-muted small mb-0">Checking DNS…</p>';
+                panel.removeAttribute('data-mail-dns-loading');
+                loadDnsPanel(panel, true);
+            });
+        });
+    }
+
     function boot(opts) {
         var immediate = !!(opts && opts.immediate);
         var run = function () {
@@ -119,6 +145,7 @@
                 }
             });
             bindCopyButtons(document);
+            bindRefreshButtons(document);
         };
         if (immediate) {
             run();
