@@ -9,6 +9,7 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\LoginActivity;
 use Rateb\App\Services\AutomationHealthService;
+use Rateb\App\Services\MailDiagnosticsService;
 use Rateb\App\Services\QueueWorkerService;
 
 final class AutomationDashboardController extends Controller
@@ -87,5 +88,61 @@ final class QueueMonitorController extends Controller
         $count = (new QueueWorkerService())->retryFailed(50);
         SessionManager::flash('success', __('queue_retried', ['count' => (string) $count]));
         Response::redirect(rateb_url('admin/queue-monitor?status=failed'));
+    }
+}
+
+final class EmailDiagnosticsController extends Controller
+{
+    public function index(): void
+    {
+        if (!function_exists('rateb_email_diagnostics_accessible') || !rateb_email_diagnostics_accessible()) {
+            Response::redirect(rateb_url('admin/settings'));
+            return;
+        }
+
+        $service = new MailDiagnosticsService();
+        $data = $service->collect();
+        $data['overall'] = $service->overall($data);
+
+        $this->view('admin/email-diagnostics/index', [
+            'title' => __('email_diagnostics_title'),
+            'data' => $data,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function runTest(): void
+    {
+        if (!function_exists('rateb_email_diagnostics_accessible') || !rateb_email_diagnostics_accessible()) {
+            Response::redirect(rateb_url('admin/settings'));
+            return;
+        }
+
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/email-diagnostics'));
+            return;
+        }
+
+        $service = new MailDiagnosticsService();
+        $to = trim((string) $this->input('test_to', 'info@rateb.sa'));
+        if ($to === '') {
+            $to = 'info@rateb.sa';
+        }
+
+        $data = $service->collect();
+        $data['test'] = $service->runTestEmail($to);
+        $data['overall'] = $service->overall($data);
+
+        SessionManager::flash(
+            ($data['test']['level'] ?? 'error') === 'success' ? 'success' : 'error',
+            (string) ($data['test']['message'] ?? __('email_diagnostics_test_failed'))
+        );
+
+        $this->view('admin/email-diagnostics/index', [
+            'title' => __('email_diagnostics_title'),
+            'data' => $data,
+            'testTo' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 }

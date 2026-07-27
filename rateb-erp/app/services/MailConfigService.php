@@ -8,6 +8,14 @@ use Rateb\App\Models\SystemSetting;
 /** Resolves SMTP settings from DB, project .env, and optional mail.secrets.php */
 final class MailConfigService
 {
+    private static bool $repairEnabled = true;
+
+    /** Read-only mode for diagnostic tools; does not affect normal requests. */
+    public static function setRepairEnabled(bool $enabled): void
+    {
+        self::$repairEnabled = $enabled;
+    }
+
     /** @var list<string> */
     private const MAIL_ENV_KEYS = [
         'RATEB_ERP_SMTP_HOST',
@@ -25,7 +33,39 @@ final class MailConfigService
     {
         $this->bootstrapMailEnvFromDotenvFile();
         $settings = new SystemSetting();
-        $this->repairSwappedSmtpInDb($settings);
+        if (self::$repairEnabled) {
+            $this->repairSwappedSmtpInDb($settings);
+        }
+        return $this->buildConfig($settings);
+    }
+
+    /**
+     * Read-only variant that also reports the source of each resolved value.
+     *
+     * @return array{config:array<string,mixed>,sources:array<string,string>}
+     */
+    public function resolveWithSources(): array
+    {
+        $this->bootstrapMailEnvFromDotenvFile();
+        $settings = new SystemSetting();
+
+        $config = $this->buildConfig($settings);
+        $sources = [
+            'host' => $this->sourceOf('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost'),
+            'port' => $this->sourceOf('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587'),
+            'encryption' => $this->sourceOf('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'),
+            'user' => $this->sourceOf('RATEB_ERP_SMTP_USER', 'smtp_user', $settings, 'info@rateb.sa'),
+            'from_email' => $this->sourceOf('RATEB_ERP_SMTP_FROM_EMAIL', 'smtp_from_email', $settings, 'info@rateb.sa'),
+            'from_name' => $this->sourceOf('RATEB_ERP_SMTP_FROM_NAME', 'smtp_from_name', $settings, 'Rateb ERP'),
+            'password' => $this->passwordSource($settings),
+        ];
+
+        return ['config' => $config, 'sources' => $sources];
+    }
+
+    /** @return array{host:string,port:int,encryption:string,user:string,pass:string,from_email:string,from_name:string} */
+    private function buildConfig(SystemSetting $settings): array
+    {
         $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
         $encryption = strtolower($this->envOrSetting('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'));
@@ -141,6 +181,90 @@ final class MailConfigService
             return trim((string) $val);
         }
         return $default;
+    }
+
+    private function sourceOf(string $envKey, string $settingKey, SystemSetting $settings, string $default = ''): string
+    {
+        $env = getenv($envKey);
+        if ($env !== false && trim((string) $env) !== '') {
+            if ($this->dotenvValueMatches($envKey, trim((string) $env))) {
+                return '.env';
+            }
+            return 'env';
+        }
+        $legacy = getenv('SMTP_' . strtoupper(substr($settingKey, 5)));
+        if ($legacy !== false && trim((string) $legacy) !== '' && str_starts_with($settingKey, 'smtp_')) {
+            return 'env';
+        }
+        $val = $settings->get($settingKey);
+        if ($val !== null && trim((string) $val) !== '') {
+            return 'database';
+        }
+        if ($default !== '') {
+            return 'default';
+        }
+        return 'missing';
+    }
+
+    private function passwordSource(SystemSetting $settings): string
+    {
+        $env = getenv('RATEB_ERP_SMTP_PASS');
+        if ($env !== false && trim((string) $env) !== '') {
+            if ($this->dotenvValueMatches('RATEB_ERP_SMTP_PASS', trim((string) $env))) {
+                return '.env';
+            }
+            return 'env';
+        }
+        $legacy = getenv('SMTP_PASS');
+        if ($legacy !== false && trim((string) $legacy) !== '') {
+            return 'env';
+        }
+        $db = (string) ($settings->get('smtp_pass', '') ?? '');
+        if (trim($db) !== '') {
+            return 'database';
+        }
+        foreach ($this->secretPaths() as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            $data = require $path;
+            if (!is_array($data)) {
+                continue;
+            }
+            $pass = trim((string) ($data['RATEB_ERP_SMTP_PASS'] ?? $data['SMTP_PASS'] ?? $data['smtp_pass'] ?? ''));
+            if ($pass !== '') {
+                return 'mail.secrets.php';
+            }
+        }
+        return 'missing';
+    }
+
+    private function dotenvValueMatches(string $key, string $value): bool
+    {
+        foreach ($this->dotenvPaths() as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
+            $lines = @file($path, FILE_IGNORE_NEW_LINES);
+            if (!is_array($lines)) {
+                continue;
+            }
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
+                    continue;
+                }
+                [$k, $v] = explode('=', $line, 2);
+                if (trim($k) !== $key) {
+                    continue;
+                }
+                $v = trim($v, " \t\"'");
+                if ($v === $value) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private function resolvePassword(SystemSetting $settings): string

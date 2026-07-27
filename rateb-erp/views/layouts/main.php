@@ -905,6 +905,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             $accessControlLinks[] = ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'];
             $accessControlLinks[] = ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'];
             $accessControlLinks[] = ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'];
+            if (function_exists('rateb_email_diagnostics_accessible') && rateb_email_diagnostics_accessible()) {
+                $accessControlLinks[] = ['admin/email-diagnostics', 'email_diagnostics', 'fa-stethoscope', 'settings.manage'];
+            }
             $accessControlLinks[] = ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'];
             $adminSection(__('access_control'), $accessControlLinks, 'fa-key');
             ?>

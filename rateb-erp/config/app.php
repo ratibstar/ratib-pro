@@ -747,6 +747,72 @@ if (!function_exists('rateb_hr_mobile_dev_console_enabled')) {
     }
 }
 
+if (!function_exists('rateb_email_diagnostics_flag_enabled')) {
+    /**
+     * Temporary email diagnostics page flag (default false).
+     * Primary: rateb_system_settings.email_diagnostics_enabled (Admin → Settings → Features).
+     * Fallback: env var EMAIL_DIAGNOSTICS_ENABLED.
+     */
+    function rateb_email_diagnostics_flag_enabled(): bool
+    {
+        static $cached = null;
+        static $bust = 0;
+        $token = $GLOBALS['__rateb_email_diagnostics_flag_bust'] ?? 0;
+        if ($cached !== null && $bust === $token) {
+            return $cached;
+        }
+        $bust = $token;
+
+        $raw = null;
+        try {
+            if (class_exists(\Rateb\App\Models\SystemSetting::class)) {
+                $raw = (new \Rateb\App\Models\SystemSetting())->get('email_diagnostics_enabled');
+            }
+        } catch (\Throwable $e) {
+            $raw = null;
+        }
+
+        if ($raw !== null && $raw !== '') {
+            $normalized = strtolower(trim((string) $raw));
+            $cached = in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+            return $cached;
+        }
+
+        $env = getenv('EMAIL_DIAGNOSTICS_ENABLED');
+        if ($env !== false && $env !== '') {
+            $cached = (bool) filter_var((string) $env, FILTER_VALIDATE_BOOLEAN);
+            return $cached;
+        }
+
+        $cached = false;
+        return $cached;
+    }
+}
+
+if (!function_exists('rateb_email_diagnostics_accessible')) {
+    /**
+     * Production-safe access: feature flag + Super Admin + settings.manage.
+     * Does not use APP_ENV / APP_DEBUG / rateb_is_production() to hide.
+     */
+    function rateb_email_diagnostics_accessible(): bool
+    {
+        if (!rateb_email_diagnostics_flag_enabled()) {
+            return false;
+        }
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return false;
+        }
+        $perm = 'settings.manage';
+        if (function_exists('rateb_can') && rateb_can($perm)) {
+            return true;
+        }
+        if (function_exists('rateb_nav_can') && rateb_nav_can($perm)) {
+            return true;
+        }
+        return false;
+    }
+}
+
 if (!function_exists('rateb_is_local_appliance_host')) {
     /** Loopback / Branch Appliance PHP built-in server (not cloud). */
     function rateb_is_local_appliance_host(?string $host = null): bool

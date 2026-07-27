@@ -51,6 +51,7 @@ return array (
   'Rateb\\App\\Controllers\\Admin\\CmsTimelineController' => '/app/controllers/Admin/CmsControllers.php',
   'Rateb\\App\\Controllers\\Admin\\CompaniesController' => '/app/controllers/Admin/AdminControllers.php',
   'Rateb\\App\\Controllers\\Admin\\DashboardController' => '/app/controllers/Admin/AdminControllers.php',
+  'Rateb\\App\\Controllers\\Admin\\EmailDiagnosticsController' => '/app/controllers/Admin/AutomationControllers.php',
   'Rateb\\App\\Controllers\\Admin\\EmailTemplatesController' => '/app/controllers/Admin/AdminControllers.php',
   'Rateb\\App\\Controllers\\Admin\\ExecutiveDashboardController' => '/app/controllers/Admin/BusinessControllers.php',
   'Rateb\\App\\Controllers\\Admin\\InventoryController' => '/app/controllers/Admin/AdminControllers.php',
