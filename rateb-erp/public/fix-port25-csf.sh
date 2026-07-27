@@ -35,6 +35,14 @@ else
     sed -i -E 's/^(TCP_OUT = "[^"]+)"/\1,25"/' "$CSF_CONF"
 fi
 
+# Disable SMTP Block if enabled (prevents PHP/ERP from sending mail)
+if grep -qE '^SMTP_BLOCK = "1"' "$CSF_CONF"; then
+    echo "Disabling CSF SMTP_BLOCK..."
+    sed -i -E 's/^(SMTP_BLOCK = )"1"/\1"0"/' "$CSF_CONF"
+else
+    echo "SMTP_BLOCK already disabled or not set."
+fi
+
 # Restart CSF
 echo "Restarting CSF..."
 csf -r
