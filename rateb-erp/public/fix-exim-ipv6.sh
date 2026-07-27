@@ -23,6 +23,17 @@ fi
 cp "$EXIM_CONF" "$EXIM_CONF.bak.$(date +%s)"
 echo "Backup created: $EXIM_CONF.bak.*"
 
+# Check if primary_hostname is already set to mail.rateb.sa
+if grep -qE '^\s*primary_hostname\s*=\s*mail\.rateb\.sa' "$EXIM_CONF"; then
+    echo "primary_hostname = mail.rateb.sa already set."
+else
+    echo "Adding primary_hostname = mail.rateb.sa to $EXIM_CONF..."
+    # Remove any existing primary_hostname line first
+    sed -i '/^\s*primary_hostname\s*=/d' "$EXIM_CONF"
+    # Add at the top of the file
+    sed -i '1s/^/# Set outbound hostname to match PTR record\nprimary_hostname = mail.rateb.sa\n\n/' "$EXIM_CONF"
+fi
+
 # Check if disable_ipv6 is already set
 if grep -qE '^\s*disable_ipv6\s*=\s*true' "$EXIM_CONF"; then
     echo "disable_ipv6 = true already set."
@@ -47,5 +58,5 @@ if command -v exim &> /dev/null; then
 fi
 
 echo ""
-echo "Done. Exim should now use IPv4 only for outbound connections."
+echo "Done. Exim should now use IPv4 only and EHLO as mail.rateb.sa."
 echo "Re-test email delivery from ERP admin/settings."
