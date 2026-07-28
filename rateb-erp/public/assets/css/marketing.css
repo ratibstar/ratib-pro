@@ -774,3 +774,102 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
     gap: 0.5rem;
     margin-top: auto;
 }
+
+/* Hero outline button must be readable on the blue gradient */
+.rateb-mkt-hero .btn-outline-primary {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.rateb-mkt-hero .btn-outline-primary:hover,
+.rateb-mkt-hero .btn-outline-primary:focus {
+    color: var(--cms-primary);
+    background: #fff;
+    border-color: #fff;
+}
+
+/* Improve header spacing and alignment */
+.rateb-mkt-header .navbar {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.rateb-mkt-actions {
+    gap: 0.6rem;
+}
+
+.rateb-mkt-header .btn-group-sm > .btn,
+.rateb-mkt-header .btn-sm {
+    padding: 0.4rem 0.75rem;
+}
+
+.rateb-mkt-topbar__inner {
+    padding: 0.55rem 0;
+    min-height: 2.5rem;
+}
+
+/* Improve visual rhythm between sections */
+.rateb-mkt-section {
+    padding: 4rem 0;
+}
+
+.rateb-mkt-section + .rateb-mkt-section:not(.rateb-mkt-section-alt) {
+    border-top: 1px solid var(--cms-border);
+}
+
+.rateb-mkt-stats {
+    margin: 0.5rem 0;
+}
+
+/* Add visual interest to text-only intro sections */
+.rateb-mkt-section .rateb-mkt-section-title {
+    position: relative;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.rateb-mkt-section .rateb-mkt-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3.5rem;
+    height: 0.25rem;
+    background: var(--cms-primary);
+    border-radius: 999px;
+}
+
+.rateb-mkt-section-head .rateb-mkt-section-title::after {
+    left: 0;
+    transform: none;
+}
+
+.rateb-mkt-cta .rateb-mkt-section-title::after,
+.rateb-mkt-hero .rateb-mkt-hero-title::after {
+    display: none;
+}
+
+/* Visual treatment for text-heavy intro sections */
+.rateb-mkt-intro {
+    text-align: center;
+}
+
+.rateb-mkt-intro-card {
+    max-width: 46rem;
+    margin: 0 auto;
+}
+
+.rateb-mkt-intro-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+    background: rgba(26, 95, 180, 0.1);
+    color: var(--cms-primary);
+    font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+}

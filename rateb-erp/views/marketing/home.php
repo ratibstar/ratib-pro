@@ -218,20 +218,26 @@ if (empty($faqs)) {
 
 <?php if (!empty($content['erp_overview']['section'])) {
     $s = $content['erp_overview']['section']; ?>
-<section class="rateb-mkt-section">
+<section class="rateb-mkt-section rateb-mkt-intro">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
-        <p class="rateb-mkt-section-lead"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
+        <div class="rateb-mkt-intro-card">
+            <i class="fas fa-hospital rateb-mkt-intro-icon" aria-hidden="true"></i>
+            <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
+            <p class="rateb-mkt-section-lead"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
+        </div>
     </div>
 </section>
 <?php } ?>
 
 <?php if (!empty($content['why_rateb']['section'])) {
     $s = $content['why_rateb']['section']; ?>
-<section class="rateb-mkt-section rateb-mkt-section-alt">
+<section class="rateb-mkt-section rateb-mkt-section-alt rateb-mkt-intro">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
-        <p class="rateb-mkt-section-lead"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
+        <div class="rateb-mkt-intro-card">
+            <i class="fas fa-check-circle rateb-mkt-intro-icon" aria-hidden="true"></i>
+            <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'title')); ?></h2>
+            <p class="rateb-mkt-section-lead"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($s, 'body')); ?></p>
+        </div>
     </div>
 </section>
 <?php } ?>
