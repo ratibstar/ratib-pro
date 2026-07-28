@@ -356,6 +356,7 @@
     var btnBulkRunMigration = document.getElementById('btnBulkRunMigration');
     var btnBulkTestDbConnection = document.getElementById('btnBulkTestDbConnection');
     var btnRepairTenantLinks = document.getElementById('btnRepairTenantLinks');
+    var btnFixAllAgencies = document.getElementById('btnFixAllAgencies');
     var bulkOverrideSuspended = document.getElementById('bulkOverrideSuspended');
     var bulkProgressBox = document.getElementById('bulkProgressBox');
     var bulkProgressText = document.getElementById('bulkProgressText');
@@ -438,7 +439,7 @@
     // EN: Central toggle for all bulk action controls during long-running actions.
     // AR: تحكم مركزي لتعطيل/تفعيل أزرار العمليات الجماعية أثناء العمليات الطويلة.
     function setBulkButtonsDisabled(disabled) {
-        var btns = [btnBulkDelete, btnBulkActivate, btnBulkDeactivate, btnBulkSuspend, btnBulkUnsuspend, btnBulkSync, btnBulkRebuildDb, btnBulkRunMigration, btnBulkTestDbConnection];
+        var btns = [btnBulkDelete, btnBulkActivate, btnBulkDeactivate, btnBulkSuspend, btnBulkUnsuspend, btnBulkSync, btnBulkRebuildDb, btnBulkRunMigration, btnBulkTestDbConnection, btnFixAllAgencies];
         btns.forEach(function(b) { if (b) b.disabled = disabled; });
     }
 
@@ -962,14 +963,18 @@
             return;
         }
 
-        var bulkBtn = clickClosest(e, '#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks');
+        var bulkBtn = clickClosest(e, '#btnBulkDelete, #btnBulkActivate, #btnBulkDeactivate, #btnBulkSuspend, #btnBulkUnsuspend, #btnBulkSync, #btnBulkRebuildDb, #btnBulkRunMigration, #btnBulkTestDbConnection, #btnRepairTenantLinks, #btnFixAllAgencies');
         if (bulkBtn) {
             e.preventDefault();
             e.stopPropagation();
+            var id = bulkBtn.id;
+            if (id === 'btnFixAllAgencies') {
+                handleFixAll();
+                return;
+            }
             // Re-evaluate selection state right before action click.
             updateBulkState();
             if (bulkBtn.disabled) { showAlert('Please select one or more agencies (check the boxes).'); return; }
-            var id = bulkBtn.id;
             if (id === 'btnBulkDelete') handleBulkAction('Type DELETE in the next prompt to confirm bulk delete.', 'PATCH', function(ids) { return { agency_ids: ids, ids: ids, action: 'delete' }; }, true);
             else if (id === 'btnBulkActivate') handleBulkAction('Bulk activate selected agencies?', 'PATCH', function(ids) { return { agency_ids: ids, ids: ids, action: 'activate', is_active: 1 }; });
             else if (id === 'btnBulkDeactivate') handleBulkAction('Bulk mark selected agencies as inactive?', 'PATCH', function(ids) { return { agency_ids: ids, ids: ids, action: 'deactivate', is_active: 0, is_suspended: 0 }; });
@@ -1119,6 +1124,41 @@
                     updateBulkState();
                 }
             }).catch(function(err) { showAlert('Request failed: ' + (err.message || err)); updateBulkState(); });
+        });
+    }
+
+    function handleFixAll() {
+        if (!checkApiBase()) return;
+        var ar = cpLocaleIsAr();
+        var msg = ar
+            ? 'إصلاح كل الوكالات في النطاق الحالي؟ سيتم إصلاح رابط المستأجر المفقود وتجهيز ERP لكل الوكالات.'
+            : 'Fix all agencies in current scope? This will repair missing tenant links and provision ERP for all agencies.';
+        showConfirm(msg).then(function(ok) {
+            if (!ok) return;
+            setBulkButtonsDisabled(true);
+            if (bulkProgressBox && bulkProgressText) {
+                bulkProgressBox.style.display = '';
+                bulkProgressText.textContent = ar ? 'جاري إصلاح الوكالات...' : 'Fixing all agencies...';
+            }
+            apiCall('PATCH', { action: 'fix_all', country_id: countryId }).then(function(r) {
+                if (r.success) location.reload();
+                else {
+                    var details = r.first_error || (r.errors && r.errors[0] && r.errors[0].error) || r.message || 'Request failed';
+                    showAlert(details + (r.request_id ? (' (request: ' + r.request_id + ')') : ''));
+                    if (bulkProgressText) {
+                        bulkProgressText.textContent = ar
+                            ? ('اكتمل مع أخطاء. نجاح: ' + (r.success_count || 0) + ', فشل: ' + (r.failed_count || 0))
+                            : ('Completed with failures. Success: ' + (r.success_count || 0) + ', Failed: ' + (r.failed_count || 0));
+                    }
+                    updateBulkState();
+                }
+            }).catch(function(err) {
+                showAlert('Request failed: ' + (err.message || err));
+                if (bulkProgressText) bulkProgressText.textContent = ar ? 'فشل الطلب' : 'Request failed';
+                updateBulkState();
+            }).finally(function() {
+                setBulkButtonsDisabled(false);
+            });
         });
     }
 

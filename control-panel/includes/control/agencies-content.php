@@ -565,6 +565,7 @@ if ($agencyIdFilter > 0) {
         <span class="ms-3 text-muted"><?php echo $lastAgencyControlEvent !== '' ? ('Last event: ' . htmlspecialchars($lastAgencyControlEvent)) : 'Last event: none'; ?></span>
         <?php if ($isControlSuperAdminUi): ?>
         <button type="button" class="btn btn-sm btn-outline-danger ms-3" id="btnRepairTenantLinks" data-permission="control_agencies,delete_control_agency">Repair Missing Tenant Link</button>
+        <button type="button" class="btn btn-sm btn-danger ms-3" id="btnFixAllAgencies" data-permission="control_agencies,delete_control_agency">Fix All Agencies</button>
         <?php endif; ?>
     </div>
     <a href="<?php echo htmlspecialchars($formAction . '?control=1'); ?>" class="btn btn-outline-secondary btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i> Back to countries</a>

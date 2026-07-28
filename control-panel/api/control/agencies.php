@@ -173,6 +173,26 @@ function qOne(string $sql, array $params = []): ?array {
     return $row ?: null;
 }
 
+// EN: Resolve all agency IDs inside the current control-panel scope for bulk fix-all.
+// AR: جلب كل معرّفات الوكالات ضمن نطاق لوحة التحكم الحالي للإصلاح الجماعي.
+function getAllAgencyIdsInScope(mysqli $ctrl, ?array $allowedCountryIds, int $countryId): array
+{
+    $where = [];
+    $hasCountryId = qOne("SHOW COLUMNS FROM control_agencies LIKE 'country_id'") !== null;
+    if ($allowedCountryIds === []) {
+        return [];
+    }
+    if ($hasCountryId && $allowedCountryIds !== null && !empty($allowedCountryIds)) {
+        $where[] = 'country_id IN (' . implode(',', array_map('intval', $allowedCountryIds)) . ')';
+    }
+    if ($hasCountryId && $countryId > 0) {
+        $where[] = 'country_id = ' . (int) $countryId;
+    }
+    $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+    $rows = qAll("SELECT id FROM control_agencies" . $whereClause);
+    return array_map(static fn($r) => (int) $r['id'], $rows);
+}
+
 // EN: Bootstrap tenant-aware request state before handling CRUD actions.
 // AR: تهيئة حالة الطلب المرتبطة بالمستأجر قبل تنفيذ عمليات CRUD.
 ensureAgencyTenantLinkColumn();
@@ -621,24 +641,28 @@ if ($method === 'PATCH') {
         jsonOut(['success' => false, 'message' => 'Access denied']);
     }
     $input = json_decode(file_get_contents('php://input'), true) ?: [];
-    $ids = $input['agency_ids'] ?? ($input['ids'] ?? []);
-    if (empty($ids)) jsonOut(['success' => false, 'message' => 'No IDs']);
-    $ids = array_map('intval', $ids);
-    if ($allowedCountryIds !== null) {
-        $ph = implode(',', $ids);
-        $rowsCheck = qAll("SELECT id, country_id FROM control_agencies WHERE id IN ($ph)");
-        foreach ($rowsCheck as $row) {
-            if (!in_array((int)$row['country_id'], $allowedCountryIds, true)) {
-                jsonOut(['success' => false, 'message' => 'You do not have permission to edit one or more of these agencies']);
-            }
-        }
-    }
     $action = trim((string)($input['action'] ?? ''));
     if ($action === '') {
         if (isset($input['is_suspended'])) {
             $action = ((int) $input['is_suspended'] === 1) ? 'suspend' : 'activate';
         } elseif (isset($input['is_active'])) {
             $action = ((int) $input['is_active'] === 1) ? 'activate' : 'deactivate';
+        }
+    }
+    $ids = $input['agency_ids'] ?? ($input['ids'] ?? []);
+    if (empty($ids) && $action !== 'fix_all') jsonOut(['success' => false, 'message' => 'No IDs']);
+    $ids = array_map('intval', $ids);
+    if ($action === 'fix_all' && empty($ids)) {
+        $countryIdFix = (int) ($input['country_id'] ?? 0);
+        $ids = getAllAgencyIdsInScope($ctrl, $allowedCountryIds, $countryIdFix);
+    }
+    if ($allowedCountryIds !== null && !empty($ids)) {
+        $ph = implode(',', $ids);
+        $rowsCheck = qAll("SELECT id, country_id FROM control_agencies WHERE id IN ($ph)");
+        foreach ($rowsCheck as $row) {
+            if (!in_array((int)$row['country_id'], $allowedCountryIds, true)) {
+                jsonOut(['success' => false, 'message' => 'You do not have permission to edit one or more of these agencies']);
+            }
         }
     }
     $isSuperAdmin = isControlSuperAdmin();
@@ -651,11 +675,11 @@ if ($method === 'PATCH') {
         securityBlock('Blocked override_suspended without SUPER_ADMIN', ['action' => $action]);
         jsonOut(['success' => false, 'message' => 'SUPER_ADMIN required for override_suspended']);
     }
-    $allowedActions = ['activate', 'deactivate', 'suspend', 'delete', 'sync', 'rebuild_db', 'run_migration', 'test_db_connection', 'open_control_center', 'view_events', 'view_db_status', 'view_query_activity', 'mark_paid', 'repair_tenant_link'];
+    $allowedActions = ['activate', 'deactivate', 'suspend', 'delete', 'sync', 'rebuild_db', 'run_migration', 'test_db_connection', 'open_control_center', 'view_events', 'view_db_status', 'view_query_activity', 'mark_paid', 'repair_tenant_link', 'fix_all'];
     if (!in_array($action, $allowedActions, true)) {
         jsonOut(['success' => false, 'message' => 'Unknown bulk action']);
     }
-    if (in_array($action, ['delete', 'rebuild_db', 'repair_tenant_link'], true) && !$isSuperAdmin) {
+    if (in_array($action, ['delete', 'rebuild_db', 'repair_tenant_link', 'fix_all'], true) && !$isSuperAdmin) {
         securityBlock('Blocked privileged bulk action', ['action' => $action]);
         jsonOut(['success' => false, 'message' => 'SUPER_ADMIN required']);
     }
@@ -746,6 +770,36 @@ if ($method === 'PATCH') {
                         'tenant_id' => $tenantId,
                         'agency_id' => $agencyId,
                         'action' => 'repair_tenant_link',
+                    ]));
+                }
+            } elseif ($action === 'fix_all') {
+                if ($tenantId <= 0) {
+                    $tenantId = provisionAgencyTenantLink($agency, $agencyId);
+                    if ($tenantId <= 0) {
+                        throw new RuntimeException('Tenant provisioning returned empty tenant_id');
+                    }
+                    qStmt("UPDATE control_agencies SET tenant_id = ? WHERE id = ?", [$tenantId, $agencyId]);
+                    if ($hasIsSuspended) {
+                        qStmt("UPDATE control_agencies SET is_active = 1, is_suspended = 0 WHERE id = ?", [$agencyId]);
+                    } else {
+                        qStmt("UPDATE control_agencies SET is_active = 1 WHERE id = ?", [$agencyId]);
+                    }
+                    setTenantContextById($tenantId);
+                    emitEvent('AGENCY_LINKED_TENANT', 'info', 'Agency tenant link repaired via fix_all', eventMeta([
+                        'tenant_id' => $tenantId,
+                        'agency_id' => $agencyId,
+                        'action' => 'fix_all',
+                    ]));
+                }
+                $erpStatus = strtolower(trim((string) ($agency['erp_status'] ?? 'none')));
+                $erpDbName = trim((string) ($agency['erp_db_name'] ?? ''));
+                if ($erpStatus !== 'ready' || $erpDbName === '') {
+                    $planSlug = trim((string) ($agency['erp_plan_slug'] ?? ''));
+                    ErpProvisioningService::provision($ctrl, $agency, $planSlug, false);
+                    emitEvent('AGENCY_ERP_PROVISIONED', 'info', 'ERP provisioned via fix_all', eventMeta([
+                        'tenant_id' => $tenantId,
+                        'agency_id' => $agencyId,
+                        'action' => 'fix_all',
                     ]));
                 }
             } elseif ($action === 'run_migration') {
