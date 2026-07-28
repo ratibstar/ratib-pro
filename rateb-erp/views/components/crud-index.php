@@ -281,7 +281,18 @@ $ratebRowRecordLabel = static function (array $row): string {
                             $companySiteUrl = trim((string) ($row['site_url'] ?? ''));
                             $companyProOpenUrl = '';
                             if ($companySiteUrl !== '' && preg_match('#^https?://#i', $companySiteUrl)) {
-                                $companyProOpenUrl = $companySiteUrl;
+                                $parsed = parse_url($companySiteUrl);
+                                if (!empty($parsed['scheme']) && !empty($parsed['host'])) {
+                                    $path = !empty($parsed['path']) ? $parsed['path'] : '/';
+                                    $port = !empty($parsed['port']) ? ':' . (int) $parsed['port'] : '';
+                                    $qs = [];
+                                    if (!empty($parsed['query'])) {
+                                        parse_str($parsed['query'], $qs);
+                                    }
+                                    $qs['control'] = '1';
+                                    $qs['agency_id'] = $agencyId;
+                                    $companyProOpenUrl = $parsed['scheme'] . '://' . $parsed['host'] . $port . $path . '?' . http_build_query($qs);
+                                }
                             }
                             ?>
                         <?php if ($canCompanyPerms) { ?>
