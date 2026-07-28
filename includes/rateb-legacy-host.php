@@ -24,8 +24,11 @@ if (!function_exists('rateb_url_host_is_legacy_ratib')) {
             return false;
         }
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if (in_array($host, rateb_legacy_ratib_hosts(), true)) {
+            return true;
+        }
 
-        return in_array($host, rateb_legacy_ratib_hosts(), true);
+        return $host === 'ratib.sa' || str_ends_with($host, '.ratib.sa');
     }
 }
 
