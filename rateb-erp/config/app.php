@@ -538,6 +538,53 @@ if (!function_exists('rateb_control_panel_agencies_url')) {
     }
 }
 
+if (!function_exists('rateb_rateb_pro_url')) {
+    /**
+     * Canonical RATEB Pro base URL for opening agency sites.
+     * Defaults to RATEB_PRO_URL constant, then SITE_URL, then rateb.sa.
+     */
+    function rateb_rateb_pro_url(): string
+    {
+        if (defined('RATEB_PRO_URL') && trim((string) RATEB_PRO_URL) !== '') {
+            return rtrim((string) RATEB_PRO_URL, '/');
+        }
+        if (defined('SITE_URL') && trim((string) SITE_URL) !== '') {
+            return rtrim((string) SITE_URL, '/');
+        }
+        return 'https://rateb.sa';
+    }
+}
+
+if (!function_exists('rateb_rateb_pro_url_for_site_url')) {
+    /**
+     * Rewrite a stored agency site_url host to the canonical RATEB Pro host.
+     * Keeps the path (usually /{country_slug}) so links open the correct agency.
+     */
+    function rateb_rateb_pro_url_for_site_url(string $siteUrl): string
+    {
+        $siteUrl = trim($siteUrl);
+        if ($siteUrl === '' || !preg_match('#^https?://#i', $siteUrl)) {
+            return $siteUrl;
+        }
+        $proBase = rateb_rateb_pro_url();
+        if ($proBase === '') {
+            return $siteUrl;
+        }
+        $siteParsed = parse_url($siteUrl);
+        $proParsed = parse_url($proBase);
+        if (empty($siteParsed['host']) || empty($proParsed['host'])) {
+            return $siteUrl;
+        }
+        if (strtolower((string) $siteParsed['host']) === strtolower((string) $proParsed['host'])) {
+            return $siteUrl;
+        }
+        $scheme = !empty($proParsed['scheme']) ? $proParsed['scheme'] : ($siteParsed['scheme'] ?? 'https');
+        $port = !empty($proParsed['port']) ? ':' . (int) $proParsed['port'] : '';
+        $path = (string) ($siteParsed['path'] ?? '/');
+        return $scheme . '://' . $proParsed['host'] . $port . $path;
+    }
+}
+
 if (!function_exists('rateb_control_panel_branch_manage_url')) {
     /** Control Panel → الشركات والفروع (optional company / agency focus). */
     function rateb_control_panel_branch_manage_url(int $companyId = 0, int $agencyId = 0): string

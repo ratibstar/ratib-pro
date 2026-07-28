@@ -286,6 +286,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $site = function_exists('rateb_normalize_agency_site_url')
                 ? rateb_normalize_agency_site_url($siteRaw)
                 : $siteRaw;
+            $site = function_exists('rateb_rateb_pro_url_for_site_url')
+                ? rateb_rateb_pro_url_for_site_url($site)
+                : $site;
             $loginUrl = function_exists('rateb_agency_erp_login_url')
                 ? rateb_agency_erp_login_url($site)
                 : '';
