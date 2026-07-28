@@ -11,6 +11,7 @@ if (!function_exists('rateb_legacy_ratib_hosts')) {
         return [
             'ratib.sa',
             'www.ratib.sa',
+            'out.ratib.sa',
         ];
     }
 }

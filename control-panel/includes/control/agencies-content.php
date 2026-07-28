@@ -23,6 +23,11 @@ $agT = static function (string $key, string $fallback = '') {
 };
 $agSiteBase = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
 
+$__agencyLookupFile = __DIR__ . '/../../../config/env/agency_lookup.php';
+if (is_file($__agencyLookupFile)) {
+    require_once $__agencyLookupFile;
+}
+
 // EN: URL helper functions for safe “open agency” behavior and SSO query composition.
 // AR: دوال مساعدة لبناء روابط "فتح الوكالة" بشكل آمن وتكوين معاملات SSO.
 if (!function_exists('agency_site_url_invalid_for_rateb_pro_open')) {
@@ -747,7 +752,10 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             $agencyIdRow = (int) ($r['id'] ?? 0);
                             $siteBaseRaw = trim((string) ($r['site_url'] ?? ''));
                             $hasValidSite = agency_has_valid_site_url($r);
-                            $openSiteUrl = ($hasValidSite && agency_site_url_host_ready($siteBaseRaw)) ? rtrim($siteBaseRaw, '/') : '';
+                            $siteBaseNormalized = function_exists('rateb_normalize_agency_site_url')
+                                ? rateb_normalize_agency_site_url($siteBaseRaw)
+                                : $siteBaseRaw;
+                            $openSiteUrl = ($hasValidSite && agency_site_url_host_ready($siteBaseNormalized)) ? rtrim($siteBaseNormalized, '/') : '';
                             $erpBlocked = agency_erp_open_blocked_reason($r);
                             $erpStBtn = strtolower(trim((string) ($r['erp_status'] ?? 'none')));
                             if (agency_can_open_erp_portal($r)) {

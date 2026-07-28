@@ -1052,12 +1052,23 @@ if (!function_exists('rateb_url_matches_agency_site')) {
     /**
      * Ensure current request is under configured agency Site URL.
      * Example: site https://rateb.sa/indonesia must match /indonesia/login...
+     *
+     * Legacy hostnames (e.g. out.ratib.sa) are rewritten to the canonical
+     * RATEB_PRO_URL/SITE_URL origin before comparing, so stored old URLs
+     * do not block agencies that have migrated to rateb.sa.
      */
     function rateb_url_matches_agency_site($siteUrl)
     {
         $siteUrl = trim((string)$siteUrl);
         if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
             return false;
+        }
+        $legacyHostFile = __DIR__ . '/rateb-legacy-host.php';
+        if (is_file($legacyHostFile)) {
+            require_once $legacyHostFile;
+            if (function_exists('rateb_rewrite_legacy_ratib_url')) {
+                $siteUrl = rateb_rewrite_legacy_ratib_url($siteUrl);
+            }
         }
         $site = @parse_url($siteUrl);
         if (!is_array($site)) return false;

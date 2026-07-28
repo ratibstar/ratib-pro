@@ -4,6 +4,11 @@
  */
 declare(strict_types=1);
 
+$__ratebLegacyHostFile = __DIR__ . '/../../includes/rateb-legacy-host.php';
+if (is_file($__ratebLegacyHostFile)) {
+    require_once $__ratebLegacyHostFile;
+}
+
 if (!function_exists('rateb_agency_lookup_connection')) {
     function rateb_agency_lookup_connection(): ?mysqli
     {
@@ -102,6 +107,10 @@ if (!function_exists('rateb_agency_host_from_site_url')) {
 if (!function_exists('rateb_normalize_agency_site_url')) {
     /**
      * Fix common CP typos: "/https://test.rateb.sa" → "https://test.rateb.sa"
+     *
+     * Legacy hostnames (e.g. out.ratib.sa) are rewritten to the canonical
+     * RATEB_PRO_URL/SITE_URL origin so stored old URLs do not break after
+     * migrating agencies to rateb.sa.
      */
     function rateb_normalize_agency_site_url(string $siteUrl): string
     {
@@ -126,8 +135,16 @@ if (!function_exists('rateb_normalize_agency_site_url')) {
         $port = isset($parts['port']) ? (':' . (int) $parts['port']) : '';
         $path = (string) ($parts['path'] ?? '');
         $path = rtrim($path, '/');
+        $normalized = $scheme . '://' . $host . $port . $path;
 
-        return $scheme . '://' . $host . $port . $path;
+        if (function_exists('rateb_rewrite_legacy_ratib_url')) {
+            $rewritten = rateb_rewrite_legacy_ratib_url($normalized);
+            if ($rewritten !== '') {
+                return rtrim($rewritten, '/');
+            }
+        }
+
+        return $normalized;
     }
 }
 
