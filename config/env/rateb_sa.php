@@ -31,7 +31,7 @@ if (!defined('RATEB_ERP_DB_NAME')) {
 define('SITE_URL', 'https://rateb.sa');
 if (!defined('RATEB_PRO_URL')) {
     $_ratebProUrl = getenv('RATEB_PRO_URL');
-    define('RATEB_PRO_URL', ($_ratebProUrl !== false && $_ratebProUrl !== '') ? (string) $_ratebProUrl : 'https://out.ratib.sa');
+    define('RATEB_PRO_URL', ($_ratebProUrl !== false && $_ratebProUrl !== '') ? (string) $_ratebProUrl : SITE_URL);
 }
 define('SINGLE_URL_MODE', true);  // All countries use same URL; DB switches by country selection
 define('APP_NAME', 'RATEB');
