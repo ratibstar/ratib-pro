@@ -1056,10 +1056,39 @@ if (!function_exists('rateb_url_matches_agency_site')) {
      * Legacy hostnames (e.g. out.ratib.sa) are rewritten to the canonical
      * RATEB_PRO_URL/SITE_URL origin before comparing, so stored old URLs
      * do not block agencies that have migrated to rateb.sa.
+     *
+     * Fallback: in single-URL mode, allow the agency when the request path
+     * matches the agency's country slug on the canonical platform host,
+     * even if the stored site_url points elsewhere.
      */
-    function rateb_url_matches_agency_site($siteUrl)
+    function rateb_url_matches_agency_site($siteUrl, $countrySlug = '')
     {
         $siteUrl = trim((string)$siteUrl);
+        $reqHostRaw = (string)($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '');
+        $reqHost = strtolower(trim(explode(',', $reqHostRaw)[0] ?? ''));
+        if (strpos($reqHost, ':') !== false) {
+            $reqHost = explode(':', $reqHost)[0];
+        }
+        $reqPath = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $reqPath = rtrim($reqPath, '/');
+
+        $countrySlug = strtolower(trim((string)$countrySlug));
+        if ($countrySlug !== '') {
+            $platformHost = '';
+            if (defined('RATEB_PRO_URL') && (string) RATEB_PRO_URL !== '') {
+                $platformHost = strtolower((string) parse_url((string) RATEB_PRO_URL, PHP_URL_HOST));
+            }
+            if ($platformHost === '' && defined('SITE_URL') && (string) SITE_URL !== '') {
+                $platformHost = strtolower((string) parse_url((string) SITE_URL, PHP_URL_HOST));
+            }
+            if ($platformHost !== '' && $reqHost === $platformHost) {
+                $reqPathParts = explode('/', trim($reqPath, '/'));
+                if (isset($reqPathParts[0]) && $reqPathParts[0] === $countrySlug) {
+                    return true;
+                }
+            }
+        }
+
         if ($siteUrl === '' || !preg_match('/^https?:\/\//i', $siteUrl)) {
             return false;
         }
@@ -1075,15 +1104,6 @@ if (!function_exists('rateb_url_matches_agency_site')) {
         $siteHost = strtolower((string)($site['host'] ?? ''));
         $sitePath = rtrim((string)($site['path'] ?? ''), '/');
         if ($siteHost === '') return false;
-
-        $reqHostRaw = (string)($_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '');
-        $reqHost = strtolower(trim(explode(',', $reqHostRaw)[0] ?? ''));
-        // Remove optional ":port" from host comparison.
-        if (strpos($reqHost, ':') !== false) {
-            $reqHost = explode(':', $reqHost)[0];
-        }
-        $reqPath = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $reqPath = rtrim($reqPath, '/');
 
         // Be tolerant for reverse-proxy HTTPS offload: compare host + path only.
         if ($reqHost !== $siteHost) return false;
@@ -1668,10 +1688,11 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && trim((string)($row['site_url'] ?? '')) === '') {
                         rateb_halt_for_agency_db_error('Agency site URL is missing.');
                     }
-                    if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '')) {
+                    if (!$isApiReq && !$skipSiteUrlGate && $effectiveAgencyId > 0 && !rateb_url_matches_agency_site($row['site_url'] ?? '', $row['country_slug'] ?? '')) {
                         // Control "Open" (?control=1&agency_id=) is an explicit CP action — do not block staging hosts.
                         if (!$openAgencyContext) {
-                            rateb_halt_for_agency_db_error('Agency site URL mismatch.');
+                            $storedSiteUrl = trim((string)($row['site_url'] ?? ''));
+                            rateb_halt_for_agency_db_error('Agency site URL mismatch. Stored site_url: ' . ($storedSiteUrl !== '' ? $storedSiteUrl : 'empty'));
                         }
                     }
                     $agencyHelper = __DIR__ . '/../control-panel/api/control/agency-db-helper.php';
