@@ -558,6 +558,8 @@ return [
     'company_create_agency_path_hint' => 'الوكالة = الشركة. أضف الوكالة من لوحة التحكم فتظهر هنا تلقائياً. التعديل هنا للصلاحيات والباقة وحساب الدخول.',
     'company_create_use_control_panel' => 'إنشاء شركة/وكالة يتم من لوحة التحكم → إدارة الوكالات. ستظهر هنا تلقائياً بعد الإضافة.',
     'company_open_control_agencies' => 'فتح إدارة الوكالات',
+    'company_provision_erp_hint' => 'بعض الشركات لا تحتوي على قاعدة بيانات ERP. افتح إدارة الوكالات واضغط "Fix All Agencies" لتجهيزها.',
+    'company_provision_erp_now' => 'تجهيز ERP الآن',
     'company_agency_site' => 'رابط الوكالة',
     'company_agency_erp_status' => 'حالة ERP',
     'company_agency_login' => 'رابط دخول الوكالة',

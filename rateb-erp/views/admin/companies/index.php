@@ -1,5 +1,6 @@
 ﻿<?php
 /** @var bool $companyCreateAgencyHint */
+/** @var bool $companyProvisionErpHint */
 /** @var string $controlPanelAgenciesUrl */
 if (!empty($companyCreateAgencyHint)) { ?>
 <div class="alert alert-info mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -7,6 +8,16 @@ if (!empty($companyCreateAgencyHint)) { ?>
     <?php if (!empty($controlPanelAgenciesUrl)) { ?>
     <a class="btn btn-sm btn-primary" href="<?php echo Rateb\App\Core\View::escape($controlPanelAgenciesUrl); ?>" target="_blank" rel="noopener">
         <i class="fas fa-external-link-alt"></i> <?php echo __('company_open_control_agencies'); ?>
+    </a>
+    <?php } ?>
+</div>
+<?php } ?>
+<?php if (!empty($companyProvisionErpHint)) { ?>
+<div class="alert alert-warning mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div><?php echo Rateb\App\Core\View::escape(__('company_provision_erp_hint')); ?></div>
+    <?php if (!empty($controlPanelAgenciesUrl)) { ?>
+    <a class="btn btn-sm btn-warning" href="<?php echo Rateb\App\Core\View::escape($controlPanelAgenciesUrl); ?>" target="_blank" rel="noopener">
+        <i class="fas fa-external-link-alt"></i> <?php echo __('company_provision_erp_now'); ?>
     </a>
     <?php } ?>
 </div>

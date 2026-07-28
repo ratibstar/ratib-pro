@@ -558,6 +558,8 @@ return [
     'company_create_agency_path_hint' => 'Agency = company. Add the agency in Control Panel and it appears here automatically. Edit here for permissions, plan, and login.',
     'company_create_use_control_panel' => 'Create agency/company from Control Panel → Agencies. It will appear here automatically after you add it.',
     'company_open_control_agencies' => 'Open Agencies',
+    'company_provision_erp_hint' => 'Some companies are missing the ERP database. Open Agency Management and click "Fix All Agencies" to provision them.',
+    'company_provision_erp_now' => 'Provision ERP now',
     'company_agency_site' => 'Agency URL',
     'company_agency_erp_status' => 'ERP status',
     'company_agency_login' => 'Agency login URL',

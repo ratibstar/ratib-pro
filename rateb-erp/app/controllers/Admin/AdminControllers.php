@@ -318,6 +318,14 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
         $total = count($items);
         $slice = array_slice($items, $offset, $limit);
+        $needsErpProvisioning = false;
+        foreach ($items as $item) {
+            $st = strtolower(trim((string) ($item['erp_status'] ?? 'none')));
+            if ($st !== 'ready' && $st !== '—') {
+                $needsErpProvisioning = true;
+                break;
+            }
+        }
 
         return [
             'title' => __('companies'),
@@ -335,6 +343,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'actionsEnabled' => $this->actionsEnabled,
             'documentEntityType' => '',
             'companyCreateAgencyHint' => true,
+            'companyProvisionErpHint' => $needsErpProvisioning,
             'controlPanelAgenciesUrl' => function_exists('rateb_control_panel_agencies_url')
                 ? rateb_control_panel_agencies_url()
                 : '',
