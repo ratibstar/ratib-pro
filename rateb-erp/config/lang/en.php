@@ -560,6 +560,7 @@ return [
     'company_open_control_agencies' => 'Open Agencies',
     'company_provision_erp_hint' => 'Some companies are missing the ERP database. Open Agency Management and click "Fix All Agencies" to provision them.',
     'company_provision_erp_now' => 'Provision ERP now',
+    'company_open_rateb_pro' => 'Open RATEB Pro',
     'company_agency_site' => 'Agency URL',
     'company_agency_erp_status' => 'ERP status',
     'company_agency_login' => 'Agency login URL',

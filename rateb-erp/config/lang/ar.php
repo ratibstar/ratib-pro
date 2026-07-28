@@ -560,6 +560,7 @@ return [
     'company_open_control_agencies' => 'فتح إدارة الوكالات',
     'company_provision_erp_hint' => 'بعض الشركات لا تحتوي على قاعدة بيانات ERP. افتح إدارة الوكالات واضغط "Fix All Agencies" لتجهيزها.',
     'company_provision_erp_now' => 'تجهيز ERP الآن',
+    'company_open_rateb_pro' => 'فتح RATEB Pro',
     'company_agency_site' => 'رابط الوكالة',
     'company_agency_erp_status' => 'حالة ERP',
     'company_agency_login' => 'رابط دخول الوكالة',

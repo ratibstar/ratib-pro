@@ -266,6 +266,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($isCompanies) {
                             $companyStatus = (string) ($row['status'] ?? '');
                             $cid = (int) ($row['id'] ?? 0);
+                            $agencyId = (int) ($row['agency_id'] ?? 0);
                             $canCompanyPerms = rateb_is_super_admin()
                                 || rateb_can('company_plans.manage')
                                 || rateb_can('companies.manage');
@@ -277,11 +278,22 @@ $ratebRowRecordLabel = static function (array $row): string {
                             $showBranches = function_exists('rateb_platform_branch_manage_enabled')
                                 && rateb_platform_branch_manage_enabled()
                                 && $companyStatus === 'active';
+                            $companySiteUrl = trim((string) ($row['site_url'] ?? ''));
+                            $companyProOpenUrl = '';
+                            if ($companySiteUrl !== '' && preg_match('#^https?://#i', $companySiteUrl)) {
+                                $companyProOpenUrl = $companySiteUrl;
+                            }
                             ?>
                         <?php if ($canCompanyPerms) { ?>
                         <a href="<?php echo rateb_url('admin/company-permissions/' . $cid); ?>" class="btn btn-sm btn-info" title="<?php echo Rateb\App\Core\View::escape(__('company_permissions')); ?>">
                             <i class="fas fa-toggle-on"></i>
                             <span class="rateb-btn-label"><?php echo __('company_permissions'); ?></span>
+                        </a>
+                        <?php } ?>
+                        <?php if ($companyProOpenUrl !== '') { ?>
+                        <a href="<?php echo Rateb\App\Core\View::escape($companyProOpenUrl); ?>" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape(__('company_open_rateb_pro')); ?>">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span class="rateb-btn-label"><?php echo __('company_open_rateb_pro'); ?></span>
                         </a>
                         <?php } ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . $cid . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" title="<?php echo __('edit'); ?>">
