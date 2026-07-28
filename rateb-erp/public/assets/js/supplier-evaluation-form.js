@@ -115,6 +115,58 @@
             .catch(function () { renderHistory([]); });
     }
 
+    function isFormClean() {
+        if (!supplierSelect || parseInt(supplierSelect.value, 10) > 0) {
+            return false;
+        }
+        for (var i = 0; i < scoreNames.length; i++) {
+            var el = form.querySelector('[name="' + scoreNames[i] + '"]');
+            if (el && String(el.value || '').trim() !== '') {
+                return false;
+            }
+        }
+        var comments = form.querySelector('[name="comments"]');
+        if (comments && String(comments.value || '').trim() !== '') {
+            return false;
+        }
+        var periodStart = form.querySelector('[name="period_start"]');
+        var periodEnd = form.querySelector('[name="period_end"]');
+        if (periodStart && String(periodStart.value || '').trim() !== '') {
+            return false;
+        }
+        if (periodEnd && String(periodEnd.value || '').trim() !== '') {
+            return false;
+        }
+        return true;
+    }
+
+    function addSupplierRefreshButton() {
+        if (!supplierSelect) {
+            return;
+        }
+        var parent = supplierSelect.parentElement;
+        if (!parent) {
+            return;
+        }
+        var wrapper = document.createElement('div');
+        wrapper.className = 'd-flex align-items-center gap-2';
+        parent.insertBefore(wrapper, supplierSelect);
+        wrapper.appendChild(supplierSelect);
+        supplierSelect.classList.add('flex-grow-1');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary btn-sm';
+        btn.title = form.getAttribute('data-supplier-refresh-title') || 'Refresh suppliers';
+        btn.setAttribute('aria-label', btn.title);
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        btn.addEventListener('click', function () {
+            if (isFormClean() || window.confirm('Unsaved changes may be lost. Reload?')) {
+                window.location.reload();
+            }
+        });
+        wrapper.appendChild(btn);
+    }
+
     scoreNames.forEach(function (name) {
         var el = form.querySelector('[name="' + name + '"]');
         if (el) el.addEventListener('change', recalcScores);
@@ -122,4 +174,11 @@
     if (supplierSelect) supplierSelect.addEventListener('change', loadHistory);
     recalcScores();
     loadHistory();
+    addSupplierRefreshButton();
+
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted && isFormClean()) {
+            window.location.reload();
+        }
+    });
 })();

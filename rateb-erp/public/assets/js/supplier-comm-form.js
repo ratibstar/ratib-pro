@@ -109,6 +109,33 @@
         }
     }
 
+    function fillField(input, value) {
+        if (!input) {
+            return;
+        }
+        input.value = value || '';
+    }
+
+    function fillContactFields(profile, force) {
+        if (!profile) {
+            if (force) {
+                fillField(contactInput, '');
+                fillField(phoneInput, '');
+                fillField(emailInput, '');
+            }
+            return;
+        }
+        if (force) {
+            fillField(contactInput, profile.name || '');
+            fillField(phoneInput, profile.phone || '');
+            fillField(emailInput, profile.email || '');
+        } else {
+            fillIfEmpty(contactInput, profile.name || '');
+            fillIfEmpty(phoneInput, profile.phone || '');
+            fillIfEmpty(emailInput, profile.email || '');
+        }
+    }
+
     function updateChannelActions() {
         if (!channelActions) {
             return;
@@ -152,10 +179,12 @@
         channelActions.hidden = !hasAction;
     }
 
-    function loadSupplierProfile() {
+    function loadSupplierProfile(force) {
         var sid = supplierSelect ? parseInt(supplierSelect.value, 10) : 0;
         loadHistory();
         if (sid < 1 || !profileUrl) {
+            fillContactFields(null, force);
+            updateChannelActions();
             return;
         }
         fetch(profileUrl + (profileUrl.indexOf('?') >= 0 ? '&' : '?') + 'supplier_id=' + sid, {
@@ -170,11 +199,7 @@
             })
             .then(function (data) {
                 var profile = data.profile || null;
-                if (profile) {
-                    fillIfEmpty(contactInput, profile.name || '');
-                    fillIfEmpty(phoneInput, profile.phone || '');
-                    fillIfEmpty(emailInput, profile.email || '');
-                }
+                fillContactFields(profile, force);
                 replaceSelectOptions(poSelect, data.purchase_orders || [], 'order_no', 'id', true);
                 replaceSelectOptions(rfqSelect, data.rfqs || [], 'rfq_no', 'id', true);
                 updateChannelActions();
@@ -183,8 +208,8 @@
     }
 
     if (supplierSelect) {
-        supplierSelect.addEventListener('change', loadSupplierProfile);
-        loadSupplierProfile();
+        supplierSelect.addEventListener('change', function () { loadSupplierProfile(true); });
+        loadSupplierProfile(false);
     }
 
     [emailInput, phoneInput, subjectInput, bodyInput].forEach(function (el) {

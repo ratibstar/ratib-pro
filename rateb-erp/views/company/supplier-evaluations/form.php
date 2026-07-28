@@ -22,7 +22,8 @@ $approval = $isEdit ? (string) ($item['manager_approval'] ?? 'pending') : 'pendi
                     data-supplier-evaluation-form="1"
                     data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>"
                     data-evaluation-id="<?php echo $evalId; ?>"
-                    data-tier-labels="<?php echo Rateb\App\Core\View::escape(json_encode($tierLabels, JSON_UNESCAPED_UNICODE)); ?>">
+                    data-tier-labels="<?php echo Rateb\App\Core\View::escape(json_encode($tierLabels, JSON_UNESCAPED_UNICODE)); ?>"
+                    data-supplier-refresh-title="<?php echo Rateb\App\Core\View::escape(__('refresh')); ?>">
                     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                     <input type="hidden" name="rating_tier" id="eval_tier_input" value="<?php echo Rateb\App\Core\View::escape((string) ($metrics['tier'] ?? 'weak')); ?>">
                     <div class="row g-3">
