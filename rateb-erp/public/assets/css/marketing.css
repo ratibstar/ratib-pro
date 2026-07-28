@@ -842,7 +842,8 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
 }
 
 .rateb-mkt-section-head .rateb-mkt-section-title::after {
-    left: 0;
+    left: auto;
+    inset-inline-start: 0;
     transform: none;
 }
 
