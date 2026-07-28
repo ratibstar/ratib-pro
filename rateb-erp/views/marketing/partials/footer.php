@@ -21,6 +21,15 @@ if ($columns === []) {
             </div>
             <?php
             $footerLinkItems = $footerMenu ?? ($menuItems ?? []);
+            if (empty($footerLinkItems)) {
+                $footerLinkItems = [
+                    ['label_en' => 'Home', 'label_ar' => 'الرئيسية', 'url' => 'site'],
+                    ['label_en' => 'Features', 'label_ar' => 'المميزات', 'url' => 'site/features'],
+                    ['label_en' => 'Pricing', 'label_ar' => 'الأسعار', 'url' => 'site/pricing'],
+                    ['label_en' => 'Request Demo', 'label_ar' => 'اطلب عرضاً', 'url' => 'site/request-demo'],
+                    ['label_en' => 'Contact', 'label_ar' => 'تواصل معنا', 'url' => 'site/contact'],
+                ];
+            }
             $footerColsRendered = 0;
             foreach (array_slice($columns, 0, 2) as $col) {
                 $links = [];

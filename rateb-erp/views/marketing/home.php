@@ -3,6 +3,175 @@
 use Rateb\App\Services\CmsService;
 $hero = $content['hero']['section'] ?? null;
 $slides = $slides ?? [];
+
+// Fallback Arabic content for homepage when CMS data is empty
+$ratebHomeFallback = [
+    'erp_overview' => [
+        'section' => [
+            'title_en' => 'Unified ERP for Healthcare & Institutions',
+            'title_ar' => 'نظام ERP موحد للقطاع الصحي والمؤسسات',
+            'body_en' => 'Rateb connects procurement, inventory, contracts, HR, finance, and compliance in one platform built for Saudi Arabia.',
+            'body_ar' => 'يربط رتب المشتريات والمخزون والعقود والموارد البشرية والمالية والامتثال في منصة واحدة مبنية للسعودية.',
+        ],
+    ],
+    'why_rateb' => [
+        'section' => [
+            'title_en' => 'Why Rateb?',
+            'title_ar' => 'لماذا رتب؟',
+            'body_en' => 'Arabic-first interface, ZATCA e-invoicing readiness, tenant isolation, and partner-friendly pricing.',
+            'body_ar' => 'واجهة عربية أولاً، جاهزية الفوترة الإلكترونية لـ ZATCA، عزل المستأجرين، وأسعار مناسبة للشركاء.',
+        ],
+    ],
+    'trust' => [
+        'section' => [
+            'title_en' => 'Trusted by Institutions',
+            'title_ar' => 'ثقة المؤسسات',
+            'body_en' => 'Security, compliance, and reliability are built into every layer of the platform.',
+            'body_ar' => 'الأمان والامتثال والموثوقية مدمجة في كل طبقة من المنصة.',
+        ],
+        'blocks' => [
+            ['icon' => 'fa-shield-alt', 'title_en' => 'TLS 1.3 & RBAC', 'title_ar' => 'TLS 1.3 والتحكم بالوصول', 'content_en' => 'Enterprise-grade security and role-based access control.', 'content_ar' => 'أمان على مستوى المؤسسات مع تحكم بالوصول المبني على الأدوار.'],
+            ['icon' => 'fa-lock', 'title_en' => 'Tenant Isolation', 'title_ar' => 'عزل المستأجرين', 'content_en' => 'Each agency data is isolated and protected.', 'content_ar' => 'بيانات كل جهة معزولة ومحمية.'],
+            ['icon' => 'fa-headset', 'title_en' => 'Priority Support', 'title_ar' => 'دعم أولوية', 'content_en' => 'Dedicated support channels for institutions and partners.', 'content_ar' => 'قنوات دعم مخصصة للمؤسسات والشركاء.'],
+            ['icon' => 'fa-server', 'title_en' => '99.9% Uptime', 'title_ar' => '99.9% توافر', 'content_en' => 'High-availability infrastructure with continuous monitoring.', 'content_ar' => 'بنية تحتية عالية التوافر مع مراقبة مستمرة.'],
+        ],
+    ],
+    'stats' => [
+        'section' => [
+            'title_en' => 'Rateb in Numbers',
+            'title_ar' => 'أرقام رتب',
+        ],
+        'blocks' => [
+            ['content_en' => '500+', 'content_ar' => '500+', 'title_en' => 'Clients', 'title_ar' => 'عميل'],
+            ['content_en' => '25K+', 'content_ar' => '25 ألف+', 'title_en' => 'Users', 'title_ar' => 'مستخدم'],
+            ['content_en' => '50+', 'content_ar' => '50+', 'title_en' => 'Cities', 'title_ar' => 'مدينة'],
+            ['content_en' => '99.9%', 'content_ar' => '99.9%', 'title_en' => 'Uptime', 'title_ar' => 'توافر'],
+        ],
+    ],
+    'industries' => [
+        'section' => [
+            'title_en' => 'Industries We Serve',
+            'title_ar' => 'القطاعات المدعومة',
+        ],
+        'blocks' => [
+            ['icon' => 'fa-hospital', 'title_en' => 'Hospitals', 'title_ar' => 'المستشفيات'],
+            ['icon' => 'fa-clinic-medical', 'title_en' => 'Clinics', 'title_ar' => 'العيادات'],
+            ['icon' => 'fa-flask', 'title_en' => 'Medical Labs', 'title_ar' => 'المختبرات الطبية'],
+            ['icon' => 'fa-building', 'title_en' => 'Institutions', 'title_ar' => 'المؤسسات'],
+            ['icon' => 'fa-truck-medical', 'title_en' => 'Medical Supply', 'title_ar' => 'التوريد الطبي'],
+        ],
+    ],
+    'contact_cta' => [
+        'section' => [
+            'title_en' => 'Start Your Digital Transformation',
+            'title_ar' => 'ابدأ رحلة التحول الرقمي',
+            'body_en' => 'Request a demo and see how Rateb can streamline your operations today.',
+            'body_ar' => 'اطلب عرضاً وشاهد كيف يمكن لرتب تبسيط عملياتك اليوم.',
+        ],
+    ],
+];
+
+foreach ($ratebHomeFallback as $key => $fallback) {
+    if (empty($content[$key])) {
+        $content[$key] = $fallback;
+    }
+}
+
+if (empty($testimonials)) {
+    $testimonials = [
+        [
+            'quote_en' => 'Rateb reduced our procurement cycle by 40% and gave us full visibility over inventory across branches.',
+            'quote_ar' => 'قلّص رتب دورة المشتريات لدينا بنسبة 40% وأعطانا رؤية كاملة للمخزون عبر الفروع.',
+            'customer_name_en' => 'Dr. Ahmed Al-Rashid',
+            'customer_name_ar' => 'د. أحمد الرشيد',
+            'position_en' => 'Operations Director',
+            'position_ar' => 'مدير العمليات',
+            'company_en' => 'Al-Rashid Medical Group',
+            'company_ar' => 'مجموعة الرشيد الطبية',
+        ],
+        [
+            'quote_en' => 'The e-invoicing integration and Arabic interface made compliance effortless for our team.',
+            'quote_ar' => 'جعلت لنا تكامل الفوترة الإلكترونية والواجهة العربية الامتثال سهلاً وسريعاً.',
+            'customer_name_en' => 'Sarah Al-Otaibi',
+            'customer_name_ar' => 'سارة العتيبي',
+            'position_en' => 'Finance Manager',
+            'position_ar' => 'مديرة المالية',
+            'company_en' => 'Otaibi Healthcare',
+            'company_ar' => 'رعاية العتيبي الصحية',
+        ],
+        [
+            'quote_en' => 'We moved from spreadsheets to a unified ERP in weeks. Support has been outstanding.',
+            'quote_ar' => 'انتقلنا من جداول البيانات إلى نظام ERP موحد في أسابيع. الدعم كان ممتازاً.',
+            'customer_name_en' => 'Khalid Al-Mutairi',
+            'customer_name_ar' => 'خالد المطيري',
+            'position_en' => 'CEO',
+            'position_ar' => 'المدير التنفيذي',
+            'company_en' => 'Mutairi Medical Supplies',
+            'company_ar' => 'توريد المطيري الطبي',
+        ],
+    ];
+}
+
+if (empty($articles)) {
+    $articles = [
+        [
+            'slug' => 'zatca-e-invoicing-guide',
+            'title_en' => 'ZATCA E-Invoicing Guide',
+            'title_ar' => 'دليل الفوترة الإلكترونية لـ ZATCA',
+            'excerpt_en' => 'Everything you need to know about Phase 2 compliance and integration.',
+            'excerpt_ar' => 'كل ما تحتاج معرفته عن الامتثال للمرحلة الثانية والتكامل.',
+        ],
+        [
+            'slug' => 'inventory-optimization',
+            'title_en' => 'Inventory Optimization for Healthcare',
+            'title_ar' => 'تحسين المخزون للقطاع الصحي',
+            'excerpt_en' => 'How clinics and hospitals can reduce waste and avoid stockouts.',
+            'excerpt_ar' => 'كيف تقلّص العيادات والمستشفيات الهدر وتتجنب نفاد المخزون.',
+        ],
+        [
+            'slug' => 'procurement-best-practices',
+            'title_en' => 'Procurement Best Practices',
+            'title_ar' => 'أفضل ممارسات المشتريات',
+            'excerpt_en' => 'Streamline vendor management, RFQs, and purchase orders.',
+            'excerpt_ar' => 'بسّط إدارة الموردين وطلبات عروض الأسعار وأوامر الشراء.',
+        ],
+    ];
+}
+
+if (empty($faqs)) {
+    $faqs = [
+        [
+            'question_en' => 'What modules does Rateb include?',
+            'question_ar' => 'ما الوحدات الموجودة في رتب؟',
+            'answer_en' => 'Rateb includes procurement, inventory, contracts, HR, payroll, accounting, manufacturing, CRM, and more under one unified platform.',
+            'answer_ar' => 'تشمل رتب المشتريات والمخزون والعقود والموارد البشرية والرواتب والمحاسبة والتصنيع وإدارة العملاء وغيرها في منصة موحدة.',
+        ],
+        [
+            'question_en' => 'Is Rateb compliant with ZATCA e-invoicing?',
+            'question_ar' => 'هل رتب متوافق مع الفوترة الإلكترونية لـ ZATCA؟',
+            'answer_en' => 'Yes. Rateb supports ZATCA Phase 2 e-invoicing with QR codes, UUIDs, and compliant XML generation.',
+            'answer_ar' => 'نعم. يدعم رتب الفوترة الإلكترونية للمرحلة الثانية من ZATCA مع رموز QR ومعرّفات UUID وملفات XML متوافقة.',
+        ],
+        [
+            'question_en' => 'Can I manage multiple branches?',
+            'question_ar' => 'هل يمكن إدارة فروع متعددة؟',
+            'answer_en' => 'Yes. Rateb supports multi-branch inventory, transfers, and consolidated reporting with tenant isolation.',
+            'answer_ar' => 'نعم. يدعم رتب مخزون متعدد الفروع والتحويلات والتقارير المركبة مع عزل المستأجرين.',
+        ],
+        [
+            'question_en' => 'Do you offer implementation support?',
+            'question_ar' => 'هل تقدمون دعم التنفيذ؟',
+            'answer_en' => 'Yes. We provide onboarding, training, and priority support for institutions and professional plans.',
+            'answer_ar' => 'نعم. نقدم التهيئة والتدريب والدعم الأولوي للمؤسسات وباقات الاحترافية.',
+        ],
+        [
+            'question_en' => 'How do I request a demo?',
+            'question_ar' => 'كيف أطلب عرضاً؟',
+            'answer_en' => 'Click "Request a Quote" or "Request Demo" anywhere on the site and our team will contact you.',
+            'answer_ar' => 'اضغط على "اطلب عرضاً" أو "اطلب عرضاً توضيحياً" في أي مكان في الموقع وسيتواصل معك فريقنا.',
+        ],
+    ];
+}
 ?>
 <section class="rateb-mkt-hero">
     <div class="container">
