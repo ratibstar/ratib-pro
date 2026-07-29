@@ -32,61 +32,130 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
     if ($referenceNumber === '' || $referenceNumber === $entryNumber) {
         return null;
     }
-    $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date FROM financial_transactions WHERE reference_number = ? LIMIT 1");
-    $ftCheck->bind_param('s', $referenceNumber);
-    $ftCheck->execute();
-    $ftRes = $ftCheck->get_result();
-    if (!$ftRes || $ftRes->num_rows === 0) {
-        $ftCheck->close();
-        return null;
-    }
-    $ft = $ftRes->fetch_assoc();
-    $ftCheck->close();
-    $transactionId = (int) $ft['id'];
-    $transactionType = trim((string) $ft['transaction_type']);
-    $amount = floatval($ft['total_amount']);
-    $description = trim((string) $ft['description']);
-    $transactionDate = $ft['transaction_date'];
 
+    $transactionId = null;
+    $transactionType = null;
+    $amount = null;
+    $description = null;
+    $transactionDate = null;
     $entityType = null;
     $entityId = null;
     $category = null;
-    $etCheck = $conn->prepare("SELECT entity_type, entity_id, category FROM entity_transactions WHERE transaction_id = ? LIMIT 1");
-    $etCheck->bind_param('i', $transactionId);
-    $etCheck->execute();
-    $etRes = $etCheck->get_result();
-    if ($etRes && $etRow = $etRes->fetch_assoc()) {
-        $entityType = $etRow['entity_type'];
-        $entityId = (int) $etRow['entity_id'];
-        $category = $etRow['category'] ?? null;
-    }
-    $etCheck->close();
 
-    if (!$entityType || !$entityId) {
-        // Fallback to entry_approval entity fields if present
-        if (!empty($entryApprovalRow['entity_type']) && !empty($entryApprovalRow['entity_id'])) {
-            $entityType = $entryApprovalRow['entity_type'];
-            $entityId = (int) $entryApprovalRow['entity_id'];
-        } else {
+    // Try multiple reference variants (ETX0001, ETX00001, EX0001, EX00001)
+    $referenceVariants = [$referenceNumber];
+    if (stripos($referenceNumber, 'ETX') === 0) {
+        $referenceVariants[] = 'EX' . substr($referenceNumber, 3);
+    }
+    if (stripos($referenceNumber, 'EX') === 0) {
+        $referenceVariants[] = 'ETX' . substr($referenceNumber, 2);
+    }
+    $referenceVariants = array_unique($referenceVariants);
+
+    foreach ($referenceVariants as $ref) {
+        $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date, journal_entry_id FROM financial_transactions WHERE reference_number = ? LIMIT 1");
+        $ftCheck->bind_param('s', $ref);
+        $ftCheck->execute();
+        $ftRes = $ftCheck->get_result();
+        if ($ftRes && $ftRow = $ftRes->fetch_assoc()) {
+            $transactionId = (int) $ftRow['id'];
+            $transactionType = trim((string) $ftRow['transaction_type']);
+            $amount = floatval($ftRow['total_amount']);
+            $description = trim((string) $ftRow['description']);
+            $transactionDate = $ftRow['transaction_date'];
+            if (!empty($ftRow['journal_entry_id'])) {
+                $ftCheck->close();
+                return (int) $ftRow['journal_entry_id'];
+            }
+        }
+        $ftCheck->close();
+        if ($transactionId) break;
+    }
+
+    // Fallback: find by amount, date, and description similarity
+    if (!$transactionId && !empty($entryApprovalRow['amount']) && !empty($entryApprovalRow['entry_date'])) {
+        $descLike = '%' . $conn->real_escape_string($entryApprovalRow['description']) . '%';
+        $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date, journal_entry_id FROM financial_transactions WHERE total_amount = ? AND transaction_date = ? AND description LIKE ? LIMIT 1");
+        $ftCheck->bind_param('dss', $entryApprovalRow['amount'], $entryApprovalRow['entry_date'], $descLike);
+        $ftCheck->execute();
+        $ftRes = $ftCheck->get_result();
+        if ($ftRes && $ftRow = $ftRes->fetch_assoc()) {
+            $transactionId = (int) $ftRow['id'];
+            $transactionType = trim((string) $ftRow['transaction_type']);
+            $amount = floatval($ftRow['total_amount']);
+            $description = trim((string) $ftRow['description']);
+            $transactionDate = $ftRow['transaction_date'];
+            if (!empty($ftRow['journal_entry_id'])) {
+                $ftCheck->close();
+                return (int) $ftRow['journal_entry_id'];
+            }
+        }
+        $ftCheck->close();
+    }
+
+    if (!$transactionId) {
+        // Last resort: create a standalone journal entry from entry_approval data
+        $entityType = !empty($entryApprovalRow['entity_type']) ? $entryApprovalRow['entity_type'] : 'accounting';
+        $entityId = !empty($entryApprovalRow['entity_id']) ? (int) $entryApprovalRow['entity_id'] : 0;
+        $transactionType = 'Expense';
+        $amount = floatval($entryApprovalRow['amount'] ?? 0);
+        $description = trim((string) ($entryApprovalRow['description'] ?? ''));
+        $transactionDate = $entryApprovalRow['entry_date'];
+        if (!$amount || !$transactionDate) {
             return null;
+        }
+    } else {
+        // Resolve entity/category from entity_transactions
+        $etCheck = $conn->prepare("SELECT entity_type, entity_id, category FROM entity_transactions WHERE transaction_id = ? LIMIT 1");
+        $etCheck->bind_param('i', $transactionId);
+        $etCheck->execute();
+        $etRes = $etCheck->get_result();
+        if ($etRes && $etRow = $etRes->fetch_assoc()) {
+            $entityType = $etRow['entity_type'];
+            $entityId = (int) $etRow['entity_id'];
+            $category = $etRow['category'] ?? null;
+        }
+        $etCheck->close();
+        if (!$entityType || !$entityId) {
+            if (!empty($entryApprovalRow['entity_type']) && !empty($entryApprovalRow['entity_id'])) {
+                $entityType = $entryApprovalRow['entity_type'];
+                $entityId = (int) $entryApprovalRow['entity_id'];
+            } else {
+                $entityType = 'accounting';
+                $entityId = 0;
+            }
         }
     }
 
     // Avoid duplicate journal entry for the same transaction
+    $jeNumber = 'JE-' . date('Ymd', strtotime($transactionDate)) . '-' . ($transactionId ? str_pad($transactionId, 6, '0', STR_PAD_LEFT) : 'EA' . $entryApprovalRow['id']);
     $existingCheck = $conn->prepare("SELECT id FROM journal_entries WHERE entry_number = ? LIMIT 1");
-    $jeNumber = 'JE-' . date('Ymd', strtotime($transactionDate)) . '-' . str_pad($transactionId, 6, '0', STR_PAD_LEFT);
     $existingCheck->bind_param('s', $jeNumber);
     $existingCheck->execute();
     $existingRes = $existingCheck->get_result();
     if ($existingRes && $existingRow = $existingRes->fetch_assoc()) {
         $existingCheck->close();
-        return (int) $existingRow['id'];
+        $journalEntryId = (int) $existingRow['id'];
+        if ($transactionId) {
+            $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+            $upd->bind_param('ii', $journalEntryId, $transactionId);
+            $upd->execute();
+            $upd->close();
+        }
+        return $journalEntryId;
     }
     $existingCheck->close();
 
-    $result = createAutomaticJournalEntry($conn, $transactionId, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category);
+    $result = createAutomaticJournalEntry($conn, $transactionId ?: 0, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category);
     if ($result['success'] && !empty($result['journal_entry_id'])) {
-        return (int) $result['journal_entry_id'];
+        $journalEntryId = (int) $result['journal_entry_id'];
+        if ($transactionId) {
+            $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+            $upd->bind_param('ii', $journalEntryId, $transactionId);
+            $upd->execute();
+            $upd->close();
+        }
+        return $journalEntryId;
     }
     return null;
 }

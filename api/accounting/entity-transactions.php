@@ -713,6 +713,7 @@ try {
                         currency VARCHAR(3) DEFAULT 'SAR',
                         debit_amount DECIMAL(15,2) DEFAULT 0.00,
                         credit_amount DECIMAL(15,2) DEFAULT 0.00,
+                        journal_entry_id INT NULL,
                         transaction_type ENUM('Income', 'Expense', 'Transfer', 'Adjustment') NOT NULL,
                         status ENUM('Draft', 'Approved', 'Posted') DEFAULT 'Posted',
                         created_by INT NOT NULL DEFAULT 1,
@@ -741,6 +742,11 @@ try {
                 $creditCheck = $conn->query("SHOW COLUMNS FROM financial_transactions LIKE 'credit_amount'");
                 if ($creditCheck->num_rows === 0) {
                     $conn->query("ALTER TABLE financial_transactions ADD COLUMN credit_amount DECIMAL(15,2) DEFAULT 0.00 AFTER debit_amount");
+                }
+                $jeIdCheck = $conn->query("SHOW COLUMNS FROM financial_transactions LIKE 'journal_entry_id'");
+                if ($jeIdCheck->num_rows === 0) {
+                    $conn->query("ALTER TABLE financial_transactions ADD COLUMN journal_entry_id INT NULL AFTER credit_amount");
+                    $conn->query("ALTER TABLE financial_transactions ADD INDEX idx_journal_entry_id (journal_entry_id)");
                 }
             }
             
@@ -1094,6 +1100,17 @@ try {
                 } catch (Exception $je) {
                     $log('Journal entry creation failed: ' . $je->getMessage());
                     // Don't fail the transaction if journal entry fails
+                }
+                
+                // Link financial transaction to the created journal entry
+                if ($journalResult['success'] && !empty($journalResult['journal_entry_id'])) {
+                    $jeId = (int) $journalResult['journal_entry_id'];
+                    $updateFtJe = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+                    if ($updateFtJe) {
+                        $updateFtJe->bind_param('ii', $jeId, $transactionId);
+                        $updateFtJe->execute();
+                        $updateFtJe->close();
+                    }
                 }
                 
                 // Update financial_transactions debit/credit columns

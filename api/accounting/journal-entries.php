@@ -5,6 +5,9 @@
  */
 require_once '../../includes/config.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
+if (file_exists(__DIR__ . '/auto-journal-entry.php')) {
+    require_once __DIR__ . '/auto-journal-entry.php';
+}
 if (file_exists(__DIR__ . '/../core/date-helper.php')) {
     require_once __DIR__ . '/../core/date-helper.php';
 } elseif (file_exists(__DIR__ . '/core/date-helper.php')) {
@@ -42,6 +45,57 @@ if (!function_exists('formatDatesInArray')) {
 require_once __DIR__ . '/core/erp-posting-controls.php';
 require_once __DIR__ . '/core/audit-trail-helper.php';
 require_once __DIR__ . '/core/accounting-ledger-lock.php';
+
+/**
+ * Ensure a financial transaction has a linked journal entry with double-entry lines.
+ * Returns the journal_entry_id or null.
+ */
+function ensureFinancialTransactionJournalEntry($conn, $ftId, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category = null) {
+    if (!function_exists('createAutomaticJournalEntry')) {
+        return null;
+    }
+    $ftId = (int) $ftId;
+    if ($ftId <= 0) return null;
+
+    $check = $conn->prepare("SELECT journal_entry_id FROM financial_transactions WHERE id = ? LIMIT 1");
+    $check->bind_param('i', $ftId);
+    $check->execute();
+    $res = $check->get_result();
+    if ($res && $row = $res->fetch_assoc()) {
+        if (!empty($row['journal_entry_id'])) {
+            $check->close();
+            return (int) $row['journal_entry_id'];
+        }
+    }
+    $check->close();
+
+    $jeNumber = 'JE-' . date('Ymd', strtotime($transactionDate)) . '-' . str_pad($ftId, 6, '0', STR_PAD_LEFT);
+    $existing = $conn->prepare("SELECT id FROM journal_entries WHERE entry_number = ? LIMIT 1");
+    $existing->bind_param('s', $jeNumber);
+    $existing->execute();
+    $existingRes = $existing->get_result();
+    if ($existingRes && $existingRow = $existingRes->fetch_assoc()) {
+        $existing->close();
+        $journalEntryId = (int) $existingRow['id'];
+        $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+        $upd->bind_param('ii', $journalEntryId, $ftId);
+        $upd->execute();
+        $upd->close();
+        return $journalEntryId;
+    }
+    $existing->close();
+
+    $result = createAutomaticJournalEntry($conn, $ftId, $entityType ?: 'accounting', $entityId ?: 0, $transactionType, $amount, $description, $transactionDate, $category);
+    if ($result['success'] && !empty($result['journal_entry_id'])) {
+        $journalEntryId = (int) $result['journal_entry_id'];
+        $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+        $upd->bind_param('ii', $journalEntryId, $ftId);
+        $upd->execute();
+        $upd->close();
+        return $journalEntryId;
+    }
+    return null;
+}
 
 header('Content-Type: application/json');
 
@@ -566,6 +620,10 @@ try {
         $conditions[] = $includeDraft
             ? "je.status IN ('Posted', 'Approved', 'Draft')"
             : "je.status IN ('Posted', 'Approved')";
+
+        // Skip journal entries that are already represented by a financial_transaction row
+        // (so auto-generated entries for entity transactions don't duplicate in the General Ledger)
+        $conditions[] = "je.id NOT IN (SELECT journal_entry_id FROM financial_transactions WHERE journal_entry_id IS NOT NULL)";
 
         // Execute query
         if ($query) {
@@ -1135,10 +1193,12 @@ try {
                 ft.transaction_date as entry_date,
                 ft.description,
                 ft.transaction_type as entry_type,
-                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END) as total_debit,
-                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END) as total_credit,
+                ft.total_amount,
+                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_debit,
+                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_credit,
                 ft.status,
                 ft.reference_number,
+                ft.journal_entry_id,
                 u.username as created_by_name,
                 " . ($hasEntityTable ? "
                 et.entity_type, 
@@ -1167,10 +1227,12 @@ try {
                     ft.transaction_date as entry_date,
                     ft.description,
                     ft.transaction_type as entry_type,
-                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END) as total_debit,
-                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END) as total_credit,
+                    ft.total_amount,
+                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_debit,
+                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_credit,
                     ft.status,
                     ft.reference_number,
+                    ft.journal_entry_id,
                     u.username as created_by_name,
                     " . ($hasEntityTable ? "
                     et.entity_type, 
@@ -1264,12 +1326,17 @@ try {
         // Optional: Attach debit/credit account names for transaction rows (for General Ledger "Debit Account / Credit Account" columns)
         $tlDebitStmt = null;
         $tlCreditStmt = null;
+        $jelDebitStmt = null;
+        $jelCreditStmt = null;
         try {
             $tlTableCheck = $conn->query("SHOW TABLES LIKE 'transaction_lines'");
+            $jelTableCheck = $conn->query("SHOW TABLES LIKE 'journal_entry_lines'");
             $faTableCheck = $conn->query("SHOW TABLES LIKE 'financial_accounts'");
             $hasTlTable = $tlTableCheck && $tlTableCheck->num_rows > 0;
+            $hasJelTable = $jelTableCheck && $jelTableCheck->num_rows > 0;
             $hasFaTable = $faTableCheck && $faTableCheck->num_rows > 0;
             if ($tlTableCheck) $tlTableCheck->free();
+            if ($jelTableCheck) $jelTableCheck->free();
             if ($faTableCheck) $faTableCheck->free();
 
             if ($hasTlTable && $hasFaTable) {
@@ -1304,13 +1371,55 @@ try {
                     ");
                 }
             }
+
+            if ($hasJelTable && $hasFaTable) {
+                $jelDebitStmt = $conn->prepare("
+                    SELECT fa.account_code, fa.account_name
+                    FROM journal_entry_lines jel
+                    LEFT JOIN financial_accounts fa ON jel.account_id = fa.id
+                    WHERE jel.journal_entry_id = ? AND jel.debit_amount > 0
+                    ORDER BY jel.debit_amount DESC, jel.id ASC
+                    LIMIT 1
+                ");
+                $jelCreditStmt = $conn->prepare("
+                    SELECT fa.account_code, fa.account_name
+                    FROM journal_entry_lines jel
+                    LEFT JOIN financial_accounts fa ON jel.account_id = fa.id
+                    WHERE jel.journal_entry_id = ? AND jel.credit_amount > 0
+                    ORDER BY jel.credit_amount DESC, jel.id ASC
+                    LIMIT 1
+                ");
+            }
         } catch (Exception $e) {
             // Best-effort only: if anything fails, we just won't attach account names
             $tlDebitStmt = null;
             $tlCreditStmt = null;
+            $jelDebitStmt = null;
+            $jelCreditStmt = null;
         }
-        
+
         while ($row = $ftResult->fetch_assoc()) {
+            // Ensure this financial transaction has a linked journal entry (so GL columns work)
+            if (empty($row['journal_entry_id']) && $row['id'] && $row['total_amount'] > 0) {
+                $createdJeId = ensureFinancialTransactionJournalEntry(
+                    $conn,
+                    $row['id'],
+                    $row['entity_type'] ?? null,
+                    $row['entity_id'] ?? 0,
+                    $row['transaction_type'] ?? 'Expense',
+                    floatval($row['total_amount'] ?? 0),
+                    $row['description'] ?? '',
+                    $row['transaction_date'],
+                    null
+                );
+                if ($createdJeId) {
+                    $row['journal_entry_id'] = $createdJeId;
+                    // Recompute totals as balanced now that a journal entry exists
+                    $row['total_debit'] = floatval($row['total_amount'] ?? 0);
+                    $row['total_credit'] = floatval($row['total_amount'] ?? 0);
+                }
+            }
+
             // Format the entry to match journal entry structure
             $entry = [
                 'id' => $row['id'],
@@ -1351,10 +1460,33 @@ try {
                 }
             }
 
+            // If no transaction_lines, try linked journal entry lines
+            $jeId = !empty($row['journal_entry_id']) ? intval($row['journal_entry_id']) : null;
+            if ($jeId && $jelDebitStmt && empty($entry['debit_account_name'])) {
+                $jelDebitStmt->bind_param('i', $jeId);
+                if ($jelDebitStmt->execute()) {
+                    $r = $jelDebitStmt->get_result();
+                    if ($r && ($dr = $r->fetch_assoc())) {
+                        $entry['debit_account_name'] = (($dr['account_code'] ? $dr['account_code'] . ' - ' : '') . ($dr['account_name'] ?? ''));
+                    }
+                }
+            }
+            if ($jeId && $jelCreditStmt && empty($entry['credit_account_name'])) {
+                $jelCreditStmt->bind_param('i', $jeId);
+                if ($jelCreditStmt->execute()) {
+                    $r = $jelCreditStmt->get_result();
+                    if ($r && ($cr = $r->fetch_assoc())) {
+                        $entry['credit_account_name'] = (($cr['account_code'] ? $cr['account_code'] . ' - ' : '') . ($cr['account_name'] ?? ''));
+                    }
+                }
+            }
+
             $entries[] = $entry;
         }
         if ($tlDebitStmt) $tlDebitStmt->close();
         if ($tlCreditStmt) $tlCreditStmt->close();
+        if ($jelDebitStmt) $jelDebitStmt->close();
+        if ($jelCreditStmt) $jelCreditStmt->close();
         }
     }
     
