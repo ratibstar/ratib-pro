@@ -85,75 +85,178 @@ $pageJs = [];
 include '../includes/header.php';
 ?>
 
-<div class="main-content entity-expenses-page" dir="ltr" lang="en">
-    <div class="page-header">
-        <a href="<?php echo $backUrl; ?>" class="btn btn-sm btn-outline-secondary">← Back to <?php echo htmlspecialchars($entityLabel); ?></a>
-        <h2 class="mt-2"><?php echo htmlspecialchars($entityLabel); ?> Expenses: <?php echo htmlspecialchars($entityName); ?></h2>
-    </div>
+<style>
+.entity-expenses-page {
+    padding: 1.5rem;
+}
 
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <div class="card glass-card">
-                <div class="card-body">
-                    <h5 class="card-title">Add Expense</h5>
-                    <form id="expenseForm">
-                        <input type="hidden" name="entity_type" value="<?php echo htmlspecialchars($entityType); ?>">
-                        <input type="hidden" name="entity_id" value="<?php echo (int) $entityId; ?>">
-                        <input type="hidden" name="transaction_type" value="Expense">
-                        <input type="hidden" name="entry_type" value="Manual">
-                        <div class="mb-2">
-                            <label class="form-label">Date</label>
-                            <input type="date" name="transaction_date" class="form-control" required value="<?php echo date('Y-m-d'); ?>">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Description</label>
-                            <input type="text" name="description" class="form-control" required placeholder="e.g. Office rent, commission, travel">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Amount</label>
-                            <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Category</label>
-                            <input type="text" name="category" class="form-control" placeholder="e.g. operational">
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label">Reference</label>
-                            <input type="text" name="reference_number" class="form-control" placeholder="Optional">
-                        </div>
-                        <button type="submit" class="btn btn-primary" <?php echo $canCreate ? '' : 'disabled'; ?>>
-                            <i class="fas fa-plus"></i> Add Expense
-                        </button>
-                        <?php if (!$canCreate): ?>
-                            <small class="text-muted d-block mt-1">You do not have permission to add expenses.</small>
-                        <?php endif; ?>
-                    </form>
+/* Desktop: account for fixed sidebar */
+@media (min-width: 769px) {
+    .entity-expenses-page {
+        margin-left: 240px;
+        width: calc(100% - 240px);
+        max-width: calc(100% - 240px);
+    }
+}
+
+/* Mobile/Tablet: full width */
+@media (max-width: 768px) {
+    .entity-expenses-page {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 0.75rem;
+    }
+}
+
+.entity-expenses-page .page-header h2 {
+    color: #f8fafc;
+}
+
+.entity-expenses-page .card {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.entity-expenses-page .card-title {
+    color: #f8fafc;
+}
+
+.entity-expenses-page .form-label {
+    color: #cbd5e1;
+}
+
+.entity-expenses-page .form-control {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #334155;
+}
+
+.entity-expenses-page .form-control:focus {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.entity-expenses-page .form-control::placeholder {
+    color: #64748b;
+}
+
+.entity-expenses-page .btn-outline-secondary {
+    color: #cbd5e1;
+    border-color: #475569;
+}
+
+.entity-expenses-page .btn-outline-secondary:hover {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+.entity-expenses-page .text-muted {
+    color: #94a3b8 !important;
+}
+
+.entity-expenses-page .table-dark {
+    --bs-table-bg: #0f172a;
+    --bs-table-color: #e2e8f0;
+    --bs-table-border-color: #334155;
+}
+
+.entity-expenses-page .table-dark th,
+.entity-expenses-page .table-dark td {
+    border-color: #334155;
+}
+
+.entity-expenses-page .table-dark thead th {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
+.entity-expenses-page .table-dark tbody tr:hover {
+    background-color: #1e293b;
+}
+
+/* Ensure the row containing the two cards stacks properly on smaller screens */
+.entity-expenses-page .row > [class*="col-"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+</style>
+
+<div class="main-content entity-expenses-page" dir="ltr" lang="en">
+    <div class="container-fluid">
+        <div class="page-header">
+            <a href="<?php echo $backUrl; ?>" class="btn btn-sm btn-outline-secondary">← Back to <?php echo htmlspecialchars($entityLabel); ?></a>
+            <h2 class="mt-2"><?php echo htmlspecialchars($entityLabel); ?> Expenses: <?php echo htmlspecialchars($entityName); ?></h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card glass-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Add Expense</h5>
+                        <form id="expenseForm">
+                            <input type="hidden" name="entity_type" value="<?php echo htmlspecialchars($entityType); ?>">
+                            <input type="hidden" name="entity_id" value="<?php echo (int) $entityId; ?>">
+                            <input type="hidden" name="transaction_type" value="Expense">
+                            <input type="hidden" name="entry_type" value="Manual">
+                            <div class="mb-2">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="transaction_date" class="form-control" required value="<?php echo date('Y-m-d'); ?>">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Description</label>
+                                <input type="text" name="description" class="form-control" required placeholder="e.g. Office rent, commission, travel">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Amount</label>
+                                <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Category</label>
+                                <input type="text" name="category" class="form-control" placeholder="e.g. operational">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Reference</label>
+                                <input type="text" name="reference_number" class="form-control" placeholder="Optional">
+                            </div>
+                            <button type="submit" class="btn btn-primary" <?php echo $canCreate ? '' : 'disabled'; ?>>
+                                <i class="fas fa-plus"></i> Add Expense
+                            </button>
+                            <?php if (!$canCreate): ?>
+                                <small class="text-muted d-block mt-1">You do not have permission to add expenses.</small>
+                            <?php endif; ?>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-8">
-            <div class="card glass-card">
-                <div class="card-body">
-                    <h5 class="card-title">Expense History</h5>
-                    <div class="table-responsive">
-                        <table class="table table-dark table-hover" id="expensesTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Reference</th>
-                                    <th>Category</th>
-                                    <th class="num">Amount</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expensesTbody">
-                                <tr><td colspan="7" class="text-center">Loading…</td></tr>
-                            </tbody>
-                        </table>
+            <div class="col-md-8">
+                <div class="card glass-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Expense History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover" id="expensesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Reference</th>
+                                        <th>Category</th>
+                                        <th class="num">Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTbody">
+                                    <tr><td colspan="7" class="text-center">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="expensesSummary" class="mt-3"></div>
                     </div>
-                    <div id="expensesSummary" class="mt-3"></div>
                 </div>
             </div>
         </div>

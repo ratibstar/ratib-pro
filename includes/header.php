@@ -56,8 +56,13 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <link rel="preload" href="<?php echo htmlspecialchars($navCssHref, ENT_QUOTES, 'UTF-8'); ?>" as="style">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style">
     
-    <!-- Load jQuery immediately (not deferred) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Load jQuery immediately (not deferred) - local copy first, CDN fallback to avoid connection failures -->
+    <script src="<?php echo asset('js/jquery-3.6.0.min.js'); ?>"></script>
+    <script>
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>');
+    }
+    </script>
     <!-- Select2 CSS and JS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
