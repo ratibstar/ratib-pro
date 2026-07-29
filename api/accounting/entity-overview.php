@@ -96,6 +96,7 @@ try {
                     WHEN et.entity_type = 'agent' THEN (SELECT agent_name FROM agents WHERE id = et.entity_id LIMIT 1)
                     WHEN et.entity_type = 'subagent' THEN (SELECT subagent_name FROM subagents WHERE id = et.entity_id LIMIT 1)
                     WHEN et.entity_type = 'worker' THEN (SELECT worker_name FROM workers WHERE id = et.entity_id LIMIT 1)
+                    WHEN et.entity_type = 'partner_agency' THEN (SELECT name FROM partner_agencies WHERE id = et.entity_id LIMIT 1)
                     WHEN et.entity_type = 'hr' THEN (SELECT employee_name FROM hr_employees WHERE id = et.entity_id LIMIT 1)
                     WHEN et.entity_type = 'accounting' THEN (SELECT username FROM users WHERE user_id = et.entity_id LIMIT 1)
                     ELSE NULL

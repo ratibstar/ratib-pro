@@ -837,6 +837,10 @@ const ui = {
                             class="btn-edit" title="Edit" data-permission="edit_agent">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <button type="button" class="btn-account" title="Expenses" data-permission="view_chart_accounts"
+                            onclick="window.open('entity-expenses.php?entity_type=agent&entity_id=${agent.agent_id}', '_blank')">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </button>
                     <button type="button" data-action="delete-agent" data-id="${agent.agent_id}" 
                             class="btn-delete" title="Delete" data-permission="delete_agent">
                         <i class="fas fa-trash"></i>

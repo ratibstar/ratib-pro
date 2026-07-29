@@ -268,6 +268,10 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-dollar-sign"></i>
                 <span>Accounting</span>
             </a>
+            <a href="<?php echo htmlspecialchars(rateb_nav_url('entity-cost-report.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_chart_accounts">
+                <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                <span>Cost Report</span>
+            </a>
             <a href="<?php echo htmlspecialchars(rateb_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_hr_dashboard">
                 <i class="nav-icon fas fa-user-tie"></i>
                 <span>HR</span>

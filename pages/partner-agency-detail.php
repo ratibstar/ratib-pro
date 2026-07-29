@@ -49,9 +49,16 @@ $listHref = htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 
         </div>
     </header>
 
+    <?php
+    $partnerAgencyId = (int) ($_GET['id'] ?? 0);
+    $partnerExpensesUrl = $partnerAgencyId > 0
+        ? htmlspecialchars(rateb_nav_url('entity-expenses.php?entity_type=partner_agency&entity_id=' . $partnerAgencyId), ENT_QUOTES, 'UTF-8')
+        : '#';
+    ?>
     <div class="agency-detail-tabs glass-card" role="tablist" aria-label="Agency sections">
         <button type="button" class="agency-detail-tab is-active" role="tab" aria-selected="true" data-tab="basic">Basic data</button>
         <button type="button" class="agency-detail-tab" role="tab" aria-selected="false" data-tab="account">Account statement</button>
+        <a href="<?php echo $partnerExpensesUrl; ?>" class="agency-detail-tab" data-permission="view_chart_accounts">Expenses</a>
     </div>
 
     <div id="panel-basic" class="agency-detail-panels" role="tabpanel">

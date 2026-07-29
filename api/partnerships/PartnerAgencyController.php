@@ -171,6 +171,14 @@ class PartnerAgencyController
             $u->execute([$hash, $id]);
         }
 
+        // Auto-create a financial account (GL) for this partner agency so expenses
+        // can be linked to it automatically.
+        try {
+            $this->ensureFinancialAccount($id);
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController::create ensureFinancialAccount: ' . $e->getMessage());
+        }
+
         return $this->toPublicRow($this->find($id));
     }
 

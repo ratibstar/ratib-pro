@@ -1118,6 +1118,10 @@ class WorkerTable {
                         <button class="btn-icon-small view-btn" data-action="view" data-worker-id="${worker.id}" title="View" data-permission="view_worker">
                             <i class="fas fa-eye"></i>
                         </button>
+                        <button type="button" class="btn-icon-small accounting-btn" title="Expenses" data-permission="view_chart_accounts"
+                                onclick="window.open('entity-expenses.php?entity_type=worker&entity_id=${worker.id}', '_blank')">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </button>
                         <button class="btn-icon-small delete-btn" data-action="delete" data-worker-id="${worker.id}" title="Delete" data-permission="delete_worker">
                             <i class="fas fa-trash"></i>
                         </button>
