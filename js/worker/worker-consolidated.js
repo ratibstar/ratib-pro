@@ -1118,8 +1118,8 @@ class WorkerTable {
                         <button class="btn-icon-small view-btn" data-action="view" data-worker-id="${worker.id}" title="View" data-permission="view_worker">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button type="button" class="btn-icon-small accounting-btn" title="Expenses" data-permission="view_chart_accounts"
-                                onclick="window.open('entity-expenses.php?entity_type=worker&entity_id=${worker.id}', '_blank')">
+                        <button type="button" class="btn-icon-small accounting-btn" title="Expenses" data-permission="view_journal_entries"
+                                onclick="window.location.href='entity-expenses.php?entity_type=worker&entity_id=${worker.id}'">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </button>
                         <button class="btn-icon-small delete-btn" data-action="delete" data-worker-id="${worker.id}" title="Delete" data-permission="delete_worker">

@@ -58,7 +58,7 @@ $listHref = htmlspecialchars(rateb_nav_url('partner-agencies.php'), ENT_QUOTES, 
     <div class="agency-detail-tabs glass-card" role="tablist" aria-label="Agency sections">
         <button type="button" class="agency-detail-tab is-active" role="tab" aria-selected="true" data-tab="basic">Basic data</button>
         <button type="button" class="agency-detail-tab" role="tab" aria-selected="false" data-tab="account">Account statement</button>
-        <a href="<?php echo $partnerExpensesUrl; ?>" class="agency-detail-tab" data-permission="view_chart_accounts">Expenses</a>
+        <a href="<?php echo $partnerExpensesUrl; ?>" class="agency-detail-tab" data-permission="view_journal_entries">Expenses</a>
     </div>
 
     <div id="panel-basic" class="agency-detail-panels" role="tabpanel">

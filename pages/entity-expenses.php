@@ -31,9 +31,9 @@ if (!in_array($entityType, $allowedTypes, true) || $entityId <= 0) {
 $entityName = '';
 if (isset($conn) && $conn instanceof mysqli) {
     $map = [
-        'agent' => ['table' => 'agents', 'name_col' => 'full_name', 'fallback' => 'agent_name'],
+        'agent' => ['table' => 'agents', 'name_col' => 'agent_name'],
         'subagent' => ['table' => 'subagents', 'name_col' => 'subagent_name'],
-        'worker' => ['table' => 'workers', 'name_col' => 'worker_name', 'fallback' => 'full_name'],
+        'worker' => ['table' => 'workers', 'name_col' => 'worker_name'],
         'partner_agency' => ['table' => 'partner_agencies', 'name_col' => 'name'],
     ];
     $m = $map[$entityType];
@@ -71,10 +71,10 @@ $entityLabel = $labels[$entityType] ?? ucfirst($entityType);
 
 $pageTitle = $entityLabel . ' Expenses — ' . $entityName;
 $backUrl = htmlspecialchars(rateb_nav_url($entityType === 'partner_agency' ? 'partner-agencies.php' : ($entityType . '.php')), ENT_QUOTES, 'UTF-8');
-$apiUrl = htmlspecialchars(rateb_nav_url('api/accounting/entity-transactions.php'), ENT_QUOTES, 'UTF-8');
-$canCreate = hasPermission('journal-entries', 'create');
-$canUpdate = hasPermission('journal-entries', 'update');
-$canDelete = hasPermission('journal-entries', 'delete');
+// API URL is derived from the current page URL in JS to avoid relative-path issues.
+$canCreate = hasPermission('add_journal_entry');
+$canUpdate = hasPermission('edit_journal_entry');
+$canDelete = hasPermission('delete_journal_entry');
 
 $v = time();
 $pageCss = [
@@ -162,20 +162,38 @@ include '../includes/header.php';
 
 <script>
 (function() {
-    var apiUrl = '<?php echo $apiUrl; ?>';
     var entityType = <?php echo json_encode($entityType); ?>;
     var entityId = <?php echo (int) $entityId; ?>;
     var canDelete = <?php echo json_encode($canDelete); ?>;
     var canUpdate = <?php echo json_encode($canUpdate); ?>;
 
+    function getApiUrl() {
+        var url = new URL(window.location.href);
+        url.pathname = url.pathname.replace(/\/pages\/[^\/]+$/, '/api/accounting/entity-transactions.php');
+        return url;
+    }
+
+    function parseJsonResponse(r) {
+        var contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(function(text) {
+                throw new Error('Server returned non-JSON response: ' + text.slice(0, 100));
+            });
+        }
+        return r.json();
+    }
+
     function loadExpenses() {
         var tbody = document.getElementById('expensesTbody');
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading…</td></tr>';
-        fetch(apiUrl + '?entity_type=' + encodeURIComponent(entityType) + '&entity_id=' + encodeURIComponent(entityId))
-            .then(function(r) { return r.json(); })
+        var url = getApiUrl();
+        url.searchParams.set('entity_type', entityType);
+        url.searchParams.set('entity_id', entityId);
+        fetch(url.toString())
+            .then(parseJsonResponse)
             .then(function(data) {
                 if (!data.success) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">' + (data.message || 'Failed to load') + '</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">' + escapeHtml(data.message || 'Failed to load') + '</td></tr>';
                     return;
                 }
                 var rows = data.transactions || [];
@@ -196,7 +214,7 @@ include '../includes/header.php';
                             actions += '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-expense" data-id="' + (t.id || '') + '">Delete</button>';
                         }
                         return '<tr data-id="' + (t.id || '') + '">' +
-                            '<td>' + date + '</td>' +
+                            '<td>' + escapeHtml(date) + '</td>' +
                             '<td>' + escapeHtml(desc) + '</td>' +
                             '<td>' + escapeHtml(ref) + '</td>' +
                             '<td>' + escapeHtml(cat) + '</td>' +
@@ -232,12 +250,12 @@ include '../includes/header.php';
         payload.debit_amount = payload.amount;
         payload.total_amount = payload.amount;
 
-        fetch(apiUrl, {
+        fetch(getApiUrl().toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(function(r) { return r.json(); })
+        .then(parseJsonResponse)
         .then(function(data) {
             if (data.success) {
                 form.reset();
@@ -256,10 +274,12 @@ include '../includes/header.php';
         if (!e.target.classList.contains('btn-delete-expense')) return;
         var id = e.target.getAttribute('data-id');
         if (!id || !confirm('Delete this expense?')) return;
-        fetch(apiUrl + '?id=' + encodeURIComponent(id) + '&entity_type=' + encodeURIComponent(entityType) + '&entity_id=' + encodeURIComponent(entityId), {
-            method: 'DELETE'
-        })
-        .then(function(r) { return r.json(); })
+        var url = getApiUrl();
+        url.searchParams.set('id', id);
+        url.searchParams.set('entity_type', entityType);
+        url.searchParams.set('entity_id', entityId);
+        fetch(url.toString(), { method: 'DELETE' })
+        .then(parseJsonResponse)
         .then(function(data) {
             if (data.success) {
                 loadExpenses();

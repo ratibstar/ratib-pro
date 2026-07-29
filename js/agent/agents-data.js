@@ -837,8 +837,8 @@ const ui = {
                             class="btn-edit" title="Edit" data-permission="edit_agent">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button type="button" class="btn-account" title="Expenses" data-permission="view_chart_accounts"
-                            onclick="window.open('entity-expenses.php?entity_type=agent&entity_id=${agent.agent_id}', '_blank')">
+                    <button type="button" class="btn-account" title="Expenses" data-permission="view_journal_entries"
+                            onclick="window.location.href='entity-expenses.php?entity_type=agent&entity_id=${agent.agent_id}'">
                         <i class="fas fa-file-invoice-dollar"></i>
                     </button>
                     <button type="button" data-action="delete-agent" data-id="${agent.agent_id}" 

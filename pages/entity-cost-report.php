@@ -11,7 +11,7 @@ rateb_staff_page_require_session();
 rateb_staff_page_require_permission('view_chart_accounts');
 
 $pageTitle = 'Entity Cost Report';
-$apiUrl = htmlspecialchars(rateb_nav_url('api/accounting/entity-cost-report.php'), ENT_QUOTES, 'UTF-8');
+// API URL is derived from the current page URL in JS to avoid relative-path issues.
 
 $v = time();
 $pageCss = [
@@ -120,7 +120,6 @@ include '../includes/header.php';
 
 <script>
 (function() {
-    var apiUrl = '<?php echo $apiUrl; ?>';
     var typeLabels = {
         agent: 'Agent',
         subagent: 'SubAgent',
@@ -128,18 +127,33 @@ include '../includes/header.php';
         partner_agency: 'Partner Agency'
     };
 
+    function getApiUrl() {
+        var url = new URL(window.location.href);
+        url.pathname = url.pathname.replace(/\/pages\/[^\/]+$/, '/api/accounting/entity-cost-report.php');
+        return url;
+    }
+
+    function parseJsonResponse(r) {
+        var contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(function(text) {
+                throw new Error('Server returned non-JSON response: ' + text.slice(0, 100));
+            });
+        }
+        return r.json();
+    }
+
     function loadReport() {
         var form = document.getElementById('costReportFilter');
         var fd = new FormData(form);
-        var qs = new URLSearchParams();
-        fd.forEach(function(v, k) { if (v) qs.append(k, v); });
-        var url = apiUrl + '?' + qs.toString();
+        var url = getApiUrl();
+        fd.forEach(function(v, k) { if (v) url.searchParams.set(k, v); });
 
         document.getElementById('byTypeTbody').innerHTML = '<tr><td colspan="4" class="text-center">Loading…</td></tr>';
         document.getElementById('byEntityTbody').innerHTML = '<tr><td colspan="5" class="text-center">Loading…</td></tr>';
 
-        fetch(url)
-            .then(function(r) { return r.json(); })
+        fetch(url.toString())
+            .then(parseJsonResponse)
             .then(function(data) {
                 if (!data.success) {
                     var msg = data.message || 'Failed to load';

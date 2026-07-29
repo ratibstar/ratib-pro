@@ -351,8 +351,8 @@ const subagentManager = {
                                 class="action-btn edit-btn" title="Edit" data-permission="edit_subagent">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button type="button" class="action-btn accounting-btn" title="Expenses" data-permission="view_chart_accounts"
-                                onclick="window.open('entity-expenses.php?entity_type=subagent&entity_id=${subagent.subagent_id}', '_blank')">
+                        <button type="button" class="action-btn accounting-btn" title="Expenses" data-permission="view_journal_entries"
+                                onclick="window.location.href='entity-expenses.php?entity_type=subagent&entity_id=${subagent.subagent_id}'">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </button>
                         <button type="button" data-action="delete" data-id="${subagent.subagent_id}" 
