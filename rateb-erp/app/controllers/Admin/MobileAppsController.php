@@ -71,6 +71,7 @@ final class MobileAppsController extends Controller
             'featureKeys' => MobileAppConfigService::FEATURE_KEYS,
             'csrf' => Csrf::token(),
             'canManage' => $this->canManage(),
+            'canToggleEnable' => $this->canToggleEnable(),
         ], 'main');
     }
 
@@ -96,11 +97,19 @@ final class MobileAppsController extends Controller
             $features[$key] = isset($postedFeatures[$key]) && (string) $postedFeatures[$key] === '1';
         }
 
-        $status = isset($_POST['status']) && (string) $_POST['status'] === 'active'
-            ? MobileAppConfigService::STATUS_ACTIVE
-            : MobileAppConfigService::STATUS_INACTIVE;
-
         $svc = new MobileAppConfigService();
+        // Agency users must not enable/disable the mobile app — only platform/super-admin.
+        if ($this->canToggleEnable()) {
+            $status = isset($_POST['status']) && (string) $_POST['status'] === 'active'
+                ? MobileAppConfigService::STATUS_ACTIVE
+                : MobileAppConfigService::STATUS_INACTIVE;
+        } else {
+            $existing = $svc->findByCompanyId($companyId);
+            $status = is_array($existing) && (string) ($existing['status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE
+                ? MobileAppConfigService::STATUS_ACTIVE
+                : MobileAppConfigService::STATUS_INACTIVE;
+        }
+
         $result = $svc->upsertForCompany($companyId, [
             'app_name' => (string) $this->input('app_name', ''),
             'logo_path' => (string) $this->input('logo_path', ''),
@@ -142,5 +151,17 @@ final class MobileAppsController extends Controller
 
         return function_exists('rateb_is_super_admin') && rateb_is_super_admin()
             && function_exists('rateb_can') && rateb_can('settings.manage');
+    }
+
+    /**
+     * Enable/disable mobile app is platform-only (not agency/agent users).
+     */
+    private function canToggleEnable(): bool
+    {
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
+        return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
     }
 }

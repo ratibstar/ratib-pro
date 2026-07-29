@@ -6,12 +6,14 @@ declare(strict_types=1);
 /** @var array<string,bool> $features */
 /** @var list<string> $featureKeys */
 /** @var bool $canManage */
+/** @var bool $canToggleEnable */
 /** @var string $csrf */
 $company = $company ?? [];
 $config = $config ?? null;
 $features = $features ?? [];
 $featureKeys = $featureKeys ?? [];
 $canManage = !empty($canManage);
+$canToggleEnable = !empty($canToggleEnable);
 $cid = (int) ($company['id'] ?? 0);
 $readonly = !$canManage ? 'readonly' : '';
 $disabled = !$canManage ? 'disabled' : '';
@@ -35,6 +37,7 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
         <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cid); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
 
+            <?php if ($canToggleEnable) { ?>
             <div class="form-check form-switch mb-3">
                 <input type="hidden" name="status" value="inactive">
                 <input class="form-check-input" type="checkbox" role="switch" id="mobile_status"
@@ -43,6 +46,9 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
                     <?php echo Rateb\App\Core\View::escape(__('mobile_apps_enable')); ?>
                 </label>
             </div>
+            <?php } else { ?>
+            <input type="hidden" name="status" value="<?php echo $statusActive ? 'active' : 'inactive'; ?>">
+            <?php } ?>
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
