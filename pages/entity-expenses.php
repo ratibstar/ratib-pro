@@ -202,7 +202,7 @@ include '../includes/header.php';
                 <div class="card glass-card h-100">
                     <div class="card-body">
                         <h5 class="card-title">Add Expense</h5>
-                        <form id="expenseForm">
+                        <form id="expenseForm" method="POST" action="">
                             <input type="hidden" name="entity_type" value="<?php echo htmlspecialchars($entityType); ?>">
                             <input type="hidden" name="entity_id" value="<?php echo (int) $entityId; ?>">
                             <input type="hidden" name="transaction_type" value="Expense">
@@ -427,7 +427,7 @@ include '../includes/header.php';
         fetch(postUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            cache: 'no-store'
+            cache: 'no-store',
             body: JSON.stringify(payload)
         })
         .then(parseJsonResponse)

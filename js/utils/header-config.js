@@ -280,9 +280,9 @@
             setTimeout(loadHeaderNotificationBadge, 100);
             return;
         }
-        // Skip on control panel pages / control sessions - notifications API returns 403 for control sessions.
+        // Skip on control panel pages / control sessions / control-pro-bridge - notifications API returns 403 for control sessions.
         var appConfigEl = document.getElementById('app-config');
-        var isControlSession = appConfigEl && appConfigEl.getAttribute('data-control') === '1';
+        var isControlSession = appConfigEl && (appConfigEl.getAttribute('data-control') === '1' || appConfigEl.getAttribute('data-control-pro-bridge') === '1');
         var isControlPage = (window.location.pathname || '').indexOf('/control/') !== -1 || (window.location.search || '').indexOf('control=1') !== -1;
         if (isControlSession || isControlPage || !jQuery('#headerNotificationBadge').length) {
             return;
