@@ -1,4 +1,15 @@
-<?php /** @var array<string, mixed>|null $contact */ /** @var array<int, array<string, mixed>> $offices */ use Rateb\App\Services\CmsService; ?>
+<?php /** @var array<string, mixed>|null $contact */ /** @var array<int, array<string, mixed>> $offices */ use Rateb\App\Services\CmsService;
+if (!$contact) {
+    $contact = [
+        'email' => 'info@rateb.sa',
+        'phone' => '+966 599863868',
+        'address_en' => 'Riyadh, Kingdom of Saudi Arabia',
+        'address_ar' => 'الرياض، المملكة العربية السعودية',
+        'working_hours_en' => 'Sunday - Thursday, 9:00 AM - 6:00 PM',
+        'working_hours_ar' => 'الأحد - الخميس، 9:00 ص - 6:00 م',
+    ];
+}
+?>
 <section class="rateb-mkt-page-hero"><div class="container"><h1><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h1></div></section>
 <section class="rateb-mkt-section"><div class="container"><div class="row g-4">
 <div class="col-lg-5">

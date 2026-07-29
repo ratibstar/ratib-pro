@@ -183,12 +183,13 @@ final class MarketingController extends Controller
     {
         $this->sendMarketingNoCacheHeaders();
         $page = $this->cms->pageBySlug($slug);
-        if ($page === null && $slug !== 'home') {
+        $viewFile = RATEB_VIEWS_PATH . '/marketing/' . $template . '.php';
+        if ($page === null && $slug !== 'home' && !is_file($viewFile)) {
             $this->notFound();
             return;
         }
         $this->cms->trackPageView($slug);
-        $defaultTitle = $page ? CmsService::pickLocale($page, 'title') : __('cms_home');
+        $defaultTitle = $page ? CmsService::pickLocale($page, 'title') : $this->defaultPageTitle($slug);
         $meta = $this->cms->metaTags($slug, $defaultTitle);
         $data = [
             'page' => $page,
@@ -265,6 +266,30 @@ final class MarketingController extends Controller
             default:
                 return [];
         }
+    }
+
+    private function defaultPageTitle(string $slug): string
+    {
+        $titles = [
+            'features' => __('cms_explore_features'),
+            'pricing' => __('cms_pricing_preview'),
+            'industries' => 'القطاعات',
+            'about' => __('cms_about'),
+            'contact' => __('cms_contact'),
+            'faq' => 'الأسئلة الشائعة',
+            'request-demo' => __('cms_request_demo'),
+            'services' => __('cms_services'),
+            'reviews' => 'آراء العملاء',
+            'partners' => 'الشركاء',
+            'careers' => 'الوظائف',
+            'privacy' => 'الخصوصية',
+            'terms' => 'الشروط',
+            'cookies' => 'ملفات الارتباط',
+            'system-status' => 'حالة النظام',
+            'help-center' => 'مركز المساعدة',
+            'knowledge-base' => 'قاعدة المعرفة',
+        ];
+        return $titles[$slug] ?? __('cms_home');
     }
 
     /** Must stay protected — matches Controller::notFound() (PHP visibility fatal if private). */

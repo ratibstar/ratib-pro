@@ -4,6 +4,14 @@
 use Rateb\App\Services\CmsService;
 
 $intro = $content['intro']['section'] ?? null;
+
+if (empty($plans)) {
+    $plans = [
+        ['slug' => 'starter', 'name' => 'Starter', 'description' => 'Basic procurement for clinics.', 'price_monthly' => 1500, 'price_yearly' => 18000, 'max_users' => 5, 'max_branches' => 3],
+        ['slug' => 'professional', 'name' => 'Professional', 'description' => 'Full procurement and inventory package.', 'price_monthly' => 1800, 'price_yearly' => 21600, 'max_users' => 25, 'max_branches' => 5],
+        ['slug' => 'enterprise', 'name' => 'Enterprise', 'description' => 'Complete health ERP system.', 'price_monthly' => 3000, 'price_yearly' => 36000, 'max_users' => 100, 'max_branches' => 25],
+    ];
+}
 ?>
 <section class="rateb-mkt-page-hero">
     <div class="container text-center">
