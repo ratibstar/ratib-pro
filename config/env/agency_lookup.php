@@ -163,6 +163,27 @@ if (!function_exists('rateb_agency_erp_public_base')) {
             return (string) preg_replace('#/rateb-erp(?:/.*)?$#i', '/rateb-erp/public', $base);
         }
 
+        // Platform country paths (https://rateb.sa/ethiopia) must NOT become
+        // https://rateb.sa/ethiopia/rateb-erp/public — ERP lives at /rateb-erp/public on the platform host.
+        $parts = parse_url($base);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = trim((string) ($parts['path'] ?? ''), '/');
+        $isPlatformHost = ($host === 'rateb.sa' || $host === 'www.rateb.sa'
+            || (defined('SITE_URL') && ($parts['host'] ?? '') !== ''
+                && strcasecmp((string) parse_url((string) SITE_URL, PHP_URL_HOST), $host) === 0));
+        if ($isPlatformHost && $path !== '' && strpos($path, '/') === false) {
+            $reserved = [
+                'control-panel', 'rateb-erp', 'pages', 'api', 'public', 'designed',
+                'js', 'css', 'assets', 'admin', 'login', 'logout', 'home', 'profile', 'site',
+            ];
+            if (!in_array(strtolower($path), $reserved, true)) {
+                $scheme = (string) ($parts['scheme'] ?? 'https');
+                $port = isset($parts['port']) ? (':' . (int) $parts['port']) : '';
+
+                return $scheme . '://' . $host . $port . '/rateb-erp/public';
+            }
+        }
+
         return $base . '/rateb-erp/public';
     }
 }

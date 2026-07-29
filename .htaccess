@@ -131,6 +131,10 @@ RewriteRule ^pages/home\.php$ /profile [R=302,L]
 RewriteCond %{REQUEST_URI} !^/pages/ [NC]
 RewriteRule ^([a-z0-9_-]+)/login/?$ pages/login.php?country_slug=$1 [L,QSA]
 
+# Safety: /ethiopia/rateb-erp/public/... was wrongly built from country site_url — send to real ERP
+RewriteCond %{THE_REQUEST} \s/+[a-z0-9_-]+/rateb-erp/public/([^\s?]*) [NC]
+RewriteRule ^[a-z0-9_-]+/rateb-erp/public/?(.*)$ /rateb-erp/public/$1 [R=301,L,QSA]
+
 # Country-specific logout: /philippines/logout → pages/logout.php?country_slug=philippines
 RewriteCond %{REQUEST_URI} !^/pages/ [NC]
 RewriteRule ^([a-z0-9_-]+)/logout/?$ pages/logout.php?country_slug=$1 [L,QSA]

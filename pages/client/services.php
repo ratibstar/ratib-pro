@@ -52,8 +52,12 @@ $catalogHref = htmlspecialchars(rateb_client_dashboard_context_url('domains.php'
                                 <?php if ($clientErpDb !== '') { ?> · DB <code><?php echo htmlspecialchars($clientErpDb, ENT_QUOTES, 'UTF-8'); ?></code><?php } ?>
                             </p>
                         </div>
-                        <?php if ($clientErpStatus === 'ready' && !empty($clientErpAgency['site_url'])) { ?>
-                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars(rtrim((string) $clientErpAgency['site_url'], '/') . '/rateb-erp/public/company/login', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">Open ERP login</a>
+                        <?php if ($clientErpStatus === 'ready' && !empty($clientErpAgency['site_url'])) {
+                            $clientErpLogin = function_exists('rateb_agency_erp_login_url')
+                                ? rateb_agency_erp_login_url((string) $clientErpAgency['site_url'])
+                                : (rtrim((string) $clientErpAgency['site_url'], '/') . '/rateb-erp/public/login');
+                        ?>
+                        <a class="rateb-cp-pillbtn" href="<?php echo htmlspecialchars($clientErpLogin, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">Open ERP login</a>
                         <?php } ?>
                     </div>
                     <?php if ($clientErpStatus !== 'ready') { ?>
