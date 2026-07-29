@@ -8,6 +8,9 @@ require_once __DIR__ . '/../core/api-permission-helper.php';
 if (file_exists(__DIR__ . '/auto-journal-entry.php')) {
     require_once __DIR__ . '/auto-journal-entry.php';
 }
+if (file_exists(__DIR__ . '/core/ensure-ft-journal-link.php')) {
+    require_once __DIR__ . '/core/ensure-ft-journal-link.php';
+}
 
 // Include entity linking helper if available
 if (file_exists(__DIR__ . '/unified-entity-linking.php')) {
@@ -33,6 +36,13 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
         return null;
     }
 
+    $hasFtJeCol = function_exists('rateb_ensure_ft_journal_entry_id_column')
+        ? rateb_ensure_ft_journal_entry_id_column($conn)
+        : false;
+    $ftSelectCols = $hasFtJeCol
+        ? 'id, transaction_type, total_amount, description, transaction_date, journal_entry_id'
+        : 'id, transaction_type, total_amount, description, transaction_date';
+
     $transactionId = null;
     $transactionType = null;
     $amount = null;
@@ -53,7 +63,10 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
     $referenceVariants = array_unique($referenceVariants);
 
     foreach ($referenceVariants as $ref) {
-        $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date, journal_entry_id FROM financial_transactions WHERE reference_number = ? LIMIT 1");
+        $ftCheck = $conn->prepare("SELECT {$ftSelectCols} FROM financial_transactions WHERE reference_number = ? LIMIT 1");
+        if (!$ftCheck) {
+            break;
+        }
         $ftCheck->bind_param('s', $ref);
         $ftCheck->execute();
         $ftRes = $ftCheck->get_result();
@@ -63,7 +76,7 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
             $amount = floatval($ftRow['total_amount']);
             $description = trim((string) $ftRow['description']);
             $transactionDate = $ftRow['transaction_date'];
-            if (!empty($ftRow['journal_entry_id'])) {
+            if ($hasFtJeCol && !empty($ftRow['journal_entry_id'])) {
                 $ftCheck->close();
                 return (int) $ftRow['journal_entry_id'];
             }
@@ -74,23 +87,25 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
 
     // Fallback: find by amount, date, and description similarity
     if (!$transactionId && !empty($entryApprovalRow['amount']) && !empty($entryApprovalRow['entry_date'])) {
-        $descLike = '%' . $conn->real_escape_string($entryApprovalRow['description']) . '%';
-        $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date, journal_entry_id FROM financial_transactions WHERE total_amount = ? AND transaction_date = ? AND description LIKE ? LIMIT 1");
-        $ftCheck->bind_param('dss', $entryApprovalRow['amount'], $entryApprovalRow['entry_date'], $descLike);
-        $ftCheck->execute();
-        $ftRes = $ftCheck->get_result();
-        if ($ftRes && $ftRow = $ftRes->fetch_assoc()) {
-            $transactionId = (int) $ftRow['id'];
-            $transactionType = trim((string) $ftRow['transaction_type']);
-            $amount = floatval($ftRow['total_amount']);
-            $description = trim((string) $ftRow['description']);
-            $transactionDate = $ftRow['transaction_date'];
-            if (!empty($ftRow['journal_entry_id'])) {
-                $ftCheck->close();
-                return (int) $ftRow['journal_entry_id'];
+        $descLike = '%' . ($entryApprovalRow['description'] ?? '') . '%';
+        $ftCheck = $conn->prepare("SELECT {$ftSelectCols} FROM financial_transactions WHERE total_amount = ? AND transaction_date = ? AND description LIKE ? LIMIT 1");
+        if ($ftCheck) {
+            $ftCheck->bind_param('dss', $entryApprovalRow['amount'], $entryApprovalRow['entry_date'], $descLike);
+            $ftCheck->execute();
+            $ftRes = $ftCheck->get_result();
+            if ($ftRes && $ftRow = $ftRes->fetch_assoc()) {
+                $transactionId = (int) $ftRow['id'];
+                $transactionType = trim((string) $ftRow['transaction_type']);
+                $amount = floatval($ftRow['total_amount']);
+                $description = trim((string) $ftRow['description']);
+                $transactionDate = $ftRow['transaction_date'];
+                if ($hasFtJeCol && !empty($ftRow['journal_entry_id'])) {
+                    $ftCheck->close();
+                    return (int) $ftRow['journal_entry_id'];
+                }
             }
+            $ftCheck->close();
         }
-        $ftCheck->close();
     }
 
     if (!$transactionId) {
@@ -107,15 +122,17 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
     } else {
         // Resolve entity/category from entity_transactions
         $etCheck = $conn->prepare("SELECT entity_type, entity_id, category FROM entity_transactions WHERE transaction_id = ? LIMIT 1");
-        $etCheck->bind_param('i', $transactionId);
-        $etCheck->execute();
-        $etRes = $etCheck->get_result();
-        if ($etRes && $etRow = $etRes->fetch_assoc()) {
-            $entityType = $etRow['entity_type'];
-            $entityId = (int) $etRow['entity_id'];
-            $category = $etRow['category'] ?? null;
+        if ($etCheck) {
+            $etCheck->bind_param('i', $transactionId);
+            $etCheck->execute();
+            $etRes = $etCheck->get_result();
+            if ($etRes && $etRow = $etRes->fetch_assoc()) {
+                $entityType = $etRow['entity_type'];
+                $entityId = (int) $etRow['entity_id'];
+                $category = $etRow['category'] ?? null;
+            }
+            $etCheck->close();
         }
-        $etCheck->close();
         if (!$entityType || !$entityId) {
             if (!empty($entryApprovalRow['entity_type']) && !empty($entryApprovalRow['entity_id'])) {
                 $entityType = $entryApprovalRow['entity_type'];
@@ -136,11 +153,13 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
     if ($existingRes && $existingRow = $existingRes->fetch_assoc()) {
         $existingCheck->close();
         $journalEntryId = (int) $existingRow['id'];
-        if ($transactionId) {
+        if ($transactionId && $hasFtJeCol) {
             $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
-            $upd->bind_param('ii', $journalEntryId, $transactionId);
-            $upd->execute();
-            $upd->close();
+            if ($upd) {
+                $upd->bind_param('ii', $journalEntryId, $transactionId);
+                $upd->execute();
+                $upd->close();
+            }
         }
         return $journalEntryId;
     }
@@ -149,11 +168,13 @@ function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
     $result = createAutomaticJournalEntry($conn, $transactionId ?: 0, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category);
     if ($result['success'] && !empty($result['journal_entry_id'])) {
         $journalEntryId = (int) $result['journal_entry_id'];
-        if ($transactionId) {
+        if ($transactionId && $hasFtJeCol) {
             $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
-            $upd->bind_param('ii', $journalEntryId, $transactionId);
-            $upd->execute();
-            $upd->close();
+            if ($upd) {
+                $upd->bind_param('ii', $journalEntryId, $transactionId);
+                $upd->execute();
+                $upd->close();
+            }
         }
         return $journalEntryId;
     }
@@ -212,6 +233,8 @@ try {
                 journal_entry_id INT NULL,
                 cost_center_id INT NULL,
                 bank_guarantee_id INT NULL,
+                entity_type VARCHAR(50) NULL,
+                entity_id INT NULL,
                 created_by INT,
                 approved_by INT NULL,
                 approved_at TIMESTAMP NULL,
@@ -233,16 +256,22 @@ try {
     } else {
         // Ensure linking columns exist in existing table
         $columnCheck = $conn->query("SHOW COLUMNS FROM entry_approval LIKE 'journal_entry_id'");
-        if ($columnCheck->num_rows === 0) {
-            $columnCheck->free();
-            try {
-                $conn->query("ALTER TABLE entry_approval ADD COLUMN journal_entry_id INT NULL AFTER status");
-                $conn->query("ALTER TABLE entry_approval ADD INDEX idx_journal_entry (journal_entry_id)");
-            } catch (Exception $e) {
-                // Index might already exist, continue
+        if (!$columnCheck || $columnCheck->num_rows === 0) {
+            if ($columnCheck) {
+                $columnCheck->free();
+            }
+            $alterOk = $conn->query("ALTER TABLE entry_approval ADD COLUMN journal_entry_id INT NULL AFTER status");
+            if (!$alterOk) {
+                error_log('entry-approval: failed to add journal_entry_id: ' . $conn->error);
+            } else {
+                @$conn->query("ALTER TABLE entry_approval ADD INDEX idx_journal_entry (journal_entry_id)");
             }
         } else {
             $columnCheck->free();
+        }
+        // Ensure FT journal link column exists for repair path
+        if (function_exists('rateb_ensure_ft_journal_entry_id_column')) {
+            rateb_ensure_ft_journal_entry_id_column($conn);
         }
         $columnCheck = $conn->query("SHOW COLUMNS FROM entry_approval LIKE 'cost_center_id'");
         if ($columnCheck->num_rows === 0) {
@@ -455,13 +484,17 @@ try {
                 // Repair: if this entry is missing a journal_entry_id, try to create one
                 $repairedJournalEntryId = null;
                 if (empty($row['journal_entry_id']) && function_exists('repairEntryApprovalJournalEntry')) {
-                    $repairedJournalEntryId = repairEntryApprovalJournalEntry($conn, $row);
-                    if ($repairedJournalEntryId) {
-                        $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
-                        $upd->bind_param('ii', $repairedJournalEntryId, $id);
-                        $upd->execute();
-                        $upd->close();
-                        $row['journal_entry_id'] = $repairedJournalEntryId;
+                    try {
+                        $repairedJournalEntryId = repairEntryApprovalJournalEntry($conn, $row);
+                        if ($repairedJournalEntryId) {
+                            $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
+                            $upd->bind_param('ii', $repairedJournalEntryId, $id);
+                            $upd->execute();
+                            $upd->close();
+                            $row['journal_entry_id'] = $repairedJournalEntryId;
+                        }
+                    } catch (Throwable $repairErr) {
+                        error_log('entry-approval repair (single): ' . $repairErr->getMessage());
                     }
                 }
 
@@ -786,13 +819,17 @@ try {
             while ($row = $result->fetch_assoc()) {
                 // Repair: if this entry is missing a journal_entry_id, try to create one
                 if (empty($row['journal_entry_id']) && function_exists('repairEntryApprovalJournalEntry')) {
-                    $repairedId = repairEntryApprovalJournalEntry($conn, $row);
-                    if ($repairedId) {
-                        $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
-                        $upd->bind_param('ii', $repairedId, $row['id']);
-                        $upd->execute();
-                        $upd->close();
-                        $row['journal_entry_id'] = $repairedId;
+                    try {
+                        $repairedId = repairEntryApprovalJournalEntry($conn, $row);
+                        if ($repairedId) {
+                            $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
+                            $upd->bind_param('ii', $repairedId, $row['id']);
+                            $upd->execute();
+                            $upd->close();
+                            $row['journal_entry_id'] = $repairedId;
+                        }
+                    } catch (Throwable $repairErr) {
+                        error_log('entry-approval repair (list): ' . $repairErr->getMessage());
                     }
                 }
 

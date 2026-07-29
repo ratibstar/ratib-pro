@@ -175,6 +175,8 @@ try {
     $hasCurrency = false;
     $hasEntityType = false;
     $hasEntityId = false;
+    $hasIsActive = false;
+    $hasDescription = false;
 
     if ($columnsCheck) {
         while ($col = $columnsCheck->fetch_assoc()) {
@@ -187,7 +189,15 @@ try {
             if ($col['Field'] === 'currency') $hasCurrency = true;
             if ($col['Field'] === 'entity_type') $hasEntityType = true;
             if ($col['Field'] === 'entity_id') $hasEntityId = true;
+            if ($col['Field'] === 'is_active') $hasIsActive = true;
+            if ($col['Field'] === 'description') $hasDescription = true;
         }
+    }
+
+    // Ensure is_active exists (required for Chart of Accounts filters)
+    if (!$hasIsActive) {
+        @$conn->query("ALTER TABLE financial_accounts ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1");
+        $hasIsActive = true;
     }
 
     // Build SELECT fields based on what exists
@@ -196,9 +206,17 @@ try {
         'account_code',
         'account_name',
         'account_type',
-        'is_active',
-        'description'
     ];
+    if ($hasIsActive) {
+        $selectFields[] = 'is_active';
+    } else {
+        $selectFields[] = '1 as is_active';
+    }
+    if ($hasDescription) {
+        $selectFields[] = 'description';
+    } else {
+        $selectFields[] = 'NULL as description';
+    }
     if ($hasEntityType) {
         $selectFields[] = 'entity_type';
     } else {
@@ -250,7 +268,7 @@ try {
 
     $query = "SELECT " . implode(', ', $selectFields) . "
         FROM financial_accounts
-        WHERE is_active = ?
+        WHERE " . ($hasIsActive ? "is_active = ?" : "1 = ?") . "
     ";
 
     $params = [$isActive];
@@ -406,7 +424,7 @@ try {
                 $selectFields = array_values(array_diff($selectFields, ['NULL as entity_type', 'NULL as entity_id']));
                 if (!in_array('entity_type', $selectFields)) $selectFields[] = 'entity_type';
                 if (!in_array('entity_id', $selectFields)) $selectFields[] = 'entity_id';
-                $query = "SELECT " . implode(', ', $selectFields) . " FROM financial_accounts WHERE is_active = ?" . ($accountType ? " AND UPPER(account_type) = ?" : "") . " ORDER BY account_code, account_name";
+                $query = "SELECT " . implode(', ', $selectFields) . " FROM financial_accounts WHERE " . ($hasIsActive ? "is_active = ?" : "1 = ?") . ($accountType ? " AND UPPER(account_type) = ?" : "") . " ORDER BY account_code, account_name";
                 
                 // Log summary of what was created
                 $summaryRes = $conn->query("SELECT entity_type, COUNT(*) as cnt FROM financial_accounts WHERE entity_type IS NOT NULL GROUP BY entity_type");

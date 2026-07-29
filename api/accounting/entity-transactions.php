@@ -12,6 +12,7 @@
 require_once '../../includes/config.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
 if (file_exists(__DIR__ . '/auto-journal-entry.php')) { require_once __DIR__ . '/auto-journal-entry.php'; }
+if (file_exists(__DIR__ . '/core/ensure-ft-journal-link.php')) { require_once __DIR__ . '/core/ensure-ft-journal-link.php'; }
 if (file_exists(__DIR__ . '/../core/date-helper.php')) { require_once __DIR__ . '/../core/date-helper.php'; }
 elseif (file_exists(__DIR__ . '/core/date-helper.php')) { require_once __DIR__ . '/core/date-helper.php'; }
 if (!function_exists('formatDateForDatabase')) {
@@ -743,10 +744,14 @@ try {
                 if ($creditCheck->num_rows === 0) {
                     $conn->query("ALTER TABLE financial_transactions ADD COLUMN credit_amount DECIMAL(15,2) DEFAULT 0.00 AFTER debit_amount");
                 }
-                $jeIdCheck = $conn->query("SHOW COLUMNS FROM financial_transactions LIKE 'journal_entry_id'");
-                if ($jeIdCheck->num_rows === 0) {
-                    $conn->query("ALTER TABLE financial_transactions ADD COLUMN journal_entry_id INT NULL AFTER credit_amount");
-                    $conn->query("ALTER TABLE financial_transactions ADD INDEX idx_journal_entry_id (journal_entry_id)");
+                if (function_exists('rateb_ensure_ft_journal_entry_id_column')) {
+                    rateb_ensure_ft_journal_entry_id_column($conn);
+                } else {
+                    $jeIdCheck = $conn->query("SHOW COLUMNS FROM financial_transactions LIKE 'journal_entry_id'");
+                    if ($jeIdCheck && $jeIdCheck->num_rows === 0) {
+                        $conn->query("ALTER TABLE financial_transactions ADD COLUMN journal_entry_id INT NULL AFTER credit_amount");
+                        @$conn->query("ALTER TABLE financial_transactions ADD INDEX idx_journal_entry_id (journal_entry_id)");
+                    }
                 }
             }
             
@@ -1105,11 +1110,16 @@ try {
                 // Link financial transaction to the created journal entry
                 if ($journalResult['success'] && !empty($journalResult['journal_entry_id'])) {
                     $jeId = (int) $journalResult['journal_entry_id'];
-                    $updateFtJe = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
-                    if ($updateFtJe) {
-                        $updateFtJe->bind_param('ii', $jeId, $transactionId);
-                        $updateFtJe->execute();
-                        $updateFtJe->close();
+                    $hasFtJeCol = function_exists('rateb_ensure_ft_journal_entry_id_column')
+                        ? rateb_ensure_ft_journal_entry_id_column($conn)
+                        : false;
+                    if ($hasFtJeCol) {
+                        $updateFtJe = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+                        if ($updateFtJe) {
+                            $updateFtJe->bind_param('ii', $jeId, $transactionId);
+                            $updateFtJe->execute();
+                            $updateFtJe->close();
+                        }
                     }
                 }
                 

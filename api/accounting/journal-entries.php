@@ -45,6 +45,9 @@ if (!function_exists('formatDatesInArray')) {
 require_once __DIR__ . '/core/erp-posting-controls.php';
 require_once __DIR__ . '/core/audit-trail-helper.php';
 require_once __DIR__ . '/core/accounting-ledger-lock.php';
+if (file_exists(__DIR__ . '/core/ensure-ft-journal-link.php')) {
+    require_once __DIR__ . '/core/ensure-ft-journal-link.php';
+}
 
 /**
  * Ensure a financial transaction has a linked journal entry with double-entry lines.
@@ -57,17 +60,25 @@ function ensureFinancialTransactionJournalEntry($conn, $ftId, $entityType, $enti
     $ftId = (int) $ftId;
     if ($ftId <= 0) return null;
 
-    $check = $conn->prepare("SELECT journal_entry_id FROM financial_transactions WHERE id = ? LIMIT 1");
-    $check->bind_param('i', $ftId);
-    $check->execute();
-    $res = $check->get_result();
-    if ($res && $row = $res->fetch_assoc()) {
-        if (!empty($row['journal_entry_id'])) {
+    $hasJeCol = function_exists('rateb_ensure_ft_journal_entry_id_column')
+        ? rateb_ensure_ft_journal_entry_id_column($conn)
+        : false;
+
+    if ($hasJeCol) {
+        $check = $conn->prepare("SELECT journal_entry_id FROM financial_transactions WHERE id = ? LIMIT 1");
+        if ($check) {
+            $check->bind_param('i', $ftId);
+            $check->execute();
+            $res = $check->get_result();
+            if ($res && $row = $res->fetch_assoc()) {
+                if (!empty($row['journal_entry_id'])) {
+                    $check->close();
+                    return (int) $row['journal_entry_id'];
+                }
+            }
             $check->close();
-            return (int) $row['journal_entry_id'];
         }
     }
-    $check->close();
 
     $jeNumber = 'JE-' . date('Ymd', strtotime($transactionDate)) . '-' . str_pad($ftId, 6, '0', STR_PAD_LEFT);
     $existing = $conn->prepare("SELECT id FROM journal_entries WHERE entry_number = ? LIMIT 1");
@@ -77,10 +88,14 @@ function ensureFinancialTransactionJournalEntry($conn, $ftId, $entityType, $enti
     if ($existingRes && $existingRow = $existingRes->fetch_assoc()) {
         $existing->close();
         $journalEntryId = (int) $existingRow['id'];
-        $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
-        $upd->bind_param('ii', $journalEntryId, $ftId);
-        $upd->execute();
-        $upd->close();
+        if ($hasJeCol) {
+            $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+            if ($upd) {
+                $upd->bind_param('ii', $journalEntryId, $ftId);
+                $upd->execute();
+                $upd->close();
+            }
+        }
         return $journalEntryId;
     }
     $existing->close();
@@ -88,10 +103,14 @@ function ensureFinancialTransactionJournalEntry($conn, $ftId, $entityType, $enti
     $result = createAutomaticJournalEntry($conn, $ftId, $entityType ?: 'accounting', $entityId ?: 0, $transactionType, $amount, $description, $transactionDate, $category);
     if ($result['success'] && !empty($result['journal_entry_id'])) {
         $journalEntryId = (int) $result['journal_entry_id'];
-        $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
-        $upd->bind_param('ii', $journalEntryId, $ftId);
-        $upd->execute();
-        $upd->close();
+        if ($hasJeCol) {
+            $upd = $conn->prepare("UPDATE financial_transactions SET journal_entry_id = ? WHERE id = ?");
+            if ($upd) {
+                $upd->bind_param('ii', $journalEntryId, $ftId);
+                $upd->execute();
+                $upd->close();
+            }
+        }
         return $journalEntryId;
     }
     return null;
@@ -623,7 +642,12 @@ try {
 
         // Skip journal entries that are already represented by a financial_transaction row
         // (so auto-generated entries for entity transactions don't duplicate in the General Ledger)
-        $conditions[] = "je.id NOT IN (SELECT journal_entry_id FROM financial_transactions WHERE journal_entry_id IS NOT NULL)";
+        $hasFtJeCol = function_exists('rateb_ensure_ft_journal_entry_id_column')
+            ? rateb_ensure_ft_journal_entry_id_column($conn)
+            : false;
+        if ($hasFtJeCol) {
+            $conditions[] = "je.id NOT IN (SELECT journal_entry_id FROM financial_transactions WHERE journal_entry_id IS NOT NULL)";
+        }
 
         // Execute query
         if ($query) {
@@ -1185,6 +1209,17 @@ try {
             ? " WHEN et.entity_type = 'partner_agency' THEN COALESCE(pa.name, '') "
             : '';
 
+        $hasFtJeCol = function_exists('rateb_ensure_ft_journal_entry_id_column')
+            ? rateb_ensure_ft_journal_entry_id_column($conn)
+            : false;
+        $ftJeIdSelect = $hasFtJeCol ? 'ft.journal_entry_id' : 'NULL as journal_entry_id';
+        $ftDebitExpr = $hasFtJeCol
+            ? "COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END)"
+            : "COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END)";
+        $ftCreditExpr = $hasFtJeCol
+            ? "COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END)"
+            : "COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END)";
+
         // Build query for financial_transactions
         $ftQuery = "
             SELECT 
@@ -1194,11 +1229,11 @@ try {
                 ft.description,
                 ft.transaction_type as entry_type,
                 ft.total_amount,
-                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_debit,
-                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_credit,
+                {$ftDebitExpr} as total_debit,
+                {$ftCreditExpr} as total_credit,
                 ft.status,
                 ft.reference_number,
-                ft.journal_entry_id,
+                {$ftJeIdSelect},
                 u.username as created_by_name,
                 " . ($hasEntityTable ? "
                 et.entity_type, 
@@ -1228,11 +1263,11 @@ try {
                     ft.description,
                     ft.transaction_type as entry_type,
                     ft.total_amount,
-                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_debit,
-                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' OR ft.journal_entry_id IS NOT NULL THEN ft.total_amount ELSE 0 END) as total_credit,
+                    {$ftDebitExpr} as total_debit,
+                    {$ftCreditExpr} as total_credit,
                     ft.status,
                     ft.reference_number,
-                    ft.journal_entry_id,
+                    {$ftJeIdSelect},
                     u.username as created_by_name,
                     " . ($hasEntityTable ? "
                     et.entity_type, 
@@ -1400,23 +1435,27 @@ try {
 
         while ($row = $ftResult->fetch_assoc()) {
             // Ensure this financial transaction has a linked journal entry (so GL columns work)
-            if (empty($row['journal_entry_id']) && $row['id'] && $row['total_amount'] > 0) {
-                $createdJeId = ensureFinancialTransactionJournalEntry(
-                    $conn,
-                    $row['id'],
-                    $row['entity_type'] ?? null,
-                    $row['entity_id'] ?? 0,
-                    $row['transaction_type'] ?? 'Expense',
-                    floatval($row['total_amount'] ?? 0),
-                    $row['description'] ?? '',
-                    $row['transaction_date'],
-                    null
-                );
-                if ($createdJeId) {
-                    $row['journal_entry_id'] = $createdJeId;
-                    // Recompute totals as balanced now that a journal entry exists
-                    $row['total_debit'] = floatval($row['total_amount'] ?? 0);
-                    $row['total_credit'] = floatval($row['total_amount'] ?? 0);
+            if (empty($row['journal_entry_id']) && $row['id'] && floatval($row['total_amount'] ?? 0) > 0) {
+                try {
+                    $createdJeId = ensureFinancialTransactionJournalEntry(
+                        $conn,
+                        $row['id'],
+                        $row['entity_type'] ?? null,
+                        $row['entity_id'] ?? 0,
+                        $row['transaction_type'] ?? ($row['entry_type'] ?? 'Expense'),
+                        floatval($row['total_amount'] ?? 0),
+                        $row['description'] ?? '',
+                        $row['entry_date'] ?? ($row['transaction_date'] ?? date('Y-m-d')),
+                        null
+                    );
+                    if ($createdJeId) {
+                        $row['journal_entry_id'] = $createdJeId;
+                        // Recompute totals as balanced now that a journal entry exists
+                        $row['total_debit'] = floatval($row['total_amount'] ?? 0);
+                        $row['total_credit'] = floatval($row['total_amount'] ?? 0);
+                    }
+                } catch (Throwable $e) {
+                    error_log('journal-entries ensure FT JE: ' . $e->getMessage());
                 }
             }
 
