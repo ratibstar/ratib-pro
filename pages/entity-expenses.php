@@ -205,11 +205,23 @@ include '../includes/header.php';
                             <input type="hidden" name="entry_type" value="Manual">
                             <div class="mb-2">
                                 <label class="form-label">Date</label>
-                                <input type="date" name="transaction_date" class="form-control" required value="<?php echo date('Y-m-d'); ?>">
+                                <input type="date" name="transaction_date" class="form-control" lang="en" dir="ltr" required value="<?php echo date('Y-m-d'); ?>">
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Description</label>
-                                <input type="text" name="description" class="form-control" required placeholder="e.g. Office rent, commission, travel">
+                                <input type="text" name="description" class="form-control" required placeholder="Select or type..." list="descriptionOptions">
+                                <datalist id="descriptionOptions">
+                                    <option value="Office rent">
+                                    <option value="Commission">
+                                    <option value="Travel">
+                                    <option value="Salary">
+                                    <option value="Utilities">
+                                    <option value="Marketing">
+                                    <option value="Supplies">
+                                    <option value="Maintenance">
+                                    <option value="Insurance">
+                                    <option value="Other">
+                                </datalist>
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Amount</label>
@@ -217,7 +229,18 @@ include '../includes/header.php';
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Category</label>
-                                <input type="text" name="category" class="form-control" placeholder="e.g. operational">
+                                <input type="text" name="category" class="form-control" placeholder="Select or type..." list="categoryOptions">
+                                <datalist id="categoryOptions">
+                                    <option value="Operational">
+                                    <option value="Administrative">
+                                    <option value="Marketing">
+                                    <option value="Travel">
+                                    <option value="Payroll">
+                                    <option value="Utilities">
+                                    <option value="Maintenance">
+                                    <option value="Insurance">
+                                    <option value="Other">
+                                </datalist>
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Reference</label>
@@ -256,6 +279,25 @@ include '../includes/header.php';
                             </table>
                         </div>
                         <div id="expensesSummary" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+            <div class="col-12">
+                <div class="card glass-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-link"></i> Accounting Integration</h5>
+                        <p class="mb-2">Every expense saved here is automatically linked to the Accounting module:</p>
+                        <ul class="mb-3">
+                            <li><strong>Financial transaction entry</strong> (قيد) — stored in the general ledger.</li>
+                            <li><strong>Accounts payable voucher / Bill</strong> (سند) — created for each expense.</li>
+                            <li><strong>Entry approval</strong> — pending approval workflow.</li>
+                            <li><strong>Cost reports</strong> — aggregated in the Entity Cost Report.</li>
+                        </ul>
+                        <a href="<?php echo htmlspecialchars(rateb_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-info">Open Accounting</a>
+                        <a href="<?php echo htmlspecialchars(rateb_nav_url('entity-cost-report.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-info">View Cost Report</a>
                     </div>
                 </div>
             </div>
