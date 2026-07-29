@@ -5,6 +5,9 @@
  */
 require_once '../../includes/config.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
+if (file_exists(__DIR__ . '/auto-journal-entry.php')) {
+    require_once __DIR__ . '/auto-journal-entry.php';
+}
 
 // Include entity linking helper if available
 if (file_exists(__DIR__ . '/unified-entity-linking.php')) {
@@ -12,6 +15,78 @@ if (file_exists(__DIR__ . '/unified-entity-linking.php')) {
 }
 
 header('Content-Type: application/json');
+
+/**
+ * Repair an entry_approval record that is missing its journal_entry_id by
+ * creating a journal entry for the linked financial transaction.
+ */
+function repairEntryApprovalJournalEntry($conn, $entryApprovalRow) {
+    if (!function_exists('createAutomaticJournalEntry')) {
+        return null;
+    }
+    $entryNumber = trim((string) ($entryApprovalRow['entry_number'] ?? ''));
+    $referenceNumber = preg_replace('/^APP-/i', '', $entryNumber);
+    if ($referenceNumber === '' || $referenceNumber === $entryNumber) {
+        return null;
+    }
+    $ftCheck = $conn->prepare("SELECT id, transaction_type, total_amount, description, transaction_date FROM financial_transactions WHERE reference_number = ? LIMIT 1");
+    $ftCheck->bind_param('s', $referenceNumber);
+    $ftCheck->execute();
+    $ftRes = $ftCheck->get_result();
+    if (!$ftRes || $ftRes->num_rows === 0) {
+        $ftCheck->close();
+        return null;
+    }
+    $ft = $ftRes->fetch_assoc();
+    $ftCheck->close();
+    $transactionId = (int) $ft['id'];
+    $transactionType = trim((string) $ft['transaction_type']);
+    $amount = floatval($ft['total_amount']);
+    $description = trim((string) $ft['description']);
+    $transactionDate = $ft['transaction_date'];
+
+    $entityType = null;
+    $entityId = null;
+    $category = null;
+    $etCheck = $conn->prepare("SELECT entity_type, entity_id, category FROM entity_transactions WHERE transaction_id = ? LIMIT 1");
+    $etCheck->bind_param('i', $transactionId);
+    $etCheck->execute();
+    $etRes = $etCheck->get_result();
+    if ($etRes && $etRow = $etRes->fetch_assoc()) {
+        $entityType = $etRow['entity_type'];
+        $entityId = (int) $etRow['entity_id'];
+        $category = $etRow['category'] ?? null;
+    }
+    $etCheck->close();
+
+    if (!$entityType || !$entityId) {
+        // Fallback to entry_approval entity fields if present
+        if (!empty($entryApprovalRow['entity_type']) && !empty($entryApprovalRow['entity_id'])) {
+            $entityType = $entryApprovalRow['entity_type'];
+            $entityId = (int) $entryApprovalRow['entity_id'];
+        } else {
+            return null;
+        }
+    }
+
+    // Avoid duplicate journal entry for the same transaction
+    $existingCheck = $conn->prepare("SELECT id FROM journal_entries WHERE entry_number = ? LIMIT 1");
+    $jeNumber = 'JE-' . date('Ymd', strtotime($transactionDate)) . '-' . str_pad($transactionId, 6, '0', STR_PAD_LEFT);
+    $existingCheck->bind_param('s', $jeNumber);
+    $existingCheck->execute();
+    $existingRes = $existingCheck->get_result();
+    if ($existingRes && $existingRow = $existingRes->fetch_assoc()) {
+        $existingCheck->close();
+        return (int) $existingRow['id'];
+    }
+    $existingCheck->close();
+
+    $result = createAutomaticJournalEntry($conn, $transactionId, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category);
+    if ($result['success'] && !empty($result['journal_entry_id'])) {
+        return (int) $result['journal_entry_id'];
+    }
+    return null;
+}
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -304,6 +379,19 @@ try {
             if ($row = $result->fetch_assoc()) {
                 $result->free();
                 $stmt->close();
+
+                // Repair: if this entry is missing a journal_entry_id, try to create one
+                $repairedJournalEntryId = null;
+                if (empty($row['journal_entry_id']) && function_exists('repairEntryApprovalJournalEntry')) {
+                    $repairedJournalEntryId = repairEntryApprovalJournalEntry($conn, $row);
+                    if ($repairedJournalEntryId) {
+                        $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
+                        $upd->bind_param('ii', $repairedJournalEntryId, $id);
+                        $upd->execute();
+                        $upd->close();
+                        $row['journal_entry_id'] = $repairedJournalEntryId;
+                    }
+                }
 
                 // Try to fetch debit/credit account display (to match General Ledger columns)
                 $debitAccountName = null;
@@ -624,6 +712,18 @@ try {
             }
 
             while ($row = $result->fetch_assoc()) {
+                // Repair: if this entry is missing a journal_entry_id, try to create one
+                if (empty($row['journal_entry_id']) && function_exists('repairEntryApprovalJournalEntry')) {
+                    $repairedId = repairEntryApprovalJournalEntry($conn, $row);
+                    if ($repairedId) {
+                        $upd = $conn->prepare("UPDATE entry_approval SET journal_entry_id = ? WHERE id = ?");
+                        $upd->bind_param('ii', $repairedId, $row['id']);
+                        $upd->execute();
+                        $upd->close();
+                        $row['journal_entry_id'] = $repairedId;
+                    }
+                }
+
                 // Get entity name if linked
                 $entityName = null;
                 if ($hasEntityType && $hasEntityId && isset($row['entity_type']) && isset($row['entity_id']) && $row['entity_type'] && $row['entity_id']) {
@@ -696,10 +796,30 @@ try {
                                     $tableCheck->free();
                                 }
                             }
+                        } elseif ($entityType === 'partner_agency') {
+                            $tableCheck = $conn->query("SHOW TABLES LIKE 'partner_agencies'");
+                            if ($tableCheck && $tableCheck->num_rows > 0) {
+                                $tableCheck->free();
+                                $nameStmt = $conn->prepare("SELECT COALESCE(name, agency_name, partner_name) as name FROM partner_agencies WHERE id = ? LIMIT 1");
+                                if ($nameStmt) {
+                                    $nameStmt->bind_param('i', $entityId);
+                                    $nameStmt->execute();
+                                    $nameResult = $nameStmt->get_result();
+                                    if ($nameRow = $nameResult->fetch_assoc()) {
+                                        $entityName = $nameRow['name'];
+                                    }
+                                    $nameResult->free();
+                                    $nameStmt->close();
+                                }
+                            } else {
+                                if ($tableCheck) {
+                                    $tableCheck->free();
+                                }
+                            }
                         }
                     }
                 }
-            
+
             // Try to fetch debit/credit account display for linked journal entry
             $debitAccountName = null;
             $creditAccountName = null;

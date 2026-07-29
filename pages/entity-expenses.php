@@ -356,7 +356,7 @@ include '../includes/header.php';
                 } else {
                     tbody.innerHTML = rows.map(function(t) {
                         var amount = parseFloat(t.total_amount || t.debit_amount || 0).toFixed(2);
-                        var currency = t.currency || 'SAR';
+                        var currency = (t.currency && t.currency !== '0' && t.currency !== '') ? t.currency : 'SAR';
                         var date = t.transaction_date || '';
                         var desc = t.description || '';
                         var ref = t.reference_number || '';
@@ -378,8 +378,9 @@ include '../includes/header.php';
                     }).join('');
                 }
                 var total = parseFloat(summary.total_debit || summary.total_expenses || 0).toFixed(2);
+                var summaryCurrency = (summary.currency && summary.currency !== '0' && summary.currency !== '') ? summary.currency : 'SAR';
                 document.getElementById('expensesSummary').innerHTML =
-                    '<strong>Total expenses:</strong> ' + escapeHtml(total + ' ' + (summary.currency || 'SAR')) +
+                    '<strong>Total expenses:</strong> ' + escapeHtml(total + ' ' + summaryCurrency) +
                     ' <span class="text-muted">(' + (summary.count || rows.length) + ' records)</span>';
             })
             .catch(function(e) {

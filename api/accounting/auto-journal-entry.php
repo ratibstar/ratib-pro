@@ -31,8 +31,79 @@ header('Content-Type: application/json');
  * @param string $transactionDate Transaction date
  * @return array Result with journal_entry_id and success status
  */
-function createAutomaticJournalEntry($conn, $transactionId, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate) {
+function ensureDefaultAccount($conn, $accountCode, $accountName, $accountType, $normalBalance) {
+    $stmt = $conn->prepare("SELECT id FROM financial_accounts WHERE account_code = ? AND is_active = 1 LIMIT 1");
+    $stmt->bind_param('s', $accountCode);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res && $row = $res->fetch_assoc()) {
+        $stmt->close();
+        return (int) $row['id'];
+    }
+    $stmt->close();
+    $ins = $conn->prepare("INSERT INTO financial_accounts (account_code, account_name, account_type, normal_balance, opening_balance, current_balance, is_active) VALUES (?, ?, ?, ?, 0, 0, 1)");
+    $ins->bind_param('ssss', $accountCode, $accountName, $accountType, $normalBalance);
+    if ($ins->execute()) {
+        $id = (int) $conn->insert_id;
+        $ins->close();
+        error_log("ensureDefaultAccount: Created $accountCode - $accountName");
+        return $id;
+    }
+    $ins->close();
+    return 0;
+}
+
+function createAutomaticJournalEntry($conn, $transactionId, $entityType, $entityId, $transactionType, $amount, $description, $transactionDate, $category = null) {
     try {
+        $category = $category ? trim((string) $category) : null;
+        // Ensure cash account exists
+        $cashAccountId = ensureDefaultAccount($conn, '1100', 'Cash', 'Asset', 'Debit');
+        if (!$cashAccountId) {
+            return ['success' => false, 'message' => 'Cash account (1100) could not be created'];
+        }
+        
+        // Category to expense account mapping (6xxx expense group)
+        $categoryExpenseMap = [
+            'office supplies' => ['6110', 'Office Supplies'],
+            'travel' => ['6120', 'Travel & Accommodation'],
+            'travel & accommodation' => ['6120', 'Travel & Accommodation'],
+            'utilities' => ['6130', 'Utilities'],
+            'rent' => ['6140', 'Rent'],
+            'payroll' => ['6150', 'Payroll'],
+            'marketing' => ['6160', 'Marketing & Advertising'],
+            'marketing & advertising' => ['6160', 'Marketing & Advertising'],
+            'maintenance' => ['6170', 'Maintenance & Repairs'],
+            'maintenance & repairs' => ['6170', 'Maintenance & Repairs'],
+            'communication' => ['6180', 'Communication'],
+            'insurance' => ['6190', 'Insurance'],
+            'professional fees' => ['6200', 'Professional Fees'],
+            'commission' => ['6210', 'Commission Expenses'],
+            'other' => ['6990', 'Other Expenses'],
+        ];
+
+        // Ensure default expense/income accounts exist
+        if ($transactionType === 'Expense') {
+            ensureDefaultAccount($conn, '5500', 'General Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5600', 'Subagent Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5700', 'Worker Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5800', 'HR Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5900', 'Partner Agency Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5100', 'Operating Expenses', 'Expense', 'Debit');
+            ensureDefaultAccount($conn, '5000', 'Other Expenses', 'Expense', 'Debit');
+            // Ensure category-specific accounts exist
+            foreach ($categoryExpenseMap as $cat => $acct) {
+                ensureDefaultAccount($conn, $acct[0], $acct[1], 'Expense', 'Debit');
+            }
+        } else {
+            ensureDefaultAccount($conn, '4300', 'Agent Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4400', 'Subagent Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4500', 'Worker Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4600', 'HR Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4700', 'Accounting Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4100', 'Sales Revenue', 'Revenue', 'Credit');
+            ensureDefaultAccount($conn, '4000', 'Other Revenue', 'Revenue', 'Credit');
+        }
+        
         // Get account mappings
         $accountMap = [];
         $accountQuery = $conn->query("SELECT id, account_code, account_name, account_type, normal_balance FROM financial_accounts WHERE is_active = 1");
@@ -47,9 +118,8 @@ function createAutomaticJournalEntry($conn, $transactionId, $entityType, $entity
         // Determine accounts - prefer entity-specific GL account (entity_type+entity_id in financial_accounts)
         $incomeAccountId = null;
         $expenseAccountId = null;
-        $cashAccountId = $accountMap['1100']['id'] ?? null;
         
-        if ($entityType && $entityId && in_array(strtolower($entityType), ['agent','subagent','worker','hr','accounting'])) {
+        if ($entityType && $entityId && in_array(strtolower($entityType), ['agent','subagent','worker','hr','accounting','partner_agency'])) {
             $escEt = $conn->real_escape_string($entityType);
             $eid = (int)$entityId;
             $entityAcc = $conn->query("SELECT id FROM financial_accounts WHERE entity_type='$escEt' AND entity_id=$eid AND is_active=1 LIMIT 1");
@@ -61,10 +131,20 @@ function createAutomaticJournalEntry($conn, $transactionId, $entityType, $entity
         }
         
         if (!$incomeAccountId && $transactionType === 'Income') {
-            $incomeAccountId = $accountMap['4300']['id'] ?? $accountMap['4400']['id'] ?? $accountMap['4500']['id'] ?? $accountMap['4600']['id'] ?? $accountMap['4100']['id'] ?? $accountMap['4000']['id'] ?? null;
+            $incomeAccountId = $accountMap['4300']['id'] ?? $accountMap['4400']['id'] ?? $accountMap['4500']['id'] ?? $accountMap['4600']['id'] ?? $accountMap['4700']['id'] ?? $accountMap['4100']['id'] ?? $accountMap['4000']['id'] ?? null;
         }
         if (!$expenseAccountId && $transactionType === 'Expense') {
-            $expenseAccountId = $accountMap['5500']['id'] ?? $accountMap['5600']['id'] ?? $accountMap['5700']['id'] ?? $accountMap['5800']['id'] ?? $accountMap['5100']['id'] ?? $accountMap['5000']['id'] ?? null;
+            // Prefer category-specific account when provided
+            if ($category && isset($categoryExpenseMap[strtolower($category)])) {
+                $catCode = $categoryExpenseMap[strtolower($category)][0];
+                if (isset($accountMap[$catCode])) {
+                    $expenseAccountId = (int) $accountMap[$catCode]['id'];
+                }
+            }
+            // Fallback to entity-specific or default expense accounts
+            if (!$expenseAccountId) {
+                $expenseAccountId = $accountMap['5500']['id'] ?? $accountMap['5600']['id'] ?? $accountMap['5700']['id'] ?? $accountMap['5800']['id'] ?? $accountMap['5900']['id'] ?? $accountMap['5100']['id'] ?? $accountMap['5000']['id'] ?? null;
+            }
         }
         
         if (!$cashAccountId) {
@@ -209,28 +289,19 @@ function createAutomaticJournalEntry($conn, $transactionId, $entityType, $entity
             
         } elseif ($transactionType === 'Expense') {
             // Line 1: Debit Expense
-            $expenseCode = '5500';
-            $expenseName = 'Agent Payments';
-            if ($entityType === 'subagent') {
-                $expenseCode = '5600';
-                $expenseName = 'Subagent Payments';
-            } elseif ($entityType === 'worker') {
-                $expenseCode = '5700';
-                $expenseName = 'Worker Payments';
-            } elseif ($entityType === 'hr') {
-                $expenseCode = '5800';
-                $expenseName = 'HR Payments';
-            } elseif ($entityType === 'accounting') {
-                $expenseCode = '5900';
-                $expenseName = 'Accounting Payments';
+            // Determine code/name from the selected expense account (category, entity, or default)
+            $expenseAccountData = null;
+            foreach ($accountMap as $code => $acct) {
+                if ((int) $acct['id'] === (int) $expenseAccountId) {
+                    $expenseAccountData = $acct;
+                    break;
+                }
             }
-            $expenseAccountData = $accountMap[$expenseCode] ?? null;
-            if ($expenseAccountData) {
-                $expenseName = $expenseAccountData['account_name'];
-            }
+            $expenseCode = $expenseAccountData ? $expenseAccountData['account_code'] : '5500';
+            $expenseName = $expenseAccountData ? $expenseAccountData['account_name'] : 'General Expenses';
             $insertJEL->bind_param('iissddiiss', 
                 $journalEntryId, $expenseAccountId, $expenseCode, $expenseName,
-                "Expense for {$entityType}", $amount, 0, 1,
+                "Expense for {$entityType}" . ($category ? " - {$category}" : ''), $amount, 0, 1,
                 $entityType, $entityId
             );
             $insertJEL->execute();

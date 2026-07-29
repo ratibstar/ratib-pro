@@ -11,6 +11,7 @@
 
 require_once '../../includes/config.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
+if (file_exists(__DIR__ . '/auto-journal-entry.php')) { require_once __DIR__ . '/auto-journal-entry.php'; }
 if (file_exists(__DIR__ . '/../core/date-helper.php')) { require_once __DIR__ . '/../core/date-helper.php'; }
 elseif (file_exists(__DIR__ . '/core/date-helper.php')) { require_once __DIR__ . '/core/date-helper.php'; }
 if (!function_exists('formatDateForDatabase')) {
@@ -654,7 +655,10 @@ try {
                         ft.description,
                         ft.reference_number,
                         ft.total_amount,
-                        COALESCE(ft.currency, 'SAR') as currency,
+                        CASE 
+                            WHEN ft.currency IS NULL OR ft.currency = '' OR ft.currency = '0' THEN 'SAR'
+                            ELSE ft.currency
+                        END as currency,
                         ft.transaction_type,
                         ft.status,
                         ft.created_at,
@@ -1079,7 +1083,8 @@ try {
                                 $transactionType, 
                                 $amount, 
                                 $data['description'], 
-                                $data['transaction_date']
+                                $data['transaction_date'],
+                                $data['category'] ?? null
                             );
                         }
                     }
@@ -1174,27 +1179,48 @@ try {
                     $hasEntityType = $entityTypeCheck && $entityTypeCheck->num_rows > 0;
                     $entityIdCheck = $conn->query("SHOW COLUMNS FROM entry_approval LIKE 'entity_id'");
                     $hasEntityId = $entityIdCheck && $entityIdCheck->num_rows > 0;
+                    $journalEntryIdCheck = $conn->query("SHOW COLUMNS FROM entry_approval LIKE 'journal_entry_id'");
+                    $hasJournalEntryId = $journalEntryIdCheck && $journalEntryIdCheck->num_rows > 0;
                     
                     $approvalEntryNumber = 'APP-' . ($referenceNumber ?: ('TXN-' . str_pad($transactionId, 8, '0', STR_PAD_LEFT)));
                     $approvalAmount = $totalAmount; // Use totalAmount calculated earlier, not undefined $amount
                     $approvalDate = $data['transaction_date']; // Already converted to YYYY-MM-DD above // Already converted to YYYY-MM-DD above
                     $approvalDescription = $data['description'] ?? '';
                     $approvalStatus = $autoPost ? 'approved' : 'pending';
+                    $journalEntryId = ($hasJournalEntryId && !empty($journalResult['journal_entry_id'])) ? (int) $journalResult['journal_entry_id'] : null;
                     
                     if ($hasEntityType && $hasEntityId) {
-                        // Use entity linking
-                        $approvalStmt = $conn->prepare("
-                            INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, entity_type, entity_id, created_by)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ");
-                        $approvalStmt->bind_param('sssdsssii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $entityType, $entityId, $userId);
+                        if ($hasJournalEntryId && $journalEntryId) {
+                            // Use entity linking + journal entry linking
+                            $approvalStmt = $conn->prepare("
+                                INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, entity_type, entity_id, journal_entry_id, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $approvalStmt->bind_param('sssdsssiii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $entityType, $entityId, $journalEntryId, $userId);
+                        } else {
+                            // Use entity linking only
+                            $approvalStmt = $conn->prepare("
+                                INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, entity_type, entity_id, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $approvalStmt->bind_param('sssdsssii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $entityType, $entityId, $userId);
+                        }
                     } else {
-                        // Basic approval record without entity linking
-                        $approvalStmt = $conn->prepare("
-                            INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, created_by)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ");
-                        $approvalStmt->bind_param('sssdssi', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $userId);
+                        if ($hasJournalEntryId && $journalEntryId) {
+                            // Basic approval record with journal entry linking
+                            $approvalStmt = $conn->prepare("
+                                INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, journal_entry_id, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $approvalStmt->bind_param('sssdssii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $journalEntryId, $userId);
+                        } else {
+                            // Basic approval record without entity linking
+                            $approvalStmt = $conn->prepare("
+                                INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, created_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $approvalStmt->bind_param('sssdssi', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $userId);
+                        }
                     }
                     
                     if (isset($approvalStmt) && !$approvalStmt->execute()) {
@@ -1202,7 +1228,7 @@ try {
                         // Don't fail the transaction, but log the error
                     } else if (isset($approvalStmt)) {
                         $approvalId = $conn->insert_id;
-                        error_log("Entry approval created successfully for transaction - Approval ID: $approvalId, Transaction ID: $transactionId");
+                        error_log("Entry approval created successfully for transaction - Approval ID: $approvalId, Transaction ID: $transactionId" . ($journalEntryId ? ", Journal Entry ID: $journalEntryId" : ""));
                     }
                     if (isset($approvalStmt)) {
                         $approvalStmt->close();
