@@ -342,7 +342,8 @@ include '../includes/header.php';
         var url = getApiUrl();
         url.searchParams.set('entity_type', entityType);
         url.searchParams.set('entity_id', entityId);
-        fetch(url.toString())
+        url.searchParams.set('_t', Date.now());
+        fetch(url.toString(), { cache: 'no-store' })
             .then(parseJsonResponse)
             .then(function(data) {
                 if (!data.success) {
@@ -421,9 +422,12 @@ include '../includes/header.php';
         payload.total_amount = payload.amount;
         payload.auto_post = 1; // Post immediately so it appears in totals and reports
 
-        fetch(getApiUrl().toString(), {
+        var postUrl = getApiUrl();
+        postUrl.searchParams.set('_t', Date.now());
+        fetch(postUrl.toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
             body: JSON.stringify(payload)
         })
         .then(parseJsonResponse)
@@ -455,7 +459,8 @@ include '../includes/header.php';
         url.searchParams.set('id', id);
         url.searchParams.set('entity_type', entityType);
         url.searchParams.set('entity_id', entityId);
-        fetch(url.toString(), { method: 'DELETE' })
+        url.searchParams.set('_t', Date.now());
+        fetch(url.toString(), { method: 'DELETE', cache: 'no-store' })
         .then(parseJsonResponse)
         .then(function(data) {
             if (data.success) {

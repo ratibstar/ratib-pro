@@ -2216,7 +2216,7 @@ ProfessionalAccounting.prototype.loadEntryApproval = async function(statusFilter
                 const url = params.toString()
                     ? `${this.apiBase}/entry-approval.php?${params.toString()}`
                     : `${this.apiBase}/entry-approval.php`;
-                response = await fetch(url, { credentials: 'include' });
+                response = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { credentials: 'include', cache: 'no-store' });
             } else {
                 params.append('action', 'list');
                 params.append('type', view);
@@ -2823,8 +2823,9 @@ ProfessionalAccounting.prototype.rejectEntries = async function(ids, rejectionRe
     // Open Entry Details Modal
 ProfessionalAccounting.prototype.openEntryDetailsModal = async function(entryId) {
         try {
-            const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}`, {
-                credentials: 'include'
+            const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}&_t=${Date.now()}`, {
+                credentials: 'include',
+                cache: 'no-store'
             });
             
             const data = await response.json();

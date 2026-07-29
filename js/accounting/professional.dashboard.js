@@ -66,9 +66,9 @@
             const indicator = this._ensureEntryApprovalIndicator(link);
             if (!indicator) return;
             try {
-                const response = await fetch(`${this.apiBase}/entry-approval.php?status=pending`, {
+                const response = await fetch(`${this.apiBase}/entry-approval.php?status=pending&_t=${Date.now()}`, {
                     credentials: 'include',
-                    cache: 'no-cache',
+                    cache: 'no-store',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
                 if (!response.ok) return;

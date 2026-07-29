@@ -25,6 +25,9 @@ if (!function_exists('formatDatesInArray')) {
 }
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $entityTransactionsLogFile = __DIR__ . '/../../logs/entity-transactions.log';
 $entityTransactionsLogDir = dirname($entityTransactionsLogFile);

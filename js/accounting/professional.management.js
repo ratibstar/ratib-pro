@@ -4664,7 +4664,7 @@
                     const url = params.toString()
                         ? `${this.apiBase}/entry-approval.php?${params.toString()}`
                         : `${this.apiBase}/entry-approval.php`;
-                    response = await fetch(url, { credentials: 'include' });
+                    response = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { credentials: 'include', cache: 'no-store' });
                 } else {
                     // Voucher approval pages: same modal/table, but source is voucher API.
                     params.append('action', 'list');
@@ -5192,8 +5192,9 @@
                     await this.viewVoucher(entryId, 'receipt');
                     return;
                 }
-                const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}`, {
-                    credentials: 'include'
+                const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}&_t=${Date.now()}`, {
+                    credentials: 'include',
+                    cache: 'no-store'
                 });
                 const data = await response.json();
                 if (!data.success || !data.entry) {

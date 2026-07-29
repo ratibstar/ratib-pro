@@ -15,6 +15,9 @@ if (file_exists(__DIR__ . '/unified-entity-linking.php')) {
 }
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 /**
  * Repair an entry_approval record that is missing its journal_entry_id by
