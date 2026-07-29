@@ -285,6 +285,22 @@
         if (isControlPage || !jQuery('#headerNotificationBadge').length) {
             return;
         }
+        // Skip if the user does not have notification-view permission to avoid 403 console errors.
+        if (window.UserPermissions) {
+            if (window.UserPermissions.loaded) {
+                if (!window.UserPermissions.has('view_notifications')) {
+                    return;
+                }
+            } else if (window.UserPermissions.load) {
+                // Wait for permissions and recheck; otherwise the badge request will retry on next page.
+                window.UserPermissions.load().then(function() {
+                    if (window.UserPermissions.has('view_notifications')) {
+                        loadHeaderNotificationBadge();
+                    }
+                }).catch(function() {});
+                return;
+            }
+        }
         // Use APP_CONFIG.apiBase if available, otherwise construct from baseUrl
         const apiBase = (window.APP_CONFIG && window.APP_CONFIG.apiBase) 
             ? window.APP_CONFIG.apiBase 

@@ -199,7 +199,7 @@ include '../includes/header.php';
                 var rows = data.transactions || [];
                 var summary = data.summary || {};
                 if (rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No expenses found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No expenses recorded yet. Add your first expense using the form on the left.</td></tr>';
                 } else {
                     tbody.innerHTML = rows.map(function(t) {
                         var amount = parseFloat(t.total_amount || t.debit_amount || 0).toFixed(2);
