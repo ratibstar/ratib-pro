@@ -47,6 +47,18 @@ $localeArUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_
                     </a>
                 </div>
                 <?php } else { ?>
+                <?php
+                if (empty($menuItems)) {
+                    $menuItems = [
+                        ['label_en' => 'Home', 'label_ar' => 'الرئيسية', 'url' => 'site'],
+                        ['label_en' => 'Features', 'label_ar' => 'المميزات', 'url' => 'site/features'],
+                        ['label_en' => 'Pricing', 'label_ar' => 'الأسعار', 'url' => 'site/pricing'],
+                        ['label_en' => 'Industries', 'label_ar' => 'القطاعات', 'url' => 'site/industries'],
+                        ['label_en' => 'About', 'label_ar' => 'من نحن', 'url' => 'site/about'],
+                        ['label_en' => 'Contact', 'label_ar' => 'تواصل معنا', 'url' => 'site/contact'],
+                    ];
+                }
+                ?>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <?php foreach ($menuItems ?? [] as $item) {
                         $label = CmsService::pickLocale($item, 'label');
