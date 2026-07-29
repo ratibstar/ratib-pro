@@ -829,9 +829,10 @@ try {
                     $transactionType = 'Expense';
                 }
                 
-                // All new transactions must go through approval - ALWAYS set status to Draft
-                // Ignore any status sent from frontend - workflow requires approval first
-                $status = 'Draft';
+                // Default to Draft for approval workflow, but allow immediate posting from
+                // the entity-expenses page when explicitly requested.
+                $autoPost = !empty($data['auto_post']) && in_array((string) $data['auto_post'], ['1', 'true', 'yes'], true);
+                $status = $autoPost ? 'Posted' : 'Draft';
                 $userId = $_SESSION['user_id'] ?? 1;
                 $referenceNumber = $data['reference_number'] ?? null;
                 
@@ -1178,21 +1179,22 @@ try {
                     $approvalAmount = $totalAmount; // Use totalAmount calculated earlier, not undefined $amount
                     $approvalDate = $data['transaction_date']; // Already converted to YYYY-MM-DD above // Already converted to YYYY-MM-DD above
                     $approvalDescription = $data['description'] ?? '';
+                    $approvalStatus = $autoPost ? 'approved' : 'pending';
                     
                     if ($hasEntityType && $hasEntityId) {
                         // Use entity linking
                         $approvalStmt = $conn->prepare("
                             INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, entity_type, entity_id, created_by)
-                            VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ");
-                        $approvalStmt->bind_param('sssdssii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $entityType, $entityId, $userId);
+                        $approvalStmt->bind_param('sssdsssii', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $entityType, $entityId, $userId);
                     } else {
                         // Basic approval record without entity linking
                         $approvalStmt = $conn->prepare("
                             INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, created_by)
-                            VALUES (?, ?, ?, ?, ?, 'pending', ?)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
                         ");
-                        $approvalStmt->bind_param('sssddsi', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $userId);
+                        $approvalStmt->bind_param('sssdssi', $approvalEntryNumber, $approvalDate, $approvalDescription, $approvalAmount, $currency, $approvalStatus, $userId);
                     }
                     
                     if (isset($approvalStmt) && !$approvalStmt->execute()) {
@@ -1643,37 +1645,37 @@ function getEntitySummary($conn, $entityType, $entityId) {
     // Normalize entity_type to lowercase for consistency
     $entityType = strtolower(trim($entityType));
     
-    // Get total revenue (Income transactions)
+    // Get total revenue (Income transactions) - include all non-cancelled statuses
     $stmt = $conn->prepare("
         SELECT COALESCE(SUM(ft.total_amount), 0) as total_revenue 
         FROM entity_transactions et
         INNER JOIN financial_transactions ft ON et.transaction_id = ft.id
         WHERE LOWER(et.entity_type) = ? AND et.entity_id = ? 
-        AND ft.transaction_type = 'Income' AND ft.status = 'Posted'
+        AND ft.transaction_type = 'Income' AND ft.status IN ('Draft', 'Approved', 'Posted')
     ");
     $stmt->bind_param('si', $entityType, $entityId);
     $stmt->execute();
     $revenue = floatval($stmt->get_result()->fetch_assoc()['total_revenue']);
     
-    // Get total expenses (Expense transactions)
+    // Get total expenses (Expense transactions) - include all non-cancelled statuses
     $stmt = $conn->prepare("
         SELECT COALESCE(SUM(ft.total_amount), 0) as total_expenses 
         FROM entity_transactions et
         INNER JOIN financial_transactions ft ON et.transaction_id = ft.id
         WHERE LOWER(et.entity_type) = ? AND et.entity_id = ? 
-        AND ft.transaction_type = 'Expense' AND ft.status = 'Posted'
+        AND ft.transaction_type = 'Expense' AND ft.status IN ('Draft', 'Approved', 'Posted')
     ");
     $stmt->bind_param('si', $entityType, $entityId);
     $stmt->execute();
     $expenses = floatval($stmt->get_result()->fetch_assoc()['total_expenses']);
     
-    // Get this month's total
+    // Get this month's total - include all non-cancelled statuses
     $stmt = $conn->prepare("
         SELECT COALESCE(SUM(ft.total_amount), 0) as this_month 
         FROM entity_transactions et
         INNER JOIN financial_transactions ft ON et.transaction_id = ft.id
         WHERE LOWER(et.entity_type) = ? AND et.entity_id = ? 
-        AND ft.status = 'Posted'
+        AND ft.status IN ('Draft', 'Approved', 'Posted')
         AND MONTH(ft.transaction_date) = MONTH(CURRENT_DATE()) 
         AND YEAR(ft.transaction_date) = YEAR(CURRENT_DATE())
     ");

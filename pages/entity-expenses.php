@@ -79,8 +79,12 @@ $canDelete = hasPermission('delete_journal_entry');
 $v = time();
 $pageCss = [
     asset('css/accounting/professional.css') . '?v=' . $v,
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css',
 ];
-$pageJs = [];
+$pageJs = [
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js',
+];
 
 include '../includes/header.php';
 ?>
@@ -205,21 +209,23 @@ include '../includes/header.php';
                             <input type="hidden" name="entry_type" value="Manual">
                             <div class="mb-2">
                                 <label class="form-label">Date</label>
-                                <input type="date" name="transaction_date" class="form-control" lang="en" dir="ltr" required value="<?php echo date('Y-m-d'); ?>">
+                                <input type="text" name="transaction_date" id="expenseDateInput" class="form-control" dir="ltr" required placeholder="YYYY-MM-DD" value="<?php echo date('Y-m-d'); ?>">
                             </div>
                             <div class="mb-2">
                                 <label class="form-label">Description</label>
                                 <input type="text" name="description" class="form-control" required placeholder="Select or type..." list="descriptionOptions">
                                 <datalist id="descriptionOptions">
-                                    <option value="Office rent">
-                                    <option value="Commission">
-                                    <option value="Travel">
-                                    <option value="Salary">
+                                    <option value="Office Rent">
+                                    <option value="Travel &amp; Accommodation">
                                     <option value="Utilities">
-                                    <option value="Marketing">
+                                    <option value="Salary">
+                                    <option value="Marketing &amp; Advertising">
                                     <option value="Supplies">
-                                    <option value="Maintenance">
+                                    <option value="Maintenance &amp; Repairs">
+                                    <option value="Communication">
                                     <option value="Insurance">
+                                    <option value="Professional Fees">
+                                    <option value="Commission">
                                     <option value="Other">
                                 </datalist>
                             </div>
@@ -231,14 +237,16 @@ include '../includes/header.php';
                                 <label class="form-label">Category</label>
                                 <input type="text" name="category" class="form-control" placeholder="Select or type..." list="categoryOptions">
                                 <datalist id="categoryOptions">
-                                    <option value="Operational">
-                                    <option value="Administrative">
-                                    <option value="Marketing">
+                                    <option value="Office Supplies">
                                     <option value="Travel">
-                                    <option value="Payroll">
                                     <option value="Utilities">
+                                    <option value="Rent">
+                                    <option value="Payroll">
+                                    <option value="Marketing">
                                     <option value="Maintenance">
+                                    <option value="Communication">
                                     <option value="Insurance">
+                                    <option value="Professional Fees">
                                     <option value="Other">
                                 </datalist>
                             </div>
@@ -289,12 +297,12 @@ include '../includes/header.php';
                 <div class="card glass-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="fas fa-link"></i> Accounting Integration</h5>
-                        <p class="mb-2">Every expense saved here is automatically linked to the Accounting module:</p>
+                        <p class="mb-2">Every expense saved here is posted immediately and linked to the Accounting module:</p>
                         <ul class="mb-3">
-                            <li><strong>Financial transaction entry</strong> (قيد) — stored in the general ledger.</li>
-                            <li><strong>Accounts payable voucher / Bill</strong> (سند) — created for each expense.</li>
-                            <li><strong>Entry approval</strong> — pending approval workflow.</li>
-                            <li><strong>Cost reports</strong> — aggregated in the Entity Cost Report.</li>
+                            <li><strong>Financial transaction entry</strong> (قيد) — posted to the general ledger with reference number.</li>
+                            <li><strong>Accounts payable voucher / Bill</strong> (سند) — created automatically for each expense.</li>
+                            <li><strong>Entry approval</strong> — tracked in the approval workflow.</li>
+                            <li><strong>Cost reports</strong> — aggregated in the Entity Cost Report by entity and category.</li>
                         </ul>
                         <a href="<?php echo htmlspecialchars(rateb_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-info">Open Accounting</a>
                         <a href="<?php echo htmlspecialchars(rateb_nav_url('entity-cost-report.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-info">View Cost Report</a>
@@ -384,6 +392,22 @@ include '../includes/header.php';
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    var expenseDatePicker = null;
+
+    function initDatePicker() {
+        var dateInput = document.getElementById('expenseDateInput');
+        if (!dateInput || typeof flatpickr === 'undefined') return;
+        if (expenseDatePicker) {
+            expenseDatePicker.destroy();
+        }
+        expenseDatePicker = flatpickr(dateInput, {
+            dateFormat: 'Y-m-d',
+            defaultDate: dateInput.value || new Date(),
+            theme: 'dark',
+            allowInput: true
+        });
+    }
+
     document.getElementById('expenseForm').addEventListener('submit', function(e) {
         e.preventDefault();
         var form = e.target;
@@ -394,6 +418,7 @@ include '../includes/header.php';
         payload.debit = payload.amount;
         payload.debit_amount = payload.amount;
         payload.total_amount = payload.amount;
+        payload.auto_post = 1; // Post immediately so it appears in totals and reports
 
         fetch(getApiUrl().toString(), {
             method: 'POST',
@@ -404,7 +429,11 @@ include '../includes/header.php';
         .then(function(data) {
             if (data.success) {
                 form.reset();
-                document.querySelector('input[name="transaction_date"]').value = new Date().toISOString().split('T')[0];
+                var dateInput = document.getElementById('expenseDateInput');
+                if (dateInput) {
+                    dateInput.value = new Date().toISOString().split('T')[0];
+                }
+                initDatePicker();
                 loadExpenses();
             } else {
                 alert(data.message || 'Failed to add expense');
@@ -414,6 +443,8 @@ include '../includes/header.php';
             alert('Error: ' + e.message);
         });
     });
+
+    initDatePicker();
 
     document.getElementById('expensesTbody').addEventListener('click', function(e) {
         if (!e.target.classList.contains('btn-delete-expense')) return;

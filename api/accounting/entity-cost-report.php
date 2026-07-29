@@ -42,7 +42,7 @@ if (!$conn instanceof mysqli) {
     exit;
 }
 
-$conditions = ["ft.transaction_type = 'Expense'", "ft.status IN ('Approved', 'Posted')"];
+$conditions = ["ft.transaction_type = 'Expense'", "ft.status IN ('Draft', 'Approved', 'Posted')"];
 $params = [];
 $types = '';
 
