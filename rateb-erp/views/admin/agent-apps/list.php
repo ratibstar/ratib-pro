@@ -6,18 +6,18 @@ declare(strict_types=1);
 /** @var string $listKind */
 /** @var list<array<string,mixed>> $rows */
 /** @var int $total */
-/** @var list<array<string,mixed>> $stats */
-$sectionKey = (string) ($sectionKey ?? '');
-$sectionMeta = $sectionMeta ?? ['title' => 'agent_apps_section', 'icon' => 'fa-cube', 'tone' => 'blue', 'desc' => ''];
-$listKind = (string) ($listKind ?? 'complaints');
 $rows = $rows ?? [];
 $total = (int) ($total ?? 0);
-$stats = $stats ?? [];
+$sectionMeta = $sectionMeta ?? ['title' => 'agent_apps_section', 'icon' => 'fa-cube', 'tone' => 'blue', 'desc' => ''];
+$listKind = (string) ($listKind ?? 'complaints');
 $tone = (string) ($sectionMeta['tone'] ?? 'blue');
 $filterStatus = (string) ($filterStatus ?? '');
 $filterType = (string) ($filterType ?? '');
 $pending = (int) ($pending ?? 0);
 $avgLabel = (string) ($avgLabel ?? '0/5');
+$canManage = !empty($canManage);
+$csrf = (string) ($csrf ?? '');
+$actionUrl = (string) ($actionUrl ?? rateb_url('admin/agent-apps/complaints/action'));
 ?>
 <div class="raa" data-raa="list">
     <header class="raa-hero raa-hero--compact">
@@ -93,6 +93,7 @@ $avgLabel = (string) ($avgLabel ?? '0/5');
                     <th><?php echo Rateb\App\Core\View::escape(__('status')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('date')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('notes')); ?></th>
+                    <?php if ($canManage) { ?><th></th><?php } ?>
                 </tr>
                 <?php } elseif ($listKind === 'ratings') { ?>
                 <tr>
@@ -110,27 +111,53 @@ $avgLabel = (string) ($avgLabel ?? '0/5');
                     <th><?php echo Rateb\App\Core\View::escape(__('title')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('type')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('date')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('status')); ?></th>
                 </tr>
                 <?php } ?>
                 </thead>
                 <tbody>
                 <?php if ($rows === []) { ?>
                 <tr>
-                    <td colspan="7" class="text-muted text-center py-4">
+                    <td colspan="8" class="text-muted text-center py-4">
                         <?php echo Rateb\App\Core\View::escape(__('agent_apps_list_empty')); ?>
                     </td>
                 </tr>
                 <?php } ?>
                 <?php foreach ($rows as $row) { ?>
                 <tr>
-                    <?php if ($listKind === 'complaints') { ?>
+                    <?php if ($listKind === 'complaints') {
+                        $st = (string) ($row['status'] ?? '');
+                        $rid = (int) ($row['id'] ?? 0);
+                        ?>
                     <td class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) ($row['request_no'] ?? $row['id'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '—')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['employee_name'] ?? ('#' . (int) ($row['employee_id'] ?? 0)))); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape(__('agent_apps_type_' . (string) ($row['request_type'] ?? 'inquiry'))); ?></td>
-                    <td><span class="badge text-bg-secondary"><?php echo Rateb\App\Core\View::escape(__((string) ($row['status'] ?? ''))); ?></span></td>
+                    <td><span class="badge text-bg-<?php echo $st === 'pending' ? 'warning' : ($st === 'approved' ? 'success' : 'secondary'); ?>"><?php echo Rateb\App\Core\View::escape(__($st)); ?></span></td>
                     <td class="rateb-ltr-num small"><?php echo Rateb\App\Core\View::escape((string) ($row['request_date'] ?? $row['created_at'] ?? '')); ?></td>
                     <td class="small"><?php echo Rateb\App\Core\View::escape(mb_substr((string) ($row['notes'] ?? ''), 0, 120)); ?></td>
+                    <?php if ($canManage) { ?>
+                    <td class="text-nowrap">
+                        <?php if ($st === 'pending' && $rid > 0) { ?>
+                        <form method="post" action="<?php echo Rateb\App\Core\View::escape($actionUrl); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <input type="hidden" name="id" value="<?php echo $rid; ?>">
+                            <input type="hidden" name="action" value="approve">
+                            <input type="hidden" name="return_status" value="<?php echo Rateb\App\Core\View::escape($filterStatus); ?>">
+                            <input type="hidden" name="return_type" value="<?php echo Rateb\App\Core\View::escape($filterType); ?>">
+                            <button type="submit" class="btn btn-sm btn-success"><?php echo Rateb\App\Core\View::escape(__('approve')); ?></button>
+                        </form>
+                        <form method="post" action="<?php echo Rateb\App\Core\View::escape($actionUrl); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <input type="hidden" name="id" value="<?php echo $rid; ?>">
+                            <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="return_status" value="<?php echo Rateb\App\Core\View::escape($filterStatus); ?>">
+                            <input type="hidden" name="return_type" value="<?php echo Rateb\App\Core\View::escape($filterType); ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><?php echo Rateb\App\Core\View::escape(__('reject')); ?></button>
+                        </form>
+                        <?php } ?>
+                    </td>
+                    <?php } ?>
                     <?php } elseif ($listKind === 'ratings') { ?>
                     <td class="rateb-ltr-num"><?php echo (int) ($row['id'] ?? 0); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '—')); ?></td>
@@ -144,6 +171,13 @@ $avgLabel = (string) ($avgLabel ?? '0/5');
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['title'] ?? '')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['type'] ?? '')); ?></td>
                     <td class="rateb-ltr-num small"><?php echo Rateb\App\Core\View::escape((string) ($row['created_at'] ?? '')); ?></td>
+                    <td>
+                        <?php if (!empty($row['is_read'])) { ?>
+                        <span class="badge text-bg-secondary"><?php echo Rateb\App\Core\View::escape(__('agent_apps_notif_read')); ?></span>
+                        <?php } else { ?>
+                        <span class="badge text-bg-primary"><?php echo Rateb\App\Core\View::escape(__('agent_apps_notif_unread')); ?></span>
+                        <?php } ?>
+                    </td>
                     <?php } ?>
                 </tr>
                 <?php } ?>

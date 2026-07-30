@@ -23,13 +23,20 @@ $stats = $stats ?? [];
             <?php foreach ($modules as $mod) {
                 $tone = (string) ($mod['tone'] ?? 'blue');
                 ?>
-            <article class="raa-card" data-tone="<?php echo Rateb\App\Core\View::escape($tone); ?>">
+            <article class="raa-card<?php echo empty($mod['live']) ? ' raa-card--soon' : ''; ?>" data-tone="<?php echo Rateb\App\Core\View::escape($tone); ?>">
                 <div class="raa-card__icon" aria-hidden="true">
                     <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($mod['icon'] ?? 'fa-cube')); ?>"></i>
                 </div>
-                <h2 class="raa-card__title"><?php echo Rateb\App\Core\View::escape((string) ($mod['title'] ?? '')); ?></h2>
+                <div class="raa-card__head">
+                    <h2 class="raa-card__title"><?php echo Rateb\App\Core\View::escape((string) ($mod['title'] ?? '')); ?></h2>
+                    <?php if (!empty($mod['live'])) { ?>
+                    <span class="raa-badge raa-badge--live"><?php echo Rateb\App\Core\View::escape(__('agent_apps_live_badge')); ?></span>
+                    <?php } else { ?>
+                    <span class="raa-badge raa-badge--soon"><?php echo Rateb\App\Core\View::escape(__('agent_apps_coming_soon_badge')); ?></span>
+                    <?php } ?>
+                </div>
                 <p class="raa-card__desc"><?php echo Rateb\App\Core\View::escape((string) ($mod['desc'] ?? '')); ?></p>
-                <a class="raa-card__btn"
+                <a class="raa-card__btn<?php echo empty($mod['live']) ? ' raa-card__btn--ghost' : ''; ?>"
                    href="<?php echo Rateb\App\Core\View::escape((string) ($mod['url'] ?? '#')); ?>"
                    data-rateb-href="<?php echo Rateb\App\Core\View::escape((string) ($mod['url'] ?? '#')); ?>"
                    data-rateb-soft-nav="1">

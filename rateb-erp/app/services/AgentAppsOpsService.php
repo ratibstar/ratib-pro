@@ -4,22 +4,27 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 
 /**
- * Platform Agent Apps console — read models over existing ESS / HR / notification data.
+ * Platform Agent Apps console — read/write over ESS / HR / notification / mobile config data.
  */
 final class AgentAppsOpsService
 {
     private function companyScopeSql(string $alias = ''): array
     {
         $col = $alias !== '' ? "{$alias}.company_id" : 'company_id';
-        if (TenantContext::isSuperAdmin()) {
+        if (TenantContext::isSuperAdmin()
+            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
             return ['', []];
         }
         $cid = (int) (TenantContext::companyId() ?? 0);
         if ($cid < 1 && function_exists('rateb_resolve_ops_company_id')) {
             $cid = (int) rateb_resolve_ops_company_id();
+        }
+        if ($cid < 1) {
+            $cid = (int) SessionManager::get('rateb_company_id', 0);
         }
         if ($cid < 1) {
             return ['', []];
@@ -78,6 +83,35 @@ final class AgentAppsOpsService
             error_log('AgentAppsOpsService::listComplaints: ' . $e->getMessage());
 
             return ['items' => [], 'total' => 0, 'pending' => 0];
+        }
+    }
+
+    public function setComplaintStatus(int $id, string $action, int $userId): bool
+    {
+        if ($id < 1 || !in_array($action, ['approve', 'reject'], true)) {
+            return false;
+        }
+        $state = $action === 'approve' ? 'approved' : 'rejected';
+        [$scopeSql, $scopeParams] = $this->companyScopeSql('');
+        $params = array_merge($scopeParams, [
+            'st' => $state,
+            'uid' => $userId > 0 ? $userId : null,
+            'id' => $id,
+            'pending' => 'pending',
+        ]);
+        $sql = 'UPDATE rateb_hr_employee_requests
+                SET status = :st, processed_by = :uid, processed_at = NOW()
+                WHERE id = :id AND status = :pending
+                  AND request_type IN (\'inquiry\',\'complaint\')' . $scopeSql;
+        try {
+            $stmt = Database::connection()->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::setComplaintStatus: ' . $e->getMessage());
+
+            return false;
         }
     }
 
@@ -162,6 +196,32 @@ final class AgentAppsOpsService
 
             return ['items' => [], 'total' => 0];
         }
+    }
+
+    /**
+     * Mobile salary / payment feature matrix per company.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function listPaymentFeatureMatrix(): array
+    {
+        $svc = new MobileAppConfigService();
+        $rows = $svc->listCompaniesWithConfig();
+        $out = [];
+        foreach ($rows as $row) {
+            $features = $svc->decodeFeatures($row['enabled_features'] ?? null);
+            $out[] = [
+                'company_id' => (int) ($row['company_id'] ?? 0),
+                'company_name' => (string) ($row['company_name'] ?? ''),
+                'app_name' => (string) ($row['app_name'] ?? ''),
+                'mobile_active' => (string) ($row['mobile_status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE,
+                'payroll' => !empty($features['payroll']),
+                'payslips' => !empty($features['payslips']),
+                'payments' => !empty($features['payments']),
+            ];
+        }
+
+        return $out;
     }
 
     public function countPendingComplaints(): int

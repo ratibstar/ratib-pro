@@ -165,11 +165,43 @@ html[data-bs-theme="dark"] .raa {
     font-size: 1.4rem;
 }
 
+.raa-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
 .raa-card__title {
     margin: 0;
     font-size: 1.05rem;
     font-weight: 800;
     color: var(--raa-text);
+}
+
+.raa-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.raa-badge--live {
+    background: color-mix(in srgb, var(--raa-green) 16%, transparent);
+    color: var(--raa-green);
+}
+
+.raa-badge--soon {
+    background: color-mix(in srgb, var(--raa-slate) 16%, transparent);
+    color: var(--raa-slate);
+}
+
+.raa-card--soon {
+    opacity: 0.88;
 }
 
 .raa-card__desc {
