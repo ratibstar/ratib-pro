@@ -1067,7 +1067,8 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body py-3">
-                <p class="small text-muted mb-3">Choose the ERP package before creating the dedicated database and company.</p>
+                <p class="small text-muted mb-2" id="erpProvisionModalIntro">Choose the ERP package before creating the dedicated database and company.</p>
+                <p class="small text-warning mb-3 d-none" id="erpProvisionReadyHint">Ready agency: use <strong>Apply package</strong> to update modules without wiping data. <strong>Re-provision ERP</strong> resets the database.</p>
                 <label class="form-label" for="erpProvisionPlanSelect">Package</label>
                 <select class="form-select form-select-sm" id="erpProvisionPlanSelect">
                     <option value="starter">Starter — essential procurement</option>
@@ -1078,6 +1079,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
             </div>
             <div class="modal-footer border-top border-secondary py-2 gap-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-primary btn-sm d-none" id="erpProvisionApplyPlanBtn">Apply package</button>
                 <button type="button" class="btn btn-primary btn-sm" id="erpProvisionConfirmBtn">Provision ERP</button>
             </div>
         </div>

@@ -479,6 +479,57 @@ final class AgencyErpMigrationService
         ];
     }
 
+    /**
+     * Apply ERP plan slug to the dedicated agency company (no data wipe).
+     *
+     * @param array<string, mixed> $agency
+     * @return array{agency_company_id:int,agency_id:int,plan_slug:string,plan_id:int,modules:list<string>}
+     */
+    public function applyDedicatedCompanyPlan(array $agency, string $planSlug): array
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException(__('company_agency_admin_no_db'));
+        }
+        $planSlug = strtolower(trim($planSlug));
+        if ($planSlug === '') {
+            $planSlug = 'professional';
+        }
+
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+        try {
+            try {
+                (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
+            } catch (\Throwable $e) {
+                error_log('applyDedicatedCompanyPlan plans repair: ' . $e->getMessage());
+            }
+
+            $companies = new \Rateb\App\Models\Company();
+            $companyRow = $companies->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $agencyCompanyId = (int) ($companyRow['id'] ?? 0);
+            if ($agencyCompanyId < 1) {
+                throw new RuntimeException(__('company_agency_admin_no_company'));
+            }
+            $applied = (new DedicatedCompanySeedService())->applyPlanSlug($agencyCompanyId, $planSlug);
+
+            return [
+                'agency_company_id' => $agencyCompanyId,
+                'agency_id' => (int) ($agency['id'] ?? 0),
+                'plan_slug' => (string) ($applied['plan_slug'] ?? $planSlug),
+                'plan_id' => (int) ($applied['plan_id'] ?? 0),
+                'modules' => is_array($applied['modules'] ?? null) ? $applied['modules'] : [],
+            ];
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
     public function syncDedicatedAdminLogin(array $agency, string $username, string $password): array
     {
         $cfg = $this->agencyDatabaseConfig($agency);

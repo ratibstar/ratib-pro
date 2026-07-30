@@ -428,22 +428,108 @@ final class DedicatedCompanySeedService
     /** @return array<string, mixed> */
     private function resolvePlan(string $planSlug): array
     {
-        $slug = trim($planSlug) !== '' ? trim($planSlug) : 'professional';
+        $slug = strtolower(trim($planSlug) !== '' ? trim($planSlug) : 'professional');
         $plan = (new Plan())->queryOne(
             'SELECT * FROM rateb_plans WHERE slug = :slug AND is_active = 1 LIMIT 1',
             ['slug' => $slug]
         );
-        if ($plan !== null) {
-            return $plan;
+        if ($plan === null) {
+            $plan = (new Plan())->queryOne(
+                'SELECT * FROM rateb_plans WHERE slug = :slug LIMIT 1',
+                ['slug' => $slug]
+            );
         }
-        $fallback = (new Plan())->queryOne(
-            'SELECT * FROM rateb_plans WHERE is_active = 1 ORDER BY price_monthly ASC LIMIT 1'
-        );
-        if ($fallback === null) {
-            throw new \RuntimeException('No active ERP plan found for dedicated seed.');
+        if ($plan === null && in_array($slug, ['starter', 'professional', 'enterprise'], true)) {
+            // Ensure canonical marketing tiers exist, then retry (agency DBs can lag).
+            try {
+                (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
+            } catch (\Throwable $e) {
+                // continue to fallback below
+            }
+            $plan = (new Plan())->queryOne(
+                'SELECT * FROM rateb_plans WHERE slug = :slug LIMIT 1',
+                ['slug' => $slug]
+            );
+        }
+        if ($plan === null) {
+            throw new \RuntimeException('ERP plan not found: ' . $slug);
         }
 
-        return $fallback;
+        // Always prefer config/plan-tiers.php module bundles over stale DB JSON.
+        $tierModules = PlanLimitService::modulesForSlug($slug);
+        if ($tierModules !== []) {
+            $plan['modules'] = json_encode($tierModules, JSON_UNESCAPED_UNICODE);
+            $tier = PlanLimitService::tierForSlug($slug);
+            if (is_array($tier)) {
+                if (isset($tier['max_users'])) {
+                    $plan['max_users'] = (int) $tier['max_users'];
+                }
+                if (isset($tier['max_storage_mb'])) {
+                    $plan['max_storage_mb'] = (int) $tier['max_storage_mb'];
+                }
+                if (isset($tier['max_branches'])) {
+                    $plan['max_branches'] = (int) $tier['max_branches'];
+                }
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Apply a SaaS plan slug onto an existing dedicated company (plan_id, modules, limits, subscription).
+     *
+     * @return array{company_id:int,plan_slug:string,plan_id:int,modules:list<string>}
+     */
+    public function applyPlanSlug(int $companyId, string $planSlug): array
+    {
+        if ($companyId < 1) {
+            throw new \InvalidArgumentException('company id is required');
+        }
+        $plan = $this->resolvePlan($planSlug);
+        $planId = (int) ($plan['id'] ?? 0);
+        if ($planId < 1) {
+            throw new \RuntimeException('ERP plan id missing for slug: ' . $planSlug);
+        }
+        $modulesJson = (string) ($plan['modules'] ?? '[]');
+        $modules = PlanLimitService::filterKnownModules(
+            json_decode($modulesJson, true) ?: PlanLimitService::modulesForSlug($planSlug)
+        );
+        if ($modules === []) {
+            $modules = PlanLimitService::modulesForSlug($planSlug);
+        }
+        foreach (['dashboard', 'notifications'] as $implied) {
+            if (!in_array($implied, $modules, true)) {
+                $modules[] = $implied;
+            }
+        }
+        $modules = array_values(array_unique($modules));
+        $modulesJson = json_encode($modules, JSON_UNESCAPED_UNICODE);
+        if ($modulesJson === false) {
+            throw new \RuntimeException('Failed to encode company modules');
+        }
+
+        $companyModel = new Company();
+        $company = $companyModel->find($companyId);
+        if (!$company) {
+            throw new \RuntimeException('Company not found: #' . $companyId);
+        }
+        $companyModel->update($companyId, [
+            'plan_id' => $planId,
+            'user_limit' => (int) ($plan['max_users'] ?? 25),
+            'storage_limit_mb' => (int) ($plan['max_storage_mb'] ?? 2048),
+            'modules' => $modulesJson,
+            'status' => 'active',
+        ]);
+        $this->ensureDedicatedSubscription($companyId, $plan);
+        PlanLimitService::forgetCompanyLimits($companyId);
+
+        return [
+            'company_id' => $companyId,
+            'plan_slug' => strtolower(trim($planSlug)),
+            'plan_id' => $planId,
+            'modules' => $modules,
+        ];
     }
 
     private function dedupeDefaultWarehouse(int $companyId): void

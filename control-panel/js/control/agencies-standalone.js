@@ -297,6 +297,9 @@
         var planSelect = document.getElementById('erpProvisionPlanSelect');
         var agencyInput = document.getElementById('erpProvisionAgencyId');
         var modalEl = document.getElementById('erpProvisionModal');
+        var applyBtn = document.getElementById('erpProvisionApplyPlanBtn');
+        var confirmBtn = document.getElementById('erpProvisionConfirmBtn');
+        var readyHint = document.getElementById('erpProvisionReadyHint');
         if (!planSelect || !agencyInput || !modalEl) {
             window.alert('ERP plan dialog is unavailable on this page.');
             return;
@@ -305,6 +308,16 @@
         agencyInput.setAttribute('data-force', erpStatus === 'ready' ? '1' : '0');
         var currentPlan = (erpProvBtn.getAttribute('data-erp-plan') || 'professional').toLowerCase();
         planSelect.value = ['starter', 'professional', 'enterprise'].indexOf(currentPlan) >= 0 ? currentPlan : 'professional';
+        var isReady = erpStatus === 'ready';
+        if (applyBtn) {
+            applyBtn.classList.toggle('d-none', !isReady);
+        }
+        if (readyHint) {
+            readyHint.classList.toggle('d-none', !isReady);
+        }
+        if (confirmBtn) {
+            confirmBtn.textContent = isReady ? 'Re-provision ERP' : 'Provision ERP';
+        }
         cleanupStaleModalBackdrops();
         var erpModal = getBootstrapModal(modalEl);
         if (erpModal) erpModal.show();
@@ -1211,6 +1224,56 @@
     })();
 
     var erpProvisionConfirmBtn = document.getElementById('erpProvisionConfirmBtn');
+    var erpProvisionApplyPlanBtn = document.getElementById('erpProvisionApplyPlanBtn');
+
+    function applyErpPlanOnly() {
+        var agencyId = parseInt((document.getElementById('erpProvisionAgencyId') || {}).value || '0', 10);
+        var planSelect = document.getElementById('erpProvisionPlanSelect');
+        var planSlug = planSelect ? String(planSelect.value || 'professional') : 'professional';
+        var modalEl = document.getElementById('erpProvisionModal');
+        if (!agencyId) return;
+        if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = true;
+        if (erpProvisionConfirmBtn) erpProvisionConfirmBtn.disabled = true;
+        fetch(API_BASE + '/agencies-erp-plan.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug })
+        }).then(function(res) {
+            var ct = (res.headers.get('content-type') || '').toLowerCase();
+            if (!ct.includes('application/json')) {
+                throw new Error('Session expired or server error — please log in again and retry.');
+            }
+            return res.json();
+        }).then(function(data) {
+            if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
+            if (erpProvisionConfirmBtn) erpProvisionConfirmBtn.disabled = false;
+            var inst = getBootstrapModal(modalEl);
+            if (inst) inst.hide();
+            cleanupStaleModalBackdrops();
+            if (!data || !data.success) {
+                showAlert((data && data.message) ? data.message : 'Failed to apply ERP package');
+                return;
+            }
+            var mods = (data.plan_apply && data.plan_apply.modules) ? data.plan_apply.modules : [];
+            var msg = 'Package applied: ' + ((data.erp_plan_slug) ? data.erp_plan_slug : planSlug);
+            if (mods.length) {
+                msg += '\nModules: ' + mods.join(', ');
+            }
+            msg += '\n\nRefresh admin.rateb.sa (Ctrl+F5) to see HR and other modules.';
+            showAlert(msg);
+            window.location.reload();
+        }).catch(function(err) {
+            if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
+            if (erpProvisionConfirmBtn) erpProvisionConfirmBtn.disabled = false;
+            showAlert((err && err.message) ? err.message : 'Apply package request failed');
+        });
+    }
+
+    if (erpProvisionApplyPlanBtn) {
+        erpProvisionApplyPlanBtn.addEventListener('click', applyErpPlanOnly);
+    }
+
     if (erpProvisionConfirmBtn) {
         erpProvisionConfirmBtn.addEventListener('click', function() {
             var agencyId = parseInt((document.getElementById('erpProvisionAgencyId') || {}).value || '0', 10);
@@ -1221,17 +1284,27 @@
             var modalEl = document.getElementById('erpProvisionModal');
             if (!agencyId) return;
             erpProvisionConfirmBtn.disabled = true;
+            if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = true;
             fetch(API_BASE + '/agencies-erp-plan.php', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug })
-            }).then(function() {
-                return fetch(API_BASE + '/agencies-provision-erp.php', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug, force: force ? 1 : 0 })
+            }).then(function(planRes) {
+                var ct = (planRes.headers.get('content-type') || '').toLowerCase();
+                if (!ct.includes('application/json')) {
+                    throw new Error('Session expired or server error — please log in again and retry.');
+                }
+                return planRes.json().then(function(planData) {
+                    if (!planData || !planData.success) {
+                        throw new Error((planData && planData.message) ? planData.message : 'Failed to save ERP package');
+                    }
+                    return fetch(API_BASE + '/agencies-provision-erp.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ agency_id: agencyId, plan_slug: planSlug, force: force ? 1 : 0 })
+                    });
                 });
             }).then(function(res) {
                 var ct = (res.headers.get('content-type') || '').toLowerCase();
@@ -1241,6 +1314,7 @@
                 return res.json();
             }).then(function(data) {
                 erpProvisionConfirmBtn.disabled = false;
+                if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
                 var inst = getBootstrapModal(modalEl);
                 if (inst) inst.hide();
                 cleanupStaleModalBackdrops();
@@ -1251,15 +1325,22 @@
                 var seed = data.data && data.data.seed ? data.data.seed : null;
                 var plan = (data.data && data.data.erp_plan_slug) ? data.data.erp_plan_slug : planSlug;
                 var msg = 'ERP ready (' + plan + ') on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
+                var mods = (data.data && data.data.plan_apply && data.data.plan_apply.modules)
+                    ? data.data.plan_apply.modules
+                    : [];
+                if (mods.length) {
+                    msg += '\nModules: ' + mods.join(', ');
+                }
                 if (seed && seed.admin_password) {
                     var login = seed.admin_username || seed.admin_email || 'admin';
                     msg += '\nUsername: ' + login + '\nPassword: ' + seed.admin_password;
                 }
                 showAlert(msg);
                 window.location.reload();
-            }).catch(function() {
+            }).catch(function(err) {
                 erpProvisionConfirmBtn.disabled = false;
-                showAlert('ERP provisioning request failed');
+                if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
+                showAlert((err && err.message) ? err.message : 'ERP provisioning request failed');
             });
         });
     }

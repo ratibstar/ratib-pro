@@ -132,6 +132,8 @@ final class ErpProvisioningService
             self::ensureAllTablesUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
             $migrationLog = self::runErpMigrations($erpDb, $dbHost, $dbPort, $dbUser, $dbPass);
             $seed = self::seedDedicatedCompany($agency, $erpDb, $dbHost, $dbPort, $dbUser, $dbPass, $planSlug);
+            $agency['erp_plan_slug'] = $planSlug;
+            $planApply = self::applyPlanToAgencyErp($agency, $planSlug);
             self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
 
             return [
@@ -141,6 +143,7 @@ final class ErpProvisioningService
                 'erp_plan_slug' => $planSlug,
                 'migration_log' => $migrationLog,
                 'seed' => $seed,
+                'plan_apply' => $planApply,
             ];
         } catch (Throwable $e) {
             self::markStatus($controlConn, $agencyId, 'failed', $erpDb, $dbHost, $dbUser, $dbPass);
@@ -165,6 +168,9 @@ final class ErpProvisioningService
         string $dbUser,
         string $dbPass
     ): array {
+        // Keep in-memory agency in sync — rebuildShellPreserveLogins reads erp_plan_slug.
+        $agency['erp_plan_slug'] = $planSlug;
+
         self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
         self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
         self::ensureAllTablesUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
@@ -174,6 +180,7 @@ final class ErpProvisioningService
         if ($companyId > 0) {
             self::saveAgencyErpCompanyId($controlConn, $agencyId, $companyId);
         }
+        $planApply = self::applyPlanToAgencyErp($agency, $planSlug);
         self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
 
         return [
@@ -185,7 +192,39 @@ final class ErpProvisioningService
             'migration_log' => $migrationLog,
             'empty_report' => $emptyReport,
             'standard_admin' => $emptyReport['standard_admin'] ?? null,
+            'plan_apply' => $planApply,
         ];
+    }
+
+    /**
+     * Push control-panel ERP package into the dedicated company row (modules / plan_id).
+     *
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public static function applyPlanToAgencyErp(array $agency, string $planSlug): array
+    {
+        $erpRoot = self::erpRootPath();
+        self::bootstrapErpForSeed($erpRoot);
+        $lookup = dirname(__DIR__, 2) . '/../config/env/agency_lookup.php';
+        if (!is_file($lookup)) {
+            $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+        }
+        if (is_file($lookup)) {
+            require_once $lookup;
+        }
+        if (!is_file($erpRoot . '/app/services/AgencyErpMigrationService.php')) {
+            throw new RuntimeException('AgencyErpMigrationService missing');
+        }
+        require_once $erpRoot . '/app/services/AgencyErpMigrationService.php';
+
+        $planSlug = self::normalizePlanSlug($planSlug);
+        $agency['erp_plan_slug'] = $planSlug;
+
+        return (new \Rateb\App\Services\AgencyErpMigrationService())->applyDedicatedCompanyPlan(
+            $agency,
+            $planSlug
+        );
     }
 
     /**

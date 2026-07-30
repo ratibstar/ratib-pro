@@ -62,12 +62,25 @@ if ($planSlug === '') {
 
 try {
     $saved = ErpProvisioningService::saveAgencyPlan($ctrl, $agencyId, $planSlug);
+    $apply = null;
+    require_once __DIR__ . '/../../../config/env/agency_lookup.php';
+    $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
+    if (is_array($agency)
+        && strtolower(trim((string) ($agency['erp_status'] ?? ''))) === 'ready'
+        && trim((string) ($agency['erp_db_name'] ?? '')) !== ''
+    ) {
+        $agency['erp_plan_slug'] = $saved;
+        $apply = ErpProvisioningService::applyPlanToAgencyErp($agency, $saved);
+    }
     planJson([
         'success' => true,
-        'message' => 'ERP plan saved',
+        'message' => $apply
+            ? 'ERP plan saved and applied to agency company'
+            : 'ERP plan saved',
         'agency_id' => $agencyId,
         'erp_plan_slug' => $saved,
         'plans' => ErpProvisioningService::allowedPlanSlugs(),
+        'plan_apply' => $apply,
     ]);
 } catch (Throwable $e) {
     planJson(['success' => false, 'message' => $e->getMessage()]);
