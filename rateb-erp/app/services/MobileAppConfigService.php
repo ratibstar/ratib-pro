@@ -309,6 +309,7 @@ final class MobileAppConfigService
             ];
         }
 
+        $enrichment = $this->mobileContentEnrichment($companyId);
         $row = $this->findByCompanyId($companyId);
         if (!$row || (string) ($row['status'] ?? '') !== self::STATUS_ACTIVE) {
             $features = self::defaultFeatures();
@@ -331,6 +332,8 @@ final class MobileAppConfigService
                     'theme_color' => '#0D6EFD',
                     'mobile_active' => true,
                     'features' => $this->featuresPayload($features),
+                    'extensions' => $enrichment['extensions'],
+                    'offers' => $enrichment['offers'],
                 ],
             ];
         }
@@ -355,8 +358,27 @@ final class MobileAppConfigService
                 'splash' => (string) ($row['splash_path'] ?? ''),
                 'theme_color' => (string) ($row['theme_color'] ?? '#0D6EFD'),
                 'features' => $this->featuresPayload($features),
+                'extensions' => $enrichment['extensions'],
+                'offers' => $enrichment['offers'],
             ],
         ];
+    }
+
+    /**
+     * @return array{extensions:array<string,string>,offers:list<array<string,mixed>>}
+     */
+    private function mobileContentEnrichment(int $companyId): array
+    {
+        try {
+            $ops = new AgentAppsOpsService();
+
+            return [
+                'extensions' => $ops->mobileExtensionsForCompany($companyId),
+                'offers' => $ops->apiActiveOffers($companyId),
+            ];
+        } catch (\Throwable $e) {
+            return ['extensions' => [], 'offers' => []];
+        }
     }
 
     /** @param mixed $path */

@@ -286,6 +286,8 @@ html[data-bs-theme="dark"] .raa {
 .raa-stat[data-tone="teal"] { --raa-tone: var(--raa-teal); }
 .raa-stat[data-tone="gold"] { --raa-tone: var(--raa-gold); }
 .raa-stat[data-tone="red"] { --raa-tone: var(--raa-red); }
+.raa-stat[data-tone="purple"] { --raa-tone: var(--raa-purple); }
+.raa-stat[data-tone="cyan"] { --raa-tone: var(--raa-cyan); }
 
 .raa-stat__icon {
     flex-shrink: 0;

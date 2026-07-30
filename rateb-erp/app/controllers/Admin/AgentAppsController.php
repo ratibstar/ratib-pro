@@ -9,10 +9,10 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\AgentAppsOpsService;
 use Rateb\App\Services\MobileAppConfigService;
+use Rateb\App\Services\MobileAppContentSchemaBootstrap;
 
 /**
  * Agent / Agency App Management console under Admin.
- * Live modules use ESS/HR/notification/mobile-config data; unfinished modules show honest empty states.
  */
 final class AgentAppsController extends Controller
 {
@@ -53,26 +53,26 @@ final class AgentAppsController extends Controller
             'desc' => 'agent_apps_payments_desc',
             'mode' => 'payments',
         ],
-        'invoices' => [
-            'title' => 'agent_apps_invoices',
-            'icon' => 'fa-file-invoice',
-            'tone' => 'navy',
-            'desc' => 'agent_apps_invoices_desc',
-            'mode' => 'invoices',
-        ],
         'content' => [
             'title' => 'agent_apps_content',
             'icon' => 'fa-file-lines',
             'tone' => 'purple',
             'desc' => 'agent_apps_content_desc',
-            'mode' => 'soon',
+            'mode' => 'content',
         ],
         'offers' => [
             'title' => 'agent_apps_offers',
             'icon' => 'fa-image',
             'tone' => 'teal',
             'desc' => 'agent_apps_offers_desc',
-            'mode' => 'soon',
+            'mode' => 'offers',
+        ],
+        'invoices' => [
+            'title' => 'agent_apps_invoices',
+            'icon' => 'fa-file-invoice',
+            'tone' => 'navy',
+            'desc' => 'agent_apps_invoices_desc',
+            'mode' => 'invoices',
         ],
     ];
 
@@ -107,6 +107,7 @@ final class AgentAppsController extends Controller
             return;
         }
 
+        MobileAppContentSchemaBootstrap::ensure();
         $meta = self::SECTIONS[$key];
         $mode = (string) ($meta['mode'] ?? 'soon');
         $ops = new AgentAppsOpsService();
@@ -119,6 +120,8 @@ final class AgentAppsController extends Controller
             'canManage' => $this->canManage(),
             'csrf' => Csrf::token(),
             'mobileAppsUrl' => rateb_url('admin/mobile-apps'),
+            'companies' => $this->companiesForForms($ops),
+            'defaultCompanyId' => $ops->resolveWriteCompanyId(0),
         ];
 
         if ($mode === 'settings') {
@@ -143,6 +146,55 @@ final class AgentAppsController extends Controller
         if ($mode === 'payments') {
             $this->view('admin/agent-apps/payments', array_merge($common, [
                 'rows' => $ops->listPaymentFeatureMatrix(),
+            ]), 'main');
+            return;
+        }
+
+        if ($mode === 'content') {
+            $companyFilter = (int) ($_GET['company_id'] ?? 0);
+            $editId = (int) ($_GET['edit'] ?? 0);
+            $list = $ops->listContents($companyFilter, 100);
+            $editRow = null;
+            if ($editId > 0) {
+                foreach ($list['items'] as $row) {
+                    if ((int) ($row['id'] ?? 0) === $editId) {
+                        $editRow = $row;
+                        break;
+                    }
+                }
+            }
+            $this->view('admin/agent-apps/content', array_merge($common, [
+                'rows' => $list['items'],
+                'total' => $list['total'],
+                'companyFilter' => $companyFilter,
+                'editRow' => $editRow,
+                'slugs' => AgentAppsOpsService::contentSlugs(),
+                'saveUrl' => rateb_url('admin/agent-apps/content/save'),
+                'deleteUrl' => rateb_url('admin/agent-apps/content/delete'),
+            ]), 'main');
+            return;
+        }
+
+        if ($mode === 'offers') {
+            $companyFilter = (int) ($_GET['company_id'] ?? 0);
+            $editId = (int) ($_GET['edit'] ?? 0);
+            $list = $ops->listOffers($companyFilter, 100, false);
+            $editRow = null;
+            if ($editId > 0) {
+                foreach ($list['items'] as $row) {
+                    if ((int) ($row['id'] ?? 0) === $editId) {
+                        $editRow = $row;
+                        break;
+                    }
+                }
+            }
+            $this->view('admin/agent-apps/offers', array_merge($common, [
+                'rows' => $list['items'],
+                'total' => $list['total'],
+                'companyFilter' => $companyFilter,
+                'editRow' => $editRow,
+                'saveUrl' => rateb_url('admin/agent-apps/offers/save'),
+                'deleteUrl' => rateb_url('admin/agent-apps/offers/delete'),
             ]), 'main');
             return;
         }
@@ -241,6 +293,101 @@ final class AgentAppsController extends Controller
         Response::redirect($redirect);
     }
 
+    public function saveContent(): void
+    {
+        $this->mutateContentOrOffer('content', 'save');
+    }
+
+    public function deleteContent(): void
+    {
+        $this->mutateContentOrOffer('content', 'delete');
+    }
+
+    public function saveOffer(): void
+    {
+        $this->mutateContentOrOffer('offers', 'save');
+    }
+
+    public function deleteOffer(): void
+    {
+        $this->mutateContentOrOffer('offers', 'delete');
+    }
+
+    private function mutateContentOrOffer(string $section, string $op): void
+    {
+        if (!$this->canManage()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        $redirect = rateb_url('admin/agent-apps/' . $section);
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($redirect);
+            return;
+        }
+
+        $ops = new AgentAppsOpsService();
+        if ($op === 'delete') {
+            $id = (int) $this->input('id', 0);
+            $ok = $section === 'content' ? $ops->deleteContent($id) : $ops->deleteOffer($id);
+            SessionManager::flash($ok ? 'success' : 'error', $ok ? __('deleted') : __('agent_apps_action_failed'));
+            Response::redirect($redirect);
+            return;
+        }
+
+        $input = [
+            'id' => (int) $this->input('id', 0),
+            'company_id' => (int) $this->input('company_id', 0),
+            'slug' => (string) $this->input('slug', ''),
+            'title_ar' => (string) $this->input('title_ar', ''),
+            'title_en' => (string) $this->input('title_en', ''),
+            'body_ar' => (string) $this->input('body_ar', ''),
+            'body_en' => (string) $this->input('body_en', ''),
+            'image_path' => (string) $this->input('image_path', ''),
+            'discount_label' => (string) $this->input('discount_label', ''),
+            'starts_at' => (string) $this->input('starts_at', ''),
+            'ends_at' => (string) $this->input('ends_at', ''),
+            'sort_order' => (int) $this->input('sort_order', 0),
+            'is_active' => (string) $this->input('is_active', '0') === '1' || (string) $this->input('is_active', '') === 'on',
+        ];
+        $result = $section === 'content'
+            ? $ops->saveContent($input)
+            : $ops->saveOffer($input);
+
+        if (!empty($result['ok'])) {
+            SessionManager::flash('success', __('saved_ok'));
+        } else {
+            $msg = (string) ($result['message'] ?? 'save_failed');
+            $map = [
+                'company_required' => __('agent_apps_company_required'),
+                'slug_invalid' => __('agent_apps_slug_invalid'),
+                'title_required' => __('agent_apps_title_required'),
+                'not_found' => __('agent_apps_action_failed'),
+                'save_failed' => __('agent_apps_action_failed'),
+            ];
+            SessionManager::flash('error', $map[$msg] ?? __('agent_apps_action_failed'));
+        }
+        Response::redirect($redirect);
+    }
+
+    /**
+     * @return list<array{id:int,name:string}>
+     */
+    private function companiesForForms(AgentAppsOpsService $ops): array
+    {
+        $companies = $ops->listCompanyOptions();
+        if ($companies !== []) {
+            return $companies;
+        }
+        $cid = $ops->resolveWriteCompanyId(0);
+        if ($cid > 0) {
+            return [['id' => $cid, 'name' => '#' . $cid]];
+        }
+
+        return [];
+    }
+
     private function canView(): bool
     {
         return rateb_is_super_admin()
@@ -261,7 +408,7 @@ final class AgentAppsController extends Controller
         $out = [];
         foreach (self::SECTIONS as $key => $meta) {
             $mode = (string) ($meta['mode'] ?? 'soon');
-            $live = in_array($mode, ['list', 'settings', 'payments', 'invoices'], true);
+            $live = in_array($mode, ['list', 'settings', 'payments', 'invoices', 'content', 'offers'], true);
             $out[] = [
                 'key' => $key,
                 'title' => __($meta['title']),
@@ -308,10 +455,14 @@ final class AgentAppsController extends Controller
         $notifCount = 0;
         $ratingAvg = '0/5';
         $complaintsPending = 0;
+        $offersActive = 0;
+        $contentCount = 0;
         try {
             $notifCount = $ops->notificationCount();
             $ratingAvg = $ops->ratingsAvgLabel();
             $complaintsPending = $ops->countPendingComplaints();
+            $offersActive = $ops->listOffers(0, 1, true)['total'];
+            $contentCount = $ops->listContents(0, 1)['total'];
         } catch (\Throwable $e) {
             // keep zeros
         }
@@ -332,17 +483,24 @@ final class AgentAppsController extends Controller
                 'tone' => 'green',
             ],
             [
+                'key' => 'content',
+                'label' => __('agent_apps_stat_content'),
+                'value' => (string) $contentCount,
+                'icon' => 'fa-file-lines',
+                'tone' => 'purple',
+            ],
+            [
+                'key' => 'offers',
+                'label' => __('agent_apps_stat_offers'),
+                'value' => (string) $offersActive,
+                'icon' => 'fa-tags',
+                'tone' => 'teal',
+            ],
+            [
                 'key' => 'notifications',
                 'label' => __('agent_apps_stat_notifications'),
                 'value' => (string) $notifCount,
                 'icon' => 'fa-bell',
-                'tone' => 'teal',
-            ],
-            [
-                'key' => 'rating',
-                'label' => __('agent_apps_stat_rating'),
-                'value' => $ratingAvg,
-                'icon' => 'fa-star',
                 'tone' => 'gold',
             ],
             [
@@ -351,6 +509,13 @@ final class AgentAppsController extends Controller
                 'value' => (string) $complaintsPending,
                 'icon' => 'fa-triangle-exclamation',
                 'tone' => 'red',
+            ],
+            [
+                'key' => 'rating',
+                'label' => __('agent_apps_stat_rating'),
+                'value' => $ratingAvg,
+                'icon' => 'fa-star',
+                'tone' => 'cyan',
             ],
         ];
     }
