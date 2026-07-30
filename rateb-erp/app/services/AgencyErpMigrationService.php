@@ -569,6 +569,13 @@ final class AgencyErpMigrationService
             }
             PlanLimitService::forgetCompanyLimits($agencyCompanyId);
 
+            $mobileFeatures = [];
+            try {
+                $mobileFeatures = (new MobileAppConfigService())->enableSalaryFeaturesForHrCompany($agencyCompanyId);
+            } catch (\Throwable $e) {
+                error_log('applyDedicatedCompanyPlan mobile salary features: ' . $e->getMessage());
+            }
+
             $verified = in_array('hr', $afterModules, true)
                 || !in_array($planSlug, ['professional', 'enterprise'], true);
             if (!$verified) {
@@ -597,6 +604,11 @@ final class AgencyErpMigrationService
                 ],
                 'erp_db_name' => $cfg['db'],
                 'verified' => true,
+                'mobile_salary_features' => [
+                    'payroll' => !empty($mobileFeatures['payroll']),
+                    'payslips' => !empty($mobileFeatures['payslips']),
+                    'payments' => !empty($mobileFeatures['payments']),
+                ],
             ];
         } finally {
             Database::clearConnectionOverride();

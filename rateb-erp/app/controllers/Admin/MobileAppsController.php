@@ -60,7 +60,6 @@ final class MobileAppsController extends Controller
         }
 
         $svc = new MobileAppConfigService();
-        $row = $svc->findByCompanyId($companyId);
         $features = $svc->enableSalaryFeaturesForHrCompany($companyId);
         $row = $svc->findByCompanyId($companyId);
 

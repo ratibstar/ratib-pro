@@ -2279,6 +2279,7 @@ return [
     'mobile_apps_feature_inquiries' => 'الاستفسارات',
     'mobile_apps_feature_payments' => 'المدفوعات',
     'mobile_apps_feature_settings' => 'الإعدادات',
+    'mobile_apps_salary_features_enabled' => 'تم تفعيل وحدات الرواتب وكشوف الرواتب والمدفوعات في تطبيق الجوال.',
     'mobile_apps_status_active' => 'نشط',
     'mobile_apps_status_inactive' => 'غير نشط',
     'mobile_apps_saved' => 'تم حفظ إعدادات تطبيق الجوال.',

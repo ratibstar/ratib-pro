@@ -72,7 +72,7 @@ final class MobileAppConfigService
     }
 
     /**
-     * Keep `payslips` and legacy `payroll` aligned when only one is supplied.
+     * Keep `payslips` / legacy `payroll` aligned, and keep `payments` with salary features.
      *
      * @param array<string, bool> $out
      * @param array<string, mixed>|null $raw
@@ -88,6 +88,11 @@ final class MobileAppConfigService
             $out['payslips'] = !empty($out['payroll']);
         } elseif (!$hasPayslips && !$hasPayroll) {
             $out['payslips'] = !empty($out['payroll']);
+        }
+
+        $hasPayments = is_array($raw) && array_key_exists('payments', $raw);
+        if (!$hasPayments && (!empty($out['payroll']) || !empty($out['payslips']))) {
+            $out['payments'] = true;
         }
 
         return $out;
