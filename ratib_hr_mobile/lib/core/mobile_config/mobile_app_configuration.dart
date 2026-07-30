@@ -36,6 +36,61 @@ abstract final class MobileFeatureKey {
   static const ceoDashboard = 'ceo_dashboard';
 }
 
+/// Promotional offer from ERP mobile config.
+final class MobileAppOffer {
+  const MobileAppOffer({
+    required this.id,
+    required this.titleAr,
+    required this.titleEn,
+    required this.bodyAr,
+    required this.bodyEn,
+    required this.imageUrl,
+    required this.discountLabel,
+  });
+
+  final int id;
+  final String titleAr;
+  final String titleEn;
+  final String bodyAr;
+  final String bodyEn;
+  final String imageUrl;
+  final String discountLabel;
+
+  String titleFor(String languageCode) =>
+      languageCode.startsWith('ar')
+          ? (titleAr.isNotEmpty ? titleAr : titleEn)
+          : (titleEn.isNotEmpty ? titleEn : titleAr);
+
+  String bodyFor(String languageCode) =>
+      languageCode.startsWith('ar')
+          ? (bodyAr.isNotEmpty ? bodyAr : bodyEn)
+          : (bodyEn.isNotEmpty ? bodyEn : bodyAr);
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'title_ar': titleAr,
+        'title_en': titleEn,
+        'body_ar': bodyAr,
+        'body_en': bodyEn,
+        'image': imageUrl,
+        'discount_label': discountLabel,
+      };
+
+  static MobileAppOffer? fromMap(Object? raw) {
+    if (raw is! Map) return null;
+    final m = raw.map((k, v) => MapEntry(k.toString(), v));
+    return MobileAppOffer(
+      id: MobileAppConfiguration._asInt(m['id']),
+      titleAr: (m['title_ar'] ?? '').toString(),
+      titleEn: (m['title_en'] ?? '').toString(),
+      bodyAr: (m['body_ar'] ?? '').toString(),
+      bodyEn: (m['body_en'] ?? '').toString(),
+      imageUrl: (m['image'] ?? m['image_path'] ?? '').toString(),
+      discountLabel: (m['discount_label'] ?? '').toString(),
+    );
+  }
+}
+
 /// Immutable runtime config — single source for branding + feature flags.
 final class MobileAppConfiguration {
   const MobileAppConfiguration({
@@ -52,6 +107,7 @@ final class MobileAppConfiguration {
     required this.fetchedAt,
     this.fromCache = false,
     this.extensions = const {},
+    this.offers = const [],
   });
 
   final int companyId;
@@ -69,6 +125,9 @@ final class MobileAppConfiguration {
 
   /// Reserved for future localization packs, custom home layouts, etc.
   final Map<String, Object?> extensions;
+
+  /// Active promotional offers from ERP.
+  final List<MobileAppOffer> offers;
 
   String get displayName {
     final n = BrandDisplay.normalizeAppName(appName);
@@ -92,6 +151,7 @@ final class MobileAppConfiguration {
     bool? fromCache,
     Map<String, bool>? features,
     Map<String, Object?>? extensions,
+    List<MobileAppOffer>? offers,
   }) {
     return MobileAppConfiguration(
       companyId: companyId,
@@ -107,6 +167,7 @@ final class MobileAppConfiguration {
       fetchedAt: fetchedAt,
       fromCache: fromCache ?? this.fromCache,
       extensions: extensions ?? this.extensions,
+      offers: offers ?? this.offers,
     );
   }
 
@@ -123,6 +184,7 @@ final class MobileAppConfiguration {
         'role': role.name,
         'fetched_at': fetchedAt.toIso8601String(),
         'extensions': extensions,
+        'offers': offers.map((o) => o.toJson()).toList(),
       };
 
   static MobileAppConfiguration fromErpBody(
@@ -155,6 +217,15 @@ final class MobileAppConfiguration {
       }
     }
 
+    final offers = <MobileAppOffer>[];
+    final rawOffers = body['offers'];
+    if (rawOffers is List) {
+      for (final item in rawOffers) {
+        final offer = MobileAppOffer.fromMap(item);
+        if (offer != null) offers.add(offer);
+      }
+    }
+
     return MobileAppConfiguration(
       companyId: _asInt(body['company_id']),
       companyName: BrandDisplay.normalizeAppName(
@@ -173,6 +244,7 @@ final class MobileAppConfiguration {
       fetchedAt: fetchedAt,
       fromCache: fromCache,
       extensions: extensions,
+      offers: offers,
     );
   }
 

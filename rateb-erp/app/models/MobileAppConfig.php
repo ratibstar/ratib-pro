@@ -23,5 +23,6 @@ final class MobileAppConfig extends Model
         'theme_color',
         'status',
         'enabled_features',
+        'payment_methods_json',
     ];
 }

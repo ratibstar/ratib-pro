@@ -99,6 +99,7 @@ class AppLocalizations {
       'homeUnreadNotifications': 'إشعارات غير مقروءة',
       'homePayrollSummary': 'ملخص الرواتب',
       'homePayrollPlaceholder': 'تفاصيل الراتب متاحة عند تفعيل وحدة الرواتب',
+      'homeOffers': 'العروض الحالية',
       'genericLoading': 'جاري التحميل…',
       'genericLoadFailed': 'تعذر التحميل',
       'offlineNeedsConnection':
@@ -332,6 +333,7 @@ class AppLocalizations {
       'homePayrollSummary': 'Payroll summary',
       'homePayrollPlaceholder':
           'Payslip detail is available when payroll is enabled',
+      'homeOffers': 'Current offers',
       'genericLoading': 'Loading…',
       'genericLoadFailed': 'Could not load',
       'offlineNeedsConnection':
@@ -571,6 +573,7 @@ class AppLocalizations {
   String get homeUnreadNotifications => _t('homeUnreadNotifications');
   String get homePayrollSummary => _t('homePayrollSummary');
   String get homePayrollPlaceholder => _t('homePayrollPlaceholder');
+  String get homeOffers => _t('homeOffers');
   String get genericLoading => _t('genericLoading');
   String get genericLoadFailed => _t('genericLoadFailed');
   String get offlineNeedsConnection => _t('offlineNeedsConnection');

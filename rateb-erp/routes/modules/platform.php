@@ -87,6 +87,8 @@ $router->post('/admin/agent-apps/content/save', [AgentAppsController::class, 'sa
 $router->post('/admin/agent-apps/content/delete', [AgentAppsController::class, 'deleteContent'], rateb_admin_mw('mobile_apps.manage'));
 $router->post('/admin/agent-apps/offers/save', [AgentAppsController::class, 'saveOffer'], rateb_admin_mw('mobile_apps.manage'));
 $router->post('/admin/agent-apps/offers/delete', [AgentAppsController::class, 'deleteOffer'], rateb_admin_mw('mobile_apps.manage'));
+$router->post('/admin/agent-apps/notifications/send', [AgentAppsController::class, 'sendNotification'], rateb_admin_mw('mobile_apps.manage'));
+$router->post('/admin/agent-apps/payments/save', [AgentAppsController::class, 'savePayments'], rateb_admin_mw('mobile_apps.manage'));
 $router->get('/admin/agent-apps/{section}', [AgentAppsController::class, 'section'], rateb_admin_mw('mobile_apps.view'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));

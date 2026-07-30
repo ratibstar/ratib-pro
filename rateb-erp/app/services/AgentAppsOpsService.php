@@ -463,6 +463,9 @@ final class AgentAppsOpsService
             'sort_order' => (int) ($input['sort_order'] ?? 0),
             'is_active' => !empty($input['is_active']) ? 1 : 0,
         ];
+        if (!empty($input['uploaded_image_path']) && is_string($input['uploaded_image_path'])) {
+            $payload['image_path'] = mb_substr(trim($input['uploaded_image_path']), 0, 500) ?: null;
+        }
         try {
             $model = new \Rateb\App\Models\MobileAppOffer();
             if ($id > 0) {
@@ -577,7 +580,7 @@ final class AgentAppsOpsService
                 'title_en' => (string) ($row['title_en'] ?? ''),
                 'body_ar' => (string) ($row['body_ar'] ?? ''),
                 'body_en' => (string) ($row['body_en'] ?? ''),
-                'image' => (string) ($row['image_path'] ?? ''),
+                'image' => $this->publicMediaUrl((string) ($row['image_path'] ?? '')),
                 'discount_label' => (string) ($row['discount_label'] ?? ''),
                 'starts_at' => $row['starts_at'] ?? null,
                 'ends_at' => $row['ends_at'] ?? null,
@@ -585,6 +588,260 @@ final class AgentAppsOpsService
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{items:list<array<string,mixed>>,total:int}
+     */
+    public function listRecruitmentRequests(int $limit = 50, int $offset = 0, string $status = ''): array
+    {
+        $limit = max(1, min(100, $limit));
+        $offset = max(0, $offset);
+        [$scopeSql, $scopeParams] = $this->companyScopeSql('r');
+        $params = $scopeParams;
+        $where = "r.service_type IN ('recruitment','domestic_worker','workforce')" . $scopeSql;
+        if ($status !== '' && in_array($status, ['draft', 'submitted', 'booked', 'paid', 'in_progress', 'completed', 'cancelled'], true)) {
+            $where .= ' AND r.status = :st';
+            $params['st'] = $status;
+        }
+        try {
+            $pdo = Database::connection();
+            $totalStmt = $pdo->prepare("SELECT COUNT(*) FROM rateb_website_service_requests r WHERE {$where}");
+            $totalStmt->execute($params);
+            $total = (int) $totalStmt->fetchColumn();
+            $sql = "SELECT r.id, r.company_id, r.service_type, r.title, r.description, r.status,
+                           r.priority, r.payment_status, r.amount, r.currency, r.created_at,
+                           c.name AS company_name
+                    FROM rateb_website_service_requests r
+                    LEFT JOIN rateb_companies c ON c.id = r.company_id
+                    WHERE {$where}
+                    ORDER BY r.id DESC
+                    LIMIT {$limit} OFFSET {$offset}";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+
+            return ['items' => $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [], 'total' => $total];
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::listRecruitmentRequests: ' . $e->getMessage());
+
+            return ['items' => [], 'total' => 0];
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array{ok:bool,message:string,id?:int,count?:int}
+     */
+    public function sendNotification(array $input): array
+    {
+        $companyId = $this->resolveWriteCompanyId((int) ($input['company_id'] ?? 0));
+        $title = mb_substr(trim((string) ($input['title'] ?? '')), 0, 255);
+        $message = trim((string) ($input['message'] ?? ''));
+        $type = trim((string) ($input['type'] ?? 'info'));
+        if (!in_array($type, ['info', 'success', 'warning', 'error', 'system'], true)) {
+            $type = 'info';
+        }
+        if ($companyId < 1) {
+            return ['ok' => false, 'message' => 'company_required'];
+        }
+        if ($title === '' || $message === '') {
+            return ['ok' => false, 'message' => 'title_required'];
+        }
+        $mode = (string) ($input['mode'] ?? 'broadcast');
+        $svc = new NotificationService();
+        try {
+            if ($mode === 'user') {
+                $userId = (int) ($input['user_id'] ?? 0);
+                if ($userId < 1) {
+                    return ['ok' => false, 'message' => 'user_required'];
+                }
+                $id = $svc->notifyUser($userId, $companyId, $title, $message, $type, 'agent_apps', 'agent_apps', null);
+
+                return ['ok' => true, 'message' => 'sent', 'id' => $id, 'count' => 1];
+            }
+            $id = $svc->notifyCompany($companyId, $title, $message, $type, 'agent_apps', 'agent_apps', null);
+
+            return ['ok' => true, 'message' => 'sent', 'id' => $id, 'count' => 1];
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::sendNotification: ' . $e->getMessage());
+
+            return ['ok' => false, 'message' => 'save_failed'];
+        }
+    }
+
+    /**
+     * @return list<array{id:int,name:string,email:string}>
+     */
+    public function listCompanyUsers(int $companyId): array
+    {
+        $companyId = $this->resolveWriteCompanyId($companyId);
+        if ($companyId < 1) {
+            return [];
+        }
+        try {
+            $stmt = Database::connection()->prepare(
+                "SELECT id, name, email FROM rateb_users
+                 WHERE company_id = :cid AND status = 'active'
+                 ORDER BY name ASC LIMIT 300"
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $out = [];
+            foreach ($rows as $row) {
+                $out[] = [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'name' => (string) ($row['name'] ?? ''),
+                    'email' => (string) ($row['email'] ?? ''),
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @return list<array{code:string,label_ar:string,label_en:string,enabled:bool}>
+     */
+    public static function defaultPaymentMethods(): array
+    {
+        return [
+            ['code' => 'bank_transfer', 'label_ar' => 'تحويل بنكي', 'label_en' => 'Bank transfer', 'enabled' => true],
+            ['code' => 'mada', 'label_ar' => 'مدى', 'label_en' => 'Mada', 'enabled' => true],
+            ['code' => 'apple_pay', 'label_ar' => 'Apple Pay', 'label_en' => 'Apple Pay', 'enabled' => false],
+            ['code' => 'stc_pay', 'label_ar' => 'STC Pay', 'label_en' => 'STC Pay', 'enabled' => false],
+            ['code' => 'cash', 'label_ar' => 'نقداً', 'label_en' => 'Cash', 'enabled' => false],
+        ];
+    }
+
+    /**
+     * @return list<array{code:string,label_ar:string,label_en:string,enabled:bool}>
+     */
+    public function getPaymentMethods(int $companyId): array
+    {
+        MobileAppContentSchemaBootstrap::ensurePaymentMethodsColumn();
+        $companyId = $this->resolveWriteCompanyId($companyId);
+        if ($companyId < 1) {
+            return self::defaultPaymentMethods();
+        }
+        try {
+            $row = (new MobileAppConfigService())->findByCompanyId($companyId);
+            $decoded = [];
+            if (is_array($row) && !empty($row['payment_methods_json'])) {
+                $raw = $row['payment_methods_json'];
+                if (is_string($raw)) {
+                    $decoded = json_decode($raw, true) ?: [];
+                } elseif (is_array($raw)) {
+                    $decoded = $raw;
+                }
+            }
+            if (!is_array($decoded) || $decoded === []) {
+                return self::defaultPaymentMethods();
+            }
+            $byCode = [];
+            foreach ($decoded as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $code = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($item['code'] ?? ''))) ?? '';
+                if ($code === '') {
+                    continue;
+                }
+                $byCode[$code] = [
+                    'code' => $code,
+                    'label_ar' => mb_substr(trim((string) ($item['label_ar'] ?? '')), 0, 120),
+                    'label_en' => mb_substr(trim((string) ($item['label_en'] ?? '')), 0, 120),
+                    'enabled' => !empty($item['enabled']),
+                ];
+            }
+            $out = [];
+            foreach (self::defaultPaymentMethods() as $def) {
+                $code = $def['code'];
+                $out[] = $byCode[$code] ?? $def;
+                unset($byCode[$code]);
+            }
+            foreach ($byCode as $extra) {
+                $out[] = $extra;
+            }
+
+            return $out;
+        } catch (\Throwable $e) {
+            return self::defaultPaymentMethods();
+        }
+    }
+
+    /**
+     * @param list<array<string,mixed>>|array<string,mixed> $methods
+     * @return array{ok:bool,message:string}
+     */
+    public function savePaymentMethods(int $companyId, array $methods): array
+    {
+        MobileAppContentSchemaBootstrap::ensurePaymentMethodsColumn();
+        $companyId = $this->resolveWriteCompanyId($companyId);
+        if ($companyId < 1) {
+            return ['ok' => false, 'message' => 'company_required'];
+        }
+        $normalized = [];
+        foreach ($methods as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $code = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($item['code'] ?? ''))) ?? '';
+            if ($code === '') {
+                continue;
+            }
+            $normalized[] = [
+                'code' => $code,
+                'label_ar' => mb_substr(trim((string) ($item['label_ar'] ?? '')), 0, 120),
+                'label_en' => mb_substr(trim((string) ($item['label_en'] ?? '')), 0, 120),
+                'enabled' => !empty($item['enabled']),
+            ];
+        }
+        if ($normalized === []) {
+            $normalized = self::defaultPaymentMethods();
+        }
+        try {
+            $svc = new MobileAppConfigService();
+            $existing = $svc->findByCompanyId($companyId);
+            $json = (string) json_encode($normalized, JSON_UNESCAPED_UNICODE);
+            if (is_array($existing)) {
+                Database::connection()->prepare(
+                    'UPDATE rateb_mobile_app_configs SET payment_methods_json = :j WHERE company_id = :cid'
+                )->execute(['j' => $json, 'cid' => $companyId]);
+            } else {
+                $svc->upsertForCompany($companyId, [
+                    'app_name' => '',
+                    'status' => MobileAppConfigService::STATUS_INACTIVE,
+                    'enabled_features' => MobileAppConfigService::defaultFeatures(),
+                ]);
+                Database::connection()->prepare(
+                    'UPDATE rateb_mobile_app_configs SET payment_methods_json = :j WHERE company_id = :cid'
+                )->execute(['j' => $json, 'cid' => $companyId]);
+            }
+
+            return ['ok' => true, 'message' => 'saved'];
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::savePaymentMethods: ' . $e->getMessage());
+
+            return ['ok' => false, 'message' => 'save_failed'];
+        }
+    }
+
+    public function publicMediaUrl(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        try {
+            return (new CmsMediaService())->publicUrl($path);
+        } catch (\Throwable $e) {
+            return $path;
+        }
     }
 
     private function canAccessCompanyRow(int $companyId): bool

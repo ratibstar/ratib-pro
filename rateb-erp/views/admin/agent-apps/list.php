@@ -66,6 +66,27 @@ $actionUrl = (string) ($actionUrl ?? rateb_url('admin/agent-apps/complaints/acti
             </div>
         </div>
     </form>
+    <?php } elseif ($listKind === 'requests') { ?>
+    <form method="get" class="rateb-card mb-3 p-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small"><?php echo Rateb\App\Core\View::escape(__('status')); ?></label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value=""><?php echo Rateb\App\Core\View::escape(__('all')); ?></option>
+                    <?php foreach (['submitted', 'booked', 'paid', 'in_progress', 'completed', 'cancelled'] as $st) { ?>
+                    <option value="<?php echo $st; ?>"<?php echo $filterStatus === $st ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(__($st)); ?></option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-primary"><?php echo Rateb\App\Core\View::escape(__('filter')); ?></button>
+            </div>
+            <div class="col-md-5 text-md-end small text-muted">
+                <?php echo Rateb\App\Core\View::escape(__('total')); ?>:
+                <strong class="rateb-ltr-num"><?php echo (int) $total; ?></strong>
+            </div>
+        </div>
+    </form>
     <?php } elseif ($listKind === 'ratings') { ?>
     <p class="small text-muted mb-2">
         <?php echo Rateb\App\Core\View::escape(__('agent_apps_stat_rating')); ?>:
@@ -94,6 +115,16 @@ $actionUrl = (string) ($actionUrl ?? rateb_url('admin/agent-apps/complaints/acti
                     <th><?php echo Rateb\App\Core\View::escape(__('date')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('notes')); ?></th>
                     <?php if ($canManage) { ?><th></th><?php } ?>
+                </tr>
+                <?php } elseif ($listKind === 'requests') { ?>
+                <tr>
+                    <th>#</th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('company')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('title')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('type')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('status')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_payment_status')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('date')); ?></th>
                 </tr>
                 <?php } elseif ($listKind === 'ratings') { ?>
                 <tr>
@@ -158,6 +189,14 @@ $actionUrl = (string) ($actionUrl ?? rateb_url('admin/agent-apps/complaints/acti
                         <?php } ?>
                     </td>
                     <?php } ?>
+                    <?php } elseif ($listKind === 'requests') { ?>
+                    <td class="rateb-ltr-num"><?php echo (int) ($row['id'] ?? 0); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '—')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['title'] ?? '')); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape(__('agent_apps_svc_' . (string) ($row['service_type'] ?? 'recruitment'))); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape(__((string) ($row['status'] ?? ''))); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape(__((string) ($row['payment_status'] ?? ''))); ?></td>
+                    <td class="rateb-ltr-num small"><?php echo Rateb\App\Core\View::escape((string) ($row['created_at'] ?? '')); ?></td>
                     <?php } elseif ($listKind === 'ratings') { ?>
                     <td class="rateb-ltr-num"><?php echo (int) ($row['id'] ?? 0); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '—')); ?></td>

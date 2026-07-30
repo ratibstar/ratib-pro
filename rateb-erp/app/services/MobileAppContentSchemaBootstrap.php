@@ -55,4 +55,22 @@ final class MobileAppContentSchemaBootstrap
         );
         self::$done = true;
     }
+
+    public static function ensurePaymentMethodsColumn(): void
+    {
+        self::ensure();
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->query("SHOW COLUMNS FROM rateb_mobile_app_configs LIKE 'payment_methods_json'");
+            $exists = $stmt && $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$exists) {
+                $pdo->exec(
+                    'ALTER TABLE rateb_mobile_app_configs
+                     ADD COLUMN payment_methods_json JSON NULL AFTER enabled_features'
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('MobileAppContentSchemaBootstrap::ensurePaymentMethodsColumn: ' . $e->getMessage());
+        }
+    }
 }

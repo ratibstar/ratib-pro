@@ -25,6 +25,13 @@ final class AgentAppsController extends Controller
             'desc' => 'agent_apps_settings_desc',
             'mode' => 'settings',
         ],
+        'requests' => [
+            'title' => 'agent_apps_requests',
+            'icon' => 'fa-briefcase',
+            'tone' => 'navy',
+            'desc' => 'agent_apps_requests_desc',
+            'mode' => 'requests',
+        ],
         'complaints' => [
             'title' => 'agent_apps_complaints',
             'icon' => 'fa-exclamation-triangle',
@@ -44,7 +51,7 @@ final class AgentAppsController extends Controller
             'icon' => 'fa-bell',
             'tone' => 'red',
             'desc' => 'agent_apps_notifications_desc',
-            'mode' => 'list',
+            'mode' => 'notifications',
         ],
         'payments' => [
             'title' => 'agent_apps_payments',
@@ -102,7 +109,7 @@ final class AgentAppsController extends Controller
         }
 
         $key = trim((string) ($params['section'] ?? ''));
-        if ($key === 'requests' || $key === '' || !isset(self::SECTIONS[$key])) {
+        if ($key === '' || !isset(self::SECTIONS[$key])) {
             Response::redirect(rateb_url('admin/agent-apps'));
             return;
         }
@@ -144,8 +151,36 @@ final class AgentAppsController extends Controller
         }
 
         if ($mode === 'payments') {
+            $companyId = (int) ($_GET['company_id'] ?? $ops->resolveWriteCompanyId(0));
             $this->view('admin/agent-apps/payments', array_merge($common, [
                 'rows' => $ops->listPaymentFeatureMatrix(),
+                'paymentMethods' => $ops->getPaymentMethods($companyId),
+                'paymentCompanyId' => $companyId,
+                'savePaymentsUrl' => rateb_url('admin/agent-apps/payments/save'),
+            ]), 'main');
+            return;
+        }
+
+        if ($mode === 'notifications') {
+            $list = $ops->listNotifications(50, 0);
+            $cid = (int) ($common['defaultCompanyId'] ?? 0);
+            $this->view('admin/agent-apps/notifications', array_merge($common, [
+                'rows' => $list['items'],
+                'total' => $list['total'],
+                'users' => $ops->listCompanyUsers($cid),
+                'sendUrl' => rateb_url('admin/agent-apps/notifications/send'),
+            ]), 'main');
+            return;
+        }
+
+        if ($mode === 'requests') {
+            $status = trim((string) ($_GET['status'] ?? ''));
+            $list = $ops->listRecruitmentRequests(50, 0, $status);
+            $this->view('admin/agent-apps/list', array_merge($common, [
+                'listKind' => 'requests',
+                'rows' => $list['items'],
+                'total' => $list['total'],
+                'filterStatus' => $status,
             ]), 'main');
             return;
         }
@@ -248,6 +283,7 @@ final class AgentAppsController extends Controller
             return;
         }
 
+        // unreachable for current SECTIONS
         $this->view('admin/agent-apps/section', array_merge($common, [
             'comingSoon' => true,
         ]), 'main');
@@ -313,6 +349,78 @@ final class AgentAppsController extends Controller
         $this->mutateContentOrOffer('offers', 'delete');
     }
 
+    public function sendNotification(): void
+    {
+        if (!$this->canManage()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        $redirect = rateb_url('admin/agent-apps/notifications');
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($redirect);
+            return;
+        }
+        $result = (new AgentAppsOpsService())->sendNotification([
+            'company_id' => (int) $this->input('company_id', 0),
+            'title' => (string) $this->input('title', ''),
+            'message' => (string) $this->input('message', ''),
+            'type' => (string) $this->input('type', 'info'),
+            'mode' => (string) $this->input('mode', 'broadcast'),
+            'user_id' => (int) $this->input('user_id', 0),
+        ]);
+        if (!empty($result['ok'])) {
+            SessionManager::flash('success', __('agent_apps_notification_sent'));
+        } else {
+            $msg = (string) ($result['message'] ?? '');
+            $map = [
+                'company_required' => __('agent_apps_company_required'),
+                'title_required' => __('agent_apps_notif_fields_required'),
+                'user_required' => __('agent_apps_user_required'),
+            ];
+            SessionManager::flash('error', $map[$msg] ?? __('agent_apps_action_failed'));
+        }
+        Response::redirect($redirect);
+    }
+
+    public function savePayments(): void
+    {
+        if (!$this->canManage()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        $companyId = (int) $this->input('company_id', 0);
+        $redirect = rateb_url('admin/agent-apps/payments' . ($companyId > 0 ? '?company_id=' . $companyId : ''));
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($redirect);
+            return;
+        }
+        $raw = $_POST['methods'] ?? [];
+        $methods = [];
+        if (is_array($raw)) {
+            foreach ($raw as $code => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $methods[] = [
+                    'code' => is_string($code) ? $code : (string) ($row['code'] ?? ''),
+                    'label_ar' => (string) ($row['label_ar'] ?? ''),
+                    'label_en' => (string) ($row['label_en'] ?? ''),
+                    'enabled' => !empty($row['enabled']),
+                ];
+            }
+        }
+        $result = (new AgentAppsOpsService())->savePaymentMethods($companyId, $methods);
+        SessionManager::flash(
+            !empty($result['ok']) ? 'success' : 'error',
+            !empty($result['ok']) ? __('saved_ok') : __('agent_apps_action_failed')
+        );
+        Response::redirect($redirect);
+    }
+
     private function mutateContentOrOffer(string $section, string $op): void
     {
         if (!$this->canManage()) {
@@ -351,6 +459,19 @@ final class AgentAppsController extends Controller
             'sort_order' => (int) $this->input('sort_order', 0),
             'is_active' => (string) $this->input('is_active', '0') === '1' || (string) $this->input('is_active', '') === 'on',
         ];
+        if ($section === 'offers' && !empty($_FILES['image']['tmp_name'])) {
+            $up = (new \Rateb\App\Services\CmsMediaService())->upload(
+                $_FILES['image'],
+                (int) SessionManager::get('rateb_user_id', 0) ?: null
+            );
+            if (!empty($up['ok']) && !empty($up['path'])) {
+                $input['uploaded_image_path'] = (string) $up['path'];
+            } elseif (!empty($up['error'])) {
+                SessionManager::flash('error', (string) $up['error']);
+                Response::redirect($redirect);
+                return;
+            }
+        }
         $result = $section === 'content'
             ? $ops->saveContent($input)
             : $ops->saveOffer($input);
@@ -408,7 +529,7 @@ final class AgentAppsController extends Controller
         $out = [];
         foreach (self::SECTIONS as $key => $meta) {
             $mode = (string) ($meta['mode'] ?? 'soon');
-            $live = in_array($mode, ['list', 'settings', 'payments', 'invoices', 'content', 'offers'], true);
+            $live = in_array($mode, ['list', 'settings', 'payments', 'invoices', 'content', 'offers', 'notifications', 'requests'], true);
             $out[] = [
                 'key' => $key,
                 'title' => __($meta['title']),

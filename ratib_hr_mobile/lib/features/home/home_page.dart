@@ -217,6 +217,11 @@ class _HomePageState extends State<HomePage> {
                           ),
                         _HeroGreeting(name: name, subtitle: job, l10n: l10n),
                         const SizedBox(height: AppSpacing.md),
+                        if (cfg != null && cfg.offers.isNotEmpty) ...[
+                          DsSectionHeader(title: l10n.homeOffers),
+                          _OffersStrip(offers: cfg.offers),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
                         _QuickActions(l10n: l10n, cfg: cfg),
                         const SizedBox(height: AppSpacing.lg),
                         DsSectionHeader(title: l10n.homeTodayAttendance),
@@ -249,6 +254,86 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
+      ),
+    );
+  }
+}
+
+class _OffersStrip extends StatelessWidget {
+  const _OffersStrip({required this.offers});
+
+  final List<MobileAppOffer> offers;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    return SizedBox(
+      height: 132,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        itemCount: offers.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, i) {
+          final o = offers[i];
+          final title = o.titleFor(lang);
+          final disc = o.discountLabel.trim();
+          return SizedBox(
+            width: 220,
+            child: DsGlassTile(
+              child: Row(
+                children: [
+                  if (o.imageUrl.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        o.imageUrl,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: Icon(Icons.local_offer_outlined),
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Icon(Icons.local_offer_outlined),
+                    ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (disc.isNotEmpty)
+                          Text(
+                            disc,
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

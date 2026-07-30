@@ -57,7 +57,7 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
             <?php echo Rateb\App\Core\View::escape($editRow ? __('edit') : __('agent_apps_offer_add')); ?>
         </div>
         <div class="rateb-card-body">
-            <form method="post" action="<?php echo Rateb\App\Core\View::escape((string) ($saveUrl ?? '')); ?>">
+            <form method="post" action="<?php echo Rateb\App\Core\View::escape((string) ($saveUrl ?? '')); ?>" enctype="multipart/form-data">
                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                 <input type="hidden" name="id" value="<?php echo (int) ($editRow['id'] ?? 0); ?>">
                 <div class="row g-3">
@@ -106,6 +106,11 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
                     <div class="col-md-6">
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('agent_apps_image_path')); ?></label>
                         <input class="form-control" name="image_path" value="<?php echo Rateb\App\Core\View::escape((string) ($editRow['image_path'] ?? '')); ?>">
+                        <div class="form-text"><?php echo Rateb\App\Core\View::escape(__('agent_apps_image_or_upload')); ?></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('agent_apps_image_upload')); ?></label>
+                        <input type="file" class="form-control" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('agent_apps_starts_at')); ?></label>

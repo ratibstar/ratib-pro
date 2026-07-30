@@ -247,6 +247,25 @@ final class HrEssPhaseCService
             return $this->normalizeFailure($resolved);
         }
 
+        $mobile = new MobileAppConfigService();
+        $cfg = $mobile->findByCompanyId($companyId);
+        $features = $mobile->decodeFeatures(is_array($cfg) ? ($cfg['enabled_features'] ?? null) : null);
+        $paymentsEnabled = !empty($features['payments']);
+
+        $ops = new AgentAppsOpsService();
+        $all = $ops->getPaymentMethods($companyId);
+        $gateways = [];
+        foreach ($all as $m) {
+            if (empty($m['enabled'])) {
+                continue;
+            }
+            $gateways[] = [
+                'code' => (string) ($m['code'] ?? ''),
+                'label_ar' => (string) ($m['label_ar'] ?? ''),
+                'label_en' => (string) ($m['label_en'] ?? ''),
+            ];
+        }
+
         return [
             'status' => 200,
             'body' => [
@@ -254,8 +273,8 @@ final class HrEssPhaseCService
                 'salary_payment' => null,
                 'bank_accounts' => [],
                 'wallet' => null,
-                'gateways' => [],
-                'available' => false,
+                'gateways' => $paymentsEnabled ? $gateways : [],
+                'available' => $paymentsEnabled && $gateways !== [],
             ],
         ];
     }

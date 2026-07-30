@@ -74,4 +74,74 @@ $tone = (string) ($sectionMeta['tone'] ?? 'slate');
             </table>
         </div>
     </div>
+
+    <?php
+    $paymentMethods = $paymentMethods ?? [];
+    $paymentCompanyId = (int) ($paymentCompanyId ?? ($defaultCompanyId ?? 0));
+    $companies = $companies ?? [];
+    $canManage = !empty($canManage);
+    $csrf = (string) ($csrf ?? '');
+    if ($canManage && $paymentMethods !== []) {
+    ?>
+    <div class="rateb-card mt-3">
+        <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__('agent_apps_payment_methods_title')); ?></div>
+        <div class="rateb-card-body">
+            <p class="small text-muted"><?php echo Rateb\App\Core\View::escape(__('agent_apps_payment_methods_intro')); ?></p>
+            <form method="post" action="<?php echo Rateb\App\Core\View::escape((string) ($savePaymentsUrl ?? '')); ?>">
+                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('company')); ?></label>
+                        <select name="company_id" class="form-select" id="raa_pay_company">
+                            <?php foreach ($companies as $c) { ?>
+                            <option value="<?php echo (int) $c['id']; ?>"<?php echo $paymentCompanyId === (int) $c['id'] ? ' selected' : ''; ?>>
+                                <?php echo Rateb\App\Core\View::escape((string) $c['name']); ?>
+                            </option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <a class="btn btn-outline-secondary btn-sm" href="#" id="raa_pay_reload"><?php echo Rateb\App\Core\View::escape(__('filter')); ?></a>
+                    </div>
+                </div>
+                <script>
+                (function(){
+                    var a=document.getElementById('raa_pay_reload'), s=document.getElementById('raa_pay_company');
+                    if(a&&s){a.addEventListener('click',function(e){e.preventDefault();location.href=<?php echo json_encode(rateb_url('admin/agent-apps/payments')); ?>+'?company_id='+encodeURIComponent(s.value);});}
+                })();
+                </script>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                        <tr>
+                            <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_payment_code')); ?></th>
+                            <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_title_ar')); ?></th>
+                            <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_title_en')); ?></th>
+                            <th><?php echo Rateb\App\Core\View::escape(__('active')); ?></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($paymentMethods as $m) {
+                            $code = (string) ($m['code'] ?? '');
+                            ?>
+                        <tr>
+                            <td class="rateb-ltr-num"><code><?php echo Rateb\App\Core\View::escape($code); ?></code>
+                                <input type="hidden" name="methods[<?php echo Rateb\App\Core\View::escape($code); ?>][code]" value="<?php echo Rateb\App\Core\View::escape($code); ?>">
+                            </td>
+                            <td><input class="form-control form-control-sm" name="methods[<?php echo Rateb\App\Core\View::escape($code); ?>][label_ar]" value="<?php echo Rateb\App\Core\View::escape((string) ($m['label_ar'] ?? '')); ?>"></td>
+                            <td><input class="form-control form-control-sm" name="methods[<?php echo Rateb\App\Core\View::escape($code); ?>][label_en]" value="<?php echo Rateb\App\Core\View::escape((string) ($m['label_en'] ?? '')); ?>"></td>
+                            <td>
+                                <input type="hidden" name="methods[<?php echo Rateb\App\Core\View::escape($code); ?>][enabled]" value="0">
+                                <input class="form-check-input" type="checkbox" name="methods[<?php echo Rateb\App\Core\View::escape($code); ?>][enabled]" value="1"<?php echo !empty($m['enabled']) ? ' checked' : ''; ?>>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-primary"><?php echo Rateb\App\Core\View::escape(__('save')); ?></button>
+            </form>
+        </div>
+    </div>
+    <?php } ?>
 </div>

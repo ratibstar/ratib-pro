@@ -13,6 +13,7 @@ if (!rateb_nav_can('mobile_apps.view')) {
 }
 $adminSection(__('agent_apps_section'), [
     ['admin/agent-apps', 'agent_apps_nav_dashboard', 'fa-gauge-high', 'mobile_apps.view'],
+    ['admin/agent-apps/requests', 'agent_apps_requests', 'fa-briefcase', 'mobile_apps.view'],
     ['admin/agent-apps/complaints', 'agent_apps_complaints', 'fa-exclamation-triangle', 'mobile_apps.view'],
     ['admin/agent-apps/content', 'agent_apps_content', 'fa-file-lines', 'mobile_apps.view'],
     ['admin/agent-apps/offers', 'agent_apps_offers', 'fa-image', 'mobile_apps.view'],
