@@ -37,7 +37,16 @@ assert_true('biometric still uses pos-shell', str_contains($bio, "'pos-shell'"))
 assert_true('sidebar full-nav only register/biometric', str_contains($side, "pos/register") && !preg_match("/str_starts_with\(\\\$resourcePath, 'pos\/'\);/", $side));
 assert_true('nav soft-nav Admin POS (no POS_ADMIN forceFull)', !str_contains($nav, 'POS_ADMIN_PAGES_RE'));
 assert_true('SW soft-nav allows POS admin HTML', str_contains($sw, 'isPosRuntimePath(url.pathname)'));
-assert_true('SW build bumped', str_contains($sw, 'pos-admin-passthrough-v130'));
+$swBuildOk = (bool) preg_match("/var\s+SW_BUILD_ID\s*=\s*'([^']+)'/", $sw, $swBuildMatch);
+$swBuildVer = 0;
+if ($swBuildOk && preg_match('/v(\d+)/', (string) ($swBuildMatch[1] ?? ''), $swVerMatch)) {
+    $swBuildVer = (int) $swVerMatch[1];
+}
+assert_true(
+    'SW build bumped',
+    $swBuildOk && ($swBuildVer >= 130 || str_contains($sw, 'pos-admin-passthrough-v130')),
+    $swBuildOk ? ('build=' . (string) ($swBuildMatch[1] ?? '')) : 'missing SW_BUILD_ID'
+);
 assert_true(
     'online POS admin passthrough (hard-offline only)',
     str_contains($sw, 'Online: never intercept')
