@@ -30,6 +30,9 @@ final class MobileAppConfigService
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
 
+    /** Salary-related mobile features (enabled when company has HR module). */
+    public const SALARY_FEATURE_KEYS = ['payroll', 'payslips', 'payments'];
+
     /** @return array<string, bool> */
     public static function defaultFeatures(): array
     {
@@ -38,13 +41,13 @@ final class MobileAppConfigService
             'leave' => true,
             'profile' => true,
             'documents' => true,
-            'payroll' => false,
-            'payslips' => false,
+            'payroll' => true,
+            'payslips' => true,
             'notifications' => true,
             'requests' => true,
             'ratings' => true,
             'inquiries' => true,
-            'payments' => false,
+            'payments' => true,
             'settings' => true,
         ];
     }
@@ -126,6 +129,54 @@ final class MobileAppConfigService
     public function encodeFeatures(array $features): string
     {
         return (string) json_encode($this->normalizeFeatures($features), JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Turn on payroll / payslips / payments when the company has the HR module.
+     * Persists when a config row already exists so the mobile API reflects the change.
+     *
+     * @return array<string, bool>
+     */
+    public function enableSalaryFeaturesForHrCompany(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return self::defaultFeatures();
+        }
+        $existing = $this->findByCompanyId($companyId);
+        $features = $this->decodeFeatures(is_array($existing) ? ($existing['enabled_features'] ?? null) : null);
+
+        $hasHr = false;
+        try {
+            $hasHr = (new PlanLimitService())->companyHasModule($companyId, 'hr');
+        } catch (\Throwable $e) {
+            $hasHr = false;
+        }
+        if (!$hasHr) {
+            return $features;
+        }
+
+        $changed = false;
+        foreach (self::SALARY_FEATURE_KEYS as $key) {
+            if (empty($features[$key])) {
+                $features[$key] = true;
+                $changed = true;
+            }
+        }
+        if (!$changed || !is_array($existing)) {
+            return $features;
+        }
+
+        $this->upsertForCompany($companyId, [
+            'app_name' => (string) ($existing['app_name'] ?? ''),
+            'logo_path' => $existing['logo_path'] ?? null,
+            'icon_path' => $existing['icon_path'] ?? null,
+            'splash_path' => $existing['splash_path'] ?? null,
+            'theme_color' => (string) ($existing['theme_color'] ?? '#0D6EFD'),
+            'status' => (string) ($existing['status'] ?? self::STATUS_INACTIVE),
+            'enabled_features' => $features,
+        ]);
+
+        return $features;
     }
 
     public function findByCompanyId(int $companyId): ?array

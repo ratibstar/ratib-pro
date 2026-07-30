@@ -61,7 +61,8 @@ final class MobileAppsController extends Controller
 
         $svc = new MobileAppConfigService();
         $row = $svc->findByCompanyId($companyId);
-        $features = $svc->decodeFeatures($row['enabled_features'] ?? null);
+        $features = $svc->enableSalaryFeaturesForHrCompany($companyId);
+        $row = $svc->findByCompanyId($companyId);
 
         $this->view('admin/mobile-apps/edit', [
             'title' => __('mobile_apps_edit'),
