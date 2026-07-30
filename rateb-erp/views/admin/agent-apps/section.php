@@ -34,14 +34,17 @@ $tone = (string) ($sectionMeta['tone'] ?? 'blue');
                 <div class="raa-empty__icon" aria-hidden="true">
                     <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($sectionMeta['icon'] ?? 'fa-cube')); ?>"></i>
                 </div>
+                <?php if (!empty($comingSoon)) { ?>
+                <h2 class="raa-empty__title"><?php echo Rateb\App\Core\View::escape(__('agent_apps_coming_soon_title')); ?></h2>
+                <p class="raa-empty__text"><?php echo Rateb\App\Core\View::escape(__('agent_apps_coming_soon_body')); ?></p>
+                <?php } else { ?>
                 <h2 class="raa-empty__title"><?php echo Rateb\App\Core\View::escape(__('agent_apps_section_ready_title')); ?></h2>
                 <p class="raa-empty__text"><?php echo Rateb\App\Core\View::escape(__('agent_apps_section_ready_body')); ?></p>
+                <?php } ?>
                 <div class="raa-empty__actions">
-                    <?php if ($sectionKey === 'settings') { ?>
                     <a class="raa-card__btn" href="<?php echo Rateb\App\Core\View::escape($mobileAppsUrl ?? rateb_url('admin/mobile-apps')); ?>" data-rateb-href="<?php echo Rateb\App\Core\View::escape($mobileAppsUrl ?? rateb_url('admin/mobile-apps')); ?>" data-rateb-soft-nav="1">
                         <?php echo Rateb\App\Core\View::escape(__('agent_apps_manage_branding')); ?>
                     </a>
-                    <?php } ?>
                     <a class="raa-card__btn raa-card__btn--ghost" href="<?php echo rateb_url('admin/agent-apps'); ?>" data-rateb-href="<?php echo rateb_url('admin/agent-apps'); ?>" data-rateb-soft-nav="1">
                         <?php echo Rateb\App\Core\View::escape(__('agent_apps_back_dashboard')); ?>
                     </a>
