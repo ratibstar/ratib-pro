@@ -16,10 +16,31 @@
     var CACHE_NAME = 'rateb-erp-ops-pages-v36';
     var COEXIST = 'rateb-erp-coexist-v34';
     var POS_SHELL = 'rateb-pos-shell-v8';
-    // Bump so clients re-warm after offline-stub UX.
-    var STORAGE_KEY = 'rateb_erp_full_warm_at_v27';
-    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v27';
-    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v27';
+    // Bump so clients re-warm after platform-host CORS fix.
+    var STORAGE_KEY = 'rateb_erp_full_warm_at_v28';
+    var SUCCESS_KEY = 'rateb_erp_full_warm_ok_v28';
+    var ASSETS_KEY = 'rateb_erp_full_warm_assets_v28';
+    /** Platform-only routes — skip warm on agency hosts (admin.rateb.sa etc.). */
+    var PLATFORM_ONLY_REL_RE = /^admin\/(cms|oversight|companies|company-permissions|agency-updates|customers)(\/|$)/i;
+    function isPlatformOversightHost() {
+        try {
+            var h = String(root.location.hostname || '').toLowerCase();
+            if (h === 'rateb.sa' || h === 'www.rateb.sa') {
+                return true;
+            }
+            if (h === 'localhost' || h === '127.0.0.1') {
+                return true;
+            }
+        } catch (eH) { /* ignore */ }
+        return false;
+    }
+    function filterWarmRel(rel) {
+        var r = String(rel || '').replace(/^\/+/, '');
+        if (!isPlatformOversightHost() && PLATFORM_ONLY_REL_RE.test(r)) {
+            return false;
+        }
+        return true;
+    }
     /** Certified offline-capable module HTML snapshots (lean product sidebar). */
     var CERTIFIED_MODULE_RELS = [
         'admin',
@@ -430,6 +451,10 @@
             if (seen[key] || !isAdminHref(full)) {
                 return;
             }
+            var rel = String(u.pathname || '').replace(/^.*?\/public\//i, '').replace(/^\/+/, '');
+            if (!filterWarmRel(rel)) {
+                return;
+            }
             seen[key] = true;
             out.push(u.href);
         } catch (e) { /* ignore */ }
@@ -456,6 +481,9 @@
             }
         });
         core.forEach(function (rel) {
+            if (!filterWarmRel(rel)) {
+                return;
+            }
             pushUrl(seen, out, origin + base + rel.replace(/^\//, ''));
         });
     }
@@ -556,6 +584,9 @@
                     }
                     var route = String(routes[logical] || '').replace(/^\/+|\/+$/g, '');
                     if (!route || !/^admin\//i.test(route)) {
+                        return;
+                    }
+                    if (!filterWarmRel(route)) {
                         return;
                     }
                     if (isBrokenAccountingWarmPath(route)) {

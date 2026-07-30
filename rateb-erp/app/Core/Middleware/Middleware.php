@@ -124,6 +124,18 @@ final class PlatformOversightHostMiddleware implements MiddlewareInterface
             return true;
         }
 
+        // Soft-nav / prefetch / warm: never 302 to rateb.sa (CORS on admin.*.rateb.sa).
+        if (function_exists('rateb_is_non_document_request') && rateb_is_non_document_request()) {
+            Response::json([
+                'ok' => false,
+                'error' => function_exists('__')
+                    ? (string) __('platform_oversight_host_only')
+                    : 'Platform oversight routes are only available on rateb.sa',
+                'code' => 'platform_host_only',
+            ], 403);
+            return false;
+        }
+
         // Do not flash a full-page error banner on agency hosts — soft in-app notification instead.
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
@@ -389,7 +401,12 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         if ($companyId < 1 && $enforceForSuper && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = (int) rateb_resolve_ops_company_id();
         }
+        $soft = function_exists('rateb_is_non_document_request') && rateb_is_non_document_request();
         if ($companyId < 1 || $this->module === '') {
+            if ($soft) {
+                Response::json(['ok' => false, 'error' => __('module_not_allowed'), 'code' => 'module_not_allowed'], 403);
+                return false;
+            }
             SessionManager::flash('error', __('module_not_allowed'));
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
@@ -398,7 +415,17 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         $limits = new \Rateb\App\Services\PlanLimitService();
         if (!$limits->companyHasModule($companyId, $this->module)) {
             $label = function_exists('__') ? __($this->module) : $this->module;
-            SessionManager::flash('error', __('module_not_in_plan_named', ['module' => $label]));
+            $msg = __('module_not_in_plan_named', ['module' => $label]);
+            if ($soft) {
+                Response::json([
+                    'ok' => false,
+                    'error' => $msg,
+                    'code' => 'module_not_in_plan',
+                    'module' => $this->module,
+                ], 403);
+                return false;
+            }
+            SessionManager::flash('error', $msg);
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }

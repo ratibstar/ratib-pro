@@ -648,6 +648,13 @@
             if (!ADMIN_PATH_RE.test(u.pathname) || POS_SHELL_RE.test(u.pathname)) {
                 return;
             }
+            // Platform CMS/oversight live on rateb.sa only — skip prefetch on agency hosts.
+            var host = String(root.location.hostname || '').toLowerCase();
+            var onPlatform = host === 'rateb.sa' || host === 'www.rateb.sa'
+                || host === 'localhost' || host === '127.0.0.1';
+            if (!onPlatform && /\/admin\/(?:cms|oversight|companies|company-permissions|agency-updates|customers)(?:\/|$)/i.test(u.pathname)) {
+                return;
+            }
             if (!opts.force) {
                 // Deferred paths (profile/notifications/catalog/bare admin) never auto-prefetch —
                 // only explicit force (idle dashboard warm or hover لوحة التحكم).

@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260724-locale-session-v131');
+define('RATEB_ASSET_BUILD', '20260730-platform-host-cors-v132');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -346,6 +346,39 @@ if (!function_exists('rateb_is_platform_oversight_host')) {
         }
 
         return !rateb_erp_is_dedicated_deployment();
+    }
+}
+
+if (!function_exists('rateb_is_non_document_request')) {
+    /**
+     * Soft-nav / prefetch / offline warm / XHR — must not set flash banners or
+     * issue cross-origin redirects (CORS on agency hosts like admin.rateb.sa).
+     */
+    function rateb_is_non_document_request(): bool
+    {
+        $mode = strtolower(trim((string) ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '')));
+        if ($mode === 'cors' || $mode === 'no-cors' || $mode === 'same-origin') {
+            return true;
+        }
+        if (!empty($_SERVER['HTTP_X_RATEB_PREFETCH'])
+            || !empty($_SERVER['HTTP_X_RATEB_SHELL_WARM'])
+            || !empty($_SERVER['HTTP_X_RATEB_NAV_SWAP'])
+            || !empty($_SERVER['HTTP_X_RATEB_CONNECTIVITY'])) {
+            return true;
+        }
+        if (strcasecmp((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''), 'XMLHttpRequest') === 0) {
+            return true;
+        }
+        $purpose = strtolower(trim((string) ($_SERVER['HTTP_SEC_PURPOSE'] ?? $_SERVER['HTTP_PURPOSE'] ?? '')));
+        if ($purpose === 'prefetch' || str_contains($purpose, 'prefetch')) {
+            return true;
+        }
+        $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        if ($accept !== '' && str_contains($accept, 'application/json') && !str_contains($accept, 'text/html')) {
+            return true;
+        }
+
+        return false;
     }
 }
 
