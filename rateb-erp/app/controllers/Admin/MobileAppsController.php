@@ -154,14 +154,17 @@ final class MobileAppsController extends Controller
     }
 
     /**
-     * Enable/disable mobile app is platform-only (not agency/agent users).
+     * Enable/disable mobile app is platform SaaS ops only.
+     * Never show on dedicated agency hosts (وكلاء), and on rateb.sa only for super-admin.
      */
     private function canToggleEnable(): bool
     {
-        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
-            return true;
+        // Agency dedicated ERP (e.g. admin.rateb.sa) — agents must never toggle enablement.
+        if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            return false;
         }
-
+        // rateb.sa is "platform host" for everyone — do NOT use rateb_is_platform_oversight_host()
+        // (that is true for the whole domain and was leaking the toggle to company admins).
         return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
     }
 }
