@@ -174,11 +174,33 @@ final class PlanLimitService
     /** @param array<string,mixed> $company @param array<string,mixed>|null $plan */
     private function resolveModules(array $company, ?array $plan): array
     {
+        // Dedicated agency ERP: Control Panel package (erp_plan_slug) is the entitlement source.
+        if (DedicatedTenantPolicy::isDedicated()) {
+            $controlSlug = $this->resolveControlPlanSlug();
+            if ($controlSlug !== '') {
+                $tier = self::modulesForSlug($controlSlug);
+                if ($tier !== []) {
+                    $this->maybePersistDedicatedPlanFromControl($company, $controlSlug, $tier);
+
+                    return self::applyLegacyImpliedModules($tier, $company);
+                }
+            }
+        }
+
         $companyModules = $this->decodeModules($company['modules'] ?? null);
         $modules = $companyModules;
 
-        if ($modules === [] && $plan) {
-            $modules = $this->decodeModules($plan['modules'] ?? null);
+        if ($plan) {
+            $planSlug = strtolower(trim((string) ($plan['slug'] ?? '')));
+            $tierModules = $planSlug !== '' ? self::modulesForSlug($planSlug) : [];
+            if ($modules === [] && $tierModules !== []) {
+                $modules = $tierModules;
+            } elseif ($modules === []) {
+                $modules = $this->decodeModules($plan['modules'] ?? null);
+            } elseif ($tierModules !== [] && DedicatedTenantPolicy::isDedicated()) {
+                // Stale company.modules (e.g. starter) must not override plan_id entitlements.
+                $modules = $tierModules;
+            }
         }
 
         if ($modules === []) {
@@ -195,6 +217,60 @@ final class PlanLimitService
         }
 
         return self::applyLegacyImpliedModules($modules, $company);
+    }
+
+    private function resolveControlPlanSlug(): string
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        $cached = '';
+        try {
+            $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+            if ($host !== '' && str_contains($host, ':')) {
+                $host = explode(':', $host, 2)[0];
+            }
+            if ($host === '' || !function_exists('rateb_lookup_agency_by_host')) {
+                return $cached;
+            }
+            $agency = rateb_lookup_agency_by_host($host);
+            if (!is_array($agency)) {
+                return $cached;
+            }
+            $slug = strtolower(trim((string) ($agency['erp_plan_slug'] ?? '')));
+            if (in_array($slug, ['starter', 'professional', 'enterprise'], true)) {
+                $cached = $slug;
+            }
+        } catch (\Throwable $e) {
+            $cached = '';
+        }
+
+        return $cached;
+    }
+
+    /** @param array<string,mixed> $company @param list<string> $tierModules */
+    private function maybePersistDedicatedPlanFromControl(array $company, string $planSlug, array $tierModules): void
+    {
+        static $attempted = false;
+        if ($attempted) {
+            return;
+        }
+        $attempted = true;
+        $companyId = (int) ($company['id'] ?? 0);
+        if ($companyId < 1 || $tierModules === []) {
+            return;
+        }
+        $current = $this->decodeModules($company['modules'] ?? null);
+        $missing = array_values(array_diff($tierModules, $current));
+        if ($missing === []) {
+            return;
+        }
+        try {
+            (new DedicatedCompanySeedService())->applyPlanSlug($companyId, $planSlug);
+        } catch (\Throwable $e) {
+            error_log('RATEB dedicated plan persist: ' . $e->getMessage());
+        }
     }
 
     /** @param list<string> $modules @param array<string,mixed> $company @return list<string> */
