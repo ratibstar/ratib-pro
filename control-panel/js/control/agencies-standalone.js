@@ -158,44 +158,102 @@
     }
 
     function showAlert(msg, asHtml) {
-        var messageEl = document.getElementById('alertMessage');
-        var alertEl = document.getElementById('alertModal');
-        if (messageEl) {
-            if (asHtml) {
-                messageEl.innerHTML = msg;
-            } else {
-                messageEl.textContent = msg;
+        return new Promise(function (resolve) {
+            var messageEl = document.getElementById('alertMessage');
+            var alertEl = document.getElementById('alertModal');
+            var done = false;
+            function finish() {
+                if (done) return;
+                done = true;
+                resolve();
             }
-        }
-        if (!alertEl) {
-            window.alert(msg);
-            return;
-        }
-        function revealAlert() {
-            prepareModalForShow(alertEl);
-            var modal = getBootstrapModal(alertEl);
-            if (!modal) {
-                window.alert(msg);
+            if (messageEl) {
+                if (asHtml) {
+                    messageEl.innerHTML = msg;
+                } else {
+                    messageEl.textContent = msg;
+                }
+            }
+            if (!alertEl) {
+                window.alert(typeof msg === 'string' ? msg.replace(/<[^>]+>/g, '') : String(msg));
+                finish();
                 return;
             }
-            modal.show();
-        }
-        var openModals = document.querySelectorAll('.modal.show');
-        if (!openModals.length) {
-            cleanupStaleModalBackdrops();
-            revealAlert();
-            return;
-        }
-        var pending = openModals.length;
-        openModals.forEach(function (openModal) {
-            hideModalThen(openModal, function () {
-                pending -= 1;
-                if (pending <= 0) {
-                    cleanupStaleModalBackdrops();
-                    window.setTimeout(revealAlert, 100);
+            function revealAlert() {
+                prepareModalForShow(alertEl);
+                var modal = getBootstrapModal(alertEl);
+                if (!modal) {
+                    window.alert(typeof msg === 'string' ? msg.replace(/<[^>]+>/g, '') : String(msg));
+                    finish();
+                    return;
                 }
+                var onHidden = function () {
+                    alertEl.removeEventListener('hidden.bs.modal', onHidden);
+                    finish();
+                };
+                alertEl.addEventListener('hidden.bs.modal', onHidden);
+                modal.show();
+            }
+            var openModals = document.querySelectorAll('.modal.show');
+            if (!openModals.length) {
+                cleanupStaleModalBackdrops();
+                revealAlert();
+                return;
+            }
+            var pending = openModals.length;
+            openModals.forEach(function (openModal) {
+                hideModalThen(openModal, function () {
+                    pending -= 1;
+                    if (pending <= 0) {
+                        cleanupStaleModalBackdrops();
+                        window.setTimeout(revealAlert, 100);
+                    }
+                });
             });
         });
+    }
+
+    function showPlanApplyResultAlert(data, planSlug) {
+        var apply = (data && data.plan_apply) ? data.plan_apply : {};
+        var mods = Array.isArray(apply.modules) ? apply.modules : [];
+        var plan = (data && data.erp_plan_slug) ? data.erp_plan_slug : planSlug;
+        var plain = [];
+        plain.push('Package applied: ' + plan);
+        if (apply.erp_db_name) plain.push('Database: ' + apply.erp_db_name);
+        if (apply.applied_databases && apply.applied_databases.length) {
+            plain.push('Updated DBs: ' + apply.applied_databases.join(', '));
+        }
+        if (mods.length) plain.push('Modules: ' + mods.join(', '));
+        if (apply.before) plain.push('Before modules: ' + (apply.before.modules || '(empty)'));
+        if (apply.after) plain.push('After modules: ' + (apply.after.modules || '(empty)'));
+        if (apply.apply_errors && apply.apply_errors.length) {
+            plain.push('Warnings: ' + apply.apply_errors.join(' | '));
+        }
+        plain.push('');
+        plain.push('Next: open admin.rateb.sa → Ctrl+F5 → الموارد البشرية');
+        var text = plain.join('\n');
+        var html = '<p class="agencies-alert-title text-success mb-2"><i class="fas fa-check-circle" aria-hidden="true"></i> Package applied</p>';
+        html += '<pre class="small mb-2 p-2 rounded" dir="ltr" style="white-space:pre-wrap;max-height:50vh;overflow:auto;background:rgba(0,0,0,.25);">'
+            + escapeHtml(text) + '</pre>';
+        html += '<button type="button" class="btn btn-sm btn-outline-light" id="erpPlanApplyCopyBtn">Copy result</button>';
+        // Bind copy after modal HTML is injected.
+        window.setTimeout(function () {
+            var copyBtn = document.getElementById('erpPlanApplyCopyBtn');
+            if (!copyBtn) return;
+            copyBtn.onclick = function () {
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text);
+                    } else {
+                        window.prompt('Copy result:', text);
+                    }
+                    copyBtn.textContent = 'Copied';
+                } catch (eCopy) {
+                    window.prompt('Copy result:', text);
+                }
+            };
+        }, 200);
+        return showAlert(html, true).then(function () { return text; });
     }
 
     function resetCountLabel(key) {
@@ -1255,24 +1313,9 @@
                 showAlert((data && data.message) ? data.message : 'Failed to apply ERP package');
                 return;
             }
-            var mods = (data.plan_apply && data.plan_apply.modules) ? data.plan_apply.modules : [];
-            var msg = 'Package applied: ' + ((data.erp_plan_slug) ? data.erp_plan_slug : planSlug);
-            if (data.plan_apply && data.plan_apply.erp_db_name) {
-                msg += '\nDatabase: ' + data.plan_apply.erp_db_name;
-            }
-            if (data.plan_apply && data.plan_apply.applied_databases && data.plan_apply.applied_databases.length) {
-                msg += '\nUpdated DBs: ' + data.plan_apply.applied_databases.join(', ');
-            }
-            if (mods.length) {
-                msg += '\nModules: ' + mods.join(', ');
-            }
-            if (data.plan_apply && data.plan_apply.before && data.plan_apply.after) {
-                msg += '\nBefore modules: ' + (data.plan_apply.before.modules || '(empty)');
-                msg += '\nAfter modules: ' + (data.plan_apply.after.modules || '(empty)');
-            }
-            msg += '\n\nOpen admin.rateb.sa → Ctrl+F5 → الموارد البشرية';
-            showAlert(msg);
-            window.location.reload();
+            showPlanApplyResultAlert(data, planSlug).then(function () {
+                window.location.reload();
+            });
         }).catch(function(err) {
             if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
             if (erpProvisionConfirmBtn) erpProvisionConfirmBtn.disabled = false;
@@ -1334,19 +1377,23 @@
                 }
                 var seed = data.data && data.data.seed ? data.data.seed : null;
                 var plan = (data.data && data.data.erp_plan_slug) ? data.data.erp_plan_slug : planSlug;
-                var msg = 'ERP ready (' + plan + ') on ' + ((data.data && data.data.erp_db_name) ? data.data.erp_db_name : 'database');
-                var mods = (data.data && data.data.plan_apply && data.data.plan_apply.modules)
-                    ? data.data.plan_apply.modules
-                    : [];
-                if (mods.length) {
-                    msg += '\nModules: ' + mods.join(', ');
-                }
+                var payload = {
+                    erp_plan_slug: plan,
+                    plan_apply: (data.data && data.data.plan_apply) ? data.data.plan_apply : {
+                        erp_db_name: (data.data && data.data.erp_db_name) ? data.data.erp_db_name : '',
+                        modules: (data.data && data.data.plan_apply && data.data.plan_apply.modules) ? data.data.plan_apply.modules : []
+                    }
+                };
                 if (seed && seed.admin_password) {
-                    var login = seed.admin_username || seed.admin_email || 'admin';
-                    msg += '\nUsername: ' + login + '\nPassword: ' + seed.admin_password;
+                    payload.plan_apply = payload.plan_apply || {};
+                    payload.plan_apply.apply_errors = [
+                        'Username: ' + (seed.admin_username || seed.admin_email || 'admin'),
+                        'Password: ' + seed.admin_password
+                    ];
                 }
-                showAlert(msg);
-                window.location.reload();
+                showPlanApplyResultAlert(payload, plan).then(function () {
+                    window.location.reload();
+                });
             }).catch(function(err) {
                 erpProvisionConfirmBtn.disabled = false;
                 if (erpProvisionApplyPlanBtn) erpProvisionApplyPlanBtn.disabled = false;
