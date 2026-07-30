@@ -185,6 +185,14 @@ final class PlanLimitService
                     return self::applyLegacyImpliedModules($tier, $company);
                 }
             }
+            // Fallback: trust plan_id slug even when control lookup is unavailable on the agency vhost.
+            if ($plan) {
+                $planSlug = strtolower(trim((string) ($plan['slug'] ?? '')));
+                $tier = $planSlug !== '' ? self::modulesForSlug($planSlug) : [];
+                if ($tier !== []) {
+                    return self::applyLegacyImpliedModules($tier, $company);
+                }
+            }
         }
 
         $companyModules = $this->decodeModules($company['modules'] ?? null);
