@@ -1257,10 +1257,20 @@
             }
             var mods = (data.plan_apply && data.plan_apply.modules) ? data.plan_apply.modules : [];
             var msg = 'Package applied: ' + ((data.erp_plan_slug) ? data.erp_plan_slug : planSlug);
+            if (data.plan_apply && data.plan_apply.erp_db_name) {
+                msg += '\nDatabase: ' + data.plan_apply.erp_db_name;
+            }
+            if (data.plan_apply && data.plan_apply.applied_databases && data.plan_apply.applied_databases.length) {
+                msg += '\nUpdated DBs: ' + data.plan_apply.applied_databases.join(', ');
+            }
             if (mods.length) {
                 msg += '\nModules: ' + mods.join(', ');
             }
-            msg += '\n\nRefresh admin.rateb.sa (Ctrl+F5) to see HR and other modules.';
+            if (data.plan_apply && data.plan_apply.before && data.plan_apply.after) {
+                msg += '\nBefore modules: ' + (data.plan_apply.before.modules || '(empty)');
+                msg += '\nAfter modules: ' + (data.plan_apply.after.modules || '(empty)');
+            }
+            msg += '\n\nOpen admin.rateb.sa → Ctrl+F5 → الموارد البشرية';
             showAlert(msg);
             window.location.reload();
         }).catch(function(err) {

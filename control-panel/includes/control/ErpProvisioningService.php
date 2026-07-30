@@ -207,6 +207,8 @@ final class ErpProvisioningService
 
     /**
      * Push control-panel ERP package into the dedicated company row (modules / plan_id).
+     * Applies to every connectable ERP DB candidate for the agency (prevents wrong-DB drift
+     * between control_agencies.erp_db_name and the host pin used by admin.*.rateb.sa).
      *
      * @param array<string, mixed> $agency
      * @return array<string, mixed>
@@ -234,54 +236,156 @@ final class ErpProvisioningService
             $slug = 'agency-' . ($agencyId > 0 ? $agencyId : 'x');
         }
 
-        // Same DB target/credentials as provision — never trust stale empty passwords.
-        $target = self::resolveErpTarget($agency, $slug);
-        if (trim((string) ($target['db'] ?? '')) === '') {
-            throw new RuntimeException('No ERP database resolved for agency #' . $agencyId);
+        $siteHost = '';
+        if (function_exists('rateb_agency_host_from_site_url')) {
+            $siteHost = rateb_agency_host_from_site_url(trim((string) ($agency['site_url'] ?? '')));
         }
-        $ping = self::resolveWorkingConnection(
-            (string) $target['host'],
-            (int) $target['port'],
-            (string) $target['user'],
-            (string) $target['pass'],
-            (string) $target['db']
-        );
-        if ($ping === null) {
+        if ($siteHost === '') {
+            $siteHost = strtolower(trim((string) ($agency['slug'] ?? '')));
+            if ($siteHost !== '' && !str_contains($siteHost, '.')) {
+                $siteHost = $siteHost . '.rateb.sa';
+            }
+        }
+
+        $cred = self::resolveAgencyMysqlCredentials($agency);
+        $candidates = [];
+        $pushCandidate = static function (array $row) use (&$candidates): void {
+            $db = trim((string) ($row['db'] ?? ''));
+            if ($db === '') {
+                return;
+            }
+            $key = strtolower($db);
+            if (isset($candidates[$key])) {
+                return;
+            }
+            $candidates[$key] = [
+                'db' => $db,
+                'host' => (string) ($row['host'] ?? 'localhost'),
+                'port' => (int) ($row['port'] ?? 3306),
+                'user' => (string) ($row['user'] ?? ''),
+                'pass' => (string) ($row['pass'] ?? ''),
+            ];
+        };
+
+        try {
+            $pushCandidate(self::resolveErpTarget($agency, $slug));
+        } catch (\Throwable $e) {
+            // continue with other candidates
+        }
+
+        if ($siteHost !== '' && function_exists('rateb_agency_erp_binding_for_host')) {
+            $binding = rateb_agency_erp_binding_for_host($siteHost);
+            if (is_array($binding)) {
+                $pushCandidate([
+                    'db' => (string) ($binding['db'] ?? ''),
+                    'host' => (string) ($binding['host'] ?? $cred['host']),
+                    'port' => (int) ($binding['port'] ?? $cred['port']),
+                    'user' => (string) ($binding['user'] ?? $cred['user']),
+                    'pass' => (string) ($binding['pass'] ?? $cred['pass']),
+                ]);
+            }
+        }
+
+        foreach ([
+            trim((string) ($agency['erp_db_name'] ?? '')),
+            trim((string) ($agency['db_name'] ?? '')),
+        ] as $named) {
+            if ($named !== '') {
+                $pushCandidate([
+                    'db' => $named,
+                    'host' => $cred['host'],
+                    'port' => $cred['port'],
+                    'user' => $cred['user'],
+                    'pass' => $cred['pass'],
+                ]);
+            }
+        }
+
+        // Host pin used by config/env/admin_rateb_sa.php when lookup is unavailable.
+        if ($siteHost === 'admin.rateb.sa' || (int) ($agency['id'] ?? 0) === 34) {
+            $pushCandidate([
+                'db' => 'admin_admin-rateb',
+                'host' => $cred['host'],
+                'port' => $cred['port'],
+                'user' => $cred['user'],
+                'pass' => $cred['pass'],
+            ]);
+        }
+
+        if ($candidates === []) {
+            throw new RuntimeException('No ERP database candidates for agency #' . $agencyId);
+        }
+
+        $results = [];
+        $errors = [];
+        $primary = null;
+        foreach ($candidates as $candidate) {
+            $ping = self::resolveWorkingConnection(
+                (string) $candidate['host'],
+                (int) $candidate['port'],
+                (string) $candidate['user'],
+                (string) $candidate['pass'],
+                (string) $candidate['db']
+            );
+            if ($ping === null) {
+                $errors[] = 'Cannot connect to ' . $candidate['db'];
+                continue;
+            }
+
+            $agencyCopy = $agency;
+            $agencyCopy['erp_plan_slug'] = $planSlug;
+            $agencyCopy['erp_db_name'] = $ping['db'];
+            $agencyCopy['erp_db_host'] = $ping['host'];
+            $agencyCopy['erp_db_user'] = $ping['user'];
+            $agencyCopy['erp_db_pass'] = $ping['pass'];
+            $agencyCopy['db_host'] = $ping['host'];
+            $agencyCopy['db_port'] = $ping['port'];
+            $agencyCopy['db_user'] = $ping['user'];
+            $agencyCopy['db_pass'] = $ping['pass'];
+            $agencyCopy['db_name'] = $ping['db'];
+
+            try {
+                $applied = (new \Rateb\App\Services\AgencyErpMigrationService())->applyDedicatedCompanyPlan(
+                    $agencyCopy,
+                    $planSlug
+                );
+                $applied['erp_db_name'] = $ping['db'];
+                $applied['erp_db_host'] = $ping['host'];
+                $mods = is_array($applied['modules'] ?? null) ? $applied['modules'] : [];
+                $verified = !empty($applied['verified']) && in_array('hr', $mods, true);
+                if ($mods === []
+                    || (!in_array('hr', $mods, true) && in_array($planSlug, ['professional', 'enterprise'], true))
+                ) {
+                    $errors[] = $ping['db'] . ': modules incomplete (' . implode(',', $mods) . ')';
+                    continue;
+                }
+                $results[] = $applied;
+                if ($ping['db'] === 'admin_admin-rateb' || $verified) {
+                    $primary = $applied;
+                }
+                if ($primary === null) {
+                    $primary = $applied;
+                }
+            } catch (\Throwable $e) {
+                $errors[] = $ping['db'] . ': ' . $e->getMessage();
+            }
+        }
+
+        if ($primary === null) {
             throw new RuntimeException(
-                'Cannot connect to agency ERP DB ' . $target['db'] . ' for plan apply (agency #' . $agencyId . ')'
+                'Plan apply failed for agency #' . $agencyId
+                . ' (' . $planSlug . '): ' . implode(' | ', $errors)
             );
         }
-        $target = $ping;
 
-        $agency['erp_plan_slug'] = $planSlug;
-        $agency['erp_db_name'] = $target['db'];
-        $agency['erp_db_host'] = $target['host'];
-        $agency['erp_db_user'] = $target['user'];
-        $agency['erp_db_pass'] = $target['pass'];
-        $agency['db_host'] = $target['host'];
-        $agency['db_port'] = $target['port'];
-        $agency['db_user'] = $target['user'];
-        $agency['db_pass'] = $target['pass'];
-        $agency['db_name'] = $target['db'];
+        $primary['applied_databases'] = array_values(array_map(
+            static fn (array $r): string => (string) ($r['erp_db_name'] ?? ''),
+            $results
+        ));
+        $primary['apply_errors'] = $errors;
+        $primary['site_host'] = $siteHost;
 
-        $applied = (new \Rateb\App\Services\AgencyErpMigrationService())->applyDedicatedCompanyPlan(
-            $agency,
-            $planSlug
-        );
-        $applied['erp_db_name'] = $target['db'];
-        $applied['erp_db_host'] = $target['host'];
-
-        $mods = is_array($applied['modules'] ?? null) ? $applied['modules'] : [];
-        if ($mods === []
-            || (!in_array('hr', $mods, true) && in_array($planSlug, ['professional', 'enterprise'], true))
-        ) {
-            throw new RuntimeException(
-                'Plan apply did not enable expected modules on ' . $target['db']
-                . ' (plan=' . $planSlug . ', modules=' . implode(',', $mods) . ')'
-            );
-        }
-
-        return $applied;
+        return $primary;
     }
 
     /**

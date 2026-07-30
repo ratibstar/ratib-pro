@@ -521,6 +521,10 @@ final class DedicatedCompanySeedService
             'modules' => $modulesJson,
             'status' => 'active',
         ]);
+        if (function_exists('rateb_ops_company_request_state')) {
+            $state = &rateb_ops_company_request_state();
+            unset($state['rows'][$companyId], $state['exists'][$companyId]);
+        }
         $this->ensureDedicatedSubscription($companyId, $plan);
         PlanLimitService::forgetCompanyLimits($companyId);
 

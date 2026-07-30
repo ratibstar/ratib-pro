@@ -523,19 +523,80 @@ final class AgencyErpMigrationService
             }
 
             $companies = new \Rateb\App\Models\Company();
-            $companyRow = $companies->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
-            $agencyCompanyId = (int) ($companyRow['id'] ?? 0);
+            $before = $companies->queryOne(
+                'SELECT id, plan_id, modules, name FROM rateb_companies ORDER BY id ASC LIMIT 1'
+            );
+            $agencyCompanyId = (int) ($before['id'] ?? 0);
             if ($agencyCompanyId < 1) {
                 throw new RuntimeException(__('company_agency_admin_no_company'));
             }
             $applied = (new DedicatedCompanySeedService())->applyPlanSlug($agencyCompanyId, $planSlug);
 
+            // Bypass Model::find request memo — verify the row actually persisted.
+            $after = $companies->queryOne(
+                'SELECT id, plan_id, modules, name FROM rateb_companies WHERE id = :id LIMIT 1',
+                ['id' => $agencyCompanyId]
+            );
+            $afterModules = [];
+            if (is_array($after)) {
+                $decoded = json_decode((string) ($after['modules'] ?? ''), true);
+                $afterModules = is_array($decoded) ? array_values(array_map('strval', $decoded)) : [];
+            }
+            if ($afterModules === [] || (in_array($planSlug, ['professional', 'enterprise'], true) && !in_array('hr', $afterModules, true))) {
+                // Direct SQL fallback if ORM update did not stick.
+                $modulesJson = json_encode($applied['modules'] ?? [], JSON_UNESCAPED_UNICODE);
+                $pdo = Database::connection();
+                $stmt = $pdo->prepare(
+                    'UPDATE rateb_companies SET plan_id = :pid, modules = :modules, user_limit = :ulimit, storage_limit_mb = :storage, status = \'active\' WHERE id = :id'
+                );
+                $stmt->execute([
+                    'pid' => (int) ($applied['plan_id'] ?? 0),
+                    'modules' => $modulesJson !== false ? $modulesJson : '[]',
+                    'ulimit' => 100,
+                    'storage' => 10240,
+                    'id' => $agencyCompanyId,
+                ]);
+                $after = $companies->queryOne(
+                    'SELECT id, plan_id, modules, name FROM rateb_companies WHERE id = :id LIMIT 1',
+                    ['id' => $agencyCompanyId]
+                );
+                $decoded = json_decode((string) (($after['modules'] ?? '')), true);
+                $afterModules = is_array($decoded) ? array_values(array_map('strval', $decoded)) : [];
+            }
+            if (function_exists('rateb_ops_company_request_state')) {
+                $state = &rateb_ops_company_request_state();
+                unset($state['rows'][$agencyCompanyId], $state['exists'][$agencyCompanyId]);
+            }
+            PlanLimitService::forgetCompanyLimits($agencyCompanyId);
+
+            $verified = in_array('hr', $afterModules, true)
+                || !in_array($planSlug, ['professional', 'enterprise'], true);
+            if (!$verified) {
+                throw new RuntimeException(
+                    'Verified modules still missing hr on ' . $cfg['db']
+                    . ' company #' . $agencyCompanyId
+                    . ' modules=' . implode(',', $afterModules)
+                );
+            }
+
             return [
                 'agency_company_id' => $agencyCompanyId,
                 'agency_id' => (int) ($agency['id'] ?? 0),
                 'plan_slug' => (string) ($applied['plan_slug'] ?? $planSlug),
-                'plan_id' => (int) ($applied['plan_id'] ?? 0),
-                'modules' => is_array($applied['modules'] ?? null) ? $applied['modules'] : [],
+                'plan_id' => (int) (($after['plan_id'] ?? $applied['plan_id'] ?? 0)),
+                'modules' => $afterModules !== [] ? $afterModules : (is_array($applied['modules'] ?? null) ? $applied['modules'] : []),
+                'before' => [
+                    'plan_id' => (int) ($before['plan_id'] ?? 0),
+                    'modules' => (string) ($before['modules'] ?? ''),
+                    'name' => (string) ($before['name'] ?? ''),
+                ],
+                'after' => [
+                    'plan_id' => (int) ($after['plan_id'] ?? 0),
+                    'modules' => (string) ($after['modules'] ?? ''),
+                    'name' => (string) ($after['name'] ?? ''),
+                ],
+                'erp_db_name' => $cfg['db'],
+                'verified' => true,
             ];
         } finally {
             Database::clearConnectionOverride();
