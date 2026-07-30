@@ -31,9 +31,9 @@ $tone = (string) ($sectionMeta['tone'] ?? 'slate');
                     <th><?php echo Rateb\App\Core\View::escape(__('company')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('mobile_apps_app_name')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('status')); ?></th>
-                    <th>payroll</th>
-                    <th>payslips</th>
-                    <th>payments</th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('mobile_apps_feature_payroll')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('mobile_apps_feature_payslips')); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(__('mobile_apps_feature_payments')); ?></th>
                     <th></th>
                 </tr>
                 </thead>

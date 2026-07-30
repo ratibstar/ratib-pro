@@ -47,10 +47,10 @@ $canManage = !empty($canManage);
                 <?php foreach ($rows as $row) {
                     $cid = (int) ($row['company_id'] ?? 0);
                     $features = is_array($row['features'] ?? null) ? $row['features'] : [];
-                    $on = [];
+                    $onLabels = [];
                     foreach (['payroll', 'payslips', 'payments', 'requests', 'inquiries', 'ratings', 'notifications'] as $fk) {
                         if (!empty($features[$fk])) {
-                            $on[] = $fk;
+                            $onLabels[] = __('mobile_apps_feature_' . $fk);
                         }
                     }
                     $active = !empty($row['mobile_active']);
@@ -64,9 +64,9 @@ $canManage = !empty($canManage);
                         </span>
                     </td>
                     <td class="small text-muted">
-                        <?php echo $on === []
+                        <?php echo $onLabels === []
                             ? Rateb\App\Core\View::escape(__('agent_apps_features_none'))
-                            : Rateb\App\Core\View::escape(implode(', ', $on)); ?>
+                            : Rateb\App\Core\View::escape(implode(' · ', $onLabels)); ?>
                     </td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-primary"
