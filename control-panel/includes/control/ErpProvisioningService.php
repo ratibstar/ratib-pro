@@ -133,6 +133,11 @@ final class ErpProvisioningService
             $migrationLog = self::runErpMigrations($erpDb, $dbHost, $dbPort, $dbUser, $dbPass);
             $seed = self::seedDedicatedCompany($agency, $erpDb, $dbHost, $dbPort, $dbUser, $dbPass, $planSlug);
             $agency['erp_plan_slug'] = $planSlug;
+            $agency['erp_db_name'] = $erpDb;
+            $agency['erp_db_host'] = $dbHost;
+            $agency['erp_db_user'] = $dbUser;
+            $agency['erp_db_pass'] = $dbPass;
+            $agency['db_port'] = $dbPort;
             $planApply = self::applyPlanToAgencyErp($agency, $planSlug);
             self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
 
@@ -168,8 +173,12 @@ final class ErpProvisioningService
         string $dbUser,
         string $dbPass
     ): array {
-        // Keep in-memory agency in sync — rebuildShellPreserveLogins reads erp_plan_slug.
         $agency['erp_plan_slug'] = $planSlug;
+        $agency['erp_db_name'] = $erpDb;
+        $agency['erp_db_host'] = $dbHost;
+        $agency['erp_db_user'] = $dbUser;
+        $agency['erp_db_pass'] = $dbPass;
+        $agency['db_port'] = $dbPort;
 
         self::ensureErpDatabase($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
         self::ensureDatabaseUtf8mb4($dbHost, $dbPort, $dbUser, $dbPass, $erpDb);
@@ -219,12 +228,60 @@ final class ErpProvisioningService
         require_once $erpRoot . '/app/services/AgencyErpMigrationService.php';
 
         $planSlug = self::normalizePlanSlug($planSlug);
-        $agency['erp_plan_slug'] = $planSlug;
+        $agencyId = (int) ($agency['id'] ?? 0);
+        $slug = trim((string) ($agency['slug'] ?? ''));
+        if ($slug === '') {
+            $slug = 'agency-' . ($agencyId > 0 ? $agencyId : 'x');
+        }
 
-        return (new \Rateb\App\Services\AgencyErpMigrationService())->applyDedicatedCompanyPlan(
+        // Same DB target/credentials as provision — never trust stale empty passwords.
+        $target = self::resolveErpTarget($agency, $slug);
+        if (trim((string) ($target['db'] ?? '')) === '') {
+            throw new RuntimeException('No ERP database resolved for agency #' . $agencyId);
+        }
+        $ping = self::resolveWorkingConnection(
+            (string) $target['host'],
+            (int) $target['port'],
+            (string) $target['user'],
+            (string) $target['pass'],
+            (string) $target['db']
+        );
+        if ($ping === null) {
+            throw new RuntimeException(
+                'Cannot connect to agency ERP DB ' . $target['db'] . ' for plan apply (agency #' . $agencyId . ')'
+            );
+        }
+        $target = $ping;
+
+        $agency['erp_plan_slug'] = $planSlug;
+        $agency['erp_db_name'] = $target['db'];
+        $agency['erp_db_host'] = $target['host'];
+        $agency['erp_db_user'] = $target['user'];
+        $agency['erp_db_pass'] = $target['pass'];
+        $agency['db_host'] = $target['host'];
+        $agency['db_port'] = $target['port'];
+        $agency['db_user'] = $target['user'];
+        $agency['db_pass'] = $target['pass'];
+        $agency['db_name'] = $target['db'];
+
+        $applied = (new \Rateb\App\Services\AgencyErpMigrationService())->applyDedicatedCompanyPlan(
             $agency,
             $planSlug
         );
+        $applied['erp_db_name'] = $target['db'];
+        $applied['erp_db_host'] = $target['host'];
+
+        $mods = is_array($applied['modules'] ?? null) ? $applied['modules'] : [];
+        if ($mods === []
+            || (!in_array('hr', $mods, true) && in_array($planSlug, ['professional', 'enterprise'], true))
+        ) {
+            throw new RuntimeException(
+                'Plan apply did not enable expected modules on ' . $target['db']
+                . ' (plan=' . $planSlug . ', modules=' . implode(',', $mods) . ')'
+            );
+        }
+
+        return $applied;
     }
 
     /**

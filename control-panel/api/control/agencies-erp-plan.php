@@ -62,25 +62,46 @@ if ($planSlug === '') {
 
 try {
     $saved = ErpProvisioningService::saveAgencyPlan($ctrl, $agencyId, $planSlug);
-    $apply = null;
     require_once __DIR__ . '/../../../config/env/agency_lookup.php';
     $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
-    if (is_array($agency)
-        && strtolower(trim((string) ($agency['erp_status'] ?? ''))) === 'ready'
-        && trim((string) ($agency['erp_db_name'] ?? '')) !== ''
-    ) {
-        $agency['erp_plan_slug'] = $saved;
-        $apply = ErpProvisioningService::applyPlanToAgencyErp($agency, $saved);
+    if (!is_array($agency)) {
+        planJson(['success' => false, 'message' => 'Agency not found after saving plan']);
     }
+    $agency['erp_plan_slug'] = $saved;
+    $status = strtolower(trim((string) ($agency['erp_status'] ?? '')));
+    $hasDb = trim((string) ($agency['erp_db_name'] ?? '')) !== ''
+        || trim((string) ($agency['db_name'] ?? '')) !== '';
+
+    // Ready (or any agency with a DB): always push modules into the dedicated company.
+    if ($hasDb && ($status === 'ready' || $status === 'failed' || $status === 'provisioning')) {
+        $apply = ErpProvisioningService::applyPlanToAgencyErp($agency, $saved);
+        $mods = is_array($apply['modules'] ?? null) ? $apply['modules'] : [];
+        if ($mods === []) {
+            planJson([
+                'success' => false,
+                'message' => 'Plan saved on control row but agency company modules stayed empty',
+                'agency_id' => $agencyId,
+                'erp_plan_slug' => $saved,
+                'plan_apply' => $apply,
+            ]);
+        }
+        planJson([
+            'success' => true,
+            'message' => 'ERP plan saved and applied to agency company (' . ($apply['erp_db_name'] ?? '') . ')',
+            'agency_id' => $agencyId,
+            'erp_plan_slug' => $saved,
+            'plans' => ErpProvisioningService::allowedPlanSlugs(),
+            'plan_apply' => $apply,
+        ]);
+    }
+
     planJson([
         'success' => true,
-        'message' => $apply
-            ? 'ERP plan saved and applied to agency company'
-            : 'ERP plan saved',
+        'message' => 'ERP plan saved (agency ERP DB not ready yet — provision first)',
         'agency_id' => $agencyId,
         'erp_plan_slug' => $saved,
         'plans' => ErpProvisioningService::allowedPlanSlugs(),
-        'plan_apply' => $apply,
+        'plan_apply' => null,
     ]);
 } catch (Throwable $e) {
     planJson(['success' => false, 'message' => $e->getMessage()]);

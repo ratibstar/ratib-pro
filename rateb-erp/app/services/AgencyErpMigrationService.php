@@ -134,17 +134,29 @@ final class AgencyErpMigrationService
         $dbName = trim((string) ($agency['erp_db_name'] ?? ''));
         $dbHost = trim((string) ($agency['erp_db_host'] ?? ''));
         if ($dbHost === '') {
-            $dbHost = trim((string) ($agency['db_host'] ?? 'localhost'));
+            $dbHost = trim((string) ($agency['db_host'] ?? ''));
         }
-        $dbPort = (int) ($agency['db_port'] ?? 3306);
+        if ($dbHost === '') {
+            $dbHost = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+        }
+        $dbPort = (int) ($agency['db_port'] ?? (defined('DB_PORT') ? (int) DB_PORT : 3306));
         $dbUser = trim((string) ($agency['erp_db_user'] ?? ''));
         if ($dbUser === '') {
             $dbUser = trim((string) ($agency['db_user'] ?? ''));
         }
-        $dbPass = (string) ($agency['erp_db_pass'] ?? '');
-        if ($dbPass === '') {
-            $dbPass = (string) ($agency['db_pass'] ?? '');
+        if ($dbUser === '') {
+            $dbUser = defined('DB_USER') ? (string) DB_USER : '';
         }
+        $agencyPass = (string) ($agency['erp_db_pass'] ?? '');
+        if ($agencyPass === '') {
+            $agencyPass = (string) ($agency['db_pass'] ?? '');
+        }
+        $envUser = defined('DB_USER') ? (string) DB_USER : '';
+        $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+        // Shared MySQL user: prefer .env password (agency row passwords go stale).
+        $dbPass = ($dbUser !== '' && $dbUser === $envUser)
+            ? $envPass
+            : ($agencyPass !== '' ? $agencyPass : $envPass);
         if ($dbName === '') {
             $dbName = trim((string) ($agency['db_name'] ?? ''));
         }
