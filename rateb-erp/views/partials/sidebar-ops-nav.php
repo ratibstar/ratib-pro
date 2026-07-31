@@ -90,7 +90,7 @@ if (!rateb_is_super_admin()
     && function_exists('rateb_company_access_routes_enabled')
     && rateb_company_access_routes_enabled()
 ) {
-    require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
+    // Agent Apps UI is SuperAdmin/platform-only today — omit from tenant sidebar.
     $accessNavLinks = [
         ['access-control', 'access_control', 'fa-shield-halved', '', 'access.manage'],
         ['access-control/matrix', 'permission_matrix', 'fa-table-cells', '', 'access.manage'],

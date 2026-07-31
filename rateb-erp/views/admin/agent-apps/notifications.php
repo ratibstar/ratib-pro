@@ -33,7 +33,7 @@ $total = (int) ($total ?? 0);
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('company')); ?></label>
-                        <select name="company_id" class="form-select" required>
+                        <select name="company_id" class="form-select" required id="raa_notif_company">
                             <?php foreach ($companies as $c) { ?>
                             <option value="<?php echo (int) $c['id']; ?>"<?php echo $defaultCompanyId === (int) $c['id'] ? ' selected' : ''; ?>>
                                 <?php echo Rateb\App\Core\View::escape((string) $c['name']); ?>
@@ -67,7 +67,7 @@ $total = (int) ($total ?? 0);
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('type')); ?></label>
                         <select name="type" class="form-select">
                             <?php foreach (['info', 'success', 'warning', 'error'] as $t) { ?>
-                            <option value="<?php echo $t; ?>"><?php echo Rateb\App\Core\View::escape(__($t)); ?></option>
+                            <option value="<?php echo $t; ?>"><?php echo Rateb\App\Core\View::escape(__('agent_apps_notif_type_' . $t)); ?></option>
                             <?php } ?>
                         </select>
                     </div>
@@ -86,10 +86,18 @@ $total = (int) ($total ?? 0);
     (function () {
         var mode = document.getElementById('raa_notif_mode');
         var wrap = document.getElementById('raa_notif_user_wrap');
-        if (!mode || !wrap) return;
-        function sync() { wrap.style.display = mode.value === 'user' ? '' : 'none'; }
-        mode.addEventListener('change', sync);
-        sync();
+        var company = document.getElementById('raa_notif_company');
+        if (mode && wrap) {
+            function sync() { wrap.style.display = mode.value === 'user' ? '' : 'none'; }
+            mode.addEventListener('change', sync);
+            sync();
+        }
+        if (company) {
+            company.addEventListener('change', function () {
+                var base = <?php echo json_encode(rateb_url('admin/agent-apps/notifications'), JSON_UNESCAPED_SLASHES); ?>;
+                location.href = base + '?company_id=' + encodeURIComponent(company.value);
+            });
+        }
     })();
     </script>
     <?php } ?>

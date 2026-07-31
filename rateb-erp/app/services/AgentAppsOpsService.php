@@ -27,7 +27,8 @@ final class AgentAppsOpsService
             $cid = (int) SessionManager::get('rateb_company_id', 0);
         }
         if ($cid < 1) {
-            return ['', []];
+            // Never fail-open: unresolved tenant must see nothing.
+            return [' AND 1=0', []];
         }
 
         return [" AND {$col} = :ops_cid", ['ops_cid' => $cid]];
@@ -153,12 +154,12 @@ final class AgentAppsOpsService
             return [
                 'items' => $items,
                 'total' => $total,
-                'avg' => number_format($avg, 1) . '/5',
+                'avg' => number_format($avg, 1),
             ];
         } catch (\Throwable $e) {
             error_log('AgentAppsOpsService::listRatings: ' . $e->getMessage());
 
-            return ['items' => [], 'total' => 0, 'avg' => '0/5'];
+            return ['items' => [], 'total' => 0, 'avg' => '0'];
         }
     }
 
@@ -653,6 +654,13 @@ final class AgentAppsOpsService
             if ($mode === 'user') {
                 $userId = (int) ($input['user_id'] ?? 0);
                 if ($userId < 1) {
+                    return ['ok' => false, 'message' => 'user_required'];
+                }
+                $chk = Database::connection()->prepare(
+                    'SELECT id FROM rateb_users WHERE id = :uid AND company_id = :cid LIMIT 1'
+                );
+                $chk->execute(['uid' => $userId, 'cid' => $companyId]);
+                if (!$chk->fetchColumn()) {
                     return ['ok' => false, 'message' => 'user_required'];
                 }
                 $id = $svc->notifyUser($userId, $companyId, $title, $message, $type, 'agent_apps', 'agent_apps', null);

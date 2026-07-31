@@ -163,11 +163,15 @@ final class AgentAppsController extends Controller
 
         if ($mode === 'notifications') {
             $list = $ops->listNotifications(50, 0);
-            $cid = (int) ($common['defaultCompanyId'] ?? 0);
+            $cid = (int) ($_GET['company_id'] ?? ($common['defaultCompanyId'] ?? 0));
+            if ($cid < 1) {
+                $cid = (int) ($common['defaultCompanyId'] ?? 0);
+            }
             $this->view('admin/agent-apps/notifications', array_merge($common, [
                 'rows' => $list['items'],
                 'total' => $list['total'],
                 'users' => $ops->listCompanyUsers($cid),
+                'defaultCompanyId' => $cid,
                 'sendUrl' => rateb_url('admin/agent-apps/notifications/send'),
             ]), 'main');
             return;
@@ -268,22 +272,11 @@ final class AgentAppsController extends Controller
                 'listKind' => 'ratings',
                 'rows' => $list['items'],
                 'total' => $list['total'],
-                'avgLabel' => $list['avg'] ?? '0/5',
+                'avgLabel' => $list['avg'] ?? '0',
             ]), 'main');
             return;
         }
 
-        if ($key === 'notifications') {
-            $list = $ops->listNotifications(50, 0);
-            $this->view('admin/agent-apps/list', array_merge($common, [
-                'listKind' => 'notifications',
-                'rows' => $list['items'],
-                'total' => $list['total'],
-            ]), 'main');
-            return;
-        }
-
-        // unreachable for current SECTIONS
         $this->view('admin/agent-apps/section', array_merge($common, [
             'comingSoon' => true,
         ]), 'main');
@@ -467,7 +460,16 @@ final class AgentAppsController extends Controller
             if (!empty($up['ok']) && !empty($up['path'])) {
                 $input['uploaded_image_path'] = (string) $up['path'];
             } elseif (!empty($up['error'])) {
-                SessionManager::flash('error', (string) $up['error']);
+                $uploadErr = (string) $up['error'];
+                $uploadMap = [
+                    'No file uploaded' => __('agent_apps_upload_none'),
+                    'File too large (max 10MB)' => __('agent_apps_upload_too_large'),
+                    'File type not allowed' => __('agent_apps_upload_type'),
+                    'SVG uploads are disabled for security' => __('agent_apps_upload_type'),
+                    'Storage unavailable' => __('agent_apps_upload_failed'),
+                    'Upload failed' => __('agent_apps_upload_failed'),
+                ];
+                SessionManager::flash('error', $uploadMap[$uploadErr] ?? __('agent_apps_upload_failed'));
                 Response::redirect($redirect);
                 return;
             }
@@ -574,7 +576,7 @@ final class AgentAppsController extends Controller
 
         $ops = new AgentAppsOpsService();
         $notifCount = 0;
-        $ratingAvg = '0/5';
+        $ratingAvg = '0';
         $complaintsPending = 0;
         $offersActive = 0;
         $contentCount = 0;

@@ -858,13 +858,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php
-            // Tenant without company-access routes still needs App Management when permitted.
-            if (!rateb_is_super_admin()
-                && rateb_nav_can('mobile_apps.view')
-                && !(function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled())
-            ) {
-                require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
-            }
+            // Agent Apps routes are platform SuperAdmin-only (rateb_admin_mw).
+            // Do not show tenant links that would 403 — SuperAdmin gets the group below.
             ?>
             <?php if (rateb_is_super_admin()) { ?>
             <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
