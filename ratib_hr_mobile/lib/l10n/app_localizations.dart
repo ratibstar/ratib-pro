@@ -156,15 +156,22 @@ class AppLocalizations {
       'inquirySubmitted': 'تم الإرسال',
       'inquiryHistory': 'السجل',
       'inquiryEmpty': 'لا توجد شكاوى أو استفسارات',
+      'statusPending': 'قيد الانتظار',
+      'statusApproved': 'مقبول',
+      'statusRejected': 'مرفوض',
+      'statusClosed': 'مغلق',
       'paymentsSalary': 'معلومات صرف الراتب',
       'paymentsBanks': 'الحسابات البنكية',
       'paymentsWallet': 'المحفظة',
-      'paymentsGateways': 'بوابات الدفع (مستقبلاً)',
+      'paymentsGateways': 'طرق الدفع المتاحة',
       'paymentsUnavailable': 'طرق الدفع غير مفعّلة لهذه الشركة بعد',
       'paymentsReady': 'بيانات الدفع متاحة',
       'paymentsBanksPlaceholder': 'سيتم عرض الحسابات البنكية عند توفرها من ERP',
       'paymentsWalletPlaceholder': 'المحفظة غير متاحة حالياً',
-      'paymentsGatewaysPlaceholder': 'لا معالجة دفع في هذه المرحلة',
+      'paymentsGatewaysPlaceholder': 'لا توجد طرق دفع مفعّلة بعد',
+      'paymentsGatewayInfoOnly': 'عرض معلومات فقط — بدون معالجة دفع',
+      'ratingsEmptyHint':
+          'التقييمات تظهر هنا بعد أن يسجّلها قسم الموارد البشرية في ERP',
       'settingsPreferences': 'التفضيلات',
       'settingsTheme': 'المظهر',
       'settingsThemeSystem': 'حسب النظام',
@@ -172,6 +179,11 @@ class AppLocalizations {
       'settingsThemeDark': 'داكن',
       'settingsNotifications': 'الإشعارات',
       'settingsBiometric': 'تسجيل الدخول بالبصمة',
+      'settingsBiometricUnavailable': 'البصمة غير متاحة على هذا الجهاز',
+      'settingsBiometricFailed': 'تعذّر التحقق بالبصمة',
+      'settingsBiometricEnabled': 'تم تفعيل البصمة',
+      'loginBiometric': 'فتح بالبصمة',
+      'loginBiometricFailed': 'فشل فتح الجلسة بالبصمة',
       'settingsAccount': 'الحساب',
       'settingsChangePassword': 'تغيير كلمة المرور',
       'settingsCurrentPassword': 'كلمة المرور الحالية',
@@ -390,17 +402,24 @@ class AppLocalizations {
       'inquirySubmitted': 'Submitted',
       'inquiryHistory': 'History',
       'inquiryEmpty': 'No complaints or inquiries',
+      'statusPending': 'Pending',
+      'statusApproved': 'Approved',
+      'statusRejected': 'Rejected',
+      'statusClosed': 'Closed',
       'paymentsSalary': 'Salary payment information',
       'paymentsBanks': 'Bank accounts',
       'paymentsWallet': 'Wallet',
-      'paymentsGateways': 'Payment gateways (future)',
+      'paymentsGateways': 'Available payment methods',
       'paymentsUnavailable':
           'Payment methods are not enabled for this company yet',
       'paymentsReady': 'Payment data available',
       'paymentsBanksPlaceholder':
           'Bank accounts will appear when ERP provides them',
       'paymentsWalletPlaceholder': 'Wallet is not available yet',
-      'paymentsGatewaysPlaceholder': 'No payment processing in this phase',
+      'paymentsGatewaysPlaceholder': 'No payment methods enabled yet',
+      'paymentsGatewayInfoOnly': 'Information only — no payment processing',
+      'ratingsEmptyHint':
+          'Ratings appear here after HR records them in ERP',
       'settingsPreferences': 'Preferences',
       'settingsTheme': 'Theme',
       'settingsThemeSystem': 'System',
@@ -408,6 +427,11 @@ class AppLocalizations {
       'settingsThemeDark': 'Dark',
       'settingsNotifications': 'Notifications',
       'settingsBiometric': 'Biometric login',
+      'settingsBiometricUnavailable': 'Biometrics are not available on this device',
+      'settingsBiometricFailed': 'Biometric verification failed',
+      'settingsBiometricEnabled': 'Biometric login enabled',
+      'loginBiometric': 'Unlock with biometrics',
+      'loginBiometricFailed': 'Could not unlock session with biometrics',
       'settingsAccount': 'Account',
       'settingsChangePassword': 'Change password',
       'settingsCurrentPassword': 'Current password',
@@ -619,6 +643,7 @@ class AppLocalizations {
   String get ratingsNoKpi => _t('ratingsNoKpi');
   String get ratingsReviews => _t('ratingsReviews');
   String get ratingsEmpty => _t('ratingsEmpty');
+  String get ratingsEmptyHint => _t('ratingsEmptyHint');
   String get inquirySubmit => _t('inquirySubmit');
   String get inquiryTypeInquiry => _t('inquiryTypeInquiry');
   String get inquiryTypeComplaint => _t('inquiryTypeComplaint');
@@ -627,6 +652,10 @@ class AppLocalizations {
   String get inquirySubmitted => _t('inquirySubmitted');
   String get inquiryHistory => _t('inquiryHistory');
   String get inquiryEmpty => _t('inquiryEmpty');
+  String get statusPending => _t('statusPending');
+  String get statusApproved => _t('statusApproved');
+  String get statusRejected => _t('statusRejected');
+  String get statusClosed => _t('statusClosed');
   String get paymentsSalary => _t('paymentsSalary');
   String get paymentsBanks => _t('paymentsBanks');
   String get paymentsWallet => _t('paymentsWallet');
@@ -636,6 +665,7 @@ class AppLocalizations {
   String get paymentsBanksPlaceholder => _t('paymentsBanksPlaceholder');
   String get paymentsWalletPlaceholder => _t('paymentsWalletPlaceholder');
   String get paymentsGatewaysPlaceholder => _t('paymentsGatewaysPlaceholder');
+  String get paymentsGatewayInfoOnly => _t('paymentsGatewayInfoOnly');
   String get settingsPreferences => _t('settingsPreferences');
   String get settingsTheme => _t('settingsTheme');
   String get settingsThemeSystem => _t('settingsThemeSystem');
@@ -643,6 +673,11 @@ class AppLocalizations {
   String get settingsThemeDark => _t('settingsThemeDark');
   String get settingsNotifications => _t('settingsNotifications');
   String get settingsBiometric => _t('settingsBiometric');
+  String get settingsBiometricUnavailable => _t('settingsBiometricUnavailable');
+  String get settingsBiometricFailed => _t('settingsBiometricFailed');
+  String get settingsBiometricEnabled => _t('settingsBiometricEnabled');
+  String get loginBiometric => _t('loginBiometric');
+  String get loginBiometricFailed => _t('loginBiometricFailed');
   String get settingsAccount => _t('settingsAccount');
   String get settingsChangePassword => _t('settingsChangePassword');
   String get settingsCurrentPassword => _t('settingsCurrentPassword');

@@ -253,7 +253,7 @@ final class HrEssPhaseCService
         $paymentsEnabled = !empty($features['payments']);
 
         $ops = new AgentAppsOpsService();
-        $all = $ops->getPaymentMethods($companyId);
+        $all = $ops->readPaymentMethodsForCompany($companyId);
         $gateways = [];
         foreach ($all as $m) {
             if (empty($m['enabled'])) {
@@ -265,12 +265,31 @@ final class HrEssPhaseCService
                 'label_en' => (string) ($m['label_en'] ?? ''),
             ];
         }
+        if ($paymentsEnabled && $gateways === []) {
+            foreach (AgentAppsOpsService::defaultPaymentMethods() as $m) {
+                if (empty($m['enabled'])) {
+                    continue;
+                }
+                $gateways[] = [
+                    'code' => (string) ($m['code'] ?? ''),
+                    'label_ar' => (string) ($m['label_ar'] ?? ''),
+                    'label_en' => (string) ($m['label_en'] ?? ''),
+                ];
+            }
+        }
+
+        $labels = [];
+        foreach ($gateways as $g) {
+            $ar = trim((string) ($g['label_ar'] ?? ''));
+            $en = trim((string) ($g['label_en'] ?? ''));
+            $labels[] = $ar !== '' ? $ar : ($en !== '' ? $en : (string) ($g['code'] ?? ''));
+        }
 
         return [
             'status' => 200,
             'body' => [
                 'success' => true,
-                'salary_payment' => null,
+                'salary_payment' => $labels !== [] ? implode(' · ', $labels) : null,
                 'bank_accounts' => [],
                 'wallet' => null,
                 'gateways' => $paymentsEnabled ? $gateways : [],

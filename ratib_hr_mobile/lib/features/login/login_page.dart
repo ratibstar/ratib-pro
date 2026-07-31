@@ -32,6 +32,19 @@ class _LoginPageState extends State<LoginPage> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _busy = false;
+  bool _biometricAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBiometric();
+  }
+
+  Future<void> _refreshBiometric() async {
+    final ok = await widget.session.biometricUnlockAvailable();
+    if (!mounted) return;
+    setState(() => _biometricAvailable = ok);
+  }
 
   @override
   void dispose() {
@@ -112,6 +125,23 @@ class _LoginPageState extends State<LoginPage> {
     DsSnackbar.show(
       context,
       message: _messageFor(widget.session.lastError, l10n),
+      kind: DsSnackbarKind.error,
+    );
+  }
+
+  Future<void> _unlockBiometric() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    final ok = await widget.session.unlockWithBiometric();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      widget.onSignedIn();
+      return;
+    }
+    DsSnackbar.show(
+      context,
+      message: l10n.loginBiometricFailed,
       kind: DsSnackbarKind.error,
     );
   }
@@ -230,12 +260,21 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: AppSpacing.xl),
                     if (_busy)
                       const DsLoadingState()
-                    else
+                    else ...[
                       DsPrimaryButton(
                         label: l10n.loginSubmit,
                         onPressed: _submit,
                         icon: Icons.login_rounded,
                       ),
+                      if (_biometricAvailable) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        OutlinedButton.icon(
+                          onPressed: _unlockBiometric,
+                          icon: const Icon(Icons.fingerprint_rounded),
+                          label: Text(l10n.loginBiometric),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
               ),

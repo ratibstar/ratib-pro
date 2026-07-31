@@ -49,6 +49,7 @@ abstract final class AppLocator {
   static DeviceRegistryPort? _deviceRegistry;
   static DeviceRegistryService? _deviceRegistryService;
   static PushNotificationService? _pushNotifications;
+  static BiometricUnlock? _biometric;
   static void Function()? _unauthorizedHandler;
   static Future<void> Function()? _signOutHandler;
 
@@ -65,12 +66,16 @@ abstract final class AppLocator {
     required AuthPort auth,
     required SecureTokenStore tokenStore,
     required ErrorMapper errors,
+    BiometricUnlock? biometric,
   }) {
     _environment = environment;
     _http = http;
     _auth = auth;
     _tokenStore = tokenStore;
     _errors = errors;
+    if (biometric != null) {
+      _biometric = biometric;
+    }
   }
 
   static void registerPhase2({required MePort me}) {
@@ -250,5 +255,6 @@ abstract final class AppLocator {
   static MobileDevicePort get mobileDevice =>
       _deviceRegistry ?? _notRegistered('mobileDevice');
   static ApprovalPort get approvals => _notRegistered('approvals');
-  static BiometricUnlock get biometric => _notRegistered('biometric');
+  static BiometricUnlock get biometric =>
+      _biometric ?? _notRegistered('biometric');
 }

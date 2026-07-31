@@ -24,7 +24,7 @@ abstract final class EssReadCache {
   static const notifications = 'ess.notifications.list.v1';
   static const ratings = 'ess.ratings.summary.v1';
   static const inquiries = 'ess.inquiries.list.v1';
-  static const payments = 'ess.payments.list.v1';
+  static const payments = 'ess.payments.list.v2';
 
   static CacheStore? resolve([CacheStore? cache]) {
     if (cache != null) return cache;

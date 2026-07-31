@@ -2,7 +2,6 @@
 ///
 /// Not an ERP authentication method. No PIN system.
 /// Online ERP remains Authentication Authority.
-/// Phase 0.6: interface only. No local_auth wiring.
 library;
 
 abstract interface class BiometricUnlock {

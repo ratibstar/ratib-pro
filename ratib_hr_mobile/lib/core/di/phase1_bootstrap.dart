@@ -20,6 +20,7 @@ import 'package:ratib_hr_mobile/core/adapters/erp_profile_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_device_registry_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_ratings_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/erp_settings_adapter.dart';
+import 'package:ratib_hr_mobile/core/adapters/local_auth_biometric_unlock.dart';
 import 'package:ratib_hr_mobile/core/adapters/local_offline_queue_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/secure_token_store_adapter.dart';
 import 'package:ratib_hr_mobile/core/adapters/shared_preferences_cache_store.dart';
@@ -88,6 +89,7 @@ void bootstrapEssCore() {
     auth: auth,
     tokenStore: tokenStore,
     errors: errors,
+    biometric: LocalAuthBiometricUnlock(),
   );
   AppLocator.registerPhase2(me: me);
   AppLocator.registerPhase3(

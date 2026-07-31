@@ -68,6 +68,13 @@ final class AuthSession extends ChangeNotifier {
         notifyListeners();
         return;
       }
+      final bioGate = await _requireBiometricUnlockIfEnabled();
+      if (!bioGate) {
+        // Keep token — user can unlock from login with biometrics or password.
+        status = AuthStatus.signedOut;
+        notifyListeners();
+        return;
+      }
       try {
         await _resolveEmployeeOrThrow();
         await _mobileConfig.refreshAfterLogin();
@@ -155,6 +162,75 @@ final class AuthSession extends ChangeNotifier {
       return false;
     } finally {
       _signInInProgress = false;
+    }
+  }
+
+  /// Unlock a stored ERP session with device biometrics (no password re-entry).
+  Future<bool> unlockWithBiometric() async {
+    lastError = null;
+    offlineSession = false;
+    _signInInProgress = true;
+    try {
+      final has = await _authPort.hasSession();
+      if (!has) {
+        lastError = const AppFailure(code: 'unauthorized', message: 'No session');
+        status = AuthStatus.signedOut;
+        notifyListeners();
+        return false;
+      }
+      final bioOn = await AppLocator.settings.biometricEnabled();
+      if (!bioOn) {
+        lastError = const AppFailure(code: 'biometric_disabled');
+        return false;
+      }
+      final unlocked = await AppLocator.biometric.unlock();
+      if (!unlocked) {
+        lastError = const AppFailure(code: 'biometric_failed');
+        status = AuthStatus.signedOut;
+        notifyListeners();
+        return false;
+      }
+      await _resolveEmployeeOrThrow();
+      await _mobileConfig.refreshAfterLogin();
+      await _registerDeviceSafe();
+      await _registerPushSafe();
+      status = AuthStatus.signedIn;
+      await _warmEssCaches();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      lastError = e is AppFailure ? e : AppLocator.errors.map(e);
+      status = AuthStatus.signedOut;
+      notifyListeners();
+      return false;
+    } finally {
+      _signInInProgress = false;
+    }
+  }
+
+  Future<bool> hasStoredSession() => _authPort.hasSession();
+
+  Future<bool> biometricUnlockAvailable() async {
+    try {
+      final bioOn = await AppLocator.settings.biometricEnabled();
+      if (!bioOn) return false;
+      final has = await _authPort.hasSession();
+      if (!has) return false;
+      return AppLocator.biometric.isAvailable();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _requireBiometricUnlockIfEnabled() async {
+    try {
+      final bioOn = await AppLocator.settings.biometricEnabled();
+      if (!bioOn) return true;
+      final available = await AppLocator.biometric.isAvailable();
+      if (!available) return true;
+      return AppLocator.biometric.unlock();
+    } catch (_) {
+      return true;
     }
   }
 

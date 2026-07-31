@@ -238,8 +238,39 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.fingerprint_rounded,
             accent: AppColors.auroraRose,
             onChanged: (v) async {
-              await AppLocator.settings.setBiometricEnabled(v);
-              setState(() => _biometric = v);
+              if (!v) {
+                await AppLocator.settings.setBiometricEnabled(false);
+                setState(() => _biometric = false);
+                return;
+              }
+              final available = await AppLocator.biometric.isAvailable();
+              if (!available) {
+                if (!mounted) return;
+                DsSnackbar.show(
+                  context,
+                  message: l10n.settingsBiometricUnavailable,
+                  kind: DsSnackbarKind.error,
+                );
+                return;
+              }
+              final ok = await AppLocator.biometric.unlock();
+              if (!ok) {
+                if (!mounted) return;
+                DsSnackbar.show(
+                  context,
+                  message: l10n.settingsBiometricFailed,
+                  kind: DsSnackbarKind.error,
+                );
+                return;
+              }
+              await AppLocator.settings.setBiometricEnabled(true);
+              if (!mounted) return;
+              setState(() => _biometric = true);
+              DsSnackbar.show(
+                context,
+                message: l10n.settingsBiometricEnabled,
+                kind: DsSnackbarKind.success,
+              );
             },
           ),
           DsSectionHeader(title: l10n.settingsAccount),

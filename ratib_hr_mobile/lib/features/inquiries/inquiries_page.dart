@@ -68,6 +68,40 @@ class _InquiriesPageState extends State<InquiriesPage> {
     }
   }
 
+  String _typeLabel(AppLocalizations l10n, Object? raw) {
+    switch ((raw ?? '').toString().trim().toLowerCase()) {
+      case 'complaint':
+        return l10n.inquiryTypeComplaint;
+      case 'inquiry':
+        return l10n.inquiryTypeInquiry;
+      default:
+        final s = (raw ?? '').toString().trim();
+        return s.isEmpty ? l10n.navInquiries : s;
+    }
+  }
+
+  String _statusLabel(AppLocalizations l10n, Object? raw) {
+    switch ((raw ?? '').toString().trim().toLowerCase()) {
+      case 'pending':
+      case 'open':
+      case 'draft':
+        return l10n.statusPending;
+      case 'approved':
+      case 'accepted':
+      case 'resolved':
+        return l10n.statusApproved;
+      case 'rejected':
+      case 'declined':
+        return l10n.statusRejected;
+      case 'closed':
+      case 'done':
+      case 'completed':
+        return l10n.statusClosed;
+      default:
+        return (raw ?? '').toString();
+    }
+  }
+
   Future<void> _submit() async {
     final text = _message.text.trim();
     if (text.isEmpty) {
@@ -164,10 +198,9 @@ class _InquiriesPageState extends State<InquiriesPage> {
                       else
                         for (final row in _items)
                           DsListItem(
-                            title: (row['request_type'] ?? l10n.navInquiries)
-                                .toString(),
+                            title: _typeLabel(l10n, row['request_type']),
                             subtitle: [
-                              (row['status'] ?? '').toString(),
+                              _statusLabel(l10n, row['status']),
                               (row['notes'] ?? '').toString(),
                             ].where((e) => e.isNotEmpty).join(' · '),
                             leading: const DsIconBadge(

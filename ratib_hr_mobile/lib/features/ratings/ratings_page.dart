@@ -54,6 +54,37 @@ class _RatingsPageState extends State<RatingsPage> {
     }
   }
 
+  String _reviewTitle(Map r) {
+    final title = (r['title'] ?? r['review_title'] ?? r['period'] ?? '').toString().trim();
+    if (title.isNotEmpty) return title;
+    final score = r['overall_score'] ?? r['score'];
+    if (score != null && '$score'.trim().isNotEmpty) {
+      return score.toString();
+    }
+    return (r['comment'] ?? r['notes'] ?? '—').toString();
+  }
+
+  String _reviewSubtitle(Map r) {
+    return [
+      (r['status'] ?? '').toString(),
+      (r['date'] ?? r['created_at'] ?? r['review_date'] ?? '').toString(),
+      if (r['overall_score'] != null) r['overall_score'].toString(),
+    ].where((e) => e.trim().isNotEmpty).join(' · ');
+  }
+
+  String _monthlyLabel(Object? monthly) {
+    if (monthly is Map) {
+      final score = monthly['overall_score'] ?? monthly['score'];
+      final period = monthly['period'] ?? monthly['title'] ?? monthly['review_date'];
+      final parts = [
+        if (period != null && '$period'.trim().isNotEmpty) period.toString(),
+        if (score != null && '$score'.trim().isNotEmpty) score.toString(),
+      ];
+      if (parts.isNotEmpty) return parts.join(' · ');
+    }
+    return '$monthly';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -87,20 +118,28 @@ class _RatingsPageState extends State<RatingsPage> {
                   if (monthly == null)
                     DsCard(child: Text(l10n.ratingsNoMonthly))
                   else
-                    DsCard(child: Text('$monthly')),
+                    DsCard(child: Text(_monthlyLabel(monthly))),
                   DsSectionHeader(title: l10n.ratingsKpi),
-                  if (kpis == null)
+                  if (kpis == null || (kpis is List && kpis.isEmpty))
                     DsCard(child: Text(l10n.ratingsNoKpi))
                   else
                     DsCard(child: Text('$kpis')),
                   DsSectionHeader(title: l10n.ratingsReviews),
                   if (reviews is! List || reviews.isEmpty)
-                    DsEmptyState(title: l10n.ratingsEmpty)
+                    DsEmptyState(
+                      title: l10n.ratingsEmpty,
+                      message: l10n.ratingsEmptyHint,
+                    )
                   else
                     for (final r in reviews.whereType<Map>())
                       DsListItem(
-                        title: (r['title'] ?? r['comment'] ?? '—').toString(),
-                        subtitle: (r['date'] ?? r['created_at'] ?? '').toString(),
+                        title: _reviewTitle(r),
+                        subtitle: _reviewSubtitle(r),
+                        leading: const DsIconBadge(
+                          icon: Icons.star_outline_rounded,
+                          color: AppColors.auroraAmber,
+                        ),
+                        trailing: const SizedBox.shrink(),
                       ),
                 ],
               ),

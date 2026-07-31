@@ -724,12 +724,23 @@ final class AgentAppsOpsService
     }
 
     /**
+     * Admin/UI path — remaps company via write scope (super-admin / tenant session).
+     *
      * @return list<array{code:string,label_ar:string,label_en:string,enabled:bool}>
      */
     public function getPaymentMethods(int $companyId): array
     {
+        return $this->readPaymentMethodsForCompany($this->resolveWriteCompanyId($companyId));
+    }
+
+    /**
+     * ESS / mobile API path — use the authenticated company id as-is (no admin write remap).
+     *
+     * @return list<array{code:string,label_ar:string,label_en:string,enabled:bool}>
+     */
+    public function readPaymentMethodsForCompany(int $companyId): array
+    {
         MobileAppContentSchemaBootstrap::ensurePaymentMethodsColumn();
-        $companyId = $this->resolveWriteCompanyId($companyId);
         if ($companyId < 1) {
             return self::defaultPaymentMethods();
         }
