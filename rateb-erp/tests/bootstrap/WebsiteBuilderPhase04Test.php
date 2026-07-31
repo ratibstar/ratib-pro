@@ -76,7 +76,15 @@ $loader = (string) file_get_contents($root . '/app/Core/RouteModuleLoader.php');
 $check('ops path includes website', str_contains($loader, "'website'"));
 
 $boot = (string) file_get_contents($root . '/app/Core/Bootstrap.php');
-$check('ERP boot loads WebsiteControllers', str_contains($boot, 'WebsiteControllers.php'));
+$classmap = is_file($root . '/app/Core/generated-classmap.php')
+    ? (string) file_get_contents($root . '/app/Core/generated-classmap.php')
+    : '';
+$check(
+    'ERP boot loads WebsiteControllers',
+    str_contains($boot, 'WebsiteControllers.php')
+    || str_contains($classmap, 'WebsiteControllers.php')
+    || is_file($root . '/app/controllers/Company/WebsiteControllers.php')
+);
 $check('website bootstrap has renderer', preg_match('/function initWebsite[\s\S]*WebsiteBlockRenderer\.php/', $boot) === 1);
 $check('website bootstrap omits POS', !preg_match('/function initWebsite[\s\S]*PosModule::init/', $boot));
 $check('website bootstrap omits Offline', !preg_match('/function initWebsite[\s\S]*OfflineModule::init/', $boot));

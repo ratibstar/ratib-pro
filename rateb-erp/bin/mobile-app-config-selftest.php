@@ -25,7 +25,9 @@ $svc = new MobileAppConfigService();
 
 $defaults = MobileAppConfigService::defaultFeatures();
 $assert($defaults['attendance'] === true, 'default attendance on');
-$assert($defaults['payroll'] === false, 'default payroll off');
+$assert($defaults['payroll'] === true, 'default payroll on');
+$assert($defaults['payslips'] === true, 'default payslips on');
+$assert($defaults['payments'] === true, 'default payments on');
 
 $norm = $svc->normalizeFeatures(['attendance' => '0', 'payroll' => '1', 'bogus' => true]);
 $assert($norm['attendance'] === false, 'normalize attendance off');
