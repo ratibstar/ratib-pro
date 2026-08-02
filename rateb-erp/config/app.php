@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260803-company-modules-nav-v143');
+define('RATEB_ASSET_BUILD', '20260803-company-modules-nav-v144');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3240,6 +3240,12 @@ if (!function_exists('rateb_nav_enforce_company_modules')) {
         }
         if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
             return true;
+        }
+        // Platform super-admin inspecting a tenant (?company_id= / ops context): honour modules.
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
+            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_nav_module_company_id')) {
+            return rateb_nav_module_company_id() > 0;
         }
 
         return false;

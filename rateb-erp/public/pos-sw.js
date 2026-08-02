@@ -5,9 +5,9 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v38';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-company-modules-nav-v143';
+var SW_BUILD_ID = '20260803-company-modules-nav-v144';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2181,16 +2181,27 @@ function softNavAdminHtml(request, url, event) {
         });
     }
 
-    var networkP = fetchNavigateNetwork(request, 2000).then(storeLive).catch(function () {
+    var networkP = fetchNavigateNetwork(request, isCloudBrowserOffline() ? 2000 : 8000).then(storeLive).catch(function () {
         return null;
     });
 
     return fromCache().then(function (hit) {
         if (hit) {
-            if (event && typeof event.waitUntil === 'function') {
-                event.waitUntil(networkP.then(function () { return null; }));
-            }
-            return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+            return hit.clone().text().then(function (body) {
+                if (!isCloudBrowserOffline() && !isHardBrowserOffline()
+                    && /data-rateb-offline-stub/i.test(String(body || ''))) {
+                    return null;
+                }
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(networkP.then(function () { return null; }));
+                }
+                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+            }).catch(function () {
+                if (event && typeof event.waitUntil === 'function') {
+                    event.waitUntil(networkP.then(function () { return null; }));
+                }
+                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+            });
         }
         return networkP.then(function (response) {
             if (response) {
@@ -2839,6 +2850,14 @@ function warmErpOfflineShell(opts) {
         'admin/hr/documents',
         'admin/hr/requests',
         'admin/hr/fleet',
+        'admin/recruitment',
+        'admin/crm',
+        'admin/projects',
+        'admin/approvals',
+        'admin/mfg',
+        'admin/payroll',
+        'admin/qms',
+        'admin/bi',
         'admin/ops/branch-dashboard',
         'admin/ops/branch-financial',
         'admin/ops/branch-dashboard/compare',

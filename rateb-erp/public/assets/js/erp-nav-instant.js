@@ -1392,6 +1392,9 @@
                 throw new Error('nav_fetch_failed');
             }
             return res.text().then(function (html) {
+                if (/data-rateb-offline-stub/i.test(html) && !isBrowserOffline()) {
+                    throw new Error('nav_stub_reject');
+                }
                 // Idle cache — never block paint / next click on Cache+SW HTML copies.
                 schedulePageCache(res.url || href, html);
                 return { html: html, finalUrl: res.url || href, fromCache: false };
@@ -1416,6 +1419,9 @@
             }
             return cached.text().then(function (html) {
                 if (!html || html.length < 200) {
+                    return null;
+                }
+                if (/data-rateb-offline-stub/i.test(html) && !isBrowserOffline()) {
                     return null;
                 }
                 return { html: html, finalUrl: href, fromCache: true };
@@ -1821,6 +1827,7 @@
                     || (ADMIN_PATH_RE.test(fu.pathname) && POS_RUNTIME_RE.test(fu.pathname))
                     || /\/admin\/company-permissions(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/oversight\/approvals(?:\/|$)/i.test(fu.pathname)
+                    || /\/admin\/(?:mfg|payroll|qms|bi|recruitment|crm|projects|approvals|eam|procurement|website)(?:\/|$)/i.test(fu.pathname)
                     || /\/(logout|login|password)(\/|$)/i.test(fu.pathname);
                 if (forceFull) {
                     ev.preventDefault();
