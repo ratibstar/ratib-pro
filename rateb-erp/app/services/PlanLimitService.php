@@ -176,6 +176,11 @@ final class PlanLimitService
     {
         // Dedicated agency ERP: Control Panel package (erp_plan_slug) is the entitlement source.
         if (DedicatedTenantPolicy::isDedicated()) {
+            $companyModules = $this->decodeModules($company['modules'] ?? null);
+            // Platform company-permissions sync writes company.modules — honour it on agency hosts.
+            if ($companyModules !== []) {
+                return self::applyLegacyImpliedModules($companyModules, $company);
+            }
             $controlSlug = $this->resolveControlPlanSlug();
             if ($controlSlug !== '') {
                 $tier = self::modulesForSlug($controlSlug);

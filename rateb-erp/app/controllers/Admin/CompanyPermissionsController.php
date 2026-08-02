@@ -146,10 +146,10 @@ final class CompanyPermissionsController extends Controller
             } catch (\Throwable $agencyErr) {
                 error_log('company permissions agency modules sync #' . $id . ': ' . $agencyErr->getMessage());
                 SessionManager::flash(
-                    'error',
+                    'warning',
                     __('company_permissions_agency_sync_failed') . ' — ' . $agencyErr->getMessage()
                 );
-                Response::redirect($back);
+                $agencyPush = ['synced' => false, 'agency_id' => 0, 'agency_company_id' => 0];
             }
 
             (new AuditService())->log('update', 'company_permissions', $id, [

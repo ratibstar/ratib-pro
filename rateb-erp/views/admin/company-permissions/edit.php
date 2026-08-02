@@ -116,7 +116,7 @@ $lockedCore = ['dashboard', 'notifications'];
             // Drop any stale offline HTML of this page before navigation.
             try {
                 if (window.caches) {
-                    ['rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v32', 'rateb-erp-coexist-v33'].forEach(function (name) {
+                    ['rateb-erp-ops-pages-v36', 'rateb-erp-coexist-v34', 'rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v32', 'rateb-erp-coexist-v33'].forEach(function (name) {
                         caches.open(name).then(function (cache) {
                             return cache.delete(location.href).catch(function () {});
                         }).catch(function () {});
