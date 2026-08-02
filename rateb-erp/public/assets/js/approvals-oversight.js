@@ -542,9 +542,21 @@
             return;
         }
         if (!tbody.querySelector('tr.rateb-approval-data-row')) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">'
+            var colSpan = 5;
+            var table = root.querySelector('table.rateb-approvals-table');
+            if (table) {
+                var thCount = table.querySelectorAll('thead th').length;
+                if (thCount > 0) {
+                    colSpan = thCount;
+                }
+            }
+            tbody.innerHTML = '<tr><td colspan="' + colSpan + '" class="text-center text-muted py-4">'
                 + escapeHtml(labels.no_records || 'No records')
                 + '</td></tr>';
+            var bar = root.querySelector('[data-rateb-bulk-bar]');
+            if (bar) {
+                bar.classList.add('d-none');
+            }
         }
     }
 
@@ -758,6 +770,122 @@
         runPost();
     }
 
+    function selectedBulkItems() {
+        var root = rootEl();
+        var items = [];
+        if (!root) {
+            return items;
+        }
+        root.querySelectorAll('[data-rateb-row-check]:checked').forEach(function (cb) {
+            var tr = cb.closest('tr.rateb-approval-data-row');
+            if (!tr) {
+                return;
+            }
+            items.push({
+                source_key: tr.getAttribute('data-source-key') || '',
+                record_id: tr.getAttribute('data-record-id') || '',
+                company_id: tr.getAttribute('data-company-id') || '',
+                row_key: tr.getAttribute('data-approval-row') || cb.value || ''
+            });
+        });
+        return items;
+    }
+
+    function confirmBulkAction(action, count) {
+        if (action === 'reject') {
+            return confirmAction(labels.bulk_confirm_reject || labels.confirm_reject || 'Confirm reject?', 'danger');
+        }
+        var tpl = labels.bulk_confirm_approve_count || labels.confirm_approve || 'Approve :count selected?';
+        return confirmAction(String(tpl).replace(':count', String(count)), 'primary');
+    }
+
+    function postBulkAction(action) {
+        if (!config.canBulk || !config.bulkDecideUrl) {
+            flashToast(labels.error || 'حدث خطأ غير متوقع', 'danger');
+            return;
+        }
+        var items = selectedBulkItems();
+        if (!items.length) {
+            flashToast(labels.bulk_none_selected || labels.error || 'حدث خطأ غير متوقع', 'warning');
+            return;
+        }
+        if (action === 'reject') {
+            items = items.filter(function (item) {
+                var row = dataRow(item.row_key);
+                return row && row.getAttribute('data-can-reject') === '1';
+            });
+            if (!items.length) {
+                flashToast(labels.bulk_none_selected || labels.error || 'حدث خطأ غير متوقع', 'warning');
+                return;
+            }
+        }
+
+        confirmBulkAction(action, items.length).then(function (ok) {
+            if (!ok) {
+                return;
+            }
+            var form = new FormData();
+            form.append('_csrf', csrf());
+            form.append('decision', action);
+            form.append('items', JSON.stringify(items));
+            if (config.typeFilter) {
+                form.append('type_filter', config.typeFilter);
+            }
+            if (config.companyFilter) {
+                form.append('company_id', String(config.companyFilter));
+            }
+
+            items.forEach(function (item) {
+                setRowBusy(item.row_key, true);
+            });
+
+            fetch(config.bulkDecideUrl, {
+                method: 'POST',
+                body: form,
+                cache: 'no-store',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrf()
+                },
+                credentials: 'same-origin'
+            })
+                .then(parseJsonResponse)
+                .then(function (data) {
+                    (data.processed || []).forEach(function (key) {
+                        removeProcessedRow(key);
+                    });
+                    if (data.summary) {
+                        applySummaryCards(data.summary);
+                    }
+                    if (data.menu_counts) {
+                        applyMenuCounts(data.menu_counts);
+                    }
+                    if (data.message) {
+                        flashToast(data.message, data.failed && data.failed.length ? 'warning' : 'success');
+                    }
+                    var rootAfter = rootEl();
+                    if (rootAfter) {
+                        var bar = rootAfter.querySelector('[data-rateb-bulk-bar]');
+                        if (bar) {
+                            bar.classList.add('d-none');
+                        }
+                        rootAfter.querySelectorAll('[data-rateb-row-check]:checked').forEach(function (cb) {
+                            cb.checked = false;
+                        });
+                    }
+                })
+                .catch(function (err) {
+                    flashToast(err && err.message ? String(err.message) : (labels.error || 'حدث خطأ غير متوقع'), 'danger');
+                })
+                .finally(function () {
+                    items.forEach(function (item) {
+                        setRowBusy(item.row_key, false);
+                    });
+                });
+        });
+    }
+
     function flashToast(message, type) {
         var root = rootEl();
         if (!root) {
@@ -778,6 +906,14 @@
     function onRootClick(e) {
         var root = rootEl();
         if (!root || !root.contains(e.target)) {
+            return;
+        }
+
+        var bulkBtn = e.target.closest('[data-oversight-bulk]');
+        if (bulkBtn && root.contains(bulkBtn)) {
+            e.preventDefault();
+            e.stopPropagation();
+            postBulkAction(bulkBtn.getAttribute('data-oversight-bulk') || 'approve');
             return;
         }
 
@@ -845,6 +981,9 @@
         if (!clickBound) {
             document.addEventListener('click', onRootClick);
             clickBound = true;
+        }
+        if (window.RatebApp && typeof window.RatebApp.reinit === 'function') {
+            window.RatebApp.reinit();
         }
     }
 

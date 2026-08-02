@@ -616,6 +616,7 @@ return [
         'admin/oversight/approvals' => 'workflows.view',
         'admin/oversight/approvals/count' => 'workflows.view',
         'admin/oversight/approvals/detail' => 'workflows.view',
+        'admin/oversight/approvals/bulk-decide' => 'oversight.approve',
         'admin/oversight/approvals/decide' => 'oversight.approve',
         'admin/oversight/approvals/action' => 'oversight.approve',
         'admin/oversight/approvals/approve' => 'oversight.approve',

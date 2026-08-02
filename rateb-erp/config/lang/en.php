@@ -1524,6 +1524,8 @@ return [
     'bulk_reject' => 'Bulk reject',
     'bulk_undo' => 'Bulk undo',
     'bulk_confirm_reject' => 'Reject selected draft entries?',
+    'bulk_confirm_reject_oversight' => 'Reject selected approvals?',
+    'bulk_confirm_approve_count' => 'Approve :count selected request(s)?',
     'bulk_confirm_undo' => 'Undo (void) selected posted entries?',
     'show' => 'Show',
     'clear' => 'Clear',

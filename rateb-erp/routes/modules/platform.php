@@ -261,6 +261,7 @@ $router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::
 $router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_platform_oversight_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_platform_oversight_mw('workflows.view'));
 $router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_platform_oversight_mw('workflows.manage'));
+$router->post('/admin/oversight/approvals/bulk-decide', [AdminApprovalsController::class, 'bulkDecide'], rateb_platform_oversight_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/action', [AdminApprovalsController::class, 'decideAction'], rateb_platform_oversight_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/approve', [AdminApprovalsController::class, 'approve'], rateb_platform_oversight_mw('workflows.manage'));
 $router->post('/admin/oversight/approvals/reject', [AdminApprovalsController::class, 'reject'], rateb_platform_oversight_mw('workflows.manage'));

@@ -1522,6 +1522,8 @@ return [
     'bulk_reject' => 'رفض المحدد',
     'bulk_undo' => 'تراجع عن المحدد',
     'bulk_confirm_reject' => 'رفض مسودات القيود المحددة؟',
+    'bulk_confirm_reject_oversight' => 'رفض الاعتمادات المحددة؟',
+    'bulk_confirm_approve_count' => 'اعتماد :count طلب/طلبات محددة؟',
     'bulk_confirm_undo' => 'تراجع (إلغاء) القيود المرحّلة المحددة؟',
     'show' => 'عرض',
     'clear' => 'مسح',

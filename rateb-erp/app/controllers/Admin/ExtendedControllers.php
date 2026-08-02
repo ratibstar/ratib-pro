@@ -275,6 +275,106 @@ final class AdminApprovalsController extends Controller
         $this->decide($action === 'reject' ? 'reject' : 'approve');
     }
 
+    public function bulkDecide(): void
+    {
+        if (!rateb_is_super_admin()) {
+            Response::json(['ok' => false, 'message' => __('access_denied')], 403);
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => __('invalid_request')], 400);
+            return;
+        }
+        $action = trim((string) $this->input('decision', 'approve'));
+        $action = $action === 'reject' ? 'reject' : 'approve';
+        $items = $this->parseBulkOversightItems();
+        if ($items === []) {
+            Response::json(['ok' => false, 'message' => __('bulk_none_selected')], 400);
+            return;
+        }
+        if (count($items) > 50) {
+            $items = array_slice($items, 0, 50);
+        }
+
+        $svc = new ApprovalOversightService();
+        $processed = [];
+        $failed = [];
+        foreach ($items as $item) {
+            $sourceKey = (string) ($item['source_key'] ?? '');
+            $recordId = (int) ($item['record_id'] ?? 0);
+            $companyId = (int) ($item['company_id'] ?? 0);
+            $rowKey = (string) ($item['row_key'] ?? '');
+            if ($action === 'reject' && !ApprovalOversightService::canReject($sourceKey)) {
+                $failed[] = [
+                    'row_key' => $rowKey,
+                    'message' => __('invalid_request'),
+                ];
+                continue;
+            }
+            try {
+                $svc->process($sourceKey, $recordId, $companyId, $action);
+                try {
+                    (new AuditService())->log($action, 'approval_oversight', $recordId, [
+                        'source' => $sourceKey,
+                        'company_id' => $companyId,
+                        'bulk' => true,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Do not block bulk if audit log insert fails.
+                }
+                $processed[] = $rowKey !== '' ? $rowKey : ($sourceKey . '-' . $recordId);
+            } catch (\Throwable $e) {
+                $failed[] = [
+                    'row_key' => $rowKey !== '' ? $rowKey : ($sourceKey . '-' . $recordId),
+                    'message' => DatabaseErrorService::userMessage($e),
+                ];
+            }
+        }
+
+        $this->clearOversightCountCache();
+
+        $okCount = count($processed);
+        if ($okCount < 1) {
+            $firstMsg = (string) ($failed[0]['message'] ?? __('system_error_generic'));
+            Response::json([
+                'ok' => false,
+                'message' => $firstMsg,
+                'failed' => $failed,
+            ], 400);
+            return;
+        }
+
+        $msg = $action === 'approve'
+            ? __('bulk_approved', ['count' => $okCount])
+            : __('bulk_rejected', ['count' => $okCount]);
+        if ($failed !== []) {
+            $msg .= ' — ' . __('failed') . ': ' . count($failed);
+        }
+
+        $filterCompany = null;
+        $postedCompany = (int) $this->input('company_id', 0);
+        if ($postedCompany > 0) {
+            $filterCompany = $postedCompany;
+        }
+        $payload = [
+            'ok' => true,
+            'message' => $msg,
+            'processed' => $processed,
+            'failed' => $failed,
+        ];
+        try {
+            $payload['summary'] = $svc->summary($filterCompany, true);
+            $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
+            SessionManager::set('rateb_oversight_menu_counts', [
+                'exp' => time() + 300,
+                'data' => $payload['menu_counts'],
+            ]);
+        } catch (\Throwable $e) {
+            // Counts are progressive enhancement.
+        }
+        Response::json($payload);
+    }
+
     public function undo(): void
     {
         if (!rateb_is_super_admin()) {
@@ -365,6 +465,40 @@ final class AdminApprovalsController extends Controller
         } catch (\Throwable $e) {
             // Ignore cache clear failures.
         }
+    }
+
+    /**
+     * @return list<array{source_key: string, record_id: int, company_id: int, row_key: string}>
+     */
+    private function parseBulkOversightItems(): array
+    {
+        $raw = $this->input('items', []);
+        if (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $sourceKey = trim((string) ($item['source_key'] ?? ''));
+            $recordId = (int) ($item['record_id'] ?? 0);
+            if ($sourceKey === '' || $recordId < 1) {
+                continue;
+            }
+            $out[] = [
+                'source_key' => $sourceKey,
+                'record_id' => $recordId,
+                'company_id' => (int) ($item['company_id'] ?? 0),
+                'row_key' => trim((string) ($item['row_key'] ?? '')),
+            ];
+        }
+
+        return $out;
     }
 
     /**
