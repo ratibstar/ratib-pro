@@ -1151,6 +1151,19 @@ table.rateb-approvals-table col.rateb-col-approval-ref { width: 9%; }
 table.rateb-approvals-table col.rateb-col-approval-date { width: 13%; }
 table.rateb-approvals-table col.rateb-col-approval-actions { width: 34%; }
 
+/* Bulk selection column — fixed-layout approvals table crushes unnamed cols to 0 width */
+table.rateb-approvals-table.rateb-approvals-table--bulk {
+    table-layout: auto;
+}
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-bulk-check {
+    width: 2.75rem;
+}
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-approval-company { width: 18%; }
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-approval-type { width: 22%; }
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-approval-ref { width: 8%; }
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-approval-date { width: 12%; }
+table.rateb-approvals-table.rateb-approvals-table--bulk col.rateb-col-approval-actions { width: 30%; }
+
 table.rateb-approvals-table th,
 table.rateb-approvals-table td {
     padding: 0.4rem 0.45rem;

@@ -444,6 +444,7 @@ FAST_FILES = [
     "rateb-erp/config/app.php",
     "rateb-erp/bin/enterprise-test/EnterpriseTestRunner.php",
     "rateb-erp/public/dashboard-skin.txt",
+    "rateb-erp/public/assets/css/components.css",
     "rateb-erp/views/admin/approvals/index.php",
     "rateb-erp/public/assets/js/approvals-oversight.js",
     "rateb-erp/public/assets/js/erp-nav-instant.js",

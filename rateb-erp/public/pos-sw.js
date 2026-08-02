@@ -5,9 +5,9 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v37';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-oversight-bulk-v141';
+var SW_BUILD_ID = '20260803-oversight-bulk-v142';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';

@@ -6,8 +6,8 @@
 /** @var array{company_id:int,status:string,date_from:string,date_to:string} $filters */
 $typeFilter = (string) ($typeFilter ?? '');
 $csrfToken = (string) ($csrf ?? '');
-$canBulk = rateb_is_super_admin();
-$colSpan = $canBulk ? 6 : 5;
+$canBulk = true;
+$colSpan = 6;
 Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
 $approvalsConfig = [
     'csrf' => $csrfToken,
@@ -154,7 +154,7 @@ $approvalsConfig = [
                 <span><?php echo __('approvals_oversight'); ?></span>
                 <span class="text-muted small"><?php echo __('admin_oversight_approvals_hint'); ?></span>
             </div>
-            <?php if ($canBulk && !empty($items)) { ?>
+            <?php if (!empty($items)) { ?>
             <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
                 <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('bulk_selected')); ?>">0 <?php echo __('bulk_selected'); ?></span>
                 <button type="button" class="btn btn-success btn-sm" data-oversight-bulk="approve">
@@ -167,9 +167,9 @@ $approvalsConfig = [
             <?php } ?>
             <div class="rateb-card-body p-0">
                 <div class="table-responsive rateb-oversight-table-wrap">
-                    <table class="table rateb-table rateb-oversight-table rateb-approvals-table mb-0"<?php echo $canBulk ? ' data-rateb-bulk-table="1"' : ''; ?>>
+                    <table class="table rateb-table rateb-oversight-table rateb-approvals-table rateb-approvals-table--bulk mb-0" data-rateb-bulk-table="1">
                         <colgroup>
-                            <?php if ($canBulk) { ?><col class="rateb-col-bulk-check"><?php } ?>
+                            <col class="rateb-col-bulk-check">
                             <col class="rateb-col-approval-company">
                             <col class="rateb-col-approval-type">
                             <col class="rateb-col-approval-ref">
@@ -178,13 +178,11 @@ $approvalsConfig = [
                         </colgroup>
                         <thead>
                         <tr>
-                            <?php if ($canBulk) { ?>
-                            <th class="rateb-th-bulk">
+                            <th class="rateb-bulk-th">
                                 <?php if (!empty($items)) { ?>
-                                <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                                <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>" aria-label="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
                                 <?php } ?>
                             </th>
-                            <?php } ?>
                             <th><?php echo __('companies'); ?></th>
                             <th><?php echo __('approval_type'); ?></th>
                             <th><?php echo __('reference'); ?></th>
@@ -212,11 +210,9 @@ $approvalsConfig = [
                             data-edit-url="<?php echo Rateb\App\Core\View::escape($editUrl); ?>"
                             data-can-reject="<?php echo $canReject ? '1' : '0'; ?>"
                             data-can-undo="<?php echo \Rateb\App\Services\ApprovalOversightService::canUndo($sourceKey) ? '1' : '0'; ?>">
-                            <?php if ($canBulk) { ?>
-                            <td class="rateb-td-bulk">
-                                <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo Rateb\App\Core\View::escape($rowKey); ?>">
+                            <td class="rateb-bulk-td">
+                                <input type="checkbox" class="form-check-input" data-rateb-row-check value="<?php echo Rateb\App\Core\View::escape($rowKey); ?>" aria-label="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
                             </td>
-                            <?php } ?>
                             <td class="rateb-approval-cell-clip"><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '')); ?></td>
                             <td class="rateb-approval-cell-clip">
                                 <?php echo Rateb\App\Core\View::escape((string) ($row['type_label'] ?? '')); ?>
