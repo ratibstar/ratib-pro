@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260803-company-modules-nav-v144');
+define('RATEB_ASSET_BUILD', '20260803-company-modules-nav-v145');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3221,6 +3221,40 @@ if (!function_exists('rateb_is_branch_appliance_runtime')) {
     }
 }
 
+if (!function_exists('rateb_platform_tenant_nav_company_id')) {
+    /**
+     * Platform rateb.sa only: honour company.modules when super-admin explicitly
+     * passes ?company_id= (tenant preview). Never infer from session shell company.
+     */
+    function rateb_platform_tenant_nav_company_id(): int
+    {
+        if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
+            return 0;
+        }
+        $fromRequest = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+        if ($fromRequest < 1) {
+            return 0;
+        }
+        if (function_exists('rateb_ops_company_exists') && !rateb_ops_company_exists($fromRequest)) {
+            return 0;
+        }
+
+        return $fromRequest;
+    }
+}
+
+if (!function_exists('rateb_nav_tenant_company_id_for_gate')) {
+    /** Company id used for nav module gating on this host. */
+    function rateb_nav_tenant_company_id_for_gate(): int
+    {
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return rateb_platform_tenant_nav_company_id();
+        }
+
+        return rateb_nav_module_company_id();
+    }
+}
+
 if (!function_exists('rateb_nav_enforce_company_modules')) {
     /**
      * Agency / dedicated / branch appliance: company.modules is the nav ceiling —
@@ -3241,11 +3275,10 @@ if (!function_exists('rateb_nav_enforce_company_modules')) {
         if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
             return true;
         }
-        // Platform super-admin inspecting a tenant (?company_id= / ops context): honour modules.
+        // Platform super-admin: filter nav only when ?company_id= tenant preview is explicit.
         if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
-            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()
-            && function_exists('rateb_nav_module_company_id')) {
-            return rateb_nav_module_company_id() > 0;
+            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return rateb_platform_tenant_nav_company_id() > 0;
         }
 
         return false;
@@ -3300,7 +3333,7 @@ if (!function_exists('rateb_nav_can')) {
                 return false;
             }
             if ($module !== '' && rateb_nav_enforce_company_modules()) {
-                $companyId = rateb_nav_module_company_id();
+                $companyId = rateb_nav_tenant_company_id_for_gate();
                 if ($companyId < 1) {
                     return false;
                 }
@@ -3322,7 +3355,7 @@ if (!function_exists('rateb_nav_can')) {
         if ($module === '') {
             return true;
         }
-        $companyId = rateb_nav_module_company_id();
+        $companyId = rateb_nav_tenant_company_id_for_gate();
         if ($companyId < 1) {
             return false;
         }
