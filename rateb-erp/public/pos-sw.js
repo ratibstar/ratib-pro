@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260724-locale-session-v134';
+var SW_BUILD_ID = '20260802-company-perms-post-v135';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1707,10 +1707,18 @@ function prefetchErpOpsUrl(href) {
  * response (404/302/500) — that UI is only for true offline cache misses.
  */
 function isOnlineOnlyPlatformAdminPath(pathname) {
-    var p = String(pathname || '');
+    var p = String(pathname || '').replace(/\/+$/, '');
     return /\/admin\/mobile-apps(?:\/|$)/i.test(p)
         || /\/admin\/hr-mobile(?:\/|$)/i.test(p)
-        || /\/admin\/settings(?:\/|$)/i.test(p);
+        || /\/admin\/settings(?:\/|$)/i.test(p)
+        || /\/admin\/company-permissions\/\d+$/i.test(p);
+}
+
+/** SaaS entitlements POST — must reach PHP when tab is online (never fake-queue). */
+function isOnlineOnlyAdminPostPath(pathname) {
+    var p = String(pathname || '').replace(/\/+$/, '');
+    return /\/admin\/company-permissions\/\d+$/i.test(p)
+        || /\/admin\/companies\/\d+$/i.test(p);
 }
 
 /**
@@ -2240,12 +2248,14 @@ function navigatePosCloudWithCacheSafety(request, url) {
 }
 
 function isOfflinePostDenyPath(pathname) {
-    var p = String(pathname || '');
+    var p = String(pathname || '').replace(/\/+$/, '');
     // Only hard-online: permanent wipe / file export / period close / GL journal post.
     // Approve, delete, pay, decide, suspend queue offline and sync later.
+    // Platform SaaS entitlements cannot queue offline (agency sync + nav gate).
     return /\/(wipe|export|pdf|excel|csv)(\/|$)/i.test(p)
         || /\/(close[-_]?period|transfer-funds|void-payment|gl[-_]?post)(\/|$)/i.test(p)
-        || /\/journal-entries\/\d+\/(post|void)(\/|$)/i.test(p);
+        || /\/journal-entries\/\d+\/(post|void)(\/|$)/i.test(p)
+        || /\/admin\/company-permissions\/\d+$/i.test(p);
 }
 
 function wantsJsonPostResponse(request) {
@@ -4600,6 +4610,13 @@ self.addEventListener('fetch', function (event) {
     // Offline POST (form Save / XHR): never let Chrome paint «لا يتوفر اتصال».
     if (event.request.method === 'POST') {
         if (/\/admin(\/|$)/i.test(url.pathname) || /\/api\//i.test(url.pathname)) {
+            // Online: real server save — SW must not fake-queue platform forms.
+            if (!isHardBrowserOffline() && isOnlineOnlyAdminPostPath(url.pathname)) {
+                return;
+            }
+            if (!isHardBrowserOffline() && !isCloudBrowserOffline()) {
+                return;
+            }
             event.respondWith(handleOfflineAdminPost(event.request, url));
             return;
         }
