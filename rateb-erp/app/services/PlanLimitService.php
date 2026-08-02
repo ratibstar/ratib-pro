@@ -174,13 +174,17 @@ final class PlanLimitService
     /** @param array<string,mixed> $company @param array<string,mixed>|null $plan */
     private function resolveModules(array $company, ?array $plan): array
     {
-        // Dedicated agency ERP: Control Panel package (erp_plan_slug) is the entitlement source.
-        if (DedicatedTenantPolicy::isDedicated()) {
+        $agencyHost = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        // Dedicated / agency ERP: explicit company.modules from platform permissions sync wins.
+        if (DedicatedTenantPolicy::isDedicated() || $agencyHost) {
             $companyModules = $this->decodeModules($company['modules'] ?? null);
-            // Platform company-permissions sync writes company.modules — honour it on agency hosts.
             if ($companyModules !== []) {
                 return self::applyLegacyImpliedModules($companyModules, $company);
             }
+        }
+
+        // Dedicated agency ERP: Control Panel package (erp_plan_slug) when modules unset.
+        if (DedicatedTenantPolicy::isDedicated()) {
             $controlSlug = $this->resolveControlPlanSlug();
             if ($controlSlug !== '') {
                 $tier = self::modulesForSlug($controlSlug);
@@ -210,9 +214,6 @@ final class PlanLimitService
                 $modules = $tierModules;
             } elseif ($modules === []) {
                 $modules = $this->decodeModules($plan['modules'] ?? null);
-            } elseif ($tierModules !== [] && DedicatedTenantPolicy::isDedicated()) {
-                // Stale company.modules (e.g. starter) must not override plan_id entitlements.
-                $modules = $tierModules;
             }
         }
 
@@ -275,6 +276,9 @@ final class PlanLimitService
             return;
         }
         $current = $this->decodeModules($company['modules'] ?? null);
+        if ($current !== []) {
+            return;
+        }
         $missing = array_values(array_diff($tierModules, $current));
         if ($missing === []) {
             return;
@@ -290,14 +294,14 @@ final class PlanLimitService
     private static function applyLegacyImpliedModules(array $modules, array $company): array
     {
         $explicit = self::decodeModulesStatic($company['modules'] ?? null);
-        if ($explicit === []) {
-            return $modules;
-        }
-        $extendedKeys = ['dashboard', 'pos', 'branches', 'notifications'];
-        foreach ($extendedKeys as $key) {
-            if (in_array($key, $explicit, true)) {
-                return $modules;
+        if ($explicit !== []) {
+            foreach (['dashboard', 'notifications'] as $implied) {
+                if (!in_array($implied, $explicit, true)) {
+                    $explicit[] = $implied;
+                }
             }
+
+            return array_values(array_unique($explicit));
         }
         foreach (['dashboard', 'notifications'] as $implied) {
             if (!in_array($implied, $modules, true)) {

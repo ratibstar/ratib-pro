@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260803-oversight-bulk-v142');
+define('RATEB_ASSET_BUILD', '20260803-company-modules-nav-v143');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3246,6 +3246,40 @@ if (!function_exists('rateb_nav_enforce_company_modules')) {
     }
 }
 
+if (!function_exists('rateb_nav_module_company_id')) {
+    /** Resolve tenant company for nav module gating (agency / dedicated / ops context). */
+    function rateb_nav_module_company_id(): int
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $resolved = (int) rateb_resolve_ops_company_id();
+            if ($resolved > 0) {
+                return $resolved;
+            }
+        }
+        if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
+            $primary = (int) \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+            if ($primary > 0
+                && (!function_exists('rateb_ops_company_exists') || rateb_ops_company_exists($primary))) {
+                if (function_exists('rateb_sync_ops_session_to_company')) {
+                    rateb_sync_ops_session_to_company($primary);
+                }
+
+                return $primary;
+            }
+        }
+        $sessionCid = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($sessionCid > 0
+            && (!function_exists('rateb_ops_company_exists') || rateb_ops_company_exists($sessionCid))) {
+            return $sessionCid;
+        }
+
+        return 0;
+    }
+}
+
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {
@@ -3260,20 +3294,18 @@ if (!function_exists('rateb_nav_can')) {
                 return false;
             }
             if ($module !== '' && rateb_nav_enforce_company_modules()) {
-                $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
-                if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-                    $companyId = (int) rateb_resolve_ops_company_id();
+                $companyId = rateb_nav_module_company_id();
+                if ($companyId < 1) {
+                    return false;
                 }
-                if ($companyId > 0) {
-                    static $superModuleGate = [];
-                    $gateKey = $companyId . ':' . $module;
-                    if (!array_key_exists($gateKey, $superModuleGate)) {
-                        $superModuleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())
-                            ->companyHasModule($companyId, $module);
-                    }
+                static $superModuleGate = [];
+                $gateKey = $companyId . ':' . $module;
+                if (!array_key_exists($gateKey, $superModuleGate)) {
+                    $superModuleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())
+                        ->companyHasModule($companyId, $module);
+                }
 
-                    return $superModuleGate[$gateKey];
-                }
+                return $superModuleGate[$gateKey];
             }
 
             return true;
@@ -3284,7 +3316,7 @@ if (!function_exists('rateb_nav_can')) {
         if ($module === '') {
             return true;
         }
-        $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
+        $companyId = rateb_nav_module_company_id();
         if ($companyId < 1) {
             return false;
         }
@@ -3294,6 +3326,7 @@ if (!function_exists('rateb_nav_can')) {
             return $moduleGate[$gateKey];
         }
         $moduleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+
         return $moduleGate[$gateKey];
     }
 }
