@@ -180,6 +180,16 @@ final class ModulePageStatsService
 
     private function companyId(): ?int
     {
+        $route = '';
+        if (function_exists('rateb_current_erp_route')) {
+            $route = trim((string) rateb_current_erp_route(), '/');
+        }
+        // Platform oversight lists honour ?company_id= only — not ops session picker.
+        if ($route !== '' && str_starts_with($route, 'admin/oversight/')) {
+            $fromGet = max(0, (int) ($_GET['company_id'] ?? 0));
+            return $fromGet > 0 ? $fromGet : null;
+        }
+
         $cid = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
         if ($cid > 0) {
             return $cid;
@@ -238,7 +248,7 @@ final class ModulePageStatsService
                 ['label' => __('procurement_oversight'), 'value' => $this->intStr((int) ($menu['procurement'] ?? 0)), 'tone' => 'orange'],
                 ['label' => __('purchase_requests'), 'value' => $this->intStr((int) ($proc['purchase_requests'] ?? 0)), 'tone' => 'blue'],
                 ['label' => __('purchase_orders'), 'value' => $this->intStr((int) ($proc['purchase_orders'] ?? 0)), 'tone' => 'purple'],
-                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
         if (str_contains($route, 'inventory')) {
@@ -246,7 +256,7 @@ final class ModulePageStatsService
                 ['label' => __('inventory_oversight'), 'value' => $this->intStr((int) ($menu['inventory'] ?? 0)), 'tone' => 'orange'],
                 ['label' => __('inventory_audits'), 'value' => $this->intStr((int) ($summary['inventory_audit'] ?? 0)), 'tone' => 'blue'],
                 ['label' => __('warehouse_transfers'), 'value' => $this->intStr((int) ($summary['warehouse_transfer'] ?? 0)), 'tone' => 'teal'],
-                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
         if (str_contains($route, 'rfq')) {
@@ -254,21 +264,21 @@ final class ModulePageStatsService
                 ['label' => __('rfq_oversight'), 'value' => $this->intStr((int) ($menu['rfq'] ?? 0)), 'tone' => 'orange'],
                 ['label' => __('quotations'), 'value' => $this->intStr((int) ($summary['quotation'] ?? 0)), 'tone' => 'blue'],
                 ['label' => __('rfq'), 'value' => $this->intStr((int) ($summary['rfq'] ?? 0)), 'tone' => 'purple'],
-                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
         if (str_contains($route, 'supplier-evaluations')) {
             return $this->cards([
                 ['label' => __('supplier_evaluations_oversight'), 'value' => $this->intStr((int) ($menu['supplier_evaluations'] ?? 0)), 'tone' => 'orange'],
                 ['label' => __('supplier_evaluations'), 'value' => $this->intStr((int) ($summary['supplier_evaluation'] ?? 0)), 'tone' => 'blue'],
-                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
         if (str_contains($route, 'workflows')) {
             return $this->cards([
                 ['label' => __('workflow_definitions'), 'value' => $this->intStr($this->countRows('rateb_workflow_definitions', $filter)), 'tone' => 'blue'],
                 ['label' => __('pending_approvals'), 'value' => $this->intStr((int) ($menu['approvals'] ?? 0)), 'tone' => 'orange'],
-                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+                ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
 
@@ -278,7 +288,7 @@ final class ModulePageStatsService
             ['label' => __('inventory_oversight'), 'value' => $this->intStr((int) ($menu['inventory'] ?? 0)), 'tone' => 'teal'],
             ['label' => __('rfq_oversight'), 'value' => $this->intStr((int) ($menu['rfq'] ?? 0)), 'tone' => 'purple'],
             ['label' => __('supplier_evaluations_oversight'), 'value' => $this->intStr((int) ($menu['supplier_evaluations'] ?? 0)), 'tone' => 'green'],
-            ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($menu['total'] ?? 0)), 'tone' => 'red'],
+            ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
         ]);
     }
 

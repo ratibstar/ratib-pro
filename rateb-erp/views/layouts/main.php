@@ -1196,9 +1196,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             }
             if ($deferModulePageMetrics) {
                 $metricsQs = 'route=' . rawurlencode($erpRoute);
-                $opsCid = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
-                if ($opsCid > 0) {
-                    $metricsQs .= '&company_id=' . $opsCid;
+                $metricsCompanyId = 0;
+                if (str_starts_with($erpRoute, 'admin/oversight/')) {
+                    $metricsCompanyId = max(0, (int) ($_GET['company_id'] ?? 0));
+                } else {
+                    $metricsCompanyId = function_exists('rateb_resolve_ops_company_id')
+                        ? (int) rateb_resolve_ops_company_id()
+                        : 0;
+                }
+                if ($metricsCompanyId > 0) {
+                    $metricsQs .= '&company_id=' . $metricsCompanyId;
                 }
                 Rateb\App\Core\View::partial('module-page-stats', [
                     'async' => true,

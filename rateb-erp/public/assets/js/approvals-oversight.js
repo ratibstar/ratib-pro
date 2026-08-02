@@ -72,7 +72,7 @@
     function parseJsonResponse(res) {
         return res.json().then(function (data) {
             if (!res.ok || data.ok === false) {
-                var err = new Error(data.message || labels.error || 'Error');
+                var err = new Error(data.message || labels.error || 'حدث خطأ غير متوقع');
                 if (data.sql_error && data.message.indexOf(data.sql_error) === -1) {
                     err.message += ' — ' + data.sql_error;
                 }
@@ -279,7 +279,7 @@
             .then(parseJsonResponse)
             .then(function (data) {
                 if (!data.detail) {
-                    throw new Error(labels.error || 'Error');
+                    throw new Error(labels.error || 'حدث خطأ غير متوقع');
                 }
                 body.innerHTML = renderDetailBody(data.detail);
                 applyDetailToRow(key, data.detail);
@@ -290,7 +290,7 @@
                 }
             })
             .catch(function (err) {
-                var msg = err && err.message ? String(err.message) : (labels.error || 'Error');
+                var msg = err && err.message ? String(err.message) : (labels.error || 'حدث خطأ غير متوقع');
                 try {
                     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                         msg = 'التفاصيل تحتاج اتصال أو زيارة الصفحة وأنت متصل مرة لحفظها أوفلاين. استخدم زر التعديل إن كان متاحاً.';
@@ -606,11 +606,11 @@
     function postAction(action, key) {
         var row = dataRow(key);
         if (!row || !key) {
-            flashToast(labels.error || 'Error', 'danger');
+            flashToast(labels.error || 'حدث خطأ غير متوقع', 'danger');
             return;
         }
         if (row.getAttribute('data-processed') === '1' && (action === 'approve' || action === 'reject')) {
-            flashToast(labels.already_processed || labels.error || 'Error', 'warning');
+            flashToast(labels.already_processed || labels.error || 'حدث خطأ غير متوقع', 'warning');
             loadDetail(key);
             return;
         }
@@ -624,7 +624,7 @@
             url = urlMap[action];
         }
         if (!url) {
-            flashToast(labels.error || 'Error', 'danger');
+            flashToast(labels.error || 'حدث خطأ غير متوقع', 'danger');
             return;
         }
 
@@ -685,7 +685,7 @@
                         syncRowAfterAction(action, key, {});
                     }
                 } catch (eQ) {
-                    flashToast(labels.error || 'Error', 'danger');
+                    flashToast(labels.error || 'حدث خطأ غير متوقع', 'danger');
                 } finally {
                     setRowBusy(key, false);
                 }
@@ -738,7 +738,7 @@
                         queueOfflineDecision();
                         return;
                     }
-                    flashToast(msg || (labels.error || 'Error'), 'danger');
+                    flashToast(msg || (labels.error || 'حدث خطأ غير متوقع'), 'danger');
                     setRowBusy(key, false);
                 })
                 .finally(function () {

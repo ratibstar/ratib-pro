@@ -8,6 +8,9 @@ if (is_string($error) && $error !== '') {
     if ($platformMsg !== '' && (str_contains($error, 'rateb.sa') || $error === $platformMsg)) {
         $error = null;
     }
+    if ($error !== null && strtolower(trim($error)) === 'error') {
+        $error = function_exists('__') ? (string) __('system_error_generic') : $error;
+    }
 }
 ?>
 <?php if ($success) { ?>
