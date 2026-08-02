@@ -397,10 +397,12 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 continue;
             }
             $decoded = json_decode((string) ($plan['modules'] ?? '[]'), true);
+            $slug = strtolower(trim((string) ($plan['slug'] ?? '')));
+            $tierMods = $slug !== '' ? \Rateb\App\Services\PlanLimitService::modulesForSlug($slug) : [];
             $planPresets[$planId] = [
                 'modules' => is_array($decoded) && $decoded !== []
                     ? array_values(array_filter(array_map('strval', $decoded)))
-                    : \Rateb\App\Services\PlanLimitService::defaultModules(),
+                    : $tierMods,
                 'max_users' => max(1, (int) ($plan['max_users'] ?? 10)),
                 'max_storage_mb' => max(128, (int) ($plan['max_storage_mb'] ?? 1024)),
                 'max_branches' => max(1, (int) ($plan['max_branches'] ?? 10)),

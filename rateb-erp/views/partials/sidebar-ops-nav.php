@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Company operations nav — unified lean product set (online = offline / branch).
- * No eproc enterprise pack, no CRM/recruitment/projects/mfg/… platform sidebars.
+ * Enterprise modules (recruitment, CRM, projects, …) appear when enabled in company permissions.
  */
 if (function_exists('rateb_bootstrap_ops_tenant')) {
     rateb_bootstrap_ops_tenant();
@@ -44,6 +44,52 @@ $opsSection(__('suppliers'), [
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
 require RATEB_ROOT . '/views/partials/sidebar-hr-nav.php';
+$opsSection(__('recruitment'), [
+    ['recruitment', 'recruitment', 'fa-user-plus', 'recruitment'],
+    ['recruitment/candidates', 'recruitment_candidates', 'fa-users', 'recruitment'],
+    ['recruitment/agencies', 'recruitment_agencies', 'fa-building', 'recruitment'],
+], 'fa-user-plus');
+$opsSection(__('crm'), [
+    ['crm', 'crm', 'fa-handshake', 'crm'],
+    ['crm/leads', 'crm_leads', 'fa-user-tag', 'crm'],
+    ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm'],
+    ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm'],
+], 'fa-handshake');
+$opsSection(__('projects'), [
+    ['projects', 'projects', 'fa-diagram-project', 'projects'],
+    ['projects/list', 'projects_list', 'fa-list', 'projects'],
+    ['projects/tasks', 'project_tasks', 'fa-tasks', 'projects', 'projects.tasks'],
+], 'fa-diagram-project');
+$opsSection(__('approval_platform'), [
+    ['approvals', 'approval_platform', 'fa-check-double', 'approval'],
+    ['approvals/pending', 'approval_pending', 'fa-clock', 'approval', 'approval.approve'],
+    ['approvals/requests', 'approval_requests', 'fa-file-signature', 'approval'],
+    ['approvals/templates', 'approval_templates', 'fa-file-lines', 'approval'],
+], 'fa-check-double');
+$opsSection(__('manufacturing_platform'), [
+    ['mfg', 'manufacturing_platform', 'fa-industry', 'manufacturing'],
+    ['mfg/products', 'mfg_products', 'fa-box', 'manufacturing'],
+    ['mfg/boms', 'mfg_boms', 'fa-list-ul', 'manufacturing', 'manufacturing.bom'],
+    ['mfg/production-orders', 'mfg_production_orders', 'fa-gears', 'manufacturing', 'manufacturing.shopfloor'],
+], 'fa-industry');
+$opsSection(__('payroll_platform'), [
+    ['payroll', 'payroll_platform', 'fa-money-check-dollar', 'payroll'],
+    ['payroll/batches', 'payroll_batches', 'fa-layer-group', 'payroll'],
+    ['payroll/payslips', 'payroll_payslips', 'fa-file-invoice', 'payroll'],
+    ['payroll/cycles', 'payroll_cycles', 'fa-rotate', 'payroll'],
+], 'fa-money-check-dollar');
+$opsSection(__('quality_platform'), [
+    ['qms', 'quality_platform', 'fa-award', 'quality'],
+    ['qms/inspections', 'quality_inspections', 'fa-clipboard-check', 'quality'],
+    ['qms/nonconformities', 'quality_nonconformities', 'fa-triangle-exclamation', 'quality'],
+    ['qms/corrective-actions', 'quality_corrective_actions', 'fa-wrench', 'quality', 'quality.corrective'],
+], 'fa-award');
+$opsSection(__('bi_platform'), [
+    ['bi', 'bi_platform', 'fa-chart-line', 'bi'],
+    ['bi/dashboards', 'bi_dashboards', 'fa-chart-pie', 'bi'],
+    ['bi/kpis', 'bi_kpis', 'fa-gauge-high', 'bi'],
+    ['bi/reports', 'bi_reports', 'fa-file-chart-column', 'bi'],
+], 'fa-chart-line');
 $opsSection(__('accounting_module'), [
     ['accounting', 'accounting_dashboard', 'fa-gauge-high', 'accounting'],
     ['accounting/platform', 'accounting_platform', 'fa-building-columns', 'accounting', 'accounting.view'],
@@ -92,24 +138,24 @@ if (!rateb_is_super_admin()
 ) {
     // Agent Apps UI is SuperAdmin/platform-only today — omit from tenant sidebar.
     $accessNavLinks = [
-        ['access-control', 'access_control', 'fa-shield-halved', '', 'access.manage'],
-        ['access-control/matrix', 'permission_matrix', 'fa-table-cells', '', 'access.manage'],
-        ['users', 'users', 'fa-users', '', 'access.manage'],
-        ['roles', 'roles', 'fa-user-shield', '', 'access.manage'],
+        ['access-control', 'access_control', 'fa-shield-halved', 'access_control', 'access.manage'],
+        ['access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access_control', 'access.manage'],
+        ['users', 'users', 'fa-users', 'access_control', 'access.manage'],
+        ['roles', 'roles', 'fa-user-shield', 'access_control', 'access.manage'],
     ];
     if (!function_exists('rateb_tenant_permission_catalog_locked') || !rateb_tenant_permission_catalog_locked()) {
-        $accessNavLinks[] = ['permissions', 'permissions', 'fa-key', '', 'access.manage'];
+        $accessNavLinks[] = ['permissions', 'permissions', 'fa-key', 'access_control', 'access.manage'];
     }
     $accessNavLinks = array_merge($accessNavLinks, [
-        ['audit-logs', 'audit_logs', 'fa-clipboard-list', '', 'settings.manage'],
-        ['support-tickets', 'support_tickets', 'fa-life-ring', '', 'settings.manage'],
-        ['email-templates', 'email_templates', 'fa-envelope', '', 'settings.manage'],
-        ['sms-templates', 'sms_templates', 'fa-sms', '', 'settings.manage'],
+        ['audit-logs', 'audit_logs', 'fa-clipboard-list', 'access_control', 'settings.manage'],
+        ['support-tickets', 'support_tickets', 'fa-life-ring', 'access_control', 'settings.manage'],
+        ['email-templates', 'email_templates', 'fa-envelope', 'access_control', 'settings.manage'],
+        ['sms-templates', 'sms_templates', 'fa-sms', 'access_control', 'settings.manage'],
     ]);
     $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
 }
-$opsLink('notifications', 'notifications', 'fa-bell');
-$opsLink('profile', 'profile', 'fa-user-gear');
+$opsLink('notifications', 'notifications', 'fa-bell', 'notifications');
+$opsLink('profile', 'profile', 'fa-user-gear', 'profile');
 if (rateb_can('website.view') || rateb_can('website.manage') || rateb_is_super_admin()) {
     $opsSection(__('website') ?: 'Website', [
         ['website', 'website', 'fa-globe', 'website', 'website.view'],

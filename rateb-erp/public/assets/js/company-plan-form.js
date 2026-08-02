@@ -61,10 +61,6 @@
         if (storageLimit) {
             storageLimit.addEventListener('input', clearCustomSync);
         }
-
-        if (planSelect.value) {
-            applyPlan(planSelect.value, false);
-        }
     }
 
     if (document.readyState === 'loading') {
