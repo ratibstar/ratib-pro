@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260803-oversight-bulk-v140');
+define('RATEB_ASSET_BUILD', '20260803-oversight-bulk-v141');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1622,6 +1622,10 @@ if (!function_exists('rateb_can')) {
     function rateb_can(string $slug): bool
     {
         if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
+        if (class_exists(\Rateb\App\Core\SessionManager::class)
+            && \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
             return true;
         }
         $userId = (int) ($_SESSION['rateb_user_id'] ?? 0);

@@ -6,8 +6,7 @@
 /** @var array{company_id:int,status:string,date_from:string,date_to:string} $filters */
 $typeFilter = (string) ($typeFilter ?? '');
 $csrfToken = (string) ($csrf ?? '');
-$canBulk = rateb_is_super_admin()
-    && (rateb_can('workflows.manage') || rateb_can('oversight.approve'));
+$canBulk = rateb_is_super_admin();
 $colSpan = $canBulk ? 6 : 5;
 Rateb\App\Core\View::partial('admin-oversight-approvals-banner');
 $approvalsConfig = [
