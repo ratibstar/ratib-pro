@@ -1151,6 +1151,11 @@
         try {
             ensureMailDnsPanel();
         } catch (eMailDns) { /* ignore */ }
+        try {
+            if (typeof root.ratebAgencyUpdatesBoot === 'function') {
+                root.ratebAgencyUpdatesBoot();
+            }
+        } catch (eAgencyUp) { /* ignore */ }
     }
 
     function setMainNavBusy(busy) {

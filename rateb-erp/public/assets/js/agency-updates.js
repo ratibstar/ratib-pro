@@ -1,39 +1,14 @@
-(function () {
+/**
+ * Agency ERP push/sync control — soft-nav safe (re-boot on rateb:nav:afterEnter).
+ */
+(function (root) {
     'use strict';
 
-    var cfg = document.getElementById('erpAgencyUpdatesConfig');
-    if (!cfg) return;
-
-    var apiUrl = cfg.getAttribute('data-api-url') || '';
-    var linkUrl = cfg.getAttribute('data-link-url') || '';
-    var syncUrl = cfg.getAttribute('data-sync-url') || '';
-    var restoreAdminUrl = cfg.getAttribute('data-restore-admin-url') || '';
-    var resetDataUrl = cfg.getAttribute('data-reset-data-url') || '';
-    var csrfToken = cfg.getAttribute('data-csrf') || '';
-    var table = document.getElementById('erpAgencyUpdatesTable');
-    var filterCompany = document.getElementById('erpAgencyFilterCompany');
-    var selectionBadge = document.getElementById('erpSelectionBadge');
-    var btnSyncSelected = document.getElementById('erpSyncRunSelected');
-    var btnPushSelected = document.getElementById('erpUpdateRunSelected');
-    var btnFullSelected = document.getElementById('erpFullDeploySelected');
-    var btnRestoreSelected = document.getElementById('erpRestoreAdminSelected');
-    var btnResetSelected = document.getElementById('erpResetDataSelected');
-    var btnResetAll = document.getElementById('erpResetDataAllReady');
-    var btnSyncAll = document.getElementById('erpSyncRunAllReady');
-    var btnPushAll = document.getElementById('erpUpdateRunAllReady');
-    var btnFullAll = document.getElementById('erpFullDeployAllReady');
-    var btnPushSub = document.getElementById('erpUpdateRunSubscribed');
-    var syncConfirmInput = document.getElementById('erpSyncConfirmInput');
-    var resetConfirmInput = document.getElementById('erpResetConfirmInput');
-    var includePlatform = document.getElementById('erpUpdateIncludePlatform');
-    var progress = document.getElementById('erpUpdateProgress');
-    var resultsBox = document.getElementById('erpUpdateResults');
-    var logEl = document.getElementById('erpUpdateLog');
-    var bulkLabel = selectionBadge ? selectionBadge.textContent.replace(/^\d+\s*/, '') : '';
+    var state = {};
 
     function visibleRows() {
-        if (!table) return [];
-        return Array.prototype.slice.call(table.querySelectorAll('tbody tr.erp-agency-row')).filter(function (tr) {
+        if (!state.table) return [];
+        return Array.prototype.slice.call(state.table.querySelectorAll('tbody tr.erp-agency-row')).filter(function (tr) {
             return tr.style.display !== 'none';
         });
     }
@@ -51,11 +26,11 @@
     }
 
     function syncConfirmValue() {
-        return syncConfirmInput ? String(syncConfirmInput.value || '').trim().toUpperCase() : '';
+        return state.syncConfirmInput ? String(state.syncConfirmInput.value || '').trim().toUpperCase() : '';
     }
 
     function resetConfirmValue() {
-        return resetConfirmInput ? String(resetConfirmInput.value || '').trim().toUpperCase() : '';
+        return state.resetConfirmInput ? String(state.resetConfirmInput.value || '').trim().toUpperCase() : '';
     }
 
     function resetOk() {
@@ -67,11 +42,11 @@
     }
 
     function applyCompanyFilter() {
-        if (!table || !filterCompany) return;
-        var val = filterCompany.value;
+        if (!state.table || !state.filterCompany) return;
+        var val = state.filterCompany.value;
         var total = 0;
         var visible = 0;
-        table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
+        state.table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
             total++;
             var coId = String(tr.getAttribute('data-erp-company-id') || '0');
             var show = true;
@@ -91,8 +66,8 @@
     }
 
     function setRowChecks(predicate) {
-        if (!table) return;
-        table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
+        if (!state.table) return;
+        state.table.querySelectorAll('tbody tr.erp-agency-row').forEach(function (tr) {
             if (tr.style.display === 'none') return;
             var cb = tr.querySelector('[data-rateb-row-check]');
             if (cb) cb.checked = !!predicate(tr);
@@ -103,14 +78,14 @@
     function syncUi() {
         var ids = selectedIds();
         var count = ids.length;
-        if (selectionBadge) {
-            selectionBadge.textContent = count + ' ' + bulkLabel.trim();
+        if (state.selectionBadge) {
+            state.selectionBadge.textContent = count + ' ' + (state.bulkLabel || '').trim();
         }
         visibleRows().forEach(function (tr) {
             var cb = tr.querySelector('[data-rateb-row-check]');
             tr.classList.toggle('table-active', !!(cb && cb.checked));
         });
-        var selectAll = table ? table.querySelector('[data-rateb-select-all]') : null;
+        var selectAll = state.table ? state.table.querySelector('[data-rateb-select-all]') : null;
         var vis = boxes();
         if (selectAll) {
             selectAll.indeterminate = count > 0 && count < vis.length;
@@ -118,27 +93,27 @@
         }
         var hasSel = count > 0;
         var syncReady = syncOk();
-        [btnSyncSelected, btnFullSelected].forEach(function (b) {
+        [state.btnSyncSelected, state.btnFullSelected].forEach(function (b) {
             if (b) b.disabled = !hasSel || !syncReady;
         });
-        if (btnPushSelected) {
-            btnPushSelected.disabled = !hasSel && !(includePlatform && includePlatform.checked);
+        if (state.btnPushSelected) {
+            state.btnPushSelected.disabled = !hasSel && !(state.includePlatform && state.includePlatform.checked);
         }
-        if (btnRestoreSelected) {
-            btnRestoreSelected.disabled = !hasSel;
+        if (state.btnRestoreSelected) {
+            state.btnRestoreSelected.disabled = !hasSel;
         }
-        if (btnResetSelected) {
-            btnResetSelected.disabled = !hasSel;
+        if (state.btnResetSelected) {
+            state.btnResetSelected.disabled = !hasSel;
         }
-        [btnSyncAll, btnFullAll].forEach(function (b) {
+        [state.btnSyncAll, state.btnFullAll].forEach(function (b) {
             if (b) b.disabled = !syncReady;
         });
     }
 
     function setBusy(busy) {
         [
-            btnSyncSelected, btnPushSelected, btnFullSelected, btnRestoreSelected, btnResetSelected,
-            btnSyncAll, btnPushAll, btnFullAll, btnPushSub, btnResetAll
+            state.btnSyncSelected, state.btnPushSelected, state.btnFullSelected, state.btnRestoreSelected, state.btnResetSelected,
+            state.btnSyncAll, state.btnPushAll, state.btnFullAll, state.btnPushSub, state.btnResetAll
         ].forEach(function (b) {
             if (b) b.disabled = !!busy;
         });
@@ -146,14 +121,14 @@
     }
 
     function showProgress(msg) {
-        if (!progress) return;
-        progress.textContent = msg;
-        progress.classList.remove('d-none');
+        if (!state.progress) return;
+        state.progress.textContent = msg;
+        state.progress.classList.remove('d-none');
     }
 
     function appendLog(text) {
-        if (!logEl) return;
-        logEl.textContent = logEl.textContent ? logEl.textContent + '\n' + text : text;
+        if (!state.logEl) return;
+        state.logEl.textContent = state.logEl.textContent ? state.logEl.textContent + '\n' + text : text;
     }
 
     function formatResults(data, reset) {
@@ -176,11 +151,7 @@
             }
             (r.log || []).forEach(function (ln) { lines.push(ln); });
         });
-        var block = lines.join('\n');
-        if (reset) {
-            return block;
-        }
-        return block;
+        return lines.join('\n');
     }
 
     function postJson(url, payload) {
@@ -193,7 +164,7 @@
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-Token': csrfToken
+                'X-CSRF-Token': state.csrfToken
             },
             body: JSON.stringify(payload)
         }).then(function (res) {
@@ -213,33 +184,33 @@
     }
 
     function runPush(payload, confirmMsg, resetLog, manageBusy) {
-        if (confirmMsg && !window.confirm(confirmMsg)) {
+        if (confirmMsg && !root.confirm(confirmMsg)) {
             return Promise.resolve(null);
         }
         if (manageBusy !== false) setBusy(true);
-        showProgress(cfg.getAttribute('data-running') || 'Running…');
-        if (resetLog && resultsBox) {
-            resultsBox.classList.remove('d-none');
-            if (logEl) logEl.textContent = '';
+        showProgress(state.cfg.getAttribute('data-running') || 'Running…');
+        if (resetLog && state.resultsBox) {
+            state.resultsBox.classList.remove('d-none');
+            if (state.logEl) state.logEl.textContent = '';
         }
-        return postJson(apiUrl, payload)
+        return postJson(state.apiUrl, payload)
             .then(function (pack) {
                 var data = pack.body || {};
                 var block = formatResults(data, true);
-                if (resetLog && logEl) {
-                    logEl.textContent = block;
-                } else if (logEl) {
+                if (resetLog && state.logEl) {
+                    state.logEl.textContent = block;
+                } else if (state.logEl) {
                     appendLog('\n--- DB migrations ---\n' + block);
                 }
                 var msg = data.success
-                    ? (cfg.getAttribute('data-done-ok') || 'Done.')
-                    : (cfg.getAttribute('data-done-errors') || 'Done with errors.');
+                    ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
+                    : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.');
                 if (!pack.ok && data.message) msg = data.message;
                 showProgress(msg);
                 return data;
             })
             .catch(function (err) {
-                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
                 return null;
             })
             .finally(function () {
@@ -249,37 +220,37 @@
 
     function runSync(payload, confirmMsg, resetLog, manageBusy) {
         if (!syncOk()) {
-            showProgress(cfg.getAttribute('data-sync-confirm-required') || 'Type SYNC first.');
+            showProgress(state.cfg.getAttribute('data-sync-confirm-required') || 'Type SYNC first.');
             return Promise.resolve(null);
         }
-        if (confirmMsg && !window.confirm(confirmMsg)) {
+        if (confirmMsg && !root.confirm(confirmMsg)) {
             return Promise.resolve(null);
         }
         payload.confirm = 'SYNC';
         if (manageBusy !== false) setBusy(true);
-        showProgress(cfg.getAttribute('data-sync-running') || 'Syncing…');
-        if (resetLog && resultsBox) {
-            resultsBox.classList.remove('d-none');
-            if (logEl) logEl.textContent = '';
+        showProgress(state.cfg.getAttribute('data-sync-running') || 'Syncing…');
+        if (resetLog && state.resultsBox) {
+            state.resultsBox.classList.remove('d-none');
+            if (state.logEl) state.logEl.textContent = '';
         }
-        return postJson(syncUrl, payload)
+        return postJson(state.syncUrl, payload)
             .then(function (pack) {
                 var data = pack.body || {};
                 var block = formatResults(data, true);
-                if (resetLog && logEl) {
-                    logEl.textContent = block;
-                } else if (logEl) {
+                if (resetLog && state.logEl) {
+                    state.logEl.textContent = block;
+                } else if (state.logEl) {
                     appendLog('\n--- File sync ---\n' + block);
                 }
                 var msg = data.success
-                    ? (cfg.getAttribute('data-done-ok') || 'Done.')
-                    : (cfg.getAttribute('data-done-errors') || 'Done with errors.');
+                    ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
+                    : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.');
                 if (!pack.ok && data.message) msg = data.message;
                 showProgress(msg);
                 return data;
             })
             .catch(function (err) {
-                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
                 return null;
             })
             .finally(function () {
@@ -288,32 +259,31 @@
     }
 
     function pushPayloadFromSelection() {
-        var ids = selectedIds();
         return {
-            agency_ids: ids,
-            include_platform: !!(includePlatform && includePlatform.checked)
+            agency_ids: selectedIds(),
+            include_platform: !!(state.includePlatform && state.includePlatform.checked)
         };
     }
 
     function runFullDeploy(scope, confirmMsg) {
         if (!syncOk()) {
-            showProgress(cfg.getAttribute('data-sync-confirm-required') || 'Type SYNC first.');
+            showProgress(state.cfg.getAttribute('data-sync-confirm-required') || 'Type SYNC first.');
             return;
         }
         var syncPayload = scope ? { scope: scope, confirm: 'SYNC' } : { agency_ids: selectedIds(), confirm: 'SYNC' };
         var pushPayload = scope
-            ? { scope: scope, include_platform: !!(includePlatform && includePlatform.checked) }
+            ? { scope: scope, include_platform: !!(state.includePlatform && state.includePlatform.checked) }
             : pushPayloadFromSelection();
         if (!scope && selectedIds().length === 0 && !pushPayload.include_platform) {
-            showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
+            showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
             return;
         }
-        if (confirmMsg && !window.confirm(confirmMsg)) return;
+        if (confirmMsg && !root.confirm(confirmMsg)) return;
 
         setBusy(true);
-        showProgress(cfg.getAttribute('data-full-running') || 'Full deploy…');
-        if (resultsBox) resultsBox.classList.remove('d-none');
-        if (logEl) logEl.textContent = '';
+        showProgress(state.cfg.getAttribute('data-full-running') || 'Full deploy…');
+        if (state.resultsBox) state.resultsBox.classList.remove('d-none');
+        if (state.logEl) state.logEl.textContent = '';
 
         runSync(syncPayload, null, true, false)
             .then(function (syncData) {
@@ -325,144 +295,6 @@
             .finally(function () {
                 setBusy(false);
             });
-    }
-
-    if (table) {
-        table.addEventListener('change', function (e) {
-            var t = e.target;
-            if (!t) return;
-            if (t.getAttribute('data-rateb-select-all') !== null) {
-                var on = !!t.checked;
-                boxes().forEach(function (cb) { cb.checked = on; });
-            } else if (t.getAttribute('data-rateb-row-check') === null) {
-                return;
-            }
-            syncUi();
-        });
-
-        table.addEventListener('click', function (e) {
-            if (e.target.closest('a, button, .dropdown-menu')) {
-                return;
-            }
-            var tr = e.target.closest('tr.erp-agency-row');
-            if (!tr || e.target.closest('[data-rateb-row-check]')) return;
-            var cb = tr.querySelector('[data-rateb-row-check]');
-            if (cb) {
-                cb.checked = !cb.checked;
-                syncUi();
-            }
-        });
-    }
-
-    if (filterCompany) {
-        filterCompany.addEventListener('change', applyCompanyFilter);
-    }
-    if (syncConfirmInput) {
-        syncConfirmInput.addEventListener('input', syncUi);
-        syncConfirmInput.addEventListener('change', syncUi);
-    }
-    if (resetConfirmInput) {
-        resetConfirmInput.addEventListener('input', syncUi);
-        resetConfirmInput.addEventListener('change', syncUi);
-    }
-    if (includePlatform) {
-        includePlatform.addEventListener('change', syncUi);
-    }
-
-    var btnSelectAll = document.getElementById('erpSelectAllRows');
-    var btnSelectReady = document.getElementById('erpSelectReadyRows');
-    var btnSelectSub = document.getElementById('erpSelectSubscribedRows');
-    var btnSelectNone = document.getElementById('erpSelectNoneRows');
-
-    if (btnSelectAll) {
-        btnSelectAll.addEventListener('click', function () {
-            setRowChecks(function () { return true; });
-        });
-    }
-    if (btnSelectReady) {
-        btnSelectReady.addEventListener('click', function () {
-            setRowChecks(function (tr) { return tr.getAttribute('data-ready') === '1'; });
-        });
-    }
-    if (btnSelectSub) {
-        btnSelectSub.addEventListener('click', function () {
-            setRowChecks(function (tr) { return tr.getAttribute('data-subscribed') === '1'; });
-        });
-    }
-    if (btnSelectNone) {
-        btnSelectNone.addEventListener('click', function () {
-            setRowChecks(function () { return false; });
-        });
-    }
-
-    if (btnSyncSelected) {
-        btnSyncSelected.addEventListener('click', function () {
-            var ids = selectedIds();
-            if (!ids.length) {
-                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                return;
-            }
-            runSync({ agency_ids: ids }, cfg.getAttribute('data-confirm-sync-selected'), true);
-        });
-    }
-    if (btnPushSelected) {
-        btnPushSelected.addEventListener('click', function () {
-            var payload = pushPayloadFromSelection();
-            if (!payload.agency_ids.length && !payload.include_platform) {
-                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                return;
-            }
-            runPush(payload, cfg.getAttribute('data-confirm-selected'), true);
-        });
-    }
-    if (btnFullSelected) {
-        btnFullSelected.addEventListener('click', function () {
-            runFullDeploy(null, cfg.getAttribute('data-confirm-full-selected'));
-        });
-    }
-    if (btnRestoreSelected) {
-        btnRestoreSelected.addEventListener('click', function () {
-            var ids = selectedIds();
-            if (!ids.length) {
-                showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                return;
-            }
-            if (!window.confirm(cfg.getAttribute('data-confirm-restore-selected') || 'Restore admin@rateb.sa?')) {
-                return;
-            }
-            setBusy(true);
-            showProgress(cfg.getAttribute('data-restore-running') || 'Restoring…');
-            if (resultsBox) {
-                resultsBox.classList.remove('d-none');
-                if (logEl) logEl.textContent = '';
-            }
-            postJson(restoreAdminUrl, { agency_ids: ids })
-                .then(function (pack) {
-                    var data = pack.body || {};
-                    var lines = ['Restore admin@rateb.sa / password'];
-                    lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
-                    (data.results || []).forEach(function (r) {
-                        lines.push('');
-                        lines.push('=== Agency #' + (r.agency_id || '?') + ' ===');
-                        if (!r.ok) {
-                            lines.push('ERROR: ' + (r.error || 'failed'));
-                            return;
-                        }
-                        var rep = r.report || {};
-                        (rep.actions || []).forEach(function (a) { lines.push(a); });
-                        lines.push('restored_users: ' + (rep.restored_users || 0));
-                        lines.push('password_hashes_reset: ' + (rep.password_hashes_reset || 0));
-                    });
-                    if (logEl) logEl.textContent = lines.join('\n');
-                    showProgress(data.success
-                        ? (cfg.getAttribute('data-done-ok') || 'Done.')
-                        : (cfg.getAttribute('data-done-errors') || 'Done with errors.'));
-                })
-                .catch(function (err) {
-                    showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
-                })
-                .then(function () { setBusy(false); });
-        });
     }
 
     function formatResetResults(data) {
@@ -528,44 +360,44 @@
             }
             if (verifySite) {
                 verifySite = verifySite.replace(/\/$/, '') + '/rateb-erp/public/admin';
-                lines.push((cfg.getAttribute('data-reset-verify-site') || 'Verify on agency site: %s').replace('%s', verifySite));
+                lines.push((state.cfg.getAttribute('data-reset-verify-site') || 'Verify on agency site: %s').replace('%s', verifySite));
             }
-            lines.push(cfg.getAttribute('data-reset-logout-hint') || 'Log out and log in again on the agency site, then verify lists are empty.');
-            lines.push(cfg.getAttribute('data-reset-shell-note') || '');
+            lines.push(state.cfg.getAttribute('data-reset-logout-hint') || 'Log out and log in again on the agency site, then verify lists are empty.');
+            lines.push(state.cfg.getAttribute('data-reset-shell-note') || '');
         });
         return lines.join('\n');
     }
 
     function runReset(payload, confirmMsg) {
         if (!resetOk()) {
-            showProgress(cfg.getAttribute('data-reset-confirm-required') || 'Type RESET-DATA first.');
+            showProgress(state.cfg.getAttribute('data-reset-confirm-required') || 'Type RESET-DATA first.');
             return Promise.resolve(null);
         }
-        if (confirmMsg && !window.confirm(confirmMsg)) {
+        if (confirmMsg && !root.confirm(confirmMsg)) {
             return Promise.resolve(null);
         }
         payload.confirm = 'RESET-DATA';
         setBusy(true);
-        showProgress(cfg.getAttribute('data-reset-running') || 'Resetting…');
-        if (resultsBox) {
-            resultsBox.classList.remove('d-none');
-            if (logEl) logEl.textContent = '';
+        showProgress(state.cfg.getAttribute('data-reset-running') || 'Resetting…');
+        if (state.resultsBox) {
+            state.resultsBox.classList.remove('d-none');
+            if (state.logEl) state.logEl.textContent = '';
         }
-        return postJson(resetDataUrl, payload)
+        return postJson(state.resetDataUrl, payload)
             .then(function (pack) {
                 var data = pack.body || {};
-                if (logEl) {
-                    logEl.textContent = formatResetResults(data);
+                if (state.logEl) {
+                    state.logEl.textContent = formatResetResults(data);
                 }
                 var msg = data.success
-                    ? (cfg.getAttribute('data-done-ok') || 'Done.')
-                    : (cfg.getAttribute('data-done-errors') || 'Done with errors.');
+                    ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
+                    : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.');
                 if (!pack.ok && data.message) msg = data.message;
                 showProgress(msg);
                 return data;
             })
             .catch(function (err) {
-                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
                 return null;
             })
             .finally(function () {
@@ -573,10 +405,19 @@
             });
     }
 
+    function resetPlatformCompanyId() {
+        var sel = document.getElementById('erpAgencyFilterCompany');
+        if (!sel) {
+            return 0;
+        }
+        var value = parseInt(String(sel.value || ''), 10);
+        return value > 0 ? value : 0;
+    }
+
     function triggerResetSelected() {
         var ids = selectedIds();
         if (!ids.length) {
-            showProgress(cfg.getAttribute('data-select-first') || 'Select agencies first.');
+            showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
             return;
         }
         var payload = { agency_ids: ids };
@@ -588,14 +429,14 @@
                 payload.platform_company_id = platformCompanyId;
             }
         }
-        runReset(payload, cfg.getAttribute('data-confirm-reset-selected'));
+        runReset(payload, state.cfg.getAttribute('data-confirm-reset-selected'));
     }
 
-    function triggerResetRow(agencyId, agencyName, siteUrl) {
+    function triggerResetRow(agencyId, agencyName) {
         if (agencyId < 1) {
             return;
         }
-        var msg = (cfg.getAttribute('data-confirm-reset-row') || 'Reset ERP data for %s?')
+        var msg = (state.cfg.getAttribute('data-confirm-reset-row') || 'Reset ERP data for %s?')
             .replace('%s', agencyName || ('#' + agencyId));
         var payload = { agency_ids: [agencyId] };
         var row = document.querySelector('.erp-agency-row[data-agency-id="' + agencyId + '"]');
@@ -615,97 +456,281 @@
         if (platformCompanyId > 0) {
             payload.platform_company_id = platformCompanyId;
         }
-        runReset(payload, cfg.getAttribute('data-confirm-reset-all'));
-    }
-
-    function resetPlatformCompanyId() {
-        var sel = document.getElementById('erpAgencyFilterCompany');
-        if (!sel) {
-            return 0;
-        }
-        var value = parseInt(String(sel.value || ''), 10);
-        return value > 0 ? value : 0;
-    }
-
-    if (btnResetSelected) {
-        btnResetSelected.addEventListener('click', triggerResetSelected);
-    }
-    if (btnResetAll) {
-        btnResetAll.addEventListener('click', triggerResetAllReady);
-    }
-    document.querySelectorAll('.erp-reset-row-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var agencyId = parseInt(btn.getAttribute('data-agency-id') || '0', 10);
-            var agencyName = btn.getAttribute('data-agency-name') || '';
-            triggerResetRow(agencyId, agencyName, btn.getAttribute('data-site-url') || '');
-        });
-    });
-    window.__erpAgencyResetSelected = triggerResetSelected;
-    window.__erpAgencyResetAllReady = triggerResetAllReady;
-    if (btnSyncAll) {
-        btnSyncAll.addEventListener('click', function () {
-            runSync({ scope: 'all_ready' }, cfg.getAttribute('data-confirm-sync-all'), true);
-        });
-    }
-    if (btnPushAll) {
-        btnPushAll.addEventListener('click', function () {
-            runPush({
-                scope: 'all_ready',
-                include_platform: !!(includePlatform && includePlatform.checked)
-            }, cfg.getAttribute('data-confirm-all'), true);
-        });
-    }
-    if (btnFullAll) {
-        btnFullAll.addEventListener('click', function () {
-            runFullDeploy('all_ready', cfg.getAttribute('data-confirm-full-all'));
-        });
-    }
-    if (btnPushSub) {
-        btnPushSub.addEventListener('click', function () {
-            runPush({
-                scope: 'all_subscribed',
-                include_platform: !!(includePlatform && includePlatform.checked)
-            }, cfg.getAttribute('data-confirm-subscribed'), true);
-        });
+        runReset(payload, state.cfg.getAttribute('data-confirm-reset-all'));
     }
 
     function linkAgency(agencyId, companyId) {
-        if (!linkUrl || agencyId < 1 || companyId < 1) return;
-        if (!window.confirm(cfg.getAttribute('data-confirm-link') || 'Link?')) return;
+        if (!state.linkUrl || agencyId < 1 || companyId < 1) return;
+        if (!root.confirm(state.cfg.getAttribute('data-confirm-link') || 'Link?')) return;
         setBusy(true);
-        postJson(linkUrl, { agency_id: agencyId, company_id: companyId })
+        postJson(state.linkUrl, { agency_id: agencyId, company_id: companyId })
             .then(function (pack) {
                 if (pack.ok && pack.body && pack.body.success) {
-                    window.location.reload();
+                    root.location.reload();
                     return;
                 }
-                showProgress((pack.body && pack.body.message) ? pack.body.message : (cfg.getAttribute('data-request-failed') || 'Failed'));
+                showProgress((pack.body && pack.body.message) ? pack.body.message : (state.cfg.getAttribute('data-request-failed') || 'Failed'));
             })
             .catch(function (err) {
-                showProgress((cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
             })
             .finally(function () {
                 setBusy(false);
             });
     }
 
-    document.querySelectorAll('.erp-link-pick-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            linkAgency(
-                parseInt(btn.getAttribute('data-agency-id') || '0', 10),
-                parseInt(btn.getAttribute('data-company-id') || '0', 10)
-            );
-        });
-    });
+    function bindControls() {
+        if (state.table) {
+            state.table.addEventListener('change', onTableChange);
+            state.table.addEventListener('click', onTableClick);
+        }
+        if (state.filterCompany) {
+            state.filterCompany.addEventListener('change', applyCompanyFilter);
+        }
+        if (state.syncConfirmInput) {
+            state.syncConfirmInput.addEventListener('input', syncUi);
+            state.syncConfirmInput.addEventListener('change', syncUi);
+        }
+        if (state.resetConfirmInput) {
+            state.resetConfirmInput.addEventListener('input', syncUi);
+            state.resetConfirmInput.addEventListener('change', syncUi);
+        }
+        if (state.includePlatform) {
+            state.includePlatform.addEventListener('change', syncUi);
+        }
 
-    function boot() {
-        applyCompanyFilter();
+        var btnSelectAll = document.getElementById('erpSelectAllRows');
+        var btnSelectReady = document.getElementById('erpSelectReadyRows');
+        var btnSelectSub = document.getElementById('erpSelectSubscribedRows');
+        var btnSelectNone = document.getElementById('erpSelectNoneRows');
+
+        if (btnSelectAll) {
+            btnSelectAll.addEventListener('click', function () {
+                setRowChecks(function () { return true; });
+            });
+        }
+        if (btnSelectReady) {
+            btnSelectReady.addEventListener('click', function () {
+                setRowChecks(function (tr) { return tr.getAttribute('data-ready') === '1'; });
+            });
+        }
+        if (btnSelectSub) {
+            btnSelectSub.addEventListener('click', function () {
+                setRowChecks(function (tr) { return tr.getAttribute('data-subscribed') === '1'; });
+            });
+        }
+        if (btnSelectNone) {
+            btnSelectNone.addEventListener('click', function () {
+                setRowChecks(function () { return false; });
+            });
+        }
+
+        if (state.btnSyncSelected) {
+            state.btnSyncSelected.addEventListener('click', function () {
+                var ids = selectedIds();
+                if (!ids.length) {
+                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                    return;
+                }
+                runSync({ agency_ids: ids }, state.cfg.getAttribute('data-confirm-sync-selected'), true);
+            });
+        }
+        if (state.btnPushSelected) {
+            state.btnPushSelected.addEventListener('click', function () {
+                var payload = pushPayloadFromSelection();
+                if (!payload.agency_ids.length && !payload.include_platform) {
+                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                    return;
+                }
+                runPush(payload, state.cfg.getAttribute('data-confirm-selected'), true);
+            });
+        }
+        if (state.btnFullSelected) {
+            state.btnFullSelected.addEventListener('click', function () {
+                runFullDeploy(null, state.cfg.getAttribute('data-confirm-full-selected'));
+            });
+        }
+        if (state.btnRestoreSelected) {
+            state.btnRestoreSelected.addEventListener('click', function () {
+                var ids = selectedIds();
+                if (!ids.length) {
+                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                    return;
+                }
+                if (!root.confirm(state.cfg.getAttribute('data-confirm-restore-selected') || 'Restore admin@rateb.sa?')) {
+                    return;
+                }
+                setBusy(true);
+                showProgress(state.cfg.getAttribute('data-restore-running') || 'Restoring…');
+                if (state.resultsBox) {
+                    state.resultsBox.classList.remove('d-none');
+                    if (state.logEl) state.logEl.textContent = '';
+                }
+                postJson(state.restoreAdminUrl, { agency_ids: ids })
+                    .then(function (pack) {
+                        var data = pack.body || {};
+                        var lines = ['Restore admin@rateb.sa / password'];
+                        lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
+                        (data.results || []).forEach(function (r) {
+                            lines.push('');
+                            lines.push('=== Agency #' + (r.agency_id || '?') + ' ===');
+                            if (!r.ok) {
+                                lines.push('ERROR: ' + (r.error || 'failed'));
+                                return;
+                            }
+                            var rep = r.report || {};
+                            (rep.actions || []).forEach(function (a) { lines.push(a); });
+                            lines.push('restored_users: ' + (rep.restored_users || 0));
+                            lines.push('password_hashes_reset: ' + (rep.password_hashes_reset || 0));
+                        });
+                        if (state.logEl) state.logEl.textContent = lines.join('\n');
+                        showProgress(data.success
+                            ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
+                            : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.'));
+                    })
+                    .catch(function (err) {
+                        showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                    })
+                    .then(function () { setBusy(false); });
+            });
+        }
+        if (state.btnResetSelected) {
+            state.btnResetSelected.addEventListener('click', triggerResetSelected);
+        }
+        if (state.btnResetAll) {
+            state.btnResetAll.addEventListener('click', triggerResetAllReady);
+        }
+        document.querySelectorAll('.erp-reset-row-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                triggerResetRow(
+                    parseInt(btn.getAttribute('data-agency-id') || '0', 10),
+                    btn.getAttribute('data-agency-name') || ''
+                );
+            });
+        });
+        if (state.btnSyncAll) {
+            state.btnSyncAll.addEventListener('click', function () {
+                runSync({ scope: 'all_ready' }, state.cfg.getAttribute('data-confirm-sync-all'), true);
+            });
+        }
+        if (state.btnPushAll) {
+            state.btnPushAll.addEventListener('click', function () {
+                runPush({
+                    scope: 'all_ready',
+                    include_platform: !!(state.includePlatform && state.includePlatform.checked)
+                }, state.cfg.getAttribute('data-confirm-all'), true);
+            });
+        }
+        if (state.btnFullAll) {
+            state.btnFullAll.addEventListener('click', function () {
+                runFullDeploy('all_ready', state.cfg.getAttribute('data-confirm-full-all'));
+            });
+        }
+        if (state.btnPushSub) {
+            state.btnPushSub.addEventListener('click', function () {
+                runPush({
+                    scope: 'all_subscribed',
+                    include_platform: !!(state.includePlatform && state.includePlatform.checked)
+                }, state.cfg.getAttribute('data-confirm-subscribed'), true);
+            });
+        }
+        document.querySelectorAll('.erp-link-pick-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                linkAgency(
+                    parseInt(btn.getAttribute('data-agency-id') || '0', 10),
+                    parseInt(btn.getAttribute('data-company-id') || '0', 10)
+                );
+            });
+        });
+    }
+
+    function onTableChange(e) {
+        var t = e.target;
+        if (!t) return;
+        if (t.hasAttribute('data-rateb-select-all')) {
+            var on = !!t.checked;
+            boxes().forEach(function (cb) { cb.checked = on; });
+        } else if (!t.hasAttribute('data-rateb-row-check')) {
+            return;
+        }
         syncUi();
     }
+
+    function onTableClick(e) {
+        if (e.target.closest('a, button, .dropdown-menu')) {
+            return;
+        }
+        var tr = e.target.closest('tr.erp-agency-row');
+        if (!tr || e.target.closest('[data-rateb-row-check]')) return;
+        var cb = tr.querySelector('[data-rateb-row-check]');
+        if (cb) {
+            cb.checked = !cb.checked;
+            syncUi();
+        }
+    }
+
+    /**
+     * Soft-nav replaces #rateb-main-content — re-read DOM and bind once per config node.
+     */
+    function boot() {
+        var cfg = document.getElementById('erpAgencyUpdatesConfig');
+        if (!cfg) {
+            return;
+        }
+        if (cfg.getAttribute('data-rateb-agency-updates-bound') === '1') {
+            syncUi();
+            return;
+        }
+        cfg.setAttribute('data-rateb-agency-updates-bound', '1');
+
+        state.cfg = cfg;
+        state.apiUrl = cfg.getAttribute('data-api-url') || '';
+        state.linkUrl = cfg.getAttribute('data-link-url') || '';
+        state.syncUrl = cfg.getAttribute('data-sync-url') || '';
+        state.restoreAdminUrl = cfg.getAttribute('data-restore-admin-url') || '';
+        state.resetDataUrl = cfg.getAttribute('data-reset-data-url') || '';
+        state.csrfToken = cfg.getAttribute('data-csrf') || '';
+        state.table = document.getElementById('erpAgencyUpdatesTable');
+        state.filterCompany = document.getElementById('erpAgencyFilterCompany');
+        state.selectionBadge = document.getElementById('erpSelectionBadge');
+        state.btnSyncSelected = document.getElementById('erpSyncRunSelected');
+        state.btnPushSelected = document.getElementById('erpUpdateRunSelected');
+        state.btnFullSelected = document.getElementById('erpFullDeploySelected');
+        state.btnRestoreSelected = document.getElementById('erpRestoreAdminSelected');
+        state.btnResetSelected = document.getElementById('erpResetDataSelected');
+        state.btnResetAll = document.getElementById('erpResetDataAllReady');
+        state.btnSyncAll = document.getElementById('erpSyncRunAllReady');
+        state.btnPushAll = document.getElementById('erpUpdateRunAllReady');
+        state.btnFullAll = document.getElementById('erpFullDeployAllReady');
+        state.btnPushSub = document.getElementById('erpUpdateRunSubscribed');
+        state.syncConfirmInput = document.getElementById('erpSyncConfirmInput');
+        state.resetConfirmInput = document.getElementById('erpResetConfirmInput');
+        state.includePlatform = document.getElementById('erpUpdateIncludePlatform');
+        state.progress = document.getElementById('erpUpdateProgress');
+        state.resultsBox = document.getElementById('erpUpdateResults');
+        state.logEl = document.getElementById('erpUpdateLog');
+        state.bulkLabel = state.selectionBadge ? state.selectionBadge.textContent.replace(/^\d+\s*/, '') : '';
+
+        bindControls();
+        applyCompanyFilter();
+    }
+
+    root.ratebAgencyUpdatesBoot = boot;
+    root.__erpAgencyResetSelected = function () {
+        if (state.cfg) {
+            triggerResetSelected();
+        }
+    };
+    root.__erpAgencyResetAllReady = function () {
+        if (state.cfg) {
+            triggerResetAllReady();
+        }
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {
         boot();
     }
-})();
+    document.addEventListener('rateb:nav:afterEnter', boot);
+})(typeof window !== 'undefined' ? window : this);
