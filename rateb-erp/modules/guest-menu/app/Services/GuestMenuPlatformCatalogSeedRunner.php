@@ -5,9 +5,8 @@ namespace Rateb\App\GuestMenu\Services;
 
 use PDO;
 use PDOException;
-use Rateb\PlatformCatalog\Infrastructure\Persistence\Migrations\M022ComprehensiveRetailSeed;
 
-/** Run platform retail seed (M022) from ERP when catalog migrate endpoint is unavailable. */
+/** Fill platform catalog DB with comprehensive retail seed (ERP-local, no catalog migrate required). */
 final class GuestMenuPlatformCatalogSeedRunner
 {
     /**
@@ -31,7 +30,7 @@ final class GuestMenuPlatformCatalogSeedRunner
                 ];
             }
         } catch (\Throwable) {
-            // tables may be missing — continue into full seed/migrate path
+            // continue — seed may create missing rows if schema exists
         }
 
         return $this->run();
@@ -47,28 +46,9 @@ final class GuestMenuPlatformCatalogSeedRunner
             return ['ok' => false, 'message' => 'platform_db_unavailable'];
         }
 
-        $catalogRoot = dirname(RATEB_ROOT) . '/rateb-platform-catalog';
-        $bootstrap = $catalogRoot . '/app/Core/Bootstrap.php';
-        if (!is_file($bootstrap)) {
-            return ['ok' => false, 'message' => 'catalog_bootstrap_missing'];
-        }
-
-        if (!defined('RATEB_CATALOG_NO_SESSION')) {
-            define('RATEB_CATALOG_NO_SESSION', true);
-        }
-        if (!defined('RATEB_ENV_NO_SESSION')) {
-            define('RATEB_ENV_NO_SESSION', true);
-        }
-
-        require_once $bootstrap;
-        if (!defined('RATEB_CATALOG_ROOT')) {
-            \Rateb\PlatformCatalog\Core\Bootstrap::initMinimal($catalogRoot);
-        }
-
         try {
-            $migration = new M022ComprehensiveRetailSeed($pdo);
-            $migration->up();
-            $this->markApplied($pdo, $migration->name());
+            (new PlatformRetailCatalogSeedData($pdo))->run();
+            $this->markApplied($pdo);
             $count = (int) $pdo->query(
                 "SELECT COUNT(*) FROM products WHERE sku LIKE 'RC-%' AND deleted_at IS NULL"
             )->fetchColumn();
@@ -84,18 +64,22 @@ final class GuestMenuPlatformCatalogSeedRunner
         }
     }
 
-    private function markApplied(PDO $pdo, string $name): void
+    private function markApplied(PDO $pdo): void
     {
-        $pdo->exec(
-            'CREATE TABLE IF NOT EXISTS catalog_migrations (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                filename VARCHAR(255) NOT NULL,
-                applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                UNIQUE KEY uk_catalog_migrations_filename (filename)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-        );
-        $stmt = $pdo->prepare('INSERT IGNORE INTO catalog_migrations (filename) VALUES (:f)');
-        $stmt->execute(['f' => $name]);
+        try {
+            $pdo->exec(
+                'CREATE TABLE IF NOT EXISTS catalog_migrations (
+                    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    filename VARCHAR(255) NOT NULL,
+                    applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                    UNIQUE KEY uk_catalog_migrations_filename (filename)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+            $stmt = $pdo->prepare('INSERT IGNORE INTO catalog_migrations (filename) VALUES (:f)');
+            $stmt->execute(['f' => '022_comprehensive_retail_seed']);
+        } catch (\Throwable) {
+            // non-fatal
+        }
     }
 
     private function platformConnection(): ?PDO
