@@ -37,11 +37,16 @@ final class GuestMenuAdminController extends Controller
         }
 
         $publicUrl = $settingsService->publicMenuUrl((string) ($settings['public_slug'] ?? ''));
+        $slug = (string) ($settings['public_slug'] ?? '');
+        $qrPreviewSrc = (!empty($settings['is_enabled']) && $slug !== '')
+            ? $settingsService->qrPreviewSrc($slug)
+            : '';
         GuestMenuView::render('admin/settings', [
             'title' => __('guest_menu_settings'),
             'settings' => $settings,
             'publicUrl' => $publicUrl,
-            'qrUrl' => rateb_app_url('guest-menu/qr.png'),
+            'qrPreviewSrc' => $qrPreviewSrc,
+            'qrDownloadUrl' => rateb_app_url('guest-menu/qr.png?download=1'),
             'csrf' => Csrf::token(),
         ]);
     }
@@ -97,6 +102,7 @@ final class GuestMenuAdminController extends Controller
         try {
             $png = LocalQrRenderer::png($url, 400);
         } catch (\Throwable $e) {
+            error_log('GuestMenuAdminController QR: ' . $e->getMessage());
             http_response_code(500);
             exit;
         }
@@ -106,8 +112,11 @@ final class GuestMenuAdminController extends Controller
             exit;
         }
 
+        $download = (string) ($_GET['download'] ?? '') === '1';
         header('Content-Type: image/png');
-        header('Content-Disposition: attachment; filename="guest-menu-qr.png"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="guest-menu-qr.png"');
+        header('Content-Length: ' . (string) strlen($png));
         echo $png;
         exit;
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\GuestMenu\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Models\Company;
 use PDO;
 
@@ -242,9 +243,56 @@ final class GuestMenuSettingsService
 
     public function publicMenuUrl(string $publicSlug): string
     {
-        return function_exists('rateb_public_url')
-            ? rateb_public_url('m/' . rawurlencode(self::normalizeSlug($publicSlug)))
-            : '/m/' . rawurlencode(self::normalizeSlug($publicSlug));
+        $slug = self::normalizeSlug($publicSlug);
+        if ($slug === '') {
+            return '';
+        }
+        $path = 'm/' . rawurlencode($slug);
+        if (function_exists('rateb_public_url')) {
+            $url = rateb_public_url($path);
+            if (preg_match('#^https?://#i', $url)) {
+                return $url;
+            }
+        }
+        if (function_exists('rateb_site_origin')) {
+            $prefix = function_exists('rateb_erp_public_prefix') && rateb_erp_public_prefix() !== ''
+                ? rateb_erp_public_prefix()
+                : (function_exists('rateb_erp_app_prefix') ? rateb_erp_app_prefix() : '/rateb-erp/public');
+
+            return rateb_site_origin() . rtrim($prefix, '/') . '/' . $path;
+        }
+
+        return '/' . $path;
+    }
+
+    public function qrPngBytes(string $publicSlug, int $size = 400): string
+    {
+        $url = $this->publicMenuUrl($publicSlug);
+        if ($url === '') {
+            return '';
+        }
+        try {
+            return LocalQrRenderer::png($url, $size);
+        } catch (\Throwable $e) {
+            error_log('GuestMenuSettingsService QR: ' . $e->getMessage());
+
+            return '';
+        }
+    }
+
+    /** Inline preview src (data URI) with network fallback URL. */
+    public function qrPreviewSrc(string $publicSlug): string
+    {
+        $png = $this->qrPngBytes($publicSlug, 400);
+        if ($png !== '') {
+            return 'data:image/png;base64,' . base64_encode($png);
+        }
+        $url = $this->publicMenuUrl($publicSlug);
+        if ($url === '' || !function_exists('rateb_url')) {
+            return '';
+        }
+
+        return rateb_url('scan/qr?data=' . rawurlencode($url) . '&size=400');
     }
 
     private function allocateUniqueSlug(string $base, int $companyId): string

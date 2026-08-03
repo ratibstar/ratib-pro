@@ -6,7 +6,8 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $title */
 /** @var array<string, mixed> $settings */
 /** @var string $publicUrl */
-/** @var string $qrUrl */
+/** @var string $qrPreviewSrc */
+/** @var string $qrDownloadUrl */
 /** @var string $csrf */
 $currentMode = (string) ($settings['mode'] ?? 'browse');
 if (!in_array($currentMode, ['browse', 'order'], true)) {
@@ -64,7 +65,7 @@ if (!in_array($currentMode, ['browse', 'order'], true)) {
                         <label class="form-label" for="gm-mode"><?php echo __('guest_menu_mode'); ?></label>
                         <select class="form-select" id="gm-mode" name="mode" aria-describedby="gm-mode-hint">
                             <option value="browse"<?php echo $currentMode === 'browse' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_browse'); ?></option>
-                            <option value="order" disabled<?php echo $currentMode === 'order' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_order'); ?></option>
+                            <option value="order" disabled title="<?php echo GuestMenuView::escape(__('guest_menu_mode_order')); ?>"><?php echo __('guest_menu_mode_order'); ?></option>
                         </select>
                         <div class="form-text" id="gm-mode-hint"><?php echo __('guest_menu_mode_hint_browse'); ?></div>
                     </div>
@@ -80,12 +81,16 @@ if (!in_array($currentMode, ['browse', 'order'], true)) {
                     <h2 class="h5"><?php echo __('guest_menu_public_url'); ?></h2>
                     <?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '') { ?>
                     <p><a href="<?php echo GuestMenuView::escape($publicUrl); ?>" target="_blank" rel="noopener"><?php echo GuestMenuView::escape($publicUrl); ?></a></p>
+                    <?php if (($qrPreviewSrc ?? '') !== '') { ?>
                     <div class="gm-qr-wrap text-center my-3">
-                        <img src="<?php echo GuestMenuView::escape($qrUrl); ?>" alt="QR" width="200" height="200" class="gm-qr-img">
+                        <img src="<?php echo GuestMenuView::escape($qrPreviewSrc); ?>" alt="QR" width="200" height="200" class="gm-qr-img" decoding="async">
                     </div>
-                    <a class="btn btn-outline-primary btn-sm" href="<?php echo GuestMenuView::escape($qrUrl); ?>" download="guest-menu-qr.png">
+                    <a class="btn btn-outline-primary btn-sm" href="<?php echo GuestMenuView::escape($qrDownloadUrl); ?>" download="guest-menu-qr.png">
                         <?php echo __('guest_menu_qr_download'); ?>
                     </a>
+                    <?php } else { ?>
+                    <p class="text-warning mb-0"><?php echo __('guest_menu_qr_unavailable'); ?></p>
+                    <?php } ?>
                     <?php } else { ?>
                     <p class="text-muted mb-0"><?php echo __('guest_menu_qr_hint'); ?></p>
                     <?php } ?>
