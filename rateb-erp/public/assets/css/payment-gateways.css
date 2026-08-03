@@ -1,0 +1,7 @@
+.rateb-payment-gateways-health-ok {
+    background-color: #198754 !important;
+}
+
+.rateb-payment-gateways-health-fail {
+    background-color: #dc3545 !important;
+}

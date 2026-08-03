@@ -1,4 +1,4 @@
-<section class="rateb-portal-section">
+<section class="rateb-portal-section rateb-portal-finance" id="rateb-portal-finance" data-csrf="<?php echo Rateb\App\Core\View::escape((string) ($csrf ?? '')); ?>">
     <div class="container">
         <h1><?php echo __('finance') ?: 'Finance'; ?></h1>
         <p class="rateb-portal-lead"><?php echo __('outstanding_balance') ?: 'Outstanding balance'; ?>: <strong><?php echo number_format((float) ($balance ?? $outstanding ?? 0), 2); ?></strong></p>
@@ -6,15 +6,29 @@
         <table class="rateb-portal-table">
             <thead><tr><th><?php echo __('invoice_no') ?: 'Invoice'; ?></th><th><?php echo __('amount') ?: 'Amount'; ?></th><th><?php echo __('status') ?: 'Status'; ?></th><th><?php echo __('due_date') ?: 'Due'; ?></th><th></th></tr></thead>
             <tbody>
-            <?php foreach ($invoices ?? [] as $inv) { ?>
+            <?php foreach ($invoices ?? [] as $inv) {
+                $ps = (string) ($inv['payment_status'] ?? $inv['status'] ?? '');
+                $canPay = !empty($paymentGatewayEnabled)
+                    && ($portalType ?? '') === 'customer'
+                    && $ps !== 'paid'
+                    && (string) ($inv['status'] ?? '') !== 'cancelled'
+                    && (string) ($inv['status'] ?? '') !== 'draft';
+                ?>
             <tr>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($inv['invoice_no'] ?? $inv['id'] ?? '')); ?></td>
                 <td><?php echo number_format((float) ($inv['total_amount'] ?? 0), 2); ?> <?php echo Rateb\App\Core\View::escape((string) ($inv['currency'] ?? '')); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape((string) ($inv['payment_status'] ?? $inv['status'] ?? '')); ?></td>
+                <td><?php echo Rateb\App\Core\View::escape($ps); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($inv['due_date'] ?? '')); ?></td>
-                <td>
+                <td class="rateb-portal-finance-actions">
                     <?php if (!empty($inv['document_path']) && ($portalType ?? '') === 'customer') { ?>
                     <a class="rateb-portal-btn rateb-portal-btn--ghost" href="<?php echo rateb_url('site/customer/finance/download?id=' . (int) ($inv['id'] ?? 0)); ?>"><?php echo __('download') ?: 'PDF'; ?></a>
+                    <?php } ?>
+                    <?php if ($canPay) { ?>
+                    <form class="rateb-portal-pay-form" method="post" action="<?php echo rateb_url('site/customer/finance/pay'); ?>" data-invoice-id="<?php echo (int) ($inv['id'] ?? 0); ?>">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape((string) ($csrf ?? '')); ?>">
+                        <input type="hidden" name="invoice_id" value="<?php echo (int) ($inv['id'] ?? 0); ?>">
+                        <button type="submit" class="rateb-portal-btn rateb-portal-btn--primary rateb-portal-pay-btn"><?php echo __('pay_online') ?: 'Pay Online'; ?></button>
+                    </form>
                     <?php } ?>
                 </td>
             </tr>

@@ -6,6 +6,8 @@ config/infra.secrets.php
 config/env/infra.secrets.php
 config/mail.secrets.php
 config/env/mail.secrets.php
+config/env/moyasar.secrets.php
+config/moyasar.secrets.php
 rateb-erp/config/mail.secrets.php
 storage/.rateb_infra_local_secret_key
 

@@ -23,6 +23,8 @@ use Rateb\App\Website\Portal\PortalRequestService;
 use Rateb\App\Website\Portal\PortalSupportService;
 use Rateb\App\Website\Portal\PortalWorkflowService;
 use Rateb\App\Website\WebsiteContext;
+use Rateb\App\Payment\PaymentService;
+use Rateb\App\Website\TenantWebsiteRepository;
 
 /**
  * Phase WEBSITE-07 — Employer / Customer / Partner self-service portals.
@@ -334,8 +336,9 @@ final class WebsitePortalController extends Controller
         if ($user === null) {
             return;
         }
+        $companyId = (new TenantWebsiteRepository())->companyId();
         $this->renderPortal($type, 'finance', array_merge(
-            ['user' => $user],
+            ['user' => $user, 'paymentGatewayEnabled' => (new PaymentService())->isGatewayEnabled($companyId)],
             (new PortalFinanceService())->statement($user)
         ));
     }

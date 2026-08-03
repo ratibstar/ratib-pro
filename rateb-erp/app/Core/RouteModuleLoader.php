@@ -150,7 +150,7 @@ final class RouteModuleLoader
             return self::orderWant($want);
         }
         if (str_starts_with($path, '/api/') || $path === '/api') {
-            $want = ['auth' => true, 'api' => true];
+            $want = ['auth' => true, 'api' => true, 'payment' => true];
 
             return self::orderWant($want);
         }
@@ -174,7 +174,7 @@ final class RouteModuleLoader
         }
 
         if (self::isPlatformPath($path)) {
-            $want = ['auth' => true, 'platform' => true];
+            $want = ['auth' => true, 'platform' => true, 'payment' => true];
 
             return self::orderWant($want);
         }
@@ -244,6 +244,7 @@ final class RouteModuleLoader
             '/admin/subscriptions',
             '/admin/plans',
             '/admin/payments',
+            '/admin/payment-gateways',
             '/admin/invoices',
             '/admin/audit-logs',
             '/admin/accounting-control',

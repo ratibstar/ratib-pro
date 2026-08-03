@@ -16,6 +16,7 @@ return [
     ['id' => 'cms', 'file' => 'routes/modules/cms.php'],
     ['id' => 'ops', 'file' => 'routes/modules/ops.php'],
     ['id' => 'api', 'file' => 'routes/modules/api.php'],
+    ['id' => 'payment', 'file' => 'routes/modules/payment.php'],
     ['id' => 'pos', 'file' => 'routes/modules/pos.php'],
     ['id' => 'pos_v2', 'file' => 'modules/pos/routes/pos-v2.php', 'optional' => true],
 ];

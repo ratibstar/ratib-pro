@@ -27,6 +27,7 @@ if (($accountingActive === 'admin' || rateb_is_super_admin()) && function_exists
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
     $tabs[] = ['path' => 'admin/payments', 'label' => __('payments'), 'match' => ['admin/payments']];
     $tabs[] = ['path' => 'admin/subscriptions', 'label' => __('subscriptions'), 'match' => ['admin/subscriptions']];
+    $tabs[] = ['path' => 'admin/payment-gateways', 'label' => __('payment_gateways'), 'match' => ['admin/payment-gateways']];
 }
 
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/ops/accounting');

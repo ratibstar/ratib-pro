@@ -45,6 +45,7 @@ $hrefCanonical = $hrefOrigin . rateb_url($hrefPath);
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_url('site/theme.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/website-portals.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/portal-invoice-payment.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-marketing rateb-portal-shell rateb-portal--<?php echo Rateb\App\Core\View::escape($portalType); ?><?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
 <?php
@@ -62,5 +63,6 @@ require RATEB_ROOT . '/views/marketing/partials/header.php';
 <script src="<?php echo rateb_bootstrap_js(); ?>"></script>
 <script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/website-portals.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/portal-invoice-payment.js'); ?>"></script>
 </body>
 </html>
