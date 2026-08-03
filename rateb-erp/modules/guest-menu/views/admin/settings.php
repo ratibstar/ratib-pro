@@ -135,6 +135,14 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
                             <button type="submit" class="btn btn-primary btn-sm"><?php echo __('guest_menu_seed_demo'); ?></button>
                         </form>
+                        <?php if (!empty($platformCatalogEnabled)) {
+                            $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog') . $gmCompanyQs;
+                            ?>
+                        <form method="post" action="<?php echo GuestMenuView::escape($platformSeedAction); ?>" class="d-inline" data-gm-csrf-form>
+                            <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <button type="submit" class="btn btn-warning btn-sm"><?php echo __('guest_menu_platform_seed'); ?></button>
+                        </form>
+                        <?php } ?>
                         <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
                             <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>

@@ -10,6 +10,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogSeedService;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogService;
 use Rateb\App\GuestMenu\Services\GuestMenuOrderService;
+use Rateb\App\GuestMenu\Services\GuestMenuPlatformCatalogSeedRunner;
 use Rateb\App\GuestMenu\Services\GuestMenuPlatformImportService;
 use Rateb\App\GuestMenu\Services\GuestMenuSettingsService;
 use Rateb\App\Services\BranchService;
@@ -110,13 +111,59 @@ final class GuestMenuAdminController extends Controller
 
             return;
         }
+        $seed = (new GuestMenuPlatformCatalogSeedRunner())->ensureSeeded();
+        if (!$seed['ok'] && ($seed['message'] ?? '') !== 'already_populated') {
+            SessionManager::flash(
+                'error',
+                __('guest_menu_platform_seed_failed') . ': ' . (string) ($seed['message'] ?? '')
+            );
+            $this->redirectGuestMenu();
+
+            return;
+        }
+
         $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 150);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {
-            SessionManager::flash('success', __('guest_menu_import_done', [
+            $msg = __('guest_menu_import_done', [
                 'imported' => (string) ($result['imported'] ?? 0),
                 'skipped' => (string) ($result['skipped'] ?? 0),
+            ]);
+            if (($seed['message'] ?? '') === 'seeded') {
+                $msg .= ' — ' . __('guest_menu_platform_seed_done', [
+                    'count' => (string) ($seed['product_count'] ?? 0),
+                ]);
+            }
+            SessionManager::flash('success', $msg);
+        }
+        $this->redirectGuestMenu();
+    }
+
+    public function seedPlatformCatalog(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirectGuestMenu();
+
+            return;
+        }
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            SessionManager::flash('error', __('guest_menu_platform_seed_forbidden'));
+            $this->redirectGuestMenu();
+
+            return;
+        }
+        $result = (new GuestMenuPlatformCatalogSeedRunner())->run();
+        if (!$result['ok']) {
+            SessionManager::flash(
+                'error',
+                __('guest_menu_platform_seed_failed') . ': ' . (string) ($result['message'] ?? '')
+            );
+        } else {
+            SessionManager::flash('success', __('guest_menu_platform_seed_done', [
+                'count' => (string) ($result['product_count'] ?? 0),
             ]));
         }
         $this->redirectGuestMenu();
