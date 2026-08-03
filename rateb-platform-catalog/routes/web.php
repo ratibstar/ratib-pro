@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use Rateb\PlatformCatalog\Http\Controllers\Admin\AdminPageController;
 use Rateb\PlatformCatalog\Http\Controllers\Admin\ErpSsoController;
+use Rateb\PlatformCatalog\Http\Controllers\Admin\MigrateController;
 
 /** @var \Rateb\PlatformCatalog\Core\Router $router */
 
 $router->get('/', [AdminPageController::class, 'dashboard']);
 $router->get('/admin', [AdminPageController::class, 'dashboard']);
 $router->get('/admin/auth/erp-sso', [ErpSsoController::class, 'accept']);
+$router->get('/admin/system/run-migrations', [MigrateController::class, 'run']);
+$router->post('/admin/system/run-migrations', [MigrateController::class, 'run']);
 $router->get('/admin/products', [AdminPageController::class, 'products']);
 $router->get('/admin/categories', [AdminPageController::class, 'categories']);
 $router->get('/admin/brands', [AdminPageController::class, 'brands']);

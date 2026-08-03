@@ -88,17 +88,23 @@ jobs:
             echo "::warning::No migrate token — skip catalog migrations"
             exit 0
           fi
-          code="$(curl -sS -o /tmp/catalog-migrate.json -w "%{http_code}" \
-            -H "X-Rateb-Migrate-Token: ${RATEB_ERP_MIGRATE_TOKEN}" \
-            -H 'Cache-Control: no-cache' \
-            --connect-timeout 15 --max-time 180 \
-            "${SITE}/rateb-platform-catalog/public/run-migrations.php" || true)"
-          echo "catalog migrate HTTP=${code}"
-          head -c 4000 /tmp/catalog-migrate.json || true
-          echo
-          if [ "$code" != "200" ]; then
-            echo "::warning::Catalog migrate HTTP ${code} (seed may need manual run)"
-          fi
+          for url in \
+            "${SITE}/rateb-platform-catalog/admin/system/run-migrations" \
+            "${SITE}/rateb-platform-catalog/public/run-migrations.php"
+          do
+            code="$(curl -sS -o /tmp/catalog-migrate.json -w "%{http_code}" \
+              -H "X-Rateb-Migrate-Token: ${RATEB_ERP_MIGRATE_TOKEN}" \
+              -H 'Cache-Control: no-cache' \
+              --connect-timeout 15 --max-time 180 \
+              "$url" || true)"
+            echo "catalog migrate via ${url} HTTP=${code}"
+            head -c 4000 /tmp/catalog-migrate.json || true
+            echo
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+          done
+          echo "::warning::Catalog migrate failed on all endpoints (seed may need manual run)"
 
       - name: Start RCC Realtime Hub (WebSocket)
         if: steps.deploy.outcome == 'success'

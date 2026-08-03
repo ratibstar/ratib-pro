@@ -38,6 +38,7 @@ use Rateb\PlatformCatalog\Application\Policies\PolicyGuardInterface;
 use Rateb\PlatformCatalog\Application\Support\AdminNavigation;
 use Rateb\PlatformCatalog\Http\Controllers\Admin\AdminPageController;
 use Rateb\PlatformCatalog\Http\Controllers\Admin\ErpSsoController;
+use Rateb\PlatformCatalog\Http\Controllers\Admin\MigrateController;
 use Rateb\PlatformCatalog\Application\Policies\ProductAttributePolicy;
 use Rateb\PlatformCatalog\Application\Policies\ProductBarcodePolicy;
 use Rateb\PlatformCatalog\Application\Policies\ProductBundlePolicy;
@@ -399,6 +400,7 @@ final class CatalogServiceProvider
         $container->set(ErpSsoController::class, static fn (Container $c): ErpSsoController => new ErpSsoController(
             $c->get(ErpSessionIdentityBridge::class)
         ));
+        $container->set(MigrateController::class, static fn (): MigrateController => new MigrateController());
         $container->set(AuditEventWriteRepositoryInterface::class, static fn (): AuditEventWriteRepositoryInterface => new MysqlAuditEventWriteRepository());
         $container->set(AuditEventService::class, static fn (Container $c): AuditEventService => new AuditEventService(
             $c->get(AuditEventWriteRepositoryInterface::class)
