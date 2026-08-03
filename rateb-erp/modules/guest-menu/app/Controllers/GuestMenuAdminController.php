@@ -7,6 +7,7 @@ use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\GuestMenu\Services\GuestMenuCatalogService;
 use Rateb\App\GuestMenu\Services\GuestMenuSettingsService;
 use Rateb\App\GuestMenu\Support\GuestMenuView;
 
@@ -41,12 +42,28 @@ final class GuestMenuAdminController extends Controller
         $qrPreviewSrc = (!empty($settings['is_enabled']) && $slug !== '')
             ? $settingsService->qrPreviewSrc($slug)
             : '';
+        $menuBranchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : null;
+        if ($menuBranchId !== null && $menuBranchId < 1) {
+            $menuBranchId = null;
+        }
+        $catalogStats = (new GuestMenuCatalogService())->statsForCompany($companyId, $menuBranchId);
+        $inventoryUrl = rateb_app_url('inventory');
+        if ($companyId > 0) {
+            $inventoryUrl .= (str_contains($inventoryUrl, '?') ? '&' : '?') . 'company_id=' . $companyId;
+        }
         GuestMenuView::render('admin/settings', [
             'title' => __('guest_menu_settings'),
             'settings' => $settings,
             'publicUrl' => $publicUrl,
             'qrPreviewSrc' => $qrPreviewSrc,
             'qrDownloadUrl' => rateb_app_url('guest-menu/qr.png?download=1'),
+            'catalogStats' => $catalogStats,
+            'inventoryUrl' => $inventoryUrl,
+            'platformCatalogUrl' => function_exists('rateb_platform_catalog_admin_url')
+                ? rateb_platform_catalog_admin_url()
+                : '',
+            'platformCatalogEnabled' => function_exists('rateb_platform_catalog_nav_enabled')
+                && rateb_platform_catalog_nav_enabled(),
             'csrf' => Csrf::token(),
         ]);
     }

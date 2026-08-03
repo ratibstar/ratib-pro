@@ -42,4 +42,11 @@ return [
     'guest_menu_qr_hint' => 'Enable the menu and save to generate the public link and QR code.',
     'guest_menu_qr_unavailable' => 'Could not generate QR — ensure PHP GD is enabled on the server.',
     'guest_menu_schema_missing' => 'Guest menu table is missing — run database migration 221 from Control Panel, or refresh after deploy.',
+    'guest_menu_catalog_panel_title' => 'Menu product source',
+    'guest_menu_catalog_stats' => ':products items · :categories categories',
+    'guest_menu_catalog_empty' => 'No items in this company inventory — the public menu stays empty until products are added.',
+    'guest_menu_catalog_flow' => 'The guest menu reads company inventory (same SKUs as POS). Platform Product Catalog is the central master library — add items to inventory (or copy from the catalog) and they appear here automatically.',
+    'guest_menu_open_inventory' => 'Open inventory',
+    'guest_menu_open_platform_catalog' => 'Platform product catalog',
+    'guest_menu_mobile_scan_tip' => 'Mobile test: open the link in Chrome/Safari (not the ERP PWA) and ensure the QR points to rateb.sa/m/…',
 ];

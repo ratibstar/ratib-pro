@@ -42,4 +42,11 @@ return [
     'guest_menu_qr_hint' => 'فعّل المنيو واحفظ الإعدادات لإنشاء رمز QR والرابط العام.',
     'guest_menu_qr_unavailable' => 'تعذّر إنشاء رمز QR — تأكد من تفعيل PHP GD على السيرفر.',
     'guest_menu_schema_missing' => 'جدول المنيو غير موجود — شغّل ترحيل قاعدة البيانات (221) من لوحة التحكم، أو حدّث الصفحة بعد النشر.',
+    'guest_menu_catalog_panel_title' => 'مصدر الأصناف في المنيو',
+    'guest_menu_catalog_stats' => ':products صنف · :categories تصنيف',
+    'guest_menu_catalog_empty' => 'لا توجد أصناف في مخزون هذه الشركة — المنيو العام سيبقى فارغاً حتى تُضاف منتجات.',
+    'guest_menu_catalog_flow' => 'المنيو يقرأ من مخزون الشركة (نفس أصناف نقطة البيع). كتالوج منتجات المنصة مكتبة مركزية — أضف المنتجات في المخزون أو انسخها من الكتالوج ثم ستظهر هنا تلقائياً.',
+    'guest_menu_open_inventory' => 'فتح المخزون',
+    'guest_menu_open_platform_catalog' => 'كتالوج منتجات المنصة',
+    'guest_menu_mobile_scan_tip' => 'للاختبار من الجوال: افتح الرابط في Chrome/Safari (ليس تطبيق ERP)، وتأكد أن QR يشير إلى rateb.sa/m/…',
 ];

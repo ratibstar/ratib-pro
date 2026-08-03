@@ -8,7 +8,13 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $publicUrl */
 /** @var string $qrPreviewSrc */
 /** @var string $qrDownloadUrl */
+/** @var array{product_count:int, category_count:int} $catalogStats */
+/** @var string $inventoryUrl */
+/** @var string $platformCatalogUrl */
+/** @var bool $platformCatalogEnabled */
 /** @var string $csrf */
+$productCount = (int) ($catalogStats['product_count'] ?? 0);
+$categoryCount = (int) ($catalogStats['category_count'] ?? 0);
 ?>
 <div class="gm-admin-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -75,6 +81,33 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
                     <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
                 </div>
             </form>
+
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3"><?php echo __('guest_menu_catalog_panel_title'); ?></h2>
+                    <p class="mb-2">
+                        <?php echo __('guest_menu_catalog_stats', [
+                            'products' => (string) $productCount,
+                            'categories' => (string) $categoryCount,
+                        ]); ?>
+                    </p>
+                    <?php if ($productCount < 1) { ?>
+                    <div class="alert alert-warning mb-3"><?php echo __('guest_menu_catalog_empty'); ?></div>
+                    <?php } ?>
+                    <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>">
+                            <?php echo __('guest_menu_open_inventory'); ?>
+                        </a>
+                        <?php if (!empty($platformCatalogEnabled) && ($platformCatalogUrl ?? '') !== '') { ?>
+                        <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($platformCatalogUrl); ?>" target="_blank" rel="noopener">
+                            <?php echo __('guest_menu_open_platform_catalog'); ?>
+                        </a>
+                        <?php } ?>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0"><?php echo __('guest_menu_mobile_scan_tip'); ?></p>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-5">
