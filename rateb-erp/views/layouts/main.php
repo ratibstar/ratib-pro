@@ -193,6 +193,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (a.hasAttribute('download')) {
                     return;
                 }
+                if (a.getAttribute('data-rateb-full-nav') === '1') {
+                    var fullRaw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+                    if (fullRaw && fullRaw !== '#') {
+                        ev.preventDefault();
+                        try { ev.stopImmediatePropagation(); } catch (eSipFn) { ev.stopPropagation(); }
+                        location.href = new URL(fullRaw, location.href).href;
+                    }
+                    return;
+                }
                 var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
                 if (!raw || raw === '#' || String(raw).indexOf('javascript:') === 0) {
                     return;
@@ -201,7 +210,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (u.origin !== location.origin) {
                     return;
                 }
-                if (/\/rateb-platform-catalog\//i.test(u.pathname)) {
+                if (/\/rateb-platform-catalog\//i.test(u.pathname) || PLATFORM_CATALOG_SSO_RE.test(u.pathname)) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSipCat) { ev.stopPropagation(); }
                     location.href = u.href;

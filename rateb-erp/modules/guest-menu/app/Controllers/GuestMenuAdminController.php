@@ -63,9 +63,9 @@ final class GuestMenuAdminController extends Controller
             'qrDownloadUrl' => rateb_app_url('guest-menu/qr.png?download=1'),
             'catalogStats' => $catalogStats,
             'inventoryUrl' => $inventoryUrl,
-            'platformCatalogUrl' => function_exists('rateb_platform_catalog_admin_url')
-                ? rateb_platform_catalog_admin_url()
-                : '',
+            'platformCatalogUrl' => function_exists('rateb_platform_catalog_entry_url')
+                ? rateb_platform_catalog_entry_url()
+                : (function_exists('rateb_platform_catalog_admin_url') ? rateb_platform_catalog_admin_url() : ''),
             'platformCatalogEnabled' => function_exists('rateb_platform_catalog_nav_enabled')
                 && rateb_platform_catalog_nav_enabled(),
             'branches' => $this->branchesForCompany($companyId),

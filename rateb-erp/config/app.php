@@ -575,6 +575,16 @@ if (!function_exists('rateb_platform_catalog_admin_url')) {
     }
 }
 
+if (!function_exists('rateb_platform_catalog_entry_url')) {
+    /** Open catalog via ERP SSO handoff (cookie path safe). */
+    function rateb_platform_catalog_entry_url(): string
+    {
+        $return = rateb_platform_catalog_admin_url();
+
+        return rateb_url('platform-catalog/sso') . '?return=' . rawurlencode($return);
+    }
+}
+
 if (!function_exists('rateb_platform_company_branches_url')) {
     /** ERP-native branch management (platform super-admin on rateb.sa). */
     function rateb_platform_company_branches_url(int $companyId = 0): string
