@@ -78,6 +78,28 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Run platform catalog migrations (retail seed)
+        if: steps.deploy.outcome == 'success'
+        env:
+          SITE: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
+        run: |
+          if [ -z "${RATEB_ERP_MIGRATE_TOKEN:-}" ]; then
+            echo "::warning::No migrate token — skip catalog migrations"
+            exit 0
+          fi
+          code="$(curl -sS -o /tmp/catalog-migrate.json -w "%{http_code}" \
+            -H "X-Rateb-Migrate-Token: ${RATEB_ERP_MIGRATE_TOKEN}" \
+            -H 'Cache-Control: no-cache' \
+            --connect-timeout 15 --max-time 180 \
+            "${SITE}/rateb-platform-catalog/public/run-migrations.php" || true)"
+          echo "catalog migrate HTTP=${code}"
+          head -c 4000 /tmp/catalog-migrate.json || true
+          echo
+          if [ "$code" != "200" ]; then
+            echo "::warning::Catalog migrate HTTP ${code} (seed may need manual run)"
+          fi
+
       - name: Start RCC Realtime Hub (WebSocket)
         if: steps.deploy.outcome == 'success'
         env:

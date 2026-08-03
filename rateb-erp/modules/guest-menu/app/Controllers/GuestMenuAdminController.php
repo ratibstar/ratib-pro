@@ -110,7 +110,7 @@ final class GuestMenuAdminController extends Controller
 
             return;
         }
-        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 50);
+        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 150);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {

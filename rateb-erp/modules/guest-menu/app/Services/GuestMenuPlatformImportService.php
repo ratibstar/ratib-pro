@@ -108,15 +108,19 @@ final class GuestMenuPlatformImportService
         $sql = 'SELECT p.sku, p.primary_barcode,
                        COALESCE(pt_ar.name, pt_en.name, p.sku) AS name,
                        (
-                           SELECT pp.amount FROM product_prices pp
-                           WHERE pp.product_id = p.id AND pp.deleted_at IS NULL
-                           ORDER BY pp.is_default DESC, pp.id ASC LIMIT 1
+                           SELECT COALESCE(pp.default_price, pp.msrp, pp.cost)
+                           FROM product_prices pp
+                           WHERE pp.product_id = p.id
+                             AND pp.deleted_at IS NULL
+                             AND pp.is_active = 1
+                           ORDER BY (pp.currency_code = \'SAR\') DESC, pp.id ASC
+                           LIMIT 1
                        ) AS price
                 FROM products p
                 LEFT JOIN product_translations pt_ar
-                    ON pt_ar.product_id = p.id AND pt_ar.language_code = \'ar\'
+                    ON pt_ar.product_id = p.id AND pt_ar.language_code = \'ar\' AND pt_ar.deleted_at IS NULL
                 LEFT JOIN product_translations pt_en
-                    ON pt_en.product_id = p.id AND pt_en.language_code = \'en\'
+                    ON pt_en.product_id = p.id AND pt_en.language_code = \'en\' AND pt_en.deleted_at IS NULL
                 WHERE p.deleted_at IS NULL
                   AND p.status IN (\'published\', \'approved\')
                 ORDER BY p.id DESC
