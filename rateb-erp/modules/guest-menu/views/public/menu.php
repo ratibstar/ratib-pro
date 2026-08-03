@@ -66,6 +66,9 @@ $products = is_array($catalog['products'] ?? null) ? $catalog['products'] : [];
         </article>
         <?php } ?>
     </main>
+    <?php if ($products === []) { ?>
+    <p class="gm-empty" id="gm-empty-msg"><?php echo __('guest_menu_no_products'); ?></p>
+    <?php } ?>
 
     <?php if (!empty($orderMode)) { ?>
     <aside class="gm-cart" id="gm-cart" hidden>

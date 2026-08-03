@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\GuestMenu\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Pos\Services\Bridge\PosNotificationBridgeService;
 use PDO;
 
 /** Guest QR menu — submit simple table orders (no auth). */
@@ -99,11 +100,80 @@ final class GuestMenuOrderService
             'currency' => $currency,
         ]);
 
+        $orderId = (int) $this->db->lastInsertId();
+        $this->notifyNewOrder($companyId, $orderNo, $tableLabel, $guestName, round($total, 2), $currency, $orderId);
+
         return [
             'ok' => true,
-            'order_id' => (int) $this->db->lastInsertId(),
+            'order_id' => $orderId,
             'order_no' => $orderNo,
         ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listForCompany(int $companyId, int $limit = 50): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $limit = max(1, min(200, $limit));
+        $stmt = $this->db->prepare(
+            'SELECT * FROM rateb_guest_menu_orders
+             WHERE company_id = :cid
+             ORDER BY created_at DESC, id DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute(['cid' => $companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function updateStatus(int $companyId, int $orderId, string $status): bool
+    {
+        if ($companyId < 1 || $orderId < 1) {
+            return false;
+        }
+        if (!in_array($status, ['pending', 'accepted', 'cancelled'], true)) {
+            return false;
+        }
+        $stmt = $this->db->prepare(
+            'UPDATE rateb_guest_menu_orders SET status = :st, updated_at = NOW()
+             WHERE id = :id AND company_id = :cid'
+        );
+        $stmt->execute(['st' => $status, 'id' => $orderId, 'cid' => $companyId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    private function notifyNewOrder(
+        int $companyId,
+        string $orderNo,
+        string $tableLabel,
+        string $guestName,
+        float $total,
+        string $currency,
+        int $orderId,
+    ): void {
+        try {
+            $who = $guestName !== '' ? $guestName : ($tableLabel !== '' ? __('guest_menu_table_short', ['table' => $tableLabel]) : __('guest_menu_guest_anonymous'));
+            $msg = __('guest_menu_order_notify_body', [
+                'order' => $orderNo,
+                'who' => $who,
+                'total' => number_format($total, 2) . ' ' . $currency,
+            ]);
+            (new PosNotificationBridgeService())->notifyCompany(
+                $companyId,
+                __('guest_menu_order_notify_title'),
+                $msg,
+                'info',
+                'guest_menu_order',
+                'guest_menu_order',
+                $orderId,
+            );
+        } catch (\Throwable $e) {
+            error_log('GuestMenuOrderService notify: ' . $e->getMessage());
+        }
     }
 
     private function ensureSchema(): void

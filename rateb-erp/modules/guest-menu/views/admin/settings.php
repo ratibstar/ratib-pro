@@ -12,13 +12,18 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $inventoryUrl */
 /** @var string $platformCatalogUrl */
 /** @var bool $platformCatalogEnabled */
+/** @var list<array<string, mixed>> $branches */
 /** @var string $csrf */
 $productCount = (int) ($catalogStats['product_count'] ?? 0);
 $categoryCount = (int) ($catalogStats['category_count'] ?? 0);
+$branchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : 0;
 ?>
 <div class="gm-admin-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h1 class="h3 mb-0"><?php echo GuestMenuView::escape($title); ?></h1>
+        <a class="btn btn-outline-primary btn-sm" href="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/orders')); ?>">
+            <?php echo __('guest_menu_orders_title'); ?>
+        </a>
     </div>
 
     <div class="row g-4">
@@ -64,6 +69,19 @@ $categoryCount = (int) ($catalogStats['category_count'] ?? 0);
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label" for="gm-branch"><?php echo __('guest_menu_branch'); ?></label>
+                        <select class="form-select" id="gm-branch" name="branch_id">
+                            <option value=""><?php echo __('guest_menu_branch_all'); ?></option>
+                            <?php foreach ($branches ?? [] as $branch) {
+                                $bid = (int) ($branch['id'] ?? 0);
+                                ?>
+                            <option value="<?php echo $bid; ?>"<?php echo $branchId === $bid ? ' selected' : ''; ?>><?php echo GuestMenuView::escape((string) ($branch['name'] ?? ('#' . $bid))); ?></option>
+                            <?php } ?>
+                        </select>
+                        <div class="form-text"><?php echo __('guest_menu_branch_hint'); ?></div>
+                    </div>
+
+                    <div class="mb-3">
                         <?php
                         $currentMode = (string) ($settings['mode'] ?? 'browse');
                         if (!in_array($currentMode, ['browse', 'order'], true)) {
@@ -95,7 +113,7 @@ $categoryCount = (int) ($catalogStats['category_count'] ?? 0);
                     <div class="alert alert-warning mb-3"><?php echo __('guest_menu_catalog_empty'); ?></div>
                     <?php } ?>
                     <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-wrap gap-2 mb-3">
                         <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>">
                             <?php echo __('guest_menu_open_inventory'); ?>
                         </a>
@@ -104,6 +122,14 @@ $categoryCount = (int) ($catalogStats['category_count'] ?? 0);
                             <?php echo __('guest_menu_open_platform_catalog'); ?>
                         </a>
                         <?php } ?>
+                        <form method="post" action="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/import-catalog')); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <button type="submit" class="btn btn-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
+                        </form>
+                        <form method="post" action="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/seed-demo')); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_seed_demo'); ?></button>
+                        </form>
                     </div>
                     <p class="text-muted small mt-3 mb-0"><?php echo __('guest_menu_mobile_scan_tip'); ?></p>
                 </div>

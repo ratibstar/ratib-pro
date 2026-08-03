@@ -17,6 +17,14 @@ final class GuestMenuPublicController extends Controller
 {
     public function menu(string $slug): void
     {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'HEAD') {
+            if (!headers_sent()) {
+                http_response_code(200);
+                header('Content-Type: text/html; charset=UTF-8');
+            }
+            exit;
+        }
+
         if (!headers_sent()) {
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             header('Pragma: no-cache');

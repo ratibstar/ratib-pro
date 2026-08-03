@@ -29,10 +29,13 @@
     }
 
     function renderProducts(products) {
+        var emptyMsg = document.getElementById('gm-empty-msg');
         if (!products.length) {
-            grid.innerHTML = '<p class="gm-empty">—</p>';
+            grid.innerHTML = '';
+            if (emptyMsg) emptyMsg.hidden = false;
             return;
         }
+        if (emptyMsg) emptyMsg.hidden = true;
         grid.innerHTML = products.map(function (p) {
             var price = p.price || {};
             var inStock = !!p.in_stock;

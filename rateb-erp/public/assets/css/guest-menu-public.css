@@ -12,7 +12,7 @@
 
 .gm-body {
     margin: 0;
-    font-family: 'Tajawal', system-ui, sans-serif;
+    font-family: 'Tajawal', 'Segoe UI', system-ui, sans-serif;
     background: var(--gm-bg);
     color: var(--gm-text);
     min-height: 100dvh;
@@ -231,4 +231,16 @@
     margin: 0.75rem 0 0;
     color: #7dffb0;
     font-size: 0.9rem;
+}
+
+.gm-grid.is-loading {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.gm-empty {
+    text-align: center;
+    color: var(--gm-muted);
+    padding: 2rem 1rem;
+    margin: 0;
 }

@@ -21,4 +21,8 @@ $router->get('/m/{slug}/qr.png', [GuestMenuPublicController::class, 'qrPng']);
 // Admin — POS module permissions
 $router->get($gmApp(''), [GuestMenuAdminController::class, 'index'], $gmMw());
 $router->post($gmApp(''), [GuestMenuAdminController::class, 'save'], $gmMw());
+$router->get($gmApp('orders'), [GuestMenuAdminController::class, 'orders'], $gmMw());
+$router->post($gmApp('orders/{orderId}/status'), [GuestMenuAdminController::class, 'orderStatus'], $gmMw());
+$router->post($gmApp('import-catalog'), [GuestMenuAdminController::class, 'importCatalog'], $gmMw());
+$router->post($gmApp('seed-demo'), [GuestMenuAdminController::class, 'seedDemo'], $gmMw());
 $router->get($gmApp('qr.png'), [GuestMenuAdminController::class, 'qrPng'], $gmMw());

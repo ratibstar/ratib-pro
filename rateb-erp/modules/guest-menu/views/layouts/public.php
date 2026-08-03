@@ -18,9 +18,6 @@ $assetJs = function_exists('rateb_asset') ? rateb_asset('js/guest-menu-public.js
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b1f33">
     <title><?php echo GuestMenuView::escape($title ?? 'Menu'); ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo GuestMenuView::escape($assetCss); ?>">
 </head>
 <body class="gm-body">

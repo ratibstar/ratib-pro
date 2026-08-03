@@ -7,8 +7,12 @@ use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\GuestMenu\Services\GuestMenuCatalogSeedService;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogService;
+use Rateb\App\GuestMenu\Services\GuestMenuOrderService;
+use Rateb\App\GuestMenu\Services\GuestMenuPlatformImportService;
 use Rateb\App\GuestMenu\Services\GuestMenuSettingsService;
+use Rateb\App\Services\BranchService;
 use Rateb\App\GuestMenu\Support\GuestMenuView;
 
 /** Admin settings for guest QR menu. */
@@ -64,8 +68,91 @@ final class GuestMenuAdminController extends Controller
                 : '',
             'platformCatalogEnabled' => function_exists('rateb_platform_catalog_nav_enabled')
                 && rateb_platform_catalog_nav_enabled(),
+            'branches' => $this->branchesForCompany($companyId),
             'csrf' => Csrf::token(),
         ]);
+    }
+
+    public function orders(): void
+    {
+        $this->guardView();
+        $companyId = $this->companyId();
+        $orders = (new GuestMenuOrderService())->listForCompany($companyId, 100);
+        GuestMenuView::render('admin/orders', [
+            'title' => __('guest_menu_orders_title'),
+            'orders' => $orders,
+            'settingsUrl' => rateb_app_url('guest-menu'),
+            'csrf' => Csrf::token(),
+        ]);
+    }
+
+    public function orderStatus(int $orderId): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirect(rateb_app_url('guest-menu/orders'));
+
+            return;
+        }
+        $status = (string) $this->input('status', 'pending');
+        $ok = (new GuestMenuOrderService())->updateStatus($this->companyId(), $orderId, $status);
+        SessionManager::flash($ok ? 'success' : 'error', $ok ? __('guest_menu_order_updated') : __('guest_menu_order_update_failed'));
+        $this->redirect(rateb_app_url('guest-menu/orders'));
+    }
+
+    public function importCatalog(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirect(rateb_app_url('guest-menu'));
+
+            return;
+        }
+        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 50);
+        if (!$result['ok']) {
+            SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
+        } else {
+            SessionManager::flash('success', __('guest_menu_import_done', [
+                'imported' => (string) ($result['imported'] ?? 0),
+                'skipped' => (string) ($result['skipped'] ?? 0),
+            ]));
+        }
+        $this->redirect(rateb_app_url('guest-menu'));
+    }
+
+    public function seedDemo(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirect(rateb_app_url('guest-menu'));
+
+            return;
+        }
+        $result = (new GuestMenuCatalogSeedService())->seedDemoForCompany($this->companyId());
+        if (!$result['ok']) {
+            SessionManager::flash('error', __('guest_menu_seed_failed') . ': ' . (string) ($result['message'] ?? ''));
+        } else {
+            SessionManager::flash('success', __('guest_menu_seed_done', [
+                'count' => (string) ($result['created'] ?? 0),
+            ]));
+        }
+        $this->redirect(rateb_app_url('guest-menu'));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function branchesForCompany(int $companyId): array
+    {
+        if ($companyId < 1 || !class_exists(BranchService::class)) {
+            return [];
+        }
+        try {
+            return (new BranchService())->listForCompany($companyId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function save(): void
