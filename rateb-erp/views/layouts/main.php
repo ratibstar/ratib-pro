@@ -201,6 +201,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if (u.origin !== location.origin) {
                     return;
                 }
+                if (/\/rateb-platform-catalog\//i.test(u.pathname)) {
+                    ev.preventDefault();
+                    try { ev.stopImmediatePropagation(); } catch (eSipCat) { ev.stopPropagation(); }
+                    location.href = u.href;
+                    return;
+                }
                 if (!/\/admin(\/|$)/i.test(u.pathname)) {
                     return;
                 }

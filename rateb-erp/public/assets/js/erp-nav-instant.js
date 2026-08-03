@@ -18,6 +18,8 @@
     /** Prefetch filters + forceFull for selling shell only. */
     var POS_SHELL_RE = POS_RUNTIME_RE;
     var ADMIN_PATH_RE = /\/admin(\/|$)/i;
+    /** Separate app — never soft-nav inside ERP shell. */
+    var PLATFORM_CATALOG_RE = /\/rateb-platform-catalog\//i;
     /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
     var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
     var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
@@ -1781,6 +1783,9 @@
             if (u.origin !== root.location.origin) {
                 return false;
             }
+            if (PLATFORM_CATALOG_RE.test(u.pathname)) {
+                return false;
+            }
             if (!ADMIN_PATH_RE.test(u.pathname)) {
                 return false;
             }
@@ -1824,6 +1829,7 @@
             if (forceHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
                 var fu = new URL(forceHref, root.location.href);
                 var forceFull = a.getAttribute('data-rateb-full-nav') === '1'
+                    || PLATFORM_CATALOG_RE.test(fu.pathname)
                     || (ADMIN_PATH_RE.test(fu.pathname) && POS_RUNTIME_RE.test(fu.pathname))
                     || /\/admin\/company-permissions(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/oversight\/approvals(?:\/|$)/i.test(fu.pathname)

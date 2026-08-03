@@ -118,7 +118,7 @@ $branchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : 0;
                             <?php echo __('guest_menu_open_inventory'); ?>
                         </a>
                         <?php if (!empty($platformCatalogEnabled) && ($platformCatalogUrl ?? '') !== '') { ?>
-                        <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($platformCatalogUrl); ?>" target="_blank" rel="noopener">
+                        <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($platformCatalogUrl); ?>" data-rateb-full-nav="1" target="_blank" rel="noopener">
                             <?php echo __('guest_menu_open_platform_catalog'); ?>
                         </a>
                         <?php } ?>
