@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use Rateb\PlatformCatalog\Http\Controllers\Admin\AdminPageController;
+use Rateb\PlatformCatalog\Http\Controllers\Admin\ErpSsoController;
 
 /** @var \Rateb\PlatformCatalog\Core\Router $router */
 
 $router->get('/', [AdminPageController::class, 'dashboard']);
 $router->get('/admin', [AdminPageController::class, 'dashboard']);
+$router->get('/admin/auth/erp-sso', [ErpSsoController::class, 'accept']);
 $router->get('/admin/products', [AdminPageController::class, 'products']);
 $router->get('/admin/categories', [AdminPageController::class, 'categories']);
 $router->get('/admin/brands', [AdminPageController::class, 'brands']);

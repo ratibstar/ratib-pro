@@ -27,6 +27,14 @@ final class ErpSessionIdentityBridge
         }
 
         $erpSession = $this->resolveErpSessionData();
+        return $this->mapErpSessionPayload($erpSession);
+    }
+
+    /**
+     * @param array<string, mixed> $erpSession
+     */
+    public function mapErpSessionPayload(array $erpSession): ?int
+    {
         $erpUserId = isset($erpSession['rateb_user_id']) ? (int) $erpSession['rateb_user_id'] : 0;
         if ($erpUserId < 1) {
             return null;

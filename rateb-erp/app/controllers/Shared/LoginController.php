@@ -328,7 +328,19 @@ final class LoginController extends Controller
         }
         if (preg_match('#^https?://#i', $next)) {
             $appBase = rateb_public_url('');
-            $next = strpos($next, $appBase) === 0 ? $next : '';
+            if (strpos($next, $appBase) === 0) {
+                // ok — ERP app URL
+            } elseif (str_contains($next, '/rateb-platform-catalog/')) {
+                $host = strtolower((string) parse_url($next, PHP_URL_HOST));
+                $reqHost = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+                if ($host !== '' && $host === $reqHost) {
+                    // ok — catalog return on same host
+                } else {
+                    $next = '';
+                }
+            } else {
+                $next = '';
+            }
         } else {
             $next = rateb_public_url(ltrim($next, '/'));
         }

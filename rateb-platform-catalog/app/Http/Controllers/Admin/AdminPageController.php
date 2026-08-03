@@ -173,6 +173,10 @@ final class AdminPageController
 
     private function render(string $pageKey): void
     {
+        if (!$this->guard->isAuthenticated()) {
+            catalog_maybe_redirect_erp_sso();
+        }
+
         $locale = AdminLocale::resolve();
         $authenticated = $this->guard->isAuthenticated();
         $permissions = $this->navigation->currentPermissions();

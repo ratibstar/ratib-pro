@@ -104,15 +104,94 @@ if (!function_exists('catalog_admin_host_allowed')) {
     }
 }
 
-if (!function_exists('catalog_admin_erp_login_url')) {
-    function catalog_admin_erp_login_url(): string
+if (!function_exists('catalog_admin_dashboard_url')) {
+    function catalog_admin_dashboard_url(): string
+    {
+        $base = defined('RATEB_PLATFORM_CATALOG_BASE_URL') && (string) RATEB_PLATFORM_CATALOG_BASE_URL !== ''
+            ? rtrim((string) RATEB_PLATFORM_CATALOG_BASE_URL, '/')
+            : '/rateb-platform-catalog/public';
+        if (str_ends_with($base, '/public')) {
+            return $base . '/admin';
+        }
+
+        return $base . '/admin';
+    }
+}
+
+if (!function_exists('catalog_current_request_url')) {
+    function catalog_current_request_url(): string
     {
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
         $scheme = $secure ? 'https' : 'http';
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
-        $return = $scheme . '://' . $host . (string) ($_SERVER['REQUEST_URI'] ?? '/rateb-platform-catalog/admin');
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/rateb-platform-catalog/admin');
 
-        return '/rateb-erp/public/login?next=' . rawurlencode($return);
+        return $scheme . '://' . $host . $uri;
+    }
+}
+
+if (!function_exists('catalog_safe_return_url')) {
+    function catalog_safe_return_url(string $return): string
+    {
+        $return = trim($return);
+        if ($return === '' || str_contains($return, '..')) {
+            return '';
+        }
+
+        if (preg_match('#^https?://#i', $return)) {
+            $host = strtolower((string) parse_url($return, PHP_URL_HOST));
+            if (!in_array($host, ['rateb.sa', 'www.rateb.sa', 'localhost', '127.0.0.1'], true)) {
+                return '';
+            }
+            if (!str_contains($return, '/rateb-platform-catalog/')) {
+                return '';
+            }
+
+            return $return;
+        }
+
+        if (!str_starts_with($return, '/rateb-platform-catalog/')) {
+            return '';
+        }
+
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $scheme = $secure ? 'https' : 'http';
+
+        return $scheme . '://' . (string) ($_SERVER['HTTP_HOST'] ?? 'localhost') . $return;
+    }
+}
+
+if (!function_exists('catalog_admin_erp_sso_url')) {
+    function catalog_admin_erp_sso_url(?string $return = null): string
+    {
+        $return = $return ?? catalog_current_request_url();
+
+        return '/rateb-erp/public/platform-catalog/sso?return=' . rawurlencode($return);
+    }
+}
+
+if (!function_exists('catalog_maybe_redirect_erp_sso')) {
+    /** Redirect unauthenticated catalog admin to ERP SSO handoff (same origin). */
+    function catalog_maybe_redirect_erp_sso(): void
+    {
+        if (PHP_SAPI === 'cli' || !catalog_admin_host_allowed()) {
+            return;
+        }
+
+        if (isset($_SESSION['platform_user_id']) && (int) $_SESSION['platform_user_id'] > 0) {
+            return;
+        }
+
+        header('Location: ' . catalog_admin_erp_sso_url(), true, 302);
+        exit;
+    }
+}
+
+if (!function_exists('catalog_admin_erp_login_url')) {
+    function catalog_admin_erp_login_url(): string
+    {
+        return catalog_admin_erp_sso_url();
     }
 }
