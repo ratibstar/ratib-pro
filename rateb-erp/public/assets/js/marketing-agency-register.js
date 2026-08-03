@@ -101,7 +101,8 @@
       return;
     }
     sel.addEventListener('change', function () {
-      var show = sel.value === 'Other countries sending workers';
+      var otherValue = sel.getAttribute('data-other-value') || 'Other countries sending workers';
+      var show = sel.value === otherValue;
       wrap.classList.toggle('d-none', !show);
     });
   }

@@ -144,11 +144,20 @@ if ($planAmount === null && isset($plans[$plan])) {
         $planAmount = $plans[$plan]['amount'] ?? null;
     }
 }
-$countries = [
-    'Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indonesia',
-    'Ethiopia', 'Nigeria', 'Rwanda', 'Thailand', 'Nepal', 'Other countries sending workers',
-];
+$countries = [];
+$countryOtherValue = 'Other countries sending workers';
+$agencyCountriesFile = __DIR__ . '/agency-registration-countries.php';
+if (is_file($agencyCountriesFile)) {
+    require_once $agencyCountriesFile;
+    $countries = rateb_agency_registration_countries(false);
+    $countryOtherValue = rateb_agency_registration_country_other_value();
+}
 $ratebCountryIsLocked = ($ratebLockedCountryName !== '');
-if ($ratebCountryIsLocked && !in_array($ratebLockedCountryName, $countries, true)) {
-    array_unshift($countries, $ratebLockedCountryName);
+if ($ratebCountryIsLocked && !in_array($ratebLockedCountryName, array_column($countries, 'value'), true)) {
+    array_unshift($countries, [
+        'value' => $ratebLockedCountryName,
+        'label' => $ratebLockedCountryName,
+        'label_en' => $ratebLockedCountryName,
+        'label_ar' => $ratebLockedCountryName,
+    ]);
 }

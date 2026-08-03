@@ -93,7 +93,14 @@ function rateb_marketing_unified_context(): ?array
         }
     }
 
-    $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indonesia', 'Ethiopia', 'Nigeria', 'Rwanda', 'Thailand', 'Nepal', 'Other countries sending workers'];
+    $countries = [];
+    $countryOtherValue = 'Other countries sending workers';
+    $agencyCountriesFile = $root . '/includes/agency-registration-countries.php';
+    if (is_file($agencyCountriesFile)) {
+        require_once $agencyCountriesFile;
+        $countries = rateb_agency_registration_countries(false);
+        $countryOtherValue = rateb_agency_registration_country_other_value();
+    }
     $ratebLockedCountryName = '';
     $ratebCountryIsLocked = ($ratebLockedCountryName !== '');
 
@@ -229,6 +236,7 @@ function rateb_marketing_unified_context(): ?array
         'years' => $years,
         'plans' => $plans,
         'countries' => $countries,
+        'countryOtherValue' => $countryOtherValue,
         'ratebCountryIsLocked' => $ratebCountryIsLocked,
         'ratebLockedCountryName' => $ratebLockedCountryName,
         'goldTestPriceYear1' => $goldTestPriceYear1,

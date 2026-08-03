@@ -78,10 +78,10 @@ $paymentSummaryFooter = $ratebHome['home.register.payment_summary.footer'] ?? 'S
             </div>
             <div class="mb-3">
                 <label class="form-label rateb-bilingual-label"><span class="label-en">Country *</span><span class="label-ar" dir="rtl" lang="ar">الدولة *</span></label>
-                <select class="form-control<?php echo $ratebCountryIsLocked ? ' is-locked-country' : ''; ?>" name="<?php echo $ratebCountryIsLocked ? 'country_visible' : 'country'; ?>" id="countrySelect" required <?php echo $ratebCountryIsLocked ? 'disabled' : ''; ?>>
+                <select class="form-control<?php echo $ratebCountryIsLocked ? ' is-locked-country' : ''; ?>" name="<?php echo $ratebCountryIsLocked ? 'country_visible' : 'country'; ?>" id="countrySelect" required <?php echo $ratebCountryIsLocked ? 'disabled' : ''; ?> data-other-value="<?php echo htmlspecialchars($countryOtherValue ?? 'Other countries sending workers', ENT_QUOTES, 'UTF-8'); ?>">
                     <option value="">-- Select Country / اختر الدولة --</option>
                     <?php foreach ($countries as $c): ?>
-                    <option value="<?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($ratebCountryIsLocked && $ratebLockedCountryName === $c) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="<?php echo htmlspecialchars($c['value'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($ratebCountryIsLocked && $ratebLockedCountryName === $c['value']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c['label_en'] . ' / ' . $c['label_ar'], ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <?php if ($ratebCountryIsLocked): ?>

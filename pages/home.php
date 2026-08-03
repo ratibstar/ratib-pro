@@ -341,10 +341,22 @@ if ($planAmount === null && isset($plans[$plan])) {
         $planAmount = $plans[$plan]['amount'] ?? null;
     }
 }
-$countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indonesia', 'Ethiopia', 'Nigeria', 'Rwanda', 'Thailand', 'Nepal', 'Other countries sending workers'];
+$countries = [];
+$countryOtherValue = 'Other countries sending workers';
+$agencyCountriesFile = __DIR__ . '/../includes/agency-registration-countries.php';
+if (is_file($agencyCountriesFile)) {
+    require_once $agencyCountriesFile;
+    $countries = rateb_agency_registration_countries(false);
+    $countryOtherValue = rateb_agency_registration_country_other_value();
+}
 $ratebCountryIsLocked = ($ratebLockedCountryName !== '');
-if ($ratebCountryIsLocked && !in_array($ratebLockedCountryName, $countries, true)) {
-    array_unshift($countries, $ratebLockedCountryName);
+if ($ratebCountryIsLocked && !in_array($ratebLockedCountryName, array_column($countries, 'value'), true)) {
+    array_unshift($countries, [
+        'value' => $ratebLockedCountryName,
+        'label' => $ratebLockedCountryName,
+        'label_en' => $ratebLockedCountryName,
+        'label_ar' => $ratebLockedCountryName,
+    ]);
 }
 
 require_once __DIR__ . '/../includes/site-content.php';
@@ -1107,10 +1119,10 @@ include __DIR__ . '/../includes/rateb-home-public-chrome-top.php';
                 <div class="mb-3"><label class="form-label">Agency ID</label><input type="text" class="form-control" name="agency_id" maxlength="64" placeholder="e.g. registration or license number"></div>
                 <div class="mb-3">
                     <label class="form-label">Country *</label>
-                    <select class="form-control<?php echo $ratebCountryIsLocked ? ' is-locked-country' : ''; ?>" name="<?php echo $ratebCountryIsLocked ? 'country_visible' : 'country'; ?>" id="countrySelect" required <?php echo $ratebCountryIsLocked ? 'disabled' : ''; ?>>
+                    <select class="form-control<?php echo $ratebCountryIsLocked ? ' is-locked-country' : ''; ?>" name="<?php echo $ratebCountryIsLocked ? 'country_visible' : 'country'; ?>" id="countrySelect" required <?php echo $ratebCountryIsLocked ? 'disabled' : ''; ?> data-other-value="<?php echo htmlspecialchars($countryOtherValue ?? 'Other countries sending workers', ENT_QUOTES, 'UTF-8'); ?>">
                         <option value="">-- Select Country --</option>
                         <?php foreach ($countries as $c): ?>
-                        <option value="<?php echo htmlspecialchars($c); ?>" <?php echo ($ratebCountryIsLocked && $ratebLockedCountryName === $c) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c); ?></option>
+                        <option value="<?php echo htmlspecialchars($c['value'], ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($ratebCountryIsLocked && $ratebLockedCountryName === $c['value']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c['label_en'], ENT_QUOTES, 'UTF-8'); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <?php if ($ratebCountryIsLocked): ?>

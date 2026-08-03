@@ -463,7 +463,8 @@
 
         document.getElementById('countrySelect').addEventListener('change', function () {
             var wrap = document.getElementById('otherCountryWrap');
-            wrap.style.display = (this.value === 'Other countries sending workers') ? 'block' : 'none';
+            var otherValue = this.getAttribute('data-other-value') || 'Other countries sending workers';
+            wrap.style.display = (this.value === otherValue) ? 'block' : 'none';
             if (wrap.style.display === 'none') {
                 document.getElementById('countryOther').value = '';
             }

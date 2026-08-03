@@ -41,7 +41,10 @@
 
     var countrySelect = document.getElementById('countrySelect');
     var countryVal = countrySelect ? countrySelect.value : '';
-    if (countryVal === 'Other countries sending workers') {
+    var otherCountryValue = countrySelect
+      ? countrySelect.getAttribute('data-other-value') || 'Other countries sending workers'
+      : 'Other countries sending workers';
+    if (countryVal === otherCountryValue) {
       var otherEl = document.getElementById('countryOther');
       data.country_name =
         (otherEl && otherEl.value.trim()) || 'Other';

@@ -28,10 +28,16 @@ if ($checkoutPlan === 'gold') {
     $planAmount = $checkoutYears === 0 ? $platMonth : $platYear;
 }
 
-$countries = [
-    'Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indonesia',
-    'Ethiopia', 'Nigeria', 'Rwanda', 'Thailand', 'Nepal', 'Other countries sending workers',
-];
+$agencyCountriesFile = dirname(RATEB_ROOT, 1) . '/includes/agency-registration-countries.php';
+if (is_file($agencyCountriesFile)) {
+    require_once $agencyCountriesFile;
+}
+$countries = function_exists('rateb_agency_registration_countries')
+    ? rateb_agency_registration_countries()
+    : [];
+$countryOtherValue = function_exists('rateb_agency_registration_country_other_value')
+    ? rateb_agency_registration_country_other_value()
+    : 'Other countries sending workers';
 $isRtl = function_exists('rateb_is_rtl') && rateb_is_rtl();
 ?>
 <div id="ratebMktAgencyRegister" class="rateb-mkt-agency-register d-none" hidden>
@@ -60,10 +66,10 @@ $isRtl = function_exists('rateb_is_rtl') && rateb_is_rtl();
             </div>
             <div class="mb-3">
                 <label class="form-label"><?php echo __('cms_agency_country'); ?> *</label>
-                <select class="form-select" name="country" id="countrySelect" required>
+                <select class="form-select" name="country" id="countrySelect" required data-other-value="<?php echo htmlspecialchars($countryOtherValue, ENT_QUOTES, 'UTF-8'); ?>">
                     <option value=""><?php echo __('cms_agency_country_select'); ?></option>
                     <?php foreach ($countries as $c) { ?>
-                    <option value="<?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($c, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="<?php echo htmlspecialchars($c['value'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($c['label'], ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php } ?>
                 </select>
             </div>
