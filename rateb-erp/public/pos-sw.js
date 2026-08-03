@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-pos-user-facing-gate-v147';
+var SW_BUILD_ID = '20260803-guest-menu-sw-bypass-v148';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -4626,6 +4626,11 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
+    // Guest QR menu — never intercept (nav, API, assets under /m/).
+    if (isGuestMenuPath(url.pathname)) {
+        return;
+    }
+
     // Cloud document navigations (ONLINE + OFFLINE):
     // Previously offline skipped this block and fell into neverFailNavigate + cache.keys()
     // scans → multi-second black screens. Always use the fast navigate helpers.
@@ -4634,10 +4639,6 @@ self.addEventListener('fetch', function (event) {
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
         && isDocumentNav) {
-        if (isGuestMenuPath(url.pathname)) {
-            releaseBackgroundWarmAfterFirstDocument();
-            return;
-        }
         if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
             if (isCloudBrowserOffline()) {
                 respondWithDocumentAndReleaseWarmGate(

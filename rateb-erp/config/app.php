@@ -1001,6 +1001,9 @@ if (!function_exists('rateb_erp_path_uses_root_prefix')) {
         if ($path === '' || $path === 'site' || str_starts_with($path, 'site/') || str_starts_with($path, 'locale/')) {
             return true;
         }
+        if (str_starts_with($path, 'm/')) {
+            return true;
+        }
 
         return false;
     }

@@ -25,6 +25,21 @@ $assetJs = function_exists('rateb_asset') ? rateb_asset('js/guest-menu-public.js
 </head>
 <body class="gm-body">
 <?php echo $pageContent ?? ''; ?>
+<script>
+(function () {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) {
+            try {
+                var scope = String(reg.scope || '');
+                if (scope.indexOf('/rateb-erp/public') !== -1) {
+                    reg.unregister();
+                }
+            } catch (e) { /* ignore */ }
+        });
+    }).catch(function () { /* ignore */ });
+})();
+</script>
 <script src="<?php echo GuestMenuView::escape($assetJs); ?>" defer></script>
 </body>
 </html>

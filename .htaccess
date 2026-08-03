@@ -288,6 +288,10 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^rateb-erp/public/?(.*)$ rateb-erp/public/index.php?route=$1 [L,QSA]
 
+# Guest QR menu — short public link (rateb.sa/m/{slug}) for mobile scanners
+RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
+RewriteRule ^m/(.*)$ rateb-erp/public/index.php?route=m/$1 [L,QSA]
+
 # Redirect all other requests to public/index.php except existing files/directories
 RewriteCond %{REQUEST_URI} !^/rateb-erp/ [NC]
 RewriteCond %{REQUEST_URI} !^/rateb-platform-catalog/ [NC]
