@@ -11,7 +11,9 @@ return [
     'guest_menu_welcome' => 'رسالة ترحيب',
     'guest_menu_mode' => 'الوضع',
     'guest_menu_mode_browse' => 'استعراض فقط (QR)',
-    'guest_menu_mode_order' => 'طلب (قريباً)',
+    'guest_menu_mode_order' => 'طلب إلكتروني (قريباً)',
+    'guest_menu_mode_hint_browse' => 'يعرض الأصناف والأسعار للضيوف عبر QR — للقراءة فقط.',
+    'guest_menu_mode_hint_order' => 'يتيح للضيوف الطلب من المنيو مباشرة — قيد التطوير.',
     'guest_menu_public_url' => 'الرابط العام',
     'guest_menu_qr_download' => 'تحميل رمز QR',
     'guest_menu_saved' => 'تم حفظ إعدادات المنيو.',
@@ -29,6 +31,6 @@ return [
     'guest_menu_title_ar_placeholder' => 'منيو المطعم',
     'guest_menu_title_en_placeholder' => 'Restaurant Menu',
     'guest_menu_welcome_placeholder' => 'أهلاً بكم — نتمنى لكم تجربة ممتعة.',
-    'guest_menu_mode_hint' => 'استعراض فقط: المنيو للقراءة عبر QR. الطلب الإلكتروني قريباً.',
+    'guest_menu_mode_hint' => 'يعرض الأصناف والأسعار للضيوف عبر QR — للقراءة فقط.',
     'guest_menu_qr_hint' => 'فعّل المنيو واحفظ الإعدادات لإنشاء رمز QR والرابط العام.',
 ];

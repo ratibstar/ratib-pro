@@ -62,11 +62,11 @@ if (!in_array($currentMode, ['browse', 'order'], true)) {
 
                     <div class="mb-3">
                         <label class="form-label" for="gm-mode"><?php echo __('guest_menu_mode'); ?></label>
-                        <select class="form-select" id="gm-mode" name="mode">
+                        <select class="form-select" id="gm-mode" name="mode" aria-describedby="gm-mode-hint">
                             <option value="browse"<?php echo $currentMode === 'browse' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_browse'); ?></option>
                             <option value="order" disabled<?php echo $currentMode === 'order' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_order'); ?></option>
                         </select>
-                        <div class="form-text"><?php echo __('guest_menu_mode_hint'); ?></div>
+                        <div class="form-text" id="gm-mode-hint"><?php echo __('guest_menu_mode_hint_browse'); ?></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
