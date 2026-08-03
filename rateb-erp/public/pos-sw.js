@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-pos-online-live-v146';
+var SW_BUILD_ID = '20260803-pos-user-facing-gate-v147';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -541,51 +541,93 @@ function biometricRequiredOfflineResponse() {
 }
 
 /** Online POS load failed — never show offline-only bio placeholder while the browser is up. */
-function posOnlineLoadFailedResponse(request) {
-    var retryHref = '#';
-    var bioHref = '#';
-    var regHref = '#';
+function posErpScopeBase() {
+    try {
+        if (self.registration && self.registration.scope) {
+            return String(self.registration.scope).replace(/\/?$/, '/');
+        }
+    } catch (eScope) { /* ignore */ }
+    return String(self.location.origin || '') + '/rateb-erp/public/';
+}
+
+function posTryParseJson(body) {
+    try {
+        var t = String(body || '').trim();
+        if (!t || t.charAt(0) !== '{') {
+            return null;
+        }
+        return JSON.parse(t);
+    } catch (eJson) {
+        return null;
+    }
+}
+
+function posCompanyIdFromRequest(request) {
     try {
         var u = new URL(typeof request === 'string' ? request : (request && request.url ? request.url : ''), self.location.origin);
-        u.searchParams.set('rateb_live', '1');
-        retryHref = u.href;
-        var cid = u.searchParams.get('company_id') || '';
-        var q = '?rateb_live=1' + (cid ? ('&company_id=' + encodeURIComponent(cid)) : '');
-        var base = u.pathname.replace(/\/register\/?$/i, '').replace(/\/biometric\/?$/i, '').replace(/\/+$/, '');
-        bioHref = base + '/biometric' + q;
-        regHref = base + '/register' + q;
-    } catch (eHref) { /* ignore */ }
-    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
-        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        + '<title>POS — تعذّر التحميل</title>'
-        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
-        + 'h1{font-size:1.2rem;margin:0 0 .75rem}p{opacity:.9;line-height:1.55;max-width:30rem;margin:.6rem auto}'
-        + 'a{color:#8ab4ff;display:inline-block;margin:.35rem .5rem}</style></head>'
-        + '<body data-rateb-pos-load-failed="1">'
-        + '<h1>تعذّر تحميل نقطة البيع من السيرفر</h1>'
-        + '<p>أنت متصل بالإنترنت — سيتم إعادة المحاولة مباشرة من السيرفر (بدون وضع أوفلاين).</p>'
-        + '<p><a href="' + retryHref + '">إعادة المحاولة</a> · '
-        + '<a href="' + bioHref + '">بوابة التحقق</a> · '
-        + '<a href="' + regHref + '">شاشة البيع</a></p>'
-        + '</body></html>';
-    return new Response(body, {
-        status: 200,
+        return parseInt(u.searchParams.get('company_id') || '0', 10) || 0;
+    } catch (eCid) {
+        return 0;
+    }
+}
+
+function posAdminRedirectUrl(request, preferCompanyEdit) {
+    var base = posErpScopeBase();
+    var cid = posCompanyIdFromRequest(request);
+    if (preferCompanyEdit && cid > 0) {
+        try {
+            return new URL('admin/companies/' + cid + '/edit', base).href;
+        } catch (eEdit) { /* ignore */ }
+    }
+    try {
+        return new URL('admin', base).href;
+    } catch (eAdmin) {
+        return base + 'admin';
+    }
+}
+
+function posHttpRedirectResponse(targetUrl) {
+    return new Response('', {
+        status: 302,
         headers: {
-            'Content-Type': 'text/html; charset=utf-8',
+            Location: String(targetUrl || '/rateb-erp/public/admin'),
             'Cache-Control': 'no-store',
-            'X-Rateb-Pos-Load-Failed': '1'
+            'X-Rateb-Pos-Redirect': '1'
         }
     });
 }
 
-function fetchPosLiveOrShowRetry(request) {
-    return fetchNavigateNetwork(request, 8000).then(function (response) {
-        if (response && response.ok) {
-            return response;
+function posHandleLiveNetworkResponse(response, request) {
+    if (response && response.ok) {
+        if (response.redirected) {
+            try {
+                var finalUrl = String(response.url || '');
+                if (finalUrl && /\/admin(\/|$)/i.test(finalUrl)) {
+                    return posHttpRedirectResponse(finalUrl);
+                }
+            } catch (eRedir) { /* ignore */ }
         }
-        return posOnlineLoadFailedResponse(request);
+        return Promise.resolve(response);
+    }
+    if (!response) {
+        return Promise.resolve(posHttpRedirectResponse(posAdminRedirectUrl(request, false)));
+    }
+    return response.clone().text().then(function (body) {
+        var json = posTryParseJson(body);
+        if (json && (json.code === 'module_not_in_plan' || json.code === 'module_not_allowed')) {
+            return posHttpRedirectResponse(posAdminRedirectUrl(request, json.code === 'module_not_in_plan'));
+        }
+        return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     }).catch(function () {
-        return posOnlineLoadFailedResponse(request);
+        return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
+    });
+}
+
+function fetchPosLiveOrShowRetry(request) {
+    return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+        return posHandleLiveNetworkResponse(response, request);
+    }).catch(function () {
+        return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     });
 }
 
@@ -2305,7 +2347,7 @@ function navigatePosCloudWithCacheSafety(request, url) {
         });
     }
     // Network-first with live-session budget (CSRF-safe); cache only if network is slow/fails.
-    return fetchNavigateNetwork(request, 8000).then(function (response) {
+    return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
         if (response && response.ok) {
             if (!isBiometricGatePath(url.pathname)) {
                 try {
@@ -2313,6 +2355,9 @@ function navigatePosCloudWithCacheSafety(request, url) {
                 } catch (ePin) { /* ignore */ }
             }
             return response;
+        }
+        if (response && !response.ok && !isHardBrowserOffline()) {
+            return posHandleLiveNetworkResponse(response, request);
         }
         return fromCacheOrFallback();
     }).catch(function () {
@@ -3351,7 +3396,11 @@ function navigateFetchInput(request) {
             credentials: 'same-origin',
             cache: 'no-store',
             redirect: 'follow',
-            headers: { Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+            headers: {
+                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Dest': 'document'
+            }
         });
     } catch (e) {
         try {
@@ -4603,8 +4652,10 @@ self.addEventListener('fetch', function (event) {
             if (url.searchParams.get('rateb_live') === '1') {
                 respondWithDocumentAndReleaseWarmGate(
                     event,
-                    fetchNavigateNetworkPassthrough(event.request, 15000).catch(function () {
-                        return posOnlineLoadFailedResponse(event.request);
+                    fetchNavigateNetworkPassthrough(event.request, 15000).then(function (res) {
+                        return posHandleLiveNetworkResponse(res, event.request);
+                    }).catch(function () {
+                        return posHttpRedirectResponse(posAdminRedirectUrl(event.request, false));
                     })
                 );
                 return;

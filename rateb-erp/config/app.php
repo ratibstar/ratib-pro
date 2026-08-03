@@ -382,6 +382,38 @@ if (!function_exists('rateb_is_non_document_request')) {
     }
 }
 
+if (!function_exists('rateb_wants_html_error_page')) {
+    /** Browser / SW HTML shell navigations — flash + redirect, never raw JSON. */
+    function rateb_wants_html_error_page(): bool
+    {
+        $mode = strtolower(trim((string) ($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '')));
+        if ($mode === 'navigate') {
+            return true;
+        }
+        $dest = strtolower(trim((string) ($_SERVER['HTTP_SEC_FETCH_DEST'] ?? '')));
+        if ($dest === 'document' || $dest === 'iframe') {
+            return true;
+        }
+        $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+        if ($accept !== '' && str_contains($accept, 'text/html')) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('rateb_prefers_json_error_response')) {
+    function rateb_prefers_json_error_response(): bool
+    {
+        if (function_exists('rateb_wants_html_error_page') && rateb_wants_html_error_page()) {
+            return false;
+        }
+
+        return function_exists('rateb_is_non_document_request') && rateb_is_non_document_request();
+    }
+}
+
 if (!function_exists('rateb_sync_platform_company_create_maintenance')) {
     /**
      * Super-admin maintenance unlock for creating companies on the platform host.

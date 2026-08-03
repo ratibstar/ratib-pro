@@ -401,9 +401,9 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         if ($companyId < 1 && $enforceForSuper && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = (int) rateb_resolve_ops_company_id();
         }
-        $soft = function_exists('rateb_is_non_document_request') && rateb_is_non_document_request();
+        $jsonOnly = function_exists('rateb_prefers_json_error_response') && rateb_prefers_json_error_response();
         if ($companyId < 1 || $this->module === '') {
-            if ($soft) {
+            if ($jsonOnly) {
                 Response::json(['ok' => false, 'error' => __('module_not_allowed'), 'code' => 'module_not_allowed'], 403);
                 return false;
             }
@@ -416,7 +416,7 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         if (!$limits->companyHasModule($companyId, $this->module)) {
             $label = function_exists('__') ? __($this->module) : $this->module;
             $msg = __('module_not_in_plan_named', ['module' => $label]);
-            if ($soft) {
+            if ($jsonOnly) {
                 Response::json([
                     'ok' => false,
                     'error' => $msg,
@@ -426,7 +426,11 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
                 return false;
             }
             SessionManager::flash('error', $msg);
-            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            $redirectUrl = function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin');
+            if (SessionManager::get('rateb_is_super_admin') && $companyId > 0 && function_exists('rateb_url')) {
+                $redirectUrl = rateb_url('admin/companies/' . $companyId . '/edit');
+            }
+            Response::redirect($redirectUrl);
             return false;
         }
 
