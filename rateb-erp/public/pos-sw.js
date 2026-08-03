@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-company-modules-nav-v145';
+var SW_BUILD_ID = '20260803-pos-online-live-v146';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -524,7 +524,7 @@ function biometricRequiredOfflineResponse() {
         + '<p>افتح نقطة البيع وأنت متصل، أكمل التحقق البيومتري مرة واحدة، ثم أعد المحاولة دون إنترنت.</p>'
         + '<p><a id="a-bio" href="#">فتح بوابة التحقق</a> · <a id="a-reg" href="#">شاشة البيع</a></p>'
         + '<script>(function(){try{var u=new URL(location.href);var cid=u.searchParams.get("company_id")||"";'
-        + 'var q=cid?("?company_id="+cid):"";var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/biometric\\/?$/,"");'
+        + 'var q="?rateb_live=1"+(cid?("&company_id="+encodeURIComponent(cid)):"");var base=u.pathname.replace(/\\/register\\/?$/,"").replace(/\\/biometric\\/?$/,"");'
         + 'var bio=base.replace(/\\/?$/,"")+"/biometric"+q;var reg=base.replace(/\\/?$/,"")+"/register"+q;'
         + 'var a1=document.getElementById("a-bio");var a2=document.getElementById("a-reg");'
         + 'if(a1)a1.href=bio;if(a2)a2.href=reg;}catch(e){}})();<\/script>'
@@ -538,6 +538,62 @@ function biometricRequiredOfflineResponse() {
             'X-Rateb-Pos-Bio-Required': '1'
         }
     });
+}
+
+/** Online POS load failed — never show offline-only bio placeholder while the browser is up. */
+function posOnlineLoadFailedResponse(request) {
+    var retryHref = '#';
+    var bioHref = '#';
+    var regHref = '#';
+    try {
+        var u = new URL(typeof request === 'string' ? request : (request && request.url ? request.url : ''), self.location.origin);
+        u.searchParams.set('rateb_live', '1');
+        retryHref = u.href;
+        var cid = u.searchParams.get('company_id') || '';
+        var q = '?rateb_live=1' + (cid ? ('&company_id=' + encodeURIComponent(cid)) : '');
+        var base = u.pathname.replace(/\/register\/?$/i, '').replace(/\/biometric\/?$/i, '').replace(/\/+$/, '');
+        bioHref = base + '/biometric' + q;
+        regHref = base + '/register' + q;
+    } catch (eHref) { /* ignore */ }
+    var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>POS — تعذّر التحميل</title>'
+        + '<style>body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#0f1117;color:#e8eaed;text-align:center}'
+        + 'h1{font-size:1.2rem;margin:0 0 .75rem}p{opacity:.9;line-height:1.55;max-width:30rem;margin:.6rem auto}'
+        + 'a{color:#8ab4ff;display:inline-block;margin:.35rem .5rem}</style></head>'
+        + '<body data-rateb-pos-load-failed="1">'
+        + '<h1>تعذّر تحميل نقطة البيع من السيرفر</h1>'
+        + '<p>أنت متصل بالإنترنت — سيتم إعادة المحاولة مباشرة من السيرفر (بدون وضع أوفلاين).</p>'
+        + '<p><a href="' + retryHref + '">إعادة المحاولة</a> · '
+        + '<a href="' + bioHref + '">بوابة التحقق</a> · '
+        + '<a href="' + regHref + '">شاشة البيع</a></p>'
+        + '</body></html>';
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Rateb-Pos-Load-Failed': '1'
+        }
+    });
+}
+
+function fetchPosLiveOrShowRetry(request) {
+    return fetchNavigateNetwork(request, 8000).then(function (response) {
+        if (response && response.ok) {
+            return response;
+        }
+        return posOnlineLoadFailedResponse(request);
+    }).catch(function () {
+        return posOnlineLoadFailedResponse(request);
+    });
+}
+
+function posBioRequiredOrLiveRetry(request) {
+    if (isHardBrowserOffline()) {
+        return Promise.resolve(biometricRequiredOfflineResponse());
+    }
+    return fetchPosLiveOrShowRetry(request);
 }
 
 
@@ -2239,11 +2295,17 @@ function navigatePosCloudWithCacheSafety(request, url) {
     // Admin CRUD pages never rewrite to register / cert shell (handled by navigatePosAdminCrudDocument).
     function fromCacheOrFallback() {
         return matchCertifiedPosShellSnapshot(shellReq).then(function (hit) {
-            return hit || shellFallback(shellReq);
+            if (hit) {
+                return hit;
+            }
+            if (!isHardBrowserOffline()) {
+                return fetchPosLiveOrShowRetry(request);
+            }
+            return shellFallback(shellReq);
         });
     }
-    // Network-first with short budget (CSRF-safe); cache only if network is slow/fails.
-    return fetchNavigateNetwork(request, 1200).then(function (response) {
+    // Network-first with live-session budget (CSRF-safe); cache only if network is slow/fails.
+    return fetchNavigateNetwork(request, 8000).then(function (response) {
         if (response && response.ok) {
             if (!isBiometricGatePath(url.pathname)) {
                 try {
@@ -3764,22 +3826,22 @@ function serveCertifiedShellOrBioRequired(request) {
                 });
             }, Promise.resolve(null)).then(function (cached) {
                 if (!cached) {
-                    return biometricRequiredOfflineResponse();
+                    return posBioRequiredOrLiveRetry(request);
                 }
                 return cached.clone().text().then(function (html) {
                     if (!isCertifiedRegisterHtml(html)) {
-                        return biometricRequiredOfflineResponse();
+                        return posBioRequiredOrLiveRetry(request);
                     }
                     // Phase OJ — certified meta is mandatory (no legacy uncertified shell).
                     if (!meta || !certMetaMatchesRequest(meta, url)) {
-                        return biometricRequiredOfflineResponse();
+                        return posBioRequiredOrLiveRetry(request);
                     }
                     var hashNow = simpleHtmlHash(html);
                     if (meta.html_len && meta.html_len !== html.length) {
-                        return biometricRequiredOfflineResponse();
+                        return posBioRequiredOrLiveRetry(request);
                     }
                     if (meta.html_hash && String(meta.html_hash).indexOf('fnv1a:') === 0 && meta.html_hash !== hashNow) {
-                        return biometricRequiredOfflineResponse();
+                        return posBioRequiredOrLiveRetry(request);
                     }
                     var headers = new Headers({
                         'Content-Type': 'text/html; charset=utf-8',
@@ -3792,7 +3854,7 @@ function serveCertifiedShellOrBioRequired(request) {
             });
         });
     }).catch(function () {
-        return biometricRequiredOfflineResponse();
+        return posBioRequiredOrLiveRetry(request);
     });
 }
 
@@ -3876,6 +3938,9 @@ function shellFallback(request) {
             }
         }
     } catch (eCrudShell) { /* ignore */ }
+    if (!isHardBrowserOffline()) {
+        return fetchPosLiveOrShowRetry(request);
+    }
     return serveCertifiedShellOrBioRequired(request);
 }
 
@@ -4534,6 +4599,16 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isPosNavigation(url)) {
+            // Live bypass: always hit PHP when user explicitly asks (recovery from stale SW cache).
+            if (url.searchParams.get('rateb_live') === '1') {
+                respondWithDocumentAndReleaseWarmGate(
+                    event,
+                    fetchNavigateNetworkPassthrough(event.request, 15000).catch(function () {
+                        return posOnlineLoadFailedResponse(event.request);
+                    })
+                );
+                return;
+            }
             // POS admin CRUD now uses Admin ERP HTML. Online: never intercept (no false
             // "connection required" when Wi‑Fi is up). Hard offline only → message page.
             if (isPosAdminCrudPath(url.pathname) || !isPosRuntimePath(url.pathname)) {
@@ -4549,11 +4624,14 @@ self.addEventListener('fetch', function (event) {
             }
             respondWithDocumentAndReleaseWarmGate(
                 event,
-                (isCloudBrowserOffline()
+                (isHardBrowserOffline()
                     ? shellFallback(event.request)
                     : navigatePosCloudWithCacheSafety(event.request, url)
                 ).catch(function () {
-                    return shellFallback(event.request);
+                    if (isHardBrowserOffline()) {
+                        return shellFallback(event.request);
+                    }
+                    return fetchPosLiveOrShowRetry(event.request);
                 })
             );
             return;
