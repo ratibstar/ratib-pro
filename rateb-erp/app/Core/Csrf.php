@@ -60,17 +60,34 @@ final class Csrf
             return;
         }
         $secure = self::requestIsSecure();
-        $path = SessionManager::cookiePath();
+        $canonical = SessionManager::cookiePath();
+        // Expire duplicates on other paths, then set the canonical cookie.
+        foreach (SessionManager::cookiePathCandidates() as $path) {
+            if ($path === $canonical) {
+                continue;
+            }
+            if (PHP_VERSION_ID >= 70300) {
+                setcookie(self::COOKIE_NAME, '', [
+                    'expires' => time() - 3600,
+                    'path' => $path,
+                    'secure' => $secure,
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            } else {
+                setcookie(self::COOKIE_NAME, '', time() - 3600, $path, '', $secure, true);
+            }
+        }
         if (PHP_VERSION_ID >= 70300) {
             setcookie(self::COOKIE_NAME, $token, [
                 'expires' => 0,
-                'path' => $path,
+                'path' => $canonical,
                 'secure' => $secure,
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
         } else {
-            setcookie(self::COOKIE_NAME, $token, 0, $path, '', $secure, true);
+            setcookie(self::COOKIE_NAME, $token, 0, $canonical, '', $secure, true);
         }
     }
 

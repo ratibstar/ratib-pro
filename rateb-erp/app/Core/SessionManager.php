@@ -7,17 +7,18 @@ final class SessionManager
 {
     public static function cookiePath(): string
     {
-        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
-        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
-            // Site-wide so /rateb-platform-catalog/ can read rateb_erp (SSO + session bridge).
-            return '/';
-        }
-
+        // Keep ERP session scoped to the app prefix. Site-wide "/" caused duplicate
+        // rateb_erp cookies (old /rateb-erp/public + new /) and broke login CSRF.
         if (function_exists('rateb_erp_app_prefix')) {
             $p = rtrim((string) rateb_erp_app_prefix(), '/');
             if ($p !== '') {
                 return $p;
             }
+        }
+
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            return '/rateb-erp/public';
         }
 
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
@@ -31,12 +32,41 @@ final class SessionManager
     /** @return list<string> */
     public static function cookiePathCandidates(): array
     {
-        $paths = [self::cookiePath()];
-        if (!in_array('/', $paths, true)) {
-            $paths[] = '/';
-        }
+        // Always expire both legacy "/" and app-prefix cookies when clearing.
+        return array_values(array_unique(array_filter([
+            self::cookiePath(),
+            '/rateb-erp/public',
+            '/',
+        ])));
+    }
 
-        return $paths;
+    /** Drop non-canonical session/CSRF cookies so only one path remains. */
+    public static function clearAlternatePathCookies(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        $canonical = self::cookiePath();
+        $secure = self::requestIsSecure();
+        foreach (['rateb_erp', 'rateb_csrf'] as $name) {
+            foreach (self::cookiePathCandidates() as $path) {
+                if ($path === $canonical) {
+                    continue;
+                }
+                if (PHP_VERSION_ID >= 70300) {
+                    setcookie($name, '', [
+                        'expires' => time() - 42000,
+                        'path' => $path,
+                        'domain' => '',
+                        'secure' => $secure,
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
+                } else {
+                    setcookie($name, '', time() - 42000, $path, '', $secure, true);
+                }
+            }
+        }
     }
 
     private static function expireNamedCookie(string $name): void
@@ -81,6 +111,7 @@ final class SessionManager
         self::ensureSavePath();
         $secure = self::requestIsSecure();
         $cookiePath = self::cookiePath();
+        self::clearAlternatePathCookies();
 
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
@@ -210,15 +241,20 @@ final class SessionManager
 
     public static function destroy(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            return;
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION = [];
+            self::expireNamedCookie(session_name());
+            session_destroy();
+        } else {
+            self::expireNamedCookie('rateb_erp');
         }
-        $_SESSION = [];
-        self::expireNamedCookie(session_name());
-        session_destroy();
+        self::clearAlternatePathCookies();
+        if (class_exists(Csrf::class)) {
+            Csrf::clearCookie();
+        }
         session_name('rateb_erp');
-        session_start();
+        self::start();
         session_regenerate_id(true);
-        $_SESSION['_rateb_init'] = time();
+        $_SESSION = ['_rateb_init' => time()];
     }
 }

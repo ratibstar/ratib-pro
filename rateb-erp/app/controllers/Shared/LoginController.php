@@ -31,6 +31,12 @@ final class LoginController extends Controller
             return;
         }
 
+        // Recover from duplicate session cookies (path=/ vs /rateb-erp/public) that break CSRF.
+        $err = (string) ($_GET['err'] ?? '');
+        if ($err === 'csrf' || $err === 'session') {
+            SessionManager::destroy();
+        }
+
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
             IpRateLimiter::reset('erp_login_ip_' . md5($ip));
