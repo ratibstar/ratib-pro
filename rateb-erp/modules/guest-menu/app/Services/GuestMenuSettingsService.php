@@ -53,42 +53,92 @@ final class GuestMenuSettingsService
     }
 
     /**
-     * Ensure settings row exists for company (defaults from company slug).
+     * Ensure settings row exists for company (defaults from company profile).
      *
      * @return array<string, mixed>
      */
     public function ensureForCompany(int $companyId): array
     {
+        $defaults = $this->buildDefaultsForCompany($companyId);
         $existing = $this->getByCompanyId($companyId);
-        if ($existing !== null) {
-            return $existing;
+        if ($existing === null) {
+            $slug = $this->allocateUniqueSlug((string) $defaults['public_slug'], $companyId);
+            $stmt = $this->db->prepare(
+                'INSERT INTO rateb_guest_menu_settings
+                 (company_id, is_enabled, public_slug, mode, title_ar, title_en, welcome_message, created_at)
+                 VALUES (:cid, :enabled, :slug, :mode, :title_ar, :title_en, :welcome, NOW())'
+            );
+            $stmt->execute([
+                'cid' => $companyId,
+                'enabled' => (int) ($defaults['is_enabled'] ?? 1),
+                'slug' => $slug,
+                'mode' => (string) ($defaults['mode'] ?? 'browse'),
+                'title_ar' => $defaults['title_ar'],
+                'title_en' => $defaults['title_en'],
+                'welcome' => $defaults['welcome_message'],
+            ]);
+
+            return $this->getByCompanyId($companyId) ?? array_merge($defaults, [
+                'company_id' => $companyId,
+                'public_slug' => $slug,
+            ]);
         }
 
+        $patched = $this->mergeMissingDefaults($existing, $defaults);
+        if ($patched !== $existing) {
+            $this->persistDefaults($companyId, $patched);
+
+            return $this->getByCompanyId($companyId) ?? $patched;
+        }
+
+        return $existing;
+    }
+
+    /**
+     * Suggested defaults for a company's guest menu (slug, titles, welcome).
+     *
+     * @return array{
+     *   is_enabled:int,
+     *   public_slug:string,
+     *   mode:string,
+     *   title_ar:string,
+     *   title_en:string,
+     *   welcome_message:string
+     * }
+     */
+    public function buildDefaultsForCompany(int $companyId): array
+    {
         $company = (new Company())->find($companyId);
-        $baseSlug = self::normalizeSlug((string) ($company['slug'] ?? ('menu-' . $companyId)));
+        $companyName = trim((string) ($company['name'] ?? ''));
+        if ($companyName === '') {
+            $companyName = 'Menu ' . $companyId;
+        }
+
+        $baseSlug = self::normalizeSlug((string) ($company['slug'] ?? ''));
+        if ($baseSlug === '') {
+            $baseSlug = self::normalizeSlug('menu-' . $companyId);
+        }
         if ($baseSlug === '') {
             $baseSlug = 'menu-' . $companyId;
         }
-        $slug = $this->allocateUniqueSlug($baseSlug, $companyId);
 
-        $stmt = $this->db->prepare(
-            'INSERT INTO rateb_guest_menu_settings
-             (company_id, is_enabled, public_slug, mode, title_ar, title_en, created_at)
-             VALUES (:cid, 0, :slug, \'browse\', :title_ar, :title_en, NOW())'
-        );
-        $companyName = trim((string) ($company['name'] ?? ''));
-        $stmt->execute([
-            'cid' => $companyId,
-            'slug' => $slug,
-            'title_ar' => $companyName !== '' ? $companyName : null,
-            'title_en' => $companyName !== '' ? $companyName : null,
-        ]);
+        $titleAr = function_exists('__')
+            ? __('guest_menu_default_title_ar', ['name' => $companyName])
+            : ('منيو ' . $companyName);
+        $titleEn = function_exists('__')
+            ? __('guest_menu_default_title_en', ['name' => $companyName])
+            : ($companyName . ' Menu');
+        $welcome = function_exists('__')
+            ? __('guest_menu_default_welcome', ['name' => $companyName])
+            : ('أهلاً بكم في ' . $companyName . ' — تصفّح قائمتنا واختر ما يناسبك.');
 
-        return $this->getByCompanyId($companyId) ?? [
-            'company_id' => $companyId,
-            'is_enabled' => 0,
-            'public_slug' => $slug,
+        return [
+            'is_enabled' => 1,
+            'public_slug' => $baseSlug,
             'mode' => 'browse',
+            'title_ar' => $titleAr,
+            'title_en' => $titleEn,
+            'welcome_message' => $welcome,
         ];
     }
 
@@ -191,6 +241,62 @@ final class GuestMenuSettingsService
         $stmt->execute(['slug' => $slug, 'cid' => $companyId]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) === false;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param array<string, mixed> $defaults
+     * @return array<string, mixed>
+     */
+    private function mergeMissingDefaults(array $row, array $defaults): array
+    {
+        $merged = $row;
+        foreach (['title_ar', 'title_en', 'welcome_message'] as $key) {
+            if (trim((string) ($merged[$key] ?? '')) === '' && trim((string) ($defaults[$key] ?? '')) !== '') {
+                $merged[$key] = $defaults[$key];
+            }
+        }
+        if (trim((string) ($merged['public_slug'] ?? '')) === '') {
+            $companyId = (int) ($merged['company_id'] ?? 0);
+            $base = (string) ($defaults['public_slug'] ?? '');
+            $merged['public_slug'] = $companyId > 0
+                ? $this->allocateUniqueSlug($base, $companyId)
+                : $base;
+        }
+        if (trim((string) ($merged['mode'] ?? '')) === '') {
+            $merged['mode'] = (string) ($defaults['mode'] ?? 'browse');
+        }
+
+        return $merged;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function persistDefaults(int $companyId, array $row): void
+    {
+        $slug = self::normalizeSlug((string) ($row['public_slug'] ?? ''));
+        if ($slug === '') {
+            return;
+        }
+        $stmt = $this->db->prepare(
+            'UPDATE rateb_guest_menu_settings SET
+                public_slug = :slug,
+                mode = :mode,
+                title_ar = :title_ar,
+                title_en = :title_en,
+                welcome_message = :welcome,
+                updated_at = NOW()
+             WHERE company_id = :cid'
+        );
+        $stmt->execute([
+            'slug' => $slug,
+            'mode' => in_array((string) ($row['mode'] ?? 'browse'), ['browse', 'order'], true)
+                ? (string) $row['mode']
+                : 'browse',
+            'title_ar' => self::nullableString($row['title_ar'] ?? null),
+            'title_en' => self::nullableString($row['title_en'] ?? null),
+            'welcome' => self::nullableString($row['welcome_message'] ?? null),
+            'cid' => $companyId,
+        ]);
     }
 
     private static function nullableString(mixed $value): ?string

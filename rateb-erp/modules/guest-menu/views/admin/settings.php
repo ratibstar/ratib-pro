@@ -8,6 +8,10 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $publicUrl */
 /** @var string $qrUrl */
 /** @var string $csrf */
+$currentMode = (string) ($settings['mode'] ?? 'browse');
+if (!in_array($currentMode, ['browse', 'order'], true)) {
+    $currentMode = 'browse';
+}
 ?>
 <div class="gm-admin-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -30,34 +34,39 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
                         <label class="form-label" for="gm-slug"><?php echo __('guest_menu_public_slug'); ?></label>
                         <input class="form-control" id="gm-slug" name="public_slug" required minlength="3" maxlength="64"
                             pattern="[a-z0-9-]+"
+                            placeholder="<?php echo GuestMenuView::escape(__('guest_menu_slug_placeholder')); ?>"
                             value="<?php echo GuestMenuView::escape((string) ($settings['public_slug'] ?? '')); ?>">
-                        <div class="form-text">a-z, 0-9, hyphen — min 3 chars</div>
+                        <div class="form-text"><?php echo __('guest_menu_slug_hint'); ?></div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label" for="gm-title-ar"><?php echo __('guest_menu_title_ar'); ?></label>
                             <input class="form-control" id="gm-title-ar" name="title_ar"
+                                placeholder="<?php echo GuestMenuView::escape(__('guest_menu_title_ar_placeholder')); ?>"
                                 value="<?php echo GuestMenuView::escape((string) ($settings['title_ar'] ?? '')); ?>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label" for="gm-title-en"><?php echo __('guest_menu_title_en'); ?></label>
                             <input class="form-control" id="gm-title-en" name="title_en"
+                                placeholder="<?php echo GuestMenuView::escape(__('guest_menu_title_en_placeholder')); ?>"
                                 value="<?php echo GuestMenuView::escape((string) ($settings['title_en'] ?? '')); ?>">
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="gm-welcome"><?php echo __('guest_menu_welcome'); ?></label>
-                        <textarea class="form-control" id="gm-welcome" name="welcome_message" rows="2"><?php echo GuestMenuView::escape((string) ($settings['welcome_message'] ?? '')); ?></textarea>
+                        <textarea class="form-control" id="gm-welcome" name="welcome_message" rows="2"
+                            placeholder="<?php echo GuestMenuView::escape(__('guest_menu_welcome_placeholder')); ?>"><?php echo GuestMenuView::escape((string) ($settings['welcome_message'] ?? '')); ?></textarea>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="gm-mode"><?php echo __('guest_menu_mode'); ?></label>
                         <select class="form-select" id="gm-mode" name="mode">
-                            <option value="browse" selected><?php echo __('guest_menu_mode_browse'); ?></option>
-                            <option value="order" disabled><?php echo __('guest_menu_mode_order'); ?></option>
+                            <option value="browse"<?php echo $currentMode === 'browse' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_browse'); ?></option>
+                            <option value="order" disabled<?php echo $currentMode === 'order' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_order'); ?></option>
                         </select>
+                        <div class="form-text"><?php echo __('guest_menu_mode_hint'); ?></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
@@ -78,7 +87,7 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
                         <?php echo __('guest_menu_qr_download'); ?>
                     </a>
                     <?php } else { ?>
-                    <p class="text-muted mb-0"><?php echo __('guest_menu_enable'); ?> + save to generate QR.</p>
+                    <p class="text-muted mb-0"><?php echo __('guest_menu_qr_hint'); ?></p>
                     <?php } ?>
                 </div>
             </div>
