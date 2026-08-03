@@ -106,6 +106,10 @@ $ratebRowRecordLabel = static function (array $row): string {
             <button type="button" class="btn btn-danger btn-sm" data-rateb-bulk-delete-btn><i class="fas fa-trash"></i> <?php echo __('bulk_delete'); ?></button>
         </form>
         <?php if ($isCompanies) { ?>
+        <form method="post" action="<?php echo rateb_url('admin/companies/bulk-activate'); ?>" class="d-inline" data-rateb-bulk-form="activate">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?></button>
+        </form>
         <form method="post" action="<?php echo rateb_url('admin/companies/bulk-suspend'); ?>" class="d-inline" data-rateb-bulk-form="suspend">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-pause"></i> <?php echo __('bulk_suspend'); ?></button>
@@ -344,6 +348,15 @@ $ratebRowRecordLabel = static function (array $row): string {
                                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                         <button type="submit" class="dropdown-item text-warning">
                                             <i class="fas fa-pause me-1"></i><?php echo __('bulk_suspend'); ?>
+                                        </button>
+                                    </form>
+                                </li>
+                                <?php } elseif ($companyStatus === 'suspended') { ?>
+                                <li>
+                                    <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/activate'); ?>">
+                                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                        <button type="submit" class="dropdown-item text-success">
+                                            <i class="fas fa-play me-1"></i><?php echo __('bulk_activate'); ?>
                                         </button>
                                     </form>
                                 </li>

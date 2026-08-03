@@ -27,12 +27,27 @@ $lockedCore = ['dashboard', 'notifications'];
         </div>
     </div>
     <div class="rateb-card-body">
-        <div class="alert alert-info">
-            <strong><?php echo Rateb\App\Core\View::escape($companyName); ?></strong>
-            · #<?php echo $cid; ?>
-            · <?php echo __('status'); ?>: <?php echo __((string) ($company['status'] ?? 'pending')); ?>
-            <?php if (!empty($limits['plan_name'])) { ?>
-            · <?php echo __('current_plan'); ?>: <?php echo Rateb\App\Core\View::escape((string) $limits['plan_name']); ?>
+        <?php
+        $companyStatus = (string) ($company['status'] ?? 'pending');
+        $canActivateCompany = ($companyStatus === 'suspended')
+            && (rateb_is_super_admin() || rateb_can('companies.manage'));
+        ?>
+        <div class="alert alert-<?php echo $companyStatus === 'suspended' ? 'warning' : 'info'; ?> d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <strong><?php echo Rateb\App\Core\View::escape($companyName); ?></strong>
+                · #<?php echo $cid; ?>
+                · <?php echo __('status'); ?>: <?php echo __($companyStatus); ?>
+                <?php if (!empty($limits['plan_name'])) { ?>
+                · <?php echo __('current_plan'); ?>: <?php echo Rateb\App\Core\View::escape((string) $limits['plan_name']); ?>
+                <?php } ?>
+            </div>
+            <?php if ($canActivateCompany) { ?>
+            <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/activate'); ?>" class="mb-0">
+                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                <button type="submit" class="btn btn-sm btn-success">
+                    <i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?>
+                </button>
+            </form>
             <?php } ?>
         </div>
         <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_rbac'); ?></p>

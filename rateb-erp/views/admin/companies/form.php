@@ -105,7 +105,15 @@ $agencyPortalMode = !empty($agencyPortalMode);
                     <div class="form-control-plaintext">
                         <span class="badge bg-<?php echo $statusBadge; ?>"><?php echo __($currentStatus); ?></span>
                     </div>
-                    <p class="form-text mb-0"><?php echo __('company_status_oversight_hint'); ?></p>
+                    <?php if ($currentStatus === 'suspended' && (rateb_is_super_admin() || rateb_can('companies.manage'))) { ?>
+                    <form method="post" action="<?php echo rateb_url('admin/companies/' . (int) $item['id'] . '/activate'); ?>" class="mt-2">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?>
+                        </button>
+                    </form>
+                    <?php } ?>
+                    <p class="form-text mb-0"><?php echo $currentStatus === 'suspended' ? __('company_status_suspended_activate_hint') : __('company_status_oversight_hint'); ?></p>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('plans'); ?></label>

@@ -1085,8 +1085,48 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
     public function activate(array $params): void
     {
-        SessionManager::flash('info', __('company_approve_in_oversight'));
-        Response::redirect(rateb_url('admin/oversight/companies-approvals'));
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $row = $this->model->find($id);
+        if (!$row) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $status = (string) ($row['status'] ?? '');
+        if ($status === 'pending') {
+            SessionManager::flash('info', __('company_approve_in_oversight'));
+            Response::redirect(rateb_url('admin/oversight/companies-approvals'));
+        }
+        if ($status === 'active') {
+            SessionManager::flash('info', __('company_already_active'));
+            $this->redirectAfterCompanyActivate($id);
+        }
+        if ($status !== 'suspended') {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $this->model->activate($id);
+        \Rateb\App\Services\PlanLimitService::forgetCompanyLimits($id);
+        (new AuditService())->log('activate', 'company', $id);
+        SessionManager::flash('success', __('company_activated'));
+        $this->redirectAfterCompanyActivate($id);
+    }
+
+    private function redirectAfterCompanyActivate(int $id): void
+    {
+        $referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($referer !== '' && str_contains($referer, 'company-permissions')) {
+            Response::redirect(rateb_url('admin/company-permissions/' . $id));
+        }
+        if ($referer !== '' && str_contains($referer, '/companies/' . $id)) {
+            Response::redirect(rateb_url('admin/companies/' . $id . '/edit'));
+        }
+        Response::redirect(rateb_url('admin/companies'));
     }
 
     public function branchesHub(): void
@@ -1286,8 +1326,40 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
     public function bulkActivate(): void
     {
-        SessionManager::flash('info', __('company_approve_in_oversight'));
-        Response::redirect(rateb_url('admin/oversight/companies-approvals'));
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $activated = 0;
+        $pending = 0;
+        foreach ($this->parseBulkIds() as $id) {
+            $id = (int) $id;
+            $row = $this->model->find($id);
+            if (!$row) {
+                continue;
+            }
+            $status = (string) ($row['status'] ?? '');
+            if ($status === 'pending') {
+                $pending++;
+                continue;
+            }
+            if ($status !== 'suspended') {
+                continue;
+            }
+            $this->model->activate($id);
+            \Rateb\App\Services\PlanLimitService::forgetCompanyLimits($id);
+            (new AuditService())->log('bulk_activate', 'company', $id);
+            $activated++;
+        }
+        if ($activated > 0) {
+            SessionManager::flash('success', __('bulk_activated', ['count' => $activated]));
+        }
+        if ($pending > 0) {
+            SessionManager::flash('info', __('company_bulk_pending_use_oversight', ['count' => $pending]));
+        }
+        if ($activated === 0 && $pending === 0) {
+            SessionManager::flash('info', __('company_bulk_nothing_to_activate'));
+        }
+        Response::redirect(rateb_url('admin/companies'));
     }
 }
 
