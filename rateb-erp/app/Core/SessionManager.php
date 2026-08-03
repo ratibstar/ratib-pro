@@ -7,6 +7,12 @@ final class SessionManager
 {
     public static function cookiePath(): string
     {
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
+            // Site-wide so /rateb-platform-catalog/ can read rateb_erp (SSO + session bridge).
+            return '/';
+        }
+
         if (function_exists('rateb_erp_app_prefix')) {
             $p = rtrim((string) rateb_erp_app_prefix(), '/');
             if ($p !== '') {
@@ -14,11 +20,6 @@ final class SessionManager
             }
         }
 
-        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
-        if (in_array($host, ['rateb.sa', 'www.rateb.sa'], true)) {
-            // Site-wide path so platform catalog (/rateb-platform-catalog/) receives rateb_erp.
-            return '/';
-        }
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
         if (preg_match('#(/rateb-erp/public)(?:/|$)#', $uri, $m)) {
             return $m[1];

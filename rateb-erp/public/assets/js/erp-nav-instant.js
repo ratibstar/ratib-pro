@@ -1829,6 +1829,10 @@
         try {
             var forceHref = navHrefOf(a);
             if (forceHref && ev.button === 0 && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
+                // Respect new-tab / download links — never swallow them into same-window nav.
+                if (a.target && a.target !== '' && a.target !== '_self') {
+                    return;
+                }
                 var fu = new URL(forceHref, root.location.href);
                 var forceFull = a.getAttribute('data-rateb-full-nav') === '1'
                     || PLATFORM_CATALOG_RE.test(fu.pathname)

@@ -35,7 +35,9 @@ $router->get('/', static function (): void {
 });
 
 $router->get('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'showLogin'], rateb_guest_mw());
-$router->get('/platform-catalog/sso', [\Rateb\App\Controllers\Shared\PlatformCatalogSsoController::class, 'start'], rateb_guest_mw());
+// No GuestMiddleware — logged-in super-admins must reach SSO (guest mw would bounce to dashboard).
+$router->get('/platform-catalog/sso', [\Rateb\App\Controllers\Shared\PlatformCatalogSsoController::class, 'start']);
+$router->get('/admin/platform-catalog/sso', [\Rateb\App\Controllers\Shared\PlatformCatalogSsoController::class, 'start']);
 $router->get('/scan/doc/{code}', [\Rateb\App\Controllers\Shared\DocumentScanController::class, 'show'], [ErpAuthMiddleware::class]);
 $router->get('/scan/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image']);
 $router->post('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());

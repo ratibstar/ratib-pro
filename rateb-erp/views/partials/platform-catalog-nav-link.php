@@ -9,6 +9,10 @@ $entryUrl = function_exists('rateb_platform_catalog_entry_url')
     : rateb_platform_catalog_admin_url();
 $entryUrl = htmlspecialchars($entryUrl, ENT_QUOTES, 'UTF-8');
 ?>
-<a href="<?php echo $entryUrl; ?>" class="rateb-nav-link" target="_blank" rel="noopener noreferrer">
+<a href="<?php echo $entryUrl; ?>"
+   class="rateb-nav-link"
+   data-rateb-full-nav="1"
+   data-rateb-href="<?php echo $entryUrl; ?>"
+   onclick="event.preventDefault();event.stopPropagation();try{event.stopImmediatePropagation();}catch(e){}window.location.assign(this.getAttribute('href'));return false;">
     <i class="fas fa-boxes-stacked"></i><span><?php echo __('platform_catalog_admin'); ?></span>
 </a>

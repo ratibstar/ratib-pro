@@ -13,10 +13,18 @@ final class PlatformCatalogSsoController extends Controller
 {
     public function start(): void
     {
-        if (!function_exists('rateb_platform_catalog_nav_enabled') || !rateb_platform_catalog_nav_enabled()) {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             http_response_code(403);
             header('Content-Type: text/plain; charset=utf-8');
-            echo 'Platform catalog SSO is not available on this host.';
+            echo 'Platform catalog is not available on agency hosts.';
+
+            return;
+        }
+
+        if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
+            http_response_code(403);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Platform catalog SSO is only available on rateb.sa.';
 
             return;
         }

@@ -81,25 +81,42 @@ final class ErpCatalogSsoToken
     public static function secret(): string
     {
         $env = getenv('RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET');
-        if (is_string($env) && $env !== '') {
-            return $env;
+        if (is_string($env) && trim($env) !== '') {
+            return trim($env);
         }
 
         if (defined('RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET')
-            && (string) RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET !== '') {
-            return (string) RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET;
+            && trim((string) RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET) !== '') {
+            return trim((string) RATEB_PLATFORM_CATALOG_TRUSTED_GATEWAY_SECRET);
         }
 
         $erpToken = getenv('RATEB_ERP_MIGRATE_TOKEN');
-        if (is_string($erpToken) && $erpToken !== '') {
-            return $erpToken;
+        if (is_string($erpToken) && trim($erpToken) !== '') {
+            return trim($erpToken);
         }
 
-        if (defined('RATEB_ERP_MIGRATE_TOKEN') && (string) RATEB_ERP_MIGRATE_TOKEN !== '') {
-            return (string) RATEB_ERP_MIGRATE_TOKEN;
+        if (defined('RATEB_ERP_MIGRATE_TOKEN') && trim((string) RATEB_ERP_MIGRATE_TOKEN) !== '') {
+            return trim((string) RATEB_ERP_MIGRATE_TOKEN);
         }
 
-        return '';
+        $root = defined('RATEB_CATALOG_ROOT') ? rtrim((string) RATEB_CATALOG_ROOT, '/\\') : '';
+        foreach ([
+            $root . '/storage/deploy-migrate-token',
+            $root . '/storage/.deploy-migrate-token',
+            ($root !== '' ? dirname($root) : '') . '/rateb-erp/storage/deploy-migrate-token',
+            ($root !== '' ? dirname($root) : '') . '/rateb-erp/storage/.deploy-migrate-token',
+        ] as $file) {
+            if ($file === '' || !is_file($file)) {
+                continue;
+            }
+            $token = trim((string) @file_get_contents($file));
+            if ($token !== '') {
+                return $token;
+            }
+        }
+
+        // Must match PlatformCatalogSsoService::sharedSecret() last resort on ERP side.
+        return hash('sha256', 'rateb-platform-catalog-sso|rateb.sa');
     }
 
     /**
