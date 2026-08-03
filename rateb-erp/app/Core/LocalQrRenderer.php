@@ -18,7 +18,7 @@ final class LocalQrRenderer
         }
         if (!extension_loaded('gd')) {
             throw new \RuntimeException(
-                'Branch Appliance QR requires PHP GD extension. Start with: php -d extension=gd …'
+                'Branch Appliance QR PNG requires PHP GD extension.'
             );
         }
 
@@ -42,6 +42,47 @@ final class LocalQrRenderer
         } finally {
             @unlink($temp);
         }
+    }
+
+    /** SVG QR — no GD required. */
+    public static function svg(string $payload, int $size = 280): string
+    {
+        $payload = trim($payload);
+        if ($payload === '' || strlen($payload) > 500) {
+            return '';
+        }
+        self::ensureLibrary();
+        $size = max(120, min(500, $size));
+        ob_start();
+        try {
+            \QRcode::svg($payload, false, \QR_ECLEVEL_H, self::matrixPointSizeForPixels($size), 2);
+        } catch (\Throwable) {
+            ob_end_clean();
+
+            return '';
+        }
+        $svg = (string) ob_get_clean();
+
+        return $svg !== '' ? $svg : '';
+    }
+
+    /** Inline admin preview (PNG data URI, else SVG data URI). */
+    public static function previewDataUri(string $payload, int $size = 400): string
+    {
+        try {
+            $png = self::png($payload, $size);
+            if ($png !== '') {
+                return 'data:image/png;base64,' . base64_encode($png);
+            }
+        } catch (\Throwable) {
+            // SVG fallback below
+        }
+        $svg = self::svg($payload, $size);
+        if ($svg !== '') {
+            return 'data:image/svg+xml;base64,' . base64_encode($svg);
+        }
+
+        return '';
     }
 
     private static function ensureLibrary(): void

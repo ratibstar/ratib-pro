@@ -58,13 +58,18 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
                     </div>
 
                     <div class="mb-3">
+                        <?php
+                        $currentMode = (string) ($settings['mode'] ?? 'browse');
+                        if (!in_array($currentMode, ['browse', 'order'], true)) {
+                            $currentMode = 'browse';
+                        }
+                        ?>
                         <label class="form-label" for="gm-mode"><?php echo __('guest_menu_mode'); ?></label>
-                        <input type="hidden" name="mode" value="browse">
-                        <select class="form-select" id="gm-mode" aria-describedby="gm-mode-hint gm-mode-soon" disabled aria-disabled="true">
-                            <option value="browse" selected><?php echo __('guest_menu_mode_browse'); ?></option>
+                        <select class="form-select" id="gm-mode" name="mode" aria-describedby="gm-mode-hint">
+                            <option value="browse"<?php echo $currentMode === 'browse' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_browse'); ?></option>
+                            <option value="order"<?php echo $currentMode === 'order' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_order'); ?></option>
                         </select>
-                        <div class="form-text" id="gm-mode-hint"><?php echo __('guest_menu_mode_hint_browse'); ?></div>
-                        <p class="small text-muted mb-0 mt-1" id="gm-mode-soon"><?php echo __('guest_menu_mode_order_soon'); ?></p>
+                        <div class="form-text" id="gm-mode-hint"><?php echo $currentMode === 'order' ? __('guest_menu_mode_hint_order') : __('guest_menu_mode_hint_browse'); ?></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
@@ -76,18 +81,12 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <h2 class="h5"><?php echo __('guest_menu_public_url'); ?></h2>
-                    <?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '') { ?>
+                    <?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '') { ?>
                     <p><a href="<?php echo GuestMenuView::escape($publicUrl); ?>" target="_blank" rel="noopener"><?php echo GuestMenuView::escape($publicUrl); ?></a></p>
-                    <?php if (($qrPreviewSrc ?? '') !== '') { ?>
-                    <div class="gm-qr-wrap text-center my-3">
-                        <img src="<?php echo GuestMenuView::escape($qrPreviewSrc); ?>" alt="QR" width="200" height="200" class="gm-qr-img" decoding="async">
-                    </div>
+                    <div class="gm-qr-wrap text-center my-3" id="gm-qr-box" data-url="<?php echo GuestMenuView::escape($publicUrl); ?>"></div>
                     <a class="btn btn-outline-primary btn-sm" href="<?php echo GuestMenuView::escape($qrDownloadUrl); ?>" download="guest-menu-qr.png">
                         <?php echo __('guest_menu_qr_download'); ?>
                     </a>
-                    <?php } else { ?>
-                    <p class="text-warning mb-0"><?php echo __('guest_menu_qr_unavailable'); ?></p>
-                    <?php } ?>
                     <?php } else { ?>
                     <p class="text-muted mb-0"><?php echo __('guest_menu_qr_hint'); ?></p>
                     <?php } ?>
@@ -96,3 +95,31 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
         </div>
     </div>
 </div>
+<?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '') {
+    $qrJs = function_exists('rateb_asset') ? rateb_asset('assets/vendor/qrcodejs/qrcode.min.js') : '/assets/vendor/qrcodejs/qrcode.min.js';
+    ?>
+<script src="<?php echo GuestMenuView::escape($qrJs); ?>"></script>
+<script>
+(function () {
+    var box = document.getElementById('gm-qr-box');
+    var mode = document.getElementById('gm-mode');
+    var hint = document.getElementById('gm-mode-hint');
+    if (box && window.QRCode) {
+        var url = box.getAttribute('data-url') || '';
+        if (url) {
+            box.innerHTML = '';
+            new QRCode(box, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
+        }
+    }
+    if (mode && hint) {
+        var hints = {
+            browse: <?php echo json_encode(__('guest_menu_mode_hint_browse'), JSON_UNESCAPED_UNICODE); ?>,
+            order: <?php echo json_encode(__('guest_menu_mode_hint_order'), JSON_UNESCAPED_UNICODE); ?>
+        };
+        mode.addEventListener('change', function () {
+            hint.textContent = hints[mode.value] || hints.browse;
+        });
+    }
+})();
+</script>
+<?php } ?>

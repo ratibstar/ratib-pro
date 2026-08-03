@@ -8,6 +8,7 @@ use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogService;
+use Rateb\App\GuestMenu\Services\GuestMenuOrderService;
 use Rateb\App\GuestMenu\Services\GuestMenuSettingsService;
 use Rateb\App\GuestMenu\Support\GuestMenuView;
 
@@ -45,6 +46,8 @@ final class GuestMenuPublicController extends Controller
             'catalog' => $catalog,
             'rtl' => $rtl,
             'apiUrl' => $this->catalogApiUrl((string) $settings['public_slug']),
+            'orderApiUrl' => $this->orderApiUrl((string) $settings['public_slug']),
+            'orderMode' => (string) ($settings['mode'] ?? 'browse') === 'order',
         ], 'public');
     }
 
@@ -77,6 +80,37 @@ final class GuestMenuPublicController extends Controller
         ]);
     }
 
+    public function submitOrder(string $slug): void
+    {
+        $settings = (new GuestMenuSettingsService())->getEnabledByPublicSlug($slug);
+        if ($settings === null) {
+            Response::json(['ok' => false, 'error' => 'not_found'], 404);
+
+            return;
+        }
+
+        $raw = file_get_contents('php://input');
+        $payload = is_string($raw) && $raw !== '' ? json_decode($raw, true) : $_POST;
+        if (!is_array($payload)) {
+            Response::json(['ok' => false, 'error' => 'invalid_json'], 400);
+
+            return;
+        }
+
+        $result = (new GuestMenuOrderService())->submit($settings, $payload);
+        if (!$result['ok']) {
+            Response::json(['ok' => false, 'error' => (string) ($result['message'] ?? 'rejected')], 422);
+
+            return;
+        }
+
+        Response::json([
+            'ok' => true,
+            'order_id' => (int) ($result['order_id'] ?? 0),
+            'order_no' => (string) ($result['order_no'] ?? ''),
+        ]);
+    }
+
     public function qrPng(string $slug): void
     {
         $settings = (new GuestMenuSettingsService())->getEnabledByPublicSlug($slug);
@@ -91,6 +125,13 @@ final class GuestMenuPublicController extends Controller
         try {
             $png = LocalQrRenderer::png($url, 320);
         } catch (\Throwable $e) {
+            $svg = LocalQrRenderer::svg($url, 320);
+            if ($svg !== '') {
+                header('Content-Type: image/svg+xml');
+                header('Cache-Control: public, max-age=3600');
+                echo $svg;
+                exit;
+            }
             http_response_code(500);
             header('Content-Type: text/plain; charset=UTF-8');
             echo 'QR unavailable';
@@ -108,6 +149,13 @@ final class GuestMenuPublicController extends Controller
         header('Cache-Control: public, max-age=3600');
         echo $png;
         exit;
+    }
+
+    private function orderApiUrl(string $slug): string
+    {
+        return function_exists('rateb_public_url')
+            ? rateb_public_url('m/' . rawurlencode($slug) . '/api/order')
+            : '/m/' . rawurlencode($slug) . '/api/order';
     }
 
     private function catalogApiUrl(string $slug): string

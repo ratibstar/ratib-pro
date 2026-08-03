@@ -15,6 +15,7 @@ $gmMw = static fn () => rateb_erp_mw('pos', '', 'guest-menu');
 // Public — no auth (QR scan entry)
 $router->get('/m/{slug}', [GuestMenuPublicController::class, 'menu']);
 $router->get('/m/{slug}/api/catalog', [GuestMenuPublicController::class, 'catalogApi']);
+$router->post('/m/{slug}/api/order', [GuestMenuPublicController::class, 'submitOrder']);
 $router->get('/m/{slug}/qr.png', [GuestMenuPublicController::class, 'qrPng']);
 
 // Admin — POS module permissions

@@ -99,10 +99,19 @@ final class GuestMenuAdminController extends Controller
         }
 
         $url = (new GuestMenuSettingsService())->publicMenuUrl($slug);
+        $download = (string) ($_GET['download'] ?? '') === '1';
         try {
             $png = LocalQrRenderer::png($url, 400);
         } catch (\Throwable $e) {
             error_log('GuestMenuAdminController QR: ' . $e->getMessage());
+            $svg = LocalQrRenderer::svg($url, 400);
+            if ($svg !== '') {
+                header('Content-Type: image/svg+xml');
+                header('Cache-Control: no-store, no-cache, must-revalidate');
+                header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="guest-menu-qr.svg"');
+                echo $svg;
+                exit;
+            }
             http_response_code(500);
             exit;
         }
@@ -112,7 +121,6 @@ final class GuestMenuAdminController extends Controller
             exit;
         }
 
-        $download = (string) ($_GET['download'] ?? '') === '1';
         header('Content-Type: image/png');
         header('Cache-Control: no-store, no-cache, must-revalidate');
         header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="guest-menu-qr.png"');

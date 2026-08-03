@@ -193,10 +193,6 @@ final class GuestMenuSettingsService
         if (!in_array($mode, ['browse', 'order'], true)) {
             $mode = 'browse';
         }
-        // Order mode not implemented yet — force browse.
-        if ($mode === 'order') {
-            $mode = 'browse';
-        }
 
         $branchId = isset($input['branch_id']) ? (int) $input['branch_id'] : null;
         if ($branchId !== null && $branchId < 1) {
@@ -280,19 +276,15 @@ final class GuestMenuSettingsService
         }
     }
 
-    /** Inline preview src (data URI) with network fallback URL. */
+    /** Inline preview src (PNG/SVG data URI, else empty for client-side QR). */
     public function qrPreviewSrc(string $publicSlug): string
     {
-        $png = $this->qrPngBytes($publicSlug, 400);
-        if ($png !== '') {
-            return 'data:image/png;base64,' . base64_encode($png);
-        }
         $url = $this->publicMenuUrl($publicSlug);
-        if ($url === '' || !function_exists('rateb_url')) {
+        if ($url === '') {
             return '';
         }
 
-        return rateb_url('scan/qr?data=' . rawurlencode($url) . '&size=400');
+        return LocalQrRenderer::previewDataUri($url, 400);
     }
 
     private function allocateUniqueSlug(string $base, int $companyId): string
