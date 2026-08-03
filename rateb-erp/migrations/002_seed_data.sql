@@ -35,9 +35,9 @@ INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r CROSS JOIN rateb_permissions p WHERE r.slug = 'super-admin'
 ON DUPLICATE KEY UPDATE role_id = role_id;
 
--- Default super admin: admin@rateb.sa / Rateb@2024 (change after first login)
+-- Default super admin: admin@rateb.sa / 123456 (change after first login)
 INSERT INTO rateb_users (company_id, name, email, password, is_super_admin, status, locale)
-SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'active', 'ar'
+SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW', 1, 'active', 'ar'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM rateb_users WHERE email = 'admin@rateb.sa');
 

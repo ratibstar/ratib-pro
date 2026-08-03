@@ -1,0 +1,24 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'guest_menu_nav' => 'Digital Menu (QR)',
+    'guest_menu_settings' => 'Guest Menu Settings',
+    'guest_menu_enable' => 'Enable public menu',
+    'guest_menu_public_slug' => 'Public menu link (slug)',
+    'guest_menu_title_ar' => 'Menu title (Arabic)',
+    'guest_menu_title_en' => 'Menu title (English)',
+    'guest_menu_welcome' => 'Welcome message',
+    'guest_menu_mode' => 'Mode',
+    'guest_menu_mode_browse' => 'Browse only (QR preview)',
+    'guest_menu_mode_order' => 'Order (coming soon)',
+    'guest_menu_public_url' => 'Public URL',
+    'guest_menu_qr_download' => 'Download QR code',
+    'guest_menu_saved' => 'Guest menu settings saved.',
+    'guest_menu_disabled_public' => 'This menu is not available.',
+    'guest_menu_not_found' => 'Menu not found.',
+    'guest_menu_all_categories' => 'All',
+    'guest_menu_out_of_stock' => 'Unavailable',
+    'guest_menu_powered_by' => 'Powered by RATEB',
+    'guest_menu_order_soon' => 'Online ordering — coming soon',
+];

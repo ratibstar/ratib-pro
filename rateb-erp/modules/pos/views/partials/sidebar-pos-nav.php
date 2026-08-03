@@ -13,4 +13,5 @@ $opsSection(__('pos_nav_section'), [
     ['pos/sync', 'pos_sync', 'fa-cloud-arrow-up', 'pos', 'pos.sync.manage'],
     ['pos/devices', 'pos_devices', 'fa-mobile-screen', 'pos', 'pos.settings.manage'],
     ['pos/settings', 'pos_settings', 'fa-sliders', 'pos', 'pos.settings.manage'],
+    ['guest-menu', 'guest_menu_nav', 'fa-qrcode', 'pos', 'pos.view'],
 ], 'fa-cash-register');

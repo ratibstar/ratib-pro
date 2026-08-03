@@ -30,6 +30,7 @@ final class WebsiteKernel
             || str_starts_with($path, '/password')
             || str_starts_with($path, '/barcode')
             || str_starts_with($path, '/scan')
+            || str_starts_with($path, '/m')
             || str_starts_with($path, '/documents')
             || str_starts_with($path, '/company')
             || str_starts_with($path, '/accounting')

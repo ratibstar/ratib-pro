@@ -1,0 +1,20 @@
+{
+    "results": [
+        {
+            "id": "BOOT",
+            "name": "database + fixture",
+            "passed": false,
+            "detail": "set POS_V2_INTEGRATION_SEED=1 or POS_V2_TEST_*"
+        }
+    ],
+    "perf": [],
+    "summary": {
+        "passed": 0,
+        "failed": 1,
+        "coverage_pct": 0,
+        "scenarios_passed": 0,
+        "scenarios_total": 11,
+        "recommendation": "NOT READY",
+        "production_readiness_pct": 0
+    }
+}

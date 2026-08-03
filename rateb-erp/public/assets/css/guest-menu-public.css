@@ -1,0 +1,132 @@
+/* Guest Menu — public PWA-style browse view */
+:root {
+    --gm-bg: #0b1f33;
+    --gm-surface: #122a42;
+    --gm-accent: #2ea8ff;
+    --gm-text: #f4f8fc;
+    --gm-muted: #9eb4c9;
+    --gm-radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+.gm-body {
+    margin: 0;
+    font-family: 'Tajawal', system-ui, sans-serif;
+    background: var(--gm-bg);
+    color: var(--gm-text);
+    min-height: 100dvh;
+}
+
+.gm-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1rem 1rem 2rem;
+}
+
+.gm-header {
+    text-align: center;
+    padding: 1rem 0 0.5rem;
+}
+
+.gm-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.gm-welcome {
+    margin: 0;
+    color: var(--gm-muted);
+    font-size: 0.95rem;
+}
+
+.gm-categories {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.75rem 0 1rem;
+    scrollbar-width: none;
+}
+
+.gm-categories::-webkit-scrollbar { display: none; }
+
+.gm-cat {
+    flex: 0 0 auto;
+    border: 1px solid rgba(46, 168, 255, 0.35);
+    background: transparent;
+    color: var(--gm-text);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+.gm-cat.is-active {
+    background: var(--gm-accent);
+    border-color: var(--gm-accent);
+    color: #042033;
+    font-weight: 600;
+}
+
+.gm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.gm-card {
+    background: var(--gm-surface);
+    border-radius: var(--gm-radius);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gm-card.is-unavailable { opacity: 0.65; }
+
+.gm-card__img {
+    height: 110px;
+    background-size: cover;
+    background-position: center;
+    background-color: #1a3550;
+}
+
+.gm-card__img--placeholder {
+    background: linear-gradient(135deg, #1a3550, #0f2840);
+}
+
+.gm-card__body { padding: 0.65rem 0.75rem 0.75rem; }
+
+.gm-card__name {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.gm-card__price {
+    margin: 0;
+    color: var(--gm-accent);
+    font-weight: 600;
+}
+
+.gm-badge {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--gm-muted);
+}
+
+.gm-footer {
+    margin-top: 2rem;
+    text-align: center;
+    color: var(--gm-muted);
+    font-size: 0.8rem;
+}
+
+.gm-footer--order {
+    position: sticky;
+    bottom: 0;
+    background: rgba(11, 31, 51, 0.92);
+    padding: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}

@@ -1,4 +1,4 @@
--- Emergency: restore super-admin login (admin@rateb.sa / password)
+-- Emergency: restore super-admin login (admin@rateb.sa / 123456)
 SET NAMES utf8mb4;
 
 INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
@@ -7,12 +7,12 @@ FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM rateb_roles WHERE slug = 'super-admin');
 
 INSERT INTO rateb_users (company_id, name, email, password, is_super_admin, status, locale)
-SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'active', 'ar'
+SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW', 1, 'active', 'ar'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM rateb_users WHERE email = 'admin@rateb.sa');
 
 UPDATE rateb_users
-SET password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+SET password = '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW',
     is_super_admin = 1,
     status = 'active',
     name = 'Super Admin',

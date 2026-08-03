@@ -88,7 +88,7 @@ header = """-- =================================================================
 -- Import via cPanel phpMyAdmin → select database → Import → choose this file
 --
 -- WARNING: Drops all existing rateb_* tables before recreating (fresh install).
--- Default login after import: admin@rateb.sa / password
+-- Default login after import: admin@rateb.sa / 123456
 -- =============================================================================
 
 USE `admin_rateb-erp`;

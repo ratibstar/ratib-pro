@@ -1715,7 +1715,7 @@ return [
     'agency_erp_push_db_selected' => 'DB migrations — selected',
     'agency_erp_full_deploy_selected' => 'Sync + migrate — selected',
     'agency_erp_restore_admin_selected' => 'Restore admin@rateb.sa',
-    'agency_erp_restore_admin_confirm' => 'Restore admin@rateb.sa with password "password" on selected agencies? (Company data is not deleted.)',
+    'agency_erp_restore_admin_confirm' => 'Restore admin@rateb.sa with password "123456" on selected agencies? (Company data is not deleted.)',
     'agency_erp_restore_admin_running' => 'Restoring super admin…',
     'agency_erp_reset_confirm_label' => 'Type RESET-DATA to confirm data wipe',
     'agency_erp_reset_confirm_required' => 'Type RESET-DATA in either confirmation field first.',

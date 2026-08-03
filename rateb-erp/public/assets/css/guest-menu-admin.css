@@ -1,0 +1,12 @@
+.gm-admin-page .gm-qr-wrap {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    display: inline-block;
+}
+
+.gm-admin-page .gm-qr-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}

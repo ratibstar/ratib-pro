@@ -59,7 +59,7 @@ JOIN rateb_permissions p ON p.slug IN ('access.manage', 'users.manage', 'roles.m
 WHERE r.slug = 'access-manager';
 
 INSERT INTO rateb_users (company_id, name, email, password, is_super_admin, status, locale)
-VALUES (NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'active', 'ar');
+VALUES (NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW', 1, 'active', 'ar');
 
 INSERT INTO rateb_user_roles (user_id, role_id)
 SELECT u.id, r.id FROM rateb_users u JOIN rateb_roles r ON r.slug = 'super-admin' WHERE u.email = 'admin@rateb.sa';

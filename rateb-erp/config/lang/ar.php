@@ -1713,7 +1713,7 @@ return [
     'agency_erp_push_db_selected' => 'ترحيلات DB للمحدد',
     'agency_erp_full_deploy_selected' => 'مزامنة + ترحيل للمحدد',
     'agency_erp_restore_admin_selected' => 'استعادة admin@rateb.sa',
-    'agency_erp_restore_admin_confirm' => 'استعادة حساب admin@rateb.sa بكلمة المرور password على الوكالات المحددة؟ (لا يحذف بيانات الشركة)',
+    'agency_erp_restore_admin_confirm' => 'استعادة حساب admin@rateb.sa بكلمة المرور 123456 على الوكالات المحددة؟ (لا يحذف بيانات الشركة)',
     'agency_erp_restore_admin_running' => 'جاري استعادة مدير النظام…',
     'agency_erp_reset_confirm_label' => 'اكتب RESET-DATA لتأكيد مسح البيانات',
     'agency_erp_reset_confirm_required' => 'اكتب RESET-DATA في أي من حقلي التأكيد أولاً.',

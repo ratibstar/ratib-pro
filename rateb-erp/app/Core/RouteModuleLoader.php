@@ -167,6 +167,12 @@ final class RouteModuleLoader
             return self::orderWant($want);
         }
 
+        if (str_starts_with($path, '/m/') || $path === '/m') {
+            $want = ['auth' => true, 'guest_menu' => true];
+
+            return self::orderWant($want);
+        }
+
         if (str_starts_with($path, '/admin/subscription') || $path === '/admin/support') {
             $want = ['auth' => true, 'subscription' => true];
 
@@ -181,6 +187,9 @@ final class RouteModuleLoader
 
         if (self::isOpsPath($path)) {
             $want = ['auth' => true, 'ops' => true];
+            if (str_contains($path, '/guest-menu')) {
+                $want['guest_menu'] = true;
+            }
 
             return self::orderWant($want);
         }

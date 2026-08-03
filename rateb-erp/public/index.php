@@ -134,6 +134,12 @@ try {
         \Rateb\App\Pos\PosModule::init();
     }
 
+    $guestMenuModule = dirname(__FILE__, 2) . '/modules/guest-menu/GuestMenuModule.php';
+    if (is_file($guestMenuModule)) {
+        require_once $guestMenuModule;
+        \Rateb\App\GuestMenu\GuestMenuModule::init();
+    }
+
     // Soft-load: production must not fatal if offline/ not yet deployed.
     $offlineModule = dirname(__FILE__, 2) . '/offline/OfflineModule.php';
     if (is_file($offlineModule)) {

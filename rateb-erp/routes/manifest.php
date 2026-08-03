@@ -19,4 +19,5 @@ return [
     ['id' => 'payment', 'file' => 'routes/modules/payment.php'],
     ['id' => 'pos', 'file' => 'routes/modules/pos.php'],
     ['id' => 'pos_v2', 'file' => 'modules/pos/routes/pos-v2.php', 'optional' => true],
+    ['id' => 'guest_menu', 'file' => 'routes/modules/guest-menu.php', 'optional' => true],
 ];

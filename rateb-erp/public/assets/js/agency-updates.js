@@ -569,7 +569,7 @@
                 postJson(state.restoreAdminUrl, { agency_ids: ids })
                     .then(function (pack) {
                         var data = pack.body || {};
-                        var lines = ['Restore admin@rateb.sa / password'];
+                        var lines = ['Restore admin@rateb.sa / 123456'];
                         lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
                         (data.results || []).forEach(function (r) {
                             lines.push('');

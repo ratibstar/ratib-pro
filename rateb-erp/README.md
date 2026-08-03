@@ -36,7 +36,7 @@ Pure PHP 7.4–8.2 SaaS platform with multi-tenant isolation, Super Admin panel,
 ### Default Super Admin
 
 - Email: `admin@rateb.sa`
-- Password: `password` (change immediately after first login)
+- Password: `123456` (change immediately after first login)
 
 ## Control Panel Integration
 
@@ -75,7 +75,7 @@ Obtain token:
 POST /rateb-erp/public/api/v1/auth/token
 Content-Type: application/json
 
-{"email":"admin@rateb.sa","password":"password"}
+{"email":"admin@rateb.sa","password":"123456"}
 ```
 
 Use token:

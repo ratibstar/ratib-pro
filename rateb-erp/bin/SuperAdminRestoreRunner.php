@@ -7,6 +7,9 @@ declare(strict_types=1);
  */
 final class SuperAdminRestoreRunner
 {
+    /** bcrypt(123456) — default restore password when env override is unset */
+    private const DEFAULT_RESTORE_PASSWORD_HASH = '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW';
+
     /** @var list<array{email:string,name:string,locale:string}> */
     private const SUPER_ADMINS = [
         ['email' => 'admin@rateb.sa', 'name' => 'Super Admin', 'locale' => 'ar'],
@@ -200,10 +203,10 @@ final class SuperAdminRestoreRunner
 
     private static function restorePasswordHash(): string
     {
-        $hash = trim((string) (getenv('RATEB_SUPER_ADMIN_RESTORE_PASSWORD_HASH') ?: ''));
-        $info = $hash !== '' ? password_get_info($hash) : ['algo' => null];
+        $hash = trim((string) (getenv('RATEB_SUPER_ADMIN_RESTORE_PASSWORD_HASH') ?: self::DEFAULT_RESTORE_PASSWORD_HASH));
+        $info = password_get_info($hash);
         if (empty($info['algo'])) {
-            throw new \RuntimeException('RATEB_SUPER_ADMIN_RESTORE_PASSWORD_HASH must contain a valid password hash.');
+            throw new \RuntimeException('Super-admin restore password hash is invalid.');
         }
         return $hash;
     }
