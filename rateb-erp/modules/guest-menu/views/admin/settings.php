@@ -83,7 +83,13 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
                     <h2 class="h5"><?php echo __('guest_menu_public_url'); ?></h2>
                     <?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '') { ?>
                     <p><a href="<?php echo GuestMenuView::escape($publicUrl); ?>" target="_blank" rel="noopener"><?php echo GuestMenuView::escape($publicUrl); ?></a></p>
-                    <div class="gm-qr-wrap text-center my-3" id="gm-qr-box" data-url="<?php echo GuestMenuView::escape($publicUrl); ?>"></div>
+                    <div class="gm-qr-wrap text-center my-3">
+                        <?php if (($qrPreviewSrc ?? '') !== '') { ?>
+                        <img class="gm-qr-img" id="gm-qr-img" src="<?php echo GuestMenuView::escape($qrPreviewSrc); ?>" alt="QR" width="200" height="200">
+                        <?php } else { ?>
+                        <div id="gm-qr-box" data-url="<?php echo GuestMenuView::escape($publicUrl); ?>"></div>
+                        <?php } ?>
+                    </div>
                     <a class="btn btn-outline-primary btn-sm" href="<?php echo GuestMenuView::escape($qrDownloadUrl); ?>" download="guest-menu-qr.png">
                         <?php echo __('guest_menu_qr_download'); ?>
                     </a>
@@ -95,8 +101,8 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
         </div>
     </div>
 </div>
-<?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '') {
-    $qrJs = function_exists('rateb_asset') ? rateb_asset('assets/vendor/qrcodejs/qrcode.min.js') : '/assets/vendor/qrcodejs/qrcode.min.js';
+<?php if (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '' && ($qrPreviewSrc ?? '') === '') {
+    $qrJs = function_exists('rateb_qrcode_js') ? rateb_qrcode_js() : (function_exists('rateb_vendor_asset') ? rateb_vendor_asset('qrcodejs/qrcode.min.js') : '/assets/vendor/qrcodejs/qrcode.min.js');
     ?>
 <script src="<?php echo GuestMenuView::escape($qrJs); ?>"></script>
 <script>
@@ -111,6 +117,22 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
             new QRCode(box, { text: url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
         }
     }
+    if (mode && hint) {
+        var hints = {
+            browse: <?php echo json_encode(__('guest_menu_mode_hint_browse'), JSON_UNESCAPED_UNICODE); ?>,
+            order: <?php echo json_encode(__('guest_menu_mode_hint_order'), JSON_UNESCAPED_UNICODE); ?>
+        };
+        mode.addEventListener('change', function () {
+            hint.textContent = hints[mode.value] || hints.browse;
+        });
+    }
+})();
+</script>
+<?php } elseif (!empty($settings['is_enabled']) && ($settings['public_slug'] ?? '') !== '' && ($publicUrl ?? '') !== '') { ?>
+<script>
+(function () {
+    var mode = document.getElementById('gm-mode');
+    var hint = document.getElementById('gm-mode-hint');
     if (mode && hint) {
         var hints = {
             browse: <?php echo json_encode(__('guest_menu_mode_hint_browse'), JSON_UNESCAPED_UNICODE); ?>,

@@ -795,6 +795,11 @@ function isLogoutPath(pathname) {
     return /\/logout(\/|$)/i.test(String(pathname || ''));
 }
 
+/** Public guest QR menu (/m/{slug}) — never SW-shell; always network. */
+function isGuestMenuPath(pathname) {
+    return /\/m\/[^/?#]+/i.test(String(pathname || ''));
+}
+
 /** Exact ERP dashboard (/…/admin) — must network-first so logout/login session matches HTML. */
 function isExactAdminDashboardPath(pathname) {
     var p = String(pathname || '').replace(/\/+$/, '');
@@ -4629,6 +4634,10 @@ self.addEventListener('fetch', function (event) {
     if (!isLocalApplianceOrigin()
         && event.request.method === 'GET'
         && isDocumentNav) {
+        if (isGuestMenuPath(url.pathname)) {
+            releaseBackgroundWarmAfterFirstDocument();
+            return;
+        }
         if (isLogoutPath(url.pathname) || isAuthPath(url.pathname)) {
             if (isCloudBrowserOffline()) {
                 respondWithDocumentAndReleaseWarmGate(
@@ -4852,6 +4861,7 @@ self.addEventListener('fetch', function (event) {
     // Residual offline navigations (non-admin) — admin/POS already handled above.
     if (event.request.mode === 'navigate'
         && !isPosNavigation(url)
+        && !isGuestMenuPath(url.pathname)
         && !isAuthPath(url.pathname)
         && !isErpAdminPath(url.pathname)
         && !isApiRequest(url)) {

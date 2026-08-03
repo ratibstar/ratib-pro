@@ -8,8 +8,8 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $pageContent */
 $dir = !empty($rtl) ? 'rtl' : 'ltr';
 $lang = !empty($rtl) ? 'ar' : 'en';
-$assetCss = function_exists('rateb_asset') ? rateb_asset('assets/css/guest-menu-public.css') : '/assets/css/guest-menu-public.css';
-$assetJs = function_exists('rateb_asset') ? rateb_asset('assets/js/guest-menu-public.js') : '/assets/js/guest-menu-public.js';
+$assetCss = function_exists('rateb_asset') ? rateb_asset('css/guest-menu-public.css') : '/assets/css/guest-menu-public.css';
+$assetJs = function_exists('rateb_asset') ? rateb_asset('js/guest-menu-public.js') : '/assets/js/guest-menu-public.js';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo GuestMenuView::escape($lang); ?>" dir="<?php echo GuestMenuView::escape($dir); ?>">

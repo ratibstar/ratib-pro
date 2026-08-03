@@ -42,7 +42,7 @@ final class GuestMenuView
         if ($layout === 'main') {
             $pageContent = $content();
             $asset = function_exists('rateb_asset')
-                ? rateb_asset('assets/css/guest-menu-admin.css')
+                ? rateb_asset('css/guest-menu-admin.css')
                 : '/assets/css/guest-menu-admin.css';
             $pageContent = '<link rel="stylesheet" href="'
                 . htmlspecialchars($asset, ENT_QUOTES, 'UTF-8') . '">' . $pageContent;
