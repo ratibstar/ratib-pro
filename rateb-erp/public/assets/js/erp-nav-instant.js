@@ -953,6 +953,15 @@
         if (csrf && local) {
             local.setAttribute('content', csrf.getAttribute('content') || '');
         }
+        // Keep form tokens aligned with meta after soft-nav (cached HTML otherwise fails POST).
+        try {
+            var csrfVal = (local && local.getAttribute('content')) || (csrf && csrf.getAttribute('content')) || '';
+            if (csrfVal) {
+                document.querySelectorAll('input[name="_csrf"]').forEach(function (inp) {
+                    inp.value = csrfVal;
+                });
+            }
+        } catch (eCsrfSync) { /* ignore */ }
         var title = doc.querySelector('title');
         if (title) {
             document.title = title.textContent || document.title;

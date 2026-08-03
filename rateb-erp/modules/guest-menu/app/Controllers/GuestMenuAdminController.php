@@ -106,7 +106,7 @@ final class GuestMenuAdminController extends Controller
         $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirect(rateb_app_url('guest-menu'));
+            $this->redirectGuestMenu();
 
             return;
         }
@@ -119,7 +119,7 @@ final class GuestMenuAdminController extends Controller
                 'skipped' => (string) ($result['skipped'] ?? 0),
             ]));
         }
-        $this->redirect(rateb_app_url('guest-menu'));
+        $this->redirectGuestMenu();
     }
 
     public function seedDemo(): void
@@ -127,7 +127,7 @@ final class GuestMenuAdminController extends Controller
         $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirect(rateb_app_url('guest-menu'));
+            $this->redirectGuestMenu();
 
             return;
         }
@@ -139,7 +139,17 @@ final class GuestMenuAdminController extends Controller
                 'count' => (string) ($result['created'] ?? 0),
             ]));
         }
-        $this->redirect(rateb_app_url('guest-menu'));
+        $this->redirectGuestMenu();
+    }
+
+    private function redirectGuestMenu(): void
+    {
+        $url = rateb_app_url('guest-menu');
+        $cid = $this->companyId();
+        if ($cid > 0) {
+            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $cid;
+        }
+        $this->redirect($url);
     }
 
     /** @return list<array<string, mixed>> */

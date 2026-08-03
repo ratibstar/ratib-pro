@@ -17,6 +17,10 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 $productCount = (int) ($catalogStats['product_count'] ?? 0);
 $categoryCount = (int) ($catalogStats['category_count'] ?? 0);
 $branchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : 0;
+$companyId = (int) ($settings['company_id'] ?? 0);
+if ($companyId < 1 && isset($_GET['company_id'])) {
+    $companyId = (int) $_GET['company_id'];
+}
 ?>
 <div class="gm-admin-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -113,7 +117,7 @@ $branchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : 0;
                     <div class="alert alert-warning mb-3"><?php echo __('guest_menu_catalog_empty'); ?></div>
                     <?php } ?>
                     <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="gm-catalog-actions">
                         <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>">
                             <?php echo __('guest_menu_open_inventory'); ?>
                         </a>
@@ -122,16 +126,40 @@ $branchId = isset($settings['branch_id']) ? (int) $settings['branch_id'] : 0;
                             <?php echo __('guest_menu_open_platform_catalog'); ?>
                         </a>
                         <?php } ?>
-                        <form method="post" action="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/import-catalog')); ?>" class="d-inline">
+                        <?php
+                        $gmCompanyQs = $companyId > 0 ? ('?company_id=' . (int) $companyId) : '';
+                        $importAction = rateb_app_url('guest-menu/import-catalog') . $gmCompanyQs;
+                        $seedAction = rateb_app_url('guest-menu/seed-demo') . $gmCompanyQs;
+                        ?>
+                        <form method="post" action="<?php echo GuestMenuView::escape($seedAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
+                            <button type="submit" class="btn btn-primary btn-sm"><?php echo __('guest_menu_seed_demo'); ?></button>
                         </form>
-                        <form method="post" action="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/seed-demo')); ?>" class="d-inline">
+                        <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_seed_demo'); ?></button>
+                            <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
                         </form>
                     </div>
                     <p class="text-muted small mt-3 mb-0"><?php echo __('guest_menu_mobile_scan_tip'); ?></p>
+                    <script>
+                    (function () {
+                        function syncGmCsrf() {
+                            var meta = document.querySelector('meta[name="rateb-csrf"]');
+                            var token = meta ? (meta.getAttribute('content') || '') : '';
+                            if (!token) return;
+                            document.querySelectorAll('[data-gm-csrf-form] input[name="_csrf"]').forEach(function (inp) {
+                                inp.value = token;
+                            });
+                        }
+                        syncGmCsrf();
+                        document.querySelectorAll('[data-gm-csrf-form]').forEach(function (form) {
+                            form.addEventListener('submit', syncGmCsrf);
+                        });
+                        if (window.RatebModuleLifecycle && typeof window.RatebModuleLifecycle.on === 'function') {
+                            window.RatebModuleLifecycle.on('afterEnter', syncGmCsrf);
+                        }
+                    })();
+                    </script>
                 </div>
             </div>
         </div>
