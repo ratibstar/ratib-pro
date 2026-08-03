@@ -9,10 +9,6 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $qrPreviewSrc */
 /** @var string $qrDownloadUrl */
 /** @var string $csrf */
-$currentMode = (string) ($settings['mode'] ?? 'browse');
-if (!in_array($currentMode, ['browse', 'order'], true)) {
-    $currentMode = 'browse';
-}
 ?>
 <div class="gm-admin-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -63,11 +59,12 @@ if (!in_array($currentMode, ['browse', 'order'], true)) {
 
                     <div class="mb-3">
                         <label class="form-label" for="gm-mode"><?php echo __('guest_menu_mode'); ?></label>
-                        <select class="form-select" id="gm-mode" name="mode" aria-describedby="gm-mode-hint">
-                            <option value="browse"<?php echo $currentMode === 'browse' ? ' selected' : ''; ?>><?php echo __('guest_menu_mode_browse'); ?></option>
-                            <option value="order" disabled title="<?php echo GuestMenuView::escape(__('guest_menu_mode_order')); ?>"><?php echo __('guest_menu_mode_order'); ?></option>
+                        <input type="hidden" name="mode" value="browse">
+                        <select class="form-select" id="gm-mode" aria-describedby="gm-mode-hint gm-mode-soon" disabled aria-disabled="true">
+                            <option value="browse" selected><?php echo __('guest_menu_mode_browse'); ?></option>
                         </select>
                         <div class="form-text" id="gm-mode-hint"><?php echo __('guest_menu_mode_hint_browse'); ?></div>
+                        <p class="small text-muted mb-0 mt-1" id="gm-mode-soon"><?php echo __('guest_menu_mode_order_soon'); ?></p>
                     </div>
 
                     <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
