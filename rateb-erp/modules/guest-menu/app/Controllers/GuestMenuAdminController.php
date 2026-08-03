@@ -22,7 +22,12 @@ final class GuestMenuAdminController extends Controller
         try {
             $settings = $settingsService->ensureForCompany($companyId);
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'rateb_guest_menu_settings') && str_contains($msg, '1146')) {
+                SessionManager::flash('error', __('guest_menu_schema_missing'));
+            } else {
+                SessionManager::flash('error', $msg);
+            }
             $settings = [
                 'company_id' => $companyId,
                 'is_enabled' => 0,

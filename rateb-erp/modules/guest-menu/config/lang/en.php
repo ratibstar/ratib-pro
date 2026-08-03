@@ -33,4 +33,5 @@ return [
     'guest_menu_welcome_placeholder' => 'Welcome — we hope you enjoy your visit.',
     'guest_menu_mode_hint' => 'Shows items and prices to guests via QR — read-only.',
     'guest_menu_qr_hint' => 'Enable the menu and save to generate the public link and QR code.',
+    'guest_menu_schema_missing' => 'Guest menu table is missing — run database migration 221 from Control Panel, or refresh after deploy.',
 ];
