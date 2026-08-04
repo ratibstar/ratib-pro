@@ -1,7 +1,16 @@
+<?php
+$repairNotice = isset($repairNotice) ? (string) $repairNotice : '';
+$repairUrl = (string) (preg_replace('/\?.*$/', '', (string) ($_SERVER['REQUEST_URI'] ?? '/admin/products')) ?: '/admin/products');
+$repairUrl .= (str_contains($repairUrl, '?') ? '&' : '?') . 'repair_arabic=1&lang=' . rawurlencode((string) ($locale ?? 'ar'));
+?>
 <div class="admin-panel">
+    <?php if ($repairNotice !== '') { ?>
+    <div class="alert alert-success mb-3" role="status"><?= htmlspecialchars($repairNotice, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php } ?>
     <div class="admin-toolbar">
         <h1 class="h4 mb-0"><?= htmlspecialchars(catalog__('nav_products', $locale), ENT_QUOTES, 'UTF-8') ?></h1>
         <div class="admin-toolbar-spacer"></div>
+        <a class="btn btn-sm btn-warning" href="<?= htmlspecialchars($repairUrl, ENT_QUOTES, 'UTF-8') ?>">إصلاح العربي ????</a>
         <input type="search" class="form-control form-control-sm" id="productSku" placeholder="SKU">
         <select class="form-select form-select-sm" id="productStatus">
             <option value="">Status</option>

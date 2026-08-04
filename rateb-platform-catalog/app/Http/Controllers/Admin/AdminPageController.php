@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rateb\PlatformCatalog\Http\Controllers\Admin;
 
 use Rateb\PlatformCatalog\Application\Policies\PolicyGuardInterface;
+use Rateb\PlatformCatalog\Application\Services\RetailArabicRepairService;
 use Rateb\PlatformCatalog\Application\Support\AdminLocale;
 use Rateb\PlatformCatalog\Application\Support\AdminNavigation;
 use Rateb\PlatformCatalog\Core\View;
@@ -53,7 +54,26 @@ final class AdminPageController
 
     public function products(): void
     {
-        $this->render('products');
+        $repairNotice = null;
+        $forceRepair = isset($_GET['repair_arabic']) && (string) $_GET['repair_arabic'] === '1';
+        if ($this->guard->isAuthenticated()) {
+            try {
+                $result = (new RetailArabicRepairService())->repairIfNeeded($forceRepair);
+                if ($result['repaired'] && ($result['message'] ?? '') === 'fixed') {
+                    $repairNotice = $forceRepair
+                        ? 'تم إصلاح الأسماء العربية. حدّث القائمة.'
+                        : 'تم إصلاح الأسماء العربية التالفة تلقائياً. اضغط «تحديث».';
+                } elseif ($result['repaired'] && ($result['message'] ?? '') === 'partial') {
+                    $repairNotice = 'Attempted Arabic repair but some names still look corrupted.';
+                } elseif ($forceRepair) {
+                    $repairNotice = 'لا توجد أسماء تالفة تحتاج إصلاحاً.';
+                }
+            } catch (\Throwable $e) {
+                $repairNotice = 'تعذّر إصلاح الأسماء: ' . $e->getMessage();
+            }
+        }
+
+        $this->render('products', ['repairNotice' => $repairNotice]);
     }
 
     public function categories(): void
@@ -171,7 +191,8 @@ final class AdminPageController
         $this->render('settings');
     }
 
-    private function render(string $pageKey): void
+    /** @param array<string, mixed> $extra */
+    private function render(string $pageKey, array $extra = []): void
     {
         if (!$this->guard->isAuthenticated()) {
             catalog_maybe_redirect_erp_sso();
@@ -198,7 +219,7 @@ final class AdminPageController
 
         $view = self::PAGES[$pageKey] ?? 'platform/admin/dashboard';
 
-        View::render($view, [
+        View::render($view, array_merge([
             'title' => catalog__('nav_' . $pageKey, $locale) . ' — ' . catalog__('admin_panel', $locale),
             'locale' => $locale,
             'dir' => AdminLocale::dir($locale),
@@ -208,6 +229,6 @@ final class AdminPageController
             'authenticated' => $authenticated,
             'release' => defined('RATEB_PLATFORM_CATALOG_RELEASE') ? (string) RATEB_PLATFORM_CATALOG_RELEASE : '',
             'architecture' => defined('RATEB_PLATFORM_CATALOG_VERSION') ? (string) RATEB_PLATFORM_CATALOG_VERSION : '1.3.1',
-        ], 'admin');
+        ], $extra), 'admin');
     }
 }

@@ -17,6 +17,12 @@ final class M022ComprehensiveRetailSeed extends AbstractMigration
 
     public function up(): void
     {
+        try {
+            $this->pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (\Throwable) {
+            // ignore
+        }
+
         $unitId = $this->unitIdPcs();
         if ($unitId < 1) {
             throw new \RuntimeException('PCS unit missing — run 002_reference_data first');
