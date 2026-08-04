@@ -10,6 +10,8 @@
 !backups/**
 !rate-limit/
 !rate-limit/**
+!cache/
+!cache/.gitkeep
 !branch/
 !branch/.gitignore
 

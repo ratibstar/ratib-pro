@@ -19,10 +19,21 @@ final class PosV2CatalogProductMapper
             $sku = trim((string) ($row['item_code'] ?? ''));
         }
 
+        $name = (string) ($row['item_name'] ?? '');
+        // Guest-menu / retail seed safety net: never show ?? for RC-*/GM-* when PHP seed has Arabic.
+        if ($this->looksLikeMojibake($name) && $sku !== '' && (str_starts_with($sku, 'RC-') || str_starts_with($sku, 'GM-'))) {
+            if (class_exists(\Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::class)) {
+                $seedName = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::nameBySku()[$sku] ?? '';
+                if ($seedName !== '' && !$this->looksLikeMojibake($seedName)) {
+                    $name = $seedName;
+                }
+            }
+        }
+
         return new PosV2CatalogProductDto(
             id: (int) ($row['id'] ?? 0),
             sku: $sku,
-            name: (string) ($row['item_name'] ?? ''),
+            name: $name,
             price: new PosV2MoneyDto(
                 amount: number_format(max(0, $unitPrice), 2, '.', ''),
                 currency: $currency,
@@ -31,6 +42,23 @@ final class PosV2CatalogProductMapper
             inStock: (bool) ($availability['can_add'] ?? ($availability['available'] ?? 0) > 0),
             requiresWeight: $this->requiresWeight((string) ($row['unit'] ?? '')),
         );
+    }
+
+    private function looksLikeMojibake(string $name): bool
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return true;
+        }
+        if (str_contains($name, '??') || str_contains($name, "\u{FFFD}")) {
+            return true;
+        }
+        if (preg_match('/^\?+$/u', $name) === 1) {
+            return true;
+        }
+        $q = substr_count($name, '?');
+
+        return $q >= 2 && $q >= (int) floor(mb_strlen($name, 'UTF-8') * 0.5);
     }
 
     private function requiresWeight(string $unit): bool

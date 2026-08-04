@@ -46,6 +46,57 @@ final class PlatformRetailCatalogSeedData
     }
 
     /**
+     * Public alias for the UTF-8 product catalog rows (read-time / repair maps).
+     *
+     * @return list<array{cat:string,sku:string,barcode:string,name_ar:string,name_en:string,price:float,brand?:string}>
+     */
+    public static function productCatalog(): array
+    {
+        return self::productRows();
+    }
+
+    /**
+     * SKU => display name (Arabic preferred). Includes RC-* seed + GM-* demo SKUs.
+     *
+     * @return array<string, string>
+     */
+    public static function nameBySku(): array
+    {
+        $out = [];
+        foreach (self::authoritativeSkuMap() as $sku => $row) {
+            $ar = trim((string) ($row['name_ar'] ?? ''));
+            $en = trim((string) ($row['name_en'] ?? ''));
+            $name = $ar !== '' ? $ar : $en;
+            if ($name !== '') {
+                $out[$sku] = $name;
+            }
+        }
+        foreach (self::demoSkuNames() as $sku => $name) {
+            if (!isset($out[$sku]) && $name !== '') {
+                $out[$sku] = $name;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Demo guest-menu SKUs (GM-*) — UTF-8 Arabic names.
+     *
+     * @return array<string, string>
+     */
+    public static function demoSkuNames(): array
+    {
+        return [
+            'GM-BURGER' => 'برجر كلاسيك',
+            'GM-FRIES' => 'بطاطس مقلية',
+            'GM-COLA' => 'كولا',
+            'GM-SALAD' => 'سلطة خضراء',
+            'GM-JUICE' => 'عصير برتقال',
+        ];
+    }
+
+    /**
      * SKU => authoritative seed fields (names never contain ??).
      *
      * @return array<string, array{sku:string, barcode:string, name_ar:string, name_en:string, price:float, category_slug:string, category_name_ar:string, category_name_en:string}>
@@ -54,7 +105,7 @@ final class PlatformRetailCatalogSeedData
     {
         $cats = self::categoryMetaBySlug();
         $out = [];
-        foreach (self::productRows() as $row) {
+        foreach (self::productCatalog() as $row) {
             $sku = (string) ($row['sku'] ?? '');
             if ($sku === '') {
                 continue;
@@ -242,7 +293,7 @@ final class PlatformRetailCatalogSeedData
     /** @param array<string, int> $categories */
     private function seedProducts(array $categories, int $unitId): void
     {
-        foreach (self::productRows() as $row) {
+        foreach (self::productCatalog() as $row) {
             $catId = $categories[$row['cat']] ?? 0;
             if ($catId < 1) {
                 continue;
@@ -253,6 +304,7 @@ final class PlatformRetailCatalogSeedData
 
     /**
      * Authoritative UTF-8 catalog rows from this PHP seed (never trust DB ?? copies).
+     * Prefer {@see productCatalog()} for external callers.
      *
      * @return list<array{cat:string,sku:string,barcode:string,name_ar:string,name_en:string,price:float,brand?:string}>
      */

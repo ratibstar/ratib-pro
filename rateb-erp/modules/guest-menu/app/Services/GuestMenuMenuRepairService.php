@@ -10,8 +10,8 @@ use Rateb\App\Models\ProductCategory;
 use PDO;
 
 /**
- * One-shot repair: platform seed UPSERT + rewrite company RC-* inventory
- * names/categories from authoritative UTF-8 PHP seed (never copy DB ??).
+ * One-shot repair: rewrite company RC- and GM- inventory names/categories
+ * from authoritative UTF-8 PHP seed (never copy platform DB mojibake).
  */
 final class GuestMenuMenuRepairService
 {
@@ -42,9 +42,16 @@ final class GuestMenuMenuRepairService
 
         $this->ensureErpUtf8();
 
-        $seed = (new GuestMenuPlatformCatalogSeedRunner())->run();
-        $seedOk = !empty($seed['ok']);
-        $seedCount = (int) ($seed['product_count'] ?? 0);
+        // Platform seed is best-effort only — inventory rewrite uses PHP seed map.
+        $seedOk = false;
+        $seedCount = 0;
+        try {
+            $seed = (new GuestMenuPlatformCatalogSeedRunner())->run();
+            $seedOk = !empty($seed['ok']);
+            $seedCount = (int) ($seed['product_count'] ?? 0);
+        } catch (\Throwable) {
+            $seedOk = false;
+        }
 
         $packs = PlatformRetailCatalogSeedData::industryPacks();
         if (!isset($packs[$pack])) {
@@ -93,35 +100,56 @@ final class GuestMenuMenuRepairService
         $imported = 0;
         $skipped = 0;
 
-        // 1) Rewrite every existing RC-* row from seed (even if outside current pack).
-        $existing = $this->listCompanyRcInventory($companyId);
+        $nameBySku = PlatformRetailCatalogSeedData::nameBySku();
         $fullMap = PlatformRetailCatalogSeedData::authoritativeSkuMap();
+
+        // 1) Rewrite every existing RC-/GM- row from PHP seed (never platform translations).
+        $existing = $this->listCompanySeedInventory($companyId);
         foreach ($existing as $inv) {
             $sku = (string) ($inv['sku'] ?? '');
             $seedRow = $fullMap[$sku] ?? null;
-            if ($seedRow === null) {
+            $name = '';
+            $categorySlug = '';
+            $categoryLabelAr = '';
+            $categoryLabelEn = '';
+            $price = 0.0;
+
+            if ($seedRow !== null) {
+                $name = $this->readableSeedName($seedRow);
+                $categorySlug = (string) ($seedRow['category_slug'] ?? '');
+                $categoryLabelAr = (string) ($seedRow['category_name_ar'] ?? '');
+                $categoryLabelEn = (string) ($seedRow['category_name_en'] ?? '');
+                $price = (float) ($seedRow['price'] ?? 0);
+            } elseif (isset($nameBySku[$sku])) {
+                // GM-* demo SKUs — name only.
+                $name = (string) $nameBySku[$sku];
+                $categorySlug = 'retail-restaurants';
+                $categoryLabelAr = 'مطاعم';
+                $categoryLabelEn = 'Restaurants';
+            } else {
                 ++$skipped;
                 continue;
             }
-            $name = $this->readableSeedName($seedRow);
+
             if ($name === '' || $this->isCorruptedName($name)) {
                 ++$skipped;
                 continue;
             }
             $categoryId = $this->resolveCompanyCategoryId(
                 $companyId,
-                (string) $seedRow['category_slug'],
-                (string) $seedRow['category_name_ar'],
-                (string) $seedRow['category_name_en'],
+                $categorySlug,
+                $categoryLabelAr,
+                $categoryLabelEn,
                 $categoryCache
             );
-            $categoryLabel = (string) $seedRow['category_name_ar'];
+            $categoryLabel = $categoryLabelAr !== '' ? $categoryLabelAr : $categoryLabelEn;
             if ($this->forceUpdateInventory(
+                $companyId,
                 (int) $inv['id'],
                 $name,
                 $categoryId,
                 $categoryLabel,
-                (float) $seedRow['price']
+                $price
             )) {
                 ++$repaired;
             } else {
@@ -129,7 +157,7 @@ final class GuestMenuMenuRepairService
             }
         }
 
-        // 2) Ensure pack SKUs exist (create missing).
+        // 2) Ensure pack SKUs exist (create missing RC-*).
         foreach ($skuMap as $seedRow) {
             $sku = (string) $seedRow['sku'];
             $existingId = $this->findInventoryId($companyId, $sku);
@@ -165,6 +193,11 @@ final class GuestMenuMenuRepairService
                     'unit_cost' => $price > 0 ? $price : 1.0,
                     'status' => 'active',
                 ]);
+                // If create stored ?? due to charset, force UNHEX rewrite.
+                $newId = $this->findInventoryId($companyId, $sku);
+                if ($newId > 0) {
+                    $this->forceUpdateInventory($companyId, $newId, $name, $categoryId, $categoryLabel, $price);
+                }
                 ++$imported;
             } catch (\Throwable) {
                 ++$skipped;
@@ -184,7 +217,10 @@ final class GuestMenuMenuRepairService
     private function ensureErpUtf8(): void
     {
         try {
-            Database::connection()->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+            $pdo = Database::connection();
+            $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+            $pdo->exec('SET CHARACTER SET utf8mb4');
+            $pdo->exec('SET character_set_connection = utf8mb4');
         } catch (\Throwable) {
             // ignore
         }
@@ -217,7 +253,6 @@ final class GuestMenuMenuRepairService
         if (preg_match('/^\?+$/u', $name) === 1) {
             return true;
         }
-        // Majority question marks (classic latin1→utf8 damage).
         $q = substr_count($name, '?');
         if ($q >= 2 && $q >= (int) floor(mb_strlen($name, 'UTF-8') * 0.5)) {
             return true;
@@ -227,12 +262,13 @@ final class GuestMenuMenuRepairService
     }
 
     /** @return list<array{id:int|string, sku:string, item_name?:string}> */
-    private function listCompanyRcInventory(int $companyId): array
+    private function listCompanySeedInventory(int $companyId): array
     {
         $stmt = Database::connection()->prepare(
             'SELECT id, sku, item_name, category_id, category
              FROM rateb_inventory
-             WHERE company_id = :cid AND sku LIKE \'RC-%\''
+             WHERE company_id = :cid
+               AND (sku LIKE \'RC-%\' OR sku LIKE \'GM-%\')'
         );
         $stmt->execute(['cid' => $companyId]);
 
@@ -251,32 +287,88 @@ final class GuestMenuMenuRepairService
     }
 
     private function forceUpdateInventory(
+        int $companyId,
         int $inventoryId,
         string $name,
         int $categoryId,
         string $categoryLabel,
         float $price
     ): bool {
-        if ($inventoryId < 1 || $name === '') {
+        if ($companyId < 1 || $inventoryId < 1 || $name === '' || $this->isCorruptedName($name)) {
             return false;
         }
-        $sets = ['item_name = :name', 'category = :cat'];
+
+        $pdo = Database::connection();
+        $cat = $categoryLabel !== '' ? $categoryLabel : 'menu';
+
+        // Prefer UNHEX write — immune to connection charset mangling Arabic → ???.
+        $hexName = bin2hex($name);
+        $hexCat = bin2hex($cat);
+        $sets = [
+            'item_name = CONVERT(UNHEX(:hex_name) USING utf8mb4)',
+            'category = CONVERT(UNHEX(:hex_cat) USING utf8mb4)',
+        ];
         $params = [
             'id' => $inventoryId,
-            'name' => $name,
-            'cat' => $categoryLabel !== '' ? $categoryLabel : 'menu',
+            'cid' => $companyId,
+            'hex_name' => $hexName,
+            'hex_cat' => $hexCat,
         ];
         if ($categoryId > 0) {
-            $sets[] = 'category_id = :cid';
-            $params['cid'] = $categoryId;
+            $sets[] = 'category_id = :cat_id';
+            $params['cat_id'] = $categoryId;
         }
         if ($price > 0) {
             $sets[] = 'unit_cost = :price';
             $params['price'] = $price;
         }
-        Database::connection()->prepare(
-            'UPDATE rateb_inventory SET ' . implode(', ', $sets) . ' WHERE id = :id'
-        )->execute($params);
+
+        try {
+            $pdo->prepare(
+                'UPDATE rateb_inventory SET ' . implode(', ', $sets)
+                . ' WHERE id = :id AND company_id = :cid'
+            )->execute($params);
+        } catch (\Throwable) {
+            // Fallback: plain parameterized UTF-8 bind.
+            $sets2 = ['item_name = :name', 'category = :cat'];
+            $params2 = [
+                'id' => $inventoryId,
+                'cid' => $companyId,
+                'name' => $name,
+                'cat' => $cat,
+            ];
+            if ($categoryId > 0) {
+                $sets2[] = 'category_id = :cat_id';
+                $params2['cat_id'] = $categoryId;
+            }
+            if ($price > 0) {
+                $sets2[] = 'unit_cost = :price';
+                $params2['price'] = $price;
+            }
+            try {
+                $pdo->prepare(
+                    'UPDATE rateb_inventory SET ' . implode(', ', $sets2)
+                    . ' WHERE id = :id AND company_id = :cid'
+                )->execute($params2);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        // Verify write stuck as Arabic (not ??).
+        try {
+            $check = $pdo->prepare(
+                'SELECT item_name FROM rateb_inventory WHERE id = :id AND company_id = :cid LIMIT 1'
+            );
+            $check->execute(['id' => $inventoryId, 'cid' => $companyId]);
+            $row = $check->fetch(PDO::FETCH_ASSOC);
+            $stored = (string) ($row['item_name'] ?? '');
+            if ($this->isCorruptedName($stored)) {
+                return false;
+            }
+        } catch (\Throwable) {
+            // assume ok if verify unavailable
+        }
 
         return true;
     }
@@ -315,10 +407,21 @@ final class GuestMenuMenuRepairService
                 (string) ($row['name'] ?? '') !== $desired
                 || (string) ($row['name_ar'] ?? '') !== $desired
                 || str_contains((string) ($row['name'] ?? ''), '??')
+                || str_contains((string) ($row['name_ar'] ?? ''), '??')
             )) {
-                $pdo->prepare(
-                    'UPDATE rateb_product_categories SET name = :n, name_ar = :na WHERE id = :id'
-                )->execute(['n' => $desired, 'na' => $desired, 'id' => $id]);
+                $hex = bin2hex($desired);
+                try {
+                    $pdo->prepare(
+                        'UPDATE rateb_product_categories
+                         SET name = CONVERT(UNHEX(:h) USING utf8mb4),
+                             name_ar = CONVERT(UNHEX(:h2) USING utf8mb4)
+                         WHERE id = :id AND company_id = :cid'
+                    )->execute(['h' => $hex, 'h2' => $hex, 'id' => $id, 'cid' => $companyId]);
+                } catch (\Throwable) {
+                    $pdo->prepare(
+                        'UPDATE rateb_product_categories SET name = :n, name_ar = :na WHERE id = :id AND company_id = :cid'
+                    )->execute(['n' => $desired, 'na' => $desired, 'id' => $id, 'cid' => $companyId]);
+                }
             }
             $cache[$slug] = $id;
 
@@ -338,6 +441,20 @@ final class GuestMenuMenuRepairService
                 'is_visible' => 1,
                 'sort_order' => 10,
             ]);
+            // Harden category Arabic via UNHEX if create mangled it.
+            if ((int) $id > 0 && $displayAr !== '') {
+                $hex = bin2hex($displayAr);
+                try {
+                    $pdo->prepare(
+                        'UPDATE rateb_product_categories
+                         SET name = CONVERT(UNHEX(:h) USING utf8mb4),
+                             name_ar = CONVERT(UNHEX(:h2) USING utf8mb4)
+                         WHERE id = :id AND company_id = :cid'
+                    )->execute(['h' => $hex, 'h2' => $hex, 'id' => (int) $id, 'cid' => $companyId]);
+                } catch (\Throwable) {
+                    // ignore
+                }
+            }
         } finally {
             TenantContext::setCompanyId($prev);
         }
