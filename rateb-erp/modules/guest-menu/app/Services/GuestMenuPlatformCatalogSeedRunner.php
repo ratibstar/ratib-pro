@@ -9,6 +9,8 @@ use PDO;
 final class GuestMenuPlatformCatalogSeedRunner
 {
     /**
+     * Prefer a fresh repair run when Arabic names look corrupted; otherwise skip if already full.
+     *
      * @return array{ok:bool, message:string, log?:list<string>, product_count?:int}
      */
     public function ensureSeeded(): array
@@ -18,6 +20,7 @@ final class GuestMenuPlatformCatalogSeedRunner
             return ['ok' => false, 'message' => 'platform_db_unavailable'];
         }
         try {
+            $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
             $published = (int) $pdo->query(
                 "SELECT COUNT(*) FROM products WHERE deleted_at IS NULL AND status IN ('published','approved')"
             )->fetchColumn();

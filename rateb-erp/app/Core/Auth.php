@@ -166,6 +166,12 @@ final class Auth
                 $companyId > 0 ? $companyId : null
             );
         }
+        // Pin session + CSRF cookies to canonical app path; drop legacy path=/ duplicates.
+        SessionManager::reissueCanonicalSessionCookie();
+        SessionManager::clearAlternatePathCookies();
+        if (class_exists(Csrf::class)) {
+            Csrf::token();
+        }
     }
 
     public static function homePath(): string

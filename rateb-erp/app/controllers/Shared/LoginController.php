@@ -35,6 +35,10 @@ final class LoginController extends Controller
         $err = (string) ($_GET['err'] ?? '');
         if ($err === 'csrf' || $err === 'session') {
             SessionManager::destroy();
+            SessionManager::clearAlternatePathCookies();
+            SessionManager::reissueCanonicalSessionCookie();
+            // Issue a fresh CSRF token into the new session so the first login attempt works.
+            Csrf::token();
         }
 
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {

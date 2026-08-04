@@ -99,3 +99,19 @@ if ($loginBarcodeJs !== '' && is_file($loginBarcodeJs)) {
     echo '<script>', file_get_contents($loginBarcodeJs), '</script>';
 }
 ?>
+<script>
+(function () {
+    function syncLoginCsrf() {
+        var meta = document.querySelector('meta[name="rateb-csrf"]');
+        var token = meta ? (meta.getAttribute('content') || '') : '';
+        if (!token) return;
+        document.querySelectorAll('form.login-panel input[name="_csrf"], #password-form input[name="_csrf"]').forEach(function (inp) {
+            inp.value = token;
+        });
+    }
+    syncLoginCsrf();
+    document.querySelectorAll('form.login-panel, #password-form').forEach(function (form) {
+        form.addEventListener('submit', syncLoginCsrf);
+    });
+})();
+</script>

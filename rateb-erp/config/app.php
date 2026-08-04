@@ -2821,6 +2821,30 @@ if (!function_exists('rateb_adopt_ops_company_id')) {
     }
 }
 
+if (!function_exists('rateb_request_company_id')) {
+    /**
+     * First non-zero company_id from request (handles duplicate ?company_id=a&company_id=b —
+     * PHP $_GET keeps the last scalar; also scan QUERY_STRING for an explicit last value).
+     */
+    function rateb_request_company_id(): int
+    {
+        $fromGet = (int) ($_GET['company_id'] ?? 0);
+        $fromPost = (int) ($_POST['company_id'] ?? 0);
+        if ($fromPost > 0) {
+            return $fromPost;
+        }
+        if ($fromGet > 0) {
+            return $fromGet;
+        }
+        $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+        if ($qs !== '' && preg_match_all('/(?:^|&)company_id=(\d+)/', $qs, $m) && $m[1] !== []) {
+            return (int) end($m[1]);
+        }
+
+        return 0;
+    }
+}
+
 if (!function_exists('rateb_resolve_ops_company_id')) {
     function rateb_resolve_ops_company_id(): int
     {
@@ -2838,19 +2862,37 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             }
         }
 
-        $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
-        if ($sessionCompany > 0) {
-            $valid = rateb_adopt_ops_company_id($sessionCompany);
+        $isSuper = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $fromRequest = function_exists('rateb_request_company_id')
+            ? rateb_request_company_id()
+            : (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+
+        // Platform super-admin: honour ops company picker (?company_id=) over any leftover
+        // rateb_company_id from a previous tenant preview (fixes ddd/22 ignored for 228).
+        if ($isSuper && $fromRequest > 0) {
+            $valid = rateb_adopt_ops_company_id($fromRequest);
             if ($valid > 0) {
+                rateb_sync_ops_session_to_company($valid);
+
                 return $valid;
             }
         }
 
-        $fromRequest = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
-        if ($fromRequest > 0) {
+        if (!$isSuper) {
+            $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+            if ($sessionCompany > 0) {
+                $valid = rateb_adopt_ops_company_id($sessionCompany);
+                if ($valid > 0) {
+                    return $valid;
+                }
+            }
+        }
+
+        if (!$isSuper && $fromRequest > 0) {
             $valid = rateb_adopt_ops_company_id($fromRequest);
             if ($valid > 0) {
                 \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $valid);
+
                 return $valid;
             }
         }
@@ -2860,6 +2902,17 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             $valid = rateb_adopt_ops_company_id($opsCompany);
             if ($valid > 0) {
                 return $valid;
+            }
+        }
+
+        // Super-admin fallback: session company only when no ops selection exists.
+        if ($isSuper) {
+            $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+            if ($sessionCompany > 0) {
+                $valid = rateb_adopt_ops_company_id($sessionCompany);
+                if ($valid > 0) {
+                    return $valid;
+                }
             }
         }
 
@@ -3014,6 +3067,40 @@ if (!function_exists('rateb_resolve_company_id')) {
     }
 }
 
+if (!function_exists('rateb_url_set_query_param')) {
+    /** Set or replace a single query param without duplicating keys. */
+    function rateb_url_set_query_param(string $url, string $key, string $value): string
+    {
+        $parts = parse_url($url);
+        if ($parts === false) {
+            return $url;
+        }
+        $query = [];
+        if (!empty($parts['query'])) {
+            parse_str((string) $parts['query'], $query);
+        }
+        $query[$key] = $value;
+        $base = '';
+        if (isset($parts['scheme'])) {
+            $base .= $parts['scheme'] . '://';
+        }
+        if (isset($parts['host'])) {
+            $base .= $parts['host'];
+            if (isset($parts['port'])) {
+                $base .= ':' . $parts['port'];
+            }
+        }
+        $base .= $parts['path'] ?? '';
+        $qs = http_build_query($query);
+        $out = $qs !== '' ? ($base . '?' . $qs) : $base;
+        if (!empty($parts['fragment'])) {
+            $out .= '#' . $parts['fragment'];
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('rateb_url_with_ops_company')) {
     function rateb_url_with_ops_company(string $path): string
     {
@@ -3025,6 +3112,10 @@ if (!function_exists('rateb_url_with_ops_company')) {
         if ($id < 1) {
             return $url;
         }
+        if (function_exists('rateb_url_set_query_param')) {
+            return rateb_url_set_query_param($url, 'company_id', (string) $id);
+        }
+
         return $url . (strpos($url, '?') === false ? '?' : '&') . 'company_id=' . $id;
     }
 }

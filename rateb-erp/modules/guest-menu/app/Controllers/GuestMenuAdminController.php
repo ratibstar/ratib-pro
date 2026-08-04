@@ -5,6 +5,7 @@ namespace Rateb\App\GuestMenu\Controllers;
 
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Database;
 use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogSeedService;
@@ -15,6 +16,7 @@ use Rateb\App\GuestMenu\Services\GuestMenuPlatformImportService;
 use Rateb\App\GuestMenu\Services\GuestMenuSettingsService;
 use Rateb\App\Services\BranchService;
 use Rateb\App\GuestMenu\Support\GuestMenuView;
+use PDO;
 
 /** Admin settings for guest QR menu. */
 final class GuestMenuAdminController extends Controller
@@ -53,9 +55,6 @@ final class GuestMenuAdminController extends Controller
         }
         $catalogStats = (new GuestMenuCatalogService())->statsForCompany($companyId, $menuBranchId);
         $inventoryUrl = rateb_app_url('inventory');
-        if ($companyId > 0) {
-            $inventoryUrl .= (str_contains($inventoryUrl, '?') ? '&' : '?') . 'company_id=' . $companyId;
-        }
         GuestMenuView::render('admin/settings', [
             'title' => __('guest_menu_settings'),
             'settings' => $settings,
@@ -91,10 +90,7 @@ final class GuestMenuAdminController extends Controller
     public function orderStatus(int $orderId): void
     {
         $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirect(rateb_app_url('guest-menu/orders'));
-
+        if (!$this->requireCsrfOrStay()) {
             return;
         }
         $status = (string) $this->input('status', 'pending');
@@ -106,12 +102,10 @@ final class GuestMenuAdminController extends Controller
     public function importCatalog(): void
     {
         $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirectGuestMenu();
-
+        if (!$this->requireCsrfOrStay()) {
             return;
         }
+        // Always repair platform Arabic (SET NAMES + UPSERT) before company import.
         $seed = (new GuestMenuPlatformCatalogSeedRunner())->ensureSeeded();
         if (!$seed['ok'] && ($seed['message'] ?? '') !== 'already_populated') {
             SessionManager::flash(
@@ -123,8 +117,19 @@ final class GuestMenuAdminController extends Controller
             return;
         }
 
+        $companyId = $this->companyId();
+        $replace = !empty($_POST['replace_imported']);
+        if ($replace) {
+            $deleted = (new GuestMenuPlatformImportService())->deleteImportedForCompany($companyId);
+            if ($deleted > 0) {
+                SessionManager::flash('success', __('guest_menu_delete_imported_done', [
+                    'count' => (string) $deleted,
+                ]));
+            }
+        }
+
         $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
-        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 200, $pack);
+        $result = (new GuestMenuPlatformImportService())->importToCompany($companyId, 200, $pack);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {
@@ -143,13 +148,71 @@ final class GuestMenuAdminController extends Controller
         $this->redirectGuestMenu();
     }
 
+    public function deleteImportedCatalog(): void
+    {
+        $this->guardManage();
+        if (!$this->requireCsrfOrStay()) {
+            return;
+        }
+        $deleted = (new GuestMenuPlatformImportService())->deleteImportedForCompany($this->companyId());
+        SessionManager::flash('success', __('guest_menu_delete_imported_done', [
+            'count' => (string) $deleted,
+        ]));
+        $this->redirectGuestMenu();
+    }
+
+    public function exportCatalog(): void
+    {
+        $this->guardView();
+        $companyId = $this->companyId();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirectGuestMenu();
+
+            return;
+        }
+
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            'SELECT i.sku, i.item_name,
+                    COALESCE(NULLIF(c.name_ar, \'\'), NULLIF(c.name, \'\'), NULLIF(i.category, \'\'), \'\') AS category_name,
+                    i.unit_cost AS price
+             FROM rateb_inventory i
+             LEFT JOIN rateb_product_categories c ON c.id = i.category_id
+             WHERE i.company_id = :cid
+               AND (i.status IS NULL OR i.status = \'active\')
+             ORDER BY category_name ASC, i.item_name ASC'
+        );
+        $stmt->execute(['cid' => $companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $filename = 'guest-menu-inventory-c' . $companyId . '-' . date('Ymd-His') . '.csv';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        echo "\xEF\xBB\xBF";
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            http_response_code(500);
+            exit;
+        }
+        fputcsv($out, ['sku', 'name', 'category', 'price']);
+        foreach ($rows as $row) {
+            fputcsv($out, [
+                (string) ($row['sku'] ?? ''),
+                (string) ($row['item_name'] ?? ''),
+                (string) ($row['category_name'] ?? ''),
+                number_format((float) ($row['price'] ?? 0), 2, '.', ''),
+            ]);
+        }
+        fclose($out);
+        exit;
+    }
+
     public function seedPlatformCatalog(): void
     {
         $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirectGuestMenu();
-
+        if (!$this->requireCsrfOrStay()) {
             return;
         }
         if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
@@ -175,10 +238,7 @@ final class GuestMenuAdminController extends Controller
     public function seedDemo(): void
     {
         $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirectGuestMenu();
-
+        if (!$this->requireCsrfOrStay()) {
             return;
         }
         $result = (new GuestMenuCatalogSeedService())->seedDemoForCompany($this->companyId());
@@ -192,14 +252,25 @@ final class GuestMenuAdminController extends Controller
         $this->redirectGuestMenu();
     }
 
+    /**
+     * CSRF failure must NEVER destroy the session or force logout — flash and stay.
+     * (Logout on Import was caused by SessionManager clearing alternate cookies mid-session.)
+     */
+    private function requireCsrfOrStay(): bool
+    {
+        if ($this->validateCsrf()) {
+            return true;
+        }
+        SessionManager::flash('error', __('csrf_invalid'));
+        $this->redirectGuestMenu();
+
+        return false;
+    }
+
     private function redirectGuestMenu(): void
     {
-        $url = rateb_app_url('guest-menu');
-        $cid = $this->companyId();
-        if ($cid > 0) {
-            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $cid;
-        }
-        $this->redirect($url);
+        // rateb_app_url already includes a single company_id for super-admins — do not append again.
+        $this->redirect(rateb_app_url('guest-menu'));
     }
 
     /** @return list<array<string, mixed>> */
@@ -218,10 +289,7 @@ final class GuestMenuAdminController extends Controller
     public function save(): void
     {
         $this->guardManage();
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('csrf_invalid'));
-            $this->redirect(rateb_app_url('guest-menu'));
-
+        if (!$this->requireCsrfOrStay()) {
             return;
         }
 
@@ -248,7 +316,7 @@ final class GuestMenuAdminController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
 
-        $this->redirect(rateb_app_url('guest-menu'));
+        $this->redirectGuestMenu();
     }
 
     public function qrPng(): void

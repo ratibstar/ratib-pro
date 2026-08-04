@@ -33,9 +33,12 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
 
     <div class="row g-4">
         <div class="col-lg-7">
-            <form method="post" action="<?php echo rateb_app_url('guest-menu'); ?>" class="card shadow-sm">
+            <form method="post" action="<?php echo rateb_app_url('guest-menu'); ?>" class="card shadow-sm" data-gm-csrf-form>
                 <div class="card-body">
                     <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                    <?php if ($companyId > 0) { ?>
+                    <input type="hidden" name="company_id" value="<?php echo (int) $companyId; ?>">
+                    <?php } ?>
 
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" name="is_enabled" value="1" id="gm-enabled"
@@ -105,7 +108,7 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                 </div>
             </form>
 
-            <div class="card shadow-sm mt-4">
+            <div class="card shadow-sm mt-4 border-primary">
                 <div class="card-body">
                     <h2 class="h5 mb-3"><?php echo __('guest_menu_catalog_panel_title'); ?></h2>
                     <p class="mb-2">
@@ -119,9 +122,14 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                     <?php } ?>
                     <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
                     <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_pack_hint'); ?></p>
+
+                    <h3 class="h6 text-primary mb-2"><?php echo __('guest_menu_catalog_actions_title'); ?></h3>
                     <div class="d-flex flex-wrap gap-2 align-items-end mb-3" id="gm-catalog-actions">
                         <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>">
                             <?php echo __('guest_menu_open_inventory'); ?>
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="<?php echo GuestMenuView::escape(rateb_app_url('guest-menu/export-catalog')); ?>" data-rateb-full-nav="1">
+                            <?php echo __('guest_menu_export_catalog'); ?>
                         </a>
                         <?php if (!empty($platformCatalogEnabled) && ($platformCatalogUrl ?? '') !== '') { ?>
                         <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($platformCatalogUrl); ?>" target="_blank" rel="noopener noreferrer">
@@ -129,31 +137,47 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                         </a>
                         <?php } ?>
                         <?php
-                        $gmCompanyQs = $companyId > 0 ? ('?company_id=' . (int) $companyId) : '';
-                        $importAction = rateb_app_url('guest-menu/import-catalog') . $gmCompanyQs;
-                        $seedAction = rateb_app_url('guest-menu/seed-demo') . $gmCompanyQs;
+                        // rateb_app_url already sets a single company_id — never append another.
+                        $importAction = rateb_app_url('guest-menu/import-catalog');
+                        $seedAction = rateb_app_url('guest-menu/seed-demo');
+                        $deleteAction = rateb_app_url('guest-menu/delete-imported-catalog');
                         $catalogPacks = is_array($catalogPacks ?? null) ? $catalogPacks : [];
                         $isRtl = function_exists('rateb_locale') && rateb_locale() === 'ar';
+                        $gmCid = (int) $companyId;
                         ?>
                         <form method="post" action="<?php echo GuestMenuView::escape($seedAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
                             <button type="submit" class="btn btn-primary btn-sm"><?php echo __('guest_menu_seed_demo'); ?></button>
                         </form>
                         <?php if (!empty($platformCatalogEnabled)) {
-                            $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog') . $gmCompanyQs;
+                            $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
                             ?>
                         <form method="post" action="<?php echo GuestMenuView::escape($platformSeedAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
                             <button type="submit" class="btn btn-warning btn-sm" title="<?php echo GuestMenuView::escape(__('guest_menu_platform_seed_hint')); ?>">
                                 <?php echo __('guest_menu_platform_seed'); ?>
                             </button>
                         </form>
                         <?php } ?>
-                        <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="d-inline-flex flex-wrap gap-2 align-items-end" data-gm-csrf-form>
+                        <form method="post" action="<?php echo GuestMenuView::escape($deleteAction); ?>" class="d-inline" data-gm-csrf-form
+                              onsubmit="return confirm(<?php echo json_encode(__('guest_menu_delete_imported_confirm'), JSON_UNESCAPED_UNICODE); ?>);">
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
-                            <div>
+                            <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
+                            <button type="submit" class="btn btn-outline-danger btn-sm" title="<?php echo GuestMenuView::escape(__('guest_menu_delete_imported_hint')); ?>">
+                                <?php echo __('guest_menu_delete_imported'); ?>
+                            </button>
+                        </form>
+                    </div>
+
+                    <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="border rounded p-3 bg-light" data-gm-csrf-form>
+                        <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                        <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
                                 <label class="form-label small mb-1" for="gm-catalog-pack"><?php echo __('guest_menu_catalog_pack'); ?></label>
-                                <select class="form-select form-select-sm" id="gm-catalog-pack" name="catalog_pack" style="min-width:12rem">
+                                <select class="form-select form-select-sm" id="gm-catalog-pack" name="catalog_pack">
                                     <?php foreach ($catalogPacks as $packKey => $packMeta) {
                                         $label = $isRtl
                                             ? (string) ($packMeta['label_ar'] ?? $packKey)
@@ -165,9 +189,15 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                                     <?php } ?>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
-                        </form>
-                    </div>
+                            <div class="col-md-7">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="replace_imported" value="1" id="gm-replace-imported">
+                                    <label class="form-check-label small" for="gm-replace-imported"><?php echo __('guest_menu_replace_on_import'); ?></label>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
+                            </div>
+                        </div>
+                    </form>
                     <p class="text-muted small mt-3 mb-0"><?php echo __('guest_menu_mobile_scan_tip'); ?></p>
                     <script>
                     (function () {
@@ -178,6 +208,8 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                             document.querySelectorAll('[data-gm-csrf-form] input[name="_csrf"]').forEach(function (inp) {
                                 inp.value = token;
                             });
+                            var saveForm = document.querySelector('.gm-admin-page form.card input[name="_csrf"]');
+                            if (saveForm) saveForm.value = token;
                         }
                         syncGmCsrf();
                         document.querySelectorAll('[data-gm-csrf-form]').forEach(function (form) {
@@ -186,6 +218,7 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                         if (window.RatebModuleLifecycle && typeof window.RatebModuleLifecycle.on === 'function') {
                             window.RatebModuleLifecycle.on('afterEnter', syncGmCsrf);
                         }
+                        document.addEventListener('rateb:nav:afterEnter', syncGmCsrf);
                     })();
                     </script>
                 </div>

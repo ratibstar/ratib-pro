@@ -111,7 +111,9 @@ final class SessionManager
         self::ensureSavePath();
         $secure = self::requestIsSecure();
         $cookiePath = self::cookiePath();
-        self::clearAlternatePathCookies();
+        // Do NOT clearAlternatePathCookies() on every start — expiring path=/ while the
+        // live session still lived there logged users out on the next POST (Import → login?err=session).
+        // Clear duplicates only on login recovery, successful login, and destroy().
 
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
@@ -131,6 +133,36 @@ final class SessionManager
         if (empty($_SESSION['_rateb_init'])) {
             session_regenerate_id(true);
             $_SESSION['_rateb_init'] = time();
+        }
+
+        // Once we have an authenticated session, pin the cookie to the canonical path
+        // and drop legacy path=/ duplicates so CSRF/session stay aligned.
+        if (!empty($_SESSION['rateb_user_id']) && !headers_sent()) {
+            self::reissueCanonicalSessionCookie();
+            self::clearAlternatePathCookies();
+        }
+    }
+
+    /** Re-send session cookie on the canonical app path (migration from legacy path=/). */
+    public static function reissueCanonicalSessionCookie(): void
+    {
+        if (headers_sent() || session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+        $secure = self::requestIsSecure();
+        $path = self::cookiePath();
+        $params = [
+            'expires' => 0,
+            'path' => $path,
+            'domain' => '',
+            'secure' => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ];
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie(session_name(), session_id(), $params);
+        } else {
+            setcookie(session_name(), session_id(), 0, $path, '', $secure, true);
         }
     }
 

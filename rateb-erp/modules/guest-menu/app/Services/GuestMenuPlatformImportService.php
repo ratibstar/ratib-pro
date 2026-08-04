@@ -14,6 +14,25 @@ use PDOException;
 final class GuestMenuPlatformImportService
 {
     /**
+     * Delete previously imported / demo menu SKUs (RC-* platform + GM-* demo) for a company.
+     */
+    public function deleteImportedForCompany(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            'DELETE FROM rateb_inventory
+             WHERE company_id = :cid
+               AND (sku LIKE \'RC-%\' OR sku LIKE \'GM-%\')'
+        );
+        $stmt->execute(['cid' => $companyId]);
+
+        return (int) $stmt->rowCount();
+    }
+
+    /**
      * @return array{ok:bool, imported:int, skipped:int, updated:int, message?:string}
      */
     public function importToCompany(int $companyId, int $limit = 50, string $pack = 'all'): array
