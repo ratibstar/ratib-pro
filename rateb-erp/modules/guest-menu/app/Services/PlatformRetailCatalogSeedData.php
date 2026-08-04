@@ -16,6 +16,12 @@ final class PlatformRetailCatalogSeedData
 
     public function run(): void
     {
+        try {
+            $this->pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (\Throwable) {
+            // ignore — connection helper already sets charset when available
+        }
+
         $unitId = $this->unitIdPcs();
         if ($unitId < 1) {
             throw new \RuntimeException('PCS unit missing — run 002_reference_data first');
@@ -24,6 +30,82 @@ final class PlatformRetailCatalogSeedData
         $categories = $this->seedCategories();
         $this->seedBrands();
         $this->seedProducts($categories, $unitId);
+    }
+
+    /**
+     * Industry / business-type packs for selective import into a company menu.
+     *
+     * @return array<string, array{label_ar:string, label_en:string, cats:list<string>|null}>
+     */
+    public static function industryPacks(): array
+    {
+        return [
+            'restaurant' => [
+                'label_ar' => 'مطعم',
+                'label_en' => 'Restaurant',
+                'cats' => ['retail-restaurants', 'retail-cafe', 'retail-beverages', 'retail-bakery'],
+            ],
+            'cafe' => [
+                'label_ar' => 'كافيه',
+                'label_en' => 'Cafe',
+                'cats' => ['retail-cafe', 'retail-bakery', 'retail-beverages'],
+            ],
+            'clothing' => [
+                'label_ar' => 'ملابس وأحذية',
+                'label_en' => 'Clothing & Shoes',
+                'cats' => ['retail-clothing-men', 'retail-clothing-women', 'retail-shoes'],
+            ],
+            'grocery' => [
+                'label_ar' => 'بقالة وتموين',
+                'label_en' => 'Grocery',
+                'cats' => ['retail-groceries', 'retail-provisions', 'retail-beverages', 'retail-dairy', 'retail-bakery'],
+            ],
+            'electronics' => [
+                'label_ar' => 'جوالات وإلكترونيات',
+                'label_en' => 'Electronics',
+                'cats' => ['retail-mobiles', 'retail-accessories', 'retail-electronics'],
+            ],
+            'pharmacy' => [
+                'label_ar' => 'صيدلية وعناية',
+                'label_en' => 'Pharmacy',
+                'cats' => ['retail-pharmacy', 'retail-personal-care', 'retail-baby'],
+            ],
+            'factory' => [
+                'label_ar' => 'مصنع / صناعي',
+                'label_en' => 'Factory / Industrial',
+                'cats' => [
+                    'retail-factory-raw',
+                    'retail-factory-packaging',
+                    'retail-factory-tools',
+                    'retail-factory-safety',
+                ],
+            ],
+            'automotive' => [
+                'label_ar' => 'سيارات',
+                'label_en' => 'Automotive',
+                'cats' => ['retail-automotive'],
+            ],
+            'sports' => [
+                'label_ar' => 'رياضة',
+                'label_en' => 'Sports',
+                'cats' => ['retail-sports'],
+            ],
+            'office' => [
+                'label_ar' => 'مكتبية',
+                'label_en' => 'Office',
+                'cats' => ['retail-office'],
+            ],
+            'household' => [
+                'label_ar' => 'منزلية',
+                'label_en' => 'Household',
+                'cats' => ['retail-household', 'retail-personal-care'],
+            ],
+            'all' => [
+                'label_ar' => 'كل القطاعات',
+                'label_en' => 'All industries',
+                'cats' => null,
+            ],
+        ];
     }
 
     public function down(): void
@@ -77,6 +159,10 @@ final class PlatformRetailCatalogSeedData
             ['retail-automotive', 'سيارات', 'Automotive', 180],
             ['retail-sports', 'رياضة', 'Sports', 190],
             ['retail-office', 'مكتبية', 'Office Supplies', 200],
+            ['retail-factory-raw', 'مواد خام صناعية', 'Factory Raw Materials', 210],
+            ['retail-factory-packaging', 'تعبئة وتغليف', 'Packaging', 220],
+            ['retail-factory-tools', 'أدوات ومعدات صناعية', 'Industrial Tools', 230],
+            ['retail-factory-safety', 'سلامة مهنية', 'Workplace Safety', 240],
         ];
 
         $map = [];
@@ -224,6 +310,26 @@ final class PlatformRetailCatalogSeedData
             ['cat' => 'retail-office', 'sku' => 'RC-OFC-002', 'barcode' => '6281000020002', 'name_ar' => 'قلم حبر أزرق (علبة 12)', 'name_en' => 'Blue Pens Pack 12', 'price' => 12.0],
             ['cat' => 'retail-office', 'sku' => 'RC-OFC-003', 'barcode' => '6281000020003', 'name_ar' => 'ورق طباعة A4 500 ورقة', 'name_en' => 'A4 Paper 500 sheets', 'price' => 22.0],
             ['cat' => 'retail-office', 'sku' => 'RC-OFC-004', 'barcode' => '6281000020004', 'name_ar' => 'دباسة مكتبية', 'name_en' => 'Office Stapler', 'price' => 18.0],
+            // مصنع — مواد خام
+            ['cat' => 'retail-factory-raw', 'sku' => 'RC-FRAW-001', 'barcode' => '6281000021001', 'name_ar' => 'صاج مجلفن لفة', 'name_en' => 'Galvanized Steel Coil', 'price' => 850.0],
+            ['cat' => 'retail-factory-raw', 'sku' => 'RC-FRAW-002', 'barcode' => '6281000021002', 'name_ar' => 'بلاستيك خام HDPE 25كجم', 'name_en' => 'HDPE Resin 25kg', 'price' => 180.0],
+            ['cat' => 'retail-factory-raw', 'sku' => 'RC-FRAW-003', 'barcode' => '6281000021003', 'name_ar' => 'أسمنت بورتلاند 50كجم', 'name_en' => 'Portland Cement 50kg', 'price' => 18.0],
+            ['cat' => 'retail-factory-raw', 'sku' => 'RC-FRAW-004', 'barcode' => '6281000021004', 'name_ar' => 'خشب MDF لوح', 'name_en' => 'MDF Board', 'price' => 95.0],
+            // مصنع — تعبئة
+            ['cat' => 'retail-factory-packaging', 'sku' => 'RC-FPKG-001', 'barcode' => '6281000022001', 'name_ar' => 'كراتين شحن متوسطة', 'name_en' => 'Medium Shipping Cartons', 'price' => 2.5],
+            ['cat' => 'retail-factory-packaging', 'sku' => 'RC-FPKG-002', 'barcode' => '6281000022002', 'name_ar' => 'شريط لاصق تغليف', 'name_en' => 'Packing Tape', 'price' => 8.0],
+            ['cat' => 'retail-factory-packaging', 'sku' => 'RC-FPKG-003', 'barcode' => '6281000022003', 'name_ar' => 'أكياس بلاستيك صناعي', 'name_en' => 'Industrial Plastic Bags', 'price' => 45.0],
+            ['cat' => 'retail-factory-packaging', 'sku' => 'RC-FPKG-004', 'barcode' => '6281000022004', 'name_ar' => 'فيلم تغليف حراري', 'name_en' => 'Shrink Wrap Film', 'price' => 120.0],
+            // مصنع — أدوات
+            ['cat' => 'retail-factory-tools', 'sku' => 'RC-FTOL-001', 'barcode' => '6281000023001', 'name_ar' => 'مثقاب كهربائي صناعي', 'name_en' => 'Industrial Drill', 'price' => 450.0],
+            ['cat' => 'retail-factory-tools', 'sku' => 'RC-FTOL-002', 'barcode' => '6281000023002', 'name_ar' => 'مفتاح ربط طقم', 'name_en' => 'Wrench Set', 'price' => 160.0],
+            ['cat' => 'retail-factory-tools', 'sku' => 'RC-FTOL-003', 'barcode' => '6281000023003', 'name_ar' => 'منشار معدني', 'name_en' => 'Metal Hacksaw', 'price' => 55.0],
+            ['cat' => 'retail-factory-tools', 'sku' => 'RC-FTOL-004', 'barcode' => '6281000023004', 'name_ar' => 'مقياس رقمي', 'name_en' => 'Digital Caliper', 'price' => 89.0],
+            // مصنع — سلامة
+            ['cat' => 'retail-factory-safety', 'sku' => 'RC-FSAF-001', 'barcode' => '6281000024001', 'name_ar' => 'خوذة سلامة', 'name_en' => 'Safety Helmet', 'price' => 35.0],
+            ['cat' => 'retail-factory-safety', 'sku' => 'RC-FSAF-002', 'barcode' => '6281000024002', 'name_ar' => 'قفازات مقاومة للحرارة', 'name_en' => 'Heat-Resistant Gloves', 'price' => 28.0],
+            ['cat' => 'retail-factory-safety', 'sku' => 'RC-FSAF-003', 'barcode' => '6281000024003', 'name_ar' => 'نظارة واقية', 'name_en' => 'Safety Goggles', 'price' => 22.0],
+            ['cat' => 'retail-factory-safety', 'sku' => 'RC-FSAF-004', 'barcode' => '6281000024004', 'name_ar' => 'سترة عاكسة', 'name_en' => 'High-Vis Vest', 'price' => 30.0],
         ];
     }
 
@@ -259,6 +365,13 @@ final class PlatformRetailCatalogSeedData
                 WHERE category_id = ' . $categoryId . ' AND language_code = ' . $this->q($lang) . ' AND deleted_at IS NULL
              )'
         );
+        $this->exec(
+            'UPDATE category_translations
+             SET name = ' . $this->q($name) . '
+             WHERE category_id = ' . $categoryId . '
+               AND language_code = ' . $this->q($lang) . '
+               AND deleted_at IS NULL'
+        );
     }
 
     private function upsertBrand(string $slug, string $nameAr, string $nameEn): int
@@ -282,6 +395,13 @@ final class PlatformRetailCatalogSeedData
                     SELECT 1 FROM brand_translations
                     WHERE brand_id = ' . $id . ' AND language_code = ' . $this->q($lang) . ' AND deleted_at IS NULL
                  )'
+            );
+            $this->exec(
+                'UPDATE brand_translations
+                 SET name = ' . $this->q($name) . '
+                 WHERE brand_id = ' . $id . '
+                   AND language_code = ' . $this->q($lang) . '
+                   AND deleted_at IS NULL'
             );
         }
 
@@ -349,6 +469,14 @@ final class PlatformRetailCatalogSeedData
                     SELECT 1 FROM product_translations
                     WHERE product_id = ' . $productId . ' AND language_code = ' . $this->q($lang) . ' AND deleted_at IS NULL
                  )'
+            );
+            $this->exec(
+                'UPDATE product_translations
+                 SET name = ' . $this->q($name) . ',
+                     short_description = ' . $this->q($name) . '
+                 WHERE product_id = ' . $productId . '
+                   AND language_code = ' . $this->q($lang) . '
+                   AND deleted_at IS NULL'
             );
         }
     }

@@ -69,6 +69,7 @@ final class GuestMenuAdminController extends Controller
                 : (function_exists('rateb_platform_catalog_admin_url') ? rateb_platform_catalog_admin_url() : ''),
             'platformCatalogEnabled' => function_exists('rateb_platform_catalog_nav_enabled')
                 && rateb_platform_catalog_nav_enabled(),
+            'catalogPacks' => \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::industryPacks(),
             'branches' => $this->branchesForCompany($companyId),
             'csrf' => Csrf::token(),
         ]);
@@ -122,13 +123,15 @@ final class GuestMenuAdminController extends Controller
             return;
         }
 
-        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 150);
+        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
+        $result = (new GuestMenuPlatformImportService())->importToCompany($this->companyId(), 200, $pack);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {
             $msg = __('guest_menu_import_done', [
                 'imported' => (string) ($result['imported'] ?? 0),
                 'skipped' => (string) ($result['skipped'] ?? 0),
+                'updated' => (string) ($result['updated'] ?? 0),
             ]);
             if (($seed['message'] ?? '') === 'seeded') {
                 $msg .= ' — ' . __('guest_menu_platform_seed_done', [

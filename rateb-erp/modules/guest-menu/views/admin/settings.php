@@ -12,6 +12,7 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $inventoryUrl */
 /** @var string $platformCatalogUrl */
 /** @var bool $platformCatalogEnabled */
+/** @var array<string, array{label_ar:string, label_en:string, cats:list<string>|null}> $catalogPacks */
 /** @var list<array<string, mixed>> $branches */
 /** @var string $csrf */
 $productCount = (int) ($catalogStats['product_count'] ?? 0);
@@ -117,7 +118,8 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                     <div class="alert alert-warning mb-3"><?php echo __('guest_menu_catalog_empty'); ?></div>
                     <?php } ?>
                     <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
-                    <div class="d-flex flex-wrap gap-2 mb-3" id="gm-catalog-actions">
+                    <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_pack_hint'); ?></p>
+                    <div class="d-flex flex-wrap gap-2 align-items-end mb-3" id="gm-catalog-actions">
                         <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>">
                             <?php echo __('guest_menu_open_inventory'); ?>
                         </a>
@@ -130,6 +132,8 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                         $gmCompanyQs = $companyId > 0 ? ('?company_id=' . (int) $companyId) : '';
                         $importAction = rateb_app_url('guest-menu/import-catalog') . $gmCompanyQs;
                         $seedAction = rateb_app_url('guest-menu/seed-demo') . $gmCompanyQs;
+                        $catalogPacks = is_array($catalogPacks ?? null) ? $catalogPacks : [];
+                        $isRtl = function_exists('rateb_locale') && rateb_locale() === 'ar';
                         ?>
                         <form method="post" action="<?php echo GuestMenuView::escape($seedAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
@@ -140,11 +144,27 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
                             ?>
                         <form method="post" action="<?php echo GuestMenuView::escape($platformSeedAction); ?>" class="d-inline" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
-                            <button type="submit" class="btn btn-warning btn-sm"><?php echo __('guest_menu_platform_seed'); ?></button>
+                            <button type="submit" class="btn btn-warning btn-sm" title="<?php echo GuestMenuView::escape(__('guest_menu_platform_seed_hint')); ?>">
+                                <?php echo __('guest_menu_platform_seed'); ?>
+                            </button>
                         </form>
                         <?php } ?>
-                        <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="d-inline" data-gm-csrf-form>
+                        <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="d-inline-flex flex-wrap gap-2 align-items-end" data-gm-csrf-form>
                             <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                            <div>
+                                <label class="form-label small mb-1" for="gm-catalog-pack"><?php echo __('guest_menu_catalog_pack'); ?></label>
+                                <select class="form-select form-select-sm" id="gm-catalog-pack" name="catalog_pack" style="min-width:12rem">
+                                    <?php foreach ($catalogPacks as $packKey => $packMeta) {
+                                        $label = $isRtl
+                                            ? (string) ($packMeta['label_ar'] ?? $packKey)
+                                            : (string) ($packMeta['label_en'] ?? $packKey);
+                                        ?>
+                                    <option value="<?php echo GuestMenuView::escape((string) $packKey); ?>"<?php echo $packKey === 'restaurant' ? ' selected' : ''; ?>>
+                                        <?php echo GuestMenuView::escape($label); ?>
+                                    </option>
+                                    <?php } ?>
+                                </select>
+                            </div>
                             <button type="submit" class="btn btn-outline-primary btn-sm"><?php echo __('guest_menu_import_catalog'); ?></button>
                         </form>
                     </div>

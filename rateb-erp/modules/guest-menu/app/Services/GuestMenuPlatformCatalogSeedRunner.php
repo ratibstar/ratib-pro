@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Rateb\App\GuestMenu\Services;
 
 use PDO;
-use PDOException;
 
 /** Fill platform catalog DB with comprehensive retail seed (ERP-local, no catalog migrate required). */
 final class GuestMenuPlatformCatalogSeedRunner
@@ -14,7 +13,7 @@ final class GuestMenuPlatformCatalogSeedRunner
      */
     public function ensureSeeded(): array
     {
-        $pdo = $this->platformConnection();
+        $pdo = PlatformCatalogConnection::connect();
         if ($pdo === null) {
             return ['ok' => false, 'message' => 'platform_db_unavailable'];
         }
@@ -22,7 +21,7 @@ final class GuestMenuPlatformCatalogSeedRunner
             $published = (int) $pdo->query(
                 "SELECT COUNT(*) FROM products WHERE deleted_at IS NULL AND status IN ('published','approved')"
             )->fetchColumn();
-            if ($published >= 20) {
+            if ($published >= 20 && !$this->hasCorruptedArabicNames($pdo)) {
                 return [
                     'ok' => true,
                     'message' => 'already_populated',
@@ -41,7 +40,7 @@ final class GuestMenuPlatformCatalogSeedRunner
      */
     public function run(): array
     {
-        $pdo = $this->platformConnection();
+        $pdo = PlatformCatalogConnection::connect();
         if ($pdo === null) {
             return ['ok' => false, 'message' => 'platform_db_unavailable'];
         }
@@ -64,6 +63,26 @@ final class GuestMenuPlatformCatalogSeedRunner
         }
     }
 
+    private function hasCorruptedArabicNames(PDO $pdo): bool
+    {
+        try {
+            $n = (int) $pdo->query(
+                "SELECT COUNT(*)
+                 FROM product_translations pt
+                 INNER JOIN products p ON p.id = pt.product_id
+                 WHERE p.sku LIKE 'RC-%'
+                   AND p.deleted_at IS NULL
+                   AND pt.deleted_at IS NULL
+                   AND pt.language_code = 'ar'
+                   AND pt.name LIKE '%??%'"
+            )->fetchColumn();
+
+            return $n > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     private function markApplied(PDO $pdo): void
     {
         try {
@@ -79,33 +98,6 @@ final class GuestMenuPlatformCatalogSeedRunner
             $stmt->execute(['f' => '022_comprehensive_retail_seed']);
         } catch (\Throwable) {
             // non-fatal
-        }
-    }
-
-    private function platformConnection(): ?PDO
-    {
-        $config = dirname(RATEB_ROOT) . '/rateb-platform-catalog/config/database.php';
-        if (!is_file($config)) {
-            return null;
-        }
-        require_once $config;
-        if (!defined('RATEB_PLATFORM_CATALOG_DB_NAME')) {
-            return null;
-        }
-        try {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
-                RATEB_PLATFORM_CATALOG_DB_HOST,
-                (int) RATEB_PLATFORM_CATALOG_DB_PORT,
-                RATEB_PLATFORM_CATALOG_DB_NAME
-            );
-
-            return new PDO($dsn, RATEB_PLATFORM_CATALOG_DB_USER, RATEB_PLATFORM_CATALOG_DB_PASS, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]);
-        } catch (PDOException) {
-            return null;
         }
     }
 }

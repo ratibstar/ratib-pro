@@ -7,7 +7,7 @@ namespace Rateb\PlatformCatalog\Application\Support;
 /** Signed short-lived token for ERP → catalog admin SSO (same origin). */
 final class ErpCatalogSsoToken
 {
-    private const TTL_SECONDS = 120;
+    private const TTL_SECONDS = 600;
 
     /**
      * @param array{erp_user_id:int,email:string,super_admin:bool,portal:string} $claims

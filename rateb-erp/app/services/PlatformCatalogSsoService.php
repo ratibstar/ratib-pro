@@ -42,7 +42,7 @@ final class PlatformCatalogSsoService
             'email' => strtolower(trim((string) ($claims['email'] ?? ''))),
             'super_admin' => !empty($claims['super_admin']),
             'portal' => (string) ($claims['portal'] ?? ''),
-            'exp' => time() + 120,
+            'exp' => time() + 600,
             'nonce' => bin2hex(random_bytes(8)),
         ];
 
