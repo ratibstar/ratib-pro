@@ -61,23 +61,9 @@ final class Csrf
         }
         $secure = self::requestIsSecure();
         $canonical = SessionManager::cookiePath();
-        // Expire duplicates on other paths, then set the canonical cookie.
-        foreach (SessionManager::cookiePathCandidates() as $path) {
-            if ($path === $canonical) {
-                continue;
-            }
-            if (PHP_VERSION_ID >= 70300) {
-                setcookie(self::COOKIE_NAME, '', [
-                    'expires' => time() - 3600,
-                    'path' => $path,
-                    'secure' => $secure,
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                ]);
-            } else {
-                setcookie(self::COOKIE_NAME, '', time() - 3600, $path, '', $secure, true);
-            }
-        }
+        // Only set the canonical CSRF cookie. Do NOT expire path=/ here —
+        // mid-request cookie deletes race with duplicate rateb_erp cookies and
+        // break the next POST (Import / login). Alternates cleared on login/destroy only.
         if (PHP_VERSION_ID >= 70300) {
             setcookie(self::COOKIE_NAME, $token, [
                 'expires' => 0,
@@ -89,6 +75,15 @@ final class Csrf
         } else {
             setcookie(self::COOKIE_NAME, $token, 0, $canonical, '', $secure, true);
         }
+    }
+
+    /** Force a new CSRF token into the current session (after a failed check). */
+    public static function regenerate(): string
+    {
+        SessionManager::start();
+        unset($_SESSION[self::SESSION_KEY]);
+
+        return self::token();
     }
 
     private static function requestIsSecure(): bool

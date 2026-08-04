@@ -47,51 +47,83 @@ final class SessionManager
             return;
         }
         $canonical = self::cookiePath();
-        $secure = self::requestIsSecure();
         foreach (['rateb_erp', 'rateb_csrf'] as $name) {
             foreach (self::cookiePathCandidates() as $path) {
                 if ($path === $canonical) {
                     continue;
                 }
-                if (PHP_VERSION_ID >= 70300) {
-                    setcookie($name, '', [
-                        'expires' => time() - 42000,
-                        'path' => $path,
-                        'domain' => '',
-                        'secure' => $secure,
-                        'httponly' => true,
-                        'samesite' => 'Lax',
-                    ]);
-                } else {
-                    setcookie($name, '', time() - 42000, $path, '', $secure, true);
+                self::expireCookieOnPath($name, $path);
+            }
+        }
+    }
+
+    /**
+     * Expire rateb_erp + rateb_csrf on EVERY candidate path (including canonical).
+     * Use only on login recovery / logout — never mid-session.
+     */
+    public static function purgeAllAuthCookies(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        foreach (['rateb_erp', 'rateb_csrf'] as $name) {
+            self::expireNamedCookie($name);
+        }
+        // Also clear common host variants browsers may have stored.
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        if ($host !== '' && !headers_sent()) {
+            $secure = self::requestIsSecure();
+            foreach (['rateb_erp', 'rateb_csrf'] as $name) {
+                foreach (self::cookiePathCandidates() as $path) {
+                    if (PHP_VERSION_ID >= 70300) {
+                        setcookie($name, '', [
+                            'expires' => time() - 42000,
+                            'path' => $path,
+                            'domain' => $host,
+                            'secure' => $secure,
+                            'httponly' => true,
+                            'samesite' => 'Lax',
+                        ]);
+                        if (str_starts_with($host, 'www.')) {
+                            setcookie($name, '', [
+                                'expires' => time() - 42000,
+                                'path' => $path,
+                                'domain' => substr($host, 4),
+                                'secure' => $secure,
+                                'httponly' => true,
+                                'samesite' => 'Lax',
+                            ]);
+                        }
+                    }
                 }
             }
         }
     }
 
+    private static function expireCookieOnPath(string $name, string $path, string $domain = ''): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+        $secure = self::requestIsSecure();
+        if (PHP_VERSION_ID >= 70300) {
+            setcookie($name, '', [
+                'expires' => time() - 42000,
+                'path' => $path,
+                'domain' => $domain,
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        } else {
+            setcookie($name, '', time() - 42000, $path, $domain, $secure, true);
+        }
+    }
+
     private static function expireNamedCookie(string $name): void
     {
-        $secure = self::requestIsSecure();
-        $domain = '';
-        $samesite = 'Lax';
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $params = session_get_cookie_params();
-            $domain = (string) ($params['domain'] ?? '');
-            $samesite = (string) ($params['samesite'] ?? 'Lax');
-        }
         foreach (self::cookiePathCandidates() as $path) {
-            if (PHP_VERSION_ID >= 70300) {
-                setcookie($name, '', [
-                    'expires' => time() - 42000,
-                    'path' => $path,
-                    'domain' => $domain,
-                    'secure' => $secure,
-                    'httponly' => true,
-                    'samesite' => $samesite,
-                ]);
-            } else {
-                setcookie($name, '', time() - 42000, $path, $domain, $secure, true);
-            }
+            self::expireCookieOnPath($name, $path, '');
         }
     }
 
@@ -111,9 +143,11 @@ final class SessionManager
         self::ensureSavePath();
         $secure = self::requestIsSecure();
         $cookiePath = self::cookiePath();
-        // Do NOT clearAlternatePathCookies() on every start — expiring path=/ while the
-        // live session still lived there logged users out on the next POST (Import → login?err=session).
-        // Clear duplicates only on login recovery, successful login, and destroy().
+        // CRITICAL: never clearAlternatePathCookies() here.
+        // 39bcc4aa still cleared them on every authenticated request — that expired the
+        // live path=/ session cookie before the browser reliably adopted Path=/rateb-erp/public,
+        // so the next POST (Import) arrived with no session → login?err=session.
+        // Clear duplicates ONLY on login success, login recovery (err=csrf|session), and destroy().
 
         if (PHP_VERSION_ID >= 70300) {
             session_set_cookie_params([
@@ -135,11 +169,13 @@ final class SessionManager
             $_SESSION['_rateb_init'] = time();
         }
 
-        // Once we have an authenticated session, pin the cookie to the canonical path
-        // and drop legacy path=/ duplicates so CSRF/session stay aligned.
-        if (!empty($_SESSION['rateb_user_id']) && !headers_sent()) {
+        // Soft pin only: re-send canonical cookie once per session. Do NOT expire path=/.
+        if (!empty($_SESSION['rateb_user_id'])
+            && empty($_SESSION['_rateb_cookie_pinned'])
+            && !headers_sent()
+        ) {
             self::reissueCanonicalSessionCookie();
-            self::clearAlternatePathCookies();
+            $_SESSION['_rateb_cookie_pinned'] = 1;
         }
     }
 

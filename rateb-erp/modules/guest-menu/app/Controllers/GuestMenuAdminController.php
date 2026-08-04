@@ -105,9 +105,9 @@ final class GuestMenuAdminController extends Controller
         if (!$this->requireCsrfOrStay()) {
             return;
         }
-        // Always repair platform Arabic (SET NAMES + UPSERT) before company import.
-        $seed = (new GuestMenuPlatformCatalogSeedRunner())->ensureSeeded();
-        if (!$seed['ok'] && ($seed['message'] ?? '') !== 'already_populated') {
+        // ALWAYS force platform Arabic UPSERT (never skip "already_populated") — fixes ????.
+        $seed = (new GuestMenuPlatformCatalogSeedRunner())->run();
+        if (!$seed['ok']) {
             SessionManager::flash(
                 'error',
                 __('guest_menu_platform_seed_failed') . ': ' . (string) ($seed['message'] ?? '')
@@ -129,7 +129,8 @@ final class GuestMenuAdminController extends Controller
         }
 
         $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
-        $result = (new GuestMenuPlatformImportService())->importToCompany($companyId, 200, $pack);
+        // Cap 300 — UPSERT names/categories for RC-* even when SKU already exists.
+        $result = (new GuestMenuPlatformImportService())->importToCompany($companyId, 300, $pack);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {
@@ -138,11 +139,9 @@ final class GuestMenuAdminController extends Controller
                 'skipped' => (string) ($result['skipped'] ?? 0),
                 'updated' => (string) ($result['updated'] ?? 0),
             ]);
-            if (($seed['message'] ?? '') === 'seeded') {
-                $msg .= ' — ' . __('guest_menu_platform_seed_done', [
-                    'count' => (string) ($seed['product_count'] ?? 0),
-                ]);
-            }
+            $msg .= ' — ' . __('guest_menu_platform_seed_done', [
+                'count' => (string) ($seed['product_count'] ?? 0),
+            ]);
             SessionManager::flash('success', $msg);
         }
         $this->redirectGuestMenu();
@@ -253,7 +252,7 @@ final class GuestMenuAdminController extends Controller
     }
 
     /**
-     * CSRF failure must NEVER destroy the session or force logout — flash and stay.
+     * CSRF failure must NEVER destroy the session or force logout — regenerate token, flash, stay.
      * (Logout on Import was caused by SessionManager clearing alternate cookies mid-session.)
      */
     private function requireCsrfOrStay(): bool
@@ -261,6 +260,7 @@ final class GuestMenuAdminController extends Controller
         if ($this->validateCsrf()) {
             return true;
         }
+        Csrf::regenerate();
         SessionManager::flash('error', __('csrf_invalid'));
         $this->redirectGuestMenu();
 
@@ -269,8 +269,16 @@ final class GuestMenuAdminController extends Controller
 
     private function redirectGuestMenu(): void
     {
-        // rateb_app_url already includes a single company_id for super-admins — do not append again.
-        $this->redirect(rateb_app_url('guest-menu'));
+        // Single company_id only — never append a second ?company_id=.
+        $url = rateb_app_url('guest-menu');
+        $cid = 0;
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $cid = (int) rateb_resolve_ops_company_id();
+        }
+        if ($cid > 0 && function_exists('rateb_url_set_query_param')) {
+            $url = rateb_url_set_query_param($url, 'company_id', (string) $cid);
+        }
+        $this->redirect($url);
     }
 
     /** @return list<array<string, mixed>> */

@@ -3028,13 +3028,24 @@ if (!function_exists('rateb_list_query_except')) {
 }
 
 if (!function_exists('rateb_url_query')) {
-    /** Append query string to a URL that may already contain ?company_id=… */
+    /** Merge query params into a URL without duplicating keys (fixes company_id=228&company_id=22). */
     function rateb_url_query(string $url, array $query = []): string
     {
         if ($query === []) {
             return $url;
         }
+        if (function_exists('rateb_url_set_query_param')) {
+            foreach ($query as $key => $value) {
+                if (is_array($value)) {
+                    continue;
+                }
+                $url = rateb_url_set_query_param($url, (string) $key, (string) $value);
+            }
+
+            return $url;
+        }
         $sep = strpos($url, '?') !== false ? '&' : '?';
+
         return $url . $sep . http_build_query($query);
     }
 }

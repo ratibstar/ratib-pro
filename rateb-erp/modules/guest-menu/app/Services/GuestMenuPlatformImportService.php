@@ -97,7 +97,8 @@ final class GuestMenuPlatformImportService
 
             $existingId = $this->findInventoryId($companyId, $sku);
             if ($existingId > 0) {
-                if ($this->repairInventoryRow($existingId, $name, $categoryId, $categoryLabel, $price)) {
+                // Always UPSERT RC-*/existing SKUs — force name + category_id rewrite.
+                if ($this->repairInventoryRow($existingId, $name, $categoryId, $categoryLabel, $price, true)) {
                     ++$updated;
                 } else {
                     ++$skipped;
@@ -180,14 +181,16 @@ final class GuestMenuPlatformImportService
 
     private function preferReadableName(string $nameAr, string $nameEn, string $sku): string
     {
-        if ($nameAr !== '' && !str_contains($nameAr, '??')) {
+        $arBad = $nameAr === '' || str_contains($nameAr, '??') || preg_match('/^\?+$/', $nameAr) === 1;
+        $enBad = $nameEn === '' || str_contains($nameEn, '??') || preg_match('/^\?+$/', $nameEn) === 1;
+        if (!$arBad) {
             return $nameAr;
         }
-        if ($nameEn !== '' && !str_contains($nameEn, '??')) {
+        if (!$enBad) {
             return $nameEn;
         }
 
-        return $nameAr !== '' ? $nameAr : ($nameEn !== '' ? $nameEn : $sku);
+        return $sku;
     }
 
     /**
@@ -301,7 +304,8 @@ final class GuestMenuPlatformImportService
         string $name,
         int $categoryId,
         string $categoryLabel,
-        float $price
+        float $price,
+        bool $force = false
     ): bool {
         $stmt = Database::connection()->prepare(
             'SELECT item_name, category_id, category FROM rateb_inventory WHERE id = :id LIMIT 1'
@@ -314,14 +318,15 @@ final class GuestMenuPlatformImportService
 
         $currentName = (string) ($row['item_name'] ?? '');
         $currentCatLabel = (string) ($row['category'] ?? '');
-        // After platform Arabic repair, re-import must sync readable names even when
-        // existing inventory still has English / stale text (not only "??").
+        // Force mode: always rewrite name + category after platform Arabic repair.
         $needsName = $name !== '' && (
-            $currentName === '' || str_contains($currentName, '??') || $currentName !== $name
+            $force || $currentName === '' || str_contains($currentName, '??') || $currentName !== $name
         );
-        $needsCatId = $categoryId > 0 && (int) ($row['category_id'] ?? 0) !== $categoryId;
+        $needsCatId = $categoryId > 0 && (
+            $force || (int) ($row['category_id'] ?? 0) !== $categoryId
+        );
         $needsCatLabel = $categoryLabel !== '' && (
-            $currentCatLabel === '' || str_contains($currentCatLabel, '??') || $currentCatLabel !== $categoryLabel
+            $force || $currentCatLabel === '' || str_contains($currentCatLabel, '??') || $currentCatLabel !== $categoryLabel
         );
         if (!$needsName && !$needsCatId && !$needsCatLabel) {
             return false;
@@ -341,9 +346,12 @@ final class GuestMenuPlatformImportService
             $sets[] = 'category = :cat';
             $params['cat'] = $categoryLabel;
         }
-        if ($needsName && $price > 0) {
+        if (($needsName || $force) && $price > 0) {
             $sets[] = 'unit_cost = :price';
             $params['price'] = $price;
+        }
+        if ($sets === []) {
+            return false;
         }
         Database::connection()->prepare(
             'UPDATE rateb_inventory SET ' . implode(', ', $sets) . ' WHERE id = :id'

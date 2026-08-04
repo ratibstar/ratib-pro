@@ -166,9 +166,10 @@ final class Auth
                 $companyId > 0 ? $companyId : null
             );
         }
-        // Pin session + CSRF cookies to canonical app path; drop legacy path=/ duplicates.
+        // After successful login only: pin canonical cookies and drop legacy path=/ duplicates.
         SessionManager::reissueCanonicalSessionCookie();
         SessionManager::clearAlternatePathCookies();
+        SessionManager::set('_rateb_cookie_pinned', 1);
         if (class_exists(Csrf::class)) {
             Csrf::token();
         }

@@ -101,17 +101,19 @@ if ($loginBarcodeJs !== '' && is_file($loginBarcodeJs)) {
 ?>
 <script>
 (function () {
+    // Prefer the token rendered with this page (after err=csrf|session recovery).
+    // Only sync from meta when it is non-empty and longer than 16 chars.
     function syncLoginCsrf() {
         var meta = document.querySelector('meta[name="rateb-csrf"]');
         var token = meta ? (meta.getAttribute('content') || '') : '';
-        if (!token) return;
-        document.querySelectorAll('form.login-panel input[name="_csrf"], #password-form input[name="_csrf"]').forEach(function (inp) {
+        if (!token || token.length < 16) return;
+        document.querySelectorAll('#password-form input[name="_csrf"], #barcode-login-form input[name="_csrf"]').forEach(function (inp) {
             inp.value = token;
         });
     }
     syncLoginCsrf();
-    document.querySelectorAll('form.login-panel, #password-form').forEach(function (form) {
-        form.addEventListener('submit', syncLoginCsrf);
+    document.querySelectorAll('#password-form, #barcode-login-form').forEach(function (form) {
+        form.addEventListener('submit', syncLoginCsrf, true);
     });
 })();
 </script>
