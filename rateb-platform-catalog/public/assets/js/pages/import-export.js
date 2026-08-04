@@ -2,7 +2,7 @@
   'use strict';
 
   function show(target, data) {
-    document.getElementById(target).innerHTML = ui.jsonBlock(data);
+    document.getElementById(target).innerHTML = ui.entityDetail(data || {});
   }
 
   document.addEventListener('DOMContentLoaded', function () {

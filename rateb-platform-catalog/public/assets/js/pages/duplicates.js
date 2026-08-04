@@ -11,15 +11,15 @@
         offset: 0
       });
       ui.renderTable(list, [
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status); } },
-        { key: 'score', label: 'Score', render: function (r) { return ui.escapeHtml(String(r.score != null ? r.score : '—')); } }
+        { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status); } },
+        { key: 'score', label: ui.t('field_score', 'Score'), render: function (r) { return ui.escapeHtml(String(r.score != null ? r.score : '—')); } },
+        { key: 'uuid', label: ui.t('field_uuid', 'UUID'), render: function (r) { return ui.codeCell(r.uuid); } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: async function (row) {
           document.getElementById('entityDetailPanel').hidden = false;
           try {
             var detail = await api.get('/catalog/duplicates/' + encodeURIComponent(row.uuid));
-            document.getElementById('entityDetail').innerHTML = ui.jsonBlock(detail.data);
+            document.getElementById('entityDetail').innerHTML = ui.entityDetail(detail.data || row);
             document.getElementById('dupResolveForm').hidden = false;
             document.getElementById('dupUuid').value = row.uuid;
           } catch (error) {
@@ -31,11 +31,14 @@
       var rules = await api.get('/catalog/duplicate-rules');
       var ruleItems = Array.isArray(rules.data) ? rules.data : [];
       ui.renderTable(document.getElementById('dupRules'), [
-        { key: 'code', label: 'Code', render: function (r) { return ui.codeCell(r.code); } },
-        { key: 'match_field', label: 'Field', render: function (r) { return ui.escapeHtml(r.match_field); } },
-        { key: 'match_type', label: 'Type', render: function (r) { return ui.escapeHtml(r.match_type); } },
-        { key: 'priority', label: 'Priority', render: function (r) { return ui.escapeHtml(String(r.priority != null ? r.priority : '—')); } },
-        { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
+        { key: 'code', label: ui.t('field_code', 'Code'), render: function (r) { return ui.codeCell(r.code); } },
+        { key: 'match_field', label: ui.t('field_match_field', 'Field'), render: function (r) { return ui.escapeHtml(r.match_field); } },
+        { key: 'match_type', label: ui.t('field_match_type', 'Type'), render: function (r) { return ui.escapeHtml(r.match_type); } },
+        { key: 'priority', label: ui.t('field_priority', 'Priority'), render: function (r) { return ui.escapeHtml(String(r.priority != null ? r.priority : '—')); } },
+        { key: 'is_active', label: ui.t('field_active', 'Active'), render: function (r) {
+          var on = r.is_active === true || r.is_active === 1 || r.is_active === '1';
+          return ui.escapeHtml(on ? ui.t('yes', 'Yes') : ui.t('no', 'No'));
+        } }
       ], ruleItems);
     } catch (error) {
       ui.handleError(error);

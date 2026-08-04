@@ -10,8 +10,27 @@
     try {
       var history = await api.get('/catalog/products/' + encodeURIComponent(productUuid) + '/workflow/history');
       var comments = await api.get('/catalog/products/' + encodeURIComponent(productUuid) + '/workflow/comments');
-      document.getElementById('workflowHistory').innerHTML = ui.jsonBlock(history.data);
-      document.getElementById('workflowComments').innerHTML = ui.jsonBlock(comments.data);
+      var historyItems = Array.isArray(history.data) ? history.data : [];
+      var commentItems = Array.isArray(comments.data) ? comments.data : [];
+      if (historyItems.length) {
+        ui.renderTable(document.getElementById('workflowHistory'), [
+          { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status || r.to_status || '—'); } },
+          { key: 'created_at', label: ui.t('field_created_at', 'Created'), render: function (r) { return ui.escapeHtml(r.created_at || r.at || '—'); } },
+          { key: 'actor', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.actor || r.user || r.action || '—'); } }
+        ], historyItems);
+        document.getElementById('workflowHistory').innerHTML += ui.rawJsonDetails(history.data);
+      } else {
+        document.getElementById('workflowHistory').innerHTML = ui.entityDetail(history.data || {});
+      }
+      if (commentItems.length) {
+        ui.renderTable(document.getElementById('workflowComments'), [
+          { key: 'body', label: ui.t('field_description', 'Description'), render: function (r) { return ui.escapeHtml(r.body || r.comment || '—'); } },
+          { key: 'created_at', label: ui.t('field_created_at', 'Created'), render: function (r) { return ui.escapeHtml(r.created_at || '—'); } }
+        ], commentItems);
+        document.getElementById('workflowComments').innerHTML += ui.rawJsonDetails(comments.data);
+      } else {
+        document.getElementById('workflowComments').innerHTML = ui.entityDetail(comments.data || {});
+      }
       document.getElementById('workflowActions').hidden = false;
       document.getElementById('workflowCommentForm').hidden = false;
     } catch (error) {

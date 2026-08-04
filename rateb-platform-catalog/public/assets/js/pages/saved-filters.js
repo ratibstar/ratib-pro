@@ -9,18 +9,17 @@
         entity_type: document.getElementById('sfEntityType').value || undefined
       });
       ui.renderTable(list, [
-        { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name); } },
-        { key: 'entity_type', label: 'Entity', render: function (r) { return ui.escapeHtml(r.entity_type); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'actions', label: 'Actions', render: function (r) {
-          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
+        { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name); } },
+        { key: 'entity_type', label: ui.t('field_entity', 'Entity'), render: function (r) { return ui.escapeHtml(r.entity_type); } },
+        { key: 'actions', label: ui.t('actions', 'Actions'), render: function (r) {
+          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del="' + ui.escapeHtml(r.uuid) + '">' + ui.escapeHtml(ui.t('delete', 'Delete')) + '</button>';
         } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: async function (row) {
           document.getElementById('entityDetailPanel').hidden = false;
           try {
             var detail = await api.get('/catalog/saved-filters/' + encodeURIComponent(row.uuid));
-            document.getElementById('entityDetail').innerHTML = ui.jsonBlock(detail.data);
+            document.getElementById('entityDetail').innerHTML = ui.entityDetail(detail.data || row);
           } catch (error) {
             ui.handleError(error);
           }

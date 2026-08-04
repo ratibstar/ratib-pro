@@ -8,7 +8,7 @@
           since: data.since || undefined,
           limit: data.limit || undefined
         });
-        document.getElementById('erpSyncResult').innerHTML = ui.jsonBlock(res.data);
+        document.getElementById('erpSyncResult').innerHTML = ui.entityDetail(res.data || {});
       } catch (error) {
         ui.handleError(error);
       }

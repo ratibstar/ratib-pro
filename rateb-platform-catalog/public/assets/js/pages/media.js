@@ -14,21 +14,40 @@
       var assets = await api.get('/catalog/asset-types');
 
       ui.renderTable(document.getElementById('mediaImages'), [
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'actions', label: 'Actions', render: function (r) {
-          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-image="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
+        { key: 'uuid', label: ui.t('field_uuid', 'UUID'), render: function (r) { return ui.codeCell(r.uuid); } },
+        { key: 'actions', label: ui.t('actions', 'Actions'), render: function (r) {
+          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-image="' + ui.escapeHtml(r.uuid) + '">' + ui.escapeHtml(ui.t('delete', 'Delete')) + '</button>';
         } }
       ], Array.isArray(images.data) ? images.data : []);
 
       ui.renderTable(document.getElementById('mediaFiles'), [
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'actions', label: 'Actions', render: function (r) {
-          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-file="' + ui.escapeHtml(r.uuid) + '">Delete</button>';
+        { key: 'uuid', label: ui.t('field_uuid', 'UUID'), render: function (r) { return ui.codeCell(r.uuid); } },
+        { key: 'actions', label: ui.t('actions', 'Actions'), render: function (r) {
+          return '<button type="button" class="btn btn-sm btn-outline-danger" data-del-file="' + ui.escapeHtml(r.uuid) + '">' + ui.escapeHtml(ui.t('delete', 'Delete')) + '</button>';
         } }
       ], Array.isArray(files.data) ? files.data : []);
 
-      document.getElementById('mediaVideos').innerHTML = ui.jsonBlock(videos.data);
-      document.getElementById('assetTypes').innerHTML = ui.jsonBlock(assets.data);
+      var videoItems = Array.isArray(videos.data) ? videos.data : [];
+      if (videoItems.length) {
+        ui.renderTable(document.getElementById('mediaVideos'), [
+          { key: 'url', label: ui.t('field_url', 'URL'), render: function (r) { return ui.escapeHtml(r.url || r.video_url || '—'); } },
+          { key: 'uuid', label: ui.t('field_uuid', 'UUID'), render: function (r) { return ui.codeCell(r.uuid); } }
+        ], videoItems);
+        document.getElementById('mediaVideos').innerHTML += ui.rawJsonDetails(videos.data);
+      } else {
+        document.getElementById('mediaVideos').innerHTML = ui.entityDetail(videos.data || {});
+      }
+
+      var assetItems = Array.isArray(assets.data) ? assets.data : [];
+      if (assetItems.length) {
+        ui.renderTable(document.getElementById('assetTypes'), [
+          { key: 'code', label: ui.t('field_code', 'Code'), render: function (r) { return ui.escapeHtml(r.code || '—'); } },
+          { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || '—'); } }
+        ], assetItems);
+        document.getElementById('assetTypes').innerHTML += ui.rawJsonDetails(assets.data);
+      } else {
+        document.getElementById('assetTypes').innerHTML = ui.entityDetail(assets.data || {});
+      }
 
       document.querySelectorAll('[data-del-image]').forEach(function (btn) {
         btn.addEventListener('click', async function () {

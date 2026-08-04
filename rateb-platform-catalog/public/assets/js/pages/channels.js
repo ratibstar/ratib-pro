@@ -7,9 +7,9 @@
     try {
       var res = await api.get('/catalog/channels', { limit: 100, offset: 0 });
       ui.renderTable(list, [
-        { key: 'code', label: 'Code', render: function (r) { return ui.escapeHtml(r.code || r.slug || '—'); } },
-        { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } }
+        { key: 'code', label: ui.t('field_code', 'Code'), render: function (r) { return ui.escapeHtml(r.code || r.slug || '—'); } },
+        { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || '—'); } },
+        { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status || '—'); } }
       ], Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       ui.handleError(error);
@@ -28,7 +28,17 @@
       }
       try {
         var res = await api.get('/catalog/products/' + encodeURIComponent(uuid) + '/channels');
-        document.getElementById('channelProductDetail').innerHTML = ui.jsonBlock(res.data);
+        var channels = Array.isArray(res.data) ? res.data : [];
+        if (channels.length) {
+          ui.renderTable(document.getElementById('channelProductDetail'), [
+            { key: 'channel_uuid', label: ui.t('field_channel', 'Channel'), render: function (r) { return ui.escapeHtml(r.channel_uuid || r.uuid || r.code || '—'); } },
+            { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || r.code || '—'); } },
+            { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status || '—'); } }
+          ], channels);
+          document.getElementById('channelProductDetail').innerHTML += ui.rawJsonDetails(res.data);
+        } else {
+          document.getElementById('channelProductDetail').innerHTML = ui.entityDetail(res.data || {});
+        }
         document.getElementById('channelReplaceForm').hidden = false;
         document.getElementById('channelProductUuid').value = uuid;
         document.getElementById('channelReplaceInput').value = JSON.stringify(res.data || [], null, 2);

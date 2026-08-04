@@ -12,9 +12,9 @@
       });
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(list, [
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'status', label: 'Status', render: function (r) { return ui.statusBadge(r.status); } },
-        { key: 'request_type', label: 'Type', render: function (r) { return ui.escapeHtml(r.request_type || '—'); } }
+        { key: 'request_type', label: ui.t('field_type', 'Type'), render: function (r) { return ui.escapeHtml(r.request_type || '—'); } },
+        { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status); } },
+        { key: 'uuid', label: ui.t('field_uuid', 'UUID'), render: function (r) { return ui.codeCell(r.uuid); } }
       ], items, { onRowClick: openItem });
     } catch (error) {
       ui.handleError(error);
@@ -26,12 +26,12 @@
     document.getElementById('entityDetailPanel').hidden = false;
     try {
       var res = await api.get('/catalog/change-requests/' + encodeURIComponent(row.uuid));
-      document.getElementById('entityDetail').innerHTML = ui.jsonBlock(res.data);
+      document.getElementById('entityDetail').innerHTML = ui.entityDetail(res.data || row);
       var actions = document.getElementById('crActions');
       actions.innerHTML =
-        '<button type="button" class="btn btn-sm btn-success" data-cr="approve">Approve</button>' +
-        '<button type="button" class="btn btn-sm btn-outline-danger" data-cr="reject">Reject</button>' +
-        '<button type="button" class="btn btn-sm btn-primary" data-cr="apply">Apply</button>';
+        '<button type="button" class="btn btn-sm btn-success" data-cr="approve">' + ui.escapeHtml(ui.t('status_approved', 'Approve')) + '</button>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger" data-cr="reject">' + ui.escapeHtml(ui.t('status_rejected', 'Reject')) + '</button>' +
+        '<button type="button" class="btn btn-sm btn-primary" data-cr="apply">' + ui.escapeHtml(ui.t('save', 'Apply')) + '</button>';
       actions.querySelectorAll('[data-cr]').forEach(function (btn) {
         btn.addEventListener('click', async function () {
           try {

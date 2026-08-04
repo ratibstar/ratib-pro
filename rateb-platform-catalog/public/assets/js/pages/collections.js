@@ -10,19 +10,19 @@
       var res = await api.get('/catalog/collections', { limit: 100, offset: 0 });
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(list, [
-        { key: 'slug', label: 'Slug', render: function (r) { return ui.escapeHtml(r.slug || '—'); } },
-        { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } }
+        { key: 'slug', label: ui.t('field_slug', 'Slug'), render: function (r) { return ui.escapeHtml(r.slug || '—'); } },
+        { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || '—'); } },
+        { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status || '—'); } }
       ], items, {
         onRowClick: async function (row) {
           document.getElementById('entityDetailPanel').hidden = false;
           try {
             var detail = await api.get('/catalog/collections/' + encodeURIComponent(row.uuid));
-            document.getElementById('entityDetail').innerHTML = ui.jsonBlock(detail.data);
+            document.getElementById('entityDetail').innerHTML = ui.entityDetail(detail.data || row);
             var products = await api.get('/catalog/collections/' + encodeURIComponent(row.uuid) + '/products', { limit: 50 });
             ui.renderTable(document.getElementById('collectionProducts'), [
-              { key: 'sku', label: 'SKU', render: function (r) { return ui.escapeHtml(r.sku || r.product_uuid || '—'); } },
-              { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || '—'); } }
+              { key: 'sku', label: ui.t('field_sku', 'SKU'), render: function (r) { return ui.escapeHtml(r.sku || r.product_uuid || '—'); } },
+              { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || '—'); } }
             ], Array.isArray(products.data) ? products.data : []);
           } catch (error) {
             ui.handleError(error);

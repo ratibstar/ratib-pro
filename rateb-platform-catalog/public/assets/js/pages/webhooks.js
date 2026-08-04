@@ -7,16 +7,18 @@
     try {
       var res = await api.get('/catalog/webhooks', { limit: 100, offset: 0 });
       ui.renderTable(list, [
-        { key: 'url', label: 'URL', render: function (r) { return ui.escapeHtml(r.url || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
+        { key: 'url', label: ui.t('field_url', 'URL'), render: function (r) { return ui.escapeHtml(r.url || '—'); } },
+        { key: 'is_active', label: ui.t('field_active', 'Active'), render: function (r) {
+          var on = r.is_active === true || r.is_active === 1 || r.is_active === '1';
+          return ui.escapeHtml(on ? ui.t('yes', 'Yes') : ui.t('no', 'No'));
+        } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: async function (row) {
           document.getElementById('entityDetailPanel').hidden = false;
           try {
             var detail = await api.get('/catalog/webhooks/' + encodeURIComponent(row.uuid));
             var item = detail.data || {};
-            document.getElementById('entityDetail').innerHTML = ui.jsonBlock(item);
+            document.getElementById('entityDetail').innerHTML = ui.entityDetail(item);
             document.getElementById('webhookUpdateForm').hidden = false;
             document.getElementById('whUuid').value = item.uuid || row.uuid;
             document.getElementById('whUrl').value = item.url || '';

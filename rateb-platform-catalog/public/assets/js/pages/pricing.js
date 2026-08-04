@@ -10,9 +10,9 @@
         var res = await api.get('/catalog/products/' + encodeURIComponent(currentUuid) + '/prices');
         var items = Array.isArray(res.data) ? res.data : [];
         ui.renderTable(document.getElementById('pricingList'), [
-          { key: 'channel_uuid', label: 'Channel', render: function (r) { return ui.escapeHtml(r.channel_uuid || r.currency || '—'); } },
-          { key: 'amount', label: 'Amount', render: function (r) { return ui.escapeHtml(String(r.amount != null ? r.amount : (r.price || '—'))); } },
-          { key: 'currency', label: 'Currency', render: function (r) { return ui.escapeHtml(r.currency || '—'); } }
+          { key: 'channel_uuid', label: ui.t('field_channel', 'Channel'), render: function (r) { return ui.escapeHtml(r.channel_uuid || r.currency || '—'); } },
+          { key: 'amount', label: ui.t('field_amount', 'Amount'), render: function (r) { return ui.escapeHtml(String(r.amount != null ? r.amount : (r.price || '—'))); } },
+          { key: 'currency', label: ui.t('field_currency', 'Currency'), render: function (r) { return ui.escapeHtml(r.currency || '—'); } }
         ], items);
         document.getElementById('pricingSaveForm').hidden = false;
         document.getElementById('pricingJson').value = JSON.stringify(items, null, 2);

@@ -7,13 +7,15 @@
     try {
       var res = await api.get('/catalog/admin/roles');
       ui.renderTable(el, [
-        { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || r.code || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } },
-        { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
+        { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || r.code || '—'); } },
+        { key: 'is_active', label: ui.t('field_active', 'Active'), render: function (r) {
+          var on = r.is_active === true || r.is_active === 1 || r.is_active === '1';
+          return ui.escapeHtml(on ? ui.t('yes', 'Yes') : ui.t('no', 'No'));
+        } }
       ], Array.isArray(res.data) ? res.data : [], {
         onRowClick: function (row) {
           document.getElementById('completenessForm').hidden = true;
-          document.getElementById('userRolesResult').innerHTML = ui.jsonBlock(row);
+          document.getElementById('userRolesResult').innerHTML = ui.entityDetail(row);
         }
       });
     } catch (error) {
@@ -28,9 +30,12 @@
       var res = await api.get('/catalog/admin/completeness-rules');
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(el, [
-        { key: 'code', label: 'Code', render: function (r) { return ui.escapeHtml(r.code); } },
-        { key: 'weight', label: 'Weight', render: function (r) { return ui.escapeHtml(String(r.weight != null ? r.weight : '—')); } },
-        { key: 'is_active', label: 'Active', render: function (r) { return ui.escapeHtml(String(r.is_active != null ? r.is_active : '—')); } }
+        { key: 'code', label: ui.t('field_code', 'Code'), render: function (r) { return ui.escapeHtml(r.code); } },
+        { key: 'weight', label: ui.t('field_weight', 'Weight'), render: function (r) { return ui.escapeHtml(String(r.weight != null ? r.weight : '—')); } },
+        { key: 'is_active', label: ui.t('field_active', 'Active'), render: function (r) {
+          var on = r.is_active === true || r.is_active === 1 || r.is_active === '1';
+          return ui.escapeHtml(on ? ui.t('yes', 'Yes') : ui.t('no', 'No'));
+        } }
       ], items, {
         onRowClick: function (row) {
           document.getElementById('completenessForm').hidden = false;
@@ -59,7 +64,7 @@
       }
       try {
         var res = await api.get('/catalog/admin/users/' + encodeURIComponent(uuid) + '/roles');
-        document.getElementById('userRolesResult').innerHTML = ui.jsonBlock(res.data);
+        document.getElementById('userRolesResult').innerHTML = ui.entityDetail(res.data || {});
         var roles = (res.data && Array.isArray(res.data.roles)) ? res.data.roles : (Array.isArray(res.data) ? res.data : []);
         document.getElementById('settingsRoleUuids').value = roles.map(function (r) { return r.uuid || r.role_uuid; }).filter(Boolean).join(',');
       } catch (error) {

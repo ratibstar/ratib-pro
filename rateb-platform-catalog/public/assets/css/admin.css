@@ -1,128 +1,129 @@
 :root {
-  /* Canvas layers */
-  --admin-bg: #dfe6f0;
-  --admin-bg-top: #e8eef6;
-  --admin-bg-bottom: #d7e0ec;
-  --admin-sidebar-top: #2e4a68;
-  --admin-sidebar: #28425d;
-  --admin-sidebar-bottom: #223a53;
-  --admin-sidebar-text: #e6edf5;
-  --admin-sidebar-muted: rgba(230, 237, 245, 0.64);
+  /* ERP-aligned light shell */
+  --admin-bg: #cce0f5;
+  --admin-bg-top: #d6e8f8;
+  --admin-bg-bottom: #bfd6ef;
+  --admin-sidebar-top: #1f3c62;
+  --admin-sidebar: #1a3354;
+  --admin-sidebar-bottom: #142840;
+  --admin-sidebar-text: #dbeafe;
+  --admin-sidebar-muted: rgba(219, 234, 254, 0.64);
   --admin-sidebar-border: rgba(255, 255, 255, 0.09);
   --admin-nav-hover: rgba(255, 255, 255, 0.08);
-  --admin-nav-active: rgba(143, 176, 210, 0.22);
-  --admin-brand-start: #7da3c7;
-  --admin-brand-end: #4f7396;
-  /* Mixed accent family (moderate) */
-  --admin-accent: #4f7396;
-  --admin-accent-soft: #e4ecf4;
-  --admin-accent-glow: rgba(79, 115, 150, 0.14);
-  --admin-mix-blue: #6b8fb5;
-  --admin-mix-sage: #6f9a82;
+  --admin-nav-active: rgba(14, 165, 233, 0.22);
+  --admin-nav-active-border: #0ea5e9;
+  --admin-brand-start: #38bdf8;
+  --admin-brand-end: #2563eb;
+  --admin-accent: #0ea5e9;
+  --admin-accent-soft: #e0f2fe;
+  --admin-accent-glow: rgba(37, 99, 235, 0.16);
+  --admin-mix-blue: #2563eb;
+  --admin-mix-sage: #14b8a6;
   --admin-mix-sand: #b39a6a;
-  --admin-mix-plum: #8a7aa8;
-  --admin-mix-blue-soft: #e8f0f8;
-  --admin-mix-sage-soft: #e9f2ec;
+  --admin-mix-plum: #6366f1;
+  --admin-mix-blue-soft: #e8f1fe;
+  --admin-mix-sage-soft: #e6f7f4;
   --admin-mix-sand-soft: #f4efe6;
-  --admin-mix-plum-soft: #eeeaf3;
-  --admin-border: #c5d0de;
-  --admin-border-soft: #d2dbe7;
-  --admin-surface: #fafbfd;
-  --admin-surface-elevated: #f4f7fb;
-  --admin-surface-muted: #eef2f8;
-  --admin-card-shine: #fafbfd;
-  --admin-text: #273445;
-  --admin-muted: #66758a;
-  --admin-danger: #a85c5c;
-  --admin-warning: #9a7d4a;
-  --admin-shadow: 0 1px 2px rgba(30, 45, 65, 0.04), 0 5px 16px rgba(30, 45, 65, 0.06);
-  --admin-shadow-hover: 0 3px 8px rgba(30, 45, 65, 0.07), 0 10px 24px rgba(30, 45, 65, 0.09);
-  --admin-topbar-bg: rgba(250, 251, 253, 0.94);
-  --admin-table-head: #eef3f9;
-  --admin-table-row-hover: rgba(79, 115, 150, 0.05);
-  --admin-stat-bg: #fafbfd;
+  --admin-mix-plum-soft: #eef0fe;
+  --admin-border: #b8cfe8;
+  --admin-border-soft: #c7d9ee;
+  --admin-surface: #eef5fd;
+  --admin-surface-elevated: #f5f9fe;
+  --admin-surface-muted: #e3effc;
+  --admin-card-shine: #f5f9fe;
+  --admin-text: #1a3354;
+  --admin-muted: #4a6b94;
+  --admin-danger: #dc2626;
+  --admin-warning: #d97706;
+  --admin-shadow: 0 1px 2px rgba(30, 58, 95, 0.05), 0 5px 16px rgba(30, 58, 95, 0.08);
+  --admin-shadow-hover: 0 3px 8px rgba(30, 58, 95, 0.08), 0 10px 24px rgba(30, 58, 95, 0.1);
+  --admin-topbar-bg: rgba(238, 245, 253, 0.94);
+  --admin-table-head: #e3effc;
+  --admin-table-row-hover: rgba(37, 99, 235, 0.07);
+  --admin-stat-bg: #f5f9fe;
   --admin-stat-accent: var(--admin-mix-blue);
-  --admin-kv-bg: #f6f9fc;
-  --admin-code-bg: #e8eef5;
-  --admin-code-text: #3f5064;
-  --admin-check-bg: #fafbfd;
-  --admin-json-bg: #273445;
-  --admin-json-text: #e6edf5;
-  --admin-success-bg: #e9f2ec;
-  --admin-success-border: #c5ddd0;
-  --admin-success-text: #4d7260;
-  --admin-ok-border: #c5ddd0;
-  --admin-badge-neutral-bg: #eef2f8;
-  --admin-badge-neutral-text: #5a677a;
-  --admin-badge-ready-bg: #e4ecf4;
-  --admin-badge-ready-text: #3f6280;
-  --admin-btn-primary: #4f7396;
-  --admin-btn-primary-hover: #426580;
+  --admin-kv-bg: #eef5fd;
+  --admin-code-bg: #e0edf9;
+  --admin-code-text: #1a3354;
+  --admin-check-bg: #f5f9fe;
+  --admin-json-bg: #1a3354;
+  --admin-json-text: #dbeafe;
+  --admin-success-bg: #e6f7f4;
+  --admin-success-border: #99e2d6;
+  --admin-success-text: #0f766e;
+  --admin-ok-border: #99e2d6;
+  --admin-badge-neutral-bg: #e3effc;
+  --admin-badge-neutral-text: #4a6b94;
+  --admin-badge-ready-bg: #dbeafe;
+  --admin-badge-ready-text: #1d4ed8;
+  --admin-btn-primary: #2563eb;
+  --admin-btn-primary-hover: #1d4ed8;
   --admin-radius: 11px;
   --admin-radius-sm: 9px;
   --admin-sidebar-width: 280px;
   --admin-sidebar-collapsed-width: 78px;
-  --admin-font: "Segoe UI", "Tahoma", "Noto Sans Arabic", sans-serif;
+  --admin-font: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
 }
 
 html[data-admin-theme="dark"] {
-  --admin-bg: #171c26;
-  --admin-bg-top: #1a202b;
-  --admin-bg-bottom: #141820;
-  --admin-sidebar-top: #0f141d;
-  --admin-sidebar: #0b1018;
-  --admin-sidebar-bottom: #080c13;
-  --admin-sidebar-text: #c8d2e0;
-  --admin-sidebar-muted: rgba(200, 210, 224, 0.58);
+  --admin-bg: #0b1120;
+  --admin-bg-top: #0f172a;
+  --admin-bg-bottom: #070d18;
+  --admin-sidebar-top: #0b1220;
+  --admin-sidebar: #070d18;
+  --admin-sidebar-bottom: #050910;
+  --admin-sidebar-text: #cbd5e1;
+  --admin-sidebar-muted: rgba(203, 213, 225, 0.58);
   --admin-sidebar-border: rgba(148, 163, 184, 0.1);
   --admin-nav-hover: rgba(255, 255, 255, 0.06);
-  --admin-nav-active: rgba(122, 155, 184, 0.18);
-  --admin-brand-start: #8aadc9;
-  --admin-brand-end: #5f83a3;
-  --admin-accent: #8aadc9;
-  --admin-accent-soft: rgba(122, 155, 184, 0.12);
-  --admin-accent-glow: rgba(122, 155, 184, 0.16);
-  --admin-mix-blue: #7a9bb8;
-  --admin-mix-sage: #7da892;
+  --admin-nav-active: rgba(45, 212, 191, 0.16);
+  --admin-nav-active-border: #2dd4bf;
+  --admin-brand-start: #38bdf8;
+  --admin-brand-end: #2563eb;
+  --admin-accent: #2dd4bf;
+  --admin-accent-soft: rgba(45, 212, 191, 0.12);
+  --admin-accent-glow: rgba(45, 212, 191, 0.18);
+  --admin-mix-blue: #3b82f6;
+  --admin-mix-sage: #2dd4bf;
   --admin-mix-sand: #c4a872;
-  --admin-mix-plum: #9a8ab5;
-  --admin-mix-blue-soft: rgba(122, 155, 184, 0.1);
-  --admin-mix-sage-soft: rgba(125, 168, 146, 0.1);
+  --admin-mix-plum: #818cf8;
+  --admin-mix-blue-soft: rgba(59, 130, 246, 0.12);
+  --admin-mix-sage-soft: rgba(45, 212, 191, 0.1);
   --admin-mix-sand-soft: rgba(196, 168, 114, 0.1);
-  --admin-mix-plum-soft: rgba(154, 138, 181, 0.1);
-  --admin-border: #2b3545;
-  --admin-border-soft: #242d3c;
-  --admin-surface: #1f2735;
-  --admin-surface-elevated: #242d3d;
-  --admin-surface-muted: #1a212d;
-  --admin-card-shine: #1f2735;
-  --admin-text: #dde4ee;
-  --admin-muted: #8d98a8;
-  --admin-danger: #c97f7f;
-  --admin-warning: #c9ad6a;
-  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 5px 16px rgba(0, 0, 0, 0.24);
-  --admin-shadow-hover: 0 3px 8px rgba(0, 0, 0, 0.26), 0 10px 24px rgba(0, 0, 0, 0.3);
-  --admin-topbar-bg: rgba(23, 28, 38, 0.94);
-  --admin-table-head: #1c2432;
-  --admin-table-row-hover: rgba(122, 155, 184, 0.06);
-  --admin-stat-bg: #1f2735;
+  --admin-mix-plum-soft: rgba(129, 140, 248, 0.1);
+  --admin-border: #2a3a52;
+  --admin-border-soft: #1e2a3d;
+  --admin-surface: #151f32;
+  --admin-surface-elevated: #1c2940;
+  --admin-surface-muted: #101927;
+  --admin-card-shine: #151f32;
+  --admin-text: #e2e8f0;
+  --admin-muted: #94a3b8;
+  --admin-danger: #f87171;
+  --admin-warning: #fbbf24;
+  --admin-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 5px 16px rgba(0, 0, 0, 0.28);
+  --admin-shadow-hover: 0 3px 8px rgba(0, 0, 0, 0.28), 0 10px 24px rgba(0, 0, 0, 0.34);
+  --admin-topbar-bg: rgba(11, 17, 32, 0.94);
+  --admin-table-head: #101927;
+  --admin-table-row-hover: rgba(45, 212, 191, 0.06);
+  --admin-stat-bg: #151f32;
   --admin-stat-accent: var(--admin-mix-blue);
-  --admin-kv-bg: #1c2432;
-  --admin-code-bg: #283142;
-  --admin-code-text: #c8d2e0;
-  --admin-check-bg: #1c2432;
-  --admin-json-bg: #0b1018;
-  --admin-json-text: #c8d2e0;
-  --admin-success-bg: rgba(125, 168, 146, 0.1);
-  --admin-success-border: rgba(125, 168, 146, 0.26);
-  --admin-success-text: #9bc4ad;
-  --admin-ok-border: rgba(125, 168, 146, 0.28);
-  --admin-badge-neutral-bg: #283142;
-  --admin-badge-neutral-text: #9aa5b5;
-  --admin-badge-ready-bg: rgba(122, 155, 184, 0.14);
-  --admin-badge-ready-text: #a8c0d6;
-  --admin-btn-primary: #5f83a3;
-  --admin-btn-primary-hover: #6f94b4;
+  --admin-kv-bg: #101927;
+  --admin-code-bg: #1c2940;
+  --admin-code-text: #cbd5e1;
+  --admin-check-bg: #101927;
+  --admin-json-bg: #070d18;
+  --admin-json-text: #cbd5e1;
+  --admin-success-bg: rgba(45, 212, 191, 0.1);
+  --admin-success-border: rgba(45, 212, 191, 0.28);
+  --admin-success-text: #5eead4;
+  --admin-ok-border: rgba(45, 212, 191, 0.3);
+  --admin-badge-neutral-bg: #1c2940;
+  --admin-badge-neutral-text: #94a3b8;
+  --admin-badge-ready-bg: rgba(59, 130, 246, 0.18);
+  --admin-badge-ready-text: #93c5fd;
+  --admin-btn-primary: #2563eb;
+  --admin-btn-primary-hover: #3b82f6;
 }
 
 * {
@@ -133,8 +134,8 @@ body.admin-body {
   margin: 0;
   font-family: var(--admin-font);
   background:
-    radial-gradient(ellipse 70% 45% at 0% 0%, rgba(107, 143, 181, 0.08), transparent 55%),
-    radial-gradient(ellipse 55% 40% at 100% 0%, rgba(111, 154, 130, 0.06), transparent 50%),
+    radial-gradient(ellipse 70% 45% at 0% 0%, rgba(37, 99, 235, 0.1), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 100% 0%, rgba(14, 165, 233, 0.08), transparent 50%),
     linear-gradient(180deg, var(--admin-bg-top) 0%, var(--admin-bg) 48%, var(--admin-bg-bottom) 100%);
   color: var(--admin-text);
   min-height: 100vh;
@@ -143,8 +144,8 @@ body.admin-body {
 
 html[data-admin-theme="dark"] body.admin-body {
   background:
-    radial-gradient(ellipse 70% 45% at 0% 0%, rgba(122, 155, 184, 0.06), transparent 55%),
-    radial-gradient(ellipse 55% 40% at 100% 0%, rgba(125, 168, 146, 0.05), transparent 50%),
+    radial-gradient(ellipse 70% 45% at 0% 0%, rgba(59, 130, 246, 0.08), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 100% 0%, rgba(45, 212, 191, 0.06), transparent 50%),
     linear-gradient(180deg, var(--admin-bg-top) 0%, var(--admin-bg) 48%, var(--admin-bg-bottom) 100%);
 }
 
@@ -272,6 +273,7 @@ html[data-admin-theme="dark"] body.admin-body {
 .admin-nav-link.is-active {
   background: var(--admin-nav-active);
   color: #fff;
+  border-inline-start: 3px solid var(--admin-nav-active-border);
 }
 
 .admin-nav-link:hover {
@@ -849,13 +851,13 @@ body.admin-body .btn-primary {
   --bs-btn-hover-border-color: var(--admin-btn-primary-hover);
   --bs-btn-active-bg: var(--admin-btn-primary-hover);
   --bs-btn-active-border-color: var(--admin-btn-primary-hover);
-  --bs-btn-focus-shadow-rgb: 77, 115, 153;
+  --bs-btn-focus-shadow-rgb: 37, 99, 235;
   border-radius: 8px;
   font-weight: 500;
 }
 
 html[data-admin-theme="dark"] body.admin-body .btn-primary {
-  --bs-btn-focus-shadow-rgb: 90, 127, 168;
+  --bs-btn-focus-shadow-rgb: 59, 130, 246;
 }
 
 body.admin-body .btn-outline-secondary {

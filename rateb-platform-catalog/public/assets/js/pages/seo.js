@@ -14,7 +14,12 @@
         document.getElementById('seoSlug').value = item.slug || '';
         document.getElementById('seoMetaDescription').value = item.meta_description || '';
         document.getElementById('seoCanonical').value = item.canonical_url || '';
-        document.getElementById('seoDetail').innerHTML = ui.jsonBlock(item);
+        document.getElementById('seoDetail').innerHTML = ui.entityDetail(item, [
+          { key: 'meta_title', label: ui.t('field_meta_title', 'Meta title') },
+          { key: 'slug', label: ui.t('field_slug', 'Slug') },
+          { key: 'meta_description', label: ui.t('field_meta_description', 'Meta description') },
+          { key: 'canonical_url', label: ui.t('field_canonical', 'Canonical URL') }
+        ]);
       } catch (error) {
         ui.handleError(error);
       }

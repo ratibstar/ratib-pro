@@ -11,12 +11,12 @@
         var items = Array.isArray(res.data) ? res.data : [];
         document.getElementById('versionsCompareForm').hidden = false;
         ui.renderTable(document.getElementById('versionsList'), [
-          { key: 'version', label: 'Version', render: function (r) { return ui.escapeHtml(String(r.version_number || r.version || '—')); } },
-          { key: 'created_at', label: 'Created', render: function (r) { return ui.escapeHtml(r.created_at || '—'); } },
-          { key: 'actions', label: 'Actions', render: function (r) {
+          { key: 'version', label: ui.t('field_version', 'Version'), render: function (r) { return ui.escapeHtml(String(r.version_number || r.version || '—')); } },
+          { key: 'created_at', label: ui.t('field_created_at', 'Created'), render: function (r) { return ui.escapeHtml(r.created_at || '—'); } },
+          { key: 'actions', label: ui.t('actions', 'Actions'), render: function (r) {
             var v = r.version_number || r.version;
-            return '<button type="button" class="btn btn-sm btn-outline-secondary" data-ver="' + ui.escapeHtml(String(v)) + '">View</button> ' +
-              '<button type="button" class="btn btn-sm btn-outline-primary" data-restore="' + ui.escapeHtml(String(v)) + '">Restore</button>';
+            return '<button type="button" class="btn btn-sm btn-outline-secondary" data-ver="' + ui.escapeHtml(String(v)) + '">' + ui.escapeHtml(ui.t('details', 'View')) + '</button> ' +
+              '<button type="button" class="btn btn-sm btn-outline-primary" data-restore="' + ui.escapeHtml(String(v)) + '">' + ui.escapeHtml(ui.t('refresh', 'Restore')) + '</button>';
           } }
         ], items);
 
@@ -24,7 +24,7 @@
           btn.addEventListener('click', async function () {
             try {
               var detail = await api.get('/catalog/products/' + encodeURIComponent(productUuid) + '/versions/' + encodeURIComponent(btn.getAttribute('data-ver')));
-              document.getElementById('versionsDetail').innerHTML = ui.jsonBlock(detail.data);
+              document.getElementById('versionsDetail').innerHTML = ui.entityDetail(detail.data || {});
             } catch (error) {
               ui.handleError(error);
             }
@@ -54,7 +54,7 @@
           left: data.left,
           right: data.right
         });
-        document.getElementById('versionsDetail').innerHTML = ui.jsonBlock(res.data);
+        document.getElementById('versionsDetail').innerHTML = ui.entityDetail(res.data || {});
       } catch (error) {
         ui.handleError(error);
       }

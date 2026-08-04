@@ -8,15 +8,15 @@
       var res = await api.get('/catalog/attributes', { limit: 100, offset: 0 });
       var items = Array.isArray(res.data) ? res.data : [];
       ui.renderTable(list, [
-        { key: 'code', label: 'Code', render: function (r) { return ui.escapeHtml(r.code || r.name || '—'); } },
-        { key: 'name', label: 'Name', render: function (r) { return ui.escapeHtml(r.name || '—'); } },
-        { key: 'uuid', label: 'UUID', render: function (r) { return ui.codeCell(r.uuid); } }
+        { key: 'code', label: ui.t('field_code', 'Code'), render: function (r) { return ui.escapeHtml(r.code || r.name || '—'); } },
+        { key: 'name', label: ui.t('field_name', 'Name'), render: function (r) { return ui.escapeHtml(r.name || '—'); } },
+        { key: 'status', label: ui.t('field_status', 'Status'), render: function (r) { return ui.statusBadge(r.status || '—'); } }
       ], items, {
         onRowClick: async function (row) {
           document.getElementById('entityDetailPanel').hidden = false;
           try {
             var detail = await api.get('/catalog/attributes/' + encodeURIComponent(row.uuid));
-            document.getElementById('entityDetail').innerHTML = ui.jsonBlock(detail.data);
+            document.getElementById('entityDetail').innerHTML = ui.entityDetail(detail.data || row);
           } catch (error) {
             ui.handleError(error);
           }
