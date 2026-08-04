@@ -33,6 +33,50 @@ final class PlatformRetailCatalogSeedData
     }
 
     /**
+     * @return array<string, array{name_ar:string, name_en:string, sort:int}>
+     */
+    public static function categoryMetaBySlug(): array
+    {
+        $map = [];
+        foreach (self::categoryDefs() as [$slug, $ar, $en, $sort]) {
+            $map[$slug] = ['name_ar' => $ar, 'name_en' => $en, 'sort' => $sort];
+        }
+
+        return $map;
+    }
+
+    /**
+     * SKU => authoritative seed fields (names never contain ??).
+     *
+     * @return array<string, array{sku:string, barcode:string, name_ar:string, name_en:string, price:float, category_slug:string, category_name_ar:string, category_name_en:string}>
+     */
+    public static function authoritativeSkuMap(): array
+    {
+        $cats = self::categoryMetaBySlug();
+        $out = [];
+        foreach (self::productRows() as $row) {
+            $sku = (string) ($row['sku'] ?? '');
+            if ($sku === '') {
+                continue;
+            }
+            $slug = (string) ($row['cat'] ?? '');
+            $meta = $cats[$slug] ?? ['name_ar' => 'عام', 'name_en' => 'General', 'sort' => 0];
+            $out[$sku] = [
+                'sku' => $sku,
+                'barcode' => (string) ($row['barcode'] ?? ''),
+                'name_ar' => (string) ($row['name_ar'] ?? ''),
+                'name_en' => (string) ($row['name_en'] ?? ''),
+                'price' => (float) ($row['price'] ?? 0),
+                'category_slug' => $slug,
+                'category_name_ar' => (string) ($meta['name_ar'] ?? 'عام'),
+                'category_name_en' => (string) ($meta['name_en'] ?? 'General'),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Industry / business-type packs for selective import into a company menu.
      *
      * @return array<string, array{label_ar:string, label_en:string, cats:list<string>|null}>
@@ -135,10 +179,12 @@ final class PlatformRetailCatalogSeedData
         $this->exec('DELETE FROM brands WHERE slug LIKE "retail-%"');
     }
 
-    /** @return array<string, int> slug => id */
-    private function seedCategories(): array
+    /**
+     * @return list<array{0:string,1:string,2:string,3:int}>
+     */
+    public static function categoryDefs(): array
     {
-        $defs = [
+        return [
             ['retail-groceries', 'بقالات', 'Groceries', 10],
             ['retail-provisions', 'تموينات', 'Provisions', 20],
             ['retail-beverages', 'مشروبات', 'Beverages', 30],
@@ -164,9 +210,13 @@ final class PlatformRetailCatalogSeedData
             ['retail-factory-tools', 'أدوات ومعدات صناعية', 'Industrial Tools', 230],
             ['retail-factory-safety', 'سلامة مهنية', 'Workplace Safety', 240],
         ];
+    }
 
+    /** @return array<string, int> slug => id */
+    private function seedCategories(): array
+    {
         $map = [];
-        foreach ($defs as [$slug, $nameAr, $nameEn, $sort]) {
+        foreach (self::categoryDefs() as [$slug, $nameAr, $nameEn, $sort]) {
             $map[$slug] = $this->upsertCategory($slug, $nameAr, $nameEn, $sort);
         }
 
@@ -192,7 +242,7 @@ final class PlatformRetailCatalogSeedData
     /** @param array<string, int> $categories */
     private function seedProducts(array $categories, int $unitId): void
     {
-        foreach ($this->productCatalog() as $row) {
+        foreach (self::productRows() as $row) {
             $catId = $categories[$row['cat']] ?? 0;
             if ($catId < 1) {
                 continue;
@@ -202,9 +252,11 @@ final class PlatformRetailCatalogSeedData
     }
 
     /**
+     * Authoritative UTF-8 catalog rows from this PHP seed (never trust DB ?? copies).
+     *
      * @return list<array{cat:string,sku:string,barcode:string,name_ar:string,name_en:string,price:float,brand?:string}>
      */
-    private function productCatalog(): array
+    public static function productRows(): array
     {
         return [
             // بقالات
@@ -414,6 +466,14 @@ final class PlatformRetailCatalogSeedData
         $sku = $row['sku'];
         $existing = $this->fetchId('SELECT id FROM products WHERE sku = :s AND deleted_at IS NULL LIMIT 1', ['s' => $sku]);
         if ($existing > 0) {
+            // Always re-bind category — null/wrong category_id collapses guest menu to «عام».
+            $this->exec(
+                'UPDATE products
+                 SET category_id = ' . (int) $categoryId . ',
+                     status = "published",
+                     primary_barcode = ' . $this->q((string) $row['barcode']) . '
+                 WHERE id = ' . (int) $existing . ' AND deleted_at IS NULL'
+            );
             $this->ensurePrice($existing, (float) $row['price']);
             $this->ensureProductTranslations($existing, $row['name_ar'], $row['name_en']);
 

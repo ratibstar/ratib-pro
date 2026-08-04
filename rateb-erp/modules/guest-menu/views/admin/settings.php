@@ -24,6 +24,7 @@ if ($companyId < 1 && isset($_GET['company_id'])) {
 }
 // rateb_app_url already sets a single company_id — never append another.
 $importAction = rateb_app_url('guest-menu/import-catalog');
+$repairAction = rateb_app_url('guest-menu/repair-menu-names');
 $seedAction = rateb_app_url('guest-menu/seed-demo');
 $deleteAction = rateb_app_url('guest-menu/delete-imported-catalog');
 $catalogPacks = is_array($catalogPacks ?? null) ? $catalogPacks : [];
@@ -56,6 +57,17 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
             <?php } ?>
             <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_flow'); ?></p>
             <p class="text-muted small mb-3"><?php echo __('guest_menu_catalog_pack_hint'); ?></p>
+
+            <form method="post" action="<?php echo GuestMenuView::escape($repairAction); ?>" class="border border-danger rounded p-3 mb-3 bg-white" data-gm-csrf-form data-rateb-full-nav="1" id="gm-repair-form">
+                <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
+                <input type="hidden" name="catalog_pack" value="all" id="gm-repair-pack">
+                <p class="fw-bold text-danger mb-2"><?php echo __('guest_menu_menu_repair_title'); ?></p>
+                <p class="small text-muted mb-3"><?php echo __('guest_menu_menu_repair_hint'); ?></p>
+                <button type="submit" class="btn btn-danger btn-lg w-100 w-md-auto">
+                    <?php echo __('guest_menu_menu_repair_btn'); ?>
+                </button>
+            </form>
 
             <div class="d-flex flex-wrap gap-2 align-items-end mb-3" id="gm-catalog-actions">
                 <a class="btn btn-outline-secondary btn-sm" href="<?php echo GuestMenuView::escape($inventoryUrl); ?>" data-rateb-full-nav="1">
@@ -249,6 +261,14 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
             syncGmCsrf();
             // Soft-nav must never intercept these POSTs.
             form.setAttribute('data-rateb-full-nav', '1');
+            // Keep repair pack in sync with selected industry when present.
+            if (form.id === 'gm-repair-form') {
+                var packSel = document.getElementById('gm-catalog-pack');
+                var packHidden = document.getElementById('gm-repair-pack');
+                if (packSel && packHidden) {
+                    packHidden.value = packSel.value || 'all';
+                }
+            }
         }, true);
     });
     if (window.RatebModuleLifecycle && typeof window.RatebModuleLifecycle.on === 'function') {

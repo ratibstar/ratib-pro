@@ -470,7 +470,15 @@ final class Database
             $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
         }
 
-        return new PDO($dsn, $user, $pass, $options);
+        $pdo = new PDO($dsn, $user, $pass, $options);
+        // DSN charset / INIT_COMMAND alone is not enough on some cPanel hosts.
+        try {
+            $pdo->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (\Throwable) {
+            // non-fatal — connection may still work with DSN charset
+        }
+
+        return $pdo;
     }
 
     /**

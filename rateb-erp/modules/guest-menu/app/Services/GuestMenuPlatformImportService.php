@@ -59,8 +59,16 @@ final class GuestMenuPlatformImportService
 
         $limit = max(1, min(300, $limit));
         $rows = $this->fetchPlatformProducts($platform, $limit, $catFilter);
+        // Always overlay PHP seed names/categories — platform DB may still hold ??.
+        $rows = $this->overlayAuthoritativeSeed($rows, $catFilter, $limit);
         if ($rows === []) {
             return ['ok' => true, 'imported' => 0, 'skipped' => 0, 'updated' => 0, 'message' => 'no_platform_products'];
+        }
+
+        try {
+            Database::connection()->exec('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (\Throwable) {
+            // ignore
         }
 
         TenantContext::setCompanyId($companyId);
@@ -75,7 +83,7 @@ final class GuestMenuPlatformImportService
             $nameAr = trim((string) ($row['name_ar'] ?? ''));
             $nameEn = trim((string) ($row['name_en'] ?? ''));
             $name = $this->preferReadableName($nameAr, $nameEn, $sku);
-            if ($sku === '' || $name === '') {
+            if ($sku === '' || $name === '' || $this->isCorruptedName($name)) {
                 ++$skipped;
                 continue;
             }
@@ -83,6 +91,12 @@ final class GuestMenuPlatformImportService
             $catSlug = trim((string) ($row['category_slug'] ?? ''));
             $catNameAr = trim((string) ($row['category_name_ar'] ?? ''));
             $catNameEn = trim((string) ($row['category_name_en'] ?? ''));
+            if ($this->isCorruptedName($catNameAr)) {
+                $catNameAr = '';
+            }
+            if ($this->isCorruptedName($catNameEn)) {
+                $catNameEn = '';
+            }
             $categoryId = $this->resolveCompanyCategoryId(
                 $companyId,
                 $catSlug,
@@ -179,18 +193,95 @@ final class GuestMenuPlatformImportService
         }
     }
 
+    /**
+     * Prefer seed PHP UTF-8 over platform COALESCE — never import ??.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param list<string>|null $catFilter
+     * @return list<array<string, mixed>>
+     */
+    private function overlayAuthoritativeSeed(array $rows, ?array $catFilter, int $limit): array
+    {
+        $seedMap = PlatformRetailCatalogSeedData::authoritativeSkuMap();
+        if ($seedMap === []) {
+            return $rows;
+        }
+        if (is_array($catFilter) && $catFilter !== []) {
+            $allowed = array_fill_keys($catFilter, true);
+            $seedMap = array_filter(
+                $seedMap,
+                static fn (array $r): bool => isset($allowed[$r['category_slug'] ?? ''])
+            );
+        }
+
+        $bySku = [];
+        foreach ($rows as $row) {
+            $sku = trim((string) ($row['sku'] ?? ''));
+            if ($sku === '') {
+                continue;
+            }
+            $bySku[$sku] = $row;
+        }
+
+        foreach ($seedMap as $sku => $seed) {
+            $base = $bySku[$sku] ?? [
+                'sku' => $sku,
+                'primary_barcode' => $seed['barcode'],
+                'price' => $seed['price'],
+            ];
+            $base['sku'] = $sku;
+            $base['name_ar'] = $seed['name_ar'];
+            $base['name_en'] = $seed['name_en'];
+            $base['category_slug'] = $seed['category_slug'];
+            $base['category_name_ar'] = $seed['category_name_ar'];
+            $base['category_name_en'] = $seed['category_name_en'];
+            if (!isset($base['primary_barcode']) || trim((string) $base['primary_barcode']) === '') {
+                $base['primary_barcode'] = $seed['barcode'];
+            }
+            if (!isset($base['price']) || (float) $base['price'] <= 0) {
+                $base['price'] = $seed['price'];
+            }
+            $bySku[$sku] = $base;
+        }
+
+        $out = array_values($bySku);
+        usort($out, static function (array $a, array $b): int {
+            return strcmp((string) ($a['sku'] ?? ''), (string) ($b['sku'] ?? ''));
+        });
+
+        return array_slice($out, 0, max(1, $limit));
+    }
+
     private function preferReadableName(string $nameAr, string $nameEn, string $sku): string
     {
-        $arBad = $nameAr === '' || str_contains($nameAr, '??') || preg_match('/^\?+$/', $nameAr) === 1;
-        $enBad = $nameEn === '' || str_contains($nameEn, '??') || preg_match('/^\?+$/', $nameEn) === 1;
-        if (!$arBad) {
+        if (!$this->isCorruptedName($nameAr)) {
             return $nameAr;
         }
-        if (!$enBad) {
+        if (!$this->isCorruptedName($nameEn)) {
             return $nameEn;
         }
 
         return $sku;
+    }
+
+    private function isCorruptedName(string $name): bool
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return true;
+        }
+        if (str_contains($name, '??') || str_contains($name, "\u{FFFD}")) {
+            return true;
+        }
+        if (preg_match('/^\?+$/u', $name) === 1) {
+            return true;
+        }
+        $q = substr_count($name, '?');
+        if ($q >= 2 && $q >= (int) floor(mb_strlen($name, 'UTF-8') * 0.5)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

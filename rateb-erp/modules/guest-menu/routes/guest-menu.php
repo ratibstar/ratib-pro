@@ -24,6 +24,7 @@ $router->post($gmApp(''), [GuestMenuAdminController::class, 'save'], $gmMw());
 $router->get($gmApp('orders'), [GuestMenuAdminController::class, 'orders'], $gmMw());
 $router->post($gmApp('orders/{orderId}/status'), [GuestMenuAdminController::class, 'orderStatus'], $gmMw());
 $router->post($gmApp('import-catalog'), [GuestMenuAdminController::class, 'importCatalog'], $gmMw());
+$router->post($gmApp('repair-menu-names'), [GuestMenuAdminController::class, 'repairMenuNames'], $gmMw());
 $router->post($gmApp('delete-imported-catalog'), [GuestMenuAdminController::class, 'deleteImportedCatalog'], $gmMw());
 $router->get($gmApp('export-catalog'), [GuestMenuAdminController::class, 'exportCatalog'], $gmMw());
 $router->post($gmApp('seed-platform-catalog'), [GuestMenuAdminController::class, 'seedPlatformCatalog'], $gmMw());

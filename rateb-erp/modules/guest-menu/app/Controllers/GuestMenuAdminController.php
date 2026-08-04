@@ -10,6 +10,7 @@ use Rateb\App\Core\LocalQrRenderer;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogSeedService;
 use Rateb\App\GuestMenu\Services\GuestMenuCatalogService;
+use Rateb\App\GuestMenu\Services\GuestMenuMenuRepairService;
 use Rateb\App\GuestMenu\Services\GuestMenuOrderService;
 use Rateb\App\GuestMenu\Services\GuestMenuPlatformCatalogSeedRunner;
 use Rateb\App\GuestMenu\Services\GuestMenuPlatformImportService;
@@ -105,19 +106,9 @@ final class GuestMenuAdminController extends Controller
         if (!$this->requireCsrfOrStay()) {
             return;
         }
-        // ALWAYS force platform Arabic UPSERT (never skip "already_populated") — fixes ????.
-        $seed = (new GuestMenuPlatformCatalogSeedRunner())->run();
-        if (!$seed['ok']) {
-            SessionManager::flash(
-                'error',
-                __('guest_menu_platform_seed_failed') . ': ' . (string) ($seed['message'] ?? '')
-            );
-            $this->redirectGuestMenu();
-
-            return;
-        }
 
         $companyId = $this->companyId();
+        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
         $replace = !empty($_POST['replace_imported']);
         if ($replace) {
             $deleted = (new GuestMenuPlatformImportService())->deleteImportedForCompany($companyId);
@@ -128,21 +119,56 @@ final class GuestMenuAdminController extends Controller
             }
         }
 
-        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
-        // Cap 300 — UPSERT names/categories for RC-* even when SKU already exists.
+        // Seed-authoritative repair first (rewrites ?? from PHP UTF-8), then pack import.
+        $repair = (new GuestMenuMenuRepairService())->repairCompany($companyId, $pack);
+        if (!$repair['ok']) {
+            SessionManager::flash(
+                'error',
+                __('guest_menu_menu_repair_failed') . ': ' . (string) ($repair['message'] ?? '')
+            );
+            $this->redirectGuestMenu();
+
+            return;
+        }
+
         $result = (new GuestMenuPlatformImportService())->importToCompany($companyId, 300, $pack);
         if (!$result['ok']) {
             SessionManager::flash('error', __('guest_menu_import_failed') . ': ' . (string) ($result['message'] ?? ''));
         } else {
-            $msg = __('guest_menu_import_done', [
+            $msg = __('guest_menu_menu_repair_done', [
+                'repaired' => (string) ($repair['repaired'] ?? 0),
+                'imported' => (string) (($result['imported'] ?? 0) + (int) ($repair['imported'] ?? 0)),
+            ]);
+            $msg .= ' — ' . __('guest_menu_import_done', [
                 'imported' => (string) ($result['imported'] ?? 0),
                 'skipped' => (string) ($result['skipped'] ?? 0),
                 'updated' => (string) ($result['updated'] ?? 0),
             ]);
-            $msg .= ' — ' . __('guest_menu_platform_seed_done', [
-                'count' => (string) ($seed['product_count'] ?? 0),
-            ]);
             SessionManager::flash('success', $msg);
+        }
+        $this->redirectGuestMenu();
+    }
+
+    /** One-shot: إصلاح أسماء المنيو الآن — seed + rewrite all RC-* from UTF-8 PHP. */
+    public function repairMenuNames(): void
+    {
+        $this->guardManage();
+        if (!$this->requireCsrfOrStay()) {
+            return;
+        }
+        $companyId = $this->companyId();
+        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
+        $result = (new GuestMenuMenuRepairService())->repairCompany($companyId, $pack);
+        if (!$result['ok']) {
+            SessionManager::flash(
+                'error',
+                __('guest_menu_menu_repair_failed') . ': ' . (string) ($result['message'] ?? '')
+            );
+        } else {
+            SessionManager::flash('success', __('guest_menu_menu_repair_done', [
+                'repaired' => (string) ($result['repaired'] ?? 0),
+                'imported' => (string) ($result['imported'] ?? 0),
+            ]));
         }
         $this->redirectGuestMenu();
     }
