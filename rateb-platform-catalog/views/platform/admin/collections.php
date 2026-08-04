@@ -10,9 +10,9 @@
 <div class="admin-panel mt-3" id="collectionCreatePanel" hidden>
     <form id="collectionCreateForm">
         <div class="admin-form-grid">
-            <div><label class="form-label">Slug</label><input class="form-control" name="slug" required></div>
-            <div><label class="form-label">Name</label><input class="form-control" name="name" required></div>
-            <div><label class="form-label">Type</label><input class="form-control" name="collection_type" value="manual"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('field_slug', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="slug" required></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('field_name', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="name" required></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('field_type', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="collection_type" value="manual"></div>
         </div>
         <div class="admin-form-actions">
             <button type="submit" class="btn btn-sm btn-primary"><?= htmlspecialchars(catalog__('admin_save', $locale), ENT_QUOTES, 'UTF-8') ?></button>
@@ -21,6 +21,6 @@
 </div>
 <div class="admin-panel mt-3" id="entityDetailPanel" hidden>
     <div id="entityDetail"></div>
-    <h3 class="h6 mt-3">Products</h3>
+    <h3 class="h6 mt-3"><?= htmlspecialchars(catalog__('nav_products', $locale), ENT_QUOTES, 'UTF-8') ?></h3>
     <div id="collectionProducts"></div>
 </div>

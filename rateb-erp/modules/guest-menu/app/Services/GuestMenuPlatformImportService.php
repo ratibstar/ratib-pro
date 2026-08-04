@@ -193,12 +193,14 @@ final class GuestMenuPlatformImportService
 
         $pdo = Database::connection();
         $stmt = $pdo->prepare(
-            'SELECT id FROM rateb_product_categories WHERE company_id = :cid AND code = :code LIMIT 1'
+            'SELECT id, name, name_ar FROM rateb_product_categories
+             WHERE company_id = :cid AND code = :code LIMIT 1'
         );
         $stmt->execute(['cid' => $companyId, 'code' => $code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (is_array($row)) {
             $id = (int) ($row['id'] ?? 0);
+            $this->refreshCompanyCategoryNames($id, $nameAr, $nameEn, $row);
             $cache[$slug] = $id;
 
             return $id;
@@ -207,11 +209,13 @@ final class GuestMenuPlatformImportService
         $prev = TenantContext::companyId();
         TenantContext::setCompanyId($companyId);
         try {
+            // Prefer Arabic labels for guest-menu / RTL companies.
+            $displayAr = $nameAr !== '' ? $nameAr : ($nameEn !== '' ? $nameEn : $code);
             $id = (new ProductCategory())->create([
                 'company_id' => $companyId,
                 'code' => $code,
-                'name' => $nameEn !== '' ? $nameEn : $code,
-                'name_ar' => $nameAr !== '' ? $nameAr : $nameEn,
+                'name' => $displayAr,
+                'name_ar' => $displayAr,
                 'is_active' => 1,
                 'is_visible' => 1,
                 'sort_order' => 10,
@@ -223,6 +227,42 @@ final class GuestMenuPlatformImportService
         $cache[$slug] = (int) $id;
 
         return (int) $id;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function refreshCompanyCategoryNames(int $categoryId, string $nameAr, string $nameEn, array $row): void
+    {
+        if ($categoryId < 1) {
+            return;
+        }
+        $currentName = (string) ($row['name'] ?? '');
+        $currentAr = (string) ($row['name_ar'] ?? '');
+        $desiredAr = $nameAr !== '' ? $nameAr : ($nameEn !== '' ? $nameEn : $currentAr);
+        $desiredName = $desiredAr !== '' ? $desiredAr : ($nameEn !== '' ? $nameEn : $currentName);
+        $needsName = $desiredName !== '' && (
+            $currentName === '' || str_contains($currentName, '??') || $currentName !== $desiredName
+        );
+        $needsAr = $desiredAr !== '' && (
+            $currentAr === '' || str_contains($currentAr, '??') || $currentAr !== $desiredAr
+        );
+        if (!$needsName && !$needsAr) {
+            return;
+        }
+        $sets = [];
+        $params = ['id' => $categoryId];
+        if ($needsName) {
+            $sets[] = 'name = :name';
+            $params['name'] = $desiredName;
+        }
+        if ($needsAr) {
+            $sets[] = 'name_ar = :name_ar';
+            $params['name_ar'] = $desiredAr;
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_product_categories SET ' . implode(', ', $sets) . ' WHERE id = :id'
+        )->execute($params);
     }
 
     private function findInventoryId(int $companyId, string $sku): int
@@ -254,9 +294,17 @@ final class GuestMenuPlatformImportService
         }
 
         $currentName = (string) ($row['item_name'] ?? '');
-        $needsName = $currentName === '' || str_contains($currentName, '??');
-        $needsCat = $categoryId > 0 && (int) ($row['category_id'] ?? 0) !== $categoryId;
-        if (!$needsName && !$needsCat) {
+        $currentCatLabel = (string) ($row['category'] ?? '');
+        // After platform Arabic repair, re-import must sync readable names even when
+        // existing inventory still has English / stale text (not only "??").
+        $needsName = $name !== '' && (
+            $currentName === '' || str_contains($currentName, '??') || $currentName !== $name
+        );
+        $needsCatId = $categoryId > 0 && (int) ($row['category_id'] ?? 0) !== $categoryId;
+        $needsCatLabel = $categoryLabel !== '' && (
+            $currentCatLabel === '' || str_contains($currentCatLabel, '??') || $currentCatLabel !== $categoryLabel
+        );
+        if (!$needsName && !$needsCatId && !$needsCatLabel) {
             return false;
         }
 
@@ -266,10 +314,12 @@ final class GuestMenuPlatformImportService
             $sets[] = 'item_name = :name';
             $params['name'] = $name;
         }
-        if ($needsCat) {
-            $sets[] = 'category_id = :cid';
+        if ($needsCatId || $needsCatLabel) {
+            if ($categoryId > 0) {
+                $sets[] = 'category_id = :cid';
+                $params['cid'] = $categoryId;
+            }
             $sets[] = 'category = :cat';
-            $params['cid'] = $categoryId;
             $params['cat'] = $categoryLabel;
         }
         if ($needsName && $price > 0) {

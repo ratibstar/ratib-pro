@@ -64,7 +64,7 @@ final class AdminPageController
                         ? 'تم إصلاح الأسماء العربية. حدّث القائمة.'
                         : 'تم إصلاح الأسماء العربية التالفة تلقائياً. اضغط «تحديث».';
                 } elseif ($result['repaired'] && ($result['message'] ?? '') === 'partial') {
-                    $repairNotice = 'Attempted Arabic repair but some names still look corrupted.';
+                    $repairNotice = 'تم محاولة إصلاح الأسماء العربية وما زال بعضها تالفاً — أعد الضغط على «إصلاح النصوص العربية».';
                 } elseif ($forceRepair) {
                     $repairNotice = 'لا توجد أسماء تالفة تحتاج إصلاحاً.';
                 }

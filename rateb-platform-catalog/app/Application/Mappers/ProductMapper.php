@@ -42,7 +42,10 @@ final class ProductMapper
             boostScore: (string) $row['boost_score'],
             name: (string) ($row['name'] ?? ''),
             shortDescription: isset($row['short_description']) ? (string) $row['short_description'] : null,
-            description: isset($row['description']) ? (string) $row['description'] : null
+            description: isset($row['description']) ? (string) $row['description'] : null,
+            categoryName: isset($row['category_name']) && $row['category_name'] !== null && $row['category_name'] !== ''
+                ? (string) $row['category_name']
+                : null
         );
     }
 }

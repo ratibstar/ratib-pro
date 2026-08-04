@@ -5,11 +5,11 @@
     </div>
     <div class="admin-split mt-3">
         <section class="admin-panel">
-            <h2 class="h6 mb-3">/health</h2>
+            <h2 class="h6 mb-3"><?= htmlspecialchars(catalog__('admin_health_liveness', $locale), ENT_QUOTES, 'UTF-8') ?></h2>
             <div id="healthLiveness"></div>
         </section>
         <section class="admin-panel">
-            <h2 class="h6 mb-3">/ready</h2>
+            <h2 class="h6 mb-3"><?= htmlspecialchars(catalog__('admin_health_ready', $locale), ENT_QUOTES, 'UTF-8') ?></h2>
             <div id="healthReady"></div>
         </section>
     </div>

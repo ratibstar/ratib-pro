@@ -10,10 +10,10 @@
 <div class="admin-panel mt-3" id="webhookCreatePanel" hidden>
     <form id="webhookCreateForm">
         <div class="admin-form-grid">
-            <div><label class="form-label">HTTPS URL</label><input class="form-control" name="url" placeholder="https://" required></div>
-            <div><label class="form-label">Events (comma)</label><input class="form-control" name="events" value="product.updated"></div>
-            <div><label class="form-label">Secret</label><input class="form-control" name="secret"></div>
-            <div><label class="form-label">ERP company ID</label><input class="form-control" name="erp_company_id"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('admin_https_url', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="url" placeholder="https://" required></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('admin_events_comma', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="events" value="product.updated"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('field_secret', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="secret"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('field_erp_company_id', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="erp_company_id"></div>
         </div>
         <div class="admin-form-actions">
             <button type="submit" class="btn btn-sm btn-primary"><?= htmlspecialchars(catalog__('admin_save', $locale), ENT_QUOTES, 'UTF-8') ?></button>
@@ -24,9 +24,9 @@
     <div id="entityDetail"></div>
     <form id="webhookUpdateForm" class="mt-3" hidden>
         <div class="admin-form-grid">
-            <div><label class="form-label">HTTPS URL</label><input class="form-control" name="url" id="whUrl"></div>
-            <div><label class="form-label">Events (comma)</label><input class="form-control" name="events" id="whEvents"></div>
-            <div><label class="form-label">Active (1/0)</label><input class="form-control" name="is_active" id="whActive" value="1"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('admin_https_url', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="url" id="whUrl"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('admin_events_comma', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="events" id="whEvents"></div>
+            <div><label class="form-label"><?= htmlspecialchars(catalog__('admin_active_flag', $locale), ENT_QUOTES, 'UTF-8') ?></label><input class="form-control" name="is_active" id="whActive" value="1"></div>
         </div>
         <input type="hidden" name="uuid" id="whUuid">
         <div class="admin-form-actions">

@@ -35,7 +35,8 @@ final class ProductDto
         public readonly string $boostScore,
         public readonly string $name,
         public readonly ?string $shortDescription,
-        public readonly ?string $description
+        public readonly ?string $description,
+        public readonly ?string $categoryName = null
     ) {
     }
 
@@ -47,6 +48,7 @@ final class ProductDto
             'sku' => $this->sku,
             'brand_uuid' => $this->brandUuid,
             'category_uuid' => $this->categoryUuid,
+            'category_name' => $this->categoryName,
             'family_uuid' => $this->familyUuid,
             'unit_uuid' => $this->unitUuid,
             'is_bundle' => $this->isBundle,

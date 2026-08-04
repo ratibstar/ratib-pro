@@ -110,6 +110,7 @@ final class MysqlProductReadRepository extends BaseRepository implements Product
                        p.approved_by, p.approved_at, p.search_weight, p.boost_score,
                        p.created_at, p.updated_at,
                        b.uuid AS brand_uuid, c.uuid AS category_uuid, pf.uuid AS family_uuid, u.uuid AS unit_uuid,
+                       COALESCE(ct_loc.name, ct_fb.name, c.slug) AS category_name,
                        ' . $this->translationSelect('pt', 'name') . ',
                        ' . $this->translationSelect('pt', 'short_description') . ',
                        ' . $this->translationSelect('pt', 'description') . ',
@@ -119,6 +120,7 @@ final class MysqlProductReadRepository extends BaseRepository implements Product
                 INNER JOIN units u ON u.id = p.unit_id AND u.deleted_at IS NULL
                 LEFT JOIN brands b ON b.id = p.brand_id AND b.deleted_at IS NULL
                 LEFT JOIN product_families pf ON pf.id = p.family_id AND pf.deleted_at IS NULL
-                ' . $this->translationJoin('p', 'id', 'product_translations', 'pt', 'product_id');
+                ' . $this->translationJoin('p', 'id', 'product_translations', 'pt', 'product_id') . '
+                ' . $this->translationJoin('c', 'id', 'category_translations', 'ct', 'category_id');
     }
 }

@@ -96,7 +96,7 @@
           key: 'category',
           label: ui.t('field_category', 'Category'),
           render: function (r) {
-            return ui.escapeHtml(categoryMap[r.category_uuid] || r.category_name || r.category_uuid || '—');
+            return ui.escapeHtml(r.category_name || categoryMap[r.category_uuid] || r.category_uuid || '—');
           }
         },
         {
@@ -129,7 +129,7 @@
       document.getElementById('productDetailMeta').innerHTML = ui.entityDetail(item, [
         { key: 'uuid', label: ui.t('field_uuid', 'UUID') },
         { key: 'category_uuid', label: ui.t('field_category', 'Category'), render: function (v) {
-          return ui.escapeHtml(categoryMap[v] || v || '—');
+          return ui.escapeHtml(item.category_name || categoryMap[v] || v || '—');
         }},
         { key: 'brand_uuid', label: ui.t('field_brand', 'Brand') },
         { key: 'family_uuid', label: ui.t('field_family', 'Family') },
