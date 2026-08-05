@@ -82,8 +82,14 @@ final class GuestMenuSettingsService
         if ($companyId < 1) {
             return;
         }
+        $this->ensureSchema();
         $this->ensureForCompany($companyId);
         $pack = PlatformRetailCatalogSeedData::normalizePack($pack);
+        if (!Database::tableHasColumn('rateb_guest_menu_settings', 'catalog_pack')) {
+            error_log('GuestMenuSettingsService::setCatalogPack — catalog_pack column missing');
+
+            return;
+        }
         $stmt = $this->db->prepare(
             'UPDATE rateb_guest_menu_settings SET catalog_pack = :pack, updated_at = NOW()
              WHERE company_id = :cid'
@@ -113,6 +119,7 @@ final class GuestMenuSettingsService
         if ($slug === '') {
             return null;
         }
+        $this->ensureSchema();
         $stmt = $this->db->prepare(
             'SELECT g.*, c.name AS company_name, c.slug AS company_slug, c.status AS company_status
              FROM rateb_guest_menu_settings g
@@ -122,8 +129,14 @@ final class GuestMenuSettingsService
         );
         $stmt->execute(['slug' => $slug]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+        $row['catalog_pack'] = PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($row['catalog_pack'] ?? 'all')
+        );
 
-        return is_array($row) ? $row : null;
+        return $row;
     }
 
     /**

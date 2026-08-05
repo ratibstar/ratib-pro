@@ -46,11 +46,16 @@ final class GuestMenuPublicController extends Controller
             $title = (string) ($settings['company_name'] ?? 'Menu');
         }
 
-        $catalogPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+        $companyId = (int) $settings['company_id'];
+        $catalogService = new GuestMenuCatalogService();
+        // Resolve from DB settings (+ auto-detect/persist when still "all").
+        $catalogPack = $catalogService->resolveCatalogPackForCompany(
+            $companyId,
             (string) ($settings['catalog_pack'] ?? 'all')
         );
-        $catalog = (new GuestMenuCatalogService())->browse(
-            (int) $settings['company_id'],
+        $settings['catalog_pack'] = $catalogPack;
+        $catalog = $catalogService->browse(
+            $companyId,
             isset($settings['branch_id']) ? (int) $settings['branch_id'] : null,
             null,
             1,
@@ -83,12 +88,15 @@ final class GuestMenuPublicController extends Controller
             ? (int) $_GET['category_id']
             : null;
         $page = max(1, (int) ($_GET['page'] ?? 1));
-        $catalogPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+        $companyId = (int) $settings['company_id'];
+        $catalogService = new GuestMenuCatalogService();
+        $catalogPack = $catalogService->resolveCatalogPackForCompany(
+            $companyId,
             (string) ($settings['catalog_pack'] ?? 'all')
         );
 
-        $catalog = (new GuestMenuCatalogService())->browse(
-            (int) $settings['company_id'],
+        $catalog = $catalogService->browse(
+            $companyId,
             isset($settings['branch_id']) ? (int) $settings['branch_id'] : null,
             $categoryId,
             $page,

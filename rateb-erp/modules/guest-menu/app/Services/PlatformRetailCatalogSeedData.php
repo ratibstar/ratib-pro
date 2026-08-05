@@ -291,6 +291,93 @@ final class PlatformRetailCatalogSeedData
         return $slug !== '' && isset($allowed[$slug]);
     }
 
+    /**
+     * Allowed RC-/GM- SKUs for a pack (null = no SKU restriction / pack=all).
+     *
+     * @return array<string, true>|null
+     */
+    public static function allowedSkuSetForPack(string $pack): ?array
+    {
+        $pack = self::normalizePack($pack);
+        if ($pack === 'all') {
+            return null;
+        }
+        $slugs = self::packCategorySlugs($pack);
+        if ($slugs === null) {
+            return null;
+        }
+        $allowedSlugs = array_fill_keys($slugs, true);
+        $out = [];
+        foreach (self::authoritativeSkuMap() as $sku => $row) {
+            $slug = (string) ($row['category_slug'] ?? '');
+            if ($slug !== '' && isset($allowedSlugs[$slug])) {
+                $out[$sku] = true;
+            }
+        }
+        if (
+            isset($allowedSlugs['retail-restaurants'])
+            || isset($allowedSlugs['retail-cafe'])
+            || isset($allowedSlugs['retail-beverages'])
+            || isset($allowedSlugs['retail-bakery'])
+        ) {
+            foreach (array_keys(self::demoSkuNames()) as $gmSku) {
+                $out[$gmSku] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Infer industry pack from a list of inventory SKUs.
+     * Returns null when empty / mixed with no clear majority.
+     *
+     * @param list<string> $skus
+     */
+    public static function detectPackFromSkus(array $skus): ?string
+    {
+        $rcGm = [];
+        foreach ($skus as $sku) {
+            $sku = trim((string) $sku);
+            if ($sku !== '' && (str_starts_with($sku, 'RC-') || str_starts_with($sku, 'GM-'))) {
+                $rcGm[] = $sku;
+            }
+        }
+        if ($rcGm === []) {
+            return null;
+        }
+
+        $counts = [];
+        foreach (self::industryPacks() as $packKey => $_meta) {
+            if ($packKey === 'all') {
+                continue;
+            }
+            $n = 0;
+            foreach ($rcGm as $sku) {
+                if (self::skuBelongsToPack($sku, $packKey)) {
+                    ++$n;
+                }
+            }
+            if ($n > 0) {
+                $counts[$packKey] = $n;
+            }
+        }
+        if ($counts === []) {
+            return null;
+        }
+
+        arsort($counts);
+        $bestPack = (string) array_key_first($counts);
+        $bestN = (int) $counts[$bestPack];
+        $total = count($rcGm);
+        // Clear sector: ≥70% of RC-/GM- SKUs belong to one pack.
+        if ($bestN >= 1 && ($bestN / $total) >= 0.7) {
+            return $bestPack;
+        }
+
+        return null;
+    }
+
 
     public function down(): void
     {

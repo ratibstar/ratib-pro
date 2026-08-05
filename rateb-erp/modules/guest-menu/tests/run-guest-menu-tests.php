@@ -84,5 +84,31 @@ gm_assert(
     'all pack has no slug filter'
 );
 
+$restSkuSet = PlatformRetailCatalogSeedData::allowedSkuSetForPack('restaurant');
+gm_assert(
+    is_array($restSkuSet) && isset($restSkuSet['RC-RST-001']) && !isset($restSkuSet['RC-SHO-001']),
+    'allowedSkuSetForPack restaurant includes RST excludes SHO'
+);
+gm_assert(
+    PlatformRetailCatalogSeedData::allowedSkuSetForPack('all') === null,
+    'allowedSkuSetForPack all is null'
+);
+gm_assert(
+    PlatformRetailCatalogSeedData::detectPackFromSkus([
+        'RC-RST-001', 'RC-CAF-001', 'RC-BEV-001', 'RC-BKY-001',
+    ]) === 'restaurant',
+    'detectPackFromSkus majority restaurant'
+);
+gm_assert(
+    PlatformRetailCatalogSeedData::detectPackFromSkus([
+        'RC-SHO-001', 'RC-CLM-001', 'RC-CLW-001',
+    ]) === 'clothing',
+    'detectPackFromSkus clothing pack'
+);
+gm_assert(
+    PlatformRetailCatalogSeedData::detectPackFromSkus([]) === null,
+    'detectPackFromSkus empty → null'
+);
+
 echo "\n{$passed} passed, {$failed} failed\n";
 exit($failed > 0 ? 1 : 0);

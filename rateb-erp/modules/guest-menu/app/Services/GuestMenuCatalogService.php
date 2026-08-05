@@ -64,12 +64,12 @@ final class GuestMenuCatalogService
         string $catalogPack = 'all',
     ): array {
         $this->bootstrapPublicCatalog($companyId, $branchId);
-        $catalogPack = PlatformRetailCatalogSeedData::normalizePack($catalogPack);
+        // Fail-safe: always resolve pack from settings (+ auto-detect when still "all").
+        $catalogPack = $this->resolveCatalogPackForCompany($companyId, $catalogPack);
         $this->maybeAutoRepairCorruptedNames($companyId, $catalogPack);
 
         $seedCategoryFilter = $categoryId !== null && $categoryId < 0;
         $adapterCategoryId = $seedCategoryFilter ? null : $categoryId;
-        $packFilter = $catalogPack !== 'all';
 
         $scope = new PosV2CatalogScope(
             companyId: $companyId,
@@ -80,14 +80,12 @@ final class GuestMenuCatalogService
             rtl: $rtl,
         );
 
-        // Wider fetch when PHP-side filters (synthetic category and/or industry pack) apply.
-        $needsPhpFilter = $seedCategoryFilter || $packFilter;
-        $perPage = $needsPhpFilter ? 200 : 24;
+        // Wider fetch — pack filter + orphan-category prune always run in PHP.
         $request = new CatalogSearchRequest(
             query: '',
             categoryId: $adapterCategoryId,
-            page: $needsPhpFilter ? 1 : max(1, $page),
-            perPage: $perPage,
+            page: 1,
+            perPage: 300,
         );
 
         $response = $this->products->search($scope, $request);
@@ -108,11 +106,78 @@ final class GuestMenuCatalogService
 
         if ($seedCategoryFilter && $categoryId !== null) {
             $catalog = $this->filterProductsBySyntheticCategory($catalog, $categoryId, max(1, $page));
-        } elseif ($packFilter) {
+        } else {
             $catalog = $this->paginateCatalogProducts($catalog, max(1, $page), 24);
         }
 
         return $catalog;
+    }
+
+    /**
+     * Resolve industry pack for public menu:
+     * 1) saved settings.catalog_pack
+     * 2) caller hint (if not all)
+     * 3) auto-detect from RC-/GM- inventory SKUs and persist when clear
+     */
+    public function resolveCatalogPackForCompany(int $companyId, string $hint = 'all'): string
+    {
+        $hint = PlatformRetailCatalogSeedData::normalizePack($hint);
+        $settings = new GuestMenuSettingsService();
+        $saved = 'all';
+        try {
+            $saved = $settings->getCatalogPack($companyId);
+        } catch (\Throwable) {
+            $saved = 'all';
+        }
+
+        if ($saved !== 'all') {
+            return $saved;
+        }
+        if ($hint !== 'all') {
+            try {
+                $settings->setCatalogPack($companyId, $hint);
+            } catch (\Throwable) {
+                // non-fatal
+            }
+
+            return $hint;
+        }
+
+        $detected = $this->detectPackFromInventory($companyId);
+        if ($detected !== null && $detected !== 'all') {
+            try {
+                $settings->setCatalogPack($companyId, $detected);
+            } catch (\Throwable) {
+                // non-fatal — filter still applies for this request
+            }
+
+            return $detected;
+        }
+
+        return 'all';
+    }
+
+    private function detectPackFromInventory(int $companyId): ?string
+    {
+        if ($companyId < 1) {
+            return null;
+        }
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT sku FROM rateb_inventory
+                 WHERE company_id = :cid AND (sku LIKE \'RC-%\' OR sku LIKE \'GM-%\')
+                 LIMIT 500'
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $skus = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $skus[] = (string) ($row['sku'] ?? '');
+            }
+
+            return PlatformRetailCatalogSeedData::detectPackFromSkus($skus);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -196,7 +261,9 @@ final class GuestMenuCatalogService
     }
 
     /**
-     * Keep only products/categories that belong to the saved industry pack.
+     * Keep only products/categories that belong to the industry pack.
+     * SKU membership is authoritative for RC-/GM-*; categories are rebuilt from
+     * visible products only (orphan PosV2 category chips are dropped).
      *
      * @param array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>} $catalog
      * @return array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>}
@@ -204,80 +271,83 @@ final class GuestMenuCatalogService
     private function applyCatalogPackFilter(int $companyId, array $catalog, string $catalogPack, bool $rtl): array
     {
         $catalogPack = PlatformRetailCatalogSeedData::normalizePack($catalogPack);
-        if ($catalogPack === 'all') {
-            return $catalog;
-        }
-
-        $packSlugs = PlatformRetailCatalogSeedData::packCategorySlugs($catalogPack) ?? [];
-        $packCodes = PlatformRetailCatalogSeedData::packCategoryCodes($catalogPack) ?? [];
-        $slugAllowed = array_fill_keys($packSlugs, true);
-        $codeAllowed = array_fill_keys($packCodes, true);
+        $packSlugs = PlatformRetailCatalogSeedData::packCategorySlugs($catalogPack);
+        $packCodes = PlatformRetailCatalogSeedData::packCategoryCodes($catalogPack);
+        $slugAllowed = $packSlugs === null ? null : array_fill_keys($packSlugs, true);
+        $codeAllowed = $packCodes === null ? null : array_fill_keys($packCodes, true);
+        $allowedSkuSet = PlatformRetailCatalogSeedData::allowedSkuSetForPack($catalogPack);
         $codeByCategoryId = $this->companyCategoryCodesById($companyId);
-
-        $packNameAr = [];
-        $packNameEn = [];
-        foreach (PlatformRetailCatalogSeedData::categoryMetaBySlug() as $slug => $meta) {
-            if (!isset($slugAllowed[$slug])) {
-                continue;
-            }
-            $packNameAr[mb_strtolower(trim((string) ($meta['name_ar'] ?? '')), 'UTF-8')] = true;
-            $packNameEn[mb_strtolower(trim((string) ($meta['name_en'] ?? '')), 'UTF-8')] = true;
-        }
+        $skuMap = PlatformRetailCatalogSeedData::authoritativeSkuMap();
 
         $filteredProducts = [];
         $usedSlugs = [];
-        $usedCategoryIds = [];
         foreach ($catalog['products'] as $product) {
-            if (!$this->productBelongsToPack(
+            if ($catalogPack !== 'all' && !$this->productBelongsToPack(
                 $product,
                 $catalogPack,
-                $slugAllowed,
-                $codeAllowed,
-                $codeByCategoryId
+                $slugAllowed ?? [],
+                $codeAllowed ?? [],
+                $codeByCategoryId,
+                $allowedSkuSet
             )) {
                 continue;
             }
-            $filteredProducts[] = $product;
+
+            // Annotate seed slug when missing so chips can be built from products.
+            $sku = trim((string) ($product['sku'] ?? ''));
             $slug = (string) ($product['category_slug'] ?? '');
-            if ($slug !== '' && isset($slugAllowed[$slug])) {
+            if ($slug === '' && $sku !== '' && isset($skuMap[$sku])) {
+                $slug = (string) ($skuMap[$sku]['category_slug'] ?? '');
+                $product['category_slug'] = $slug;
+                if ($rtl) {
+                    $product['category_name'] = (string) ($skuMap[$sku]['category_name_ar'] ?? '');
+                } else {
+                    $product['category_name'] = (string) ($skuMap[$sku]['category_name_en'] ?? '');
+                }
+            } elseif ($slug === '' && str_starts_with($sku, 'GM-')) {
+                $slug = 'retail-restaurants';
+                $product['category_slug'] = $slug;
+            }
+
+            if ($slug !== '' && ($slugAllowed === null || isset($slugAllowed[$slug]))) {
                 $usedSlugs[$slug] = true;
             }
-            $cid = (int) ($product['category_id'] ?? 0);
-            if ($cid > 0) {
-                $usedCategoryIds[$cid] = true;
-            }
+
+            $filteredProducts[] = $product;
         }
 
+        // Categories: ONLY those with ≥1 visible product (never orphan PosV2 cats).
         $filteredCategories = [];
-        foreach ($catalog['categories'] as $cat) {
-            $slug = (string) ($cat['slug'] ?? '');
-            $code = strtoupper(trim((string) ($cat['code'] ?? '')));
-            $name = mb_strtolower(trim((string) ($cat['name'] ?? '')), 'UTF-8');
-            $id = (int) ($cat['id'] ?? 0);
-            $ok = false;
-            if ($slug !== '' && isset($slugAllowed[$slug])) {
-                $ok = true;
-            } elseif ($code !== '' && isset($codeAllowed[$code])) {
-                $ok = true;
-            } elseif ($id > 0 && isset($codeByCategoryId[$id]) && isset($codeAllowed[$codeByCategoryId[$id]])) {
-                $ok = true;
-            } elseif ($name !== '' && (isset($packNameAr[$name]) || isset($packNameEn[$name]))) {
-                $ok = true;
-            } elseif ($id < 0 && $slug !== '' && isset($slugAllowed[$slug])) {
-                $ok = true;
-            } elseif ($id > 0 && isset($usedCategoryIds[$id])) {
-                $ok = true;
-            }
-            if ($ok) {
-                $filteredCategories[] = $cat;
-            }
-        }
-
-        // Ensure pack chips exist when DB categories were stripped but products remain.
-        if ($filteredCategories === [] && $usedSlugs !== []) {
+        if ($usedSlugs !== []) {
             $filteredCategories = $this->syntheticCategoriesFromSeed(array_keys($usedSlugs), $rtl);
-        } elseif ($filteredCategories === [] && $packSlugs !== []) {
+            $slugToId = [];
+            foreach ($filteredCategories as $cat) {
+                $slugToId[(string) ($cat['slug'] ?? '')] = (int) ($cat['id'] ?? 0);
+            }
+            foreach ($filteredProducts as $i => $product) {
+                $slug = (string) ($product['category_slug'] ?? '');
+                if ($slug !== '' && isset($slugToId[$slug])) {
+                    $filteredProducts[$i]['category_id'] = $slugToId[$slug];
+                }
+            }
+        } elseif ($catalogPack !== 'all' && is_array($packSlugs) && $packSlugs !== []) {
+            // Pack set but no products yet — show pack chips (empty grid).
             $filteredCategories = $this->syntheticCategoriesFromSeed($packSlugs, $rtl);
+        } else {
+            // pack=all, no seed slugs on products — keep DB cats that match product category_ids.
+            $usedCategoryIds = [];
+            foreach ($filteredProducts as $product) {
+                $cid = (int) ($product['category_id'] ?? 0);
+                if ($cid > 0) {
+                    $usedCategoryIds[$cid] = true;
+                }
+            }
+            foreach ($catalog['categories'] as $cat) {
+                $id = (int) ($cat['id'] ?? 0);
+                if ($id > 0 && isset($usedCategoryIds[$id])) {
+                    $filteredCategories[] = $cat;
+                }
+            }
         }
 
         $catalog['products'] = $filteredProducts;
@@ -291,6 +361,7 @@ final class GuestMenuCatalogService
      * @param array<string, true> $slugAllowed
      * @param array<string, true> $codeAllowed
      * @param array<int, string> $codeByCategoryId
+     * @param array<string, true>|null $allowedSkuSet
      */
     private function productBelongsToPack(
         array $product,
@@ -298,12 +369,19 @@ final class GuestMenuCatalogService
         array $slugAllowed,
         array $codeAllowed,
         array $codeByCategoryId,
+        ?array $allowedSkuSet = null,
     ): bool {
         $sku = trim((string) ($product['sku'] ?? ''));
         if ($sku !== '' && (str_starts_with($sku, 'RC-') || str_starts_with($sku, 'GM-'))) {
+            // Strict SKU set first (reliable even when category_id is wrong).
+            if (is_array($allowedSkuSet)) {
+                return isset($allowedSkuSet[$sku]);
+            }
+
             return PlatformRetailCatalogSeedData::skuBelongsToPack($sku, $catalogPack);
         }
 
+        // Non-RC/GM custom products: keep only when category matches pack.
         $slug = (string) ($product['category_slug'] ?? '');
         if ($slug !== '' && isset($slugAllowed[$slug])) {
             return true;
@@ -313,7 +391,6 @@ final class GuestMenuCatalogService
             return true;
         }
 
-        // Manual inventory outside pack categories is hidden when a pack is selected.
         return false;
     }
 
