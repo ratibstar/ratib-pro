@@ -46,12 +46,16 @@ final class GuestMenuPublicController extends Controller
             $title = (string) ($settings['company_name'] ?? 'Menu');
         }
 
+        $catalogPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($settings['catalog_pack'] ?? 'all')
+        );
         $catalog = (new GuestMenuCatalogService())->browse(
             (int) $settings['company_id'],
             isset($settings['branch_id']) ? (int) $settings['branch_id'] : null,
             null,
             1,
             $rtl,
+            $catalogPack,
         );
 
         GuestMenuView::render('public/menu', [
@@ -79,6 +83,9 @@ final class GuestMenuPublicController extends Controller
             ? (int) $_GET['category_id']
             : null;
         $page = max(1, (int) ($_GET['page'] ?? 1));
+        $catalogPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($settings['catalog_pack'] ?? 'all')
+        );
 
         $catalog = (new GuestMenuCatalogService())->browse(
             (int) $settings['company_id'],
@@ -86,6 +93,7 @@ final class GuestMenuPublicController extends Controller
             $categoryId,
             $page,
             $rtl,
+            $catalogPack,
         );
 
         Response::json([

@@ -33,6 +33,54 @@ final class GuestMenuPlatformImportService
     }
 
     /**
+     * Delete RC- / GM- rows that do not belong to the given industry pack.
+     * Leaves manual (non-seed) inventory untouched.
+     */
+    public function deleteOutsidePackForCompany(int $companyId, string $pack): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        $pack = PlatformRetailCatalogSeedData::normalizePack($pack);
+        if ($pack === 'all') {
+            return 0;
+        }
+
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            'SELECT id, sku FROM rateb_inventory
+             WHERE company_id = :cid
+               AND (sku LIKE \'RC-%\' OR sku LIKE \'GM-%\')'
+        );
+        $stmt->execute(['cid' => $companyId]);
+        $ids = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $sku = trim((string) ($row['sku'] ?? ''));
+            if ($sku === '' || PlatformRetailCatalogSeedData::skuBelongsToPack($sku, $pack)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        if ($ids === []) {
+            return 0;
+        }
+        $deleted = 0;
+        foreach (array_chunk($ids, 100) as $chunk) {
+            $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+            $del = $pdo->prepare(
+                'DELETE FROM rateb_inventory WHERE company_id = ? AND id IN (' . $placeholders . ')'
+            );
+            $del->execute(array_merge([$companyId], $chunk));
+            $deleted += (int) $del->rowCount();
+        }
+
+        return $deleted;
+    }
+
+    /**
      * @return array{ok:bool, imported:int, skipped:int, updated:int, message?:string}
      */
     public function importToCompany(int $companyId, int $limit = 50, string $pack = 'all'): array

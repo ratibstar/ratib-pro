@@ -54,7 +54,11 @@ final class GuestMenuAdminController extends Controller
         if ($menuBranchId !== null && $menuBranchId < 1) {
             $menuBranchId = null;
         }
-        $catalogStats = (new GuestMenuCatalogService())->statsForCompany($companyId, $menuBranchId);
+        $catalogPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($settings['catalog_pack'] ?? 'all')
+        );
+        $settings['catalog_pack'] = $catalogPack;
+        $catalogStats = (new GuestMenuCatalogService())->statsForCompany($companyId, $menuBranchId, $catalogPack);
         $inventoryUrl = rateb_app_url('inventory');
         GuestMenuView::render('admin/settings', [
             'title' => __('guest_menu_settings'),
@@ -70,6 +74,7 @@ final class GuestMenuAdminController extends Controller
             'platformCatalogEnabled' => function_exists('rateb_platform_catalog_nav_enabled')
                 && rateb_platform_catalog_nav_enabled(),
             'catalogPacks' => \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::industryPacks(),
+            'selectedCatalogPack' => $catalogPack,
             'branches' => $this->branchesForCompany($companyId),
             'csrf' => Csrf::token(),
         ]);
@@ -108,7 +113,10 @@ final class GuestMenuAdminController extends Controller
         }
 
         $companyId = $this->companyId();
-        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
+        $pack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($_POST['catalog_pack'] ?? 'all')
+        );
+        (new GuestMenuSettingsService())->setCatalogPack($companyId, $pack);
         $replace = !empty($_POST['replace_imported']);
         if ($replace) {
             $deleted = (new GuestMenuPlatformImportService())->deleteImportedForCompany($companyId);
@@ -157,7 +165,10 @@ final class GuestMenuAdminController extends Controller
             return;
         }
         $companyId = $this->companyId();
-        $pack = trim((string) ($_POST['catalog_pack'] ?? 'all'));
+        $pack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($_POST['catalog_pack'] ?? (new GuestMenuSettingsService())->getCatalogPack($companyId))
+        );
+        (new GuestMenuSettingsService())->setCatalogPack($companyId, $pack);
         $result = (new GuestMenuMenuRepairService())->repairCompany($companyId, $pack);
         if (!$result['ok']) {
             SessionManager::flash(
@@ -181,6 +192,32 @@ final class GuestMenuAdminController extends Controller
         }
         $deleted = (new GuestMenuPlatformImportService())->deleteImportedForCompany($this->companyId());
         SessionManager::flash('success', __('guest_menu_delete_imported_done', [
+            'count' => (string) $deleted,
+        ]));
+        $this->redirectGuestMenu();
+    }
+
+    /** Delete RC- / GM- inventory SKUs outside the saved (or POSTed) industry pack. */
+    public function cleanupOutsidePack(): void
+    {
+        $this->guardManage();
+        if (!$this->requireCsrfOrStay()) {
+            return;
+        }
+        $companyId = $this->companyId();
+        $settingsService = new GuestMenuSettingsService();
+        $pack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($_POST['catalog_pack'] ?? $settingsService->getCatalogPack($companyId))
+        );
+        $settingsService->setCatalogPack($companyId, $pack);
+        if ($pack === 'all') {
+            SessionManager::flash('error', __('guest_menu_cleanup_outside_need_pack'));
+            $this->redirectGuestMenu();
+
+            return;
+        }
+        $deleted = (new GuestMenuPlatformImportService())->deleteOutsidePackForCompany($companyId, $pack);
+        SessionManager::flash('success', __('guest_menu_cleanup_outside_done', [
             'count' => (string) $deleted,
         ]));
         $this->redirectGuestMenu();
@@ -331,16 +368,29 @@ final class GuestMenuAdminController extends Controller
         $settingsService = new GuestMenuSettingsService();
 
         try {
+            $newPack = \Rateb\App\GuestMenu\Services\PlatformRetailCatalogSeedData::normalizePack(
+                (string) $this->input('catalog_pack', 'all')
+            );
             $settingsService->save($companyId, [
                 'is_enabled' => $this->input('is_enabled'),
                 'public_slug' => $this->input('public_slug'),
                 'mode' => $this->input('mode', 'browse'),
                 'branch_id' => $this->input('branch_id'),
+                'catalog_pack' => $newPack,
                 'title_ar' => $this->input('title_ar'),
                 'title_en' => $this->input('title_en'),
                 'welcome_message' => $this->input('welcome_message'),
             ]);
-            SessionManager::flash('success', __('guest_menu_saved'));
+            // Optional inventory purge — public menu already filters by pack on save.
+            $cleaned = 0;
+            if ($newPack !== 'all' && !empty($_POST['cleanup_outside_pack'])) {
+                $cleaned = (new GuestMenuPlatformImportService())->deleteOutsidePackForCompany($companyId, $newPack);
+            }
+            $msg = __('guest_menu_saved');
+            if ($cleaned > 0) {
+                $msg .= ' — ' . __('guest_menu_cleanup_outside_done', ['count' => (string) $cleaned]);
+            }
+            SessionManager::flash('success', $msg);
         } catch (\InvalidArgumentException $e) {
             $msg = $e->getMessage() === 'slug_taken'
                 ? __('guest_menu_public_slug') . ' — taken'

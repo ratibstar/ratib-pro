@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS rateb_guest_menu_settings (
     is_enabled TINYINT(1) NOT NULL DEFAULT 0,
     public_slug VARCHAR(64) NOT NULL,
     mode ENUM('browse', 'order') NOT NULL DEFAULT 'browse',
+    catalog_pack VARCHAR(32) NOT NULL DEFAULT 'all',
     title_ar VARCHAR(255) NULL,
     title_en VARCHAR(255) NULL,
     welcome_message TEXT NULL,

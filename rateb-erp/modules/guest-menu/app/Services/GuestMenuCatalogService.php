@@ -42,9 +42,9 @@ final class GuestMenuCatalogService
     }
 
     /** @return array{product_count:int, category_count:int} */
-    public function statsForCompany(int $companyId, ?int $branchId): array
+    public function statsForCompany(int $companyId, ?int $branchId, string $catalogPack = 'all'): array
     {
-        $catalog = $this->browse($companyId, $branchId, null, 1, true);
+        $catalog = $this->browse($companyId, $branchId, null, 1, true, $catalogPack);
 
         return [
             'product_count' => (int) ($catalog['pagination']['total'] ?? 0),
@@ -55,13 +55,21 @@ final class GuestMenuCatalogService
     /**
      * @return array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>}
      */
-    public function browse(int $companyId, ?int $branchId, ?int $categoryId, int $page, bool $rtl): array
-    {
+    public function browse(
+        int $companyId,
+        ?int $branchId,
+        ?int $categoryId,
+        int $page,
+        bool $rtl,
+        string $catalogPack = 'all',
+    ): array {
         $this->bootstrapPublicCatalog($companyId, $branchId);
-        $this->maybeAutoRepairCorruptedNames($companyId);
+        $catalogPack = PlatformRetailCatalogSeedData::normalizePack($catalogPack);
+        $this->maybeAutoRepairCorruptedNames($companyId, $catalogPack);
 
         $seedCategoryFilter = $categoryId !== null && $categoryId < 0;
         $adapterCategoryId = $seedCategoryFilter ? null : $categoryId;
+        $packFilter = $catalogPack !== 'all';
 
         $scope = new PosV2CatalogScope(
             companyId: $companyId,
@@ -72,12 +80,13 @@ final class GuestMenuCatalogService
             rtl: $rtl,
         );
 
-        // When filtering by synthetic seed category, fetch a wider page then filter in PHP.
-        $perPage = $seedCategoryFilter ? 120 : 24;
+        // Wider fetch when PHP-side filters (synthetic category and/or industry pack) apply.
+        $needsPhpFilter = $seedCategoryFilter || $packFilter;
+        $perPage = $needsPhpFilter ? 200 : 24;
         $request = new CatalogSearchRequest(
             query: '',
             categoryId: $adapterCategoryId,
-            page: $seedCategoryFilter ? 1 : max(1, $page),
+            page: $needsPhpFilter ? 1 : max(1, $page),
             perPage: $perPage,
         );
 
@@ -94,10 +103,13 @@ final class GuestMenuCatalogService
             'pagination' => $response->pagination->toArray(),
         ];
 
-        $catalog = $this->applySeedDisplayFallback($companyId, $catalog, $rtl);
+        $catalog = $this->applySeedDisplayFallback($companyId, $catalog, $rtl, $catalogPack);
+        $catalog = $this->applyCatalogPackFilter($companyId, $catalog, $catalogPack, $rtl);
 
         if ($seedCategoryFilter && $categoryId !== null) {
             $catalog = $this->filterProductsBySyntheticCategory($catalog, $categoryId, max(1, $page));
+        } elseif ($packFilter) {
+            $catalog = $this->paginateCatalogProducts($catalog, max(1, $page), 24);
         }
 
         return $catalog;
@@ -106,16 +118,19 @@ final class GuestMenuCatalogService
     /**
      * If DB still holds ?? for RC-/GM- names, overlay UTF-8 seed names and
      * rebuild category chips from seed slugs when DB only has GEN/عام.
+     * Synthetic chips are limited to the company industry pack (never all sectors).
      *
      * @param array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>} $catalog
      * @return array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>}
      */
-    private function applySeedDisplayFallback(int $companyId, array $catalog, bool $rtl): array
+    private function applySeedDisplayFallback(int $companyId, array $catalog, bool $rtl, string $catalogPack = 'all'): array
     {
         $nameBySku = PlatformRetailCatalogSeedData::nameBySku();
         $skuMap = PlatformRetailCatalogSeedData::authoritativeSkuMap();
         $products = is_array($catalog['products'] ?? null) ? $catalog['products'] : [];
         $categories = is_array($catalog['categories'] ?? null) ? $catalog['categories'] : [];
+        $packSlugs = PlatformRetailCatalogSeedData::packCategorySlugs($catalogPack);
+        $packAllowed = $packSlugs === null ? null : array_fill_keys($packSlugs, true);
 
         $seedCatCodes = [];
         foreach ($products as $i => $product) {
@@ -129,10 +144,17 @@ final class GuestMenuCatalogService
             }
             $seed = $skuMap[$sku] ?? null;
             if ($seed === null) {
+                if (str_starts_with($sku, 'GM-') && ($packAllowed === null || isset($packAllowed['retail-restaurants']))) {
+                    $seedCatCodes['retail-restaurants'] = true;
+                    $products[$i]['category_slug'] = 'retail-restaurants';
+                }
                 continue;
             }
             $slug = (string) ($seed['category_slug'] ?? '');
             if ($slug === '') {
+                continue;
+            }
+            if ($packAllowed !== null && !isset($packAllowed[$slug])) {
                 continue;
             }
             $seedCatCodes[$slug] = true;
@@ -143,8 +165,14 @@ final class GuestMenuCatalogService
         }
 
         if ($this->categoriesNeedSeedFallback($categories)) {
-            foreach ($this->companySeedCategorySlugs($companyId, $skuMap) as $slug) {
+            foreach ($this->companySeedCategorySlugs($companyId, $skuMap, $catalogPack) as $slug) {
                 $seedCatCodes[$slug] = true;
+            }
+            // Prefer pack-defined chips when inventory is empty/mixed but pack is set.
+            if ($seedCatCodes === [] && $packSlugs !== null) {
+                foreach ($packSlugs as $slug) {
+                    $seedCatCodes[$slug] = true;
+                }
             }
             if ($seedCatCodes !== []) {
                 $categories = $this->syntheticCategoriesFromSeed(array_keys($seedCatCodes), $rtl);
@@ -168,14 +196,186 @@ final class GuestMenuCatalogService
     }
 
     /**
-     * @param array<string, array{category_slug?:string}> $skuMap
-     * @return list<string>
+     * Keep only products/categories that belong to the saved industry pack.
+     *
+     * @param array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>} $catalog
+     * @return array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>}
      */
-    private function companySeedCategorySlugs(int $companyId, array $skuMap): array
+    private function applyCatalogPackFilter(int $companyId, array $catalog, string $catalogPack, bool $rtl): array
+    {
+        $catalogPack = PlatformRetailCatalogSeedData::normalizePack($catalogPack);
+        if ($catalogPack === 'all') {
+            return $catalog;
+        }
+
+        $packSlugs = PlatformRetailCatalogSeedData::packCategorySlugs($catalogPack) ?? [];
+        $packCodes = PlatformRetailCatalogSeedData::packCategoryCodes($catalogPack) ?? [];
+        $slugAllowed = array_fill_keys($packSlugs, true);
+        $codeAllowed = array_fill_keys($packCodes, true);
+        $codeByCategoryId = $this->companyCategoryCodesById($companyId);
+
+        $packNameAr = [];
+        $packNameEn = [];
+        foreach (PlatformRetailCatalogSeedData::categoryMetaBySlug() as $slug => $meta) {
+            if (!isset($slugAllowed[$slug])) {
+                continue;
+            }
+            $packNameAr[mb_strtolower(trim((string) ($meta['name_ar'] ?? '')), 'UTF-8')] = true;
+            $packNameEn[mb_strtolower(trim((string) ($meta['name_en'] ?? '')), 'UTF-8')] = true;
+        }
+
+        $filteredProducts = [];
+        $usedSlugs = [];
+        $usedCategoryIds = [];
+        foreach ($catalog['products'] as $product) {
+            if (!$this->productBelongsToPack(
+                $product,
+                $catalogPack,
+                $slugAllowed,
+                $codeAllowed,
+                $codeByCategoryId
+            )) {
+                continue;
+            }
+            $filteredProducts[] = $product;
+            $slug = (string) ($product['category_slug'] ?? '');
+            if ($slug !== '' && isset($slugAllowed[$slug])) {
+                $usedSlugs[$slug] = true;
+            }
+            $cid = (int) ($product['category_id'] ?? 0);
+            if ($cid > 0) {
+                $usedCategoryIds[$cid] = true;
+            }
+        }
+
+        $filteredCategories = [];
+        foreach ($catalog['categories'] as $cat) {
+            $slug = (string) ($cat['slug'] ?? '');
+            $code = strtoupper(trim((string) ($cat['code'] ?? '')));
+            $name = mb_strtolower(trim((string) ($cat['name'] ?? '')), 'UTF-8');
+            $id = (int) ($cat['id'] ?? 0);
+            $ok = false;
+            if ($slug !== '' && isset($slugAllowed[$slug])) {
+                $ok = true;
+            } elseif ($code !== '' && isset($codeAllowed[$code])) {
+                $ok = true;
+            } elseif ($id > 0 && isset($codeByCategoryId[$id]) && isset($codeAllowed[$codeByCategoryId[$id]])) {
+                $ok = true;
+            } elseif ($name !== '' && (isset($packNameAr[$name]) || isset($packNameEn[$name]))) {
+                $ok = true;
+            } elseif ($id < 0 && $slug !== '' && isset($slugAllowed[$slug])) {
+                $ok = true;
+            } elseif ($id > 0 && isset($usedCategoryIds[$id])) {
+                $ok = true;
+            }
+            if ($ok) {
+                $filteredCategories[] = $cat;
+            }
+        }
+
+        // Ensure pack chips exist when DB categories were stripped but products remain.
+        if ($filteredCategories === [] && $usedSlugs !== []) {
+            $filteredCategories = $this->syntheticCategoriesFromSeed(array_keys($usedSlugs), $rtl);
+        } elseif ($filteredCategories === [] && $packSlugs !== []) {
+            $filteredCategories = $this->syntheticCategoriesFromSeed($packSlugs, $rtl);
+        }
+
+        $catalog['products'] = $filteredProducts;
+        $catalog['categories'] = $filteredCategories;
+
+        return $catalog;
+    }
+
+    /**
+     * @param array<string, mixed> $product
+     * @param array<string, true> $slugAllowed
+     * @param array<string, true> $codeAllowed
+     * @param array<int, string> $codeByCategoryId
+     */
+    private function productBelongsToPack(
+        array $product,
+        string $catalogPack,
+        array $slugAllowed,
+        array $codeAllowed,
+        array $codeByCategoryId,
+    ): bool {
+        $sku = trim((string) ($product['sku'] ?? ''));
+        if ($sku !== '' && (str_starts_with($sku, 'RC-') || str_starts_with($sku, 'GM-'))) {
+            return PlatformRetailCatalogSeedData::skuBelongsToPack($sku, $catalogPack);
+        }
+
+        $slug = (string) ($product['category_slug'] ?? '');
+        if ($slug !== '' && isset($slugAllowed[$slug])) {
+            return true;
+        }
+        $cid = (int) ($product['category_id'] ?? 0);
+        if ($cid > 0 && isset($codeByCategoryId[$cid]) && isset($codeAllowed[$codeByCategoryId[$cid]])) {
+            return true;
+        }
+
+        // Manual inventory outside pack categories is hidden when a pack is selected.
+        return false;
+    }
+
+    /**
+     * @return array<int, string> category_id => CODE
+     */
+    private function companyCategoryCodesById(int $companyId): array
     {
         if ($companyId < 1) {
             return [];
         }
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT id, code FROM rateb_product_categories WHERE company_id = :cid'
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $map = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $id = (int) ($row['id'] ?? 0);
+                $code = strtoupper(trim((string) ($row['code'] ?? '')));
+                if ($id > 0 && $code !== '') {
+                    $map[$id] = $code;
+                }
+            }
+
+            return $map;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * @param array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>} $catalog
+     * @return array{categories: list<array<string, mixed>>, products: list<array<string, mixed>>, pagination: array<string, mixed>}
+     */
+    private function paginateCatalogProducts(array $catalog, int $page, int $perPage): array
+    {
+        $products = is_array($catalog['products'] ?? null) ? $catalog['products'] : [];
+        $total = count($products);
+        $offset = max(0, ($page - 1) * $perPage);
+        $catalog['products'] = array_slice($products, $offset, $perPage);
+        $catalog['pagination'] = [
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => max(1, (int) ceil($total / max(1, $perPage))),
+        ];
+
+        return $catalog;
+    }
+
+    /**
+     * @param array<string, array{category_slug?:string}> $skuMap
+     * @return list<string>
+     */
+    private function companySeedCategorySlugs(int $companyId, array $skuMap, string $catalogPack = 'all'): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $packSlugs = PlatformRetailCatalogSeedData::packCategorySlugs($catalogPack);
+        $packAllowed = $packSlugs === null ? null : array_fill_keys($packSlugs, true);
         try {
             $stmt = Database::connection()->prepare(
                 'SELECT sku FROM rateb_inventory
@@ -186,10 +386,20 @@ final class GuestMenuCatalogService
             $slugs = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $sku = trim((string) ($row['sku'] ?? ''));
-                $slug = (string) ($skuMap[$sku]['category_slug'] ?? '');
-                if ($slug !== '') {
-                    $slugs[$slug] = true;
+                if ($sku !== '' && !PlatformRetailCatalogSeedData::skuBelongsToPack($sku, $catalogPack)) {
+                    continue;
                 }
+                $slug = (string) ($skuMap[$sku]['category_slug'] ?? '');
+                if ($slug === '' && str_starts_with($sku, 'GM-')) {
+                    $slug = 'retail-restaurants';
+                }
+                if ($slug === '') {
+                    continue;
+                }
+                if ($packAllowed !== null && !isset($packAllowed[$slug])) {
+                    continue;
+                }
+                $slugs[$slug] = true;
             }
 
             return array_keys($slugs);
@@ -324,7 +534,7 @@ final class GuestMenuCatalogService
      * Auto-run write repair once when most RC-/GM- names are mojibake.
      * Guarded by a 1-hour file flag so public traffic does not hammer the DB.
      */
-    private function maybeAutoRepairCorruptedNames(int $companyId): void
+    private function maybeAutoRepairCorruptedNames(int $companyId, string $catalogPack = 'all'): void
     {
         if ($companyId < 1) {
             return;
@@ -339,7 +549,7 @@ final class GuestMenuCatalogService
 
                 return;
             }
-            (new GuestMenuMenuRepairService())->repairCompany($companyId, 'all');
+            (new GuestMenuMenuRepairService())->repairCompany($companyId, $catalogPack);
         } catch (\Throwable) {
             // non-fatal — read-time seed overlay still covers UX
         }

@@ -34,6 +34,7 @@ final class GuestMenuSettingsService
                 is_enabled TINYINT(1) NOT NULL DEFAULT 0,
                 public_slug VARCHAR(64) NOT NULL,
                 mode ENUM(\'browse\', \'order\') NOT NULL DEFAULT \'browse\',
+                catalog_pack VARCHAR(32) NOT NULL DEFAULT \'all\',
                 title_ar VARCHAR(255) NULL,
                 title_en VARCHAR(255) NULL,
                 welcome_message TEXT NULL,
@@ -45,7 +46,49 @@ final class GuestMenuSettingsService
                 CONSTRAINT fk_guest_menu_company FOREIGN KEY (company_id) REFERENCES rateb_companies(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
-        self::$schemaReady = true;
+        $this->ensureCatalogPackColumn();
+        // Only mark ready once the pack column exists (or CREATE already included it).
+        self::$schemaReady = Database::tableHasColumn('rateb_guest_menu_settings', 'catalog_pack');
+    }
+
+    /** Auto-migrate catalog_pack on older deployments. */
+    private function ensureCatalogPackColumn(): void
+    {
+        try {
+            if (Database::tableHasColumn('rateb_guest_menu_settings', 'catalog_pack')) {
+                return;
+            }
+            $this->db->exec(
+                'ALTER TABLE rateb_guest_menu_settings
+                 ADD COLUMN catalog_pack VARCHAR(32) NOT NULL DEFAULT \'all\' AFTER mode'
+            );
+            Database::clearColumnCache();
+        } catch (\Throwable $e) {
+            error_log('GuestMenuSettingsService catalog_pack migrate: ' . $e->getMessage());
+        }
+    }
+
+    /** Saved industry pack for public menu filtering (restaurant, clothing, all, …). */
+    public function getCatalogPack(int $companyId): string
+    {
+        $row = $this->getByCompanyId($companyId);
+        $pack = is_array($row) ? (string) ($row['catalog_pack'] ?? 'all') : 'all';
+
+        return PlatformRetailCatalogSeedData::normalizePack($pack);
+    }
+
+    public function setCatalogPack(int $companyId, string $pack): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $this->ensureForCompany($companyId);
+        $pack = PlatformRetailCatalogSeedData::normalizePack($pack);
+        $stmt = $this->db->prepare(
+            'UPDATE rateb_guest_menu_settings SET catalog_pack = :pack, updated_at = NOW()
+             WHERE company_id = :cid'
+        );
+        $stmt->execute(['pack' => $pack, 'cid' => $companyId]);
     }
 
     /** @return array<string, mixed>|null */
@@ -167,6 +210,7 @@ final class GuestMenuSettingsService
             'is_enabled' => 1,
             'public_slug' => $baseSlug,
             'mode' => 'browse',
+            'catalog_pack' => 'all',
             'title_ar' => $titleAr,
             'title_en' => $titleEn,
             'welcome_message' => $welcome,
@@ -199,11 +243,16 @@ final class GuestMenuSettingsService
             $branchId = null;
         }
 
+        $catalogPack = PlatformRetailCatalogSeedData::normalizePack(
+            (string) ($input['catalog_pack'] ?? $row['catalog_pack'] ?? 'all')
+        );
+
         $stmt = $this->db->prepare(
             'UPDATE rateb_guest_menu_settings SET
                 is_enabled = :enabled,
                 public_slug = :slug,
                 mode = :mode,
+                catalog_pack = :catalog_pack,
                 branch_id = :branch_id,
                 title_ar = :title_ar,
                 title_en = :title_en,
@@ -215,6 +264,7 @@ final class GuestMenuSettingsService
             'enabled' => !empty($input['is_enabled']) ? 1 : 0,
             'slug' => $slug,
             'mode' => $mode,
+            'catalog_pack' => $catalogPack,
             'branch_id' => $branchId,
             'title_ar' => self::nullableString($input['title_ar'] ?? null),
             'title_en' => self::nullableString($input['title_en'] ?? null),

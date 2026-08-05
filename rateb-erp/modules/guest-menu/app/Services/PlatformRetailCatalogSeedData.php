@@ -203,6 +203,95 @@ final class PlatformRetailCatalogSeedData
         ];
     }
 
+    /** Normalize pack key; unknown → all. */
+    public static function normalizePack(string $pack): string
+    {
+        $pack = strtolower(trim($pack));
+        $packs = self::industryPacks();
+
+        return isset($packs[$pack]) ? $pack : 'all';
+    }
+
+    /**
+     * Category slugs for a pack, or null when pack is "all" (no filter).
+     *
+     * @return list<string>|null
+     */
+    public static function packCategorySlugs(string $pack): ?array
+    {
+        $pack = self::normalizePack($pack);
+        $cats = self::industryPacks()[$pack]['cats'] ?? null;
+
+        return is_array($cats) ? array_values($cats) : null;
+    }
+
+    /**
+     * Company category codes derived from pack slugs (import mapping).
+     *
+     * @return list<string>|null
+     */
+    public static function packCategoryCodes(string $pack): ?array
+    {
+        $slugs = self::packCategorySlugs($pack);
+        if ($slugs === null) {
+            return null;
+        }
+        $codes = [];
+        foreach ($slugs as $slug) {
+            $codes[] = self::companyCategoryCodeFromSlug($slug);
+        }
+
+        return array_values(array_unique($codes));
+    }
+
+    /** Same code derivation as GuestMenuPlatformImportService::resolveCompanyCategoryId. */
+    public static function companyCategoryCodeFromSlug(string $slug): string
+    {
+        $code = strtoupper(preg_replace('/[^A-Za-z0-9_-]/', '', str_replace('retail-', '', $slug)) ?? '');
+        $code = substr($code !== '' ? $code : 'GEN', 0, 32);
+
+        return $code;
+    }
+
+    /**
+     * Whether an inventory SKU belongs to the industry pack (public menu filter).
+     * GM-* demo SKUs count as restaurant/cafe (F&B) only.
+     */
+    public static function skuBelongsToPack(string $sku, string $pack): bool
+    {
+        $pack = self::normalizePack($pack);
+        if ($pack === 'all') {
+            return true;
+        }
+        $sku = trim($sku);
+        if ($sku === '') {
+            return false;
+        }
+
+        $allowedSlugs = self::packCategorySlugs($pack);
+        if ($allowedSlugs === null) {
+            return true;
+        }
+        $allowed = array_fill_keys($allowedSlugs, true);
+
+        if (str_starts_with($sku, 'GM-')) {
+            return isset($allowed['retail-restaurants'])
+                || isset($allowed['retail-cafe'])
+                || isset($allowed['retail-beverages'])
+                || isset($allowed['retail-bakery']);
+        }
+
+        $seed = self::authoritativeSkuMap()[$sku] ?? null;
+        if ($seed === null) {
+            // Non-seed SKU — caller may still match via company category code.
+            return false;
+        }
+        $slug = (string) ($seed['category_slug'] ?? '');
+
+        return $slug !== '' && isset($allowed[$slug]);
+    }
+
+
     public function down(): void
     {
         $this->exec(

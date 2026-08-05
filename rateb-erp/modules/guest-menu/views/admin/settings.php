@@ -13,6 +13,7 @@ use Rateb\App\GuestMenu\Support\GuestMenuView;
 /** @var string $platformCatalogUrl */
 /** @var bool $platformCatalogEnabled */
 /** @var array<string, array{label_ar:string, label_en:string, cats:list<string>|null}> $catalogPacks */
+/** @var string $selectedCatalogPack */
 /** @var list<array<string, mixed>> $branches */
 /** @var string $csrf */
 $productCount = (int) ($catalogStats['product_count'] ?? 0);
@@ -27,7 +28,12 @@ $importAction = rateb_app_url('guest-menu/import-catalog');
 $repairAction = rateb_app_url('guest-menu/repair-menu-names');
 $seedAction = rateb_app_url('guest-menu/seed-demo');
 $deleteAction = rateb_app_url('guest-menu/delete-imported-catalog');
+$cleanupAction = rateb_app_url('guest-menu/cleanup-outside-pack');
 $catalogPacks = is_array($catalogPacks ?? null) ? $catalogPacks : [];
+$selectedCatalogPack = (string) ($selectedCatalogPack ?? $settings['catalog_pack'] ?? 'all');
+if ($selectedCatalogPack === '' || !isset($catalogPacks[$selectedCatalogPack])) {
+    $selectedCatalogPack = 'all';
+}
 $isRtl = function_exists('rateb_locale') && rateb_locale() === 'ar';
 $gmCid = (int) $companyId;
 $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
@@ -61,7 +67,7 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
             <form method="post" action="<?php echo GuestMenuView::escape($repairAction); ?>" class="border border-danger rounded p-3 mb-3 bg-white" data-gm-csrf-form data-rateb-full-nav="1" id="gm-repair-form">
                 <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
                 <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
-                <input type="hidden" name="catalog_pack" value="all" id="gm-repair-pack">
+                <input type="hidden" name="catalog_pack" value="<?php echo GuestMenuView::escape($selectedCatalogPack); ?>" id="gm-repair-pack">
                 <p class="fw-bold text-danger mb-2"><?php echo __('guest_menu_menu_repair_title'); ?></p>
                 <p class="small text-muted mb-3"><?php echo __('guest_menu_menu_repair_hint'); ?></p>
                 <button type="submit" class="btn btn-danger btn-lg w-100 w-md-auto">
@@ -103,6 +109,15 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
                         <?php echo __('guest_menu_delete_imported'); ?>
                     </button>
                 </form>
+                <form method="post" action="<?php echo GuestMenuView::escape($cleanupAction); ?>" class="d-inline" data-gm-csrf-form data-rateb-full-nav="1" id="gm-cleanup-form"
+                      onsubmit="return confirm(<?php echo json_encode(__('guest_menu_cleanup_outside_confirm'), JSON_UNESCAPED_UNICODE); ?>);">
+                    <input type="hidden" name="_csrf" value="<?php echo GuestMenuView::escape($csrf); ?>">
+                    <?php if ($gmCid > 0) { ?><input type="hidden" name="company_id" value="<?php echo $gmCid; ?>"><?php } ?>
+                    <input type="hidden" name="catalog_pack" value="<?php echo GuestMenuView::escape($selectedCatalogPack); ?>" id="gm-cleanup-pack">
+                    <button type="submit" class="btn btn-outline-warning btn-sm" title="<?php echo GuestMenuView::escape(__('guest_menu_cleanup_outside_hint')); ?>">
+                        <?php echo __('guest_menu_cleanup_outside'); ?>
+                    </button>
+                </form>
             </div>
 
             <form method="post" action="<?php echo GuestMenuView::escape($importAction); ?>" class="border border-success rounded p-3 bg-light" data-gm-csrf-form data-rateb-full-nav="1" id="gm-import-form">
@@ -117,7 +132,7 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
                                     ? (string) ($packMeta['label_ar'] ?? $packKey)
                                     : (string) ($packMeta['label_en'] ?? $packKey);
                                 ?>
-                            <option value="<?php echo GuestMenuView::escape((string) $packKey); ?>"<?php echo $packKey === 'restaurant' ? ' selected' : ''; ?>>
+                            <option value="<?php echo GuestMenuView::escape((string) $packKey); ?>"<?php echo (string) $packKey === $selectedCatalogPack ? ' selected' : ''; ?>>
                                 <?php echo GuestMenuView::escape($label); ?>
                             </option>
                             <?php } ?>
@@ -137,6 +152,7 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
                         </div>
                     </div>
                 </div>
+                <p class="small text-muted mt-2 mb-0"><?php echo __('guest_menu_replace_full_recommend'); ?></p>
             </form>
             <p class="text-muted small mt-3 mb-0"><?php echo __('guest_menu_mobile_scan_tip'); ?></p>
         </div>
@@ -201,6 +217,27 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label" for="gm-settings-catalog-pack"><?php echo __('guest_menu_catalog_pack'); ?></label>
+                        <select class="form-select" id="gm-settings-catalog-pack" name="catalog_pack">
+                            <?php foreach ($catalogPacks as $packKey => $packMeta) {
+                                $label = $isRtl
+                                    ? (string) ($packMeta['label_ar'] ?? $packKey)
+                                    : (string) ($packMeta['label_en'] ?? $packKey);
+                                ?>
+                            <option value="<?php echo GuestMenuView::escape((string) $packKey); ?>"<?php echo (string) $packKey === $selectedCatalogPack ? ' selected' : ''; ?>>
+                                <?php echo GuestMenuView::escape($label); ?>
+                            </option>
+                            <?php } ?>
+                        </select>
+                        <div class="form-text"><?php echo __('guest_menu_catalog_pack_settings_hint'); ?></div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="cleanup_outside_pack" value="1" id="gm-cleanup-on-save">
+                        <label class="form-check-label" for="gm-cleanup-on-save"><?php echo __('guest_menu_cleanup_outside_on_save'); ?></label>
+                    </div>
+
+                    <div class="mb-3">
                         <?php
                         $currentMode = (string) ($settings['mode'] ?? 'browse');
                         if (!in_array($currentMode, ['browse', 'order'], true)) {
@@ -261,16 +298,34 @@ $platformSeedAction = rateb_app_url('guest-menu/seed-platform-catalog');
             syncGmCsrf();
             // Soft-nav must never intercept these POSTs.
             form.setAttribute('data-rateb-full-nav', '1');
-            // Keep repair pack in sync with selected industry when present.
-            if (form.id === 'gm-repair-form') {
+            // Keep repair/cleanup pack in sync with selected industry when present.
+            if (form.id === 'gm-repair-form' || form.id === 'gm-cleanup-form') {
                 var packSel = document.getElementById('gm-catalog-pack');
-                var packHidden = document.getElementById('gm-repair-pack');
+                var packHidden = form.querySelector('input[name="catalog_pack"]');
                 if (packSel && packHidden) {
                     packHidden.value = packSel.value || 'all';
                 }
             }
         }, true);
     });
+    var packImport = document.getElementById('gm-catalog-pack');
+    var packSettings = document.getElementById('gm-settings-catalog-pack');
+    function syncPackSelects(from) {
+        if (!packImport || !packSettings) return;
+        var val = from.value || 'all';
+        if (packImport !== from) packImport.value = val;
+        if (packSettings !== from) packSettings.value = val;
+        var repairHidden = document.getElementById('gm-repair-pack');
+        var cleanupHidden = document.getElementById('gm-cleanup-pack');
+        if (repairHidden) repairHidden.value = val;
+        if (cleanupHidden) cleanupHidden.value = val;
+    }
+    if (packImport) {
+        packImport.addEventListener('change', function () { syncPackSelects(packImport); });
+    }
+    if (packSettings) {
+        packSettings.addEventListener('change', function () { syncPackSelects(packSettings); });
+    }
     if (window.RatebModuleLifecycle && typeof window.RatebModuleLifecycle.on === 'function') {
         window.RatebModuleLifecycle.on('afterEnter', syncGmCsrf);
     }
