@@ -36,6 +36,9 @@ $opsSection(__('inventory'), [
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }
+if (is_file(RATEB_ROOT . '/modules/logistics/views/partials/sidebar-logistics-nav.php')) {
+    require RATEB_ROOT . '/modules/logistics/views/partials/sidebar-logistics-nav.php';
+}
 $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
     ['supplier-comms', 'supplier_comms', 'fa-comments', 'suppliers'],
