@@ -3112,6 +3112,7 @@ return [
     'token' => 'رمز',
     'path' => 'المسار',
     'bi_platform' => 'ذكاء الأعمال',
+    'logistics_platform' => 'الخدمات اللوجستية',
     'bi_dashboards' => 'لوحات المعلومات',
     'bi_kpis' => 'مؤشرات الأداء',
     'bi_reports' => 'التقارير المحفوظة',

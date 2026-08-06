@@ -23,4 +23,5 @@ return [
     'projects' => 'projects.manage',
     'manufacturing' => 'manufacturing.manage',
     'website' => 'website.view',
+    'logistics' => 'logistics.manage',
 ];

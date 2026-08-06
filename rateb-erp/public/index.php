@@ -140,6 +140,12 @@ try {
         \Rateb\App\GuestMenu\GuestMenuModule::init();
     }
 
+    $logisticsModule = dirname(__FILE__, 2) . '/modules/logistics/LogisticsModule.php';
+    if (is_file($logisticsModule)) {
+        require_once $logisticsModule;
+        \Rateb\App\Logistics\LogisticsModule::init();
+    }
+
     // Soft-load: production must not fatal if offline/ not yet deployed.
     $offlineModule = dirname(__FILE__, 2) . '/offline/OfflineModule.php';
     if (is_file($offlineModule)) {

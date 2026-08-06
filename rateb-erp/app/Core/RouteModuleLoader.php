@@ -190,6 +190,9 @@ final class RouteModuleLoader
             if (str_contains($path, '/guest-menu')) {
                 $want['guest_menu'] = true;
             }
+            if (str_contains($path, '/logistics')) {
+                $want['logistics'] = true;
+            }
 
             return self::orderWant($want);
         }

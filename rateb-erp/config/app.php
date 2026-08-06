@@ -3152,7 +3152,7 @@ if (!function_exists('rateb_app_route')) {
                 'supplier-comms', 'supplier-classifications', 'supplier-kpi',
                 'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',
                 'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
-                'documents', 'profile', 'pos', 'guest-menu',
+                'documents', 'profile', 'pos', 'guest-menu', 'logistics',
             ];
             if (function_exists('rateb_company_access_routes_enabled') && rateb_company_access_routes_enabled()) {
                 $conflictRoots = array_merge($conflictRoots, [
@@ -3531,6 +3531,9 @@ if (!function_exists('rateb_entity_perms')) {
             if (class_exists(\Rateb\App\GuestMenu\GuestMenuModule::class)) {
                 $map = array_merge($map, \Rateb\App\GuestMenu\GuestMenuModule::entityPermissions());
             }
+            if (class_exists(\Rateb\App\Logistics\LogisticsModule::class)) {
+                $map = array_merge($map, \Rateb\App\Logistics\LogisticsModule::entityPermissions());
+            }
         }
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $row = $map[$resource] ?? null;
@@ -3721,6 +3724,12 @@ if (!function_exists('__')) {
             $gmText = \Rateb\App\GuestMenu\GuestMenuModule::translate($key, $replace);
             if ($gmText !== null) {
                 return $gmText;
+            }
+        }
+        if ($text === $key && class_exists(\Rateb\App\Logistics\LogisticsModule::class)) {
+            $logisticsText = \Rateb\App\Logistics\LogisticsModule::translate($key, $replace);
+            if ($logisticsText !== null) {
+                return $logisticsText;
             }
         }
         foreach ($replace as $k => $v) {

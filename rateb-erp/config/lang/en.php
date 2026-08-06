@@ -3113,6 +3113,7 @@ return [
     'token' => 'Token',
     'path' => 'Path',
     'bi_platform' => 'Business Intelligence',
+    'logistics_platform' => 'Logistics',
     'bi_dashboards' => 'Dashboards',
     'bi_kpis' => 'KPIs',
     'bi_reports' => 'Saved reports',

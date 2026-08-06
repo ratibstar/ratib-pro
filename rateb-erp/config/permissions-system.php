@@ -48,6 +48,7 @@ return [
         'quality',
         'bi',
         'website',
+        'logistics',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -79,6 +80,7 @@ return [
         'quality' => 'quality_platform',
         'bi' => 'bi_platform',
         'website' => 'website',
+        'logistics' => 'logistics_platform',
     ],
 
     /**
@@ -255,6 +257,13 @@ return [
             'crm.activities',
             'crm.campaign',
             'crm.admin',
+        ],
+        'logistics.manage' => [
+            'logistics.view',
+            'logistics.dispatch',
+            'logistics.driver',
+            'logistics.expense',
+            'logistics.report',
         ],
         'crm.admin' => [
             'crm.view',
