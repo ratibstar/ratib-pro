@@ -15,6 +15,7 @@
 
         <div class="rateb-portal-quick-actions">
             <a class="rateb-portal-btn" href="<?php echo rateb_url('site/customer/services'); ?>"><?php echo __('online_services') ?: 'Services'; ?></a>
+            <a class="rateb-portal-btn rateb-portal-btn--ghost" href="<?php echo rateb_url('site/customer/logistics'); ?>"><?php echo __('logistics_portal_title') ?: 'Track shipment'; ?></a>
             <a class="rateb-portal-btn rateb-portal-btn--ghost" href="<?php echo rateb_url('site/customer/requests'); ?>"><?php echo __('new_request') ?: 'Requests'; ?></a>
             <a class="rateb-portal-btn rateb-portal-btn--ghost" href="<?php echo rateb_url('site/customer/contracts'); ?>"><?php echo __('contracts') ?: 'Contracts'; ?></a>
             <a class="rateb-portal-btn rateb-portal-btn--ghost" href="<?php echo rateb_url('site/customer/pipeline'); ?>"><?php echo __('pipeline') ?: 'Pipeline'; ?></a>

@@ -99,6 +99,10 @@ $router->post('/site/customer/services/pay', [WebsitePortalController::class, 's
 $router->get('/site/customer/services/payment/callback', [WebsitePortalController::class, 'servicePaymentCallback'], $cmw);
 $router->post('/site/customer/services/payment/callback', [WebsitePortalController::class, 'servicePaymentCallback'], $cmw);
 
+if (is_file(RATEB_ROOT . '/modules/logistics/routes/logistics-portal.php')) {
+    require RATEB_ROOT . '/modules/logistics/routes/logistics-portal.php';
+}
+
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);
 $router->get('/site/robots.txt', [MarketingController::class, 'robots']);

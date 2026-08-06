@@ -53,6 +53,20 @@ final class LogisticsFormLookupService
                 'created', 'picked', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'failed',
             ]);
         }
+        if (isset($needed['logistics_route_statuses'])) {
+            $lookups['logistics_route_statuses'] = $this->statusOptions([
+                'active', 'inactive',
+            ]);
+        }
+        if (isset($needed['logistics_expense_types'])) {
+            $lookups['logistics_expense_types'] = [
+                ['value' => 'fuel', 'label' => __('logistics_expense_type_fuel')],
+                ['value' => 'maintenance', 'label' => __('logistics_expense_type_maintenance')],
+                ['value' => 'driver_payment', 'label' => __('logistics_expense_type_driver_payment')],
+                ['value' => 'transport_cost', 'label' => __('logistics_expense_type_transport_cost')],
+                ['value' => 'other', 'label' => __('logistics_expense_type_other')],
+            ];
+        }
         if (isset($needed['logistics_vehicles']) && $companyId > 0) {
             $lookups['logistics_vehicles'] = $this->fleet->options($companyId);
         }

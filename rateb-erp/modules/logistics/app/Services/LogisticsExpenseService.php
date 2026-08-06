@@ -51,6 +51,36 @@ final class LogisticsExpenseService
         return $this->expenses->create($companyId, $payload);
     }
 
+    /** @param array<string, mixed> $data */
+    public function update(int $id, int $companyId, array $data): bool
+    {
+        $existing = $this->expenses->find($id, $companyId);
+        if ($existing === null) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        if ((string) ($existing['status'] ?? '') !== 'draft') {
+            throw new \RuntimeException(__('logistics_expense_locked'));
+        }
+        $payload = $this->normalize($companyId, $data);
+        $payload['updated_by'] = $this->userId();
+        unset($payload['status']);
+
+        return $this->expenses->update($id, $companyId, $payload);
+    }
+
+    public function delete(int $id, int $companyId): bool
+    {
+        $existing = $this->expenses->find($id, $companyId);
+        if ($existing === null) {
+            throw new \RuntimeException(__('no_records'));
+        }
+        if ((string) ($existing['status'] ?? '') !== 'draft') {
+            throw new \RuntimeException(__('logistics_expense_locked'));
+        }
+
+        return $this->expenses->delete($id, $companyId);
+    }
+
     /**
      * @return array{ok:bool,expense_id:int,journal_entry_id:int}
      */
