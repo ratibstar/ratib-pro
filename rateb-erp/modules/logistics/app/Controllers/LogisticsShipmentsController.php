@@ -5,6 +5,7 @@ namespace Rateb\App\Logistics\Controllers;
 
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Logistics\Services\LogisticsDispatchService;
 use Rateb\App\Logistics\Services\LogisticsFormLookupService;
 use Rateb\App\Logistics\Services\ShipmentService;
 
@@ -59,6 +60,12 @@ final class LogisticsShipmentsController extends LogisticsBaseController
         $data = $this->formData($item);
         $data['nextStatuses'] = $this->service->nextStatuses($id, $companyId);
         $data['history'] = $this->service->history($id, $companyId);
+        $data['isDispatched'] = (new LogisticsDispatchService())->isDispatched($companyId, $id);
+        $data['canDispatch'] = (
+            (function_exists('rateb_can') && rateb_can('logistics.dispatch'))
+            || (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity(self::RESOURCE))
+            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+        );
         $this->logisticsView('shipments/form', $data);
     }
 
@@ -109,6 +116,32 @@ final class LogisticsShipmentsController extends LogisticsBaseController
                 $this->service->transition($id, $this->companyId(), $to, (string) $this->input('reason', ''));
             }
             SessionManager::flash('success', __('logistics_status_updated'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_app_url(self::RESOURCE . '/' . $id . '/edit'));
+    }
+
+    public function dispatch(array $params): void
+    {
+        $this->bootstrapLogistics();
+        if (!(
+            (function_exists('rateb_can') && rateb_can('logistics.dispatch'))
+            || (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity(self::RESOURCE))
+            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+        )) {
+            $this->denyAccess(self::RESOURCE);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $this->requireCsrf(rateb_app_url(self::RESOURCE . '/' . $id . '/edit'));
+        $lines = [[
+            'inventory_id' => (int) $this->input('inventory_id', 0),
+            'quantity' => (float) $this->input('quantity', 0),
+            'warehouse_id' => (int) $this->input('warehouse_id', 0),
+        ]];
+        try {
+            (new LogisticsDispatchService())->dispatch($this->companyId(), $id, $lines);
+            SessionManager::flash('success', __('logistics_dispatch_success'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }

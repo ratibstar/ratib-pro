@@ -6,7 +6,7 @@ namespace Rateb\App\Logistics\Repositories;
 use Rateb\App\Core\Model;
 use Rateb\App\Logistics\Models\LogisticsVehicle;
 
-final class LogisticsVehicleRepository extends AbstractLogisticsRepository
+class LogisticsVehicleRepository extends AbstractLogisticsRepository
 {
     protected function newModel(): Model
     {

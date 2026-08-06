@@ -53,4 +53,5 @@ $router->post($logApp('shipments'), [LogisticsShipmentsController::class, 'store
 $router->get($logApp('shipments/{id}/edit'), [LogisticsShipmentsController::class, 'edit'], $shipMw);
 $router->post($logApp('shipments/{id}'), [LogisticsShipmentsController::class, 'update'], $shipMw);
 $router->post($logApp('shipments/{id}/transition'), [LogisticsShipmentsController::class, 'transition'], $shipMw);
+$router->post($logApp('shipments/{id}/dispatch'), [LogisticsShipmentsController::class, 'dispatch'], $shipMw);
 $router->post($logApp('shipments/{id}/delete'), [LogisticsShipmentsController::class, 'destroy'], $shipMw);

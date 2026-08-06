@@ -5,8 +5,10 @@ namespace Rateb\App\Logistics\Services;
 
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
+use Rateb\App\Logistics\Contracts\EmployeeDirectory;
 use Rateb\App\Logistics\Policies\LogisticsStatusPolicy;
 use Rateb\App\Logistics\Repositories\LogisticsDriverRepository;
+use Rateb\App\Logistics\Services\Integration\HrEmployeeDirectory;
 use Rateb\App\Models\Employee;
 
 final class DriverService
@@ -14,6 +16,7 @@ final class DriverService
     public function __construct(
         private LogisticsDriverRepository $drivers = new LogisticsDriverRepository(),
         private LogisticsStatusService $status = new LogisticsStatusService(),
+        private EmployeeDirectory $employees = new HrEmployeeDirectory(),
     ) {
     }
 
@@ -126,7 +129,7 @@ final class DriverService
             throw new \RuntimeException(__('logistics_employee_required'));
         }
         TenantContext::setCompanyId($companyId);
-        $employee = (new Employee())->find($employeeId);
+        $employee = $this->employees->findEmployee($employeeId);
         if ($employee === null || (int) ($employee['company_id'] ?? 0) !== $companyId) {
             throw new \RuntimeException(__('logistics_employee_invalid'));
         }

@@ -17,6 +17,7 @@ final class ShipmentService
         private DeliveryOrderService $deliveryOrders = new DeliveryOrderService(),
         private TripService $trips = new TripService(),
         private LogisticsStatusService $status = new LogisticsStatusService(),
+        private LogisticsNotificationService $notifications = new LogisticsNotificationService(),
     ) {
     }
 
@@ -45,7 +46,11 @@ final class ShipmentService
         $payload = $this->normalize($companyId, $data, true);
         $payload['created_by'] = $this->userId();
 
-        return $this->shipments->create($companyId, $payload);
+        $id = $this->shipments->create($companyId, $payload);
+        $row = $this->shipments->find($id, $companyId) ?? array_merge($payload, ['id' => $id]);
+        $this->notifications->shipmentCreated($companyId, $row);
+
+        return $id;
     }
 
     /** @param array<string, mixed> $data */
@@ -73,7 +78,7 @@ final class ShipmentService
             $extra['delivered_at'] = date('Y-m-d H:i:s');
         }
 
-        return $this->status->transition(
+        $result = $this->status->transition(
             $companyId,
             LogisticsStatusPolicy::ENTITY_SHIPMENT,
             $id,
@@ -81,11 +86,16 @@ final class ShipmentService
             $reason,
             $extra
         );
+
+        $shipment = $this->shipments->find($id, $companyId);
+        if ($shipment !== null) {
+            $this->notifications->notifyStatus($companyId, $shipment, $toStatus);
+        }
+
+        return $result;
     }
 
     /**
-     * Mark delivered and optionally store proof-of-delivery fields.
-     *
      * @param array<string, mixed> $proof
      * @return array{ok:bool,entity_type:string,entity_id:int,from:string,to:string}
      */

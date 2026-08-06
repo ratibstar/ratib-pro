@@ -16,6 +16,40 @@ if (!$isEdit) {
     return;
 }
 ?>
+<?php
+$isDispatched = !empty($isDispatched);
+$canDispatch = !empty($canDispatch);
+$statusNow = (string) ($item['status'] ?? '');
+$dispatchBlocked = $isDispatched || in_array($statusNow, ['out_for_delivery', 'delivered', 'failed'], true);
+if ($canDispatch && !$dispatchBlocked) { ?>
+<div class="rateb-card mt-3">
+    <div class="rateb-card-header"><?php echo __('logistics_dispatch'); ?></div>
+    <div class="rateb-card-body">
+        <form method="post" action="<?php echo rateb_app_url('logistics/shipments/' . (int) $item['id'] . '/dispatch'); ?>" class="row g-2 align-items-end">
+            <input type="hidden" name="_csrf" value="<?php echo View::escape((string) ($csrf ?? '')); ?>">
+            <div class="col-md-4">
+                <label class="form-label"><?php echo __('inventory'); ?></label>
+                <input type="number" name="inventory_id" class="form-control" min="1" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label"><?php echo __('quantity'); ?></label>
+                <input type="number" name="quantity" class="form-control" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label"><?php echo __('warehouses'); ?></label>
+                <input type="number" name="warehouse_id" class="form-control" min="0">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100"><?php echo __('logistics_dispatch'); ?></button>
+            </div>
+        </form>
+        <p class="small text-muted mt-2 mb-0"><?php echo __('logistics_dispatch_hint'); ?></p>
+    </div>
+</div>
+<?php } elseif ($isDispatched) { ?>
+<div class="alert alert-info mt-3 mb-0"><?php echo __('logistics_dispatch_already_done'); ?></div>
+<?php } ?>
+
 <div class="rateb-card mt-3">
     <div class="rateb-card-header"><?php echo __('logistics_status_actions'); ?></div>
     <div class="rateb-card-body">

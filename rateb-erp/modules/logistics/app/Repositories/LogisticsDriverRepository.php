@@ -6,7 +6,7 @@ namespace Rateb\App\Logistics\Repositories;
 use Rateb\App\Core\Model;
 use Rateb\App\Logistics\Models\LogisticsDriver;
 
-final class LogisticsDriverRepository extends AbstractLogisticsRepository
+class LogisticsDriverRepository extends AbstractLogisticsRepository
 {
     protected function newModel(): Model
     {
