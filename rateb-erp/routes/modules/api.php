@@ -77,6 +77,9 @@ $router->post('/api/v1/inventory', [ApiController::class, 'createInventory'], ra
 if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api.php')) {
     require RATEB_ROOT . '/modules/pos/routes/pos-api.php';
 }
+if (is_file(RATEB_ROOT . '/modules/logistics/routes/logistics-api.php')) {
+    require RATEB_ROOT . '/modules/logistics/routes/logistics-api.php';
+}
 if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api-v2.php')) {
     require RATEB_ROOT . '/modules/pos/routes/pos-api-v2.php';
 }

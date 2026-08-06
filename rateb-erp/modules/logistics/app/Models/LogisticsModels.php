@@ -114,3 +114,23 @@ final class LogisticsStatusHistory extends Model
     ];
     protected array $searchable = ['entity_type', 'from_status', 'to_status', 'reason'];
 }
+
+final class LogisticsDriverLocation extends Model
+{
+    protected string $table = 'rateb_logistics_driver_locations';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'driver_id', 'trip_id', 'shipment_id', 'gps_lat', 'gps_long',
+        'recorded_at', 'client_timestamp',
+    ];
+}
+
+final class LogisticsApiIdempotency extends Model
+{
+    protected string $table = 'rateb_logistics_api_idempotency';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'driver_id', 'idempotency_key', 'endpoint', 'request_hash',
+        'response_code', 'response_body', 'client_timestamp',
+    ];
+}
