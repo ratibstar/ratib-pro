@@ -5,9 +5,9 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v41';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260807-mfg-import-no-fake-offline-v151';
+var SW_BUILD_ID = '20260807-erp-route-imports-softnav-v152';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2327,9 +2327,9 @@ function navigateAdminDashboardNetworkFirst(request, url, event) {
 }
 
 /**
- * Soft-nav (X-Rateb-Nav-Swap) / prefetch HTML — cache-first like F5 navigate.
- * Soft-online used to passthrough these fetches → cold network while Ctrl+F5 was instant.
- * Never return uncached dark shell here (triggers soft-nav shell_mismatch → hardNavigate → black).
+ * Soft-nav (X-Rateb-Nav-Swap) / prefetch HTML.
+ * Online: network-first (cache-first painted company-edit / offline stubs while Connected).
+ * Hard offline: validated cache only. Never serve offline-stub HTML as a "page".
  */
 function softNavAdminHtml(request, url, event) {
     var pageUrl = request.url || (url && url.href) || '';
@@ -2351,71 +2351,75 @@ function softNavAdminHtml(request, url, event) {
         return response;
     }
 
-    function fromCache() {
+    function validatedCacheHit() {
         return matchSoftOnlineExactCache(request, url).then(function (hit) {
-            if (hit) {
-                return hit;
+            if (!hit) {
+                var bare = String((url && url.pathname) || '').replace(/\/+$/, '');
+                if (/\/admin$/i.test(bare)) {
+                    return matchCachedAdminDashboard(url);
+                }
+                return null;
             }
-            var bare = String((url && url.pathname) || '').replace(/\/+$/, '');
-            if (/\/admin$/i.test(bare)) {
-                return matchCachedAdminDashboard(url);
+            return hit;
+        }).then(function (hit) {
+            if (!hit) {
+                return null;
             }
-            return null;
+            return hit.clone().text().then(function (body) {
+                var html = String(body || '');
+                if (/data-rateb-offline-stub/i.test(html) || !isValidErpOpsHtmlBody(pageUrl, html)) {
+                    try {
+                        deletePoisonedErpOpsCacheEntries(pageUrl);
+                    } catch (eDel) { /* ignore */ }
+                    return null;
+                }
+                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+            }).catch(function () {
+                return null;
+            });
         }).catch(function () {
             return null;
         });
     }
 
-    if (isCloudBrowserOffline()) {
-        return fromCache().then(function (hit) {
+    if (isHardBrowserOffline()) {
+        return validatedCacheHit().then(function (hit) {
             if (hit) {
-                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: false });
+                return hit;
             }
             return Promise.reject(new Error('soft-nav-offline-miss'));
         });
     }
 
-    var networkP = fetchNavigateNetwork(request, isCloudBrowserOffline() ? 2000 : 8000).then(storeLive).catch(function () {
-        return null;
-    });
-
-    return fromCache().then(function (hit) {
-        if (!hit) {
-            return networkP.then(function (response) {
-                if (response) {
-                    return response;
+    // Soft-latch still prefers live Admin HTML while the UI can show متصل.
+    var networkMs = isCloudBrowserOffline() ? 4000 : 10000;
+    return fetchNavigateNetwork(request, networkMs).then(storeLive).then(function (response) {
+        if (response && response.ok) {
+            return response.clone().text().then(function (body) {
+                if (/data-rateb-offline-stub/i.test(String(body || ''))) {
+                    return null;
                 }
-                return Promise.reject(new Error('soft-nav-miss'));
+                return response;
+            }).catch(function () {
+                return response;
             });
         }
-        return hit.clone().text().then(function (body) {
-            var html = String(body || '');
-            if (!isCloudBrowserOffline() && !isHardBrowserOffline()
-                && /data-rateb-offline-stub/i.test(html)) {
-                return null;
+        // Pass through real HTTP errors (do not rewrite to offline card).
+        if (response) {
+            return response;
+        }
+        return null;
+    }).catch(function () {
+        return null;
+    }).then(function (live) {
+        if (live) {
+            return live;
+        }
+        return validatedCacheHit().then(function (hit) {
+            if (hit) {
+                return hit;
             }
-            if (!isValidErpOpsHtmlBody(pageUrl, html)) {
-                try {
-                    deletePoisonedErpOpsCacheEntries(pageUrl);
-                } catch (eDel) { /* ignore */ }
-                return null;
-            }
-            if (event && typeof event.waitUntil === 'function') {
-                event.waitUntil(networkP.then(function () { return null; }));
-            }
-            return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
-        }).catch(function () {
-            return null;
-        }).then(function (cachedRes) {
-            if (cachedRes) {
-                return cachedRes;
-            }
-            return networkP.then(function (response) {
-                if (response) {
-                    return response;
-                }
-                return Promise.reject(new Error('soft-nav-miss'));
-            });
+            return Promise.reject(new Error('soft-nav-miss'));
         });
     });
 }

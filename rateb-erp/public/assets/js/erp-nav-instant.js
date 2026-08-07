@@ -22,9 +22,9 @@
     var PLATFORM_CATALOG_RE = /\/rateb-platform-catalog\//i;
     /** ERP SSO handoff into platform catalog admin. */
     var PLATFORM_CATALOG_SSO_RE = /\/platform-catalog\/sso(?:\/|$|\?)/i;
-    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v41). Older names kept as read fallbacks. */
-    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v41';
-    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v40', 'rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
+    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v42). Older names kept as read fallbacks. */
+    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
+    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v41', 'rateb-erp-ops-pages-v40', 'rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36'];
     var OPS_COEXIST_CACHE = 'rateb-erp-coexist-v34';
     var loadedScripts = Object.create(null);
     var navigating = false;
@@ -182,10 +182,15 @@
         } catch (ePath) {
             path = String(href || '');
         }
+        var body = String(html || '');
+        // Fake offline card while Connected — never paint as a real module page.
+        if (/data-rateb-offline-stub/i.test(body)
+            || /فتحت الصفحة أوفلاين داخل النظام/i.test(body)) {
+            return true;
+        }
         if (/\/admin\/companies\/\d+(?:\/edit)?\/?$/i.test(path)) {
             return false;
         }
-        var body = String(html || '');
         var looksLikeCompanyEdit = /\/admin\/companies\/\d+\/edit/i.test(body)
             && /(?:تعديل الشركات|Edit compan|name=["']max_users["']|name=["']storage_limit_mb["']|package_id)/i.test(body);
         if (!looksLikeCompanyEdit) {
