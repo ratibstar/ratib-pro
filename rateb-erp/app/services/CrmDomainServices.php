@@ -554,7 +554,54 @@ final class CrmCompanyService
             'notes' => CrmSupport::nullIfEmpty($input['notes'] ?? null),
         ], CrmSupport::actorFields(true)));
 
+        (new CrmTimelineService())->record(
+            'crm_company_created',
+            'Company created: ' . $name,
+            null,
+            'crm_company',
+            (int) $id,
+            ['crm_company_id' => (int) $id, 'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null)]
+        );
+
         return ['id' => (int) $id];
+    }
+
+    /**
+     * @return array{
+     *   contacts: list<array<string,mixed>>,
+     *   leads: list<array<string,mixed>>,
+     *   opportunities: list<array<string,mixed>>
+     * }
+     */
+    public function relatedGraph(int $crmCompanyId): array
+    {
+        $tenantId = CrmSupport::requireCompanyId();
+        $contacts = (new CrmContact())->query(
+            'SELECT * FROM rateb_crm_contacts
+             WHERE company_id = :cid AND crm_company_id = :aid AND deleted_at IS NULL
+             ORDER BY is_primary DESC, full_name ASC LIMIT 50',
+            ['cid' => $tenantId, 'aid' => $crmCompanyId]
+        );
+        $leads = (new CrmLead())->query(
+            'SELECT id, lead_no, title, workflow_status, contact_id
+             FROM rateb_crm_leads
+             WHERE company_id = :cid AND crm_company_id = :aid AND deleted_at IS NULL
+             ORDER BY updated_at DESC LIMIT 50',
+            ['cid' => $tenantId, 'aid' => $crmCompanyId]
+        );
+        $opps = (new CrmOpportunity())->query(
+            'SELECT id, opportunity_no, name, workflow_status, amount, lead_id, contact_id
+             FROM rateb_crm_opportunities
+             WHERE company_id = :cid AND crm_company_id = :aid AND deleted_at IS NULL
+             ORDER BY updated_at DESC LIMIT 50',
+            ['cid' => $tenantId, 'aid' => $crmCompanyId]
+        );
+
+        return [
+            'contacts' => is_array($contacts) ? $contacts : [],
+            'leads' => is_array($leads) ? $leads : [],
+            'opportunities' => is_array($opps) ? $opps : [],
+        ];
     }
 }
 
@@ -563,31 +610,79 @@ final class ContactService
     /**
      * @return array{items: list<array<string,mixed>>, total: int}
      */
-    public function list(int $limit = 25, int $offset = 0, string $search = ''): array
+    public function list(int $limit = 25, int $offset = 0, string $search = '', ?int $crmCompanyId = null): array
     {
         $companyId = CrmSupport::requireCompanyId();
         $safeLimit = max(1, min(100, $limit));
         $safeOffset = max(0, $offset);
         $params = ['cid' => $companyId];
-        $where = 'company_id = :cid AND deleted_at IS NULL';
+        $where = 'c.company_id = :cid AND c.deleted_at IS NULL';
+        if ($crmCompanyId !== null && $crmCompanyId > 0) {
+            $where .= ' AND c.crm_company_id = :aid';
+            $params['aid'] = $crmCompanyId;
+        }
         if ($search !== '') {
-            $where .= ' AND (full_name LIKE :q OR email LIKE :q2 OR phone LIKE :q3)';
+            $where .= ' AND (c.full_name LIKE :q OR c.email LIKE :q2 OR c.phone LIKE :q3)';
             $like = '%' . $search . '%';
             $params['q'] = $like;
             $params['q2'] = $like;
             $params['q3'] = $like;
         }
         $totalRow = (new CrmContact())->queryOne(
-            'SELECT COUNT(*) AS c FROM rateb_crm_contacts WHERE ' . $where,
+            'SELECT COUNT(*) AS c FROM rateb_crm_contacts c WHERE ' . $where,
             $params
         );
         $items = (new CrmContact())->query(
-            'SELECT * FROM rateb_crm_contacts WHERE ' . $where
-            . ' ORDER BY full_name ASC LIMIT ' . $safeLimit . ' OFFSET ' . $safeOffset,
+            'SELECT c.*, co.name AS crm_company_name
+             FROM rateb_crm_contacts c
+             LEFT JOIN rateb_crm_companies co ON co.id = c.crm_company_id
+             WHERE ' . $where
+            . ' ORDER BY c.full_name ASC LIMIT ' . $safeLimit . ' OFFSET ' . $safeOffset,
             $params
         );
 
         return ['items' => is_array($items) ? $items : [], 'total' => (int) ($totalRow['c'] ?? 0)];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function find(int $id): ?array
+    {
+        $row = (new CrmContact())->queryOne(
+            'SELECT c.*, co.name AS crm_company_name
+             FROM rateb_crm_contacts c
+             LEFT JOIN rateb_crm_companies co ON co.id = c.crm_company_id
+             WHERE c.id = :id AND c.company_id = :cid AND c.deleted_at IS NULL LIMIT 1',
+            ['id' => $id, 'cid' => CrmSupport::requireCompanyId()]
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array{leads: list<array<string,mixed>>, opportunities: list<array<string,mixed>>}
+     */
+    public function relatedGraph(int $contactId): array
+    {
+        $tenantId = CrmSupport::requireCompanyId();
+        $leads = (new CrmLead())->query(
+            'SELECT id, lead_no, title, workflow_status, crm_company_id
+             FROM rateb_crm_leads
+             WHERE company_id = :cid AND contact_id = :ct AND deleted_at IS NULL
+             ORDER BY updated_at DESC LIMIT 50',
+            ['cid' => $tenantId, 'ct' => $contactId]
+        );
+        $opps = (new CrmOpportunity())->query(
+            'SELECT id, opportunity_no, name, workflow_status, amount, lead_id
+             FROM rateb_crm_opportunities
+             WHERE company_id = :cid AND contact_id = :ct AND deleted_at IS NULL
+             ORDER BY updated_at DESC LIMIT 50',
+            ['cid' => $tenantId, 'ct' => $contactId]
+        );
+
+        return [
+            'leads' => is_array($leads) ? $leads : [],
+            'opportunities' => is_array($opps) ? $opps : [],
+        ];
     }
 
     /**
@@ -617,6 +712,19 @@ final class ContactService
             'status' => 'active',
             'notes' => CrmSupport::nullIfEmpty($input['notes'] ?? null),
         ], CrmSupport::actorFields(true)));
+
+        (new CrmTimelineService())->record(
+            'contact_created',
+            'Contact created: ' . $name,
+            null,
+            'contact',
+            (int) $id,
+            [
+                'contact_id' => (int) $id,
+                'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
+                'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
+            ]
+        );
 
         return ['id' => (int) $id];
     }

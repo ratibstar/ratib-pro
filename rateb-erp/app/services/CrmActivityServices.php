@@ -46,7 +46,7 @@ final class ActivityService
             throw new \InvalidArgumentException('subject_required');
         }
         $type = (string) ($input['activity_type'] ?? 'other');
-        if (!in_array($type, ['note', 'follow_up', 'other'], true)) {
+        if (!in_array($type, ['note', 'follow_up', 'call', 'meeting', 'task', 'other'], true)) {
             $type = 'other';
         }
         $id = (new CrmActivity())->create(array_merge([
@@ -144,7 +144,13 @@ final class MeetingService
             null,
             'meeting',
             (int) $id,
-            ['lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null)]
+            [
+                'lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null),
+                'opportunity_id' => CrmSupport::intOrNull($input['opportunity_id'] ?? null),
+                'contact_id' => CrmSupport::intOrNull($input['contact_id'] ?? null),
+                'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
+                'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
+            ]
         );
 
         return ['id' => (int) $id];
@@ -213,10 +219,16 @@ final class CallService
         (new CrmTimelineService())->record(
             'call',
             'Call: ' . $subject,
-            null,
+            CrmSupport::nullIfEmpty($input['notes'] ?? null),
             'call',
             (int) $id,
-            ['lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null)]
+            [
+                'lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null),
+                'opportunity_id' => CrmSupport::intOrNull($input['opportunity_id'] ?? null),
+                'contact_id' => CrmSupport::intOrNull($input['contact_id'] ?? null),
+                'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
+                'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
+            ]
         );
 
         return ['id' => (int) $id];
@@ -291,7 +303,13 @@ final class TaskService
             null,
             'task',
             (int) $id,
-            ['lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null)]
+            [
+                'lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null),
+                'opportunity_id' => CrmSupport::intOrNull($input['opportunity_id'] ?? null),
+                'contact_id' => CrmSupport::intOrNull($input['contact_id'] ?? null),
+                'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
+                'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
+            ]
         );
 
         return ['id' => (int) $id];

@@ -32,6 +32,12 @@ declare(strict_types=1);
                 </div>
             </form>
             <?php endif; ?>
+            <?php if (!empty($canConvert)): ?>
+            <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $item['id'] . '/convert-opportunity'), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3">
+                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <button class="btn btn-success" type="submit"><?php echo htmlspecialchars(__('crm_convert_to_opportunity'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+            <?php endif; ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $item['id'] . '/notes'), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <label class="form-label"><?php echo htmlspecialchars(__('crm_add_note'), ENT_QUOTES, 'UTF-8'); ?></label>

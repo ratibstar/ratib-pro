@@ -3,6 +3,8 @@ declare(strict_types=1);
 /** @var list<array<string,mixed>> $recent */
 /** @var array<string,int> $board */
 /** @var list<array<string,mixed>> $timeline */
+/** @var array<string,mixed> $kpis */
+$kpis = $kpis ?? [];
 ?>
 <div class="container-fluid py-3">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -12,6 +14,40 @@ declare(strict_types=1);
             <a class="btn btn-primary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads/create')), ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-plus"></i> <?php echo htmlspecialchars(__('crm_lead_create'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
     </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl">
+            <div class="border rounded p-3 h-100">
+                <div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_leads'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fs-4 fw-semibold"><?php echo (int) ($kpis['leads_total'] ?? 0); ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <div class="border rounded p-3 h-100">
+                <div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_conversion_rate'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fs-4 fw-semibold"><?php echo htmlspecialchars((string) ($kpis['conversion_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <div class="border rounded p-3 h-100">
+                <div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_active_opportunities'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fs-4 fw-semibold"><?php echo (int) ($kpis['opportunities_active'] ?? 0); ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <div class="border rounded p-3 h-100">
+                <div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_pending_quotations'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fs-4 fw-semibold"><?php echo (int) ($kpis['quotations_pending'] ?? 0); ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
+            <div class="border rounded p-3 h-100">
+                <div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_pipeline_value'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fs-4 fw-semibold"><?php echo htmlspecialchars(number_format((float) ($kpis['pipeline_value'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3 mb-4">
         <?php foreach (($board ?? []) as $st => $cnt): ?>
         <div class="col-6 col-md-3 col-xl">
@@ -47,7 +83,7 @@ declare(strict_types=1);
                 <?php foreach (($timeline ?? []) as $ev): ?>
                     <li class="list-group-item">
                         <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                        <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                        <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['event_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                     </li>
                 <?php endforeach; ?>
                 <?php if (($timeline ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

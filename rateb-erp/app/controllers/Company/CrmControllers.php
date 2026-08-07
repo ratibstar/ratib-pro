@@ -13,12 +13,15 @@ use Rateb\App\Services\CampaignService;
 use Rateb\App\Services\ContactService;
 use Rateb\App\Services\CrmAssignmentService;
 use Rateb\App\Services\CrmCompanyService;
+use Rateb\App\Services\CrmConversionService;
+use Rateb\App\Services\CrmDashboardService;
 use Rateb\App\Services\CrmNoteService;
+use Rateb\App\Services\CrmQuotationService;
+use Rateb\App\Services\CrmQuotationWorkflowService;
 use Rateb\App\Services\CrmTimelineService;
 use Rateb\App\Services\CrmWorkflowService;
 use Rateb\App\Services\LeadService;
 use Rateb\App\Services\MeetingService;
-use Rateb\App\Services\CrmQuotationService;
 use Rateb\App\Services\OpportunityService;
 use Rateb\App\Services\PipelineService;
 use Rateb\App\Services\TaskService;
@@ -40,7 +43,8 @@ final class CrmDashboardController extends Controller
             'recent' => $leads['items'],
             'total' => $leads['total'],
             'board' => (new LeadService())->boardCounts(),
-            'timeline' => (new CrmTimelineService())->listRecent(10),
+            'kpis' => (new CrmDashboardService())->kpis(),
+            'timeline' => (new CrmTimelineService())->listExpanded(15),
             'statuses' => CrmWorkflowService::statuses(),
         ], 'main');
     }
@@ -144,7 +148,25 @@ final class CrmLeadsController extends Controller
             'canWorkflow' => rateb_can('crm.update') || rateb_can('crm.manage') || rateb_can('crm.admin'),
             'canAssign' => rateb_can('crm.assign') || rateb_can('crm.manage'),
             'canActivities' => rateb_can('crm.activities') || rateb_can('crm.manage'),
+            'canConvert' => rateb_can('crm.create') || rateb_can('crm.manage') || rateb_can('crm.admin'),
         ], 'main');
+    }
+
+    public function convertToOpportunity(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/leads')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $created = (new CrmConversionService())->leadToOpportunity($id, $_POST);
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $created['opportunity_no']);
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities') . '/' . $created['opportunity_id']));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/leads') . '/' . $id));
+        }
     }
 
     public function edit(array $params): void
@@ -352,10 +374,46 @@ final class CrmOpportunitiesController extends Controller
         try {
             $created = (new OpportunityService())->create($_POST);
             SessionManager::flash('success', __('saved_ok'));
-            $this->redirect(rateb_url(rateb_app_route('crm/opportunities')));
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities') . '/' . $created['id']));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url(rateb_app_route('crm/opportunities/create')));
+        }
+    }
+
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new OpportunityService())->find($id);
+        if ($item === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities')));
+        }
+        $this->view('company/crm/opportunities/show', [
+            'title' => __('crm_opportunities'),
+            'item' => $item,
+            'timeline' => (new CrmTimelineService())->listForOpportunity($id, 40),
+            'canConvert' => rateb_can('crm.quote.create') || rateb_can('crm.create') || rateb_can('crm.manage'),
+        ], 'main');
+    }
+
+    public function convertToQuotation(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $created = (new CrmConversionService())->opportunityToQuotation($id, $_POST);
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $created['quotation_no']);
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $created['quotation_id']));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities') . '/' . $id));
         }
     }
 }
@@ -478,12 +536,40 @@ final class CrmContactsController extends Controller
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        $result = (new ContactService())->list(50, 0, trim((string) ($_GET['q'] ?? '')));
+        $crmCompanyId = (int) ($_GET['crm_company_id'] ?? 0);
+        $result = (new ContactService())->list(
+            50,
+            0,
+            trim((string) ($_GET['q'] ?? '')),
+            $crmCompanyId > 0 ? $crmCompanyId : null
+        );
         $this->view('company/crm/contacts/index', [
             'title' => __('crm_contacts'),
             'items' => $result['items'],
             'total' => $result['total'],
+            'companies' => (new CrmCompanyService())->list(100, 0)['items'],
+            'crm_company_id' => $crmCompanyId,
             'canCreate' => rateb_can('crm.create') || rateb_can('crm.manage'),
+        ], 'main');
+    }
+
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new ContactService())->find($id);
+        if ($item === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url(rateb_app_route('crm/contacts')));
+        }
+        $graph = (new ContactService())->relatedGraph($id);
+        $this->view('company/crm/contacts/show', [
+            'title' => __('crm_contacts'),
+            'item' => $item,
+            'leads' => $graph['leads'],
+            'opportunities' => $graph['opportunities'],
         ], 'main');
     }
 
@@ -494,12 +580,13 @@ final class CrmContactsController extends Controller
             $this->redirect(rateb_url(rateb_app_route('crm/contacts')));
         }
         try {
-            (new ContactService())->create($_POST);
+            $created = (new ContactService())->create($_POST);
             SessionManager::flash('success', __('saved_ok'));
+            $this->redirect(rateb_url(rateb_app_route('crm/contacts') . '/' . $created['id']));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/contacts')));
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/contacts')));
     }
 }
 
@@ -519,6 +606,27 @@ final class CrmCompaniesController extends Controller
         ], 'main');
     }
 
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new CrmCompanyService())->find($id);
+        if ($item === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url(rateb_app_route('crm/companies')));
+        }
+        $graph = (new CrmCompanyService())->relatedGraph($id);
+        $this->view('company/crm/companies/show', [
+            'title' => __('crm_companies'),
+            'item' => $item,
+            'contacts' => $graph['contacts'],
+            'leads' => $graph['leads'],
+            'opportunities' => $graph['opportunities'],
+        ], 'main');
+    }
+
     public function store(): void
     {
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
@@ -526,12 +634,13 @@ final class CrmCompaniesController extends Controller
             $this->redirect(rateb_url(rateb_app_route('crm/companies')));
         }
         try {
-            (new CrmCompanyService())->create($_POST);
+            $created = (new CrmCompanyService())->create($_POST);
             SessionManager::flash('success', __('saved_ok'));
+            $this->redirect(rateb_url(rateb_app_route('crm/companies') . '/' . $created['id']));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/companies')));
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/companies')));
     }
 }
 
@@ -552,9 +661,29 @@ final class CrmCustomerProfileController extends Controller
     }
 }
 
-/** Phase 1 — Sales quotations (CRM extension; no workflow to invoice yet). */
+/** Phase 1+2 — Sales quotations lifecycle (no invoice conversion). */
 final class CrmQuotationsController extends Controller
 {
+    private function canViewQuote(): bool
+    {
+        return rateb_can('crm.quote.view') || rateb_can('crm.view') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canCreateQuote(): bool
+    {
+        return rateb_can('crm.quote.create') || rateb_can('crm.create') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canUpdateQuote(): bool
+    {
+        return rateb_can('crm.quote.update') || rateb_can('crm.update') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canConvertQuote(): bool
+    {
+        return rateb_can('crm.quote.convert') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
     public function index(): void
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
@@ -573,7 +702,8 @@ final class CrmQuotationsController extends Controller
             'limit' => $limit,
             'q' => $search,
             'status' => $status,
-            'canCreate' => rateb_can('crm.create') || rateb_can('crm.manage'),
+            'statuses' => CrmQuotationWorkflowService::statuses(),
+            'canCreate' => $this->canCreateQuote(),
         ], 'main');
     }
 
@@ -601,10 +731,11 @@ final class CrmQuotationsController extends Controller
         try {
             $created = (new CrmQuotationService())->create($_POST);
             SessionManager::flash('success', __('saved_ok') . ' — ' . $created['quotation_no']);
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $created['id']));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations/create')));
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
     }
 
     public function show(array $params): void
@@ -618,10 +749,117 @@ final class CrmQuotationsController extends Controller
             SessionManager::flash('error', __('not_found'));
             $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
         }
+        $status = (string) ($item['status'] ?? 'draft');
         $this->view('company/crm/quotations/show', [
             'title' => __('crm_quotation'),
             'item' => $item,
             'lines' => (new CrmQuotationService())->linesFor($id),
+            'timeline' => (new CrmTimelineService())->listForQuotation($id, 40),
+            'history' => (new CrmQuotationService())->statusHistory($id),
+            'transitions' => CrmQuotationWorkflowService::allowedTransitions()[$status] ?? [],
+            'canWorkflow' => $this->canUpdateQuote(),
+            'canConvertCustomer' => $this->canConvertQuote() && $status === CrmQuotationWorkflowService::STATUS_ACCEPTED,
         ], 'main');
+    }
+
+    public function transition(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new CrmQuotationWorkflowService())->transition(
+                $id,
+                (string) ($_POST['to_status'] ?? ''),
+                isset($_POST['reason']) ? (string) $_POST['reason'] : null
+            );
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
+    }
+
+    public function convertToCustomer(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $created = (new CrmConversionService())->quotationToCustomer($id, $_POST);
+            SessionManager::flash('success', __('saved_ok') . ' — #' . $created['customer_id']);
+            $this->redirect(rateb_url(rateb_app_route('crm/customers') . '/' . $created['customer_id']));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
+        }
+    }
+}
+
+final class CrmCallsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $result = (new CallService())->list(50, 0);
+        $this->view('company/crm/calls/index', [
+            'title' => __('crm_calls'),
+            'items' => $result['items'],
+            'total' => $result['total'],
+            'canCreate' => rateb_can('crm.activities') || rateb_can('crm.manage'),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/calls')));
+        }
+        try {
+            (new CallService())->create($_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/calls')));
+    }
+}
+
+final class CrmActivitiesController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $result = (new ActivityService())->list(50, 0);
+        $this->view('company/crm/activities/index', [
+            'title' => __('crm_activities'),
+            'items' => $result['items'],
+            'total' => $result['total'],
+            'canCreate' => rateb_can('crm.activities') || rateb_can('crm.manage'),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/activities')));
+        }
+        try {
+            (new ActivityService())->create($_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/activities')));
     }
 }

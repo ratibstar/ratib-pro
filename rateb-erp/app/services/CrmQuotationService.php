@@ -154,4 +154,29 @@ final class CrmQuotationService
 
         return ['id' => (int) $id, 'quotation_no' => $no];
     }
+
+    /**
+     * Phase 2 — Invoice conversion is intentionally blocked.
+     */
+    public function convertToInvoice(int $quotationId): void
+    {
+        unset($quotationId);
+        throw new \RuntimeException('quotation_to_invoice_disabled_phase2');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function statusHistory(int $quotationId): array
+    {
+        $companyId = CrmSupport::requireCompanyId();
+        $rows = (new \Rateb\App\Models\CrmEntityStatusHistory())->query(
+            "SELECT * FROM rateb_crm_entity_status_history
+             WHERE company_id = :cid AND entity_type = 'quotation' AND entity_id = :eid
+             ORDER BY created_at DESC, id DESC LIMIT 100",
+            ['cid' => $companyId, 'eid' => $quotationId]
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
 }

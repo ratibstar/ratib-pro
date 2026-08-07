@@ -259,6 +259,10 @@ return [
             'crm.activities',
             'crm.campaign',
             'crm.admin',
+            'crm.quote.view',
+            'crm.quote.create',
+            'crm.quote.update',
+            'crm.quote.convert',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -282,6 +286,10 @@ return [
             'crm.pipeline',
             'crm.activities',
             'crm.campaign',
+            'crm.quote.view',
+            'crm.quote.create',
+            'crm.quote.update',
+            'crm.quote.convert',
         ],
         'website.manage' => [
             'website.view',

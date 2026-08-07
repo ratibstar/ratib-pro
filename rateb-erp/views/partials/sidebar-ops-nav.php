@@ -58,6 +58,12 @@ $opsSection(__('crm'), [
     ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm'],
     ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm'],
     ['crm/quotations', 'crm_quotations', 'fa-file-invoice', 'crm'],
+    ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm'],
+    ['crm/companies', 'crm_companies', 'fa-building', 'crm'],
+    ['crm/activities', 'crm_activities', 'fa-list-check', 'crm', 'crm.activities'],
+    ['crm/calls', 'crm_calls', 'fa-phone', 'crm', 'crm.activities'],
+    ['crm/meetings', 'crm_meetings', 'fa-calendar', 'crm', 'crm.activities'],
+    ['crm/tasks', 'crm_tasks', 'fa-check', 'crm', 'crm.activities'],
 ], 'fa-handshake');
 if (is_file(RATEB_ROOT . '/modules/marketplace/views/partials/sidebar-marketplace-nav.php')) {
     require RATEB_ROOT . '/modules/marketplace/views/partials/sidebar-marketplace-nav.php';
