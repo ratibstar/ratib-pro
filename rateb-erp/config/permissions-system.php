@@ -295,6 +295,10 @@ return [
             'crm.search.view',
             'crm.reporting.center',
             'crm.workflow.governance',
+            'crm.insights.view',
+            'crm.predictive.manage',
+            'crm.merge.manage',
+            'crm.intelligence.advanced',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -354,6 +358,10 @@ return [
             'crm.search.view',
             'crm.reporting.center',
             'crm.workflow.governance',
+            'crm.insights.view',
+            'crm.predictive.manage',
+            'crm.merge.manage',
+            'crm.intelligence.advanced',
         ],
         'website.manage' => [
             'website.view',

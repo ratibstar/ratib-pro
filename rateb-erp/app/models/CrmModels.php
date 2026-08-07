@@ -512,3 +512,48 @@ final class CrmScheduledReport extends Model
         'created_by', 'updated_by', 'deleted_at',
     ];
 }
+
+/** Phase 9 — Predictive rules. */
+final class CrmPredictiveRule extends Model
+{
+    protected string $table = 'rateb_crm_predictive_rules';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'rule_key', 'name', 'rule_type', 'config_json',
+        'priority', 'is_enabled', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 9 — Executive intelligence insights. */
+final class CrmIntelligenceInsight extends Model
+{
+    protected string $table = 'rateb_crm_intelligence_insights';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'insight_type', 'severity', 'title', 'body',
+        'entity_type', 'entity_id', 'score', 'meta_json', 'status',
+        'created_by', 'dismissed_at',
+    ];
+}
+
+/** Phase 9 — Duplicate merge workflow. */
+final class CrmMergeRequest extends Model
+{
+    protected string $table = 'rateb_crm_merge_requests';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'entity_type', 'source_id', 'target_id', 'status',
+        'reason', 'merge_json', 'created_by', 'resolved_by', 'resolved_at',
+    ];
+}
+
+/** Phase 9 — Data freshness snapshots. */
+final class CrmFreshnessSnapshot extends Model
+{
+    protected string $table = 'rateb_crm_freshness_snapshots';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'freshness_score', 'stale_leads', 'stale_opportunities',
+        'stale_customers', 'meta_json', 'created_by',
+    ];
+}

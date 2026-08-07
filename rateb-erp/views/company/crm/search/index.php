@@ -10,6 +10,21 @@ $results = $result['results'] ?? [];
         <div class="col-auto"><button class="btn btn-primary" type="submit"><?php echo htmlspecialchars(__('search'), ENT_QUOTES, 'UTF-8'); ?></button></div>
     </form>
     <p class="text-muted">Total: <?php echo (int) ($result['total'] ?? 0); ?></p>
+    <?php if (($result['ranked'] ?? []) !== []): ?>
+    <h2 class="h5"><?php echo htmlspecialchars(__('crm_ranked_results'), ENT_QUOTES, 'UTF-8'); ?></h2>
+    <ul class="list-group mb-4">
+        <?php foreach (($result['ranked'] ?? []) as $row): ?>
+        <li class="list-group-item small d-flex justify-content-between">
+            <span>
+                <?php echo htmlspecialchars((string) ($row['entity_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                #<?php echo (int) ($row['id'] ?? 0); ?>
+                · <?php echo htmlspecialchars((string) ($row['title'] ?? $row['name'] ?? $row['full_name'] ?? $row['subject'] ?? $row['quotation_no'] ?? $row['opportunity_no'] ?? $row['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+            </span>
+            <span class="text-muted">rel <?php echo (int) ($row['relevance'] ?? 0); ?></span>
+        </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
     <?php foreach (['leads','contacts','companies','opportunities','quotations','activities'] as $type): ?>
     <h2 class="h5 mt-3"><?php echo htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?></h2>
     <?php if (($results[$type] ?? []) === []): ?>

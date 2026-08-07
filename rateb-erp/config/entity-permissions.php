@@ -757,6 +757,26 @@ return [
         'view' => 'crm.workflow.governance',
         'manage' => 'crm.workflow.governance',
     ],
+    'crm-insights' => [
+        'module' => 'crm',
+        'view' => 'crm.insights.view',
+        'manage' => 'crm.insights.view',
+    ],
+    'crm-predictive' => [
+        'module' => 'crm',
+        'view' => 'crm.predictive.manage',
+        'manage' => 'crm.predictive.manage',
+    ],
+    'crm-merge' => [
+        'module' => 'crm',
+        'view' => 'crm.merge.manage',
+        'manage' => 'crm.merge.manage',
+    ],
+    'crm-intelligence-advanced' => [
+        'module' => 'crm',
+        'view' => 'crm.intelligence.advanced',
+        'manage' => 'crm.intelligence.advanced',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

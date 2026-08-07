@@ -22,14 +22,20 @@ use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
+use Rateb\App\Services\CrmDataFreshnessService;
 use Rateb\App\Services\CrmDataQualityEngineService;
+use Rateb\App\Services\CrmDuplicateMergeService;
 use Rateb\App\Services\CrmEnterpriseForecastService;
 use Rateb\App\Services\CrmExecutiveCockpitService;
+use Rateb\App\Services\CrmExecutiveInsightsService;
 use Rateb\App\Services\CrmForecastEngineService;
 use Rateb\App\Services\CrmGovernanceService;
+use Rateb\App\Services\CrmIntelligenceLayerService;
+use Rateb\App\Services\CrmPredictiveRulesEngineService;
 use Rateb\App\Services\CrmReportingCenterService;
 use Rateb\App\Services\CrmRevOpsAutomationService;
 use Rateb\App\Services\CrmRevOpsCommandCenterService;
+use Rateb\App\Services\CrmUnifiedActivityIntelligenceService;
 use Rateb\App\Services\CrmUnifiedSearchService;
 use Rateb\App\Services\CrmWorkflowGovernanceService;
 use Rateb\App\Services\CrmLifecycleService;
@@ -1924,5 +1930,199 @@ final class CrmReportingCenterController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+    }
+}
+
+/** Phase 9 — Advanced intelligence layer. */
+final class CrmIntelligenceLayerController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $pipelineId = (int) ($_GET['pipeline_id'] ?? 0) ?: null;
+        $data = (new CrmIntelligenceLayerService())->analyze($pipelineId);
+        $activity = (new CrmUnifiedActivityIntelligenceService())->analyze(
+            (int) ($_GET['user_id'] ?? 0) ?: null,
+            trim((string) ($_GET['date_from'] ?? '')) ?: null,
+            trim((string) ($_GET['date_to'] ?? '')) ?: null
+        );
+        $this->view('company/crm/intelligence-layer/index', [
+            'title' => __('crm_intelligence_layer'),
+            'data' => $data,
+            'activity' => $activity,
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
+            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+        ], 'main');
+    }
+}
+
+/** Phase 9 — Predictive rules engine. */
+final class CrmPredictiveRulesController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmPredictiveRulesEngineService();
+        $this->view('company/crm/predictive/index', [
+            'title' => __('crm_predictive_rules'),
+            'rules' => $svc->listRules(),
+            'evaluation' => $svc->evaluate(15),
+            'canManage' => rateb_can('crm.predictive.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/predictive')));
+        }
+        try {
+            $config = json_decode((string) ($_POST['config_json'] ?? '{}'), true);
+            if (!is_array($config)) {
+                throw new \InvalidArgumentException('invalid_json');
+            }
+            (new CrmPredictiveRulesEngineService())->saveRule([
+                'rule_key' => $_POST['rule_key'] ?? '',
+                'name' => $_POST['name'] ?? '',
+                'rule_type' => $_POST['rule_type'] ?? '',
+                'config' => $config,
+                'priority' => (int) ($_POST['priority'] ?? 100),
+                'is_enabled' => !empty($_POST['is_enabled']),
+            ]);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/predictive')));
+    }
+}
+
+/** Phase 9 — Executive insights center. */
+final class CrmInsightsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $data = (new CrmExecutiveInsightsService())->assemble(true);
+        $this->view('company/crm/insights/index', [
+            'title' => __('crm_executive_insights'),
+            'data' => $data,
+            'canManage' => rateb_can('crm.insights.view') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function dismiss(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/insights')));
+        }
+        try {
+            (new CrmExecutiveInsightsService())->dismiss((int) ($params['id'] ?? 0));
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/insights')));
+    }
+}
+
+/** Phase 9 — Duplicate merge + freshness governance. */
+final class CrmMergeController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $merge = new CrmDuplicateMergeService();
+        $freshness = [];
+        try {
+            $freshness = (new CrmDataFreshnessService())->check(false);
+        } catch (\Throwable $e) {
+            $freshness = ['error' => $e->getMessage()];
+        }
+        $this->view('company/crm/merge/index', [
+            'title' => __('crm_duplicate_merge'),
+            'pending' => $merge->listPending(40),
+            'suggestions' => $merge->suggestLeadDuplicates(20),
+            'freshness' => $freshness,
+            'freshness_history' => (new CrmDataFreshnessService())->history(15),
+            'canManage' => rateb_can('crm.merge.manage') || rateb_can('crm.governance.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function request(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+        }
+        try {
+            (new CrmDuplicateMergeService())->requestMerge(
+                (string) ($_POST['entity_type'] ?? 'lead'),
+                (int) ($_POST['source_id'] ?? 0),
+                (int) ($_POST['target_id'] ?? 0),
+                trim((string) ($_POST['reason'] ?? '')) ?: null
+            );
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+    }
+
+    public function execute(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+        }
+        try {
+            $r = (new CrmDuplicateMergeService())->execute((int) ($params['id'] ?? 0));
+            SessionManager::flash('success', __('saved_ok') . ' — moved:' . json_encode($r['moved'] ?? []));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+    }
+
+    public function reject(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+        }
+        try {
+            (new CrmDuplicateMergeService())->reject((int) ($params['id'] ?? 0), trim((string) ($_POST['reason'] ?? '')) ?: null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+    }
+
+    public function freshnessScan(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+        }
+        try {
+            $r = (new CrmDataFreshnessService())->check(true);
+            SessionManager::flash('success', __('saved_ok') . ' — freshness:' . $r['freshness_score']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/merge')));
     }
 }
