@@ -692,6 +692,26 @@ return [
         'view' => 'crm.retention.view',
         'manage' => 'crm.retention.view',
     ],
+    'crm-workspace' => [
+        'module' => 'crm',
+        'view' => 'crm.workspace.view',
+        'manage' => 'crm.workspace.view',
+    ],
+    'crm-intelligence' => [
+        'module' => 'crm',
+        'view' => 'crm.intelligence.view',
+        'manage' => 'crm.intelligence.view',
+    ],
+    'crm-dashboards' => [
+        'module' => 'crm',
+        'view' => 'crm.dashboards.view',
+        'manage' => 'crm.dashboards.view',
+    ],
+    'crm-export' => [
+        'module' => 'crm',
+        'view' => 'crm.export.manage',
+        'manage' => 'crm.export.manage',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

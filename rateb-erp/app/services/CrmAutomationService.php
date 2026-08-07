@@ -473,6 +473,18 @@ final class CrmAutomationService
         $renewal = $this->processRenewalReminders();
         $stale = $this->processStaleOpportunities();
         $custFollow = $this->processCustomerFollowUps();
+        $rules = ['matched' => 0, 'executed' => 0, 'history' => []];
+        $scored = 0;
+        try {
+            $scored = count((new CrmOpportunityIntelligenceService())->refreshOpen(25));
+            $rules = (new CrmAutomationRulesEngineService())->evaluate([
+                'entity_type' => 'crm',
+                'entity_id' => 0,
+                'days_inactive' => 21,
+            ]);
+        } catch (\Throwable $e) {
+            // Phase 6 engine optional until migrated
+        }
         $this->audit('crm.automation.run_all', 'crm', null, [
             'follow_up' => $follow,
             'quote_expiry' => $quotes,
@@ -482,6 +494,8 @@ final class CrmAutomationService
             'renewal' => $renewal,
             'stale' => $stale,
             'customer_follow_up' => $custFollow,
+            'rules_engine' => $rules,
+            'intelligence_scored' => $scored,
         ]);
 
         return [
@@ -493,6 +507,8 @@ final class CrmAutomationService
             'renewal' => $renewal,
             'stale' => $stale,
             'customer_follow_up' => $custFollow,
+            'rules_engine' => $rules,
+            'intelligence_scored' => $scored,
         ];
     }
 

@@ -56,24 +56,32 @@ declare(strict_types=1);
             <?php foreach (($automation_rules ?? []) as $rule): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/admin/automation-rules') . '/' . (int) $rule['id']), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-2">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                    <div>
-                        <div class="fw-semibold"><?php echo htmlspecialchars((string) ($rule['name'] ?? $rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                        <div class="small text-muted"><?php echo htmlspecialchars((string) ($rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                    </div>
-                    <?php if (!empty($canManage)): ?>
-                    <div class="d-flex gap-2 align-items-center">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_enabled" value="1" id="rule_<?php echo (int) $rule['id']; ?>" <?php echo !empty($rule['is_enabled']) ? 'checked' : ''; ?>>
-                            <label class="form-check-label" for="rule_<?php echo (int) $rule['id']; ?>">enabled</label>
-                        </div>
-                        <button class="btn btn-sm btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
-                    </div>
-                    <?php endif; ?>
+                <div class="fw-semibold"><?php echo htmlspecialchars((string) ($rule['name'] ?? $rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small text-muted mb-2"><?php echo htmlspecialchars((string) ($rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                <?php if (!empty($canManage)): ?>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="is_enabled" value="1" id="rule_<?php echo (int) $rule['id']; ?>" <?php echo !empty($rule['is_enabled']) ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="rule_<?php echo (int) $rule['id']; ?>">enabled</label>
                 </div>
+                <label class="form-label small"><?php echo htmlspecialchars(__('crm_rule_conditions'), ENT_QUOTES, 'UTF-8'); ?></label>
+                <textarea class="form-control form-control-sm mb-2" name="condition_json" rows="2"><?php echo htmlspecialchars((string) ($rule['condition_json'] ?? '{"type":"always"}'), ENT_QUOTES, 'UTF-8'); ?></textarea>
+                <label class="form-label small"><?php echo htmlspecialchars(__('crm_rule_actions'), ENT_QUOTES, 'UTF-8'); ?></label>
+                <textarea class="form-control form-control-sm mb-2" name="action_json" rows="2"><?php echo htmlspecialchars((string) ($rule['action_json'] ?? '{"type":"notify"}'), ENT_QUOTES, 'UTF-8'); ?></textarea>
+                <button class="btn btn-sm btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
+                <?php endif; ?>
             </form>
             <?php endforeach; ?>
             <?php if (($automation_rules ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
+
+            <h2 class="h5 mt-4"><?php echo htmlspecialchars(__('crm_automation_history'), ENT_QUOTES, 'UTF-8'); ?></h2>
+            <ul class="list-group">
+                <?php foreach (($execution_history ?? []) as $h): ?>
+                <li class="list-group-item small">
+                    <?php echo htmlspecialchars((string) (($h['event_type'] ?? '') . ' · ' . ($h['entity_type'] ?? '') . ' #' . ($h['entity_id'] ?? '') . ' · ' . ($h['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                </li>
+                <?php endforeach; ?>
+                <?php if (($execution_history ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
+            </ul>
         </div>
     </div>
 </div>

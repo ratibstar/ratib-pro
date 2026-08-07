@@ -10,7 +10,11 @@ $customer = $customer ?? [];
             <div class="small mt-1">
                 <?php echo htmlspecialchars(__('crm_lifecycle'), ENT_QUOTES, 'UTF-8'); ?>:
                 <strong><?php echo htmlspecialchars((string) ($customer['crm_lifecycle_stage'] ?? 'customer'), ENT_QUOTES, 'UTF-8'); ?></strong>
-                · <?php echo htmlspecialchars(__('crm_activity_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_activity_score'] ?? 0); ?>
+                · <?php echo htmlspecialchars(__('crm_activity_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_activity_score'] ?? ($health['activity_score'] ?? 0)); ?>
+                · <?php echo htmlspecialchars(__('crm_engagement_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_engagement_score'] ?? ($health['engagement_score'] ?? 0)); ?>
+                · <?php echo htmlspecialchars(__('crm_health_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_health_score'] ?? ($health['health_score'] ?? 0)); ?>
+                (<?php echo htmlspecialchars((string) ($customer['crm_health_status'] ?? ($health['health_status'] ?? 'unknown')), ENT_QUOTES, 'UTF-8'); ?>)
+                · <?php echo htmlspecialchars(__('crm_renewal_risk'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($customer['crm_renewal_risk'] ?? ($health['renewal_risk'] ?? 'low')), ENT_QUOTES, 'UTF-8'); ?>
                 <?php if (!empty($customer['crm_at_risk'])): ?> · <span class="text-danger"><?php echo htmlspecialchars(__('crm_at_risk'), ENT_QUOTES, 'UTF-8'); ?></span><?php endif; ?>
             </div>
         </div>

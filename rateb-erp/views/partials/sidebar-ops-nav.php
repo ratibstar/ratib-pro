@@ -55,6 +55,8 @@ $opsSection(__('recruitment'), [
 $opsSection(__('crm'), [
     ['crm', 'crm', 'fa-handshake', 'crm'],
     ['crm/leads', 'crm_leads', 'fa-user-tag', 'crm'],
+    ['crm/workspace', 'crm_workspace', 'fa-briefcase', 'crm', 'crm.workspace.view'],
+    ['crm/dashboards', 'crm_advanced_dashboards', 'fa-gauge-high', 'crm', 'crm.dashboards.view'],
     ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm'],
     ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm'],
     ['crm/quotations', 'crm_quotations', 'fa-file-invoice', 'crm'],

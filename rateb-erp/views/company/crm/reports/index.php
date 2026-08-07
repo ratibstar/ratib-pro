@@ -26,8 +26,60 @@ $forecast = $forecast ?? [];
                 <button class="btn btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('crm_forecast_snapshot'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
             <?php endif; ?>
+            <?php if (!empty($canExport)): ?>
+            <a class="btn btn-outline-success" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/reports/export') . '?report=funnel&pipeline_id=' . (int) ($pipeline_id ?? 0) . '&date_from=' . urlencode((string) ($date_from ?? '')) . '&date_to=' . urlencode((string) ($date_to ?? ''))), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('crm_export_csv'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php endif; ?>
         </div>
     </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-2">
+            <select class="form-select" name="pipeline_id">
+                <option value="0"><?php echo htmlspecialchars(__('crm_pipeline'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php foreach (($pipelines ?? []) as $p): ?>
+                <option value="<?php echo (int) $p['id']; ?>" <?php echo ((int) ($pipeline_id ?? 0) === (int) $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($p['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-2"><input class="form-control" type="date" name="date_from" value="<?php echo htmlspecialchars((string) ($date_from ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+        <div class="col-md-2"><input class="form-control" type="date" name="date_to" value="<?php echo htmlspecialchars((string) ($date_to ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+        <div class="col-md-2"><button class="btn btn-primary w-100" type="submit"><?php echo htmlspecialchars(__('apply'), ENT_QUOTES, 'UTF-8'); ?></button></div>
+        <?php if (!empty($canExport)): ?>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input class="form-control" name="filter_name_display" form="saveFilterForm" placeholder="<?php echo htmlspecialchars(__('crm_save_filter'), ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+        </div>
+        <?php endif; ?>
+    </form>
+    <?php if (!empty($canExport)): ?>
+    <form id="saveFilterForm" method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/reports/filters')), ENT_QUOTES, 'UTF-8'); ?>" class="mb-3">
+        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="pipeline_id" value="<?php echo (int) ($pipeline_id ?? 0); ?>">
+        <input type="hidden" name="date_from" value="<?php echo htmlspecialchars((string) ($date_from ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="date_to" value="<?php echo htmlspecialchars((string) ($date_to ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="report" value="funnel">
+        <div class="input-group">
+            <input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('crm_save_filter'), ENT_QUOTES, 'UTF-8'); ?>" required>
+            <button class="btn btn-outline-secondary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
+        </div>
+    </form>
+    <?php if (($saved_filters ?? []) !== []): ?>
+    <ul class="list-inline small mb-3">
+        <?php foreach ($saved_filters as $sf): ?>
+        <?php
+            $fj = json_decode((string) ($sf['filters_json'] ?? '{}'), true) ?: [];
+            $q = http_build_query([
+                'pipeline_id' => $fj['pipeline_id'] ?? 0,
+                'date_from' => $fj['date_from'] ?? '',
+                'date_to' => $fj['date_to'] ?? '',
+            ]);
+        ?>
+        <li class="list-inline-item"><a href="?<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($sf['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a></li>
+        <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
+    <?php endif; ?>
 
     <?php $engine = $engine ?? []; $quote_metrics = $quote_metrics ?? []; $revenue = $revenue ?? []; ?>
     <div class="row g-3 mb-4">

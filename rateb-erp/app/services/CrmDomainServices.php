@@ -423,6 +423,11 @@ final class OpportunityService
             CrmSupport::intOrNull($row['owner_user_id'] ?? null),
             $patch['workflow_status'] ?? null
         );
+        try {
+            (new CrmOpportunityIntelligenceService())->score($id, true);
+        } catch (\Throwable $e) {
+            // intelligence columns may be absent pre-migrate
+        }
         if ($outcome === 'won') {
             $custId = CrmSupport::intOrNull($row['customer_id'] ?? null);
             if ($custId !== null && $custId > 0) {

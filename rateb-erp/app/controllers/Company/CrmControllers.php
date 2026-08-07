@@ -13,8 +13,11 @@ use Rateb\App\Services\CampaignService;
 use Rateb\App\Services\ContactService;
 use Rateb\App\Services\CrmAssignmentService;
 use Rateb\App\Services\CrmCompanyService;
+use Rateb\App\Services\CrmActivityIntelligenceService;
 use Rateb\App\Services\CrmAdminConfigService;
+use Rateb\App\Services\CrmAdvancedDashboardService;
 use Rateb\App\Services\CrmAnalyticsService;
+use Rateb\App\Services\CrmAutomationRulesEngineService;
 use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
@@ -22,13 +25,16 @@ use Rateb\App\Services\CrmDashboardService;
 use Rateb\App\Services\CrmForecastEngineService;
 use Rateb\App\Services\CrmLifecycleService;
 use Rateb\App\Services\CrmNoteService;
+use Rateb\App\Services\CrmOpportunityIntelligenceService;
 use Rateb\App\Services\CrmPipelineHealthService;
 use Rateb\App\Services\CrmQuotationService;
 use Rateb\App\Services\CrmQuotationWorkflowService;
+use Rateb\App\Services\CrmReportExportService;
 use Rateb\App\Services\CrmReportService;
 use Rateb\App\Services\CrmRetentionService;
 use Rateb\App\Services\CrmRevenueTrackingService;
 use Rateb\App\Services\CrmSalesTeamService;
+use Rateb\App\Services\CrmSalesWorkspaceService;
 use Rateb\App\Services\CrmTimelineService;
 use Rateb\App\Services\CrmWorkflowService;
 use Rateb\App\Services\LeadService;
@@ -828,9 +834,17 @@ final class CrmReportsController extends Controller
             'quote_metrics' => (new CrmQuotationService())->performanceMetrics(),
             'revenue' => (new CrmRevenueTrackingService())->summary(),
             'analytics' => $analyticsDash,
+            'activity_intel' => (new CrmActivityIntelligenceService())->analyze(
+                (int) ($_GET['owner_user_id'] ?? 0) ?: null,
+                trim((string) ($_GET['date_from'] ?? '')) ?: null,
+                trim((string) ($_GET['date_to'] ?? '')) ?: null
+            ),
+            'saved_filters' => (new CrmReportExportService())->listSavedFilters(),
+            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
+            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
             'pipelines' => (new PipelineService())->listPipelines(),
             'pipeline_id' => $pipelineId,
-            'canExport' => rateb_can('crm.reports.export') || rateb_can('crm.manage'),
+            'canExport' => rateb_can('crm.reports.export') || rateb_can('crm.export.manage') || rateb_can('crm.manage'),
             'canForecastManage' => rateb_can('crm.forecast.manage') || rateb_can('crm.manage'),
             'canAnalytics' => rateb_can('crm.analytics.view') || rateb_can('crm.reports.view') || rateb_can('crm.manage'),
         ], 'main');
@@ -849,6 +863,30 @@ final class CrmReportsController extends Controller
                 trim((string) ($_POST['period_key'] ?? '')) ?: null
             );
             SessionManager::flash('success', __('saved_ok') . ' — ' . $created['period_key']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/reports')));
+    }
+
+    public function export(): void
+    {
+        if (!(rateb_can('crm.reports.export') || rateb_can('crm.export.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'))) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reports')));
+        }
+        (new CrmReportExportService())->streamCsv($_GET);
+    }
+
+    public function saveFilter(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reports')));
+        }
+        try {
+            (new CrmReportExportService())->saveFilter($_POST);
+            SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
@@ -894,12 +932,14 @@ final class CrmAdminController extends Controller
             rateb_bootstrap_ops_tenant();
         }
         $cfg = (new CrmAdminConfigService())->overview();
+        $engine = new CrmAutomationRulesEngineService();
         $this->view('company/crm/admin/index', [
             'title' => __('crm_admin_config'),
             'pipelines' => $cfg['pipelines'],
             'loss_reasons' => $cfg['loss_reasons'],
             'activity_types' => $cfg['activity_types'],
             'automation_rules' => $cfg['automation_rules'],
+            'execution_history' => $engine->executionHistory(30),
             'canManage' => rateb_can('crm.config.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'),
         ], 'main');
     }
@@ -926,12 +966,110 @@ final class CrmAdminController extends Controller
             $this->redirect(rateb_url(rateb_app_route('crm/admin')));
         }
         try {
-            (new CrmAdminConfigService())->updateAutomationRule((int) ($params['id'] ?? 0), $_POST);
+            $id = (int) ($params['id'] ?? 0);
+            if (isset($_POST['condition_json']) || isset($_POST['action_json'])) {
+                (new CrmAutomationRulesEngineService())->saveRule($id, $_POST);
+            } else {
+                (new CrmAdminConfigService())->updateAutomationRule($id, $_POST);
+            }
             SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/admin')));
+    }
+}
+
+/** Phase 6 — Sales execution workspace. */
+final class CrmWorkspaceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $filters = [
+            'user_id' => (int) ($_GET['user_id'] ?? 0) ?: null,
+            'team_id' => (int) ($_GET['team_id'] ?? 0) ?: null,
+            'territory_id' => (int) ($_GET['territory_id'] ?? 0) ?: null,
+        ];
+        $data = (new CrmSalesWorkspaceService())->assemble($filters);
+        $teams = [];
+        $territories = [];
+        try {
+            $teamSvc = new CrmSalesTeamService();
+            $teams = $teamSvc->listTeams();
+            $territories = $teamSvc->listTerritories();
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        $this->view('company/crm/workspace/index', array_merge($data, [
+            'title' => __('crm_workspace'),
+            'teams' => $teams,
+            'territories' => $territories,
+        ]), 'main');
+    }
+}
+
+/** Phase 6 — Advanced role dashboards. */
+final class CrmDashboardsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $role = trim((string) ($_GET['role'] ?? 'rep'));
+        $dash = (new CrmAdvancedDashboardService())->forRole(
+            $role,
+            (int) ($_GET['user_id'] ?? 0) ?: null,
+            (int) ($_GET['team_id'] ?? 0) ?: null,
+            (int) ($_GET['pipeline_id'] ?? 0) ?: null
+        );
+        $this->view('company/crm/dashboards/index', [
+            'title' => __('crm_advanced_dashboards'),
+            'dash' => $dash,
+            'role' => $dash['role'],
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'user_id' => (int) ($_GET['user_id'] ?? 0),
+            'team_id' => (int) ($_GET['team_id'] ?? 0),
+        ], 'main');
+    }
+}
+
+/** Phase 6 — Opportunity intelligence actions. */
+final class CrmIntelligenceController extends Controller
+{
+    public function refresh(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/workspace')));
+        }
+        try {
+            $n = count((new CrmOpportunityIntelligenceService())->refreshOpen(50));
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $n);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/workspace')));
+    }
+
+    public function scoreOpportunity(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/opportunities')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $score = (new CrmOpportunityIntelligenceService())->score($id, true);
+            SessionManager::flash('success', __('crm_intelligence_score') . ': ' . $score['intelligence_score']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/opportunities') . '/' . $id));
     }
 }
 

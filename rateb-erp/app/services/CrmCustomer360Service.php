@@ -27,32 +27,51 @@ final class CrmCustomer360Service
     public function assemble(int $customerId): array
     {
         $companyId = CrmSupport::requireCompanyId();
-        $customer = (new Customer())->queryOne(
-            'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
-                    crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
-                    crm_last_interaction_at, crm_activity_score, crm_renewal_due_at, crm_at_risk
-             FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
-            ['id' => $customerId, 'cid' => $companyId]
-        );
+        $customer = null;
+        try {
+            $customer = (new Customer())->queryOne(
+                'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
+                        crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
+                        crm_last_interaction_at, crm_activity_score, crm_engagement_score,
+                        crm_health_score, crm_health_status, crm_renewal_risk,
+                        crm_renewal_due_at, crm_at_risk
+                 FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $customerId, 'cid' => $companyId]
+            );
+        } catch (\Throwable $e) {
+            $customer = null;
+        }
+        if (!is_array($customer)) {
+            $customer = (new Customer())->queryOne(
+                'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id
+                 FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $customerId, 'cid' => $companyId]
+            );
+        }
         if (!is_array($customer)) {
             throw new \RuntimeException('customer_not_found');
         }
 
         $lifecycleHistory = [];
         $retention = null;
+        $health = null;
         try {
             $lifecycleHistory = (new CrmLifecycleService())->history($customerId, 40);
             $retention = (new CrmRetentionService())->refreshCustomer($customerId);
+            $health = (new CrmCustomerHealthService())->compute($customerId, true);
             $customer = (new Customer())->queryOne(
                 'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
                         crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
-                        crm_last_interaction_at, crm_activity_score, crm_renewal_due_at, crm_at_risk
+                        crm_last_interaction_at, crm_activity_score, crm_engagement_score,
+                        crm_health_score, crm_health_status, crm_renewal_risk,
+                        crm_renewal_due_at, crm_at_risk
                  FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
                 ['id' => $customerId, 'cid' => $companyId]
             ) ?? $customer;
         } catch (\Throwable $e) {
             $lifecycleHistory = [];
             $retention = null;
+            $health = null;
         }
 
         $crmCompanies = (new CrmCompany())->query(
@@ -179,6 +198,7 @@ final class CrmCustomer360Service
             'lifecycle_history' => $lifecycleHistory,
             'lifecycle_stages' => CrmLifecycleService::STAGES,
             'retention' => $retention,
+            'health' => $health,
             'order_links' => $orderLinks,
             'invoice_links' => $invoiceLinks,
             'payment_links' => $paymentLinks,

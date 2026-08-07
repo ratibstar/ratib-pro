@@ -154,7 +154,9 @@ final class Customer extends Model
         'company_id', 'code', 'name', 'name_ar', 'phone', 'email', 'tax_id',
         'cost_center_id', 'notes', 'is_active', 'branch_id',
         'crm_lifecycle_stage', 'crm_owner_user_id', 'crm_team_id', 'crm_territory_id',
-        'crm_last_interaction_at', 'crm_activity_score', 'crm_renewal_due_at', 'crm_at_risk',
+        'crm_last_interaction_at', 'crm_activity_score', 'crm_engagement_score',
+        'crm_health_score', 'crm_health_status', 'crm_renewal_risk',
+        'crm_renewal_due_at', 'crm_at_risk',
     ];
 }
 

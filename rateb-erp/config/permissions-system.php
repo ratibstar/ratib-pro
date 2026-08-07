@@ -281,6 +281,10 @@ return [
             'crm.lifecycle.manage',
             'crm.analytics.view',
             'crm.retention.view',
+            'crm.workspace.view',
+            'crm.intelligence.view',
+            'crm.dashboards.view',
+            'crm.export.manage',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -326,6 +330,10 @@ return [
             'crm.lifecycle.manage',
             'crm.analytics.view',
             'crm.retention.view',
+            'crm.workspace.view',
+            'crm.intelligence.view',
+            'crm.dashboards.view',
+            'crm.export.manage',
         ],
         'website.manage' => [
             'website.view',

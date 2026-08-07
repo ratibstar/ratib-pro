@@ -91,7 +91,9 @@ final class CrmOpportunity extends Model
         'public_uuid', 'company_id', 'branch_id', 'opportunity_no', 'name', 'name_ar', 'lead_id',
         'crm_company_id', 'contact_id', 'customer_id', 'pipeline_id', 'stage_id', 'stage_entered_at',
         'owner_user_id', 'team_id',
-        'amount', 'currency_code', 'probability_percent', 'expected_close_date', 'workflow_status',
+        'amount', 'currency_code', 'probability_percent',
+        'intelligence_score', 'engagement_score', 'risk_level', 'recommended_probability', 'is_stale', 'score_updated_at',
+        'expected_close_date', 'workflow_status',
         'loss_reason_id', 'loss_notes',
         'status', 'notes', 'created_by', 'updated_by', 'deleted_at',
     ];
@@ -333,7 +335,8 @@ final class CrmAutomationRule extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'public_uuid', 'company_id', 'rule_key', 'name', 'is_enabled',
-        'config_json', 'created_by', 'updated_by', 'deleted_at',
+        'config_json', 'condition_json', 'action_json',
+        'created_by', 'updated_by', 'deleted_at',
     ];
 }
 
@@ -396,5 +399,27 @@ final class CrmStageTransition extends Model
     protected array $fillable = [
         'public_uuid', 'company_id', 'opportunity_id', 'pipeline_id', 'from_stage_id',
         'to_stage_id', 'duration_seconds', 'owner_user_id', 'team_id', 'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 6 — Score change audit. */
+final class CrmScoreHistory extends Model
+{
+    protected string $table = 'rateb_crm_score_history';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'entity_type', 'entity_id', 'score_type',
+        'from_value', 'to_value', 'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 6 — Saved report filters. */
+final class CrmSavedReportFilter extends Model
+{
+    protected string $table = 'rateb_crm_saved_report_filters';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'user_id', 'name', 'report_key', 'filters_json',
+        'created_by', 'updated_by', 'deleted_at',
     ];
 }
