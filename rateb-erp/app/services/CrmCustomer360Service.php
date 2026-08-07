@@ -55,10 +55,17 @@ final class CrmCustomer360Service
         $lifecycleHistory = [];
         $retention = null;
         $health = null;
+        $healthIntel = ['health_history' => [], 'risk_trends' => ['trend' => 'stable', 'points' => []], 'engagement_timeline' => []];
         try {
             $lifecycleHistory = (new CrmLifecycleService())->history($customerId, 40);
             $retention = (new CrmRetentionService())->refreshCustomer($customerId);
-            $health = (new CrmCustomerHealthService())->compute($customerId, true);
+            $healthSvc = new CrmCustomerHealthService();
+            $health = $healthSvc->compute($customerId, true);
+            $healthIntel = [
+                'health_history' => $healthSvc->healthHistory($customerId),
+                'risk_trends' => $healthSvc->riskTrends($customerId),
+                'engagement_timeline' => $healthSvc->engagementTimeline($customerId),
+            ];
             $customer = (new Customer())->queryOne(
                 'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
                         crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
@@ -72,6 +79,7 @@ final class CrmCustomer360Service
             $lifecycleHistory = [];
             $retention = null;
             $health = null;
+            $healthIntel = ['health_history' => [], 'risk_trends' => ['trend' => 'stable', 'points' => []], 'engagement_timeline' => []];
         }
 
         $crmCompanies = (new CrmCompany())->query(
@@ -199,6 +207,9 @@ final class CrmCustomer360Service
             'lifecycle_stages' => CrmLifecycleService::STAGES,
             'retention' => $retention,
             'health' => $health,
+            'health_history' => $healthIntel['health_history'] ?? [],
+            'risk_trends' => $healthIntel['risk_trends'] ?? ['trend' => 'stable', 'points' => []],
+            'engagement_timeline' => $healthIntel['engagement_timeline'] ?? [],
             'order_links' => $orderLinks,
             'invoice_links' => $invoiceLinks,
             'payment_links' => $paymentLinks,

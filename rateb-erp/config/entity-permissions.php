@@ -712,6 +712,26 @@ return [
         'view' => 'crm.export.manage',
         'manage' => 'crm.export.manage',
     ],
+    'crm-governance' => [
+        'module' => 'crm',
+        'view' => 'crm.governance.view',
+        'manage' => 'crm.governance.manage',
+    ],
+    'crm-forecast-enterprise' => [
+        'module' => 'crm',
+        'view' => 'crm.forecast.enterprise',
+        'manage' => 'crm.forecast.enterprise',
+    ],
+    'crm-performance' => [
+        'module' => 'crm',
+        'view' => 'crm.performance.view',
+        'manage' => 'crm.performance.view',
+    ],
+    'crm-revenue-intel' => [
+        'module' => 'crm',
+        'view' => 'crm.revenue.intel',
+        'manage' => 'crm.revenue.intel',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

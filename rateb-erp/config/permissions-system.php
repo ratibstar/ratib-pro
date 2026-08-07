@@ -285,6 +285,11 @@ return [
             'crm.intelligence.view',
             'crm.dashboards.view',
             'crm.export.manage',
+            'crm.governance.view',
+            'crm.governance.manage',
+            'crm.forecast.enterprise',
+            'crm.performance.view',
+            'crm.revenue.intel',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -334,6 +339,11 @@ return [
             'crm.intelligence.view',
             'crm.dashboards.view',
             'crm.export.manage',
+            'crm.governance.view',
+            'crm.governance.manage',
+            'crm.forecast.enterprise',
+            'crm.performance.view',
+            'crm.revenue.intel',
         ],
         'website.manage' => [
             'website.view',

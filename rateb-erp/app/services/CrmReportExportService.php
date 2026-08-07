@@ -87,6 +87,16 @@ final class CrmReportExportService
      */
     public function streamCsv(array $filters = []): void
     {
+        try {
+            $policy = (new CrmGovernanceService())->validateExportPolicy();
+            if (!$policy['ok']) {
+                throw new \RuntimeException('export_policy_blocked:' . implode(',', $policy['violations']));
+            }
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            // governance table may be absent pre-migrate
+        }
         $payload = $this->build($filters);
         if (class_exists(AuditService::class)) {
             (new AuditService())->log('crm.export.csv', 'crm_report', null, [

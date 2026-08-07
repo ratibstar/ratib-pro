@@ -311,9 +311,9 @@ final class CrmForecastSnapshot extends Model
     protected string $table = 'rateb_crm_forecast_snapshots';
     protected bool $tenantScoped = false;
     protected array $fillable = [
-        'public_uuid', 'company_id', 'period_key', 'pipeline_id', 'owner_user_id',
+        'public_uuid', 'company_id', 'period_key', 'period_type', 'pipeline_id', 'owner_user_id', 'team_id',
         'open_amount', 'weighted_amount', 'won_amount', 'lost_amount',
-        'opportunity_count', 'meta_json', 'created_by',
+        'opportunity_count', 'confidence_score', 'forecast_scope', 'meta_json', 'created_by',
     ];
 }
 
@@ -421,5 +421,47 @@ final class CrmSavedReportFilter extends Model
     protected array $fillable = [
         'public_uuid', 'company_id', 'user_id', 'name', 'report_key', 'filters_json',
         'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 7 — Forecast change audit. */
+final class CrmForecastChangeLog extends Model
+{
+    protected string $table = 'rateb_crm_forecast_change_log';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'snapshot_id', 'period_key', 'period_type', 'change_type',
+        'from_weighted', 'to_weighted', 'from_confidence', 'to_confidence',
+        'team_id', 'owner_user_id', 'meta_json', 'created_by',
+    ];
+}
+
+final class CrmGovernanceSetting extends Model
+{
+    protected string $table = 'rateb_crm_governance_settings';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'setting_key', 'setting_json',
+        'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+final class CrmDataQualityIssue extends Model
+{
+    protected string $table = 'rateb_crm_data_quality_issues';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'entity_type', 'entity_id', 'issue_code', 'severity',
+        'message', 'status', 'meta_json', 'resolved_by', 'resolved_at', 'created_by',
+    ];
+}
+
+final class CrmHealthHistory extends Model
+{
+    protected string $table = 'rateb_crm_health_history';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'customer_id', 'activity_score', 'engagement_score',
+        'health_score', 'health_status', 'renewal_risk', 'meta_json', 'created_by',
     ];
 }

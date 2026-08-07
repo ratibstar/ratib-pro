@@ -22,7 +22,9 @@ use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
+use Rateb\App\Services\CrmEnterpriseForecastService;
 use Rateb\App\Services\CrmForecastEngineService;
+use Rateb\App\Services\CrmGovernanceService;
 use Rateb\App\Services\CrmLifecycleService;
 use Rateb\App\Services\CrmNoteService;
 use Rateb\App\Services\CrmOpportunityIntelligenceService;
@@ -32,7 +34,9 @@ use Rateb\App\Services\CrmQuotationWorkflowService;
 use Rateb\App\Services\CrmReportExportService;
 use Rateb\App\Services\CrmReportService;
 use Rateb\App\Services\CrmRetentionService;
+use Rateb\App\Services\CrmRevenueIntelligenceService;
 use Rateb\App\Services\CrmRevenueTrackingService;
+use Rateb\App\Services\CrmSalesPerformanceService;
 use Rateb\App\Services\CrmSalesTeamService;
 use Rateb\App\Services\CrmSalesWorkspaceService;
 use Rateb\App\Services\CrmTimelineService;
@@ -1070,6 +1074,184 @@ final class CrmIntelligenceController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/opportunities') . '/' . $id));
+    }
+}
+
+/** Phase 7 — Revenue intelligence. */
+final class CrmRevenueController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $pipelineId = (int) ($_GET['pipeline_id'] ?? 0) ?: null;
+        $data = (new CrmRevenueIntelligenceService())->dashboard(
+            $pipelineId,
+            trim((string) ($_GET['date_from'] ?? '')) ?: null,
+            trim((string) ($_GET['date_to'] ?? '')) ?: null
+        );
+        if (class_exists(\Rateb\App\Services\AuditService::class)) {
+            (new \Rateb\App\Services\AuditService())->log('crm.report.access', 'crm_revenue_intel', null, [
+                'pipeline_id' => $pipelineId,
+            ]);
+        }
+        $this->view('company/crm/revenue/index', [
+            'title' => __('crm_revenue_intelligence'),
+            'data' => $data,
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
+            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+        ], 'main');
+    }
+}
+
+/** Phase 7 — Enterprise forecasting. */
+final class CrmForecastController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmEnterpriseForecastService();
+        $periodType = trim((string) ($_GET['period_type'] ?? 'month'));
+        $forecast = $svc->compute(
+            $periodType,
+            (int) ($_GET['pipeline_id'] ?? 0) ?: null,
+            (int) ($_GET['team_id'] ?? 0) ?: null,
+            (int) ($_GET['user_id'] ?? 0) ?: null,
+            trim((string) ($_GET['period_key'] ?? '')) ?: null
+        );
+        $this->view('company/crm/forecast/index', [
+            'title' => __('crm_enterprise_forecast'),
+            'forecast' => $forecast,
+            'history' => $svc->changeHistory(30),
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'period_type' => $periodType,
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'team_id' => (int) ($_GET['team_id'] ?? 0),
+            'user_id' => (int) ($_GET['user_id'] ?? 0),
+            'canManage' => rateb_can('crm.forecast.enterprise') || rateb_can('crm.forecast.manage') || rateb_can('crm.manage'),
+        ], 'main');
+    }
+
+    public function snapshot(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/forecast')));
+        }
+        try {
+            $created = (new CrmEnterpriseForecastService())->snapshot(
+                trim((string) ($_POST['period_type'] ?? 'month')),
+                (int) ($_POST['pipeline_id'] ?? 0) ?: null,
+                (int) ($_POST['team_id'] ?? 0) ?: null,
+                (int) ($_POST['user_id'] ?? 0) ?: null,
+                trim((string) ($_POST['period_key'] ?? '')) ?: null
+            );
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $created['period_key'] . ' (' . $created['confidence_score'] . '%)');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/forecast')));
+    }
+}
+
+/** Phase 7 — Governance + data quality. */
+final class CrmGovernanceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmGovernanceService();
+        $this->view('company/crm/governance/index', [
+            'title' => __('crm_governance'),
+            'health' => $svc->healthDashboard(),
+            'issues' => $svc->listOpenIssues(50),
+            'automation_gov' => $svc->automationGovernanceCheck(),
+            'canManage' => rateb_can('crm.governance.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function scan(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        }
+        try {
+            $r = (new CrmGovernanceService())->runDataQualityScan(true);
+            SessionManager::flash('success', __('saved_ok') . ' — issues:' . $r['created']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+    }
+
+    public function resolve(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        }
+        try {
+            (new CrmGovernanceService())->resolveIssue((int) ($params['id'] ?? 0), trim((string) ($_POST['note'] ?? '')) ?: null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+    }
+
+    public function saveSetting(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        }
+        try {
+            $key = trim((string) ($_POST['setting_key'] ?? ''));
+            $json = trim((string) ($_POST['setting_json'] ?? ''));
+            $decoded = json_decode($json, true);
+            if (!is_array($decoded)) {
+                throw new \InvalidArgumentException('invalid_json');
+            }
+            (new CrmGovernanceService())->saveSetting($key, $decoded);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+    }
+}
+
+/** Phase 7 — Sales performance management. */
+final class CrmPerformanceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $from = trim((string) ($_GET['date_from'] ?? ''));
+        $to = trim((string) ($_GET['date_to'] ?? ''));
+        $data = (new CrmSalesPerformanceService())->dashboard($from !== '' ? $from : null, $to !== '' ? $to : null);
+        if (class_exists(\Rateb\App\Services\AuditService::class)) {
+            (new \Rateb\App\Services\AuditService())->log('crm.report.access', 'crm_performance', null, [
+                'date_from' => $from,
+                'date_to' => $to,
+            ]);
+        }
+        $this->view('company/crm/performance/index', [
+            'title' => __('crm_sales_performance_mgmt'),
+            'data' => $data,
+            'date_from' => $from,
+            'date_to' => $to,
+        ], 'main');
     }
 }
 
