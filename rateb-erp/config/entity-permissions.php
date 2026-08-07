@@ -657,6 +657,16 @@ return [
         'view' => 'crm.view',
         'manage' => 'crm.manage',
     ],
+    'crm-reports' => [
+        'module' => 'crm',
+        'view' => 'crm.reports.view',
+        'manage' => 'crm.manage',
+    ],
+    'crm-pipeline' => [
+        'module' => 'crm',
+        'view' => 'crm.pipeline.view',
+        'manage' => 'crm.pipeline.manage',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

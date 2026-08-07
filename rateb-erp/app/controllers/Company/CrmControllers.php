@@ -13,11 +13,14 @@ use Rateb\App\Services\CampaignService;
 use Rateb\App\Services\ContactService;
 use Rateb\App\Services\CrmAssignmentService;
 use Rateb\App\Services\CrmCompanyService;
+use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
+use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
 use Rateb\App\Services\CrmNoteService;
 use Rateb\App\Services\CrmQuotationService;
 use Rateb\App\Services\CrmQuotationWorkflowService;
+use Rateb\App\Services\CrmReportService;
 use Rateb\App\Services\CrmTimelineService;
 use Rateb\App\Services\CrmWorkflowService;
 use Rateb\App\Services\LeadService;
@@ -285,18 +288,38 @@ final class CrmLeadsController extends Controller
 
 final class CrmPipelineController extends Controller
 {
+    private function canViewPipeline(): bool
+    {
+        return rateb_can('crm.pipeline.view') || rateb_can('crm.pipeline') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canManagePipeline(): bool
+    {
+        return rateb_can('crm.pipeline.manage') || rateb_can('crm.pipeline') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canForecast(): bool
+    {
+        return rateb_can('crm.pipeline.forecast') || rateb_can('crm.pipeline') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
     public function index(): void
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
         $pipelineId = (int) ($_GET['pipeline_id'] ?? 0);
-        $board = (new PipelineService())->board($pipelineId > 0 ? $pipelineId : null);
+        $svc = new PipelineService();
+        $board = $svc->board($pipelineId > 0 ? $pipelineId : null);
+        $pid = (int) (($board['pipeline']['id'] ?? 0));
         $this->view('company/crm/pipeline/index', [
             'title' => __('crm_pipeline'),
-            'pipelines' => (new PipelineService())->listPipelines(),
+            'pipelines' => $svc->listPipelines(),
             'board' => $board,
-            'canManage' => rateb_can('crm.pipeline') || rateb_can('crm.manage'),
+            'lossReasons' => $svc->listLossReasons(),
+            'forecast' => $this->canForecast() ? (new CrmReportService())->forecast($pid > 0 ? $pid : null) : null,
+            'canManage' => $this->canManagePipeline(),
+            'canForecast' => $this->canForecast(),
         ], 'main');
     }
 
@@ -315,6 +338,37 @@ final class CrmPipelineController extends Controller
         $this->redirect(rateb_url(rateb_app_route('crm/pipeline')));
     }
 
+    public function storeStage(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/pipeline')));
+        }
+        try {
+            $stageId = (int) ($_POST['stage_id'] ?? 0);
+            (new PipelineService())->upsertStage($_POST, $stageId > 0 ? $stageId : null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/pipeline')));
+    }
+
+    public function storeLossReason(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/pipeline')));
+        }
+        try {
+            (new PipelineService())->createLossReason($_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/pipeline')));
+    }
+
     public function moveOpportunity(array $params): void
     {
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
@@ -323,7 +377,7 @@ final class CrmPipelineController extends Controller
         }
         $id = (int) ($params['id'] ?? 0);
         try {
-            (new OpportunityService())->moveStage($id, (int) ($_POST['stage_id'] ?? 0));
+            (new OpportunityService())->moveStage($id, (int) ($_POST['stage_id'] ?? 0), $_POST);
             SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
@@ -652,12 +706,67 @@ final class CrmCustomerProfileController extends Controller
             rateb_bootstrap_ops_tenant();
         }
         $customerId = (int) ($params['id'] ?? 0);
-        $this->view('company/crm/customer-profile', [
-            'title' => __('crm_customer_profile'),
+        try {
+            $data = (new CrmCustomer360Service())->assemble($customerId);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm')));
+
+            return;
+        }
+        $this->view('company/crm/customer-profile', array_merge($data, [
+            'title' => __('crm_customer_360'),
             'customer_id' => $customerId,
-            'timeline' => (new CrmTimelineService())->listForCustomer($customerId, 50),
-            'activities' => (new ActivityService())->list(20, 0),
+        ]), 'main');
+    }
+}
+
+final class CrmReportsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $reports = new CrmReportService();
+        $pipelineId = (int) ($_GET['pipeline_id'] ?? 0);
+        $this->view('company/crm/reports/index', [
+            'title' => __('crm_reports'),
+            'funnel' => $reports->salesFunnel($pipelineId > 0 ? $pipelineId : null),
+            'conversions' => $reports->conversionRates(),
+            'sources' => $reports->leadSources(),
+            'performance' => $reports->salesPerformance(),
+            'lost' => $reports->lostOpportunities(),
+            'forecast' => $reports->forecast($pipelineId > 0 ? $pipelineId : null),
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'pipeline_id' => $pipelineId,
+            'canExport' => rateb_can('crm.reports.export') || rateb_can('crm.manage'),
         ], 'main');
+    }
+}
+
+final class CrmAutomationController extends Controller
+{
+    public function run(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm')));
+        }
+        try {
+            $auto = new CrmAutomationService();
+            $follow = $auto->processFollowUpReminders();
+            $quotes = $auto->processQuoteExpiryAlerts();
+            SessionManager::flash(
+                'success',
+                __('crm_automation_ran') . ' — reminders:' . $follow['reminders']
+                . ' overdue:' . $follow['overdue']
+                . ' quote_alerts:' . $quotes['alerts']
+            );
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm')));
     }
 }
 
@@ -834,17 +943,26 @@ final class CrmCallsController extends Controller
 
 final class CrmActivitiesController extends Controller
 {
+    private function canManageActivities(): bool
+    {
+        return rateb_can('crm.activities.manage') || rateb_can('crm.activities') || rateb_can('crm.manage');
+    }
+
     public function index(): void
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
         $result = (new ActivityService())->list(50, 0);
+        $tasks = (new TaskService())->list(30, 0);
         $this->view('company/crm/activities/index', [
             'title' => __('crm_activities'),
             'items' => $result['items'],
             'total' => $result['total'],
-            'canCreate' => rateb_can('crm.activities') || rateb_can('crm.manage'),
+            'tasks' => $tasks['items'],
+            'history' => (new ActivityService())->history(40),
+            'canCreate' => $this->canManageActivities(),
+            'canAssign' => rateb_can('crm.activities.assign') || rateb_can('crm.assign') || rateb_can('crm.manage'),
         ], 'main');
     }
 

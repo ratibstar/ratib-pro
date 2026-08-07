@@ -58,6 +58,7 @@ $opsSection(__('crm'), [
     ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm'],
     ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm'],
     ['crm/quotations', 'crm_quotations', 'fa-file-invoice', 'crm'],
+    ['crm/reports', 'crm_reports', 'fa-chart-line', 'crm', 'crm.reports.view'],
     ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm'],
     ['crm/companies', 'crm_companies', 'fa-building', 'crm'],
     ['crm/activities', 'crm_activities', 'fa-list-check', 'crm', 'crm.activities'],

@@ -10,8 +10,10 @@ use Rateb\App\Models\CrmCompany;
 use Rateb\App\Models\CrmContact;
 use Rateb\App\Models\CrmLead;
 use Rateb\App\Models\CrmLeadSource;
+use Rateb\App\Models\CrmLossReason;
 use Rateb\App\Models\CrmNote;
 use Rateb\App\Models\CrmOpportunity;
+use Rateb\App\Models\CrmOpportunityOutcome;
 use Rateb\App\Models\CrmPipeline;
 use Rateb\App\Models\CrmPipelineStage;
 use Rateb\App\Models\CrmTag;
@@ -316,7 +318,10 @@ final class OpportunityService
         );
     }
 
-    public function moveStage(int $id, int $stageId): void
+    /**
+     * @param array<string, mixed> $meta loss_reason_id / loss_notes for lost stages
+     */
+    public function moveStage(int $id, int $stageId, array $meta = []): void
     {
         $row = $this->find($id);
         if ($row === null) {
@@ -331,25 +336,73 @@ final class OpportunityService
         if ($stage === null) {
             throw new \RuntimeException('stage_not_found');
         }
+        $prob = (float) ($stage['probability_percent'] ?? 0);
+        $amount = (float) ($row['amount'] ?? 0);
+        $expected = round($amount * $prob / 100, 2);
         $patch = array_merge([
             'stage_id' => $stageId,
             'pipeline_id' => (int) ($stage['pipeline_id'] ?? 0),
-            'probability_percent' => (float) ($stage['probability_percent'] ?? 0),
+            'probability_percent' => $prob,
         ], CrmSupport::actorFields(false));
+        $outcome = null;
         if ((int) ($stage['is_won'] ?? 0) === 1) {
             $patch['workflow_status'] = 'won';
+            $outcome = 'won';
         } elseif ((int) ($stage['is_lost'] ?? 0) === 1) {
             $patch['workflow_status'] = 'lost';
+            $outcome = 'lost';
+            $lossReasonId = CrmSupport::intOrNull($meta['loss_reason_id'] ?? null);
+            $reasons = (new PipelineService())->listLossReasons();
+            if ($lossReasonId === null && $reasons !== []) {
+                throw new \InvalidArgumentException('loss_reason_required');
+            }
+            if ($lossReasonId !== null) {
+                $patch['loss_reason_id'] = $lossReasonId;
+            }
+            $patch['loss_notes'] = CrmSupport::nullIfEmpty($meta['loss_notes'] ?? null);
         }
         (new CrmOpportunity())->update($id, $patch);
+        if ($outcome !== null) {
+            (new CrmOpportunityOutcome())->create([
+                'company_id' => $companyId,
+                'opportunity_id' => $id,
+                'outcome' => $outcome,
+                'loss_reason_id' => $outcome === 'lost' ? ($patch['loss_reason_id'] ?? null) : null,
+                'amount' => $amount,
+                'probability_percent' => $prob,
+                'expected_revenue' => $expected,
+                'notes' => $patch['loss_notes'] ?? null,
+                'created_by' => CrmSupport::userId(),
+            ]);
+        }
+        $stageName = (string) ($stage['name'] ?? $stageId);
         (new CrmTimelineService())->record(
             'opportunity_stage',
-            'Stage → ' . (string) ($stage['name'] ?? $stageId),
-            null,
+            'Stage → ' . $stageName,
+            $outcome === 'lost' ? (string) ($patch['loss_notes'] ?? '') : null,
             'opportunity',
             $id,
             ['opportunity_id' => $id]
         );
+        (new CrmAutomationService())->onOpportunityStageChanged(
+            $id,
+            $stageName,
+            CrmSupport::intOrNull($row['owner_user_id'] ?? null),
+            $patch['workflow_status'] ?? null
+        );
+        if (class_exists(AuditService::class)) {
+            (new AuditService())->log('crm.opportunity.stage', 'crm_opportunity', $id, [
+                'stage_id' => $stageId,
+                'stage' => $stageName,
+                'outcome' => $outcome,
+                'expected_revenue' => $expected,
+            ]);
+        }
+    }
+
+    public static function expectedRevenue(float $amount, float $probabilityPercent): float
+    {
+        return round($amount * $probabilityPercent / 100, 2);
     }
 }
 
@@ -470,11 +523,119 @@ final class PipelineService
             ['cid' => CrmSupport::requireCompanyId(), 'pid' => $pid]
         );
 
+        $list = is_array($opps) ? $opps : [];
+        foreach ($list as &$opp) {
+            $opp['expected_revenue'] = OpportunityService::expectedRevenue(
+                (float) ($opp['amount'] ?? 0),
+                (float) ($opp['probability_percent'] ?? 0)
+            );
+        }
+        unset($opp);
+
         return [
             'pipeline' => $pipe,
             'stages' => $stages,
-            'opportunities' => is_array($opps) ? $opps : [],
+            'opportunities' => $list,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int}
+     */
+    public function upsertStage(array $input, ?int $stageId = null): array
+    {
+        $companyId = CrmSupport::requireCompanyId();
+        $pipelineId = (int) ($input['pipeline_id'] ?? 0);
+        $name = trim((string) ($input['name'] ?? ''));
+        if ($pipelineId < 1 || $name === '') {
+            throw new \InvalidArgumentException('stage_fields_required');
+        }
+        $pipe = (new CrmPipeline())->queryOne(
+            'SELECT id FROM rateb_crm_pipelines WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',
+            ['id' => $pipelineId, 'cid' => $companyId]
+        );
+        if ($pipe === null) {
+            throw new \RuntimeException('pipeline_not_found');
+        }
+        $payload = array_merge([
+            'pipeline_id' => $pipelineId,
+            'code' => substr(trim((string) ($input['code'] ?? preg_replace('/\s+/', '_', strtolower($name)))), 0, 40),
+            'name' => substr($name, 0, 160),
+            'name_ar' => CrmSupport::nullIfEmpty($input['name_ar'] ?? null),
+            'sort_order' => (int) ($input['sort_order'] ?? 0),
+            'probability_percent' => max(0, min(100, (float) ($input['probability_percent'] ?? 0))),
+            'is_won' => !empty($input['is_won']) ? 1 : 0,
+            'is_lost' => !empty($input['is_lost']) ? 1 : 0,
+            'status' => 'active',
+        ], CrmSupport::actorFields($stageId === null));
+
+        if ($stageId !== null && $stageId > 0) {
+            $existing = (new CrmPipelineStage())->queryOne(
+                'SELECT id FROM rateb_crm_pipeline_stages WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',
+                ['id' => $stageId, 'cid' => $companyId]
+            );
+            if ($existing === null) {
+                throw new \RuntimeException('stage_not_found');
+            }
+            (new CrmPipelineStage())->update($stageId, $payload);
+            if (class_exists(AuditService::class)) {
+                (new AuditService())->log('crm.pipeline.stage_update', 'crm_pipeline_stage', $stageId, $payload);
+            }
+
+            return ['id' => $stageId];
+        }
+
+        $id = (new CrmPipelineStage())->create(array_merge([
+            'public_uuid' => CrmSupport::uuidV4(),
+            'company_id' => $companyId,
+        ], $payload));
+        if (class_exists(AuditService::class)) {
+            (new AuditService())->log('crm.pipeline.stage_create', 'crm_pipeline_stage', (int) $id, $payload);
+        }
+
+        return ['id' => (int) $id];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listLossReasons(): array
+    {
+        $rows = (new CrmLossReason())->query(
+            "SELECT * FROM rateb_crm_loss_reasons
+             WHERE company_id = :cid AND deleted_at IS NULL AND status = 'active'
+             ORDER BY sort_order ASC, name ASC",
+            ['cid' => CrmSupport::requireCompanyId()]
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array{id: int}
+     */
+    public function createLossReason(array $input): array
+    {
+        $companyId = CrmSupport::requireCompanyId();
+        $name = trim((string) ($input['name'] ?? ''));
+        if ($name === '') {
+            throw new \InvalidArgumentException('name_required');
+        }
+        $code = trim((string) ($input['code'] ?? ''));
+        if ($code === '') {
+            $code = CrmSupport::nextCode('rateb_crm_loss_reasons', 'LR', $companyId);
+        }
+        $id = (new CrmLossReason())->create(array_merge([
+            'public_uuid' => CrmSupport::uuidV4(),
+            'company_id' => $companyId,
+            'code' => substr($code, 0, 40),
+            'name' => substr($name, 0, 160),
+            'name_ar' => CrmSupport::nullIfEmpty($input['name_ar'] ?? null),
+            'sort_order' => (int) ($input['sort_order'] ?? 0),
+            'status' => 'active',
+        ], CrmSupport::actorFields(true)));
+
+        return ['id' => (int) $id];
     }
 }
 
@@ -853,6 +1014,17 @@ final class CrmAssignmentService
         $assignee = (int) ($input['assignee_user_id'] ?? 0);
         if ($relatedType === '' || $relatedId < 1 || $assignee < 1) {
             throw new \InvalidArgumentException('assignment_fields_required');
+        }
+        if ($relatedType === 'lead') {
+            (new CrmLead())->update($relatedId, array_merge([
+                'owner_user_id' => $assignee,
+            ], CrmSupport::actorFields(false)));
+            $lead = CrmSupport::findLead($relatedId, $companyId);
+            (new CrmAutomationService())->onLeadAssigned(
+                $relatedId,
+                $assignee,
+                is_array($lead) ? (string) ($lead['title'] ?? null) : null
+            );
         }
         $id = (new CrmAssignment())->create(array_merge([
             'public_uuid' => CrmSupport::uuidV4(),

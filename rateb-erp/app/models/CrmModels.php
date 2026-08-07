@@ -90,6 +90,7 @@ final class CrmOpportunity extends Model
         'public_uuid', 'company_id', 'branch_id', 'opportunity_no', 'name', 'name_ar', 'lead_id',
         'crm_company_id', 'contact_id', 'customer_id', 'pipeline_id', 'stage_id', 'owner_user_id',
         'amount', 'currency_code', 'probability_percent', 'expected_close_date', 'workflow_status',
+        'loss_reason_id', 'loss_notes',
         'status', 'notes', 'created_by', 'updated_by', 'deleted_at',
     ];
 }
@@ -111,7 +112,8 @@ final class CrmActivity extends Model
     protected array $fillable = [
         'public_uuid', 'company_id', 'branch_id', 'activity_type', 'subject', 'body', 'related_type',
         'related_id', 'lead_id', 'opportunity_id', 'contact_id', 'crm_company_id', 'customer_id',
-        'owner_user_id', 'activity_at', 'status', 'created_by', 'updated_by', 'deleted_at',
+        'owner_user_id', 'activity_at', 'due_at', 'reminder_at', 'priority', 'status',
+        'created_by', 'updated_by', 'deleted_at',
     ];
 }
 
@@ -239,5 +241,48 @@ final class CrmConversion extends Model
     protected array $fillable = [
         'public_uuid', 'company_id', 'conversion_type', 'from_type', 'from_id',
         'to_type', 'to_id', 'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 3 — Loss reason catalog. */
+final class CrmLossReason extends Model
+{
+    protected string $table = 'rateb_crm_loss_reasons';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'code', 'name', 'name_ar', 'sort_order',
+        'status', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 3 — Opportunity won/lost outcome snapshots. */
+final class CrmOpportunityOutcome extends Model
+{
+    protected string $table = 'rateb_crm_opportunity_outcomes';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'company_id', 'opportunity_id', 'outcome', 'loss_reason_id', 'amount',
+        'probability_percent', 'expected_revenue', 'notes', 'created_by',
+    ];
+}
+
+/** Phase 3 — Activity/task reminder side records. */
+final class CrmActivityReminder extends Model
+{
+    protected string $table = 'rateb_crm_activity_reminders';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'company_id', 'activity_id', 'task_id', 'owner_user_id', 'due_at',
+        'reminder_at', 'priority', 'reminded_at', 'status', 'created_by',
+    ];
+}
+
+/** Phase 3 — Automation event log. */
+final class CrmAutomationLog extends Model
+{
+    protected string $table = 'rateb_crm_automation_log';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'company_id', 'event_type', 'entity_type', 'entity_id', 'user_id', 'payload_json',
     ];
 }

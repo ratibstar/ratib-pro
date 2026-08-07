@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Models\CrmActivity;
+use Rateb\App\Models\CrmActivityReminder;
 use Rateb\App\Models\CrmCall;
 use Rateb\App\Models\CrmMeeting;
 use Rateb\App\Models\CrmTask;
@@ -49,6 +50,13 @@ final class ActivityService
         if (!in_array($type, ['note', 'follow_up', 'call', 'meeting', 'task', 'other'], true)) {
             $type = 'other';
         }
+        $priority = (string) ($input['priority'] ?? 'normal');
+        if (!in_array($priority, ['low', 'normal', 'high', 'urgent'], true)) {
+            $priority = 'normal';
+        }
+        $ownerId = CrmSupport::intOrNull($input['owner_user_id'] ?? null) ?? CrmSupport::userId();
+        $dueAt = CrmSupport::nullIfEmpty($input['due_at'] ?? null);
+        $reminderAt = CrmSupport::nullIfEmpty($input['reminder_at'] ?? null);
         $id = (new CrmActivity())->create(array_merge([
             'public_uuid' => CrmSupport::uuidV4(),
             'company_id' => $companyId,
@@ -63,10 +71,26 @@ final class ActivityService
             'contact_id' => CrmSupport::intOrNull($input['contact_id'] ?? null),
             'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
             'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
-            'owner_user_id' => CrmSupport::intOrNull($input['owner_user_id'] ?? null) ?? CrmSupport::userId(),
+            'owner_user_id' => $ownerId,
             'activity_at' => CrmSupport::nullIfEmpty($input['activity_at'] ?? null) ?? date('Y-m-d H:i:s'),
+            'due_at' => $dueAt,
+            'reminder_at' => $reminderAt,
+            'priority' => $priority,
             'status' => 'open',
         ], CrmSupport::actorFields(true)));
+
+        if ($dueAt !== null || $reminderAt !== null) {
+            (new CrmActivityReminder())->create([
+                'company_id' => $companyId,
+                'activity_id' => (int) $id,
+                'owner_user_id' => $ownerId,
+                'due_at' => $dueAt,
+                'reminder_at' => $reminderAt,
+                'priority' => $priority,
+                'status' => 'open',
+                'created_by' => CrmSupport::userId(),
+            ]);
+        }
 
         (new CrmTimelineService())->record(
             'activity',
@@ -80,8 +104,41 @@ final class ActivityService
                 'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
             ]
         );
+        if (class_exists(AuditService::class)) {
+            (new AuditService())->log('crm.activity.create', 'crm_activity', (int) $id, [
+                'activity_type' => $type,
+                'priority' => $priority,
+                'owner_user_id' => $ownerId,
+            ]);
+        }
 
         return ['id' => (int) $id];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function history(int $limit = 50, ?int $relatedId = null, ?string $relatedType = null): array
+    {
+        $companyId = CrmSupport::requireCompanyId();
+        $safe = max(1, min(200, $limit));
+        $params = ['cid' => $companyId];
+        $where = 'company_id = :cid AND deleted_at IS NULL';
+        if ($relatedType !== null && $relatedType !== '') {
+            $where .= ' AND related_type = :rt';
+            $params['rt'] = $relatedType;
+        }
+        if ($relatedId !== null && $relatedId > 0) {
+            $where .= ' AND related_id = :rid';
+            $params['rid'] = $relatedId;
+        }
+        $rows = (new CrmActivity())->query(
+            'SELECT * FROM rateb_crm_activities WHERE ' . $where
+            . ' ORDER BY COALESCE(activity_at, created_at) DESC LIMIT ' . $safe,
+            $params
+        );
+
+        return is_array($rows) ? $rows : [];
     }
 }
 
@@ -279,23 +336,39 @@ final class TaskService
         if (!in_array($priority, ['low', 'normal', 'high', 'urgent'], true)) {
             $priority = 'normal';
         }
+        $ownerId = CrmSupport::intOrNull($input['owner_user_id'] ?? null) ?? CrmSupport::userId();
+        $dueAt = CrmSupport::nullIfEmpty($input['due_at'] ?? null);
+        $reminderAt = CrmSupport::nullIfEmpty($input['reminder_at'] ?? null);
         $id = (new CrmTask())->create(array_merge([
             'public_uuid' => CrmSupport::uuidV4(),
             'company_id' => $companyId,
             'branch_id' => CrmSupport::branchId(),
             'subject' => substr($subject, 0, 190),
-            'due_at' => CrmSupport::nullIfEmpty($input['due_at'] ?? null),
+            'due_at' => $dueAt,
             'priority' => $priority,
             'lead_id' => CrmSupport::intOrNull($input['lead_id'] ?? null),
             'opportunity_id' => CrmSupport::intOrNull($input['opportunity_id'] ?? null),
             'contact_id' => CrmSupport::intOrNull($input['contact_id'] ?? null),
             'crm_company_id' => CrmSupport::intOrNull($input['crm_company_id'] ?? null),
             'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
-            'owner_user_id' => CrmSupport::intOrNull($input['owner_user_id'] ?? null) ?? CrmSupport::userId(),
-            'reminder_at' => CrmSupport::nullIfEmpty($input['reminder_at'] ?? null),
+            'owner_user_id' => $ownerId,
+            'reminder_at' => $reminderAt,
             'status' => 'open',
             'notes' => CrmSupport::nullIfEmpty($input['notes'] ?? null),
         ], CrmSupport::actorFields(true)));
+
+        if ($dueAt !== null || $reminderAt !== null) {
+            (new CrmActivityReminder())->create([
+                'company_id' => $companyId,
+                'task_id' => (int) $id,
+                'owner_user_id' => $ownerId,
+                'due_at' => $dueAt,
+                'reminder_at' => $reminderAt,
+                'priority' => $priority,
+                'status' => 'open',
+                'created_by' => CrmSupport::userId(),
+            ]);
+        }
 
         (new CrmTimelineService())->record(
             'task',
@@ -311,6 +384,13 @@ final class TaskService
                 'customer_id' => CrmSupport::intOrNull($input['customer_id'] ?? null),
             ]
         );
+        if (class_exists(AuditService::class)) {
+            (new AuditService())->log('crm.task.create', 'crm_task', (int) $id, [
+                'priority' => $priority,
+                'owner_user_id' => $ownerId,
+                'due_at' => $dueAt,
+            ]);
+        }
 
         return ['id' => (int) $id];
     }

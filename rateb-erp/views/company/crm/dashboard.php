@@ -9,9 +9,16 @@ $kpis = $kpis ?? [];
 <div class="container-fluid py-3">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h1 class="h3 mb-0"><?php echo htmlspecialchars((string) ($title ?? __('crm')), ENT_QUOTES, 'UTF-8'); ?></h1>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/reports')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('crm_reports'), ENT_QUOTES, 'UTF-8'); ?></a>
             <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads/board')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('crm_lead_board'), ENT_QUOTES, 'UTF-8'); ?></a>
             <a class="btn btn-primary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads/create')), ENT_QUOTES, 'UTF-8'); ?>"><i class="fas fa-plus"></i> <?php echo htmlspecialchars(__('crm_lead_create'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <?php if (function_exists('rateb_can') && (rateb_can('crm.admin') || rateb_can('crm.manage'))): ?>
+            <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/automation/run')), ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <button class="btn btn-outline-warning" type="submit"><?php echo htmlspecialchars(__('crm_run_automation'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 
