@@ -49,6 +49,7 @@ return [
         'bi',
         'website',
         'logistics',
+        'marketplace',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -81,6 +82,7 @@ return [
         'bi' => 'bi_platform',
         'website' => 'website',
         'logistics' => 'logistics_platform',
+        'marketplace' => 'marketplace_platform',
     ],
 
     /**
@@ -264,6 +266,12 @@ return [
             'logistics.driver',
             'logistics.expense',
             'logistics.report',
+        ],
+        'marketplace.manage' => [
+            'marketplace.view',
+            'marketplace.create',
+            'marketplace.update',
+            'marketplace.delete',
         ],
         'crm.admin' => [
             'crm.view',

@@ -24,4 +24,5 @@ return [
     'manufacturing' => 'manufacturing.manage',
     'website' => 'website.view',
     'logistics' => 'logistics.manage',
+    'marketplace' => 'marketplace.manage',
 ];

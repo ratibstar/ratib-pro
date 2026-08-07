@@ -81,6 +81,17 @@ final class CrmSupport
         return 'OP-' . date('Y') . '-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
     }
 
+    public static function nextQuotationNo(int $companyId): string
+    {
+        $row = (new CrmLead())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_crm_quotations WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $n = (int) ($row['c'] ?? 0) + 1;
+
+        return 'QT-' . date('Y') . '-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
+    }
+
     public static function nextCode(string $table, string $prefix, int $companyId): string
     {
         $allowed = [

@@ -49,6 +49,7 @@ return [
             'logistics',
             'crm',
             'projects',
+            'marketplace',
         ],
     ],
     'enterprise' => [
@@ -86,6 +87,7 @@ return [
             'bi',
             'website',
             'logistics',
+            'marketplace',
             'access_control',
             'profile',
         ],

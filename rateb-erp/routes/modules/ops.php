@@ -52,6 +52,7 @@ use Rateb\App\Controllers\Company\CrmDashboardController;
 use Rateb\App\Controllers\Company\CrmLeadsController;
 use Rateb\App\Controllers\Company\CrmPipelineController;
 use Rateb\App\Controllers\Company\CrmOpportunitiesController;
+use Rateb\App\Controllers\Company\CrmQuotationsController;
 use Rateb\App\Controllers\Company\CrmMeetingsController;
 use Rateb\App\Controllers\Company\CrmTasksController;
 use Rateb\App\Controllers\Company\CrmCampaignsController;
@@ -384,6 +385,10 @@ $router->post($app('crm/opportunities/{id}/move-stage'), [CrmPipelineController:
 $router->get($app('crm/opportunities'), [CrmOpportunitiesController::class, 'index'], $crmMw);
 $router->get($app('crm/opportunities/create'), [CrmOpportunitiesController::class, 'create'], rateb_erp_mw('crm', 'crm.create', 'crm'));
 $router->post($app('crm/opportunities'), [CrmOpportunitiesController::class, 'store'], rateb_erp_mw('crm', 'crm.create', 'crm'));
+$router->get($app('crm/quotations'), [CrmQuotationsController::class, 'index'], $crmMw);
+$router->get($app('crm/quotations/create'), [CrmQuotationsController::class, 'create'], rateb_erp_mw('crm', 'crm.create', 'crm'));
+$router->post($app('crm/quotations'), [CrmQuotationsController::class, 'store'], rateb_erp_mw('crm', 'crm.create', 'crm'));
+$router->get($app('crm/quotations/{id}'), [CrmQuotationsController::class, 'show'], $crmMw);
 $router->get($app('crm/meetings'), [CrmMeetingsController::class, 'index'], rateb_erp_mw('crm', 'crm.activities', 'crm'));
 $router->post($app('crm/meetings'), [CrmMeetingsController::class, 'store'], rateb_erp_mw('crm', 'crm.activities', 'crm'));
 $router->get($app('crm/tasks'), [CrmTasksController::class, 'index'], rateb_erp_mw('crm', 'crm.activities', 'crm'));

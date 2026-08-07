@@ -57,7 +57,11 @@ $opsSection(__('crm'), [
     ['crm/leads', 'crm_leads', 'fa-user-tag', 'crm'],
     ['crm/pipeline', 'crm_pipeline', 'fa-filter', 'crm'],
     ['crm/opportunities', 'crm_opportunities', 'fa-bullseye', 'crm'],
+    ['crm/quotations', 'crm_quotations', 'fa-file-invoice', 'crm'],
 ], 'fa-handshake');
+if (is_file(RATEB_ROOT . '/modules/marketplace/views/partials/sidebar-marketplace-nav.php')) {
+    require RATEB_ROOT . '/modules/marketplace/views/partials/sidebar-marketplace-nav.php';
+}
 $opsSection(__('projects'), [
     ['projects', 'projects', 'fa-diagram-project', 'projects'],
     ['projects/list', 'projects_list', 'fa-list', 'projects'],

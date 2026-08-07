@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260807-csrf-field-helper-v153');
+define('RATEB_ASSET_BUILD', '20260807-crm-mp-phase1-v154');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3533,6 +3533,9 @@ if (!function_exists('rateb_entity_perms')) {
             if (class_exists(\Rateb\App\Logistics\LogisticsModule::class)) {
                 $map = array_merge($map, \Rateb\App\Logistics\LogisticsModule::entityPermissions());
             }
+            if (class_exists(\Rateb\App\Marketplace\MarketplaceModule::class)) {
+                $map = array_merge($map, \Rateb\App\Marketplace\MarketplaceModule::entityPermissions());
+            }
         }
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $row = $map[$resource] ?? null;
@@ -3729,6 +3732,12 @@ if (!function_exists('__')) {
             $logisticsText = \Rateb\App\Logistics\LogisticsModule::translate($key, $replace);
             if ($logisticsText !== null) {
                 return $logisticsText;
+            }
+        }
+        if ($text === $key && class_exists(\Rateb\App\Marketplace\MarketplaceModule::class)) {
+            $mpText = \Rateb\App\Marketplace\MarketplaceModule::translate($key, $replace);
+            if ($mpText !== null) {
+                return $mpText;
             }
         }
         foreach ($replace as $k => $v) {

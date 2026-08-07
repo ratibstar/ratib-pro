@@ -21,4 +21,5 @@ return [
     ['id' => 'pos_v2', 'file' => 'modules/pos/routes/pos-v2.php', 'optional' => true],
     ['id' => 'guest_menu', 'file' => 'routes/modules/guest-menu.php', 'optional' => true],
     ['id' => 'logistics', 'file' => 'routes/modules/logistics.php', 'optional' => true],
+    ['id' => 'marketplace', 'file' => 'routes/modules/marketplace.php', 'optional' => true],
 ];

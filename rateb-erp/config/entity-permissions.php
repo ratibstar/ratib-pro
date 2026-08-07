@@ -652,6 +652,11 @@ return [
         'view' => 'crm.view',
         'manage' => 'crm.manage',
     ],
+    'crm-quotations' => [
+        'module' => 'crm',
+        'view' => 'crm.view',
+        'manage' => 'crm.manage',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

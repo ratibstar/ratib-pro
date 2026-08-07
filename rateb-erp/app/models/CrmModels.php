@@ -196,3 +196,27 @@ final class CrmStatusHistory extends Model
         'company_id', 'lead_id', 'from_status', 'to_status', 'reason', 'created_by',
     ];
 }
+
+/** Phase 1 — Sales quotations (linked to leads / opportunities / customers). */
+final class CrmQuotation extends Model
+{
+    protected string $table = 'rateb_crm_quotations';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'branch_id', 'quotation_no', 'title', 'lead_id',
+        'opportunity_id', 'customer_id', 'crm_company_id', 'contact_id', 'owner_user_id',
+        'status', 'currency_code', 'subtotal', 'tax_amount', 'discount_amount', 'total_amount',
+        'valid_until', 'notes', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+final class CrmQuotationLine extends Model
+{
+    protected string $table = 'rateb_crm_quotation_lines';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'quotation_id', 'line_no', 'item_name', 'description',
+        'quantity', 'unit_price', 'tax_rate', 'line_subtotal', 'line_tax', 'line_total',
+        'sort_order', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
