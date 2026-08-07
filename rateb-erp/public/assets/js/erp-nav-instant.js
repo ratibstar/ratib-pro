@@ -22,9 +22,9 @@
     var PLATFORM_CATALOG_RE = /\/rateb-platform-catalog\//i;
     /** ERP SSO handoff into platform catalog admin. */
     var PLATFORM_CATALOG_SSO_RE = /\/platform-catalog\/sso(?:\/|$|\?)/i;
-    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v40). Older names kept as read fallbacks. */
-    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v40';
-    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
+    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v41). Older names kept as read fallbacks. */
+    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v41';
+    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v40', 'rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
     var OPS_COEXIST_CACHE = 'rateb-erp-coexist-v34';
     var loadedScripts = Object.create(null);
     var navigating = false;
@@ -1786,6 +1786,7 @@
                         showNavToast('تعذر فتح الصفحة أوفلاين من الشيل الحالي.', true);
                     }
                 } else {
+                    // Online: never paint fake offline stub (badge says متصل).
                     showSoftNavMissToast(href);
                     lastSoftNavMissHref = '';
                     hardNavigate(href);

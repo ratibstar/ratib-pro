@@ -5,9 +5,9 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v40';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v41';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260807-softnav-poison-bust-v150';
+var SW_BUILD_ID = '20260807-mfg-import-no-fake-offline-v151';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1496,8 +1496,9 @@ function safeOfflineAdminNavigate(request, url, event) {
  * Online: network first (passthrough). Offline/soft-latch/fail: safeOfflineAdminNavigate.
  */
 function adminDocumentNavigate(request, url, event) {
-    var offlineNow = isHardBrowserOffline() || isCloudBrowserOffline();
-    if (offlineNow) {
+    // Hard offline only → shell stub. Soft-latch / timeouts must NOT fake "أوفلاين"
+    // while the UI badge still says متصل (that caused the click-to-click mess).
+    if (isHardBrowserOffline()) {
         return safeOfflineAdminNavigate(request, url, event);
     }
 
@@ -1508,7 +1509,7 @@ function adminDocumentNavigate(request, url, event) {
         pageUrl = '';
     }
 
-    return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+    return fetchNavigateNetworkPassthrough(request, 12000).then(function (response) {
         if (response && response.ok) {
             try {
                 // Clone before respondWith consumes body (same bug as storeLive).
@@ -1526,10 +1527,50 @@ function adminDocumentNavigate(request, url, event) {
             } catch (eStore) { /* ignore */ }
             return response;
         }
-        return safeOfflineAdminNavigate(request, url, event);
+        // Pass through real 403/500/etc — never rewrite as offline stub while online.
+        if (response) {
+            return response;
+        }
+        return matchSoftOnlineExactCache(request, url).then(function (hit) {
+            if (hit) {
+                return hit.clone().text().then(function (body) {
+                    if (isValidErpOpsHtmlBody(pageUrl, body)
+                        && !/data-rateb-offline-stub/i.test(String(body || ''))) {
+                        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+                    }
+                    return null;
+                }).catch(function () { return null; });
+            }
+            return null;
+        }).then(function (cached) {
+            if (cached) {
+                return cached;
+            }
+            return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse);
+        });
     }).catch(function () {
         markCloudNetworkDegraded('admin-nav-fail');
-        return safeOfflineAdminNavigate(request, url, event);
+        if (isHardBrowserOffline()) {
+            return safeOfflineAdminNavigate(request, url, event);
+        }
+        return matchSoftOnlineExactCache(request, url).then(function (hit) {
+            if (hit) {
+                return hit.clone().text().then(function (body) {
+                    if (isValidErpOpsHtmlBody(pageUrl, body)
+                        && !/data-rateb-offline-stub/i.test(String(body || ''))) {
+                        return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+                    }
+                    return null;
+                }).catch(function () { return null; });
+            }
+            return null;
+        }).then(function (cached) {
+            if (cached) {
+                return cached;
+            }
+            // Last resort online: network again (no fake offline card).
+            return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse);
+        });
     });
 }
 
@@ -1653,6 +1694,9 @@ function isValidErpOpsHtmlBody(pageUrl, html) {
         return false;
     }
     if (isCompanyEditPoisonHtml(pageUrl, body)) {
+        return false;
+    }
+    if (/data-rateb-offline-stub/i.test(body)) {
         return false;
     }
     var hasShell = /rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-rateb-app|data-pos-register|rateb-pos-register-config/i.test(body);
