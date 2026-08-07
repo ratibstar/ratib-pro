@@ -22,9 +22,9 @@
     var PLATFORM_CATALOG_RE = /\/rateb-platform-catalog\//i;
     /** ERP SSO handoff into platform catalog admin. */
     var PLATFORM_CATALOG_SSO_RE = /\/platform-catalog\/sso(?:\/|$|\?)/i;
-    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v36). Older names kept as read fallbacks. */
-    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v36';
-    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
+    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v40). Older names kept as read fallbacks. */
+    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v40';
+    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36', 'rateb-erp-ops-pages-v35', 'rateb-erp-ops-pages-v34'];
     var OPS_COEXIST_CACHE = 'rateb-erp-coexist-v34';
     var loadedScripts = Object.create(null);
     var navigating = false;
@@ -169,6 +169,59 @@
 
     function contentMainSel() {
         return '#rateb-pos-app, main.rateb-pos-pages-main, #rateb-main-content, main.rateb-content';
+    }
+
+    /**
+     * Reject company-edit HTML that was cached under ops module URLs
+     * (old package-gate bounce → first soft-nav click showed «تعديل الشركات»).
+     */
+    function isPoisonedOpsHtml(href, html) {
+        var path = '';
+        try {
+            path = new URL(href, root.location.href).pathname;
+        } catch (ePath) {
+            path = String(href || '');
+        }
+        if (/\/admin\/companies\/\d+(?:\/edit)?\/?$/i.test(path)) {
+            return false;
+        }
+        var body = String(html || '');
+        var looksLikeCompanyEdit = /\/admin\/companies\/\d+\/edit/i.test(body)
+            && /(?:تعديل الشركات|Edit compan|name=["']max_users["']|name=["']storage_limit_mb["']|package_id)/i.test(body);
+        if (!looksLikeCompanyEdit) {
+            return false;
+        }
+        if (/غير مشمولة في باقتك|module_not_in_plan|module_not_allowed/i.test(body)) {
+            return true;
+        }
+        if (/\/admin\/(?:ops\/)?(?!companies(?:\/|$))/i.test(path)
+            && /(?:max_users|storage_limit_mb)/i.test(body)) {
+            return true;
+        }
+        return false;
+    }
+
+    function purgePoisonedOpsCaches() {
+        if (!root.caches || typeof root.caches.keys !== 'function') {
+            return;
+        }
+        root.caches.keys().then(function (keys) {
+            return Promise.all((keys || []).map(function (name) {
+                if (/^rateb-erp-ops-pages-v\d+/i.test(String(name))) {
+                    return root.caches.delete(name).catch(function () { return false; });
+                }
+                return null;
+            }));
+        }).catch(function () { /* ignore */ });
+        try {
+            if (root.navigator && root.navigator.serviceWorker && root.navigator.serviceWorker.controller) {
+                root.navigator.serviceWorker.controller.postMessage({
+                    type: 'RATEB_HTML_CACHE_BUST',
+                    reason: 'poisoned-ops-html',
+                    at: Date.now()
+                });
+            }
+        } catch (eMsg) { /* ignore */ }
     }
 
     function sameShell(doc) {
@@ -1367,6 +1420,9 @@
         if (!root.caches || !html || html.length < 20000) {
             return Promise.resolve(false);
         }
+        if (isPoisonedOpsHtml(href, html)) {
+            return Promise.resolve(false);
+        }
         var keys = [href];
         try {
             var u = new URL(href, root.location.href);
@@ -1408,6 +1464,10 @@
                 if (/data-rateb-offline-stub/i.test(html) && !isBrowserOffline()) {
                     throw new Error('nav_stub_reject');
                 }
+                if (isPoisonedOpsHtml(href, html)) {
+                    purgePoisonedOpsCaches();
+                    throw new Error('nav_poison_reject');
+                }
                 // Idle cache — never block paint / next click on Cache+SW HTML copies.
                 schedulePageCache(res.url || href, html);
                 return { html: html, finalUrl: res.url || href, fromCache: false };
@@ -1435,6 +1495,10 @@
                     return null;
                 }
                 if (/data-rateb-offline-stub/i.test(html) && !isBrowserOffline()) {
+                    return null;
+                }
+                if (isPoisonedOpsHtml(href, html)) {
+                    purgePoisonedOpsCaches();
                     return null;
                 }
                 return { html: html, finalUrl: href, fromCache: true };
@@ -1644,6 +1708,10 @@
                 return false;
             }
             var doc = new DOMParser().parseFromString(pack.html, 'text/html');
+            if (isPoisonedOpsHtml(href, pack.html)) {
+                purgePoisonedOpsCaches();
+                throw new Error('nav_poison_reject');
+            }
             if (!sameShell(doc)) {
                 throw new Error('shell_mismatch');
             }
@@ -1976,6 +2044,16 @@
             } catch (eBadge) { /* ignore */ }
         });
         lastHref = root.location.href;
+        try {
+            if (root.navigator && root.navigator.serviceWorker) {
+                root.navigator.serviceWorker.addEventListener('message', function (ev) {
+                    var data = (ev && ev.data) || {};
+                    if (data.type === 'RATEB_HTML_CACHE_BUST') {
+                        purgePoisonedOpsCaches();
+                    }
+                });
+            }
+        } catch (eSwMsg) { /* ignore */ }
         /* Soft/hard offline watchdog — force-unlock nav if a hung fetch left clicks dead. */
         try {
             root.setInterval(function () {

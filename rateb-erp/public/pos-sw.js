@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
+/* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v40';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260807-sa-module-gate-open-v149';
+var SW_BUILD_ID = '20260807-softnav-poison-bust-v150';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1610,6 +1610,38 @@ function scrubEphemeralOfflineNotes(html) {
  * @param {string} html
  * @returns {boolean}
  */
+/**
+ * Old module_not_in_plan bounce cached «تعديل الشركات» HTML under ops URLs.
+ * First soft-nav click painted that poison; second click got the live page.
+ */
+function isCompanyEditPoisonHtml(pageUrl, html) {
+    var path = '';
+    try {
+        path = new URL(String(pageUrl || ''), self.location.origin).pathname;
+    } catch (ePath) {
+        path = String(pageUrl || '');
+    }
+    if (/\/admin\/companies\/\d+(?:\/edit)?\/?$/i.test(path)) {
+        return false;
+    }
+    var body = String(html || '');
+    var looksLikeCompanyEdit = /\/admin\/companies\/\d+\/edit/i.test(body)
+        && /(?:تعديل الشركات|Edit compan|name=["']max_users["']|name=["']storage_limit_mb["']|package_id)/i.test(body);
+    if (!looksLikeCompanyEdit) {
+        return false;
+    }
+    // Flash from package gate + company form = classic poison.
+    if (/غير مشمولة في باقتك|module_not_in_plan|module_not_allowed/i.test(body)) {
+        return true;
+    }
+    // Company SaaS form fields while navigating a different Admin/ops module.
+    if (/\/admin\/(?:ops\/)?(?!companies(?:\/|$))/i.test(path)
+        && /(?:max_users|storage_limit_mb)/i.test(body)) {
+        return true;
+    }
+    return false;
+}
+
 function isValidErpOpsHtmlBody(pageUrl, html) {
     var body = String(html || '');
     if (body.trim() === '') {
@@ -1618,6 +1650,9 @@ function isValidErpOpsHtmlBody(pageUrl, html) {
     // Explicit empty browser document (cache poison / consumed stream).
     if (/^<!DOCTYPE\s+html>\s*<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())
         || /^<html[^>]*>\s*<head[^>]*>\s*<\/head>\s*<body[^>]*>\s*<\/body>\s*<\/html>\s*$/i.test(body.trim())) {
+        return false;
+    }
+    if (isCompanyEditPoisonHtml(pageUrl, body)) {
         return false;
     }
     var hasShell = /rateb-sidebar|__RATEB_ERP_SHELL|rateb-main|data-rateb-app|data-pos-register|rateb-pos-register-config/i.test(body);
@@ -2301,28 +2336,42 @@ function softNavAdminHtml(request, url, event) {
     });
 
     return fromCache().then(function (hit) {
-        if (hit) {
-            return hit.clone().text().then(function (body) {
-                if (!isCloudBrowserOffline() && !isHardBrowserOffline()
-                    && /data-rateb-offline-stub/i.test(String(body || ''))) {
-                    return null;
+        if (!hit) {
+            return networkP.then(function (response) {
+                if (response) {
+                    return response;
                 }
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(networkP.then(function () { return null; }));
-                }
-                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
-            }).catch(function () {
-                if (event && typeof event.waitUntil === 'function') {
-                    event.waitUntil(networkP.then(function () { return null; }));
-                }
-                return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+                return Promise.reject(new Error('soft-nav-miss'));
             });
         }
-        return networkP.then(function (response) {
-            if (response) {
-                return response;
+        return hit.clone().text().then(function (body) {
+            var html = String(body || '');
+            if (!isCloudBrowserOffline() && !isHardBrowserOffline()
+                && /data-rateb-offline-stub/i.test(html)) {
+                return null;
             }
-            return Promise.reject(new Error('soft-nav-miss'));
+            if (!isValidErpOpsHtmlBody(pageUrl, html)) {
+                try {
+                    deletePoisonedErpOpsCacheEntries(pageUrl);
+                } catch (eDel) { /* ignore */ }
+                return null;
+            }
+            if (event && typeof event.waitUntil === 'function') {
+                event.waitUntil(networkP.then(function () { return null; }));
+            }
+            return withSoftOfflineCacheHeader(hit.clone(), { softOnly: true });
+        }).catch(function () {
+            return null;
+        }).then(function (cachedRes) {
+            if (cachedRes) {
+                return cachedRes;
+            }
+            return networkP.then(function (response) {
+                if (response) {
+                    return response;
+                }
+                return Promise.reject(new Error('soft-nav-miss'));
+            });
         });
     });
 }
@@ -4353,14 +4402,25 @@ self.addEventListener('activate', function (event) {
                                         if (!res) {
                                             return null;
                                         }
-                                        return fresh.put(req, res.clone()).then(function () {
-                                            try {
-                                                var href = typeof req === 'string' ? req : (req.url || '');
-                                                var u = new URL(href);
-                                                return fresh.put(u.origin + u.pathname, res.clone());
-                                            } catch (eAlias) {
+                                        return res.clone().text().then(function (html) {
+                                            var href = typeof req === 'string' ? req : (req.url || '');
+                                            if (!isValidErpOpsHtmlBody(href, html)) {
                                                 return null;
                                             }
+                                            var clean = new Response(html, {
+                                                status: 200,
+                                                headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Ops-Page': '1' }
+                                            });
+                                            return fresh.put(req, clean.clone()).then(function () {
+                                                try {
+                                                    var u = new URL(href);
+                                                    return fresh.put(u.origin + u.pathname, clean.clone());
+                                                } catch (eAlias) {
+                                                    return null;
+                                                }
+                                            });
+                                        }).catch(function () {
+                                            return null;
                                         });
                                     });
                                 }));
@@ -4623,6 +4683,24 @@ self.addEventListener('message', function (event) {
     }
     if (data.type === 'PURGE_ERP_AUTH_CACHE') {
         event.waitUntil(purgeErpOpsAuthPages());
+        return;
+    }
+    if (data.type === 'RATEB_HTML_CACHE_BUST') {
+        event.waitUntil(
+            caches.keys().then(function (keys) {
+                return Promise.all((keys || []).map(function (name) {
+                    if (/^rateb-erp-ops-pages-v\d+/i.test(String(name))
+                        || String(name) === ERP_COEXIST_CACHE) {
+                        return caches.delete(name).catch(function () { return false; });
+                    }
+                    return null;
+                }));
+            }).then(function () {
+                return caches.open(ERP_OPS_PAGE_CACHE).then(function () { return true; });
+            }).catch(function () {
+                return false;
+            })
+        );
         return;
     }
 });
