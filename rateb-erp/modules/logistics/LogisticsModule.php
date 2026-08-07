@@ -72,13 +72,36 @@ final class LogisticsModule
     private static function registerAutoload(): void
     {
         $root = self::rootPath();
-        spl_autoload_register(static function (string $class) use ($root): void {
+        // Multi-class model file (PSR-4 would expect one class per file).
+        $modelBundle = [
+            'LogisticsDriver',
+            'LogisticsVehicle',
+            'LogisticsRoute',
+            'LogisticsDeliveryOrder',
+            'LogisticsTrip',
+            'LogisticsShipment',
+            'LogisticsDeliveryProof',
+            'LogisticsExpense',
+            'LogisticsStatusHistory',
+            'LogisticsDriverLocation',
+            'LogisticsApiIdempotency',
+        ];
+        spl_autoload_register(static function (string $class) use ($root, $modelBundle): void {
             $prefix = 'Rateb\\App\\Logistics\\';
             if (strpos($class, $prefix) !== 0) {
                 return;
             }
-            $relative = str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
-            $path = $root . '/app/' . $relative;
+            $relative = str_replace('\\', '/', substr($class, strlen($prefix)));
+            $short = substr($class, (int) strrpos($class, '\\') + 1);
+            if (str_starts_with($relative, 'Models/') && in_array($short, $modelBundle, true)) {
+                $bundle = $root . '/app/Models/LogisticsModels.php';
+                if (is_file($bundle)) {
+                    require_once $bundle;
+                }
+
+                return;
+            }
+            $path = $root . '/app/' . $relative . '.php';
             if (is_file($path)) {
                 require_once $path;
             }

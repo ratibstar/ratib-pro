@@ -124,6 +124,11 @@ logistics2_assert(class_exists(LogisticsDriversController::class), 'Drivers cont
 logistics2_assert(class_exists(LogisticsTripsController::class), 'Trips controller');
 logistics2_assert(class_exists(LogisticsShipmentsController::class), 'Shipments controller');
 
+// Models live in LogisticsModels.php (bundle autoload)
+logistics2_assert(class_exists(\Rateb\App\Logistics\Models\LogisticsShipment::class), 'LogisticsShipment model autoload');
+logistics2_assert(class_exists(\Rateb\App\Logistics\Models\LogisticsTrip::class), 'LogisticsTrip model autoload');
+logistics2_assert(class_exists(\Rateb\App\Logistics\Models\LogisticsDriver::class), 'LogisticsDriver model autoload');
+
 // Views
 $views = [
     'dashboard/index',
