@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v35 — bust stale Admin HTML that predated early-nav-guard (caused black لوحة التحكم). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v39';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260803-guest-menu-sw-bypass-v148';
+var SW_BUILD_ID = '20260807-sa-module-gate-open-v149';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -573,12 +573,8 @@ function posCompanyIdFromRequest(request) {
 
 function posAdminRedirectUrl(request, preferCompanyEdit) {
     var base = posErpScopeBase();
-    var cid = posCompanyIdFromRequest(request);
-    if (preferCompanyEdit && cid > 0) {
-        try {
-            return new URL('admin/companies/' + cid + '/edit', base).href;
-        } catch (eEdit) { /* ignore */ }
-    }
+    // Never bounce ops module denials to company edit — that trapped Super Admin
+    // on "module not in plan" while opening logistics/procurement soft-nav.
     try {
         return new URL('admin', base).href;
     } catch (eAdmin) {
@@ -614,8 +610,24 @@ function posHandleLiveNetworkResponse(response, request) {
     }
     return response.clone().text().then(function (body) {
         var json = posTryParseJson(body);
+        // Pass through module/plan denials for non-POS Admin soft-nav — do not
+        // synthesize a companies/{id}/edit redirect (broke Super Admin logistics).
         if (json && (json.code === 'module_not_in_plan' || json.code === 'module_not_allowed')) {
-            return posHttpRedirectResponse(posAdminRedirectUrl(request, json.code === 'module_not_in_plan'));
+            try {
+                var reqUrl = String((request && request.url) || '');
+                if (/\/admin\/ops\/(?!pos(?:\/|$))/i.test(reqUrl) || /\/admin\/(?!ops\/pos)/i.test(reqUrl)) {
+                    return new Response(body, {
+                        status: response.status || 403,
+                        statusText: response.statusText || 'Forbidden',
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8',
+                            'Cache-Control': 'no-store',
+                            'X-Rateb-Pos-Passthrough': 'module-gate'
+                        }
+                    });
+                }
+            } catch (ePass) { /* fall through */ }
+            return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
         }
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     }).catch(function () {

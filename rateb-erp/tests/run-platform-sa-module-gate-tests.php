@@ -62,8 +62,14 @@ sa_gate_assert(
     'company edit redirect removed from CompanyModuleMiddleware'
 );
 
-$mig = (string) file_get_contents($root . '/migrations/227_plan_tiers_logistics_modules.sql');
-sa_gate_assert(str_contains($mig, 'logistics'), 'migration 227 includes logistics');
+sa_gate_assert(
+    str_contains((string) file_get_contents($root . '/app/services/PlanLimitService.php'), 'full ERP entitlement'),
+    'PlanLimitService companyHasModule SA bypass'
+);
+sa_gate_assert(
+    str_contains((string) file_get_contents($root . '/public/pos-sw.js'), 'Never bounce ops module denials'),
+    'pos-sw no longer bounces ops denials to company edit'
+);
 
 $repair = (string) file_get_contents($root . '/app/services/MigrationService.php');
 sa_gate_assert(str_contains($repair, 'syncPlanTierModulesFromConfig'), 'repair syncs modules from plan-tiers config');

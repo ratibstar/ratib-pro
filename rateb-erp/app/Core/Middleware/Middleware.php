@@ -434,11 +434,26 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
     private static function isSuperAdminSession(): bool
     {
+        if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             return true;
         }
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+        try {
+            if (class_exists(\Rateb\App\Core\TenantContext::class)
+                && method_exists(\Rateb\App\Core\TenantContext::class, 'isSuperAdmin')
+                && \Rateb\App\Core\TenantContext::isSuperAdmin()) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
-        return (bool) SessionManager::get('rateb_is_super_admin');
+        return false;
     }
 }
 

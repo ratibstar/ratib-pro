@@ -328,6 +328,18 @@ final class PlanLimitService
 
     public function companyHasModule(int $companyId, string $module): bool
     {
+        // Super Admin: full ERP entitlement — package checkboxes never block support/ops.
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (class_exists(\Rateb\App\Core\SessionManager::class)
+            && \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+        if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
+
         $limits = $this->getLimits($companyId);
         return in_array($module, $limits['modules'], true);
     }

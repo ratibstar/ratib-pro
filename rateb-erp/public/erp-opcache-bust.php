@@ -11,6 +11,10 @@ header('Cache-Control: no-store');
 $targets = [
     __DIR__ . '/index.php',
     __DIR__ . '/erp-build-probe.php',
+    __DIR__ . '/erp-sa-gate-probe.php',
+    dirname(__DIR__) . '/app/Core/Middleware/Middleware.php',
+    dirname(__DIR__) . '/app/services/PlanLimitService.php',
+    dirname(__DIR__) . '/config/app.php',
 ];
 
 foreach ($targets as $file) {
