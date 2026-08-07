@@ -667,6 +667,11 @@ return [
         'view' => 'crm.pipeline.view',
         'manage' => 'crm.pipeline.manage',
     ],
+    'crm-admin' => [
+        'module' => 'crm',
+        'view' => 'crm.config.manage',
+        'manage' => 'crm.config.manage',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

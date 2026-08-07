@@ -271,6 +271,11 @@ return [
             'crm.activities.assign',
             'crm.reports.view',
             'crm.reports.export',
+            'crm.quote.approve',
+            'crm.quote.version',
+            'crm.forecast.manage',
+            'crm.revenue.view',
+            'crm.config.manage',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -306,6 +311,11 @@ return [
             'crm.activities.assign',
             'crm.reports.view',
             'crm.reports.export',
+            'crm.quote.approve',
+            'crm.quote.version',
+            'crm.forecast.manage',
+            'crm.revenue.view',
+            'crm.config.manage',
         ],
         'website.manage' => [
             'website.view',

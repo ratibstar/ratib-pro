@@ -62,6 +62,13 @@ final class CrmQuotationWorkflowService
         if (!in_array($to, $allowed, true)) {
             throw new \RuntimeException('quotation_transition_denied');
         }
+        $approval = (string) ($quote['approval_status'] ?? 'none');
+        if ($to === self::STATUS_SENT && $approval === 'pending') {
+            throw new \RuntimeException('quotation_approval_pending');
+        }
+        if ($to === self::STATUS_SENT && $approval === 'rejected') {
+            throw new \RuntimeException('quotation_approval_rejected');
+        }
 
         (new CrmQuotation())->update($quotationId, array_merge([
             'status' => $to,
@@ -96,6 +103,21 @@ final class CrmQuotationWorkflowService
                 'to' => $to,
                 'reason' => $reason,
             ]);
+        }
+
+        if ($to === self::STATUS_ACCEPTED) {
+            (new CrmRevenueTrackingService())->record(
+                'quotation_accepted',
+                (float) ($quote['total_amount'] ?? 0),
+                (string) ($quote['currency_code'] ?? 'SAR'),
+                [
+                    'lead_id' => CrmSupport::intOrNull($quote['lead_id'] ?? null),
+                    'opportunity_id' => CrmSupport::intOrNull($quote['opportunity_id'] ?? null),
+                    'quotation_id' => $quotationId,
+                    'customer_id' => CrmSupport::intOrNull($quote['customer_id'] ?? null),
+                ],
+                ['from_status' => $from]
+            );
         }
 
         return ['ok' => true, 'quotation_id' => $quotationId, 'from' => $from, 'to' => $to];

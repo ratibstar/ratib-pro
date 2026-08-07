@@ -208,7 +208,9 @@ final class CrmQuotation extends Model
         'public_uuid', 'company_id', 'branch_id', 'quotation_no', 'title', 'lead_id',
         'opportunity_id', 'customer_id', 'crm_company_id', 'contact_id', 'owner_user_id',
         'status', 'currency_code', 'subtotal', 'tax_amount', 'discount_amount', 'total_amount',
-        'valid_until', 'notes', 'created_by', 'updated_by', 'deleted_at',
+        'valid_until', 'notes', 'version_no', 'parent_quotation_id', 'root_quotation_id',
+        'approval_status', 'approved_by', 'approved_at',
+        'created_by', 'updated_by', 'deleted_at',
     ];
 }
 
@@ -284,5 +286,51 @@ final class CrmAutomationLog extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'company_id', 'event_type', 'entity_type', 'entity_id', 'user_id', 'payload_json',
+    ];
+}
+
+/** Phase 4 — Revenue tracking events (no invoices). */
+final class CrmRevenueEvent extends Model
+{
+    protected string $table = 'rateb_crm_revenue_events';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'event_type', 'amount', 'currency_code',
+        'lead_id', 'opportunity_id', 'quotation_id', 'customer_id', 'period_key',
+        'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 4 — Forecast period snapshots. */
+final class CrmForecastSnapshot extends Model
+{
+    protected string $table = 'rateb_crm_forecast_snapshots';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'period_key', 'pipeline_id', 'owner_user_id',
+        'open_amount', 'weighted_amount', 'won_amount', 'lost_amount',
+        'opportunity_count', 'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 4 — Configurable activity types. */
+final class CrmActivityType extends Model
+{
+    protected string $table = 'rateb_crm_activity_types';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'code', 'name', 'name_ar', 'is_active',
+        'sort_order', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 4 — Automation rule configuration. */
+final class CrmAutomationRule extends Model
+{
+    protected string $table = 'rateb_crm_automation_rules';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'rule_key', 'name', 'is_enabled',
+        'config_json', 'created_by', 'updated_by', 'deleted_at',
     ];
 }

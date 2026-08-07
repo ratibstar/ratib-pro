@@ -99,7 +99,28 @@ final class CrmCustomer360Service
             ['cid' => $companyId, 'cuid' => $customerId]
         );
 
+        $revenue = [];
+        try {
+            $revRows = (new Customer())->query(
+                'SELECT id, event_type, amount, currency_code, period_key, quotation_id, created_at
+                 FROM rateb_crm_revenue_events
+                 WHERE company_id = :cid AND customer_id = :cuid
+                 ORDER BY created_at DESC LIMIT 30',
+                ['cid' => $companyId, 'cuid' => $customerId]
+            );
+            $revenue = is_array($revRows) ? $revRows : [];
+        } catch (\Throwable $e) {
+            $revenue = [];
+        }
+
         // Link-only refs — never call AccountingService.
+        $orderLinks = $this->safeLinks(
+            'SELECT id, order_no AS label, status, total AS amount
+             FROM rateb_pos_orders WHERE company_id = :cid AND customer_id = :cuid
+             ORDER BY id DESC LIMIT 20',
+            ['cid' => $companyId, 'cuid' => $customerId],
+            'pos/orders'
+        );
         $invoiceLinks = $this->safeLinks(
             'SELECT id, invoice_no AS label, status, total_amount AS amount
              FROM rateb_invoices WHERE company_id = :cid AND customer_id = :cuid
@@ -136,8 +157,10 @@ final class CrmCustomer360Service
             'calls' => is_array($calls) ? $calls : [],
             'meetings' => is_array($meetings) ? $meetings : [],
             'timeline' => (new CrmTimelineService())->listForCustomer($customerId, 60),
+            'order_links' => $orderLinks,
             'invoice_links' => $invoiceLinks,
             'payment_links' => $paymentLinks,
+            'revenue_events' => $revenue,
         ];
     }
 

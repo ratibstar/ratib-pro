@@ -11,8 +11,22 @@ $history = $history ?? [];
         <div>
             <h1 class="h3 mb-1"><?php echo htmlspecialchars((string) ($item['quotation_no'] ?? ($title ?? '')), ENT_QUOTES, 'UTF-8'); ?></h1>
             <span class="badge text-bg-secondary"><?php echo htmlspecialchars((string) ($item['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="badge text-bg-info">v<?php echo (int) ($item['version_no'] ?? 1); ?></span>
+            <span class="badge text-bg-light"><?php echo htmlspecialchars((string) ($item['approval_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
-        <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?></a>
+        <div class="d-flex gap-2 flex-wrap">
+            <?php if (!empty($canVersion)): ?>
+            <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $item['id'] . '/duplicate'), ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <button class="btn btn-outline-secondary btn-sm" type="submit"><?php echo htmlspecialchars(__('crm_quote_duplicate'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+            <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $item['id'] . '/version'), ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <button class="btn btn-outline-secondary btn-sm" type="submit"><?php echo htmlspecialchars(__('crm_quote_version'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+            <?php endif; ?>
+            <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?></a>
+        </div>
     </div>
     <div class="card mb-3">
         <div class="card-body row g-2">
@@ -21,8 +35,24 @@ $history = $history ?? [];
             <div class="col-md-3"><strong><?php echo htmlspecialchars(__('crm_lead_id'), ENT_QUOTES, 'UTF-8'); ?>:</strong> <?php echo (int) ($item['lead_id'] ?? 0); ?></div>
             <div class="col-md-3"><strong><?php echo htmlspecialchars(__('crm_opportunity_id'), ENT_QUOTES, 'UTF-8'); ?>:</strong> <?php echo (int) ($item['opportunity_id'] ?? 0); ?></div>
             <div class="col-md-3"><strong><?php echo htmlspecialchars(__('customer_id'), ENT_QUOTES, 'UTF-8'); ?>:</strong> <?php echo (int) ($item['customer_id'] ?? 0); ?></div>
+            <div class="col-md-3"><strong><?php echo htmlspecialchars(__('crm_valid_until'), ENT_QUOTES, 'UTF-8'); ?>:</strong> <?php echo htmlspecialchars((string) ($item['valid_until'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></div>
         </div>
     </div>
+
+    <?php if (!empty($canSubmitApproval)): ?>
+    <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $item['id'] . '/submit-approval'), ENT_QUOTES, 'UTF-8'); ?>" class="mb-3">
+        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+        <button class="btn btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('crm_quote_submit_approval'), ENT_QUOTES, 'UTF-8'); ?></button>
+    </form>
+    <?php endif; ?>
+    <?php if (!empty($canDecideApproval)): ?>
+    <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $item['id'] . '/decide-approval'), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3 d-flex gap-2 flex-wrap">
+        <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
+        <input class="form-control" name="reason" placeholder="<?php echo htmlspecialchars(__('notes'), ENT_QUOTES, 'UTF-8'); ?>">
+        <button class="btn btn-success" name="decision" value="approve" type="submit"><?php echo htmlspecialchars(__('approve'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button class="btn btn-outline-danger" name="decision" value="reject" type="submit"><?php echo htmlspecialchars(__('reject'), ENT_QUOTES, 'UTF-8'); ?></button>
+    </form>
+    <?php endif; ?>
 
     <?php if (!empty($canWorkflow) && $transitions !== []): ?>
     <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $item['id'] . '/transition'), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3">

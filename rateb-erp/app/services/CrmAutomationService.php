@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Models\CrmAutomationLog;
+use Rateb\App\Models\CrmOpportunity;
 use Rateb\App\Models\CrmQuotation;
 use Rateb\App\Models\CrmTask;
 
@@ -50,6 +51,9 @@ final class CrmAutomationService
         ?int $ownerUserId,
         ?string $workflowStatus = null
     ): void {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('stage_change')) {
+            return;
+        }
         $companyId = CrmSupport::requireCompanyId();
         if ($ownerUserId !== null && $ownerUserId > 0) {
             $this->notifier->notifyUser(
@@ -91,6 +95,9 @@ final class CrmAutomationService
      */
     public function processFollowUpReminders(): array
     {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('follow_up_overdue')) {
+            return ['reminders' => 0, 'overdue' => 0];
+        }
         $companyId = CrmSupport::requireCompanyId();
         $now = date('Y-m-d H:i:s');
         $reminders = 0;
@@ -154,8 +161,13 @@ final class CrmAutomationService
      */
     public function processQuoteExpiryAlerts(): array
     {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('quote_expiry')) {
+            return ['alerts' => 0];
+        }
         $companyId = CrmSupport::requireCompanyId();
-        $horizon = date('Y-m-d', strtotime('+3 days'));
+        $cfg = (new CrmAdminConfigService())->ruleConfig('quote_expiry');
+        $daysAhead = max(0, (int) ($cfg['days_ahead'] ?? 3));
+        $horizon = date('Y-m-d', strtotime('+' . $daysAhead . ' days'));
         $today = date('Y-m-d');
         $rows = (new CrmQuotation())->query(
             "SELECT * FROM rateb_crm_quotations
@@ -208,6 +220,91 @@ final class CrmAutomationService
         $this->audit('crm.automation.quote_expiry_scan', 'crm_quotation', null, ['alerts' => $alerts]);
 
         return ['alerts' => $alerts];
+    }
+
+    /**
+     * Alert owners of open opportunities with no updates for N days.
+     *
+     * @return array{alerts: int}
+     */
+    public function processOpportunityInactivity(): array
+    {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('opportunity_inactivity')) {
+            return ['alerts' => 0];
+        }
+        $companyId = CrmSupport::requireCompanyId();
+        $cfg = (new CrmAdminConfigService())->ruleConfig('opportunity_inactivity');
+        $days = max(1, (int) ($cfg['days'] ?? 14));
+        $cutoff = date('Y-m-d H:i:s', strtotime('-' . $days . ' days'));
+        $rows = (new CrmOpportunity())->query(
+            "SELECT id, name, owner_user_id, updated_at FROM rateb_crm_opportunities
+             WHERE company_id = :cid AND deleted_at IS NULL AND workflow_status = 'open'
+               AND updated_at IS NOT NULL AND updated_at <= :cutoff
+             ORDER BY updated_at ASC LIMIT 50",
+            ['cid' => $companyId, 'cutoff' => $cutoff]
+        );
+        $alerts = 0;
+        foreach (is_array($rows) ? $rows : [] as $opp) {
+            $owner = (int) ($opp['owner_user_id'] ?? 0);
+            $oid = (int) ($opp['id'] ?? 0);
+            $msg = 'Opportunity #' . $oid . ' inactive for ' . $days . ' days: ' . (string) ($opp['name'] ?? '');
+            if ($owner > 0) {
+                $this->notifier->notifyUser(
+                    $owner,
+                    $companyId,
+                    'CRM: Opportunity inactivity',
+                    $msg,
+                    'warning',
+                    'crm.opportunity_inactivity',
+                    'crm_opportunity',
+                    $oid
+                );
+            } else {
+                $this->notifier->notifyCompany(
+                    $companyId,
+                    'CRM: Opportunity inactivity',
+                    $msg,
+                    'warning',
+                    'crm.opportunity_inactivity',
+                    'crm_opportunity',
+                    $oid
+                );
+            }
+            $this->log('opportunity_inactivity', 'opportunity', $oid, $owner > 0 ? $owner : null, [
+                'days' => $days,
+            ]);
+            ++$alerts;
+        }
+        $this->audit('crm.automation.opportunity_inactivity_scan', 'crm_opportunity', null, [
+            'alerts' => $alerts,
+            'days' => $days,
+        ]);
+
+        return ['alerts' => $alerts];
+    }
+
+    /**
+     * @return array{follow_up: array{reminders:int,overdue:int}, quote_expiry: array{alerts:int}, inactivity: array{alerts:int}, expired_quotes: int}
+     */
+    public function runAll(): array
+    {
+        $follow = $this->processFollowUpReminders();
+        $quotes = $this->processQuoteExpiryAlerts();
+        $inactive = $this->processOpportunityInactivity();
+        $expired = (new CrmQuotationService())->expireOverdue();
+        $this->audit('crm.automation.run_all', 'crm', null, [
+            'follow_up' => $follow,
+            'quote_expiry' => $quotes,
+            'inactivity' => $inactive,
+            'expired_quotes' => $expired,
+        ]);
+
+        return [
+            'follow_up' => $follow,
+            'quote_expiry' => $quotes,
+            'inactivity' => $inactive,
+            'expired_quotes' => $expired,
+        ];
     }
 
     /**

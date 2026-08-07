@@ -169,6 +169,19 @@ final class CrmConversionService
             ]
         );
 
+        (new CrmRevenueTrackingService())->record(
+            'customer_from_quote',
+            (float) ($quote['total_amount'] ?? 0),
+            (string) ($quote['currency_code'] ?? 'SAR'),
+            [
+                'lead_id' => CrmSupport::intOrNull($quote['lead_id'] ?? null),
+                'opportunity_id' => CrmSupport::intOrNull($quote['opportunity_id'] ?? null),
+                'quotation_id' => $quotationId,
+                'customer_id' => $customerId,
+            ],
+            ['customer_code' => $code]
+        );
+
         return ['customer_id' => $customerId, 'code' => $code];
     }
 

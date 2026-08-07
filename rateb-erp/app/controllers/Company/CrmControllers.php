@@ -13,14 +13,17 @@ use Rateb\App\Services\CampaignService;
 use Rateb\App\Services\ContactService;
 use Rateb\App\Services\CrmAssignmentService;
 use Rateb\App\Services\CrmCompanyService;
+use Rateb\App\Services\CrmAdminConfigService;
 use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
+use Rateb\App\Services\CrmForecastEngineService;
 use Rateb\App\Services\CrmNoteService;
 use Rateb\App\Services\CrmQuotationService;
 use Rateb\App\Services\CrmQuotationWorkflowService;
 use Rateb\App\Services\CrmReportService;
+use Rateb\App\Services\CrmRevenueTrackingService;
 use Rateb\App\Services\CrmTimelineService;
 use Rateb\App\Services\CrmWorkflowService;
 use Rateb\App\Services\LeadService;
@@ -729,19 +732,46 @@ final class CrmReportsController extends Controller
             rateb_bootstrap_ops_tenant();
         }
         $reports = new CrmReportService();
+        $engine = new CrmForecastEngineService();
         $pipelineId = (int) ($_GET['pipeline_id'] ?? 0);
+        $pid = $pipelineId > 0 ? $pipelineId : null;
         $this->view('company/crm/reports/index', [
             'title' => __('crm_reports'),
-            'funnel' => $reports->salesFunnel($pipelineId > 0 ? $pipelineId : null),
+            'funnel' => $reports->salesFunnel($pid),
             'conversions' => $reports->conversionRates(),
             'sources' => $reports->leadSources(),
             'performance' => $reports->salesPerformance(),
             'lost' => $reports->lostOpportunities(),
-            'forecast' => $reports->forecast($pipelineId > 0 ? $pipelineId : null),
+            'forecast' => $reports->forecast($pid),
+            'engine' => $engine->compute($pid),
+            'win_probability' => $engine->winProbabilityTracking(),
+            'accuracy' => $engine->accuracyReport(),
+            'quote_metrics' => (new CrmQuotationService())->performanceMetrics(),
+            'revenue' => (new CrmRevenueTrackingService())->summary(),
             'pipelines' => (new PipelineService())->listPipelines(),
             'pipeline_id' => $pipelineId,
             'canExport' => rateb_can('crm.reports.export') || rateb_can('crm.manage'),
+            'canForecastManage' => rateb_can('crm.forecast.manage') || rateb_can('crm.manage'),
         ], 'main');
+    }
+
+    public function snapshot(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reports')));
+        }
+        try {
+            $created = (new CrmForecastEngineService())->snapshot(
+                (int) ($_POST['pipeline_id'] ?? 0) ?: null,
+                null,
+                trim((string) ($_POST['period_key'] ?? '')) ?: null
+            );
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $created['period_key']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/reports')));
     }
 }
 
@@ -754,19 +784,69 @@ final class CrmAutomationController extends Controller
             $this->redirect(rateb_url(rateb_app_route('crm')));
         }
         try {
-            $auto = new CrmAutomationService();
-            $follow = $auto->processFollowUpReminders();
-            $quotes = $auto->processQuoteExpiryAlerts();
+            $result = (new CrmAutomationService())->runAll();
             SessionManager::flash(
                 'success',
-                __('crm_automation_ran') . ' — reminders:' . $follow['reminders']
-                . ' overdue:' . $follow['overdue']
-                . ' quote_alerts:' . $quotes['alerts']
+                __('crm_automation_ran')
+                . ' — reminders:' . $result['follow_up']['reminders']
+                . ' overdue:' . $result['follow_up']['overdue']
+                . ' quote_alerts:' . $result['quote_expiry']['alerts']
+                . ' inactive:' . $result['inactivity']['alerts']
+                . ' expired:' . $result['expired_quotes']
             );
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm')));
+    }
+}
+
+final class CrmAdminController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $cfg = (new CrmAdminConfigService())->overview();
+        $this->view('company/crm/admin/index', [
+            'title' => __('crm_admin_config'),
+            'pipelines' => $cfg['pipelines'],
+            'loss_reasons' => $cfg['loss_reasons'],
+            'activity_types' => $cfg['activity_types'],
+            'automation_rules' => $cfg['automation_rules'],
+            'canManage' => rateb_can('crm.config.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function storeActivityType(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/admin')));
+        }
+        try {
+            (new CrmAdminConfigService())->saveActivityType($_POST, (int) ($_POST['id'] ?? 0) ?: null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/admin')));
+    }
+
+    public function updateAutomationRule(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/admin')));
+        }
+        try {
+            (new CrmAdminConfigService())->updateAutomationRule((int) ($params['id'] ?? 0), $_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/admin')));
     }
 }
 
@@ -793,6 +873,16 @@ final class CrmQuotationsController extends Controller
         return rateb_can('crm.quote.convert') || rateb_can('crm.manage') || rateb_can('crm.admin');
     }
 
+    private function canApproveQuote(): bool
+    {
+        return rateb_can('crm.quote.approve') || rateb_can('crm.manage') || rateb_can('crm.admin');
+    }
+
+    private function canVersionQuote(): bool
+    {
+        return rateb_can('crm.quote.version') || rateb_can('crm.quote.create') || rateb_can('crm.create') || rateb_can('crm.manage');
+    }
+
     public function index(): void
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
@@ -802,7 +892,8 @@ final class CrmQuotationsController extends Controller
         $limit = function_exists('rateb_list_per_page') ? rateb_list_per_page() : 25;
         $search = trim((string) ($_GET['q'] ?? ''));
         $status = trim((string) ($_GET['status'] ?? ''));
-        $result = (new CrmQuotationService())->list($limit, ($page - 1) * $limit, $search, $status !== '' ? $status : null);
+        $svc = new CrmQuotationService();
+        $result = $svc->list($limit, ($page - 1) * $limit, $search, $status !== '' ? $status : null);
         $this->view('company/crm/quotations/index', [
             'title' => __('crm_quotations'),
             'items' => $result['items'],
@@ -812,6 +903,7 @@ final class CrmQuotationsController extends Controller
             'q' => $search,
             'status' => $status,
             'statuses' => CrmQuotationWorkflowService::statuses(),
+            'metrics' => $svc->performanceMetrics(),
             'canCreate' => $this->canCreateQuote(),
         ], 'main');
     }
@@ -859,6 +951,7 @@ final class CrmQuotationsController extends Controller
             $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
         }
         $status = (string) ($item['status'] ?? 'draft');
+        $approval = (string) ($item['approval_status'] ?? 'none');
         $this->view('company/crm/quotations/show', [
             'title' => __('crm_quotation'),
             'item' => $item,
@@ -868,6 +961,9 @@ final class CrmQuotationsController extends Controller
             'transitions' => CrmQuotationWorkflowService::allowedTransitions()[$status] ?? [],
             'canWorkflow' => $this->canUpdateQuote(),
             'canConvertCustomer' => $this->canConvertQuote() && $status === CrmQuotationWorkflowService::STATUS_ACCEPTED,
+            'canVersion' => $this->canVersionQuote(),
+            'canSubmitApproval' => $this->canUpdateQuote() && $status === 'draft' && $approval !== 'pending',
+            'canDecideApproval' => $this->canApproveQuote() && $approval === 'pending',
         ], 'main');
     }
 
@@ -906,6 +1002,73 @@ final class CrmQuotationsController extends Controller
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
         }
+    }
+
+    public function duplicate(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $created = (new CrmQuotationService())->duplicate($id);
+            SessionManager::flash('success', __('saved_ok') . ' — ' . $created['quotation_no']);
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $created['id']));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
+        }
+    }
+
+    public function version(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $created = (new CrmQuotationService())->createVersion($id);
+            SessionManager::flash('success', __('saved_ok') . ' — v' . $created['version_no']);
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $created['id']));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
+        }
+    }
+
+    public function submitApproval(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new CrmQuotationService())->submitForApproval($id);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
+    }
+
+    public function decideApproval(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/quotations')));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $approve = (string) ($_POST['decision'] ?? '') === 'approve';
+            (new CrmQuotationService())->decideApproval($id, $approve, isset($_POST['reason']) ? (string) $_POST['reason'] : null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/quotations') . '/' . $id));
     }
 }
 
