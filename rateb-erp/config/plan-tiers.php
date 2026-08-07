@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Canonical SaaS plan tiers — limits, pricing, and module bundles.
- * Synced to rateb_plans via migration 148 + MigrationService::repairMarketingPlansCanonicalIfNeeded().
+ * Synced to rateb_plans via migration 148/227 + MigrationService::repairMarketingPlansCanonicalIfNeeded().
  */
 return [
     'starter' => [
@@ -25,7 +25,7 @@ return [
     ],
     'professional' => [
         'name' => 'Professional',
-        'description' => 'Full procurement, inventory, contracts, and reporting suite',
+        'description' => 'Full procurement, inventory, contracts, logistics, and reporting suite',
         'price_monthly' => 1800.00,
         'price_yearly' => 19999.00,
         'max_users' => 25,
@@ -46,6 +46,9 @@ return [
             'branches',
             'notifications',
             'recruitment',
+            'logistics',
+            'crm',
+            'projects',
         ],
     ],
     'enterprise' => [
@@ -74,6 +77,17 @@ return [
             'notifications',
             'pos',
             'recruitment',
+            'crm',
+            'projects',
+            'approval',
+            'manufacturing',
+            'payroll',
+            'quality',
+            'bi',
+            'website',
+            'logistics',
+            'access_control',
+            'profile',
         ],
     ],
 ];

@@ -138,9 +138,49 @@ final class MigrationService
         if (!$this->isApplied($pdo, '148_marketing_plans_canonical.sql')) {
             $this->markApplied($pdo, '148_marketing_plans_canonical.sql');
         }
-        $log[] = 'Marketing plans catchup: limits + modules synced (enterprise → 100 users).';
+
+        // Prefer config/plan-tiers.php module bundles over any stale SQL snapshot.
+        $this->syncPlanTierModulesFromConfig($pdo, $log);
+
+        $catchup227 = $root . '/migrations/227_plan_tiers_logistics_modules.sql';
+        if (is_file($catchup227) && !$this->isApplied($pdo, '227_plan_tiers_logistics_modules.sql')) {
+            $sql227 = file_get_contents($catchup227);
+            if (is_string($sql227) && trim($sql227) !== '') {
+                $log[] = 'Applying plan tiers logistics modules catchup (227)…';
+                $this->execSqlFile($pdo, $sql227);
+                $this->markApplied($pdo, '227_plan_tiers_logistics_modules.sql');
+            }
+        }
+
+        $log[] = 'Marketing plans catchup: limits + modules synced from plan-tiers.';
 
         return $localLog;
+    }
+
+    /** @param list<string> $log */
+    private function syncPlanTierModulesFromConfig(PDO $pdo, array &$log): void
+    {
+        if (!class_exists(PlanLimitService::class)) {
+            return;
+        }
+        foreach (['starter', 'professional', 'enterprise'] as $slug) {
+            $modules = PlanLimitService::modulesForSlug($slug);
+            if ($modules === []) {
+                continue;
+            }
+            $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
+            if (!is_string($json) || $json === '') {
+                continue;
+            }
+            try {
+                $stmt = $pdo->prepare('UPDATE rateb_plans SET modules = :modules WHERE slug = :slug');
+                $stmt->execute(['modules' => $json, 'slug' => $slug]);
+                $this->drainStatement($stmt);
+                $log[] = 'Plan modules synced from config: ' . $slug . ' (' . count($modules) . ')';
+            } catch (\Throwable $e) {
+                $log[] = 'Plan modules sync failed for ' . $slug . ': ' . $e->getMessage();
+            }
+        }
     }
 
     /** @return list<string> */

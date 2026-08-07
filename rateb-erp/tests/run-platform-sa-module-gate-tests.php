@@ -1,0 +1,60 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Platform Super Admin module gate + plan-tiers logistics coverage.
+ * Run: php rateb-erp/tests/run-platform-sa-module-gate-tests.php
+ */
+
+$root = dirname(__DIR__);
+require_once $root . '/app/Core/Bootstrap.php';
+\Rateb\App\Core\Bootstrap::init($root);
+
+use Rateb\App\Services\PlanLimitService;
+
+$passed = 0;
+$failed = 0;
+
+function sa_gate_assert(bool $cond, string $label): void
+{
+    global $passed, $failed;
+    if ($cond) {
+        ++$passed;
+        echo "PASS: {$label}\n";
+    } else {
+        ++$failed;
+        echo "FAIL: {$label}\n";
+    }
+}
+
+$pro = PlanLimitService::modulesForSlug('professional');
+$ent = PlanLimitService::modulesForSlug('enterprise');
+$starter = PlanLimitService::modulesForSlug('starter');
+
+sa_gate_assert(in_array('procurement', $starter, true), 'starter includes procurement');
+sa_gate_assert(in_array('logistics', $pro, true), 'professional includes logistics');
+sa_gate_assert(in_array('procurement', $pro, true), 'professional includes procurement');
+sa_gate_assert(in_array('logistics', $ent, true), 'enterprise includes logistics');
+sa_gate_assert(in_array('pos', $ent, true), 'enterprise includes pos');
+sa_gate_assert(in_array('crm', $ent, true), 'enterprise includes crm');
+
+$appPhp = (string) file_get_contents($root . '/config/app.php');
+sa_gate_assert(
+    str_contains($appPhp, 'Platform Super Admin on rateb.sa: never ceiling-gate'),
+    'platform SA nav gate disabled in app.php'
+);
+
+$mw = (string) file_get_contents($root . '/app/Core/Middleware/Middleware.php');
+sa_gate_assert(
+    str_contains($mw, 'Platform Super Admin always bypasses package module gates'),
+    'CompanyModuleMiddleware SA platform bypass present'
+);
+
+$mig = (string) file_get_contents($root . '/migrations/227_plan_tiers_logistics_modules.sql');
+sa_gate_assert(str_contains($mig, 'logistics'), 'migration 227 includes logistics');
+
+$repair = (string) file_get_contents($root . '/app/services/MigrationService.php');
+sa_gate_assert(str_contains($repair, 'syncPlanTierModulesFromConfig'), 'repair syncs modules from plan-tiers config');
+
+echo "\nPlatform SA module gate tests: {$passed} passed, {$failed} failed\n";
+exit($failed > 0 ? 1 : 0);

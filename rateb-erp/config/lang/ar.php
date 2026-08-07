@@ -547,6 +547,8 @@ return [
     'company_bulk_pending_use_oversight' => ':count شركة قيد الانتظار — اعتمدها من مراقبة الإدارة → اعتماد الشركات.',
     'company_bulk_nothing_to_activate' => 'لا توجد شركات موقوفة ضمن المحدد.',
     'company_plan_modules_sync_hint' => 'عند تغيير الباقة تُحدَّث الوحدات المفعّلة والحدود تلقائياً. يمكنك تعديل الوحدات يدوياً بعد ذلك.',
+    'company_plan_required_for_modules' => 'لا توجد باقة مرتبطة بهذه الشركة. اختر Starter / Professional / Enterprise ثم احفظ، وبعدها فعّل الوحدات المطلوبة (مثل المشتريات واللوجستيات).',
+    'company_plans_empty_hint' => 'لا توجد باقات SaaS نشطة في قاعدة البيانات. شغّل الترحيلات أو أعد باقات starter/professional/enterprise.',
     'company_plan_modules_tenant_help' => 'فعّل أو أوقف وحدات الشركة (نقطة البيع، الفروع، الإشعارات، …). يحتاج المستخدمون أيضاً صلاحيات مطابقة في مصفوفة الوصول.',
     'company_permissions' => 'صلاحيات الشركات',
     'company_permissions_help' => 'تحكّم في وحدات الناف الظاهرة لكل شركة مشتركة — مستقل عن صلاحيات المستخدمين داخل النظام.',

@@ -3422,10 +3422,14 @@ if (!function_exists('rateb_nav_enforce_company_modules')) {
         if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
             return true;
         }
-        // Platform super-admin: filter nav only when ?company_id= tenant preview is explicit.
+        // Platform Super Admin on rateb.sa: never ceiling-gate by company.modules.
+        // Ops ?company_id= still scopes tenant data; package checkboxes remain the
+        // entitlement for company users / agency hosts. Blocking SA here made
+        // procurement/logistics links redirect to companies/{id}/edit with
+        // "module not in plan" even for full-access platform operators.
         if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
             && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            return rateb_platform_tenant_nav_company_id() > 0;
+            return false;
         }
 
         return false;

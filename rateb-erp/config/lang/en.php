@@ -547,6 +547,8 @@ return [
     'company_bulk_pending_use_oversight' => ':count pending company(ies) — approve under Admin oversight → Company approvals.',
     'company_bulk_nothing_to_activate' => 'No suspended companies in the selection.',
     'company_plan_modules_sync_hint' => 'Changing the plan updates enabled modules and limits automatically. Adjust modules manually if needed.',
+    'company_plan_required_for_modules' => 'No plan is assigned. Select Starter / Professional / Enterprise, save, then enable modules the company should use (e.g. Procurement, Logistics).',
+    'company_plans_empty_hint' => 'No active SaaS plans were found in the database. Run migrations or restore starter/professional/enterprise plans.',
     'company_plan_modules_tenant_help' => 'Toggle modules for this company (POS, branches, notifications, etc.). Users still need matching permissions in the access matrix.',
     'company_permissions' => 'Company Permissions',
     'company_permissions_help' => 'Control which nav modules each shared company can see — separate from in-app user roles and permissions.',

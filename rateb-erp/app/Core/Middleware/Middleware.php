@@ -391,6 +391,13 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
     public function handle(): bool
     {
+        // Platform Super Admin always bypasses package module gates (support / ops).
+        if (SessionManager::get('rateb_is_super_admin')
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
         $enforceForSuper = function_exists('rateb_nav_enforce_company_modules')
             && rateb_nav_enforce_company_modules();
         if (SessionManager::get('rateb_is_super_admin') && !$enforceForSuper) {

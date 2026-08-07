@@ -126,6 +126,12 @@ $agencyPortalMode = !empty($agencyPortalMode);
                         <?php } ?>
                     </select>
                     <p class="form-text mb-0"><?php echo __('company_plan_modules_sync_hint'); ?></p>
+                    <?php if ($isEdit && (int) ($item['plan_id'] ?? 0) < 1) { ?>
+                    <p class="form-text text-warning mb-0"><?php echo __('company_plan_required_for_modules'); ?></p>
+                    <?php } ?>
+                    <?php if ($plans === []) { ?>
+                    <p class="form-text text-danger mb-0"><?php echo __('company_plans_empty_hint'); ?></p>
+                    <?php } ?>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('user_limit'); ?></label>
