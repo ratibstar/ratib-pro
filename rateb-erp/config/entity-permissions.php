@@ -672,6 +672,26 @@ return [
         'view' => 'crm.config.manage',
         'manage' => 'crm.config.manage',
     ],
+    'crm-teams' => [
+        'module' => 'crm',
+        'view' => 'crm.teams.view',
+        'manage' => 'crm.teams.manage',
+    ],
+    'crm-lifecycle' => [
+        'module' => 'crm',
+        'view' => 'crm.lifecycle.manage',
+        'manage' => 'crm.lifecycle.manage',
+    ],
+    'crm-analytics' => [
+        'module' => 'crm',
+        'view' => 'crm.analytics.view',
+        'manage' => 'crm.analytics.view',
+    ],
+    'crm-retention' => [
+        'module' => 'crm',
+        'view' => 'crm.retention.view',
+        'manage' => 'crm.retention.view',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

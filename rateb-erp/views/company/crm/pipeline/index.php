@@ -21,9 +21,10 @@ $pipelineId = (int) (($board['pipeline']['id'] ?? 0));
 
     <?php if (!empty($canForecast) && is_array($forecast)): ?>
     <div class="row g-3 mb-3">
-        <div class="col-md-4"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_pipeline_value'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo htmlspecialchars(number_format((float) ($forecast['total_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
-        <div class="col-md-4"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_expected_revenue'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo htmlspecialchars(number_format((float) ($forecast['total_expected_revenue'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
-        <div class="col-md-4"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_forecast'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo count($forecast['by_stage'] ?? []); ?> <?php echo htmlspecialchars(__('crm_pipeline_stages'), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_kpi_pipeline_value'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo htmlspecialchars(number_format((float) ($forecast['total_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_expected_revenue'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo htmlspecialchars(number_format((float) ($forecast['total_expected_revenue'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_pipeline_health'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo (int) (($health['score'] ?? 0)); ?> (<?php echo htmlspecialchars((string) ($health['grade'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>)</div></div></div>
+        <div class="col-md-3"><div class="border rounded p-3"><div class="text-muted small"><?php echo htmlspecialchars(__('crm_bottlenecks'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5 fw-semibold"><?php echo (int) (($health['bottleneck_count'] ?? count($bottlenecks ?? []))); ?></div></div></div>
     </div>
     <?php endif; ?>
 
@@ -37,7 +38,7 @@ $pipelineId = (int) (($board['pipeline']['id'] ?? 0));
                 <div class="border rounded h-100">
                     <div class="px-3 py-2 border-bottom">
                         <div class="fw-semibold"><?php echo htmlspecialchars((string) ($stage['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                        <div class="small text-muted"><?php echo htmlspecialchars((string) ($stage['probability_percent'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div>
+                        <div class="small text-muted"><?php echo htmlspecialchars((string) ($stage['probability_percent'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%<?php if (!empty($stage['expected_duration_days'])): ?> · <?php echo (int) $stage['expected_duration_days']; ?>d<?php endif; ?></div>
                     </div>
                     <div class="p-2">
                         <?php foreach ($opps as $opp): if ((int) ($opp['stage_id'] ?? 0) !== (int) $stage['id']) continue; ?>
@@ -79,8 +80,9 @@ $pipelineId = (int) (($board['pipeline']['id'] ?? 0));
                     <input type="hidden" name="pipeline_id" value="<?php echo $pipelineId; ?>">
                     <h2 class="h6"><?php echo htmlspecialchars(__('crm_pipeline_stage_manage'), ENT_QUOTES, 'UTF-8'); ?></h2>
                     <div class="row g-2">
-                        <div class="col-md-6"><input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
-                        <div class="col-md-3"><input class="form-control" name="probability_percent" type="number" min="0" max="100" step="1" placeholder="%" value="20"></div>
+                        <div class="col-md-4"><input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
+                        <div class="col-md-2"><input class="form-control" name="probability_percent" type="number" min="0" max="100" step="1" placeholder="%" value="20"></div>
+                        <div class="col-md-3"><input class="form-control" name="expected_duration_days" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_stage_duration_days'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                         <div class="col-md-3"><input class="form-control" name="sort_order" type="number" placeholder="#" value="0"></div>
                         <div class="col-md-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="is_won" value="1" id="is_won"><label class="form-check-label" for="is_won">won</label></div>
                         <div class="col-md-6 form-check"><input class="form-check-input" type="checkbox" name="is_lost" value="1" id="is_lost"><label class="form-check-label" for="is_lost">lost</label></div>

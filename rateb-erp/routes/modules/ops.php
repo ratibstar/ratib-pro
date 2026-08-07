@@ -64,6 +64,7 @@ use Rateb\App\Controllers\Company\CrmCompaniesController;
 use Rateb\App\Controllers\Company\CrmCustomerProfileController;
 use Rateb\App\Controllers\Company\CrmReportsController;
 use Rateb\App\Controllers\Company\CrmAdminController;
+use Rateb\App\Controllers\Company\CrmTeamsController;
 use Rateb\App\Controllers\Company\WebsiteDashboardController;
 use Rateb\App\Controllers\Company\WebsitePagesController;
 use Rateb\App\Controllers\Company\WebsiteBuilderController;
@@ -396,6 +397,11 @@ $router->post($app('crm/automation/run'), [CrmAutomationController::class, 'run'
 $router->get($app('crm/admin'), [CrmAdminController::class, 'index'], rateb_erp_mw('crm', 'crm.config.manage', 'crm'));
 $router->post($app('crm/admin/activity-types'), [CrmAdminController::class, 'storeActivityType'], rateb_erp_mw('crm', 'crm.config.manage', 'crm'));
 $router->post($app('crm/admin/automation-rules/{id}'), [CrmAdminController::class, 'updateAutomationRule'], rateb_erp_mw('crm', 'crm.config.manage', 'crm'));
+$router->get($app('crm/teams'), [CrmTeamsController::class, 'index'], rateb_erp_mw('crm', 'crm.teams.view', 'crm'));
+$router->post($app('crm/teams'), [CrmTeamsController::class, 'storeTeam'], rateb_erp_mw('crm', 'crm.teams.manage', 'crm'));
+$router->post($app('crm/teams/{id}/members'), [CrmTeamsController::class, 'storeMember'], rateb_erp_mw('crm', 'crm.teams.manage', 'crm'));
+$router->post($app('crm/teams/territories'), [CrmTeamsController::class, 'storeTerritory'], rateb_erp_mw('crm', 'crm.teams.manage', 'crm'));
+$router->post($app('crm/teams/ownership-rules'), [CrmTeamsController::class, 'storeOwnershipRule'], rateb_erp_mw('crm', 'crm.teams.manage', 'crm'));
 $router->get($app('crm/opportunities'), [CrmOpportunitiesController::class, 'index'], $crmMw);
 $router->get($app('crm/opportunities/create'), [CrmOpportunitiesController::class, 'create'], rateb_erp_mw('crm', 'crm.create', 'crm'));
 $router->post($app('crm/opportunities'), [CrmOpportunitiesController::class, 'store'], rateb_erp_mw('crm', 'crm.create', 'crm'));
@@ -429,6 +435,9 @@ $router->get($app('crm/companies'), [CrmCompaniesController::class, 'index'], $c
 $router->post($app('crm/companies'), [CrmCompaniesController::class, 'store'], rateb_erp_mw('crm', 'crm.create', 'crm'));
 $router->get($app('crm/companies/{id}'), [CrmCompaniesController::class, 'show'], $crmMw);
 $router->get($app('crm/customers/{id}'), [CrmCustomerProfileController::class, 'show'], $crmMw);
+$router->post($app('crm/customers/{id}/lifecycle'), [CrmCustomerProfileController::class, 'transitionLifecycle'], rateb_erp_mw('crm', 'crm.lifecycle.manage', 'crm'));
+$router->post($app('crm/customers/{id}/ownership'), [CrmCustomerProfileController::class, 'assignOwnership'], rateb_erp_mw('crm', 'crm.lifecycle.manage', 'crm'));
+$router->post($app('crm/customers/{id}/renewal'), [CrmCustomerProfileController::class, 'setRenewal'], rateb_erp_mw('crm', 'crm.lifecycle.manage', 'crm'));
 
 /** Phase 18A — Projects ONLINE (no offline hooks). */
 $prjMw = rateb_erp_mw('projects', '', 'projects');

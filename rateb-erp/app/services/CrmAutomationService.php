@@ -8,6 +8,7 @@ use Rateb\App\Models\CrmAutomationLog;
 use Rateb\App\Models\CrmOpportunity;
 use Rateb\App\Models\CrmQuotation;
 use Rateb\App\Models\CrmTask;
+use Rateb\App\Models\Customer;
 
 /**
  * Phase 3 — CRM automation events via existing NotificationService.
@@ -284,7 +285,183 @@ final class CrmAutomationService
     }
 
     /**
-     * @return array{follow_up: array{reminders:int,overdue:int}, quote_expiry: array{alerts:int}, inactivity: array{alerts:int}, expired_quotes: int}
+     * Customers / leads with no CRM activity for N days.
+     *
+     * @return array{alerts: int}
+     */
+    public function processNoActivityReminders(): array
+    {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('no_activity')) {
+            return ['alerts' => 0];
+        }
+        $companyId = CrmSupport::requireCompanyId();
+        $cfg = (new CrmAdminConfigService())->ruleConfig('no_activity');
+        $days = max(1, (int) ($cfg['days'] ?? 21));
+        $cutoff = date('Y-m-d H:i:s', strtotime('-' . $days . ' days'));
+        $rows = (new Customer())->query(
+            "SELECT id, name, crm_owner_user_id, crm_last_interaction_at
+             FROM rateb_customers
+             WHERE company_id = :cid
+               AND (
+                    crm_last_interaction_at IS NULL
+                    OR crm_last_interaction_at <= :cutoff
+               )
+             ORDER BY COALESCE(crm_last_interaction_at, '1970-01-01') ASC
+             LIMIT 40",
+            ['cid' => $companyId, 'cutoff' => $cutoff]
+        );
+        $alerts = 0;
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $cid = (int) ($row['id'] ?? 0);
+            $owner = (int) ($row['crm_owner_user_id'] ?? 0);
+            $msg = 'Customer #' . $cid . ' has no activity for ' . $days . ' days: ' . (string) ($row['name'] ?? '');
+            if ($owner > 0) {
+                $this->notifier->notifyUser($owner, $companyId, 'CRM: No activity', $msg, 'warning', 'crm.no_activity', 'customer', $cid);
+            } else {
+                $this->notifier->notifyCompany($companyId, 'CRM: No activity', $msg, 'warning', 'crm.no_activity', 'customer', $cid);
+            }
+            $this->log('no_activity', 'customer', $cid, $owner > 0 ? $owner : null, ['days' => $days]);
+            ++$alerts;
+        }
+        $this->audit('crm.automation.no_activity_scan', 'customer', null, ['alerts' => $alerts, 'days' => $days]);
+
+        return ['alerts' => $alerts];
+    }
+
+    /**
+     * Renewal due reminders (CRM tracking only — no Subscription/Accounting).
+     *
+     * @return array{alerts: int}
+     */
+    public function processRenewalReminders(): array
+    {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('renewal_reminder')) {
+            return ['alerts' => 0];
+        }
+        $companyId = CrmSupport::requireCompanyId();
+        $cfg = (new CrmAdminConfigService())->ruleConfig('renewal_reminder');
+        $daysAhead = max(0, (int) ($cfg['days_ahead'] ?? 30));
+        $rows = (new CrmRetentionService())->renewalsDue($daysAhead, 40);
+        $alerts = 0;
+        foreach ($rows as $row) {
+            $cid = (int) ($row['id'] ?? 0);
+            $owner = (int) ($row['crm_owner_user_id'] ?? 0);
+            $due = (string) ($row['crm_renewal_due_at'] ?? '');
+            $msg = 'Customer #' . $cid . ' renewal due ' . $due . ': ' . (string) ($row['name'] ?? '');
+            if ($owner > 0) {
+                $this->notifier->notifyUser($owner, $companyId, 'CRM: Renewal reminder', $msg, 'info', 'crm.renewal_reminder', 'customer', $cid);
+            } else {
+                $this->notifier->notifyCompany($companyId, 'CRM: Renewal reminder', $msg, 'info', 'crm.renewal_reminder', 'customer', $cid);
+            }
+            $this->log('renewal_reminder', 'customer', $cid, $owner > 0 ? $owner : null, ['due' => $due]);
+            ++$alerts;
+        }
+        $this->audit('crm.automation.renewal_scan', 'customer', null, ['alerts' => $alerts]);
+
+        return ['alerts' => $alerts];
+    }
+
+    /**
+     * Open opportunities exceeding stage expected_duration_days.
+     *
+     * @return array{alerts: int}
+     */
+    public function processStaleOpportunities(): array
+    {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('stale_opportunity')) {
+            return ['alerts' => 0];
+        }
+        $companyId = CrmSupport::requireCompanyId();
+        $rows = (new CrmOpportunity())->query(
+            "SELECT o.id, o.name, o.owner_user_id, o.stage_entered_at, s.name AS stage_name, s.expected_duration_days
+             FROM rateb_crm_opportunities o
+             INNER JOIN rateb_crm_pipeline_stages s ON s.id = o.stage_id
+             WHERE o.company_id = :cid AND o.deleted_at IS NULL AND o.workflow_status = 'open'
+               AND s.expected_duration_days IS NOT NULL AND s.expected_duration_days > 0
+               AND o.stage_entered_at IS NOT NULL
+               AND o.stage_entered_at < DATE_SUB(NOW(), INTERVAL s.expected_duration_days DAY)
+             ORDER BY o.stage_entered_at ASC
+             LIMIT 50",
+            ['cid' => $companyId]
+        );
+        $alerts = 0;
+        foreach (is_array($rows) ? $rows : [] as $opp) {
+            $oid = (int) ($opp['id'] ?? 0);
+            $owner = (int) ($opp['owner_user_id'] ?? 0);
+            $msg = 'Opportunity #' . $oid . ' stale in stage ' . (string) ($opp['stage_name'] ?? '')
+                . ' (SLA ' . (int) ($opp['expected_duration_days'] ?? 0) . 'd)';
+            if ($owner > 0) {
+                $this->notifier->notifyUser($owner, $companyId, 'CRM: Stale opportunity', $msg, 'warning', 'crm.stale_opportunity', 'crm_opportunity', $oid);
+            } else {
+                $this->notifier->notifyCompany($companyId, 'CRM: Stale opportunity', $msg, 'warning', 'crm.stale_opportunity', 'crm_opportunity', $oid);
+            }
+            $this->log('stale_opportunity', 'opportunity', $oid, $owner > 0 ? $owner : null, [
+                'expected_duration_days' => (int) ($opp['expected_duration_days'] ?? 0),
+            ]);
+            ++$alerts;
+        }
+        $this->audit('crm.automation.stale_opportunity_scan', 'crm_opportunity', null, ['alerts' => $alerts]);
+
+        return ['alerts' => $alerts];
+    }
+
+    /**
+     * Active customers needing follow-up based on last interaction.
+     *
+     * @return array{alerts: int}
+     */
+    public function processCustomerFollowUps(): array
+    {
+        if (!(new CrmAdminConfigService())->isRuleEnabled('customer_follow_up')) {
+            return ['alerts' => 0];
+        }
+        $companyId = CrmSupport::requireCompanyId();
+        $cfg = (new CrmAdminConfigService())->ruleConfig('customer_follow_up');
+        $days = max(1, (int) ($cfg['days'] ?? 14));
+        $cutoff = date('Y-m-d H:i:s', strtotime('-' . $days . ' days'));
+        $rows = (new Customer())->query(
+            "SELECT id, name, crm_owner_user_id, crm_lifecycle_stage, crm_last_interaction_at
+             FROM rateb_customers
+             WHERE company_id = :cid
+               AND crm_lifecycle_stage IN ('customer','active_customer','retention','renewal')
+               AND (
+                    crm_last_interaction_at IS NULL
+                    OR crm_last_interaction_at <= :cutoff
+               )
+             ORDER BY COALESCE(crm_last_interaction_at, '1970-01-01') ASC
+             LIMIT 40",
+            ['cid' => $companyId, 'cutoff' => $cutoff]
+        );
+        $alerts = 0;
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $cid = (int) ($row['id'] ?? 0);
+            $owner = (int) ($row['crm_owner_user_id'] ?? 0);
+            $msg = 'Follow up customer #' . $cid . ' (' . (string) ($row['crm_lifecycle_stage'] ?? '') . '): '
+                . (string) ($row['name'] ?? '');
+            if ($owner > 0) {
+                $this->notifier->notifyUser($owner, $companyId, 'CRM: Customer follow-up', $msg, 'info', 'crm.customer_follow_up', 'customer', $cid);
+            } else {
+                $this->notifier->notifyCompany($companyId, 'CRM: Customer follow-up', $msg, 'info', 'crm.customer_follow_up', 'customer', $cid);
+            }
+            $this->log('customer_follow_up', 'customer', $cid, $owner > 0 ? $owner : null, ['days' => $days]);
+            ++$alerts;
+        }
+        $this->audit('crm.automation.customer_follow_up_scan', 'customer', null, ['alerts' => $alerts]);
+
+        return ['alerts' => $alerts];
+    }
+
+    /**
+     * @return array{
+     *   follow_up: array{reminders:int,overdue:int},
+     *   quote_expiry: array{alerts:int},
+     *   inactivity: array{alerts:int},
+     *   expired_quotes: int,
+     *   no_activity: array{alerts:int},
+     *   renewal: array{alerts:int},
+     *   stale: array{alerts:int},
+     *   customer_follow_up: array{alerts:int}
+     * }
      */
     public function runAll(): array
     {
@@ -292,11 +469,19 @@ final class CrmAutomationService
         $quotes = $this->processQuoteExpiryAlerts();
         $inactive = $this->processOpportunityInactivity();
         $expired = (new CrmQuotationService())->expireOverdue();
+        $noActivity = $this->processNoActivityReminders();
+        $renewal = $this->processRenewalReminders();
+        $stale = $this->processStaleOpportunities();
+        $custFollow = $this->processCustomerFollowUps();
         $this->audit('crm.automation.run_all', 'crm', null, [
             'follow_up' => $follow,
             'quote_expiry' => $quotes,
             'inactivity' => $inactive,
             'expired_quotes' => $expired,
+            'no_activity' => $noActivity,
+            'renewal' => $renewal,
+            'stale' => $stale,
+            'customer_follow_up' => $custFollow,
         ]);
 
         return [
@@ -304,6 +489,10 @@ final class CrmAutomationService
             'quote_expiry' => $quotes,
             'inactivity' => $inactive,
             'expired_quotes' => $expired,
+            'no_activity' => $noActivity,
+            'renewal' => $renewal,
+            'stale' => $stale,
+            'customer_follow_up' => $custFollow,
         ];
     }
 

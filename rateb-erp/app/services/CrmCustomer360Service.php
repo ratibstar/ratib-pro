@@ -28,12 +28,31 @@ final class CrmCustomer360Service
     {
         $companyId = CrmSupport::requireCompanyId();
         $customer = (new Customer())->queryOne(
-            'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id
+            'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
+                    crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
+                    crm_last_interaction_at, crm_activity_score, crm_renewal_due_at, crm_at_risk
              FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
             ['id' => $customerId, 'cid' => $companyId]
         );
         if (!is_array($customer)) {
             throw new \RuntimeException('customer_not_found');
+        }
+
+        $lifecycleHistory = [];
+        $retention = null;
+        try {
+            $lifecycleHistory = (new CrmLifecycleService())->history($customerId, 40);
+            $retention = (new CrmRetentionService())->refreshCustomer($customerId);
+            $customer = (new Customer())->queryOne(
+                'SELECT id, code, name, name_ar, phone, email, is_active, notes, branch_id,
+                        crm_lifecycle_stage, crm_owner_user_id, crm_team_id, crm_territory_id,
+                        crm_last_interaction_at, crm_activity_score, crm_renewal_due_at, crm_at_risk
+                 FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $customerId, 'cid' => $companyId]
+            ) ?? $customer;
+        } catch (\Throwable $e) {
+            $lifecycleHistory = [];
+            $retention = null;
         }
 
         $crmCompanies = (new CrmCompany())->query(
@@ -157,6 +176,9 @@ final class CrmCustomer360Service
             'calls' => is_array($calls) ? $calls : [],
             'meetings' => is_array($meetings) ? $meetings : [],
             'timeline' => (new CrmTimelineService())->listForCustomer($customerId, 60),
+            'lifecycle_history' => $lifecycleHistory,
+            'lifecycle_stages' => CrmLifecycleService::STAGES,
+            'retention' => $retention,
             'order_links' => $orderLinks,
             'invoice_links' => $invoiceLinks,
             'payment_links' => $paymentLinks,

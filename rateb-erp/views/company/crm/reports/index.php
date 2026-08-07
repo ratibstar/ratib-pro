@@ -105,5 +105,32 @@ $forecast = $forecast ?? [];
             <?php if (($accuracy ?? []) === []): ?><tr><td colspan="4" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
             </tbody></table></div>
         </div>
+
+        <?php if (!empty($canAnalytics) && is_array($analytics ?? null)): ?>
+        <?php $a = $analytics; $cycle = $a['sales_cycle'] ?? []; $vel = $a['pipeline_velocity'] ?? []; $cac = $a['cac'] ?? []; $ret = $a['retention'] ?? []; ?>
+        <div class="col-12"><h2 class="h4 mt-2"><?php echo htmlspecialchars(__('crm_analytics'), ENT_QUOTES, 'UTF-8'); ?></h2></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_sales_cycle'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo htmlspecialchars((string) ($cycle['avg_days'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>d</div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_pipeline_velocity'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo htmlspecialchars(number_format((float) ($vel['velocity_score'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_pipeline_health'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo (int) (($a['pipeline_health']['score'] ?? 0)); ?></div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_at_risk'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo (int) ($ret['at_risk'] ?? 0); ?></div></div></div>
+        <div class="col-lg-6">
+            <h2 class="h5"><?php echo htmlspecialchars(__('crm_rep_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Rep</th><th>Open</th><th>Won</th><th>Win%</th><th>Won Amt</th></tr></thead><tbody>
+            <?php foreach (($a['rep_performance'] ?? []) as $row): ?>
+                <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['open_count']; ?></td><td><?php echo (int) $row['won_count']; ?></td><td><?php echo htmlspecialchars((string) round($row['win_rate'] * 100, 1), ENT_QUOTES, 'UTF-8'); ?>%</td><td><?php echo htmlspecialchars(number_format($row['won_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
+            <?php endforeach; ?>
+            <?php if (($a['rep_performance'] ?? []) === []): ?><tr><td colspan="5" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
+            </tbody></table></div>
+        </div>
+        <div class="col-lg-6">
+            <h2 class="h5"><?php echo htmlspecialchars(__('crm_cac_placeholder'), ENT_QUOTES, 'UTF-8'); ?></h2>
+            <p class="small text-muted mb-2"><?php echo htmlspecialchars((string) ($cac['note'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between"><span>CAC</span><span><?php echo $cac['cac_placeholder'] === null ? 'n/a' : htmlspecialchars((string) $cac['cac_placeholder'], ENT_QUOTES, 'UTF-8'); ?></span></li>
+                <li class="list-group-item d-flex justify-content-between"><span><?php echo htmlspecialchars(__('crm_customers_acquired'), ENT_QUOTES, 'UTF-8'); ?></span><span><?php echo (int) ($cac['customers_acquired'] ?? 0); ?></span></li>
+                <li class="list-group-item d-flex justify-content-between"><span><?php echo htmlspecialchars(__('crm_leads'), ENT_QUOTES, 'UTF-8'); ?></span><span><?php echo (int) ($cac['leads_total'] ?? 0); ?></span></li>
+            </ul>
+        </div>
+        <?php endif; ?>
     </div>
 </div>

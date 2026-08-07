@@ -8,6 +8,7 @@ use Rateb\App\Models\CrmAssignment;
 use Rateb\App\Models\CrmCampaign;
 use Rateb\App\Models\CrmCompany;
 use Rateb\App\Models\CrmContact;
+use Rateb\App\Models\CrmEntityStatusHistory;
 use Rateb\App\Models\CrmLead;
 use Rateb\App\Models\CrmLeadSource;
 use Rateb\App\Models\CrmLossReason;
@@ -258,14 +259,25 @@ final class OpportunityService
             'pipeline_id' => $pipelineId,
             'stage_id' => $stageId,
             'owner_user_id' => CrmSupport::intOrNull($input['owner_user_id'] ?? null) ?? CrmSupport::userId(),
+            'team_id' => CrmSupport::intOrNull($input['team_id'] ?? null),
             'amount' => (float) ($input['amount'] ?? 0),
             'currency_code' => CrmSupport::nullIfEmpty($input['currency_code'] ?? null),
             'probability_percent' => (float) ($input['probability_percent'] ?? 0),
             'expected_close_date' => CrmSupport::nullIfEmpty($input['expected_close_date'] ?? null),
+            'stage_entered_at' => date('Y-m-d H:i:s'),
             'workflow_status' => 'open',
             'status' => 'active',
             'notes' => CrmSupport::nullIfEmpty($input['notes'] ?? null),
         ], CrmSupport::actorFields(true)));
+
+        $custId = CrmSupport::intOrNull($input['customer_id'] ?? null);
+        if ($custId !== null && $custId > 0) {
+            try {
+                (new CrmLifecycleService())->ensureAtLeast($custId, 'opportunity', 'opportunity_created');
+            } catch (\Throwable $e) {
+                // best-effort lifecycle
+            }
+        }
 
         (new CrmTimelineService())->record(
             'opportunity_created',
@@ -296,7 +308,7 @@ final class OpportunityService
                 $patch[$f] = $f === 'name' ? substr(trim((string) $input[$f]), 0, 190) : CrmSupport::nullIfEmpty($input[$f]);
             }
         }
-        foreach (['lead_id', 'crm_company_id', 'contact_id', 'customer_id', 'pipeline_id', 'stage_id', 'owner_user_id'] as $f) {
+        foreach (['lead_id', 'crm_company_id', 'contact_id', 'customer_id', 'pipeline_id', 'stage_id', 'owner_user_id', 'team_id'] as $f) {
             if (array_key_exists($f, $input)) {
                 $patch[$f] = CrmSupport::intOrNull($input[$f]);
             }
@@ -339,10 +351,12 @@ final class OpportunityService
         $prob = (float) ($stage['probability_percent'] ?? 0);
         $amount = (float) ($row['amount'] ?? 0);
         $expected = round($amount * $prob / 100, 2);
+        $fromStageId = CrmSupport::intOrNull($row['stage_id'] ?? null);
         $patch = array_merge([
             'stage_id' => $stageId,
             'pipeline_id' => (int) ($stage['pipeline_id'] ?? 0),
             'probability_percent' => $prob,
+            'stage_entered_at' => date('Y-m-d H:i:s'),
         ], CrmSupport::actorFields(false));
         $outcome = null;
         if ((int) ($stage['is_won'] ?? 0) === 1) {
@@ -361,7 +375,26 @@ final class OpportunityService
             }
             $patch['loss_notes'] = CrmSupport::nullIfEmpty($meta['loss_notes'] ?? null);
         }
+        (new CrmPipelineHealthService())->recordTransition(
+            $id,
+            $fromStageId,
+            $stageId,
+            (int) ($stage['pipeline_id'] ?? ($row['pipeline_id'] ?? 0)) ?: null,
+            isset($row['stage_entered_at']) ? (string) $row['stage_entered_at'] : null,
+            CrmSupport::intOrNull($row['owner_user_id'] ?? null),
+            CrmSupport::intOrNull($row['team_id'] ?? null),
+            ['outcome' => $outcome]
+        );
         (new CrmOpportunity())->update($id, $patch);
+        (new CrmEntityStatusHistory())->create([
+            'company_id' => $companyId,
+            'entity_type' => 'opportunity_stage',
+            'entity_id' => $id,
+            'from_status' => $fromStageId !== null ? (string) $fromStageId : null,
+            'to_status' => (string) $stageId,
+            'reason' => $outcome,
+            'created_by' => CrmSupport::userId(),
+        ]);
         if ($outcome !== null) {
             (new CrmOpportunityOutcome())->create([
                 'company_id' => $companyId,
@@ -390,9 +423,20 @@ final class OpportunityService
             CrmSupport::intOrNull($row['owner_user_id'] ?? null),
             $patch['workflow_status'] ?? null
         );
+        if ($outcome === 'won') {
+            $custId = CrmSupport::intOrNull($row['customer_id'] ?? null);
+            if ($custId !== null && $custId > 0) {
+                try {
+                    (new CrmLifecycleService())->ensureAtLeast($custId, 'active_customer', 'opportunity_won');
+                } catch (\Throwable $e) {
+                    // best-effort
+                }
+            }
+        }
         if (class_exists(AuditService::class)) {
             (new AuditService())->log('crm.opportunity.stage', 'crm_opportunity', $id, [
                 'stage_id' => $stageId,
+                'from_stage_id' => $fromStageId,
                 'stage' => $stageName,
                 'outcome' => $outcome,
                 'expected_revenue' => $expected,
@@ -558,6 +602,9 @@ final class PipelineService
         if ($pipe === null) {
             throw new \RuntimeException('pipeline_not_found');
         }
+        $durationDays = array_key_exists('expected_duration_days', $input)
+            ? CrmSupport::intOrNull($input['expected_duration_days'])
+            : null;
         $payload = array_merge([
             'pipeline_id' => $pipelineId,
             'code' => substr(trim((string) ($input['code'] ?? preg_replace('/\s+/', '_', strtolower($name)))), 0, 40),
@@ -565,6 +612,7 @@ final class PipelineService
             'name_ar' => CrmSupport::nullIfEmpty($input['name_ar'] ?? null),
             'sort_order' => (int) ($input['sort_order'] ?? 0),
             'probability_percent' => max(0, min(100, (float) ($input['probability_percent'] ?? 0))),
+            'expected_duration_days' => $durationDays !== null && $durationDays > 0 ? $durationDays : null,
             'is_won' => !empty($input['is_won']) ? 1 : 0,
             'is_lost' => !empty($input['is_lost']) ? 1 : 0,
             'status' => 'active',

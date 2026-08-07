@@ -147,8 +147,19 @@ final class CrmConversionService
             'phone' => CrmSupport::nullIfEmpty($input['phone'] ?? null),
             'email' => CrmSupport::nullIfEmpty($input['email'] ?? null),
             'is_active' => 1,
+            'crm_lifecycle_stage' => 'opportunity',
+            'crm_owner_user_id' => CrmSupport::intOrNull($quote['owner_user_id'] ?? null) ?? CrmSupport::userId(),
             'notes' => 'Created from CRM quotation ' . ($quote['quotation_no'] ?? $quotationId),
         ]);
+
+        try {
+            (new CrmLifecycleService())->transition($customerId, 'customer', 'quotation_to_customer', [
+                'quotation_id' => $quotationId,
+            ]);
+            (new CrmSalesTeamService())->applyOwnershipRules($customerId, 'customer');
+        } catch (\Throwable $e) {
+            // lifecycle best-effort when columns/tables not yet migrated
+        }
 
         $this->linkCustomerAcross($quote, $customerId);
         $this->logConversion('quotation_to_customer', 'quotation', $quotationId, 'customer', $customerId, [

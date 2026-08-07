@@ -276,6 +276,11 @@ return [
             'crm.forecast.manage',
             'crm.revenue.view',
             'crm.config.manage',
+            'crm.teams.view',
+            'crm.teams.manage',
+            'crm.lifecycle.manage',
+            'crm.analytics.view',
+            'crm.retention.view',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -316,6 +321,11 @@ return [
             'crm.forecast.manage',
             'crm.revenue.view',
             'crm.config.manage',
+            'crm.teams.view',
+            'crm.teams.manage',
+            'crm.lifecycle.manage',
+            'crm.analytics.view',
+            'crm.retention.view',
         ],
         'website.manage' => [
             'website.view',
