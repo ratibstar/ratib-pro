@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Platform Super Admin module gate + plan-tiers logistics coverage.
+ * Super Admin full-open module gate + plan-tiers logistics coverage.
  * Run: php rateb-erp/tests/run-platform-sa-module-gate-tests.php
  */
 
@@ -40,14 +40,26 @@ sa_gate_assert(in_array('crm', $ent, true), 'enterprise includes crm');
 
 $appPhp = (string) file_get_contents($root . '/config/app.php');
 sa_gate_assert(
-    str_contains($appPhp, 'Platform Super Admin on rateb.sa: never ceiling-gate'),
-    'platform SA nav gate disabled in app.php'
+    str_contains($appPhp, 'Super Admin: full system open'),
+    'SA nav fully open in app.php'
+);
+sa_gate_assert(
+    str_contains($appPhp, 'Super Admin is never gated'),
+    'SA never enforces company.modules in nav gate'
 );
 
 $mw = (string) file_get_contents($root . '/app/Core/Middleware/Middleware.php');
 sa_gate_assert(
-    str_contains($mw, 'Platform Super Admin always bypasses package module gates'),
-    'CompanyModuleMiddleware SA platform bypass present'
+    str_contains($mw, 'Super Admin: full ERP open'),
+    'CompanyModuleMiddleware SA full bypass present'
+);
+sa_gate_assert(
+    str_contains($mw, 'isSuperAdminSession'),
+    'CompanyModuleMiddleware uses isSuperAdminSession helper'
+);
+sa_gate_assert(
+    !str_contains($mw, "companies/' . \$companyId . '/edit"),
+    'company edit redirect removed from CompanyModuleMiddleware'
 );
 
 $mig = (string) file_get_contents($root . '/migrations/227_plan_tiers_logistics_modules.sql');

@@ -391,21 +391,13 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
     public function handle(): bool
     {
-        // Platform Super Admin always bypasses package module gates (support / ops).
-        if (SessionManager::get('rateb_is_super_admin')
-            && function_exists('rateb_is_platform_oversight_host')
-            && rateb_is_platform_oversight_host()) {
-            return true;
-        }
-
-        $enforceForSuper = function_exists('rateb_nav_enforce_company_modules')
-            && rateb_nav_enforce_company_modules();
-        if (SessionManager::get('rateb_is_super_admin') && !$enforceForSuper) {
+        // Super Admin: full ERP open — never ceiling-gate by company.modules / plan.
+        if (self::isSuperAdminSession()) {
             return true;
         }
 
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
-        if ($companyId < 1 && $enforceForSuper && function_exists('rateb_resolve_ops_company_id')) {
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = (int) rateb_resolve_ops_company_id();
         }
         $jsonOnly = function_exists('rateb_prefers_json_error_response') && rateb_prefers_json_error_response();
@@ -433,15 +425,20 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
                 return false;
             }
             SessionManager::flash('error', $msg);
-            $redirectUrl = function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin');
-            if (SessionManager::get('rateb_is_super_admin') && $companyId > 0 && function_exists('rateb_url')) {
-                $redirectUrl = rateb_url('admin/companies/' . $companyId . '/edit');
-            }
-            Response::redirect($redirectUrl);
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
         return true;
+    }
+
+    private static function isSuperAdminSession(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+
+        return (bool) SessionManager::get('rateb_is_super_admin');
     }
 }
 

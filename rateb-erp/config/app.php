@@ -3404,12 +3404,15 @@ if (!function_exists('rateb_nav_tenant_company_id_for_gate')) {
 
 if (!function_exists('rateb_nav_enforce_company_modules')) {
     /**
-     * Agency / dedicated / branch appliance: company.modules is the nav ceiling —
-     * including for users flagged as super_admin on that host.
-     * Platform oversight host (rateb.sa) keeps full platform nav for super admins.
+     * Whether company.modules ceilings apply to navigation / module middleware.
+     * Super Admin is never gated (full ERP open). Company users / agency tenants
+     * remain limited by their package checkboxes.
      */
     function rateb_nav_enforce_company_modules(): bool
     {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return false;
+        }
         if (function_exists('rateb_is_branch_appliance_runtime') && rateb_is_branch_appliance_runtime()) {
             return true;
         }
@@ -3421,15 +3424,6 @@ if (!function_exists('rateb_nav_enforce_company_modules')) {
         }
         if (function_exists('rateb_is_platform_oversight_host') && !rateb_is_platform_oversight_host()) {
             return true;
-        }
-        // Platform Super Admin on rateb.sa: never ceiling-gate by company.modules.
-        // Ops ?company_id= still scopes tenant data; package checkboxes remain the
-        // entitlement for company users / agency hosts. Blocking SA here made
-        // procurement/logistics links redirect to companies/{id}/edit with
-        // "module not in plan" even for full-access platform operators.
-        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
-            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            return false;
         }
 
         return false;
@@ -3480,24 +3474,7 @@ if (!function_exists('rateb_nav_can')) {
             return true;
         }
         if (rateb_is_super_admin()) {
-            if ($permission !== '' && !rateb_can($permission)) {
-                return false;
-            }
-            if ($module !== '' && rateb_nav_enforce_company_modules()) {
-                $companyId = rateb_nav_tenant_company_id_for_gate();
-                if ($companyId < 1) {
-                    return false;
-                }
-                static $superModuleGate = [];
-                $gateKey = $companyId . ':' . $module;
-                if (!array_key_exists($gateKey, $superModuleGate)) {
-                    $superModuleGate[$gateKey] = (new \Rateb\App\Services\PlanLimitService())
-                        ->companyHasModule($companyId, $module);
-                }
-
-                return $superModuleGate[$gateKey];
-            }
-
+            // Super Admin: full system open (nav + modules). Ops ?company_id= only scopes data.
             return true;
         }
         if ($permission !== '' && !rateb_can($permission)) {
