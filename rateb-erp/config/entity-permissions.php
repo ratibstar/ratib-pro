@@ -732,6 +732,31 @@ return [
         'view' => 'crm.revenue.intel',
         'manage' => 'crm.revenue.intel',
     ],
+    'crm-revops' => [
+        'module' => 'crm',
+        'view' => 'crm.revops.view',
+        'manage' => 'crm.revops.view',
+    ],
+    'crm-cockpit' => [
+        'module' => 'crm',
+        'view' => 'crm.cockpit.view',
+        'manage' => 'crm.cockpit.view',
+    ],
+    'crm-search' => [
+        'module' => 'crm',
+        'view' => 'crm.search.view',
+        'manage' => 'crm.search.view',
+    ],
+    'crm-reporting-center' => [
+        'module' => 'crm',
+        'view' => 'crm.reporting.center',
+        'manage' => 'crm.reporting.center',
+    ],
+    'crm-workflow-governance' => [
+        'module' => 'crm',
+        'view' => 'crm.workflow.governance',
+        'manage' => 'crm.workflow.governance',
+    ],
     'projects' => [
         'module' => 'projects',
         'view' => 'projects.view',

@@ -340,6 +340,15 @@ final class OpportunityService
             throw new \RuntimeException('opportunity_not_found');
         }
         $companyId = CrmSupport::requireCompanyId();
+        try {
+            if (class_exists(CrmWorkflowGovernanceService::class)) {
+                (new CrmWorkflowGovernanceService())->assertStageMove($id, $stageId, $meta);
+            }
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            // Stage governance table may be absent pre-migrate 237
+        }
         $stage = (new CrmPipelineStage())->queryOne(
             'SELECT * FROM rateb_crm_pipeline_stages
              WHERE id = :id AND company_id = :cid AND deleted_at IS NULL LIMIT 1',

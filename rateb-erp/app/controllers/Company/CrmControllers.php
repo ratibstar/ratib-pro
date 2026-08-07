@@ -22,9 +22,16 @@ use Rateb\App\Services\CrmAutomationService;
 use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
+use Rateb\App\Services\CrmDataQualityEngineService;
 use Rateb\App\Services\CrmEnterpriseForecastService;
+use Rateb\App\Services\CrmExecutiveCockpitService;
 use Rateb\App\Services\CrmForecastEngineService;
 use Rateb\App\Services\CrmGovernanceService;
+use Rateb\App\Services\CrmReportingCenterService;
+use Rateb\App\Services\CrmRevOpsAutomationService;
+use Rateb\App\Services\CrmRevOpsCommandCenterService;
+use Rateb\App\Services\CrmUnifiedSearchService;
+use Rateb\App\Services\CrmWorkflowGovernanceService;
 use Rateb\App\Services\CrmLifecycleService;
 use Rateb\App\Services\CrmNoteService;
 use Rateb\App\Services\CrmOpportunityIntelligenceService;
@@ -1647,5 +1654,275 @@ final class CrmActivitiesController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/activities')));
+    }
+}
+
+/** Phase 8 — RevOps Command Center. */
+final class CrmRevOpsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $role = trim((string) ($_GET['role'] ?? 'executive'));
+        $teamId = (int) ($_GET['team_id'] ?? 0) ?: null;
+        $pipelineId = (int) ($_GET['pipeline_id'] ?? 0) ?: null;
+        $dateFrom = trim((string) ($_GET['date_from'] ?? '')) ?: null;
+        $dateTo = trim((string) ($_GET['date_to'] ?? '')) ?: null;
+        $data = (new CrmRevOpsCommandCenterService())->assemble($role, $dateFrom, $dateTo, $teamId, $pipelineId);
+        $teams = [];
+        try {
+            $teams = (new CrmSalesTeamService())->listTeams();
+        } catch (\Throwable $e) {
+            $teams = [];
+        }
+        $this->view('company/crm/revops/index', [
+            'title' => __('crm_revops_command_center'),
+            'data' => $data,
+            'role' => $role,
+            'team_id' => (int) ($_GET['team_id'] ?? 0),
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'date_from' => (string) ($_GET['date_from'] ?? ''),
+            'date_to' => (string) ($_GET['date_to'] ?? ''),
+            'pipelines' => (new PipelineService())->listPipelines(),
+            'teams' => $teams,
+            'canRunAutomation' => rateb_can('crm.admin') || rateb_can('crm.manage') || rateb_can('crm.revops.view'),
+        ], 'main');
+    }
+
+    public function runAutomation(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/revops')));
+        }
+        try {
+            $r = (new CrmRevOpsAutomationService())->runAll();
+            SessionManager::flash('success', __('saved_ok') . ' — ' . json_encode($r));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/revops')));
+    }
+}
+
+/** Phase 8 — Executive CRM Cockpit. */
+final class CrmCockpitController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $data = (new CrmExecutiveCockpitService())->assemble(
+            (int) ($_GET['team_id'] ?? 0) ?: null,
+            (int) ($_GET['pipeline_id'] ?? 0) ?: null,
+            trim((string) ($_GET['date_from'] ?? '')) ?: null,
+            trim((string) ($_GET['date_to'] ?? '')) ?: null
+        );
+        $this->view('company/crm/cockpit/index', [
+            'title' => __('crm_executive_cockpit'),
+            'data' => $data,
+            'pipeline_id' => (int) ($_GET['pipeline_id'] ?? 0),
+            'team_id' => (int) ($_GET['team_id'] ?? 0),
+            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
+            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+            'pipelines' => (new PipelineService())->listPipelines(),
+        ], 'main');
+    }
+}
+
+/** Phase 8 — Workflow governance UI. */
+final class CrmWorkflowGovernanceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmWorkflowGovernanceService();
+        $pipelineId = (int) ($_GET['pipeline_id'] ?? 0) ?: null;
+        $stages = [];
+        try {
+            $pipelines = (new PipelineService())->listPipelines();
+            if ($pipelineId) {
+                $stages = (new PipelineService())->stagesFor($pipelineId);
+            } elseif ($pipelines !== []) {
+                $pipelineId = (int) ($pipelines[0]['id'] ?? 0) ?: null;
+                if ($pipelineId) {
+                    $stages = (new PipelineService())->stagesFor($pipelineId);
+                }
+            }
+        } catch (\Throwable $e) {
+            $pipelines = [];
+            $stages = [];
+        }
+        $this->view('company/crm/workflow-governance/index', [
+            'title' => __('crm_workflow_governance'),
+            'rules' => $svc->listRules($pipelineId),
+            'sla_breaches' => $svc->slaBreaches(30),
+            'pipelines' => $pipelines ?? [],
+            'stages' => $stages,
+            'pipeline_id' => (int) ($pipelineId ?? 0),
+            'canManage' => rateb_can('crm.workflow.governance') || rateb_can('crm.governance.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function saveRule(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/workflow-governance')));
+        }
+        try {
+            $fields = array_filter(array_map('trim', explode(',', (string) ($_POST['required_fields'] ?? ''))));
+            $actions = array_filter(array_map('trim', explode(',', (string) ($_POST['required_actions'] ?? ''))));
+            (new CrmWorkflowGovernanceService())->saveRule([
+                'stage_id' => (int) ($_POST['stage_id'] ?? 0),
+                'pipeline_id' => (int) ($_POST['pipeline_id'] ?? 0) ?: null,
+                'required_fields' => $fields,
+                'required_actions' => $actions,
+                'approval_required' => !empty($_POST['approval_required']),
+                'ownership_required' => !isset($_POST['ownership_required']) || !empty($_POST['ownership_required']),
+                'sla_hours' => (int) ($_POST['sla_hours'] ?? 0) ?: null,
+                'is_enabled' => !isset($_POST['is_enabled']) || !empty($_POST['is_enabled']),
+            ]);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/workflow-governance')));
+    }
+}
+
+/** Phase 8 — Advanced data quality engine UI. */
+final class CrmDataQualityController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmDataQualityEngineService();
+        $this->view('company/crm/data-quality/index', [
+            'title' => __('crm_data_quality_engine'),
+            'data' => $svc->dashboard(),
+            'canManage' => rateb_can('crm.governance.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function scan(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/data-quality')));
+        }
+        try {
+            $r = (new CrmDataQualityEngineService())->runScan(true);
+            SessionManager::flash('success', __('saved_ok') . ' — ' . json_encode($r));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/data-quality')));
+    }
+
+    public function resolve(array $params): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/data-quality')));
+        }
+        try {
+            (new CrmDataQualityEngineService())->resolveIssue((int) ($params['id'] ?? 0), trim((string) ($_POST['note'] ?? '')) ?: null);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/data-quality')));
+    }
+}
+
+/** Phase 8 — Unified CRM search. */
+final class CrmSearchController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $result = (new CrmUnifiedSearchService())->search($q);
+        $this->view('company/crm/search/index', [
+            'title' => __('crm_unified_search'),
+            'q' => $q,
+            'result' => $result,
+        ], 'main');
+    }
+}
+
+/** Phase 8 — Enterprise reporting center. */
+final class CrmReportingCenterController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $svc = new CrmReportingCenterService();
+        if (class_exists(\Rateb\App\Services\AuditService::class)) {
+            (new \Rateb\App\Services\AuditService())->log('crm.report.access', 'crm_reporting_center', null, []);
+        }
+        $this->view('company/crm/reporting-center/index', [
+            'title' => __('crm_reporting_center'),
+            'dashboards' => $svc->listSavedDashboards(),
+            'schedules' => $svc->listScheduledReports(),
+            'canManage' => rateb_can('crm.reporting.center') || rateb_can('crm.export.manage') || rateb_can('crm.admin'),
+        ], 'main');
+    }
+
+    public function saveDashboard(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+        }
+        try {
+            (new CrmReportingCenterService())->saveDashboard($_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+    }
+
+    public function saveSchedule(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+        }
+        try {
+            (new CrmReportingCenterService())->saveScheduledReport($_POST);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+    }
+
+    public function runDue(): void
+    {
+        if (!Csrf::validate($_POST['_csrf'] ?? null)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
+        }
+        try {
+            $r = (new CrmReportingCenterService())->runDue();
+            SessionManager::flash('success', __('saved_ok') . ' — ran:' . $r['ran']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url(rateb_app_route('crm/reporting-center')));
     }
 }

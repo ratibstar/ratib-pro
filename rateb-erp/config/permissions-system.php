@@ -290,6 +290,11 @@ return [
             'crm.forecast.enterprise',
             'crm.performance.view',
             'crm.revenue.intel',
+            'crm.revops.view',
+            'crm.cockpit.view',
+            'crm.search.view',
+            'crm.reporting.center',
+            'crm.workflow.governance',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -344,6 +349,11 @@ return [
             'crm.forecast.enterprise',
             'crm.performance.view',
             'crm.revenue.intel',
+            'crm.revops.view',
+            'crm.cockpit.view',
+            'crm.search.view',
+            'crm.reporting.center',
+            'crm.workflow.governance',
         ],
         'website.manage' => [
             'website.view',

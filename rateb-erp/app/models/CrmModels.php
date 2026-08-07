@@ -452,7 +452,7 @@ final class CrmDataQualityIssue extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'public_uuid', 'company_id', 'entity_type', 'entity_id', 'issue_code', 'severity',
-        'message', 'status', 'meta_json', 'resolved_by', 'resolved_at', 'created_by',
+        'message', 'status', 'meta_json', 'resolved_by', 'resolved_at', 'resolution_note', 'created_by',
     ];
 }
 
@@ -463,5 +463,52 @@ final class CrmHealthHistory extends Model
     protected array $fillable = [
         'public_uuid', 'company_id', 'customer_id', 'activity_score', 'engagement_score',
         'health_score', 'health_status', 'renewal_risk', 'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 8 — Stage workflow governance rules. */
+final class CrmStageGovernanceRule extends Model
+{
+    protected string $table = 'rateb_crm_stage_governance_rules';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'pipeline_id', 'stage_id',
+        'required_fields_json', 'required_actions_json', 'approval_required', 'ownership_required',
+        'sla_hours', 'is_enabled', 'meta_json', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 8 — Data quality score snapshots. */
+final class CrmQualitySnapshot extends Model
+{
+    protected string $table = 'rateb_crm_quality_snapshots';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'completeness_score', 'quality_score',
+        'open_issues', 'resolved_issues', 'duplicate_count', 'missing_count', 'ownership_gaps',
+        'meta_json', 'created_by',
+    ];
+}
+
+/** Phase 8 — Saved RevOps dashboards. */
+final class CrmSavedDashboard extends Model
+{
+    protected string $table = 'rateb_crm_saved_dashboards';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'user_id', 'name', 'role_key',
+        'layout_json', 'filters_json', 'is_shared', 'created_by', 'updated_by', 'deleted_at',
+    ];
+}
+
+/** Phase 8 — Scheduled reports (no new email provider). */
+final class CrmScheduledReport extends Model
+{
+    protected string $table = 'rateb_crm_scheduled_reports';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'public_uuid', 'company_id', 'user_id', 'name', 'report_key', 'frequency',
+        'filters_json', 'is_enabled', 'next_run_at', 'last_run_at', 'last_status',
+        'created_by', 'updated_by', 'deleted_at',
     ];
 }
