@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260807-erp-route-imports-softnav-v152');
+define('RATEB_ASSET_BUILD', '20260807-csrf-field-helper-v153');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1273,6 +1273,24 @@ if (!function_exists('rateb_url')) {
         }
 
         return rateb_public_url($path);
+    }
+}
+
+if (!function_exists('rateb_csrf_token')) {
+    function rateb_csrf_token(): string
+    {
+        return \Rateb\App\Core\Csrf::token();
+    }
+}
+
+if (!function_exists('rateb_csrf_field')) {
+    /** Hidden CSRF input for Admin forms (BI / payroll / QMS / DMS views). */
+    function rateb_csrf_field(string $name = '_csrf'): string
+    {
+        $name = preg_replace('/[^a-zA-Z0-9_]/', '', $name) ?: '_csrf';
+        $token = htmlspecialchars(rateb_csrf_token(), ENT_QUOTES, 'UTF-8');
+
+        return '<input type="hidden" name="' . $name . '" value="' . $token . '">';
     }
 }
 
