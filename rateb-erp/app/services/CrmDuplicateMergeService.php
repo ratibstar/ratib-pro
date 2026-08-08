@@ -136,6 +136,15 @@ final class CrmDuplicateMergeService
             ], CrmSupport::actorFields(false)));
         }
 
+        // Defense-in-depth: verify row still pending for this tenant before finalize.
+        $check = (new CrmMergeRequest())->queryOne(
+            "SELECT id FROM rateb_crm_merge_requests
+             WHERE id = :id AND company_id = :cid AND status = 'pending' LIMIT 1",
+            ['id' => $mergeId, 'cid' => $companyId]
+        );
+        if ($check === null) {
+            throw new \RuntimeException('merge_not_found');
+        }
         (new CrmMergeRequest())->update($mergeId, [
             'status' => 'merged',
             'merge_json' => json_encode($moved, JSON_UNESCAPED_UNICODE),
@@ -150,6 +159,7 @@ final class CrmDuplicateMergeService
                 'moved' => $moved,
             ]);
         }
+        CrmObservability::logTiming('crm.merge.execute', 0.0, true, null, 'crm_merge_request', $mergeId);
 
         return ['id' => $mergeId, 'status' => 'merged', 'moved' => $moved];
     }

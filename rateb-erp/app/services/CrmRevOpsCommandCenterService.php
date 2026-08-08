@@ -58,10 +58,10 @@ final class CrmRevOpsCommandCenterService
             $health = ['error' => $e->getMessage()];
         }
         try {
-            $quality = (new CrmDataQualityEngineService())->dashboard();
+            $quality = (new CrmDataQualityEngineService())->dashboard(false);
         } catch (\Throwable $e) {
             try {
-                $quality = (new CrmGovernanceService())->healthDashboard();
+                $quality = (new CrmGovernanceService())->healthDashboard(false);
             } catch (\Throwable $e2) {
                 $quality = ['error' => $e2->getMessage()];
             }

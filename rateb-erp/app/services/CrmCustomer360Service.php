@@ -58,9 +58,21 @@ final class CrmCustomer360Service
         $healthIntel = ['health_history' => [], 'risk_trends' => ['trend' => 'stable', 'points' => []], 'engagement_timeline' => []];
         try {
             $lifecycleHistory = (new CrmLifecycleService())->history($customerId, 40);
-            $retention = (new CrmRetentionService())->refreshCustomer($customerId);
+            // Phase 10: read-path avoids write-on-read; refresh only when explicitly requested.
+            $doRefresh = !empty($GLOBALS['crm_360_refresh']) || (isset($_GET['refresh']) && (string) $_GET['refresh'] === '1');
+            if ($doRefresh) {
+                $retention = (new CrmRetentionService())->refreshCustomer($customerId);
+            } else {
+                $retention = [
+                    'crm_lifecycle_stage' => $customer['crm_lifecycle_stage'] ?? null,
+                    'crm_health_score' => $customer['crm_health_score'] ?? null,
+                    'crm_renewal_risk' => $customer['crm_renewal_risk'] ?? null,
+                    'crm_at_risk' => $customer['crm_at_risk'] ?? null,
+                    'source' => 'read_only',
+                ];
+            }
             $healthSvc = new CrmCustomerHealthService();
-            $health = $healthSvc->compute($customerId, true);
+            $health = $healthSvc->compute($customerId, $doRefresh);
             $healthIntel = [
                 'health_history' => $healthSvc->healthHistory($customerId),
                 'risk_trends' => $healthSvc->riskTrends($customerId),

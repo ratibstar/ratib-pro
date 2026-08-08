@@ -138,6 +138,16 @@ final class CrmReportingCenterService
             }
             $filters['report'] = (string) ($row['report_key'] ?? 'funnel');
             try {
+                try {
+                    $policy = (new CrmGovernanceService())->validateExportPolicy();
+                    if (!$policy['ok']) {
+                        throw new \RuntimeException('export_policy_blocked:' . implode(',', $policy['violations']));
+                    }
+                } catch (\RuntimeException $e) {
+                    throw $e;
+                } catch (\Throwable $e) {
+                    // pre-migrate governance settings
+                }
                 $payload = (new CrmReportExportService())->build($filters);
                 (new CrmScheduledReport())->update((int) $row['id'], array_merge([
                     'last_run_at' => date('Y-m-d H:i:s'),

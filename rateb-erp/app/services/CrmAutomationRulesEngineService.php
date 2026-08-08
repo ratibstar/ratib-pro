@@ -70,6 +70,9 @@ final class CrmAutomationRulesEngineService
     public function evaluate(array $context = []): array
     {
         $companyId = CrmSupport::requireCompanyId();
+        $safety = new CrmAutomationSafetyService();
+        $gov = (new CrmGovernanceService())->automationGovernanceCheck();
+        $blockAlwaysOverMax = !empty($safety->settings()['block_always_rules_over_max']);
         $rules = (new CrmAutomationRule())->query(
             'SELECT * FROM rateb_crm_automation_rules
              WHERE company_id = :cid AND deleted_at IS NULL AND is_enabled = 1
@@ -79,12 +82,33 @@ final class CrmAutomationRulesEngineService
         $matched = 0;
         $executed = 0;
         $history = [];
+        $alwaysSeen = 0;
+        $maxAlways = (int) ($gov['max_always_rules'] ?? 3);
         foreach (is_array($rules) ? $rules : [] as $rule) {
             $cond = $this->decode($rule['condition_json'] ?? null);
+            $condType = (string) ($cond['type'] ?? 'always');
+            if ($condType === 'always') {
+                ++$alwaysSeen;
+                if ($blockAlwaysOverMax && $alwaysSeen > $maxAlways) {
+                    $history[] = [
+                        'rule_id' => (int) ($rule['id'] ?? 0),
+                        'skipped' => 'always_rule_cap',
+                    ];
+                    continue;
+                }
+            }
             if (!$this->matches($cond, $context)) {
                 continue;
             }
             ++$matched;
+            $ruleId = (int) ($rule['id'] ?? 0);
+            if ($safety->recentlyFired('rules_engine', 'crm_automation_rule', $ruleId)) {
+                $history[] = [
+                    'rule_id' => $ruleId,
+                    'skipped' => 'cooldown',
+                ];
+                continue;
+            }
             $action = $this->decode($rule['action_json'] ?? null);
             $ok = $this->executeAction($action, $rule, $context);
             if ($ok) {

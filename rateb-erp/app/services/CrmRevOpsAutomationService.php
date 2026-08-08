@@ -8,41 +8,69 @@ use Rateb\App\Models\CrmOpportunity;
 use Rateb\App\Models\Customer;
 
 /**
- * Phase 8 — Revenue Operations automation (NotificationService only; no new email provider).
+ * Phase 8/10 — Revenue Operations automation with cooldown + run lock (NotificationService only).
  */
 final class CrmRevOpsAutomationService
 {
     private NotificationService $notifier;
+    private CrmAutomationSafetyService $safety;
+    private int $notifyBudget = 100;
 
-    public function __construct(?NotificationService $notifier = null)
+    public function __construct(?NotificationService $notifier = null, ?CrmAutomationSafetyService $safety = null)
     {
         $this->notifier = $notifier ?? new NotificationService();
+        $this->safety = $safety ?? new CrmAutomationSafetyService();
+        $this->notifyBudget = $this->safety->maxNotifiesPerRun();
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, int|string|bool>
      */
-    public function runAll(): array
+    public function runAll(bool $includeLegacy = false): array
     {
-        $out = [
-            'escalations' => $this->processEscalations(),
-            'sla_breaches' => $this->processSlaBreaches(),
-            'pipeline_risks' => $this->processPipelineRisks(),
-            'forecast_alerts' => $this->processForecastAlerts(),
-            'customer_risk_alerts' => $this->processCustomerRiskAlerts(),
-            'legacy' => 0,
-        ];
-        try {
-            $legacy = (new CrmAutomationService())->runAll();
-            $out['legacy'] = is_array($legacy) ? 1 : 0;
-        } catch (\Throwable $e) {
-            $out['legacy'] = 0;
-        }
-        if (class_exists(AuditService::class)) {
-            (new AuditService())->log('crm.automation.run_all', 'crm_revops_automation', null, $out);
-        }
+        $timed = CrmObservability::timed('crm.revops.automation.run_all', function () use ($includeLegacy) {
+            if (!$this->safety->acquireRunLock('revops_run_all')) {
+                return [
+                    'skipped' => 'run_lock',
+                    'escalations' => 0,
+                    'sla_breaches' => 0,
+                    'pipeline_risks' => 0,
+                    'forecast_alerts' => 0,
+                    'customer_risk_alerts' => 0,
+                    'legacy' => 0,
+                ];
+            }
+            $settings = $this->safety->settings();
+            $includeLegacy = $includeLegacy || !empty($settings['include_legacy_in_revops']);
+            $this->notifyBudget = $this->safety->maxNotifiesPerRun();
 
-        return $out;
+            $out = [
+                'escalations' => $this->processEscalations(),
+                'sla_breaches' => $this->processSlaBreaches(),
+                'pipeline_risks' => $this->processPipelineRisks(),
+                'forecast_alerts' => $this->processForecastAlerts(),
+                'customer_risk_alerts' => $this->processCustomerRiskAlerts(),
+                'legacy' => 0,
+                'notify_budget_remaining' => $this->notifyBudget,
+            ];
+            if ($includeLegacy) {
+                try {
+                    $legacy = (new CrmAutomationService())->runAll();
+                    $out['legacy'] = is_array($legacy) ? 1 : 0;
+                    $out['legacy_detail'] = isset($legacy['skipped']) ? (string) $legacy['skipped'] : 'ran';
+                } catch (\Throwable $e) {
+                    CrmObservability::logFailure('crm.revops.legacy_automation', $e);
+                    $out['legacy'] = 0;
+                }
+            }
+            if (class_exists(AuditService::class)) {
+                (new AuditService())->log('crm.automation.run_all', 'crm_revops_automation', null, $out);
+            }
+
+            return $out;
+        });
+
+        return is_array($timed['result'] ?? null) ? $timed['result'] : [];
     }
 
     public function processEscalations(): int
@@ -61,7 +89,8 @@ final class CrmRevOpsAutomationService
         $n = 0;
         foreach (is_array($rows) ? $rows : [] as $row) {
             $uid = (int) ($row['owner_user_id'] ?? 0);
-            if ($uid <= 0) {
+            $oid = (int) ($row['id'] ?? 0);
+            if ($uid <= 0 || !$this->allow('revops_escalation', 'opportunity', $oid)) {
                 continue;
             }
             $this->notifier->notifyUser(
@@ -72,8 +101,9 @@ final class CrmRevOpsAutomationService
                 'warning',
                 'crm.escalation',
                 'crm_opportunity',
-                (int) $row['id']
+                $oid
             );
+            $this->safety->record('revops_escalation', 'opportunity', $oid, ['days' => 14], $uid);
             ++$n;
         }
 
@@ -83,7 +113,6 @@ final class CrmRevOpsAutomationService
     public function processSlaBreaches(): int
     {
         $companyId = CrmSupport::requireCompanyId();
-        $breaches = [];
         try {
             $breaches = (new CrmWorkflowGovernanceService())->slaBreaches(25);
         } catch (\Throwable $e) {
@@ -92,7 +121,8 @@ final class CrmRevOpsAutomationService
         $n = 0;
         foreach ($breaches as $row) {
             $uid = (int) ($row['owner_user_id'] ?? 0);
-            if ($uid <= 0) {
+            $oid = (int) ($row['id'] ?? 0);
+            if ($uid <= 0 || !$this->allow('revops_sla_breach', 'opportunity', $oid)) {
                 continue;
             }
             $this->notifier->notifyUser(
@@ -103,8 +133,9 @@ final class CrmRevOpsAutomationService
                 'warning',
                 'crm.sla_breach',
                 'crm_opportunity',
-                (int) $row['id']
+                $oid
             );
+            $this->safety->record('revops_sla_breach', 'opportunity', $oid, [], $uid);
             ++$n;
         }
 
@@ -114,7 +145,6 @@ final class CrmRevOpsAutomationService
     public function processPipelineRisks(): int
     {
         $companyId = CrmSupport::requireCompanyId();
-        $stale = [];
         try {
             $stale = (new CrmOpportunityIntelligenceService())->staleOpportunities(15);
         } catch (\Throwable $e) {
@@ -123,7 +153,13 @@ final class CrmRevOpsAutomationService
         $n = 0;
         foreach ($stale as $row) {
             $uid = (int) ($row['owner_user_id'] ?? 0);
-            if ($uid <= 0) {
+            $oid = (int) ($row['id'] ?? 0);
+            // Skip if already escalated/stale-notified recently (cross-event storm protection).
+            if ($uid <= 0
+                || !$this->allow('revops_pipeline_risk', 'opportunity', $oid)
+                || $this->safety->recentlyFired('revops_escalation', 'opportunity', $oid)
+                || $this->safety->recentlyFired('stale_opportunity', 'opportunity', $oid)
+            ) {
                 continue;
             }
             $this->notifier->notifyUser(
@@ -134,8 +170,9 @@ final class CrmRevOpsAutomationService
                 'warning',
                 'crm.pipeline_risk',
                 'crm_opportunity',
-                (int) $row['id']
+                $oid
             );
+            $this->safety->record('revops_pipeline_risk', 'opportunity', $oid, [], $uid);
             ++$n;
         }
 
@@ -145,6 +182,9 @@ final class CrmRevOpsAutomationService
     public function processForecastAlerts(): int
     {
         $companyId = CrmSupport::requireCompanyId();
+        if (!$this->allow('revops_forecast_alert', 'crm_forecast', 1)) {
+            return 0;
+        }
         $settings = (new CrmGovernanceService())->setting('revops_alerts', ['forecast_confidence_min' => 40]);
         $min = (float) ($settings['forecast_confidence_min'] ?? 40);
         try {
@@ -156,30 +196,14 @@ final class CrmRevOpsAutomationService
         if ($confidence >= $min) {
             return 0;
         }
+        $msg = 'Forecast confidence low: ' . $confidence . '% (min ' . $min . '%)';
         $uid = CrmSupport::userId();
         if ($uid === null || $uid <= 0) {
-            $this->notifier->notifyCompany(
-                $companyId,
-                'CRM forecast alert',
-                'Forecast confidence low: ' . $confidence . '% (min ' . $min . '%)',
-                'warning',
-                'crm.forecast_alert',
-                'crm_forecast',
-                null
-            );
-
-            return 1;
+            $this->notifier->notifyCompany($companyId, 'CRM forecast alert', $msg, 'warning', 'crm.forecast_alert', 'crm_forecast', null);
+        } else {
+            $this->notifier->notifyUser($uid, $companyId, 'CRM forecast alert', $msg, 'warning', 'crm.forecast_alert', 'crm_forecast', null);
         }
-        $this->notifier->notifyUser(
-            $uid,
-            $companyId,
-            'CRM forecast alert',
-            'Forecast confidence low: ' . $confidence . '% (min ' . $min . '%)',
-            'warning',
-            'crm.forecast_alert',
-            'crm_forecast',
-            null
-        );
+        $this->safety->record('revops_forecast_alert', 'crm_forecast', 1, ['confidence' => $confidence]);
 
         return 1;
     }
@@ -191,7 +215,7 @@ final class CrmRevOpsAutomationService
             'customer_risk_levels' => ['high', 'critical'],
         ]);
         $levels = $settings['customer_risk_levels'] ?? ['high', 'critical'];
-        if (!is_array($levels)) {
+        if (!is_array($levels) || $levels === []) {
             $levels = ['high', 'critical'];
         }
         $placeholders = [];
@@ -201,9 +225,6 @@ final class CrmRevOpsAutomationService
             $placeholders[] = ':' . $k;
             $params[$k] = (string) $level;
         }
-        if ($placeholders === []) {
-            return 0;
-        }
         $sql = 'SELECT id, name, crm_owner_user_id, crm_renewal_risk, crm_health_score
                 FROM rateb_customers
                 WHERE company_id = :cid AND crm_renewal_risk IN (' . implode(',', $placeholders) . ')
@@ -212,7 +233,8 @@ final class CrmRevOpsAutomationService
         $n = 0;
         foreach (is_array($rows) ? $rows : [] as $row) {
             $uid = (int) ($row['crm_owner_user_id'] ?? 0);
-            if ($uid <= 0) {
+            $cid = (int) ($row['id'] ?? 0);
+            if ($uid <= 0 || !$this->allow('revops_customer_risk', 'customer', $cid)) {
                 continue;
             }
             $this->notifier->notifyUser(
@@ -223,11 +245,19 @@ final class CrmRevOpsAutomationService
                 'warning',
                 'crm.customer_risk_alert',
                 'customer',
-                (int) $row['id']
+                $cid
             );
+            $this->safety->record('revops_customer_risk', 'customer', $cid, [], $uid);
             ++$n;
         }
 
         return $n;
+    }
+
+    private function allow(string $eventType, ?string $entityType, ?int $entityId): bool
+    {
+        $gate = $this->safety->allowNotify($eventType, $entityType, $entityId, $this->notifyBudget);
+
+        return !empty($gate['allowed']);
     }
 }

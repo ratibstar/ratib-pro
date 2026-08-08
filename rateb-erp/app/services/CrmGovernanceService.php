@@ -17,8 +17,30 @@ final class CrmGovernanceService
     /**
      * @return array<string, mixed>
      */
-    public function healthDashboard(): array
+    public function healthDashboard(bool $liveScan = false): array
     {
+        // Phase 10: avoid full scan on every GET; use open-issue aggregates unless liveScan.
+        if (!$liveScan) {
+            $by = $this->issuesBySeverity();
+            $open = $this->countOpenIssues();
+            $scan = [
+                'created' => 0,
+                'duplicates' => (int) ($by['medium'] ?? 0),
+                'missing' => (int) ($by['medium'] ?? 0) + (int) ($by['low'] ?? 0),
+                'ownership' => (int) ($by['high'] ?? 0),
+            ];
+
+            return [
+                'open_issues' => $open,
+                'by_severity' => $by,
+                'duplicate_candidates' => 0,
+                'missing_fields' => 0,
+                'ownership_gaps' => 0,
+                'settings' => $this->listSettings(),
+                'score' => max(0, 100 - min(100, $open * 2)),
+                'source' => 'issue_counts',
+            ];
+        }
         $scan = $this->runDataQualityScan(false);
 
         return [
@@ -29,6 +51,7 @@ final class CrmGovernanceService
             'ownership_gaps' => $scan['ownership'],
             'settings' => $this->listSettings(),
             'score' => $this->governanceScore($scan),
+            'source' => 'live_scan',
         ];
     }
 
@@ -229,6 +252,16 @@ final class CrmGovernanceService
         $violations = [];
         if (empty($policy['allow_csv'])) {
             $violations[] = 'csv_export_disabled';
+        }
+        $required = trim((string) ($policy['require_permission'] ?? 'crm.export.manage'));
+        if ($required !== '' && function_exists('rateb_can')) {
+            $ok = rateb_can($required)
+                || rateb_can('crm.reports.export')
+                || rateb_can('crm.admin')
+                || rateb_can('crm.manage');
+            if (!$ok) {
+                $violations[] = 'missing_permission:' . $required;
+            }
         }
 
         return ['ok' => $violations === [], 'violations' => $violations];

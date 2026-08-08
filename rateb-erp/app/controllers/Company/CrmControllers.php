@@ -40,6 +40,7 @@ use Rateb\App\Services\CrmUnifiedSearchService;
 use Rateb\App\Services\CrmWorkflowGovernanceService;
 use Rateb\App\Services\CrmLifecycleService;
 use Rateb\App\Services\CrmNoteService;
+use Rateb\App\Services\CrmObservability;
 use Rateb\App\Services\CrmOpportunityIntelligenceService;
 use Rateb\App\Services\CrmPipelineHealthService;
 use Rateb\App\Services\CrmQuotationService;
@@ -1693,20 +1694,28 @@ final class CrmRevOpsController extends Controller
             'date_to' => (string) ($_GET['date_to'] ?? ''),
             'pipelines' => (new PipelineService())->listPipelines(),
             'teams' => $teams,
-            'canRunAutomation' => rateb_can('crm.admin') || rateb_can('crm.manage') || rateb_can('crm.revops.view'),
+            'canRunAutomation' => rateb_can('crm.revops.run') || rateb_can('crm.admin') || rateb_can('crm.manage'),
         ], 'main');
     }
 
     public function runAutomation(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url(rateb_app_route('crm/revops')));
         }
+        if (!(rateb_can('crm.revops.run') || rateb_can('crm.admin') || rateb_can('crm.manage'))) {
+            SessionManager::flash('error', __('forbidden') !== 'forbidden' ? __('forbidden') : 'forbidden');
+            $this->redirect(rateb_url(rateb_app_route('crm/revops')));
+        }
         try {
-            $r = (new CrmRevOpsAutomationService())->runAll();
+            $r = (new CrmRevOpsAutomationService())->runAll(false);
             SessionManager::flash('success', __('saved_ok') . ' — ' . json_encode($r));
         } catch (\Throwable $e) {
+            CrmObservability::logFailure('crm.revops.run_automation', $e);
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/revops')));
@@ -2012,18 +2021,27 @@ final class CrmInsightsController extends Controller
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        $data = (new CrmExecutiveInsightsService())->assemble(true);
+        // Phase 10: do not persist insight cards on every GET (write amplification).
+        $persist = isset($_GET['persist']) && (string) $_GET['persist'] === '1';
+        $data = (new CrmExecutiveInsightsService())->assemble($persist);
         $this->view('company/crm/insights/index', [
             'title' => __('crm_executive_insights'),
             'data' => $data,
-            'canManage' => rateb_can('crm.insights.view') || rateb_can('crm.admin'),
+            'canManage' => rateb_can('crm.insights.manage') || rateb_can('crm.admin') || rateb_can('crm.manage'),
         ], 'main');
     }
 
     public function dismiss(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
             SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('crm/insights')));
+        }
+        if (!(rateb_can('crm.insights.manage') || rateb_can('crm.admin') || rateb_can('crm.manage'))) {
+            SessionManager::flash('error', 'forbidden');
             $this->redirect(rateb_url(rateb_app_route('crm/insights')));
         }
         try {

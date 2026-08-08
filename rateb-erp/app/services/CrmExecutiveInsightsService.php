@@ -19,7 +19,7 @@ final class CrmExecutiveInsightsService
         $cockpit = (new CrmExecutiveCockpitService())->assemble();
         $quality = [];
         try {
-            $quality = (new CrmDataQualityEngineService())->dashboard();
+            $quality = (new CrmDataQualityEngineService())->dashboard(false);
         } catch (\Throwable $e) {
             $quality = [];
         }

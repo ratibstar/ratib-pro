@@ -17,10 +17,14 @@ use Rateb\App\Models\Customer;
 final class CrmAutomationService
 {
     private NotificationService $notifier;
+    private CrmAutomationSafetyService $safety;
+    private int $notifyBudget = 100;
 
-    public function __construct(?NotificationService $notifier = null)
+    public function __construct(?NotificationService $notifier = null, ?CrmAutomationSafetyService $safety = null)
     {
         $this->notifier = $notifier ?? new NotificationService();
+        $this->safety = $safety ?? new CrmAutomationSafetyService();
+        $this->notifyBudget = $this->safety->maxNotifiesPerRun();
     }
 
     public function onLeadAssigned(int $leadId, int $assigneeUserId, ?string $leadTitle = null): void
@@ -124,6 +128,9 @@ final class CrmAutomationService
                 continue;
             }
             $taskId = (int) ($task['id'] ?? 0);
+            if (!$this->allowNotify('follow_up_reminder', 'task', $taskId)) {
+                continue;
+            }
             $isOverdue = !empty($task['due_at']) && (string) $task['due_at'] <= $now;
             $title = $isOverdue ? 'CRM: Task overdue' : 'CRM: Follow-up reminder';
             $message = (string) ($task['subject'] ?? ('Task #' . $taskId));
@@ -186,6 +193,9 @@ final class CrmAutomationService
         foreach ($rows as $quote) {
             $owner = (int) ($quote['owner_user_id'] ?? 0);
             $qid = (int) ($quote['id'] ?? 0);
+            if (!$this->allowNotify('quote_expiry', 'quotation', $qid)) {
+                continue;
+            }
             $valid = (string) ($quote['valid_until'] ?? '');
             $expired = $valid !== '' && $valid < $today;
             $title = $expired ? 'CRM: Quotation expired' : 'CRM: Quotation expiring soon';
@@ -248,6 +258,9 @@ final class CrmAutomationService
         foreach (is_array($rows) ? $rows : [] as $opp) {
             $owner = (int) ($opp['owner_user_id'] ?? 0);
             $oid = (int) ($opp['id'] ?? 0);
+            if (!$this->allowNotify('opportunity_inactivity', 'opportunity', $oid)) {
+                continue;
+            }
             $msg = 'Opportunity #' . $oid . ' inactive for ' . $days . ' days: ' . (string) ($opp['name'] ?? '');
             if ($owner > 0) {
                 $this->notifier->notifyUser(
@@ -314,6 +327,9 @@ final class CrmAutomationService
         foreach (is_array($rows) ? $rows : [] as $row) {
             $cid = (int) ($row['id'] ?? 0);
             $owner = (int) ($row['crm_owner_user_id'] ?? 0);
+            if (!$this->allowNotify('no_activity', 'customer', $cid)) {
+                continue;
+            }
             $msg = 'Customer #' . $cid . ' has no activity for ' . $days . ' days: ' . (string) ($row['name'] ?? '');
             if ($owner > 0) {
                 $this->notifier->notifyUser($owner, $companyId, 'CRM: No activity', $msg, 'warning', 'crm.no_activity', 'customer', $cid);
@@ -347,6 +363,9 @@ final class CrmAutomationService
             $cid = (int) ($row['id'] ?? 0);
             $owner = (int) ($row['crm_owner_user_id'] ?? 0);
             $due = (string) ($row['crm_renewal_due_at'] ?? '');
+            if (!$this->allowNotify('renewal_reminder', 'customer', $cid)) {
+                continue;
+            }
             $msg = 'Customer #' . $cid . ' renewal due ' . $due . ': ' . (string) ($row['name'] ?? '');
             if ($owner > 0) {
                 $this->notifier->notifyUser($owner, $companyId, 'CRM: Renewal reminder', $msg, 'info', 'crm.renewal_reminder', 'customer', $cid);
@@ -388,6 +407,9 @@ final class CrmAutomationService
         foreach (is_array($rows) ? $rows : [] as $opp) {
             $oid = (int) ($opp['id'] ?? 0);
             $owner = (int) ($opp['owner_user_id'] ?? 0);
+            if (!$this->allowNotify('stale_opportunity', 'opportunity', $oid)) {
+                continue;
+            }
             $msg = 'Opportunity #' . $oid . ' stale in stage ' . (string) ($opp['stage_name'] ?? '')
                 . ' (SLA ' . (int) ($opp['expected_duration_days'] ?? 0) . 'd)';
             if ($owner > 0) {
@@ -436,6 +458,9 @@ final class CrmAutomationService
         foreach (is_array($rows) ? $rows : [] as $row) {
             $cid = (int) ($row['id'] ?? 0);
             $owner = (int) ($row['crm_owner_user_id'] ?? 0);
+            if (!$this->allowNotify('customer_follow_up', 'customer', $cid)) {
+                continue;
+            }
             $msg = 'Follow up customer #' . $cid . ' (' . (string) ($row['crm_lifecycle_stage'] ?? '') . '): '
                 . (string) ($row['name'] ?? '');
             if ($owner > 0) {
@@ -465,51 +490,71 @@ final class CrmAutomationService
      */
     public function runAll(): array
     {
-        $follow = $this->processFollowUpReminders();
-        $quotes = $this->processQuoteExpiryAlerts();
-        $inactive = $this->processOpportunityInactivity();
-        $expired = (new CrmQuotationService())->expireOverdue();
-        $noActivity = $this->processNoActivityReminders();
-        $renewal = $this->processRenewalReminders();
-        $stale = $this->processStaleOpportunities();
-        $custFollow = $this->processCustomerFollowUps();
-        $rules = ['matched' => 0, 'executed' => 0, 'history' => []];
-        $scored = 0;
-        try {
-            $scored = count((new CrmOpportunityIntelligenceService())->refreshOpen(25));
-            $rules = (new CrmAutomationRulesEngineService())->evaluate([
-                'entity_type' => 'crm',
-                'entity_id' => 0,
-                'days_inactive' => 21,
-            ]);
-        } catch (\Throwable $e) {
-            // Phase 6 engine optional until migrated
-        }
-        $this->audit('crm.automation.run_all', 'crm', null, [
-            'follow_up' => $follow,
-            'quote_expiry' => $quotes,
-            'inactivity' => $inactive,
-            'expired_quotes' => $expired,
-            'no_activity' => $noActivity,
-            'renewal' => $renewal,
-            'stale' => $stale,
-            'customer_follow_up' => $custFollow,
-            'rules_engine' => $rules,
-            'intelligence_scored' => $scored,
-        ]);
+        $timed = CrmObservability::timed('crm.automation.run_all', function () {
+            if (!$this->safety->acquireRunLock('automation_run_all')) {
+                return [
+                    'skipped' => 'run_lock',
+                    'follow_up' => ['reminders' => 0, 'overdue' => 0],
+                    'quote_expiry' => ['alerts' => 0],
+                    'inactivity' => ['alerts' => 0],
+                    'expired_quotes' => 0,
+                    'no_activity' => ['alerts' => 0],
+                    'renewal' => ['alerts' => 0],
+                    'stale' => ['alerts' => 0],
+                    'customer_follow_up' => ['alerts' => 0],
+                    'rules_engine' => ['matched' => 0, 'executed' => 0, 'history' => []],
+                    'intelligence_scored' => 0,
+                    'notify_budget_remaining' => $this->notifyBudget,
+                ];
+            }
+            $this->notifyBudget = $this->safety->maxNotifiesPerRun();
+            $follow = $this->processFollowUpReminders();
+            $quotes = $this->processQuoteExpiryAlerts();
+            $inactive = $this->processOpportunityInactivity();
+            $expired = (new CrmQuotationService())->expireOverdue();
+            $noActivity = $this->processNoActivityReminders();
+            $renewal = $this->processRenewalReminders();
+            $stale = $this->processStaleOpportunities();
+            $custFollow = $this->processCustomerFollowUps();
+            $rules = ['matched' => 0, 'executed' => 0, 'history' => []];
+            $scored = 0;
+            try {
+                $scored = count((new CrmOpportunityIntelligenceService())->refreshOpen(25));
+                $rules = (new CrmAutomationRulesEngineService())->evaluate([
+                    'entity_type' => 'crm',
+                    'entity_id' => 0,
+                    'days_inactive' => 21,
+                ]);
+            } catch (\Throwable $e) {
+                CrmObservability::logFailure('crm.automation.rules_or_intel', $e);
+            }
+            $payload = [
+                'follow_up' => $follow,
+                'quote_expiry' => $quotes,
+                'inactivity' => $inactive,
+                'expired_quotes' => $expired,
+                'no_activity' => $noActivity,
+                'renewal' => $renewal,
+                'stale' => $stale,
+                'customer_follow_up' => $custFollow,
+                'rules_engine' => $rules,
+                'intelligence_scored' => $scored,
+                'notify_budget_remaining' => $this->notifyBudget,
+            ];
+            $this->audit('crm.automation.run_all', 'crm', null, $payload);
 
-        return [
-            'follow_up' => $follow,
-            'quote_expiry' => $quotes,
-            'inactivity' => $inactive,
-            'expired_quotes' => $expired,
-            'no_activity' => $noActivity,
-            'renewal' => $renewal,
-            'stale' => $stale,
-            'customer_follow_up' => $custFollow,
-            'rules_engine' => $rules,
-            'intelligence_scored' => $scored,
-        ];
+            return $payload;
+        });
+
+        return is_array($timed['result'] ?? null) ? $timed['result'] : [];
+    }
+
+    /** Phase 10 — cooldown + notify budget gate. */
+    private function allowNotify(string $eventType, ?string $entityType, ?int $entityId): bool
+    {
+        $gate = $this->safety->allowNotify($eventType, $entityType, $entityId, $this->notifyBudget);
+
+        return !empty($gate['allowed']);
     }
 
     /**

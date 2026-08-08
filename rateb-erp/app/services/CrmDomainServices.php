@@ -577,7 +577,8 @@ final class PipelineService
         $opps = (new CrmOpportunity())->query(
             'SELECT * FROM rateb_crm_opportunities
              WHERE company_id = :cid AND pipeline_id = :pid AND deleted_at IS NULL
-             ORDER BY updated_at DESC',
+             ORDER BY updated_at DESC
+             LIMIT 500',
             ['cid' => CrmSupport::requireCompanyId(), 'pid' => $pid]
         );
 

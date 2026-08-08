@@ -296,9 +296,11 @@ return [
             'crm.reporting.center',
             'crm.workflow.governance',
             'crm.insights.view',
+            'crm.insights.manage',
             'crm.predictive.manage',
             'crm.merge.manage',
             'crm.intelligence.advanced',
+            'crm.revops.run',
         ],
         'logistics.manage' => [
             'logistics.view',
@@ -359,9 +361,11 @@ return [
             'crm.reporting.center',
             'crm.workflow.governance',
             'crm.insights.view',
+            'crm.insights.manage',
             'crm.predictive.manage',
             'crm.merge.manage',
             'crm.intelligence.advanced',
+            'crm.revops.run',
         ],
         'website.manage' => [
             'website.view',

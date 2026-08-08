@@ -16,8 +16,34 @@ final class CrmDataQualityEngineService
     /**
      * @return array<string, mixed>
      */
-    public function dashboard(): array
+    public function dashboard(bool $liveScan = false): array
     {
+        // Phase 10: prefer last snapshot on GET paths to avoid scanning 400+ rows per page load.
+        if (!$liveScan) {
+            $trend = $this->qualityTrend(1);
+            $latest = $trend[0] ?? null;
+            if (is_array($latest)) {
+                return [
+                    'completeness_score' => (float) ($latest['completeness_score'] ?? 0),
+                    'quality_score' => (float) ($latest['quality_score'] ?? 0),
+                    'open_issues' => $this->countOpen(),
+                    'resolved_issues' => $this->countResolved(),
+                    'duplicates' => (int) ($latest['duplicate_count'] ?? 0),
+                    'missing' => (int) ($latest['missing_count'] ?? 0),
+                    'ownership' => (int) ($latest['ownership_gaps'] ?? 0),
+                    'by_severity' => $this->bySeverity(),
+                    'trend' => $this->qualityTrend(20),
+                    'resolution' => $this->resolutionTracking(20),
+                    'source' => 'snapshot',
+                    'duplicate_rules' => (new CrmGovernanceService())->setting('duplicate_rules', [
+                        'match_email' => true,
+                        'match_phone' => true,
+                        'match_company_name' => true,
+                    ]),
+                ];
+            }
+        }
+
         $scan = $this->runScan(false);
         $scores = $this->computeScores($scan);
 
@@ -32,6 +58,7 @@ final class CrmDataQualityEngineService
             'by_severity' => $this->bySeverity(),
             'trend' => $this->qualityTrend(20),
             'resolution' => $this->resolutionTracking(20),
+            'source' => 'live_scan',
             'duplicate_rules' => (new CrmGovernanceService())->setting('duplicate_rules', [
                 'match_email' => true,
                 'match_phone' => true,
