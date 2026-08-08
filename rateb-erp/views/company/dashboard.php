@@ -1,22 +1,15 @@
 <?php
 $m = $metrics ?? ($dash['metrics'] ?? []);
 $c = $charts ?? ($dash['charts'] ?? []);
-$limits = $limits ?? ($dash['limits'] ?? []);
 $userCount = (int) ($userCount ?? 0);
-$mods = $limits['modules'] ?? [];
 $companyName = trim((string) ($companyName ?? ($dash['company_name'] ?? '')));
 $recentActivity = $recentActivity ?? ($dash['recent_activity'] ?? []);
-$moduleTiles = $modules ?? ($dash['modules'] ?? []);
 
 $prLabels = json_encode($c['procurement_trend']['labels'] ?? []);
 $prValues = json_encode(array_map('intval', $c['procurement_trend']['purchase_requests'] ?? []));
 $poValues = json_encode(array_map('intval', $c['procurement_trend']['purchase_orders'] ?? []));
 $invHealthLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $c['inventory_health'] ?? []));
 $invHealthValues = json_encode(array_map('intval', array_column($c['inventory_health'] ?? [], 'value')));
-
-$userLimit = max(0, (int) ($limits['user_limit'] ?? 0));
-$storageMb = max(0, (int) ($limits['storage_limit_mb'] ?? 0));
-$userPct = $userLimit > 0 ? min(100, (int) round(($userCount / $userLimit) * 100)) : 0;
 
 $metrics = [];
 foreach (
@@ -129,57 +122,6 @@ Rateb\App\Core\View::partial('dashboard/head');
                         data-labels='<?php echo Rateb\App\Core\View::escape($invHealthLabels); ?>'
                         data-values='<?php echo Rateb\App\Core\View::escape($invHealthValues); ?>'></canvas>
                 </div>
-            </section>
-        </div>
-
-        <div class="cm-viz-grid cm-viz-grid--2">
-            <section class="cm-board cm-board--fill">
-                <div class="cm-board__head"><?php echo __('company_active_modules'); ?></div>
-                <?php if ($moduleTiles === []) { ?>
-                <p class="cm-empty"><?php echo __('company_no_modules'); ?></p>
-                <?php } else { ?>
-                <div class="cm-mod-grid">
-                    <?php foreach ($moduleTiles as $tile) { ?>
-                    <a class="cm-mod" href="<?php echo Rateb\App\Core\View::escape((string) ($tile['href'] ?? '#')); ?>">
-                        <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($tile['icon'] ?? 'fa-link')); ?>"></i>
-                        <span><?php echo Rateb\App\Core\View::escape((string) ($tile['label'] ?? '')); ?></span>
-                    </a>
-                    <?php } ?>
-                </div>
-                <?php } ?>
-            </section>
-
-            <section class="cm-board cm-board--fill">
-                <div class="cm-board__head"><?php echo __('company_plan_usage'); ?></div>
-                <dl class="cm-meta">
-                    <div class="cm-meta__row">
-                        <dt><?php echo __('current_plan'); ?></dt>
-                        <dd><?php echo Rateb\App\Core\View::escape((string) ($limits['plan_name'] ?? '—')); ?></dd>
-                    </div>
-                    <div class="cm-meta__row cm-meta__row--meter">
-                        <dt><?php echo __('user_limit'); ?></dt>
-                        <dd>
-                            <span><?php echo $userCount; ?> / <?php echo $userLimit; ?></span>
-                            <div class="cm-meter" role="progressbar" aria-valuenow="<?php echo $userPct; ?>" aria-valuemin="0" aria-valuemax="100">
-                                <div class="cm-meter__fill" style="width:<?php echo $userPct; ?>%"></div>
-                            </div>
-                        </dd>
-                    </div>
-                    <div class="cm-meta__row">
-                        <dt><?php echo __('storage_limit_mb'); ?></dt>
-                        <dd><?php echo $storageMb; ?> MB</dd>
-                    </div>
-                    <?php if ($mods !== []) { ?>
-                    <div class="cm-meta__row">
-                        <dt><?php echo __('plan_modules'); ?></dt>
-                        <dd class="cm-meta__tags">
-                            <?php foreach ($mods as $mod) { ?>
-                            <span class="cm-tag"><?php echo Rateb\App\Core\View::escape(__((string) $mod)); ?></span>
-                            <?php } ?>
-                        </dd>
-                    </div>
-                    <?php } ?>
-                </dl>
             </section>
         </div>
 
