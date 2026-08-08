@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
-use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\JournalEntry;
 
 /** Removes inter-branch Due To/From balances from consolidated statements. */
@@ -31,30 +30,40 @@ final class ConsolidationEliminationService
     /** @return array<int, array<string, mixed>> */
     public function interBranchBalances(int $companyId): array
     {
-        if ($this->accountIdByCode($companyId, '1350') < 1 && $this->accountIdByCode($companyId, '2150') < 1) {
+        $dueFromId = $this->accountIdByCode($companyId, '1350');
+        $dueToId = $this->accountIdByCode($companyId, '2150');
+        $ids = array_values(array_unique(array_filter(
+            [$dueFromId, $dueToId],
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($ids === []) {
             return [];
         }
-        $sql = "SELECT e.branch_id, b.name AS branch_name, b.code AS branch_code,
-                       COALESCE(SUM(CASE WHEN a.code = '1350' THEN l.debit - l.credit ELSE 0 END), 0) AS due_from,
-                       COALESCE(SUM(CASE WHEN a.code = '2150' THEN l.credit - l.debit ELSE 0 END), 0) AS due_to
+        $placeholders = [];
+        $params = ['cid' => $companyId, 'due_from' => $dueFromId, 'due_to' => $dueToId];
+        foreach ($ids as $i => $id) {
+            $key = 'aid' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key] = $id;
+        }
+        $sql = 'SELECT e.branch_id, b.name AS branch_name, b.code AS branch_code,
+                       COALESCE(SUM(CASE WHEN l.account_id = :due_from THEN l.debit - l.credit ELSE 0 END), 0) AS due_from,
+                       COALESCE(SUM(CASE WHEN l.account_id = :due_to THEN l.credit - l.debit ELSE 0 END), 0) AS due_to
                 FROM rateb_journal_entries e
                 INNER JOIN rateb_journal_lines l ON l.journal_entry_id = e.id
-                INNER JOIN rateb_chart_of_accounts a ON a.id = l.account_id
                 LEFT JOIN rateb_branches b ON b.id = e.branch_id
-                WHERE e.company_id = :cid AND e.status = 'posted'
-                  AND a.code IN ('1350','2150')
+                WHERE e.company_id = :cid AND e.status = \'posted\'
+                  AND l.account_id IN (' . implode(', ', $placeholders) . ')
                 GROUP BY e.branch_id, b.name, b.code
-                ORDER BY b.name";
-        return (new JournalEntry())->query($sql, ['cid' => $companyId]);
+                ORDER BY b.name';
+
+        return (new JournalEntry())->query($sql, $params);
     }
 
     private function accountIdByCode(int $companyId, string $code): int
     {
-        $row = (new ChartOfAccount())->queryOne(
-            'SELECT id FROM rateb_chart_of_accounts WHERE company_id = :cid AND code = :code LIMIT 1',
-            ['cid' => $companyId, 'code' => $code]
-        );
-        return (int) ($row['id'] ?? 0);
+        // Use AccountingService so legacy codes (1350/2150) resolve after Saudi COA rename.
+        return (int) ((new AccountingService())->accountIdByCode($companyId, $code) ?? 0);
     }
 
     private function accountBalance(int $companyId, int $accountId, ?string $from, ?string $to): float

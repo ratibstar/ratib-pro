@@ -114,7 +114,8 @@ final class LogisticsExpenseService
 
         $this->accounting->ensureDefaultAccounts($companyId);
         $expenseAccountId = $this->accountForType($companyId, (string) ($expense['expense_type'] ?? 'other'));
-        $cashAccountId = $this->accounting->accountIdByCode($companyId, '1100');
+        $cashAccountId = $this->accounting->accountIdByCode($companyId, '1100')
+            ?? $this->accounting->ensureCompanyCoaCode($companyId, '1100');
         if ($expenseAccountId === null || $cashAccountId === null) {
             throw new \RuntimeException(__('logistics_expense_accounts_missing'));
         }

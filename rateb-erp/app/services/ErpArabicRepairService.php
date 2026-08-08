@@ -44,7 +44,7 @@ final class ErpArabicRepairService
                 "SELECT name_ar AS v FROM rateb_permissions WHERE slug = 'dashboard.view' LIMIT 1",
                 "SELECT name_ar AS v FROM rateb_permissions WHERE slug = 'inventory.manage' LIMIT 1",
                 "SELECT name AS v FROM rateb_warehouses WHERE code = 'WH-MAIN' LIMIT 1",
-                "SELECT name_ar AS v FROM rateb_chart_of_accounts WHERE code = '1220' LIMIT 1",
+                "SELECT name_ar AS v FROM rateb_chart_of_accounts WHERE code IN ('1220','10110') LIMIT 1",
             ];
             foreach ($checks as $sql) {
                 $stmt = $pdo->query($sql);

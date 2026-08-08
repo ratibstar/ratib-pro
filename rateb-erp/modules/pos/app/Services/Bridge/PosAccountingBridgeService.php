@@ -529,7 +529,9 @@ final class PosAccountingBridgeService
 
     private function requireAccount(int $companyId, string $code): int
     {
-        $id = $this->accounting->accountIdByCode($companyId, $code);
+        $this->accounting->ensureDefaultAccounts($companyId);
+        $id = $this->accounting->accountIdByCode($companyId, $code)
+            ?? $this->accounting->ensureCompanyCoaCode($companyId, $code);
         if ($id === null || $id < 1) {
             throw new \RuntimeException(__('pos_gl_account_missing') . ' (' . $code . ')');
         }

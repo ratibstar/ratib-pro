@@ -39,9 +39,19 @@ final class BranchFinancialReportingService
         $this->isolation->assertCanAccess($branchId);
         $from = $from ?? date('Y-01-01');
         $to = $to ?? date('Y-m-d');
-        $operating = $this->cashMovement($companyId, $branchId, $from, $to, ['1100', '115', '1200', '2100']);
-        $investing = $this->cashMovement($companyId, $branchId, $from, $to, ['150', '151', '152', '153']);
-        $financing = $this->cashMovement($companyId, $branchId, $from, $to, ['320', '250']);
+        // Prefixes cover legacy 1xxx codes and Saudi COA (101xx / 201xx / 30x / 102xx).
+        $operating = $this->cashMovement($companyId, $branchId, $from, $to, [
+            '1100', '111', '115', '1200', '2100',
+            '10101', '10102', '10103', '10104', '20101',
+        ]);
+        $investing = $this->cashMovement($companyId, $branchId, $from, $to, [
+            '150', '151', '152', '153', '159',
+            '10201',
+        ]);
+        $financing = $this->cashMovement($companyId, $branchId, $from, $to, [
+            '320', '250', '310',
+            '301', '306', '20106', '202',
+        ]);
         return [
             'branch_id' => $branchId,
             'from' => $from,
