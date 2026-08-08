@@ -423,9 +423,15 @@ final class AccountingService
             return null;
         }
         $code = $this->resolveCoaCode($code);
-        $existing = $this->accountIdByCode($companyId, $code);
+        // Use direct map lookup (not accountIdByCode) to avoid recursion with lazy provision.
+        $existing = $this->findCoaByCode($companyId, $code);
         if ($existing) {
-            return $existing;
+            return (int) $existing['id'];
+        }
+        $this->ensureDefaultAccounts($companyId);
+        $existing = $this->findCoaByCode($companyId, $code);
+        if ($existing) {
+            return (int) $existing['id'];
         }
         $def = null;
         foreach (self::DEFAULT_ACCOUNTS as $d) {
@@ -435,8 +441,7 @@ final class AccountingService
             }
         }
         if ($def === null) {
-            $row = $this->findCoaByCode($companyId, $code);
-            return $row ? (int) $row['id'] : null;
+            return null;
         }
         $id = $this->provisionCompanyCoaCode($companyId, $code, $def, []);
         return $id > 0 ? $id : null;
@@ -584,20 +589,34 @@ final class AccountingService
     {
         $normalized = $this->normalizeCompanyId($companyId);
         $resolved = $this->resolveCoaCode($code);
-        foreach (array_unique([$resolved, $code]) as $try) {
-            $row = $this->findCoaByCode($normalized, $try);
-            if ($row) {
-                return (int) $row['id'];
-            }
-        }
-        if ($normalized !== null && $normalized > 0) {
-            foreach (array_unique([$resolved, $code]) as $try) {
-                $template = $this->findCoaByCode(null, $try);
-                if ($template) {
-                    return (int) $template['id'];
+        $candidates = array_values(array_unique(array_filter([$resolved, $code], static fn ($c) => $c !== '')));
+
+        $lookup = function (?int $cid) use ($candidates): ?int {
+            foreach ($candidates as $try) {
+                $row = $this->findCoaByCode($cid, $try);
+                if ($row) {
+                    return (int) $row['id'];
                 }
             }
+            return null;
+        };
+
+        $found = $lookup($normalized);
+        if ($found) {
+            return $found;
         }
+
+        // Lazy provision: invoice/payment/PO auto-post may run before COA page is opened.
+        if ($normalized !== null && $normalized > 0) {
+            $this->ensureDefaultAccounts($normalized);
+            $found = $lookup($normalized);
+            if ($found) {
+                return $found;
+            }
+            // Last resort: platform template row (read/compat only).
+            return $lookup(null);
+        }
+
         return null;
     }
 
