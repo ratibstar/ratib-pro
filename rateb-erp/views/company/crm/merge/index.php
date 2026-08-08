@@ -60,7 +60,7 @@ $freshness = $freshness ?? [];
             <?php $hist = is_array($freshness_history ?? null) ? $freshness_history : []; ?>
             <div class="border rounded p-3" style="max-height:220px;overflow:auto">
                 <?php if ($hist === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled small mb-0">
                         <?php foreach ($hist as $h): ?>

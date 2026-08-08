@@ -20,7 +20,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
         </div>
         <?php endforeach; ?>
         <?php if ($cards === []): ?>
-        <div class="col-12 border rounded px-3"><?php require __DIR__ . '/../../partials/crm-empty.php'; ?></div>
+        <div class="col-12 border rounded px-3"><?php require __DIR__ . '/../partials/empty.php'; ?></div>
         <?php endif; ?>
     </div>
     <div class="row g-3">
@@ -28,7 +28,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_trend_indicators'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3">
                 <?php if ($trends === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach ($trends as $k => $v): ?>
@@ -43,7 +43,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_risk_alerts'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($risks === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled mb-0 small">
                         <?php foreach ($risks as $r): ?>
@@ -60,7 +60,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_growth_opportunities'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($growth === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled mb-0 small">
                         <?php foreach ($growth as $g): ?>
@@ -76,7 +76,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
     </div>
     <h2 class="h5 mt-4"><?php echo htmlspecialchars(__('crm_stored_insights'), ENT_QUOTES, 'UTF-8'); ?></h2>
     <?php if ($stored === []): ?>
-        <div class="border rounded px-3"><?php require __DIR__ . '/../../partials/crm-empty.php'; ?></div>
+        <div class="border rounded px-3"><?php require __DIR__ . '/../partials/empty.php'; ?></div>
     <?php endif; ?>
     <?php foreach ($stored as $ins): ?>
     <div class="border rounded p-3 mb-2 d-flex justify-content-between gap-2">

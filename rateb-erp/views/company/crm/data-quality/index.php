@@ -24,7 +24,7 @@ $data = $data ?? [];
             <?php $trend = is_array($data['trend'] ?? null) ? $data['trend'] : []; ?>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($trend === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled small mb-0">
                         <?php foreach ($trend as $t): ?>

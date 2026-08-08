@@ -61,7 +61,7 @@ $dqEmpty = $dq === [] || isset($dq['error']);
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_enterprise_forecast'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3">
                 <?php if ($fcEmpty): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach (['period_key','confidence_score','weighted_amount','open_amount','won_amount','opportunity_count'] as $key): ?>
@@ -77,7 +77,7 @@ $dqEmpty = $dq === [] || isset($dq['error']);
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_data_quality_engine'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3">
                 <?php if ($dqEmpty): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach (['quality_score','completeness_score','open_issues','duplicates','missing','ownership'] as $key): ?>

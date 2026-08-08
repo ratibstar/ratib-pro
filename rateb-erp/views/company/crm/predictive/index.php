@@ -17,7 +17,7 @@ foreach ($matches as $rows) {
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars((string) $type, ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) $cnt; ?></div></div></div>
         <?php endforeach; ?>
         <?php if (($evaluation['counts'] ?? []) === []): ?>
-        <div class="col-12 border rounded px-3"><?php require __DIR__ . '/../../partials/crm-empty.php'; ?></div>
+        <div class="col-12 border rounded px-3"><?php require __DIR__ . '/../partials/empty.php'; ?></div>
         <?php endif; ?>
     </div>
     <div class="row g-3">
@@ -31,7 +31,7 @@ foreach ($matches as $rows) {
             </div>
             <?php endforeach; ?>
             <?php if (($rules ?? []) === []): ?>
-                <div class="border rounded px-3"><?php require __DIR__ . '/../../partials/crm-empty.php'; ?></div>
+                <div class="border rounded px-3"><?php require __DIR__ . '/../partials/empty.php'; ?></div>
             <?php endif; ?>
             <?php if (!empty($canManage)): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/predictive/rules')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mt-2">
@@ -50,7 +50,7 @@ foreach ($matches as $rows) {
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rule_matches'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:520px;overflow:auto">
                 <?php if (!$hasAnyMatch): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <?php foreach ($matches as $type => $rows): ?>
                         <?php if (!is_array($rows) || $rows === []) { continue; } ?>

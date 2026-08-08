@@ -36,7 +36,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_scoring_evolution'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($scoring === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled small mb-0">
                         <?php foreach ($scoring as $ev): ?>
@@ -54,7 +54,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_pipeline_anomalies'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($anomalies === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled small mb-0">
                         <?php foreach ($anomalies as $a): ?>
@@ -72,7 +72,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_customer_risk'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:280px;overflow:auto">
                 <?php if ($risks === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <ul class="list-unstyled small mb-0">
                         <?php foreach ($risks as $r): ?>
@@ -98,7 +98,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
                     <dd class="col-5"><?php echo (int) ($engagement['active_opps'] ?? 0); ?> / <?php echo (int) ($engagement['touched_opps'] ?? 0); ?></dd>
                 </dl>
                 <?php if ($patterns === [] && $reps === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <?php if ($patterns !== []): ?>
                     <h3 class="h6"><?php echo htmlspecialchars(__('crm_activity_patterns'), ENT_QUOTES, 'UTF-8'); ?></h3>

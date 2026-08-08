@@ -37,7 +37,7 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_growth_trends'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:320px;overflow:auto">
                 <?php if ($trendRows === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
@@ -61,7 +61,7 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_win_loss_intel'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="border rounded p-3" style="max-height:320px;overflow:auto">
                 <?php if ($winLoss === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row small mb-3">
                         <dt class="col-6 text-muted">Won</dt><dd class="col-6"><?php echo (int) ($winLoss['won_count'] ?? 0); ?></dd>
@@ -69,7 +69,7 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
                         <dt class="col-6 text-muted">Win rate</dt><dd class="col-6"><?php echo htmlspecialchars((string) ($winLoss['win_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</dd>
                     </dl>
                     <?php if ($topLoss === []): ?>
-                        <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                        <?php require __DIR__ . '/../partials/empty.php'; ?>
                     <?php else: ?>
                         <ul class="list-unstyled small mb-0">
                             <?php foreach ($topLoss as $reason): ?>

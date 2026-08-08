@@ -48,7 +48,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
             <?php $health = is_array($dash['extra']['pipeline_health'] ?? null) ? $dash['extra']['pipeline_health'] : []; ?>
             <div class="border rounded p-3">
                 <?php if ($health === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach ($health as $hk => $hv): ?>
@@ -98,7 +98,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
             <?php $act = is_array($dash['extra']['activity'] ?? null) ? $dash['extra']['activity'] : []; ?>
             <div class="border rounded p-3">
                 <?php if ($act === []): ?>
-                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                    <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach ([
