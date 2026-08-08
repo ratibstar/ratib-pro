@@ -19,6 +19,13 @@ $editUrl = static function (int $id) use ($routePrefix): string {
     }
     return rateb_url($routePrefix . '/' . $id . '/edit');
 };
+$showUrl = static function (int $id) use ($routePrefix): string {
+    if (strpos($routePrefix, 'admin/ops/') === 0) {
+        $short = preg_replace('#^admin/ops/#', '', $routePrefix);
+        return rateb_app_url($short . '/' . $id);
+    }
+    return rateb_url($routePrefix . '/' . $id);
+};
 $deleteUrl = static function (int $id) use ($routePrefix): string {
     if (strpos($routePrefix, 'admin/ops/') === 0) {
         $short = preg_replace('#^admin/ops/#', '', $routePrefix);
@@ -29,7 +36,7 @@ $deleteUrl = static function (int $id) use ($routePrefix): string {
 $createUrl = strpos($routePrefix, 'admin/ops/') === 0
     ? rateb_app_url(preg_replace('#^admin/ops/#', '', $routePrefix) . '/create')
     : rateb_url($routePrefix . '/create');
-$render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = null) use (&$render, $editUrl, $deleteUrl, $actionsEnabled, $bulkEnabled, $csrf, $fullTreeMode): void {
+$render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = null) use (&$render, $editUrl, $showUrl, $deleteUrl, $actionsEnabled, $bulkEnabled, $csrf, $fullTreeMode): void {
     foreach ($nodes as $node) {
         $name = rateb_locale() === 'ar' && !empty($node['name_ar']) ? $node['name_ar'] : ($node['name'] ?? '');
         $type = (string) ($node['account_type'] ?? '');
@@ -40,26 +47,40 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
             || substr($codeStr, -3) === '000';
         $nodeId = (int) ($node['id'] ?? 0);
         $childAttr = $parentNodeId !== null ? ' data-coa-child-of="' . $parentNodeId . '"' : '';
+        $rowClass = trim(
+            ($isGroup ? 'rateb-coa-group' : '')
+            . ($isHeader ? ' rateb-coa-header' : '')
+            . ($parentNodeId !== null ? ' rateb-coa-child' : '')
+            . ' rateb-coa-depth-' . min(6, $depth)
+        );
         ?>
-        <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?><?php echo $isHeader ? ' rateb-coa-header' : ''; ?><?php echo $parentNodeId !== null ? ' rateb-coa-child' : ''; ?>"
+        <tr class="<?php echo Rateb\App\Core\View::escape($rowClass); ?>"
             data-depth="<?php echo $depth; ?>"<?php echo $childAttr; ?><?php echo $isGroup && $fullTreeMode ? ' data-coa-node="' . $nodeId . '"' : ''; ?>>
-            <td class="rateb-coa-name" style="padding-inline-start: <?php echo (12 + $depth * 24); ?>px">
-                <?php if ($fullTreeMode && $isGroup) { ?>
-                <button type="button" class="btn btn-link btn-sm p-0 me-1 text-warning rateb-coa-toggle" data-coa-toggle="<?php echo $nodeId; ?>" aria-expanded="true">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <?php } elseif ($depth > 0) { ?>
-                <span class="rateb-coa-branch text-muted me-1">└</span>
-                <?php } ?>
-                <?php if ($isGroup || $isHeader) { ?><i class="fas fa-folder-open text-warning me-1"></i><?php } else { ?><i class="fas fa-file-invoice text-muted me-1"></i><?php } ?>
-                <span class="fw-semibold"><?php echo Rateb\App\Core\View::escape($node['code'] ?? ''); ?></span>
-                <span class="ms-1"><?php echo Rateb\App\Core\View::escape($name); ?></span>
-                <?php if ($isGroup || $isHeader) { ?><span class="badge bg-warning-subtle text-warning ms-1 small"><?php echo __('main_account'); ?></span><?php } ?>
+            <td class="rateb-coa-name">
+                <div class="rateb-coa-name-inner" style="--coa-depth: <?php echo (int) $depth; ?>">
+                    <?php if ($fullTreeMode && $isGroup) { ?>
+                    <button type="button" class="btn btn-link btn-sm p-0 rateb-coa-toggle" data-coa-toggle="<?php echo $nodeId; ?>" aria-expanded="true" title="<?php echo Rateb\App\Core\View::escape(__('expand_all')); ?>">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <?php } else { ?>
+                    <span class="rateb-coa-toggle-spacer" aria-hidden="true"></span>
+                    <?php } ?>
+                    <span class="rateb-coa-icode <?php echo ($isGroup || $isHeader) ? 'is-group' : 'is-leaf'; ?>" aria-hidden="true">
+                        <i class="fas <?php echo ($isGroup || $isHeader) ? 'fa-folder' : 'fa-file-invoice'; ?>"></i>
+                    </span>
+                    <a class="rateb-coa-label" href="<?php echo $showUrl($nodeId); ?>" title="<?php echo Rateb\App\Core\View::escape($codeStr . ' — ' . $name); ?>">
+                        <span class="rateb-coa-code"><?php echo Rateb\App\Core\View::escape($codeStr); ?></span>
+                        <span class="rateb-coa-title"><?php echo Rateb\App\Core\View::escape($name); ?></span>
+                    </a>
+                    <?php if ($isGroup || $isHeader) { ?>
+                    <span class="badge rateb-coa-main-badge"><?php echo __('main_account'); ?></span>
+                    <?php } ?>
+                </div>
             </td>
-            <td><span class="badge bg-secondary-subtle text-secondary"><?php echo __($type); ?></span></td>
-            <td class="text-end"><?php echo number_format((float) ($node['total_debit'] ?? 0), 2); ?></td>
-            <td class="text-end"><?php echo number_format((float) ($node['total_credit'] ?? 0), 2); ?></td>
-            <td class="text-end fw-semibold"><?php echo number_format($balance, 2); ?></td>
+            <td class="rateb-coa-type"><span class="badge bg-secondary-subtle text-secondary"><?php echo __($type); ?></span></td>
+            <td class="text-end rateb-ltr-num rateb-coa-amt"><?php echo number_format((float) ($node['total_debit'] ?? 0), 2); ?></td>
+            <td class="text-end rateb-ltr-num rateb-coa-amt"><?php echo number_format((float) ($node['total_credit'] ?? 0), 2); ?></td>
+            <td class="text-end rateb-ltr-num rateb-coa-amt fw-semibold"><?php echo number_format($balance, 2); ?></td>
             <?php if ($actionsEnabled || $bulkEnabled) { ?>
             <td class="rateb-actions-cell text-end text-nowrap">
                 <div class="rateb-actions justify-content-end">
@@ -91,9 +112,13 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
 $showActionsCol = $actionsEnabled || $bulkEnabled;
 $colspan = 5 + ($showActionsCol ? 1 : 0);
 ?>
-<div class="rateb-card"<?php echo $fullTreeMode ? ' data-rateb-coa-full-tree="1"' : ''; ?>>
+<div class="rateb-card rateb-coa-card"<?php echo $fullTreeMode ? ' data-rateb-coa-full-tree="1"' : ''; ?>>
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <?php if (!$fullTreeMode) { ?>
         <span><i class="fas fa-sitemap me-2"></i><?php echo Rateb\App\Core\View::escape($treeTitle); ?></span>
+        <?php } else { ?>
+        <span class="text-muted small"><?php echo __('account'); ?></span>
+        <?php } ?>
         <div class="d-flex flex-wrap gap-2">
             <?php if ($fullTreeMode && !empty($tree)) { ?>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-coa-expand-all><i class="fas fa-expand-alt"></i> <?php echo __('expand_all'); ?></button>
@@ -117,15 +142,23 @@ $colspan = 5 + ($showActionsCol ? 1 : 0);
     </div>
     <?php } ?>
     <div class="rateb-card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive rateb-table-no-scroll rateb-coa-scroll">
             <table class="table rateb-table rateb-coa-tree mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
+                <colgroup>
+                    <col class="rateb-coa-col-account">
+                    <col class="rateb-coa-col-type">
+                    <col class="rateb-coa-col-amt">
+                    <col class="rateb-coa-col-amt">
+                    <col class="rateb-coa-col-amt">
+                    <?php if ($showActionsCol) { ?><col class="rateb-coa-col-actions"><?php } ?>
+                </colgroup>
                 <thead>
                 <tr>
-                    <th><?php echo __('account'); ?></th>
-                    <th><?php echo __('account_type'); ?></th>
-                    <th class="text-end"><?php echo __('debit'); ?></th>
-                    <th class="text-end"><?php echo __('credit'); ?></th>
-                    <th class="text-end"><?php echo __('balance'); ?></th>
+                    <th class="rateb-coa-th-account"><?php echo __('account'); ?></th>
+                    <th class="rateb-coa-th-type"><?php echo __('account_type'); ?></th>
+                    <th class="text-end rateb-coa-th-amt"><?php echo __('debit'); ?></th>
+                    <th class="text-end rateb-coa-th-amt"><?php echo __('credit'); ?></th>
+                    <th class="text-end rateb-coa-th-amt"><?php echo __('balance'); ?></th>
                     <?php if ($showActionsCol) { ?>
                     <th class="rateb-th-actions text-end">
                         <span class="rateb-actions-head">

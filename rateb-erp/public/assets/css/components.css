@@ -778,31 +778,158 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     background: var(--rateb-surface-alt, rgba(255, 255, 255, 0.03));
 }
 
+/* Chart of accounts tree — readable hierarchy (override global fixed/ellipsis table rules) */
+.rateb-coa-scroll {
+    max-height: none !important;
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.rateb-coa-tree {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 720px;
+}
+
+.rateb-coa-tree .rateb-coa-col-account,
+.rateb-coa-tree th.rateb-coa-th-account,
+.rateb-coa-tree td.rateb-coa-name {
+    width: 48%;
+}
+
+.rateb-coa-tree .rateb-coa-col-type,
+.rateb-coa-tree th.rateb-coa-th-type,
+.rateb-coa-tree td.rateb-coa-type {
+    width: 10%;
+}
+
+.rateb-coa-tree .rateb-coa-col-amt,
+.rateb-coa-tree th.rateb-coa-th-amt,
+.rateb-coa-tree td.rateb-coa-amt {
+    width: 11%;
+}
+
+.rateb-coa-tree .rateb-coa-col-actions,
+.rateb-coa-tree th.rateb-th-actions,
+.rateb-coa-tree td.rateb-actions-cell {
+    width: 9%;
+}
+
+.rateb-coa-tree th,
+.rateb-coa-tree td,
+.rateb-coa-tree td.rateb-coa-name,
+.rateb-coa-tree td.rateb-coa-type,
+.rateb-coa-tree td.rateb-coa-amt,
+.rateb-content table.rateb-coa-tree td {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+}
+
 .rateb-coa-tree .rateb-coa-group td {
     background: var(--rateb-surface-alt, rgba(0, 0, 0, 0.03));
 }
 
 .rateb-coa-tree .rateb-coa-header td {
-    font-weight: 600;
+    font-weight: 700;
     border-top: 1px solid var(--rateb-border);
-}
-
-.rateb-coa-tree .rateb-coa-branch {
-    font-family: monospace;
-    opacity: 0.6;
+    background: rgba(13, 110, 253, 0.08);
 }
 
 .rateb-coa-tree tr.rateb-coa-child.rateb-coa-hidden {
     display: none;
 }
 
+.rateb-coa-tree td.rateb-coa-name {
+    padding-block: 0.65rem;
+}
+
+.rateb-coa-name-inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.45rem;
+    min-width: 0;
+    padding-inline-start: calc(0.25rem + (var(--coa-depth, 0) * 1.15rem));
+}
+
+.rateb-coa-toggle,
+.rateb-coa-toggle-spacer {
+    flex: 0 0 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    line-height: 1.1rem;
+    text-align: center;
+}
+
 .rateb-coa-toggle {
-    line-height: 1;
+    color: var(--rateb-warning, #ffc107) !important;
     vertical-align: middle;
 }
 
-.rateb-coa-tree .rateb-coa-name {
+.rateb-coa-icode {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    text-align: center;
+    opacity: 0.85;
+}
+
+.rateb-coa-icode.is-group {
+    color: var(--rateb-warning, #ffc107);
+}
+
+.rateb-coa-icode.is-leaf {
+    color: var(--rateb-text-muted);
+}
+
+.rateb-coa-label {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.55rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.rateb-coa-label:hover .rateb-coa-title {
+    color: var(--rateb-primary, #0d6efd);
+    text-decoration: underline;
+}
+
+.rateb-coa-code {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    color: var(--rateb-primary, #6ea8fe);
     white-space: nowrap;
+}
+
+.rateb-coa-title {
+    font-weight: 500;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.rateb-coa-main-badge {
+    flex: 0 0 auto;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.35);
+}
+
+.rateb-coa-tree td.rateb-coa-type .badge {
+    white-space: nowrap;
+}
+
+.rateb-coa-tree td.rateb-coa-amt {
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums;
 }
 
 .rateb-entry-approval .rateb-approval-stat {
@@ -865,6 +992,14 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
 
 html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
     background: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="dark"] .rateb-coa-tree .rateb-coa-header td {
+    background: rgba(110, 168, 254, 0.1);
+}
+
+html[data-theme="dark"] .rateb-coa-code {
+    color: #8bb7ff;
 }
 
 .rateb-accounting-nav {

@@ -1517,6 +1517,7 @@ return [
     'chart_of_accounts' => 'Chart of Accounts',
     'coa_tree' => 'Accounting Tree',
     'coa_full_tree' => 'Accounts tree',
+    'coa_tree_clarity_hint' => 'Click an account name to open details. Use expand/collapse to show branches.',
     'expand_all' => 'Expand all',
     'collapse_all' => 'Collapse all',
     'main_account' => 'Main',

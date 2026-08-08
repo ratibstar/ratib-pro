@@ -6,7 +6,10 @@ $typeTotals = $typeTotals ?? [];
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-    <h5 class="mb-0"><i class="fas fa-sitemap me-2 text-primary"></i><?php echo __('coa_full_tree'); ?></h5>
+    <div>
+        <h5 class="mb-0"><i class="fas fa-sitemap me-2 text-primary"></i><?php echo __('coa_full_tree'); ?></h5>
+        <div class="text-muted small mt-1"><?php echo __('coa_tree_clarity_hint'); ?></div>
+    </div>
     <div class="d-flex flex-wrap gap-2">
         <a href="<?php echo rateb_app_url('chart-of-accounts'); ?>" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-list"></i> <?php echo __('chart_of_accounts'); ?>

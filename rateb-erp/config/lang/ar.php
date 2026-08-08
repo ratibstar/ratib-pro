@@ -1515,6 +1515,7 @@ return [
     'chart_of_accounts' => 'دليل الحسابات',
     'coa_tree' => 'شجرة المحاسبة',
     'coa_full_tree' => 'شجرة الحسابات',
+    'coa_tree_clarity_hint' => 'اضغط اسم الحساب لفتح التفاصيل. استخدم توسيع/طي لإظهار الفروع.',
     'expand_all' => 'توسيع الكل',
     'collapse_all' => 'طي الكل',
     'main_account' => 'رئيسي',
