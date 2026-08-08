@@ -39,6 +39,15 @@ final class ChartOfAccountsService
             'parent_id' => isset($data['parent_id']) && (int) $data['parent_id'] > 0 ? (int) $data['parent_id'] : null,
             'is_active' => isset($data['is_active']) ? ((int) $data['is_active'] ? 1 : 0) : 1,
         ], AccountingSupport::actorFields(true));
+        if (AccountingSupport::hasColumn('rateb_chart_of_accounts', 'account_level')) {
+            $payload['account_level'] = isset($data['account_level']) ? (int) $data['account_level'] : 0;
+        }
+        if (AccountingSupport::hasColumn('rateb_chart_of_accounts', 'cash_flow_class')) {
+            $cf = strtolower(trim((string) ($data['cash_flow_class'] ?? 'unclassified')));
+            $payload['cash_flow_class'] = in_array($cf, ['operating', 'investing', 'financing', 'unclassified'], true)
+                ? $cf
+                : 'unclassified';
+        }
         if (AccountingSupport::hasColumn('rateb_chart_of_accounts', 'public_uuid')) {
             $payload['public_uuid'] = AccountingSupport::uuidV4();
         }

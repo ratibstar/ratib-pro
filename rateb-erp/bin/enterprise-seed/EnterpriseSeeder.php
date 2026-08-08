@@ -73,17 +73,19 @@ final class EnterpriseSeeder
         }
         $this->db->exec(
             "INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
-             SELECT c.id, '1350', 'Due From Branches', 'Due From Branches', 'asset', p.id, 1
+             SELECT c.id, '1010411', 'Due From Branches', 'مدينون للفروع', 'asset', p.id, 1
              FROM rateb_companies c
-             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code = '1000'
-             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code = '1350')"
+             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code IN ('10104','100','1000')
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code IN ('1010411','1350'))
+             GROUP BY c.id"
         );
         $this->db->exec(
             "INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
-             SELECT c.id, '2150', 'Due To Branches', 'Due To Branches', 'liability', p.id, 1
+             SELECT c.id, '20107', 'Due To Branches', 'دائنون للفروع', 'liability', p.id, 1
              FROM rateb_companies c
-             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code = '2000'
-             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code = '2150')"
+             LEFT JOIN rateb_chart_of_accounts p ON p.company_id = c.id AND p.code IN ('201','200','2000')
+             WHERE NOT EXISTS (SELECT 1 FROM rateb_chart_of_accounts x WHERE x.company_id = c.id AND x.code IN ('20107','2150'))
+             GROUP BY c.id"
         );
     }
 

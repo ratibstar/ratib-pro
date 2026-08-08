@@ -943,6 +943,24 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
                 break;
             }
         }
+        if (!isset($item['account_level']) || (int) $item['account_level'] < 1) {
+            $level = 0;
+            $walkId = (int) ($item['parent_id'] ?? 0);
+            $guard = 0;
+            while ($walkId > 0 && $guard < 12) {
+                $level++;
+                $parent = $this->model->queryOne(
+                    'SELECT id, parent_id FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid',
+                    ['id' => $walkId, 'cid' => $companyId]
+                );
+                $walkId = (int) ($parent['parent_id'] ?? 0);
+                $guard++;
+            }
+            $item['account_level'] = $level;
+        }
+        if (empty($item['cash_flow_class'])) {
+            $item['cash_flow_class'] = 'unclassified';
+        }
         $this->view($this->viewPrefix . '/show', [
             'title' => __('chart_of_accounts'),
             'item' => $item,

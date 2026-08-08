@@ -38,3 +38,4 @@ Rateb\App\Core\View::partial('coa-tree', array_merge(get_defined_vars(), [
     'treeTitle' => __('coa_full_tree'),
 ]));
 ?>
+<p class="text-center text-muted small mt-3 mb-0"><?php echo __('developed_by_rateb_tech'); ?></p>

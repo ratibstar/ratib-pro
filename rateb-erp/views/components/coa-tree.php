@@ -35,7 +35,9 @@ $render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = nu
         $type = (string) ($node['account_type'] ?? '');
         $balance = (float) ($node['balance'] ?? 0);
         $isGroup = !empty($node['children']);
-        $isHeader = substr((string) ($node['code'] ?? ''), -3) === '000';
+        $codeStr = (string) ($node['code'] ?? '');
+        $isHeader = in_array($codeStr, ['100', '200', '300', '400', '500', '1000', '2000', '3000', '4000', '5000'], true)
+            || substr($codeStr, -3) === '000';
         $nodeId = (int) ($node['id'] ?? 0);
         $childAttr = $parentNodeId !== null ? ' data-coa-child-of="' . $parentNodeId . '"' : '';
         ?>

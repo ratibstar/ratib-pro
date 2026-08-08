@@ -101,57 +101,127 @@ final class AccountingService
         return $v === '1' || strtolower((string) $v) === 'true';
     }
 
-    /** @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string}> */
-    /** Standard COA tree — keeps existing posting codes (1100, 1200, 1210, …). */
+    /**
+     * Saudi-style chart of accounts (canonical product tree).
+     * Posting still accepts legacy 1xxx codes via LEGACY_CODE_ALIASES.
+     *
+     * @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string,level?:int,cash_flow?:string}>
+     */
     private const DEFAULT_ACCOUNTS = [
-        // ── 1xxx Assets ──
-        'assets' => ['code' => '1000', 'name' => 'Assets', 'name_ar' => 'الأصول', 'type' => 'asset'],
-        'cash' => ['code' => '1100', 'name' => 'Cash on Hand', 'name_ar' => 'النقدية / الصندوق', 'type' => 'asset', 'parent' => '1000'],
-        'banks_grp' => ['code' => '1150', 'name' => 'Bank Accounts', 'name_ar' => 'الحسابات البنكية', 'type' => 'asset', 'parent' => '1000'],
-        'ar' => ['code' => '1200', 'name' => 'Accounts Receivable', 'name_ar' => 'ذمم مدينة', 'type' => 'asset', 'parent' => '1000'],
-        'vat_input' => ['code' => '1210', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset', 'parent' => '1000'],
-        'adv_suppliers' => ['code' => '1220', 'name' => 'Advances to Suppliers', 'name_ar' => 'سلف موردين', 'type' => 'asset', 'parent' => '1000'],
-        'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset', 'parent' => '1000'],
-        'prepaid' => ['code' => '1400', 'name' => 'Prepaid Expenses', 'name_ar' => 'مصروفات مقدمة', 'type' => 'asset', 'parent' => '1000'],
-        'fixed_assets' => ['code' => '1500', 'name' => 'Fixed Assets', 'name_ar' => 'الأصول الثابتة', 'type' => 'asset', 'parent' => '1000'],
-        'equipment' => ['code' => '1510', 'name' => 'Equipment', 'name_ar' => 'معدات', 'type' => 'asset', 'parent' => '1500'],
-        'vehicles' => ['code' => '1520', 'name' => 'Vehicles', 'name_ar' => 'مركبات', 'type' => 'asset', 'parent' => '1500'],
-        'buildings' => ['code' => '1530', 'name' => 'Buildings', 'name_ar' => 'مباني', 'type' => 'asset', 'parent' => '1500'],
-        'accum_depr' => ['code' => '1590', 'name' => 'Accumulated Depreciation', 'name_ar' => 'مجمع الإهلاك', 'type' => 'asset', 'parent' => '1500'],
+        // ── 100 الأصول ──
+        'assets' => ['code' => '100', 'name' => 'Assets', 'name_ar' => 'الأصول', 'type' => 'asset', 'level' => 0, 'cash_flow' => 'unclassified'],
+        'current_assets' => ['code' => '101', 'name' => 'Current Assets', 'name_ar' => 'الأصول المتداولة', 'type' => 'asset', 'parent' => '100', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'cash_equivalents' => ['code' => '10101', 'name' => 'Cash and Cash Equivalents', 'name_ar' => 'النقدية ومافي حكمها', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'petty_cash' => ['code' => '1010101', 'name' => 'Petty Cash', 'name_ar' => 'العهد النقدية', 'type' => 'asset', 'parent' => '10101', 'level' => 3, 'cash_flow' => 'unclassified'],
+        'customer_transfer_diff' => ['code' => '1010104', 'name' => 'Customer Transfer Differences', 'name_ar' => 'الفروقات حوالات العملاء', 'type' => 'asset', 'parent' => '10101', 'level' => 3, 'cash_flow' => 'unclassified'],
+        'sifi_wallet' => ['code' => '1010105', 'name' => 'SiFi Wallet', 'name_ar' => 'محفظة SiFi', 'type' => 'asset', 'parent' => '10101', 'level' => 3, 'cash_flow' => 'unclassified'],
+        'banks_grp' => ['code' => '10102', 'name' => 'Current Bank Accounts', 'name_ar' => 'البنوك الجارية', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'payment_gateways' => ['code' => '10103', 'name' => 'Payment Gateways', 'name_ar' => 'بوابات الدفع', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'ar' => ['code' => '10104', 'name' => 'Accounts Receivable', 'name_ar' => 'الذمم المدينة', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'vat_input' => ['code' => '1010410', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset', 'parent' => '10104', 'level' => 3, 'cash_flow' => 'unclassified'],
+        'due_from_branches' => ['code' => '1010411', 'name' => 'Due From Branches', 'name_ar' => 'مدينون للفروع', 'type' => 'asset', 'parent' => '10104', 'level' => 3, 'cash_flow' => 'unclassified'],
+        'inventory' => ['code' => '10106', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'prepaid' => ['code' => '10107', 'name' => 'Prepaid Expenses', 'name_ar' => 'المصروفات المدفوعة مقدماً', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'payment_gateway_diff' => ['code' => '10108', 'name' => 'Payment Gateway Differences', 'name_ar' => 'فروقات بوابات الدفع', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'temp_settlements' => ['code' => '10109', 'name' => 'Temporary Settlements', 'name_ar' => 'تسويات مؤقته', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'adv_suppliers' => ['code' => '10110', 'name' => 'Advances / Prepayments', 'name_ar' => 'دفعات مقدمة', 'type' => 'asset', 'parent' => '101', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'noncurrent_assets' => ['code' => '102', 'name' => 'Non-current Assets', 'name_ar' => 'الأصول غير المتداولة', 'type' => 'asset', 'parent' => '100', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'fixed_assets' => ['code' => '10201', 'name' => 'Fixed Assets', 'name_ar' => 'الأصول الثابتة', 'type' => 'asset', 'parent' => '102', 'level' => 2, 'cash_flow' => 'investing'],
+        'equipment' => ['code' => '1020101', 'name' => 'Equipment', 'name_ar' => 'معدات', 'type' => 'asset', 'parent' => '10201', 'level' => 3, 'cash_flow' => 'investing'],
+        'vehicles' => ['code' => '1020102', 'name' => 'Vehicles', 'name_ar' => 'مركبات', 'type' => 'asset', 'parent' => '10201', 'level' => 3, 'cash_flow' => 'investing'],
+        'buildings' => ['code' => '1020103', 'name' => 'Buildings', 'name_ar' => 'مباني', 'type' => 'asset', 'parent' => '10201', 'level' => 3, 'cash_flow' => 'investing'],
+        'accum_depr' => ['code' => '1020109', 'name' => 'Accumulated Depreciation', 'name_ar' => 'مجمع الإهلاك', 'type' => 'asset', 'parent' => '10201', 'level' => 3, 'cash_flow' => 'investing'],
+        'current_interco' => ['code' => '1020113', 'name' => 'Current Account', 'name_ar' => 'الجاري', 'type' => 'asset', 'parent' => '102', 'level' => 3, 'cash_flow' => 'unclassified'],
 
-        // ── 2xxx Liabilities ──
-        'liabilities' => ['code' => '2000', 'name' => 'Liabilities', 'name_ar' => 'الخصوم', 'type' => 'liability'],
-        'ap' => ['code' => '2100', 'name' => 'Accounts Payable', 'name_ar' => 'ذمم دائنة', 'type' => 'liability', 'parent' => '2000'],
-        'cust_advances' => ['code' => '2110', 'name' => 'Customer Advances', 'name_ar' => 'دفعات مقدمة من العملاء', 'type' => 'liability', 'parent' => '2000'],
-        'vat' => ['code' => '2200', 'name' => 'VAT Payable', 'name_ar' => 'ضريبة مستحقة', 'type' => 'liability', 'parent' => '2000'],
-        'accrued' => ['code' => '2300', 'name' => 'Accrued Expenses', 'name_ar' => 'مصروفات مستحقة', 'type' => 'liability', 'parent' => '2000'],
-        'salaries_payable' => ['code' => '2400', 'name' => 'Salaries Payable', 'name_ar' => 'رواتب مستحقة', 'type' => 'liability', 'parent' => '2000'],
-        'st_loans' => ['code' => '2500', 'name' => 'Short-term Loans', 'name_ar' => 'قروض قصيرة الأجل', 'type' => 'liability', 'parent' => '2000'],
+        // ── 200 الخصوم ──
+        'liabilities' => ['code' => '200', 'name' => 'Liabilities', 'name_ar' => 'الخصوم', 'type' => 'liability', 'level' => 0, 'cash_flow' => 'unclassified'],
+        'current_liabilities' => ['code' => '201', 'name' => 'Current Liabilities', 'name_ar' => 'الخصوم المتداولة', 'type' => 'liability', 'parent' => '200', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'ap' => ['code' => '20101', 'name' => 'Accounts Payable', 'name_ar' => 'ذمم دائنة', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'operating'],
+        'cust_advances' => ['code' => '20102', 'name' => 'Customer Advances', 'name_ar' => 'دفعات مقدمة من العملاء', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'operating'],
+        'vat' => ['code' => '20103', 'name' => 'VAT Payable', 'name_ar' => 'ضريبة مستحقة', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'operating'],
+        'accrued' => ['code' => '20104', 'name' => 'Accrued Expenses', 'name_ar' => 'مصروفات مستحقة', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'operating'],
+        'salaries_payable' => ['code' => '20105', 'name' => 'Salaries Payable', 'name_ar' => 'رواتب مستحقة', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'operating'],
+        'st_loans' => ['code' => '20106', 'name' => 'Short-term Loans', 'name_ar' => 'قروض قصيرة الأجل', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'financing'],
+        'due_to_branches' => ['code' => '20107', 'name' => 'Due To Branches', 'name_ar' => 'دائنون للفروع', 'type' => 'liability', 'parent' => '201', 'level' => 2, 'cash_flow' => 'unclassified'],
+        'noncurrent_liabilities' => ['code' => '202', 'name' => 'Non-current Liabilities', 'name_ar' => 'الخصوم غير المتداولة', 'type' => 'liability', 'parent' => '200', 'level' => 1, 'cash_flow' => 'financing'],
 
-        // ── 3xxx Equity ──
-        'equity' => ['code' => '3000', 'name' => 'Equity', 'name_ar' => 'حقوق الملكية', 'type' => 'equity'],
-        'retained' => ['code' => '3100', 'name' => 'Retained Earnings', 'name_ar' => 'أرباح محتجزة', 'type' => 'equity', 'parent' => '3000'],
-        'capital' => ['code' => '3200', 'name' => 'Share Capital', 'name_ar' => 'رأس المال', 'type' => 'equity', 'parent' => '3000'],
-        'current_pl' => ['code' => '3300', 'name' => 'Current Year Profit/Loss', 'name_ar' => 'أرباح/خسائر العام الحالي', 'type' => 'equity', 'parent' => '3000'],
+        // ── 300 حقوق الملكية ──
+        'equity' => ['code' => '300', 'name' => 'Equity', 'name_ar' => 'حقوق الملكية', 'type' => 'equity', 'level' => 0, 'cash_flow' => 'unclassified'],
+        'capital' => ['code' => '301', 'name' => 'Share Capital', 'name_ar' => 'رأس المال', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'financing'],
+        'statutory_reserve' => ['code' => '302', 'name' => 'Statutory Reserve', 'name_ar' => 'احتياطي نظامي', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'other_reserves' => ['code' => '303', 'name' => 'Other Reserves', 'name_ar' => 'احتياطيات أخرى', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'retained' => ['code' => '304', 'name' => 'Retained Earnings (Accumulated Losses)', 'name_ar' => 'الأرباح المبقاة (الخسائر المتراكمة)', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'current_pl' => ['code' => '305', 'name' => 'Current Period Profit (Loss)', 'name_ar' => 'أرباح (خسائر) الفترة الحالية', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'unclassified'],
+        'dividends' => ['code' => '306', 'name' => 'Dividends', 'name_ar' => 'توزيعات الأرباح', 'type' => 'equity', 'parent' => '300', 'level' => 1, 'cash_flow' => 'financing'],
 
-        // ── 4xxx Revenue ──
-        'revenue_grp' => ['code' => '4000', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue'],
-        'revenue' => ['code' => '4100', 'name' => 'Sales Revenue', 'name_ar' => 'إيرادات المبيعات', 'type' => 'revenue', 'parent' => '4000'],
-        'service_rev' => ['code' => '4200', 'name' => 'Service Revenue', 'name_ar' => 'إيرادات الخدمات', 'type' => 'revenue', 'parent' => '4000'],
-        'other_income' => ['code' => '4300', 'name' => 'Other Income', 'name_ar' => 'إيرادات أخرى', 'type' => 'revenue', 'parent' => '4000'],
-        'sales_returns' => ['code' => '4900', 'name' => 'Sales Returns & Allowances', 'name_ar' => 'مردودات ومسموحات المبيعات', 'type' => 'revenue', 'parent' => '4000'],
+        // ── 400 الإيرادات ──
+        'revenue_grp' => ['code' => '400', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue', 'level' => 0, 'cash_flow' => 'operating'],
+        'revenue' => ['code' => '401', 'name' => 'Operating Revenue', 'name_ar' => 'الإيرادات التشغيلية', 'type' => 'revenue', 'parent' => '400', 'level' => 1, 'cash_flow' => 'operating'],
+        'service_rev' => ['code' => '40102', 'name' => 'Service Revenue', 'name_ar' => 'إيرادات الخدمات', 'type' => 'revenue', 'parent' => '401', 'level' => 2, 'cash_flow' => 'operating'],
+        'sales_returns' => ['code' => '40109', 'name' => 'Sales Returns & Allowances', 'name_ar' => 'مردودات ومسموحات المبيعات', 'type' => 'revenue', 'parent' => '401', 'level' => 2, 'cash_flow' => 'operating'],
+        'other_income' => ['code' => '402', 'name' => 'Other Income', 'name_ar' => 'الإيرادات الأخرى', 'type' => 'revenue', 'parent' => '400', 'level' => 1, 'cash_flow' => 'operating'],
 
-        // ── 5xxx Expenses ──
-        'expenses' => ['code' => '5000', 'name' => 'Expenses', 'name_ar' => 'المصروفات', 'type' => 'expense'],
-        'procurement' => ['code' => '5100', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense', 'parent' => '5000'],
-        'cogs' => ['code' => '5200', 'name' => 'Cost of Goods Sold', 'name_ar' => 'تكلفة البضاعة المباعة', 'type' => 'expense', 'parent' => '5000'],
-        'payroll' => ['code' => '5300', 'name' => 'Salaries & Wages', 'name_ar' => 'الرواتب والأجور', 'type' => 'expense', 'parent' => '5000'],
-        'rent' => ['code' => '5400', 'name' => 'Rent Expense', 'name_ar' => 'مصروف الإيجار', 'type' => 'expense', 'parent' => '5000'],
-        'utilities' => ['code' => '5500', 'name' => 'Utilities', 'name_ar' => 'مرافق (كهرباء، ماء، …)', 'type' => 'expense', 'parent' => '5000'],
-        'depr_exp' => ['code' => '5600', 'name' => 'Depreciation Expense', 'name_ar' => 'مصروف الإهلاك', 'type' => 'expense', 'parent' => '5000'],
-        'bank_charges' => ['code' => '5700', 'name' => 'Bank & Finance Charges', 'name_ar' => 'عمولات بنكية ومالية', 'type' => 'expense', 'parent' => '5000'],
-        'ga_exp' => ['code' => '5800', 'name' => 'General & Administrative', 'name_ar' => 'مصروفات عمومية وإدارية', 'type' => 'expense', 'parent' => '5000'],
-        'marketing' => ['code' => '5900', 'name' => 'Marketing & Sales', 'name_ar' => 'مصروفات تسويق ومبيعات', 'type' => 'expense', 'parent' => '5000'],
+        // ── 500 المصروفات ──
+        'expenses' => ['code' => '500', 'name' => 'Expenses', 'name_ar' => 'المصروفات', 'type' => 'expense', 'level' => 0, 'cash_flow' => 'operating'],
+        'cogs' => ['code' => '501', 'name' => 'Cost of Sales', 'name_ar' => 'تكلفة المبيعات', 'type' => 'expense', 'parent' => '500', 'level' => 1, 'cash_flow' => 'operating'],
+        'operating_exp' => ['code' => '502', 'name' => 'Operating Expenses', 'name_ar' => 'المصروفات التشغيلية', 'type' => 'expense', 'parent' => '500', 'level' => 1, 'cash_flow' => 'operating'],
+        'ga_exp' => ['code' => '50201', 'name' => 'General & Administrative Expenses', 'name_ar' => 'المصروفات الإدارية والعمومية', 'type' => 'expense', 'parent' => '502', 'level' => 2, 'cash_flow' => 'operating'],
+        'payroll' => ['code' => '5020101', 'name' => 'Salaries & Wages', 'name_ar' => 'الرواتب والأجور', 'type' => 'expense', 'parent' => '50201', 'level' => 3, 'cash_flow' => 'operating'],
+        'rent' => ['code' => '5020102', 'name' => 'Rent Expense', 'name_ar' => 'مصروف الإيجار', 'type' => 'expense', 'parent' => '50201', 'level' => 3, 'cash_flow' => 'operating'],
+        'utilities' => ['code' => '5020103', 'name' => 'Utilities', 'name_ar' => 'مرافق (كهرباء، ماء، …)', 'type' => 'expense', 'parent' => '50201', 'level' => 3, 'cash_flow' => 'operating'],
+        'depr_exp' => ['code' => '5020104', 'name' => 'Depreciation Expense', 'name_ar' => 'مصروف الإهلاك', 'type' => 'expense', 'parent' => '50201', 'level' => 3, 'cash_flow' => 'operating'],
+        'procurement' => ['code' => '50202', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense', 'parent' => '502', 'level' => 2, 'cash_flow' => 'operating'],
+        'marketing' => ['code' => '50203', 'name' => 'Marketing & Sales', 'name_ar' => 'مصروفات تسويق ومبيعات', 'type' => 'expense', 'parent' => '502', 'level' => 2, 'cash_flow' => 'operating'],
+        'non_operating_exp' => ['code' => '503', 'name' => 'Non-operating Expenses', 'name_ar' => 'المصروفات غير التشغيلية', 'type' => 'expense', 'parent' => '500', 'level' => 1, 'cash_flow' => 'operating'],
+        'bank_charges' => ['code' => '50301', 'name' => 'Bank & Finance Charges', 'name_ar' => 'عمولات بنكية ومالية', 'type' => 'expense', 'parent' => '503', 'level' => 2, 'cash_flow' => 'operating'],
+        'brokerage_fees' => ['code' => '504', 'name' => 'Brokerage & Follow-up Fees', 'name_ar' => 'اتعاب السعي والتعقيب', 'type' => 'expense', 'parent' => '500', 'level' => 1, 'cash_flow' => 'operating'],
+    ];
+
+    /** Legacy 4-digit codes → new Saudi COA codes (posting + rename). */
+    private const LEGACY_CODE_ALIASES = [
+        '1000' => '100',
+        '1100' => '1010101',
+        '1150' => '10102',
+        '1200' => '10104',
+        '1210' => '1010410',
+        '1220' => '10110',
+        '1300' => '10106',
+        '1350' => '1010411',
+        '1400' => '10107',
+        '1500' => '10201',
+        '1510' => '1020101',
+        '1520' => '1020102',
+        '1530' => '1020103',
+        '1590' => '1020109',
+        '2000' => '200',
+        '2100' => '20101',
+        '2110' => '20102',
+        '2150' => '20107',
+        '2200' => '20103',
+        '2300' => '20104',
+        '2400' => '20105',
+        '2500' => '20106',
+        '3000' => '300',
+        '3100' => '304',
+        '3200' => '301',
+        '3210' => '301',
+        '3220' => '301',
+        '3300' => '305',
+        '4000' => '400',
+        '4100' => '401',
+        '4200' => '40102',
+        '4300' => '402',
+        '4900' => '40109',
+        '5000' => '500',
+        '5100' => '50202',
+        '5200' => '501',
+        '5300' => '5020101',
+        '5400' => '5020102',
+        '5500' => '5020103',
+        '5600' => '5020104',
+        '5700' => '50301',
+        '5800' => '50201',
+        '5900' => '50203',
     ];
 
     public function normalizeCompanyId($companyId): ?int
@@ -183,23 +253,40 @@ final class AccountingService
         return $map[$code] ?? null;
     }
 
+    private function coaHasMetaColumns(): bool
+    {
+        return AccountingSupport::hasColumn('rateb_chart_of_accounts', 'account_level')
+            && AccountingSupport::hasColumn('rateb_chart_of_accounts', 'cash_flow_class');
+    }
+
     /** @param array<string, mixed> $def */
     private function insertCoaRow(?int $companyId, array $def, ?int $parentId = null): int
     {
         $pdo = Database::connection();
-        $stmt = $pdo->prepare(
-            'INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
-             VALUES (:cid, :code, :name, :name_ar, :type, :parent, 1)'
-        );
         $cid = $this->normalizeCompanyId($companyId);
-        $stmt->execute([
+        $params = [
             'cid' => $cid,
             'code' => (string) ($def['code'] ?? ''),
             'name' => (string) ($def['name'] ?? ''),
             'name_ar' => $def['name_ar'] ?? null,
             'type' => (string) ($def['account_type'] ?? $def['type'] ?? 'asset'),
             'parent' => $parentId,
-        ]);
+        ];
+        if ($this->coaHasMetaColumns()) {
+            $stmt = $pdo->prepare(
+                'INSERT INTO rateb_chart_of_accounts
+                 (company_id, code, name, name_ar, account_type, parent_id, account_level, cash_flow_class, is_active)
+                 VALUES (:cid, :code, :name, :name_ar, :type, :parent, :level, :cf, 1)'
+            );
+            $params['level'] = (int) ($def['level'] ?? 0);
+            $params['cf'] = (string) ($def['cash_flow'] ?? 'unclassified');
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO rateb_chart_of_accounts (company_id, code, name, name_ar, account_type, parent_id, is_active)
+                 VALUES (:cid, :code, :name, :name_ar, :type, :parent, 1)'
+            );
+        }
+        $stmt->execute($params);
         $this->invalidateCoaCodeMap($cid);
 
         return (int) $pdo->lastInsertId();
@@ -210,25 +297,81 @@ final class AccountingService
     {
         $name = (string) ($def['name'] ?? '');
         $nameAr = $def['name_ar'] ?? null;
+        $level = (int) ($def['level'] ?? 0);
+        $cf = (string) ($def['cash_flow'] ?? 'unclassified');
+        $hasMeta = $this->coaHasMetaColumns();
         if (is_array($existing)) {
             $curActive = (int) ($existing['is_active'] ?? 0);
             $curName = (string) ($existing['name'] ?? '');
             $curAr = $existing['name_ar'] ?? null;
-            if ($curActive === 1 && $curName === $name && (string) $curAr === (string) $nameAr) {
+            $sameMeta = !$hasMeta
+                || (((int) ($existing['account_level'] ?? 0) === $level)
+                    && ((string) ($existing['cash_flow_class'] ?? 'unclassified') === $cf));
+            if ($curActive === 1 && $curName === $name && (string) $curAr === (string) $nameAr && $sameMeta) {
                 return;
             }
         }
-        Database::connection()->prepare(
-            'UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id'
-        )->execute([
-            'id' => $id,
-            'name' => $name,
-            'name_ar' => $nameAr,
-        ]);
+        if ($hasMeta) {
+            Database::connection()->prepare(
+                'UPDATE rateb_chart_of_accounts
+                 SET is_active = 1, name = :name, name_ar = :name_ar, account_level = :level, cash_flow_class = :cf
+                 WHERE id = :id'
+            )->execute([
+                'id' => $id,
+                'name' => $name,
+                'name_ar' => $nameAr,
+                'level' => $level,
+                'cf' => $cf,
+            ]);
+        } else {
+            Database::connection()->prepare(
+                'UPDATE rateb_chart_of_accounts SET is_active = 1, name = :name, name_ar = :name_ar WHERE id = :id'
+            )->execute([
+                'id' => $id,
+                'name' => $name,
+                'name_ar' => $nameAr,
+            ]);
+        }
         $cid = is_array($existing) ? $this->normalizeCompanyId($existing['company_id'] ?? null) : null;
         if ($cid !== null || (is_array($existing) && array_key_exists('company_id', $existing))) {
             $this->invalidateCoaCodeMap($cid);
         }
+    }
+
+    /** Rename legacy 4-digit COA codes in-place when the new code is free (preserves journal FKs). */
+    private function migrateLegacyCoaCodes(?int $companyId): void
+    {
+        $pdo = Database::connection();
+        $map = $this->coaCodeMap($companyId);
+        foreach (self::LEGACY_CODE_ALIASES as $oldCode => $newCode) {
+            if ($oldCode === $newCode || !isset($map[$oldCode]) || isset($map[$newCode])) {
+                continue;
+            }
+            $id = (int) ($map[$oldCode]['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            try {
+                if ($companyId !== null && $companyId > 0) {
+                    $pdo->prepare(
+                        'UPDATE rateb_chart_of_accounts SET code = :new WHERE id = :id AND company_id = :cid AND code = :old'
+                    )->execute(['new' => $newCode, 'id' => $id, 'cid' => $companyId, 'old' => $oldCode]);
+                } else {
+                    $pdo->prepare(
+                        'UPDATE rateb_chart_of_accounts SET code = :new WHERE id = :id AND company_id IS NULL AND code = :old'
+                    )->execute(['new' => $newCode, 'id' => $id, 'old' => $oldCode]);
+                }
+            } catch (\Throwable $e) {
+                // Unique conflict or concurrent rename — leave for alias resolution.
+            }
+        }
+        $this->invalidateCoaCodeMap($companyId);
+    }
+
+    private function resolveCoaCode(string $code): string
+    {
+        $code = trim($code);
+        return self::LEGACY_CODE_ALIASES[$code] ?? $code;
     }
 
     /**
@@ -279,6 +422,11 @@ final class AccountingService
         if ($companyId < 1) {
             return null;
         }
+        $code = $this->resolveCoaCode($code);
+        $existing = $this->accountIdByCode($companyId, $code);
+        if ($existing) {
+            return $existing;
+        }
         $def = null;
         foreach (self::DEFAULT_ACCOUNTS as $d) {
             if ($d['code'] === $code) {
@@ -323,6 +471,7 @@ final class AccountingService
         if (!self::accountingRepairMode() && $this->defaultCoaIsComplete($normalized)) {
             return;
         }
+        $this->migrateLegacyCoaCodes($normalized);
         $codeToId = [];
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $code = (string) $def['code'];
@@ -383,7 +532,11 @@ final class AccountingService
                 continue;
             }
             $code = (string) ($row['code'] ?? '');
-            if (preg_match('/^111\d$/', $code) && !empty($codeToId['1150'])) {
+            if ((preg_match('/^111\d+$/', $code) || preg_match('/^10102\d+$/', $code)) && !empty($codeToId['10102'])) {
+                $coa->update($childId, ['parent_id' => $codeToId['10102']]);
+                continue;
+            }
+            if (preg_match('/^111\d+$/', $code) && !empty($codeToId['1150'])) {
                 $coa->update($childId, ['parent_id' => $codeToId['1150']]);
                 continue;
             }
@@ -398,6 +551,22 @@ final class AccountingService
     /** @param array<string, int> $codeToId */
     private function inferParentCode(string $code, array $codeToId): ?string
     {
+        // Longest matching DEFAULT parent prefix (Saudi tree), e.g. 1010101 → 10101 → 101 → 100.
+        $candidates = [];
+        foreach (array_keys($codeToId) as $parentCode) {
+            $parentCode = (string) $parentCode;
+            if ($parentCode === '' || $parentCode === $code) {
+                continue;
+            }
+            if (str_starts_with($code, $parentCode) && strlen($parentCode) < strlen($code)) {
+                $candidates[] = $parentCode;
+            }
+        }
+        if ($candidates !== []) {
+            usort($candidates, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+            return $candidates[0];
+        }
         if (!preg_match('/^\d{4}$/', $code) || substr($code, -3) === '000') {
             return null;
         }
@@ -414,13 +583,20 @@ final class AccountingService
     public function accountIdByCode(?int $companyId, string $code): ?int
     {
         $normalized = $this->normalizeCompanyId($companyId);
-        $row = $this->findCoaByCode($normalized, $code);
-        if ($row) {
-            return (int) $row['id'];
+        $resolved = $this->resolveCoaCode($code);
+        foreach (array_unique([$resolved, $code]) as $try) {
+            $row = $this->findCoaByCode($normalized, $try);
+            if ($row) {
+                return (int) $row['id'];
+            }
         }
         if ($normalized !== null && $normalized > 0) {
-            $template = $this->findCoaByCode(null, $code);
-            return $template ? (int) $template['id'] : null;
+            foreach (array_unique([$resolved, $code]) as $try) {
+                $template = $this->findCoaByCode(null, $try);
+                if ($template) {
+                    return (int) $template['id'];
+                }
+            }
         }
         return null;
     }
@@ -1552,7 +1728,7 @@ final class AccountingService
                        INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'
                        WHERE a.company_id = :cid AND a.is_active = 1
                          AND a.account_type = 'expense'
-                         AND (a.code = '5200' OR a.code LIKE '520%')";
+                         AND (a.code = '501' OR a.code LIKE '501%' OR a.code = '5200' OR a.code LIKE '520%')";
         $params = ['cid' => $companyId];
         if ($fromDate) {
             $accountSql .= ' AND e.entry_date >= :from';
@@ -1578,7 +1754,7 @@ final class AccountingService
                      INNER JOIN rateb_chart_of_accounts a ON a.id = l.account_id
                      WHERE a.company_id = :cid AND a.is_active = 1
                        AND a.account_type = 'expense'
-                       AND (a.code = '5200' OR a.code LIKE '520%')";
+                       AND (a.code = '501' OR a.code LIKE '501%' OR a.code = '5200' OR a.code LIKE '520%')";
         $entryParams = ['cid' => $companyId];
         if ($fromDate) {
             $entrySql .= ' AND e.entry_date >= :from';
@@ -1786,7 +1962,9 @@ final class AccountingService
             $parentId = (int) ($account['parent_id'] ?? 0);
             $code = (string) ($account['code'] ?? '');
             if ($parentId < 1) {
-                if (preg_match('/^111\d$/', $code) && isset($codeToId['1150'])) {
+                if ((preg_match('/^111\d+$/', $code) || preg_match('/^10102\d+$/', $code)) && isset($codeToId['10102'])) {
+                    $parentId = $codeToId['10102'];
+                } elseif (preg_match('/^111\d+$/', $code) && isset($codeToId['1150'])) {
                     $parentId = $codeToId['1150'];
                 } else {
                     $parentCode = $this->inferParentCode($code, $codeToId);
@@ -2027,8 +2205,8 @@ final class AccountingService
         $this->ensureDefaultAccounts($companyId);
         $code = $this->nextBankAccountCode($companyId);
         $coa = new ChartOfAccount();
-        $banksParent = $this->accountIdByCode($companyId, '1150');
-        $coaId = $coa->create([
+        $banksParent = $this->accountIdByCode($companyId, '10102') ?: $this->accountIdByCode($companyId, '1150');
+        $payload = [
             'company_id' => $companyId,
             'code' => $code,
             'name' => (string) ($data['name'] ?? 'Bank'),
@@ -2036,7 +2214,12 @@ final class AccountingService
             'account_type' => 'asset',
             'parent_id' => $banksParent,
             'is_active' => 1,
-        ]);
+        ];
+        if ($this->coaHasMetaColumns()) {
+            $payload['account_level'] = 3;
+            $payload['cash_flow_class'] = 'unclassified';
+        }
+        $coaId = $coa->create($payload);
         $pdo = Database::connection();
         if (!empty($data['is_default'])) {
             $pdo->prepare('UPDATE rateb_bank_accounts SET is_default = 0 WHERE company_id = :cid')->execute(['cid' => $companyId]);
@@ -2764,16 +2947,37 @@ final class AccountingService
 
     private function nextBankAccountCode(?int $companyId): string
     {
-        $row = (new ChartOfAccount())->queryOne(
+        $rows = (new ChartOfAccount())->query(
+            'SELECT code FROM rateb_chart_of_accounts
+             WHERE company_id = :cid AND code LIKE :pfx
+             ORDER BY code DESC',
+            ['cid' => $companyId, 'pfx' => '10102%']
+        );
+        $max = 1010200;
+        foreach ($rows as $row) {
+            $code = (string) ($row['code'] ?? '');
+            if ($code === '10102' || !preg_match('/^10102\d+$/', $code)) {
+                continue;
+            }
+            $num = (int) $code;
+            if ($num > $max) {
+                $max = $num;
+            }
+        }
+        if ($max >= 1010201) {
+            return (string) ($max + 1);
+        }
+        $legacy = (new ChartOfAccount())->queryOne(
             'SELECT code FROM rateb_chart_of_accounts
              WHERE company_id = :cid AND code LIKE :pfx
              ORDER BY code DESC LIMIT 1',
             ['cid' => $companyId, 'pfx' => '111%']
         );
-        if (!$row) {
-            return '1110';
+        if (!$legacy) {
+            return '1010201';
         }
-        $num = (int) preg_replace('/\D/', '', (string) $row['code']);
+        $num = (int) preg_replace('/\D/', '', (string) $legacy['code']);
+
         return (string) ($num + 1);
     }
 

@@ -1068,6 +1068,8 @@ CREATE TABLE IF NOT EXISTS "rateb_chart_of_accounts" (
   "name_ar" TEXT DEFAULT NULL,
   "account_type" TEXT NOT NULL DEFAULT 'asset',
   "parent_id" INTEGER DEFAULT NULL,
+  "account_level" INTEGER NOT NULL DEFAULT 0,
+  "cash_flow_class" TEXT NOT NULL DEFAULT 'unclassified',
   "is_active" INTEGER NOT NULL DEFAULT 1,
   "created_by" INTEGER DEFAULT NULL,
   "updated_by" INTEGER DEFAULT NULL,
