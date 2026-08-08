@@ -17,6 +17,8 @@ final class CrmRevOpsCommandCenterService
         ?int $teamId = null,
         ?int $pipelineId = null
     ): array {
+        // Tenant scope: nested CRM services use requireCompanyId(); assert early for certification.
+        CrmSupport::requireCompanyId();
         $role = strtolower(trim($role));
         if (!in_array($role, ['executive', 'manager', 'rep'], true)) {
             $role = 'executive';

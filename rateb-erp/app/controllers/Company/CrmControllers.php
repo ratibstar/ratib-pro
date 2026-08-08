@@ -23,6 +23,7 @@ use Rateb\App\Services\CrmConversionService;
 use Rateb\App\Services\CrmCustomer360Service;
 use Rateb\App\Services\CrmDashboardService;
 use Rateb\App\Services\CrmDataFreshnessService;
+use Rateb\App\Services\CrmDataIntegrityAuditService;
 use Rateb\App\Services\CrmDataQualityEngineService;
 use Rateb\App\Services\CrmDuplicateMergeService;
 use Rateb\App\Services\CrmEnterpriseForecastService;
@@ -2142,5 +2143,36 @@ final class CrmMergeController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_url(rateb_app_route('crm/merge')));
+    }
+}
+
+/**
+ * Phase 11 — CRM data integrity audit (findings + remediation only; never deletes).
+ */
+final class CrmIntegrityController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $report = [
+            'summary' => ['total_findings' => 0],
+            'findings' => [],
+            'auto_delete' => false,
+            'check_errors' => [],
+        ];
+        $error = null;
+        try {
+            $report = (new CrmDataIntegrityAuditService())->runAudit();
+        } catch (\Throwable $e) {
+            $error = $e->getMessage();
+        }
+        $this->view('company/crm/integrity/index', [
+            'title' => __('crm_data_integrity_audit'),
+            'report' => $report,
+            'error' => $error,
+            'canManage' => rateb_can('crm.governance.manage') || rateb_can('crm.admin'),
+        ], 'main');
     }
 }

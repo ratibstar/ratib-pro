@@ -76,6 +76,7 @@ use Rateb\App\Controllers\Company\CrmRevOpsController;
 use Rateb\App\Controllers\Company\CrmCockpitController;
 use Rateb\App\Controllers\Company\CrmWorkflowGovernanceController;
 use Rateb\App\Controllers\Company\CrmDataQualityController;
+use Rateb\App\Controllers\Company\CrmIntegrityController;
 use Rateb\App\Controllers\Company\CrmSearchController;
 use Rateb\App\Controllers\Company\CrmReportingCenterController;
 use Rateb\App\Controllers\Company\CrmIntelligenceLayerController;
@@ -436,6 +437,7 @@ $router->post($app('crm/workflow-governance/rules'), [CrmWorkflowGovernanceContr
 $router->get($app('crm/data-quality'), [CrmDataQualityController::class, 'index'], rateb_erp_mw('crm', 'crm.governance.view', 'crm'));
 $router->post($app('crm/data-quality/scan'), [CrmDataQualityController::class, 'scan'], rateb_erp_mw('crm', 'crm.governance.manage', 'crm'));
 $router->post($app('crm/data-quality/issues/{id}/resolve'), [CrmDataQualityController::class, 'resolve'], rateb_erp_mw('crm', 'crm.governance.manage', 'crm'));
+$router->get($app('crm/integrity'), [CrmIntegrityController::class, 'index'], rateb_erp_mw('crm', 'crm.governance.view', 'crm'));
 $router->get($app('crm/search'), [CrmSearchController::class, 'index'], rateb_erp_mw('crm', 'crm.search.view', 'crm'));
 $router->get($app('crm/reporting-center'), [CrmReportingCenterController::class, 'index'], rateb_erp_mw('crm', 'crm.reporting.center', 'crm'));
 $router->post($app('crm/reporting-center/dashboards'), [CrmReportingCenterController::class, 'saveDashboard'], rateb_erp_mw('crm', 'crm.reporting.center', 'crm'));

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
-use Rateb\App\Models\CrmActivity;
+use PDO;
+use Rateb\App\Core\Database;
 use Rateb\App\Models\CrmContact;
 use Rateb\App\Models\CrmLead;
 use Rateb\App\Models\CrmMergeRequest;
-use Rateb\App\Models\CrmNote;
-use Rateb\App\Models\CrmOpportunity;
 
 /**
- * Phase 9 — Duplicate merge workflow with audit (CRM entities only; no Accounting).
+ * Phase 9/11 — Duplicate merge with full DB transaction (CRM entities only; no Accounting).
  */
 final class CrmDuplicateMergeService
 {
@@ -95,6 +94,10 @@ final class CrmDuplicateMergeService
     }
 
     /**
+     * Execute merge inside a single DB transaction (atomicity).
+     * On any failure: full rollback of archive/repoint/status updates.
+     * Audit/observability run only after successful commit.
+     *
      * @return array<string, mixed>
      */
     public function execute(int $mergeId): array
@@ -112,56 +115,75 @@ final class CrmDuplicateMergeService
         $targetId = (int) $req['target_id'];
         $this->assertEntities($entityType, $sourceId, $targetId);
 
+        $db = Database::connection();
+        $startedTx = false;
         $moved = ['activities' => 0, 'opportunities' => 0, 'notes' => 0];
-        if ($entityType === 'lead') {
-            $moved['activities'] = $this->repoint('rateb_crm_activities', 'lead_id', $sourceId, $targetId);
-            $moved['opportunities'] = $this->repoint('rateb_crm_opportunities', 'lead_id', $sourceId, $targetId);
-            try {
-                $moved['notes'] = $this->repoint('rateb_crm_notes', 'lead_id', $sourceId, $targetId);
-            } catch (\Throwable $e) {
-                $moved['notes'] = 0;
+        $t0 = microtime(true);
+
+        try {
+            if (!$db->inTransaction()) {
+                $db->beginTransaction();
+                $startedTx = true;
             }
-            (new CrmLead())->update($sourceId, array_merge([
-                'status' => 'archived',
-                'workflow_status' => 'archived',
-                'deleted_at' => date('Y-m-d H:i:s'),
-                'notes' => 'Merged into lead #' . $targetId,
-            ], CrmSupport::actorFields(false)));
-        } else {
-            $moved['activities'] = $this->repoint('rateb_crm_activities', 'contact_id', $sourceId, $targetId);
-            (new CrmContact())->update($sourceId, array_merge([
-                'status' => 'archived',
-                'deleted_at' => date('Y-m-d H:i:s'),
-                'notes' => 'Merged into contact #' . $targetId,
-            ], CrmSupport::actorFields(false)));
+
+            if ($entityType === 'lead') {
+                $moved['activities'] = $this->repointBulk($db, 'rateb_crm_activities', 'lead_id', $sourceId, $targetId, $companyId);
+                $moved['opportunities'] = $this->repointBulk($db, 'rateb_crm_opportunities', 'lead_id', $sourceId, $targetId, $companyId);
+                $moved['notes'] = $this->repointBulkOptional($db, 'rateb_crm_notes', 'lead_id', $sourceId, $targetId, $companyId);
+                $this->archiveLead($db, $sourceId, $targetId, $companyId);
+            } else {
+                $moved['activities'] = $this->repointBulk($db, 'rateb_crm_activities', 'contact_id', $sourceId, $targetId, $companyId);
+                $this->archiveContact($db, $sourceId, $targetId, $companyId);
+            }
+
+            $check = $db->prepare(
+                "SELECT id FROM rateb_crm_merge_requests
+                 WHERE id = :id AND company_id = :cid AND status = 'pending' LIMIT 1"
+            );
+            $check->execute(['id' => $mergeId, 'cid' => $companyId]);
+            if ($check->fetch(PDO::FETCH_ASSOC) === false) {
+                throw new \RuntimeException('merge_not_found');
+            }
+
+            $upd = $db->prepare(
+                "UPDATE rateb_crm_merge_requests
+                 SET status = 'merged', merge_json = :mj, resolved_by = :uid, resolved_at = :at
+                 WHERE id = :id AND company_id = :cid AND status = 'pending'"
+            );
+            $upd->execute([
+                'mj' => json_encode($moved, JSON_UNESCAPED_UNICODE),
+                'uid' => CrmSupport::userId(),
+                'at' => date('Y-m-d H:i:s'),
+                'id' => $mergeId,
+                'cid' => $companyId,
+            ]);
+            if ($upd->rowCount() < 1) {
+                throw new \RuntimeException('merge_finalize_failed');
+            }
+
+            if ($startedTx) {
+                $db->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($startedTx && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            CrmObservability::logFailure('crm.merge.execute', $e, 'crm_merge_request', $mergeId);
+            throw $e;
         }
 
-        // Defense-in-depth: verify row still pending for this tenant before finalize.
-        $check = (new CrmMergeRequest())->queryOne(
-            "SELECT id FROM rateb_crm_merge_requests
-             WHERE id = :id AND company_id = :cid AND status = 'pending' LIMIT 1",
-            ['id' => $mergeId, 'cid' => $companyId]
-        );
-        if ($check === null) {
-            throw new \RuntimeException('merge_not_found');
-        }
-        (new CrmMergeRequest())->update($mergeId, [
-            'status' => 'merged',
-            'merge_json' => json_encode($moved, JSON_UNESCAPED_UNICODE),
-            'resolved_by' => CrmSupport::userId(),
-            'resolved_at' => date('Y-m-d H:i:s'),
-        ]);
         if (class_exists(AuditService::class)) {
             (new AuditService())->log('crm.merge.execute', 'crm_merge_request', $mergeId, [
                 'entity_type' => $entityType,
                 'source_id' => $sourceId,
                 'target_id' => $targetId,
                 'moved' => $moved,
+                'transactional' => true,
             ]);
         }
-        CrmObservability::logTiming('crm.merge.execute', 0.0, true, null, 'crm_merge_request', $mergeId);
+        CrmObservability::logTiming('crm.merge.execute', (microtime(true) - $t0) * 1000, true, null, 'crm_merge_request', $mergeId);
 
-        return ['id' => $mergeId, 'status' => 'merged', 'moved' => $moved];
+        return ['id' => $mergeId, 'status' => 'merged', 'moved' => $moved, 'transactional' => true];
     }
 
     public function reject(int $mergeId, ?string $reason = null): void
@@ -213,36 +235,75 @@ final class CrmDuplicateMergeService
         }
     }
 
-    private function repoint(string $table, string $column, int $fromId, int $toId): int
+    private function repointBulk(PDO $db, string $table, string $column, int $fromId, int $toId, int $companyId): int
     {
-        $companyId = CrmSupport::requireCompanyId();
         $allowed = [
             'rateb_crm_activities' => ['lead_id', 'contact_id'],
             'rateb_crm_opportunities' => ['lead_id'],
             'rateb_crm_notes' => ['lead_id'],
         ];
         if (!isset($allowed[$table]) || !in_array($column, $allowed[$table], true)) {
-            return 0;
+            throw new \InvalidArgumentException('invalid_repoint_target');
         }
-        $model = match ($table) {
-            'rateb_crm_activities' => new CrmActivity(),
-            'rateb_crm_opportunities' => new CrmOpportunity(),
-            'rateb_crm_notes' => new CrmNote(),
-            default => null,
-        };
-        if ($model === null) {
-            return 0;
-        }
-        $rows = $model->query(
-            "SELECT id FROM {$table} WHERE company_id = :cid AND {$column} = :fromId AND deleted_at IS NULL",
-            ['cid' => $companyId, 'fromId' => $fromId]
-        );
-        $n = 0;
-        foreach (is_array($rows) ? $rows : [] as $r) {
-            $model->update((int) $r['id'], [$column => $toId]);
-            ++$n;
-        }
+        $sql = "UPDATE {$table} SET {$column} = :toId
+                WHERE company_id = :cid AND {$column} = :fromId AND deleted_at IS NULL";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['toId' => $toId, 'cid' => $companyId, 'fromId' => $fromId]);
 
-        return $n;
+        return max(0, $stmt->rowCount());
+    }
+
+    /**
+     * Notes table / column may be absent on older tenants — never abort merge.
+     */
+    private function repointBulkOptional(PDO $db, string $table, string $column, int $fromId, int $toId, int $companyId): int
+    {
+        try {
+            return $this->repointBulk($db, $table, $column, $fromId, $toId, $companyId);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    private function archiveLead(PDO $db, int $sourceId, int $targetId, int $companyId): void
+    {
+        $actor = CrmSupport::actorFields(false);
+        $sql = "UPDATE rateb_crm_leads
+                SET status = 'archived', workflow_status = 'archived', deleted_at = :del,
+                    notes = :notes, updated_by = :ub, updated_at = :ua
+                WHERE id = :id AND company_id = :cid AND deleted_at IS NULL";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            'del' => date('Y-m-d H:i:s'),
+            'notes' => 'Merged into lead #' . $targetId,
+            'ub' => $actor['updated_by'] ?? CrmSupport::userId(),
+            'ua' => date('Y-m-d H:i:s'),
+            'id' => $sourceId,
+            'cid' => $companyId,
+        ]);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException('lead_archive_failed');
+        }
+    }
+
+    private function archiveContact(PDO $db, int $sourceId, int $targetId, int $companyId): void
+    {
+        $actor = CrmSupport::actorFields(false);
+        $sql = "UPDATE rateb_crm_contacts
+                SET status = 'archived', deleted_at = :del, notes = :notes,
+                    updated_by = :ub, updated_at = :ua
+                WHERE id = :id AND company_id = :cid AND deleted_at IS NULL";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            'del' => date('Y-m-d H:i:s'),
+            'notes' => 'Merged into contact #' . $targetId,
+            'ub' => $actor['updated_by'] ?? CrmSupport::userId(),
+            'ua' => date('Y-m-d H:i:s'),
+            'id' => $sourceId,
+            'cid' => $companyId,
+        ]);
+        if ($stmt->rowCount() < 1) {
+            throw new \RuntimeException('contact_archive_failed');
+        }
     }
 }

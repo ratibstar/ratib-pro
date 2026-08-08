@@ -75,6 +75,7 @@ $opsSection(__('crm'), [
     ['crm/governance', 'crm_governance', 'fa-shield-halved', 'crm', 'crm.governance.view'],
     ['crm/workflow-governance', 'crm_workflow_governance', 'fa-diagram-project', 'crm', 'crm.workflow.governance'],
     ['crm/data-quality', 'crm_data_quality_engine', 'fa-database', 'crm', 'crm.governance.view'],
+    ['crm/integrity', 'crm_data_integrity_audit', 'fa-shield', 'crm', 'crm.governance.view'],
     ['crm/teams', 'crm_sales_teams', 'fa-people-group', 'crm', 'crm.teams.view'],
     ['crm/admin', 'crm_admin_config', 'fa-sliders', 'crm', 'crm.config.manage'],
     ['crm/contacts', 'crm_contacts', 'fa-address-book', 'crm'],
