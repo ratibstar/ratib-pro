@@ -2265,17 +2265,35 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $existing = $this->model->find($id);
-        if (!$existing || !$this->roleInScope($existing)) {
+        if (!$existing) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
         }
+        if (!$this->roleInScope($existing)) {
+            $resolved = $this->resolveRoleForActiveCompany($existing);
+            if ($resolved === null) {
+                SessionManager::flash('error', __('invalid_request'));
+                $this->redirect(rateb_url($this->routePrefix));
+            }
+            $existing = $resolved;
+            $id = (int) $existing['id'];
+        }
         $data = $this->collectData();
+        // Keep system slug/name stable for seeded company roles; still allow description edits.
+        if (!empty($existing['is_system'])) {
+            unset($data['slug']);
+        }
         $permIds = array_map('intval', (array) $this->input('permission_ids', []));
         $this->model->update($id, $data);
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url($this->routePrefix));
+        $url = rateb_url($this->routePrefix);
+        $cid = $this->scopedCompanyId();
+        if ($cid > 0) {
+            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $cid;
+        }
+        $this->redirect($url);
     }
 
     /** @param array<int, int> $ids */

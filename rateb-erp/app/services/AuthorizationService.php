@@ -585,6 +585,7 @@ final class AuthorizationService
                 ['slug' => $slug, 'cid' => $companyId]
             );
             $roleId = (int) ($existing['id'] ?? 0);
+            $created = false;
             if ($roleId < 1) {
                 $roleId = $roleModel->create([
                     'company_id' => $companyId,
@@ -593,12 +594,16 @@ final class AuthorizationService
                     'description' => (string) $def['description'],
                     'is_system' => !empty($def['is_system']) ? 1 : 0,
                 ]);
+                $created = $roleId > 0;
             }
             if ($roleId < 1) {
                 continue;
             }
             if ($def['permissions'] === ['__company_full_access__']) {
-                $this->syncCompanyFullAccessPermissions($roleId);
+                // Seed full catalog only on first create — never wipe a saved custom matrix.
+                if ($created) {
+                    $this->syncCompanyFullAccessPermissions($roleId);
+                }
                 continue;
             }
             if (is_array($def['permissions'])) {
@@ -682,7 +687,8 @@ final class AuthorizationService
             return;
         }
         if ($slugs === ['__company_full_access__']) {
-            $this->syncCompanyFullAccessPermissions($roleId);
+            // Additive only — never wipe an admin-customized matrix.
+            $this->grantCompanyFullAccessPermissions($roleId);
 
             return;
         }
@@ -706,6 +712,27 @@ final class AuthorizationService
         if ($roleId < 1) {
             return;
         }
+        $this->syncRolePermissions($roleId, $this->companyFullAccessPermissionIds());
+    }
+
+    /** Add missing full-access permissions without removing customized ones. */
+    private function grantCompanyFullAccessPermissions(int $roleId): void
+    {
+        if ($roleId < 1) {
+            return;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)'
+        );
+        foreach ($this->companyFullAccessPermissionIds() as $pid) {
+            $stmt->execute(['rid' => $roleId, 'pid' => $pid]);
+        }
+    }
+
+    /** @return list<int> */
+    private function companyFullAccessPermissionIds(): array
+    {
         $config = self::permissionsConfig();
         $excluded = (array) ($config['company_role_excluded_slugs'] ?? []);
         if (self::isAgencyPermissionMatrixContext()) {
@@ -719,9 +746,13 @@ final class AuthorizationService
             if ($slug === '' || in_array($slug, $excluded, true)) {
                 continue;
             }
-            $ids[] = (int) ($row['id'] ?? 0);
+            $pid = (int) ($row['id'] ?? 0);
+            if ($pid > 0) {
+                $ids[] = $pid;
+            }
         }
-        $this->syncRolePermissions($roleId, array_values(array_filter($ids)));
+
+        return $ids;
     }
 
     public function refreshDedicatedCompanyAccessPermissions(): void
@@ -743,7 +774,8 @@ final class AuthorizationService
             return;
         }
         $roleId = (int) $role['id'];
-        $this->syncCompanyFullAccessPermissions($roleId);
+        // Additive only — preserve admin matrix customizations for the company.
+        $this->grantCompanyFullAccessPermissions($roleId);
         $config = self::permissionsConfig();
         $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
         if ($extra !== []) {
