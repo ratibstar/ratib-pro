@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 $data = $data ?? [];
-$fc = $data['forecast'] ?? [];
-$dq = $data['data_quality'] ?? [];
-$ch = $data['customer_health'] ?? [];
-$perf = $data['sales_performance'] ?? [];
-$auto = $data['automation'] ?? [];
-$rev = $data['revenue_pipeline'] ?? [];
+$fc = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
+$dq = is_array($data['data_quality'] ?? null) ? $data['data_quality'] : [];
+$ch = is_array($data['customer_health'] ?? null) ? $data['customer_health'] : [];
+$perf = is_array($data['sales_performance'] ?? null) ? $data['sales_performance'] : [];
+$auto = is_array($data['automation'] ?? null) ? $data['automation'] : [];
+$rev = is_array($data['revenue_pipeline'] ?? null) ? $data['revenue_pipeline'] : [];
+$fcEmpty = $fc === [] || isset($fc['error']);
+$dqEmpty = $dq === [] || isset($dq['error']);
 ?>
 <div class="container-fluid py-3">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -57,11 +59,35 @@ $rev = $data['revenue_pipeline'] ?? [];
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_enterprise_forecast'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <pre class="border rounded p-3 small bg-light" style="max-height:280px;overflow:auto"><?php echo htmlspecialchars(json_encode($fc, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '{}', ENT_QUOTES, 'UTF-8'); ?></pre>
+            <div class="border rounded p-3">
+                <?php if ($fcEmpty): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <dl class="row mb-0 small">
+                        <?php foreach (['period_key','confidence_score','weighted_amount','open_amount','won_amount','opportunity_count'] as $key): ?>
+                            <?php if (!array_key_exists($key, $fc)) { continue; } ?>
+                            <dt class="col-6 text-muted"><?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dd class="col-6"><?php echo htmlspecialchars(is_scalar($fc[$key]) ? (string) $fc[$key] : '', ENT_QUOTES, 'UTF-8'); ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_data_quality_engine'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <pre class="border rounded p-3 small bg-light" style="max-height:280px;overflow:auto"><?php echo htmlspecialchars(json_encode($dq, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '{}', ENT_QUOTES, 'UTF-8'); ?></pre>
+            <div class="border rounded p-3">
+                <?php if ($dqEmpty): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <dl class="row mb-0 small">
+                        <?php foreach (['quality_score','completeness_score','open_issues','duplicates','missing','ownership'] as $key): ?>
+                            <?php if (!array_key_exists($key, $dq)) { continue; } ?>
+                            <dt class="col-6 text-muted"><?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dd class="col-6"><?php echo htmlspecialchars(is_scalar($dq[$key]) ? (string) $dq[$key] : '', ENT_QUOTES, 'UTF-8'); ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>

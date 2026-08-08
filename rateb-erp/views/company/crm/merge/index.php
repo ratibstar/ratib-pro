@@ -56,8 +56,22 @@ $freshness = $freshness ?? [];
             </div>
             <?php endforeach; ?>
             <?php if (($pending ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
-            <h2 class="h5 mt-4">Freshness history</h2>
-            <pre class="border rounded p-3 small bg-light" style="max-height:220px;overflow:auto"><?php echo htmlspecialchars(json_encode($freshness_history ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '[]', ENT_QUOTES, 'UTF-8'); ?></pre>
+            <h2 class="h5 mt-4"><?php echo htmlspecialchars(__('crm_freshness_history'), ENT_QUOTES, 'UTF-8'); ?></h2>
+            <?php $hist = is_array($freshness_history ?? null) ? $freshness_history : []; ?>
+            <div class="border rounded p-3" style="max-height:220px;overflow:auto">
+                <?php if ($hist === []): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <ul class="list-unstyled small mb-0">
+                        <?php foreach ($hist as $h): ?>
+                        <li class="mb-2 pb-2 border-bottom">
+                            <?php echo htmlspecialchars((string) ($h['created_at'] ?? $h['checked_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                            · score <?php echo htmlspecialchars((string) ($h['freshness_score'] ?? $h['score'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>

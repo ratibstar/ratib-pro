@@ -45,7 +45,20 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_pipeline_health'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <pre class="border rounded p-3 small"><?php echo htmlspecialchars(json_encode($dash['extra']['pipeline_health'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?></pre>
+            <?php $health = is_array($dash['extra']['pipeline_health'] ?? null) ? $dash['extra']['pipeline_health'] : []; ?>
+            <div class="border rounded p-3">
+                <?php if ($health === []): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <dl class="row mb-0 small">
+                        <?php foreach ($health as $hk => $hv): ?>
+                            <?php if (!is_scalar($hv)) { continue; } ?>
+                            <dt class="col-6 text-muted"><?php echo htmlspecialchars((string) $hk, ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dd class="col-6"><?php echo htmlspecialchars((string) $hv, ENT_QUOTES, 'UTF-8'); ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
     <?php elseif ($role === 'manager'): ?>
@@ -82,7 +95,24 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_activity_intelligence'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <pre class="border rounded p-3 small"><?php echo htmlspecialchars(json_encode($dash['extra']['activity'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?></pre>
+            <?php $act = is_array($dash['extra']['activity'] ?? null) ? $dash['extra']['activity'] : []; ?>
+            <div class="border rounded p-3">
+                <?php if ($act === []): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <dl class="row mb-0 small">
+                        <?php foreach ([
+                            'activity_count', 'avg_response_hours', 'avg_follow_up_delay_hours',
+                            'conversion_impact_pct', 'activity_effectiveness_pct', 'won_with_activity',
+                            'won_total', 'conversions', 'tasks_in_period',
+                        ] as $ak): ?>
+                            <?php if (!array_key_exists($ak, $act) || !is_scalar($act[$ak])) { continue; } ?>
+                            <dt class="col-7 text-muted"><?php echo htmlspecialchars($ak, ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dd class="col-5"><?php echo htmlspecialchars((string) $act[$ak], ENT_QUOTES, 'UTF-8'); ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
     <?php endif; ?>

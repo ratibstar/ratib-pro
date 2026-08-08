@@ -20,8 +20,23 @@ $data = $data ?? [];
     </div>
     <div class="row g-3">
         <div class="col-lg-6">
-            <h2 class="h5">Quality trend</h2>
-            <pre class="border rounded p-3 small bg-light" style="max-height:280px;overflow:auto"><?php echo htmlspecialchars(json_encode($data['trend'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '[]', ENT_QUOTES, 'UTF-8'); ?></pre>
+            <h2 class="h5"><?php echo htmlspecialchars(__('crm_quality_trend'), ENT_QUOTES, 'UTF-8'); ?></h2>
+            <?php $trend = is_array($data['trend'] ?? null) ? $data['trend'] : []; ?>
+            <div class="border rounded p-3" style="max-height:280px;overflow:auto">
+                <?php if ($trend === []): ?>
+                    <?php require __DIR__ . '/../../partials/crm-empty.php'; ?>
+                <?php else: ?>
+                    <ul class="list-unstyled small mb-0">
+                        <?php foreach ($trend as $t): ?>
+                            <?php if (!is_array($t)) { continue; } ?>
+                            <li class="mb-2 pb-2 border-bottom">
+                                <?php echo htmlspecialchars((string) ($t['period'] ?? $t['created_at'] ?? $t['date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                · <?php echo htmlspecialchars((string) ($t['quality_score'] ?? $t['score'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="col-lg-6">
             <h2 class="h5">Resolution tracking</h2>
