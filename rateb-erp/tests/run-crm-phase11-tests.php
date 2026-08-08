@@ -82,12 +82,23 @@ foreach (['transaction_integrity', 'data_integrity', 'tenant_isolation', 'author
 c11_assert(str_contains($merge, 'merge_finalize_failed') || str_contains($merge, 'lead_archive_failed'), 'failure paths throw');
 c11_assert(preg_match('/catch\s*\(\s*\\\\?Throwable/', $merge) === 1, 'merge catch Throwable for rollback');
 
+echo "\n=== Intelligence HY093 guard ===\n";
+$engSrc = (string) file_get_contents($root . '/app/services/CrmUnifiedActivityIntelligenceService.php');
+c11_assert(str_contains($engSrc, '$activeParams'), 'salesEngagement uses activeParams only');
+c11_assert(str_contains($engSrc, '$touchedParams'), 'salesEngagement uses touchedParams');
+c11_assert(
+    preg_match('/workflow_status = \'open\' \{\$ownerFilter\}",\s*\$params\s*\)/', $engSrc) !== 1,
+    'active opps query no longer binds unused from/to'
+);
+
 echo "\n=== PHP lint (phase 11 files) ===\n";
 foreach ([
     'app/services/CrmDuplicateMergeService.php',
     'app/services/CrmDataIntegrityAuditService.php',
     'app/services/CrmEnterpriseCertificationService.php',
     'app/services/CrmPerformanceCertificationService.php',
+    'app/services/CrmUnifiedActivityIntelligenceService.php',
+    'app/services/CrmIntelligenceLayerService.php',
     'app/controllers/Company/CrmControllers.php',
     'routes/modules/ops.php',
     'views/company/crm/integrity/index.php',

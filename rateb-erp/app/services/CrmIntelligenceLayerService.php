@@ -18,19 +18,30 @@ final class CrmIntelligenceLayerService
      */
     public function analyze(?int $pipelineId = null): array
     {
-        $companyId = CrmSupport::requireCompanyId();
+        CrmSupport::requireCompanyId();
+        $safe = static function (callable $fn, mixed $fallback): mixed {
+            try {
+                return $fn();
+            } catch (\Throwable $e) {
+                return $fallback;
+            }
+        };
         $result = [
-            'scoring_evolution' => $this->opportunityScoringEvolution(),
-            'sales_trends' => $this->salesTrendDetection(),
-            'customer_risk_signals' => $this->customerRiskSignals(),
-            'pipeline_anomalies' => $this->pipelineAnomalyDetection($pipelineId),
+            'scoring_evolution' => $safe(fn () => $this->opportunityScoringEvolution(), []),
+            'sales_trends' => $safe(fn () => $this->salesTrendDetection(), ['direction' => 'stable', 'series' => []]),
+            'customer_risk_signals' => $safe(fn () => $this->customerRiskSignals(), []),
+            'pipeline_anomalies' => $safe(fn () => $this->pipelineAnomalyDetection($pipelineId), []),
         ];
         if (class_exists(AuditService::class)) {
-            (new AuditService())->log('crm.intelligence.calculate', 'crm_intelligence_layer', null, [
-                'pipeline_id' => $pipelineId,
-                'anomaly_count' => count($result['pipeline_anomalies']),
-                'risk_count' => count($result['customer_risk_signals']),
-            ]);
+            try {
+                (new AuditService())->log('crm.intelligence.calculate', 'crm_intelligence_layer', 0, [
+                    'pipeline_id' => $pipelineId,
+                    'anomaly_count' => is_array($result['pipeline_anomalies']) ? count($result['pipeline_anomalies']) : 0,
+                    'risk_count' => is_array($result['customer_risk_signals']) ? count($result['customer_risk_signals']) : 0,
+                ]);
+            } catch (\Throwable $e) {
+                // never block the page on audit
+            }
         }
 
         return $result;

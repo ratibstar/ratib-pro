@@ -16,23 +16,50 @@ final class CrmUnifiedActivityIntelligenceService
      */
     public function analyze(?int $ownerUserId = null, ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        $base = (new CrmActivityIntelligenceService())->analyze($ownerUserId, $dateFrom, $dateTo);
-        $patterns = $this->activityPatterns($ownerUserId, $dateFrom, $dateTo);
-        $delays = $this->responseDelays($ownerUserId, $dateFrom, $dateTo);
-        $engagement = $this->salesEngagement($ownerUserId, $dateFrom, $dateTo);
-        $reps = $this->repEffectiveness($dateFrom, $dateTo);
+        $safe = static function (callable $fn, mixed $fallback): mixed {
+            try {
+                return $fn();
+            } catch (\Throwable $e) {
+                return $fallback;
+            }
+        };
+        $base = $safe(
+            static fn () => (new CrmActivityIntelligenceService())->analyze($ownerUserId, $dateFrom, $dateTo),
+            [
+                'date_from' => $dateFrom ?: date('Y-m-d', strtotime('-30 days')),
+                'date_to' => $dateTo ?: date('Y-m-d'),
+                'owner_user_id' => $ownerUserId,
+                'activity_count' => 0,
+                'avg_response_hours' => 0.0,
+                'avg_follow_up_delay_hours' => 0.0,
+                'conversion_impact_pct' => 0.0,
+                'activity_effectiveness_pct' => 0.0,
+                'won_with_activity' => 0,
+                'won_total' => 0,
+                'conversions' => 0,
+                'tasks_in_period' => 0,
+            ]
+        );
+        $patterns = $safe(fn () => $this->activityPatterns($ownerUserId, $dateFrom, $dateTo), ['by_type' => [], 'by_day' => []]);
+        $delays = $safe(fn () => $this->responseDelays($ownerUserId, $dateFrom, $dateTo), ['avg_hours' => 0.0, 'overdue_open' => 0, 'samples' => 0]);
+        $engagement = $safe(fn () => $this->salesEngagement($ownerUserId, $dateFrom, $dateTo), ['active_opps' => 0, 'touched_opps' => 0, 'engagement_rate' => 0.0]);
+        $reps = $safe(fn () => $this->repEffectiveness($dateFrom, $dateTo), []);
 
-        $result = array_merge($base, [
+        $result = array_merge(is_array($base) ? $base : [], [
             'activity_patterns' => $patterns,
             'response_delays' => $delays,
             'sales_engagement' => $engagement,
             'rep_effectiveness' => $reps,
         ]);
         if (class_exists(AuditService::class)) {
-            (new AuditService())->log('crm.intelligence.calculate', 'crm_activity_intelligence', null, [
-                'owner_user_id' => $ownerUserId,
-                'activity_count' => (int) ($base['activity_count'] ?? 0),
-            ]);
+            try {
+                (new AuditService())->log('crm.intelligence.calculate', 'crm_activity_intelligence', 0, [
+                    'owner_user_id' => $ownerUserId,
+                    'activity_count' => (int) ($result['activity_count'] ?? 0),
+                ]);
+            } catch (\Throwable $e) {
+                // never block the page on audit
+            }
         }
 
         return $result;
@@ -123,25 +150,37 @@ final class CrmUnifiedActivityIntelligenceService
         $companyId = CrmSupport::requireCompanyId();
         $from = $dateFrom ?: date('Y-m-d', strtotime('-30 days'));
         $to = $dateTo ?: date('Y-m-d');
-        $params = ['cid' => $companyId, 'from' => $from . ' 00:00:00', 'to' => $to . ' 23:59:59'];
+        // Native PDO rejects unused named params (HY093) — bind only placeholders present in each SQL.
+        $activeParams = ['cid' => $companyId];
         $ownerFilter = '';
         if ($ownerUserId !== null && $ownerUserId > 0) {
             $ownerFilter = ' AND owner_user_id = :uid';
-            $params['uid'] = $ownerUserId;
+            $activeParams['uid'] = $ownerUserId;
         }
         $active = (int) (((new CrmOpportunity())->queryOne(
             "SELECT COUNT(*) AS c FROM rateb_crm_opportunities
              WHERE company_id = :cid AND deleted_at IS NULL AND workflow_status = 'open' {$ownerFilter}",
-            $params
+            $activeParams
         )['c'] ?? 0));
+
+        $touchedParams = [
+            'cid' => $companyId,
+            'from' => $from . ' 00:00:00',
+            'to' => $to . ' 23:59:59',
+        ];
+        $touchedOwner = '';
+        if ($ownerUserId !== null && $ownerUserId > 0) {
+            $touchedOwner = ' AND o.owner_user_id = :uid';
+            $touchedParams['uid'] = $ownerUserId;
+        }
         $touched = (int) (((new CrmOpportunity())->queryOne(
             "SELECT COUNT(DISTINCT o.id) AS c
              FROM rateb_crm_opportunities o
              INNER JOIN rateb_crm_activities a ON a.opportunity_id = o.id AND a.deleted_at IS NULL
                AND COALESCE(a.activity_at, a.created_at) BETWEEN :from AND :to
              WHERE o.company_id = :cid AND o.deleted_at IS NULL AND o.workflow_status = 'open'"
-            . ($ownerUserId !== null && $ownerUserId > 0 ? ' AND o.owner_user_id = :uid' : ''),
-            $params
+            . $touchedOwner,
+            $touchedParams
         )['c'] ?? 0));
         $rate = $active > 0 ? round(($touched / $active) * 100, 1) : 0.0;
 
