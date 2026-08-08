@@ -12,7 +12,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('name'); ?></label>
-                    <input class="form-control" name="name" value="<?php echo Rateb\App\Core\View::escape($item['name'] ?? ''); ?>" required>
+                    <input class="form-control" name="name" value="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_role_label') && is_array($item ?? null) ? rateb_role_label($item) : ($item['name'] ?? '')); ?>" required>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('slug'); ?></label>
@@ -20,7 +20,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('description'); ?></label>
-                    <input class="form-control" name="description" value="<?php echo Rateb\App\Core\View::escape($item['description'] ?? ''); ?>">
+                    <input class="form-control" name="description" value="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_role_description') && is_array($item ?? null) ? rateb_role_description($item) : ($item['description'] ?? '')); ?>">
                 </div>
             </div>
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
@@ -33,7 +33,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
             <?php foreach ($permissionGroups as $module => $perms) { ?>
             <div class="rateb-card mb-3">
                 <div class="rateb-card-header py-2 d-flex justify-content-between align-items-center">
-                    <span><?php echo Rateb\App\Core\View::escape(__( $module)); ?></span>
+                    <span><?php echo Rateb\App\Core\View::escape(function_exists('rateb_module_label') ? rateb_module_label((string) $module) : __($module)); ?></span>
                     <button type="button" class="btn btn-link btn-sm p-0" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
                 </div>
                 <div class="rateb-card-body">

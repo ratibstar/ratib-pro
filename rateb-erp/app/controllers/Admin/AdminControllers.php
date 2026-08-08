@@ -2196,7 +2196,25 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     {
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
-        if (!$item || !$this->roleInScope($item)) {
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        if (!$this->roleInScope($item)) {
+            // Platform admin switched company while editing a global/other-tenant role:
+            // rematch the same slug to the active company's role copy.
+            $resolved = $this->resolveRoleForActiveCompany($item);
+            if ($resolved !== null) {
+                $qid = (int) $resolved['id'];
+                $url = rateb_url($this->routePrefix . '/' . $qid . '/edit');
+                $cid = $this->scopedCompanyId();
+                if ($cid > 0) {
+                    $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $cid;
+                }
+                $this->redirect($url);
+                return;
+            }
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
@@ -2346,6 +2364,32 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }
 
         return (int) ($role['company_id'] ?? 0) === $companyId;
+    }
+
+    /**
+     * When a company is selected, map a platform/global role to that company's clone by slug.
+     *
+     * @param array<string, mixed> $role
+     * @return array<string, mixed>|null
+     */
+    private function resolveRoleForActiveCompany(array $role): ?array
+    {
+        $companyId = $this->scopedCompanyId();
+        $slug = trim((string) ($role['slug'] ?? ''));
+        if ($companyId < 1 || $slug === '') {
+            return null;
+        }
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $authz->ensureCompanyRoles($companyId);
+        $clone = $authz->findRoleBySlug($slug, $companyId);
+        if (!is_array($clone) || (int) ($clone['id'] ?? 0) < 1) {
+            return null;
+        }
+        if ((int) ($clone['id'] ?? 0) === (int) ($role['id'] ?? 0)) {
+            return null;
+        }
+
+        return $clone;
     }
 }
 

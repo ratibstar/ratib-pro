@@ -2243,6 +2243,10 @@ if (!function_exists('rateb_module_label')) {
         if ($module === '') {
             return '';
         }
+        $keyed = __('perm_module_' . $module);
+        if ($keyed !== 'perm_module_' . $module) {
+            return $keyed;
+        }
         if ($module === 'hr') {
             $hr = __('human_resources');
             if ($hr !== 'human_resources') {
