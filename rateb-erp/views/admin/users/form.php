@@ -22,6 +22,11 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php if (!empty($formHelp)) { ?>
+        <div class="alert alert-secondary py-2 small mb-3" role="status">
+            <?php echo Rateb\App\Core\View::escape((string) $formHelp); ?>
+        </div>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
@@ -48,7 +53,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     <label class="form-label"><?php echo __('companies'); ?></label>
                     <select class="form-select" name="company_id"<?php echo !empty($hideSuperAdminFlag) ? ' disabled' : ''; ?>>
                         <?php if (empty($hideSuperAdminFlag)) { ?>
-                        <option value=""><?php echo __('super_admin'); ?> / <?php echo __('platform'); ?></option>
+                        <option value=""><?php echo __('users_type_platform_sa'); ?> — <?php echo __('users_no_company'); ?></option>
                         <?php } ?>
                         <?php
                         $selectedCompanyId = (int) ($item['company_id'] ?? ($defaultCompanyId ?? 0));

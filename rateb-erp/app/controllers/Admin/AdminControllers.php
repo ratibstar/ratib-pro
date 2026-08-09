@@ -1773,67 +1773,91 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $companyId = $this->scopedCompanyId();
         $isPlatformSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
 
-        // Platform SA must always see other super-admins. Company scope previously hid them
-        // (is_super_admin=1 + company_id NULL), which made "users" look empty besides one POS user.
-        if ($companyId > 0 && $isPlatformSa) {
-            $items = $this->model->query(
-                'SELECT * FROM rateb_users
-                 WHERE (COALESCE(is_super_admin, 0) = 1)
-                    OR (COALESCE(is_super_admin, 0) = 0 AND company_id = :cid)
-                 ORDER BY COALESCE(is_super_admin, 0) DESC, id DESC
-                 LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset,
-                ['cid' => $companyId]
-            );
-            $total = (int) ($this->model->queryOne(
-                'SELECT COUNT(*) AS c FROM rateb_users
-                 WHERE (COALESCE(is_super_admin, 0) = 1)
-                    OR (COALESCE(is_super_admin, 0) = 0 AND company_id = :cid)',
-                ['cid' => $companyId]
-            )['c'] ?? 0);
-        } elseif ($companyId > 0) {
-            $items = $this->model->query(
-                'SELECT * FROM rateb_users
-                 WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid
-                 ORDER BY id DESC LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset,
-                ['cid' => $companyId]
-            );
-            $total = (int) ($this->model->queryOne(
-                'SELECT COUNT(*) AS c FROM rateb_users
-                 WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid',
-                ['cid' => $companyId]
-            )['c'] ?? 0);
-        } else {
-            $items = $this->model->query(
-                'SELECT * FROM rateb_users
-                 ORDER BY COALESCE(is_super_admin, 0) DESC, id DESC
-                 LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset
-            );
-            $total = (int) ($this->model->queryOne('SELECT COUNT(*) AS c FROM rateb_users')['c'] ?? 0);
+        // Do NOT mix platform super-admins into a company users list.
+        // scope=company (default when ops company selected) | platform | all
+        $scopeRaw = strtolower(trim((string) $this->input('scope', '')));
+        if (!in_array($scopeRaw, ['company', 'platform', 'all'], true)) {
+            $scopeRaw = ($companyId > 0) ? 'company' : ($isPlatformSa ? 'all' : 'company');
         }
+        if (!$isPlatformSa) {
+            $scopeRaw = 'company';
+        }
+        if ($scopeRaw === 'company' && $companyId < 1 && $isPlatformSa) {
+            $scopeRaw = 'all';
+        }
+
+        $where = '1=1';
+        $params = [];
+        if ($scopeRaw === 'platform') {
+            $where = 'COALESCE(is_super_admin, 0) = 1';
+        } elseif ($scopeRaw === 'company') {
+            $where = 'COALESCE(is_super_admin, 0) = 0 AND company_id = :cid';
+            $params['cid'] = $companyId;
+        } elseif ($companyId > 0) {
+            // all = company users for ops company + every platform SA (still labeled separately)
+            $where = '(COALESCE(is_super_admin, 0) = 1)
+                   OR (COALESCE(is_super_admin, 0) = 0 AND company_id = :cid)';
+            $params['cid'] = $companyId;
+        }
+
+        $items = $this->model->query(
+            'SELECT * FROM rateb_users WHERE ' . $where . '
+             ORDER BY COALESCE(is_super_admin, 0) DESC, id DESC
+             LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset,
+            $params
+        );
+        $total = (int) ($this->model->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_users WHERE ' . $where,
+            $params
+        )['c'] ?? 0);
+
+        $companyNames = [];
         foreach ($items as &$row) {
             $row['roles_list'] = $authz->getUserRoleNames((int) $row['id']);
-            if (!empty($row['is_super_admin'])) {
-                $row['roles_list'] = __('super_admin') . ($row['roles_list'] !== '' ? ' · ' . $row['roles_list'] : '');
-                if ((int) ($row['company_id'] ?? 0) < 1) {
-                    $row['company_id'] = '—';
+            $isSa = !empty($row['is_super_admin']);
+            $cid = (int) ($row['company_id'] ?? 0);
+            $row['account_type'] = $isSa ? __('users_type_platform_sa') : __('users_type_company');
+            if ($isSa) {
+                $row['company_label'] = '—';
+                $row['roles_list'] = __('super_admin')
+                    . ($row['roles_list'] !== '' ? ' · ' . $row['roles_list'] : '');
+            } else {
+                if ($cid > 0) {
+                    if (!isset($companyNames[$cid])) {
+                        $co = (new \Rateb\App\Models\Company())->find($cid);
+                        $companyNames[$cid] = $co
+                            ? ((string) ($co['name'] ?? '') . ' (#' . $cid . ')')
+                            : ('#' . $cid);
+                    }
+                    $row['company_label'] = $companyNames[$cid];
+                } else {
+                    $row['company_label'] = __('users_no_company');
                 }
             }
         }
         unset($row);
 
         $displayFields = [
+            ['name' => 'account_type', 'label' => 'account_type'],
             ['name' => 'name', 'label' => 'name'],
             ['name' => 'email', 'label' => 'email'],
             ['name' => 'phone', 'label' => 'phone'],
-            ['name' => 'company_id', 'label' => 'company_id'],
+            ['name' => 'company_label', 'label' => 'companies'],
             ['name' => 'roles_list', 'label' => 'roles'],
             ['name' => 'status', 'label' => 'status'],
             ['name' => 'locale', 'label' => 'language'],
         ];
 
-        $listHelp = $isPlatformSa
-            ? __('users_list_includes_super_admins')
-            : '';
+        $listHelp = '';
+        if ($isPlatformSa) {
+            if ($scopeRaw === 'company') {
+                $listHelp = __('users_list_company_only');
+            } elseif ($scopeRaw === 'platform') {
+                $listHelp = __('users_list_platform_only');
+            } else {
+                $listHelp = __('users_list_all_separated');
+            }
+        }
 
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
@@ -1848,6 +1872,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
             'listHelp' => $listHelp,
+            'usersScope' => $scopeRaw,
+            'usersScopeCompanyId' => $companyId,
+            'showUsersScopeTabs' => $isPlatformSa,
         ], $this->layout());
     }
 
@@ -1897,6 +1924,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 static fn (array $row): bool => (int) ($row['id'] ?? 0) === $companyId
             ))
             : (new \Rateb\App\Models\Company())->all(200, 0);
+        $formHelp = '';
+        if ($companyId > 0) {
+            $formHelp = __('users_create_company_hint');
+        } elseif (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            $formHelp = __('users_create_platform_hint');
+        }
+
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('users'),
             'item' => $item,
@@ -1911,6 +1945,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'isSuperAdmin' => !empty($item['is_super_admin']),
             'hideSuperAdminFlag' => $companyId > 0,
             'defaultCompanyId' => $companyId > 0 ? $companyId : null,
+            'formHelp' => $formHelp,
             'loginBarcode' => $barcode,
             'badgeScanQrUrl' => $badgeScanQrUrl,
             'badgeLoginUrl' => $badgeLoginUrl,
@@ -2087,8 +2122,12 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
         $scopedCompanyId = $this->scopedCompanyId();
         if ($scopedCompanyId > 0) {
+            // Ops company selected ⇒ always a tenant user, never platform SA.
             $data['is_super_admin'] = 0;
             $data['company_id'] = $scopedCompanyId;
+        } elseif (!empty($data['is_super_admin'])) {
+            // Platform SA accounts must not belong to a tenant company.
+            $data['company_id'] = null;
         } elseif ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
             $data['company_id'] = null;
         } else {
