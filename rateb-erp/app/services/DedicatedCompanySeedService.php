@@ -439,7 +439,7 @@ final class DedicatedCompanySeedService
                 ['slug' => $slug]
             );
         }
-        if ($plan === null && in_array($slug, ['starter', 'professional', 'enterprise'], true)) {
+        if ($plan === null && in_array($slug, PlanLimitService::canonicalSlugs(), true)) {
             // Ensure canonical marketing tiers exist, then retry (agency DBs can lag).
             try {
                 (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());

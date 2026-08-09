@@ -26,6 +26,12 @@ final class PlanLimitService
         return is_array($tiers) ? $tiers : [];
     }
 
+    /** @return list<string> */
+    public static function canonicalSlugs(): array
+    {
+        return array_keys(self::tierDefinitions());
+    }
+
     /** @return array<string, mixed>|null */
     public static function tierForSlug(string $slug): ?array
     {
@@ -253,7 +259,7 @@ final class PlanLimitService
                 return $cached;
             }
             $slug = strtolower(trim((string) ($agency['erp_plan_slug'] ?? '')));
-            if (in_array($slug, ['starter', 'professional', 'enterprise'], true)) {
+            if (in_array($slug, self::canonicalSlugs(), true)) {
                 $cached = $slug;
             }
         } catch (\Throwable $e) {

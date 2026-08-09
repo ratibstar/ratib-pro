@@ -6,11 +6,23 @@ use Rateb\App\Services\CmsService;
 $intro = $content['intro']['section'] ?? null;
 
 if (empty($plans)) {
-    $plans = [
-        ['slug' => 'starter', 'name' => 'Starter', 'description' => 'Basic procurement for clinics.', 'price_monthly' => 1500, 'price_yearly' => 18000, 'max_users' => 5, 'max_branches' => 3],
-        ['slug' => 'professional', 'name' => 'Professional', 'description' => 'Full procurement and inventory package.', 'price_monthly' => 1800, 'price_yearly' => 21600, 'max_users' => 25, 'max_branches' => 5],
-        ['slug' => 'enterprise', 'name' => 'Enterprise', 'description' => 'Complete health ERP system.', 'price_monthly' => 3000, 'price_yearly' => 36000, 'max_users' => 100, 'max_branches' => 25],
-    ];
+    $fallback = [];
+    foreach (\Rateb\App\Services\PlanLimitService::tierDefinitions() as $slug => $tier) {
+        if (!is_array($tier)) {
+            continue;
+        }
+        $fallback[] = [
+            'slug' => (string) $slug,
+            'name' => (string) ($tier['name'] ?? $slug),
+            'description' => (string) ($tier['description'] ?? ''),
+            'price_monthly' => (float) ($tier['price_monthly'] ?? 0),
+            'price_yearly' => (float) ($tier['price_yearly'] ?? 0),
+            'max_users' => (int) ($tier['max_users'] ?? 0),
+            'max_branches' => (int) ($tier['max_branches'] ?? 0),
+            'modules' => json_encode($tier['modules'] ?? [], JSON_UNESCAPED_UNICODE),
+        ];
+    }
+    $plans = $fallback;
 }
 ?>
 <section class="rateb-mkt-page-hero">

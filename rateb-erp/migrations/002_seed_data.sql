@@ -3,9 +3,12 @@ SET NAMES utf8mb4;
 
 INSERT INTO rateb_plans (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, modules, is_active)
 VALUES
-('Starter', 'starter', 'Essential procurement for small clinics', 299.00, 2990.00, 5, 512, '["procurement","inventory","suppliers"]', 1),
-('Professional', 'professional', 'Full procurement and inventory suite', 799.00, 7990.00, 25, 2048, '["procurement","inventory","suppliers","assets","contracts","reports"]', 1),
-('Enterprise', 'enterprise', 'Complete healthcare ERP with all modules', 1999.00, 19990.00, 100, 10240, '["procurement","inventory","suppliers","assets","contracts","tenders","reports","medical_devices"]', 1)
+('Launch', 'launch', 'Start with the control panel, alerts, and essential reporting', 990.00, 10900.00, 3, 256, '["dashboard","notifications","profile","reports"]', 1),
+('Starter', 'starter', 'Core purchasing operations for clinics and small establishments', 1500.00, 16000.00, 8, 512, '["dashboard","notifications","profile","reports","procurement","inventory","suppliers"]', 1),
+('Commerce', 'commerce', 'Sell, stock, and deliver with POS, logistics, and marketplace', 1990.00, 21900.00, 20, 2048, '["dashboard","notifications","profile","reports","procurement","inventory","suppliers","pos","logistics","marketplace","branches"]', 1),
+('Professional', 'professional', 'Grow with HR, CRM, projects, accounting, and approvals', 2490.00, 26900.00, 50, 5120, '["dashboard","notifications","profile","reports","procurement","inventory","suppliers","pos","logistics","marketplace","branches","hr","recruitment","crm","projects","approval","accounting","assets","contracts","documents","workflows"]', 1),
+('Enterprise', 'enterprise', 'Industrial depth: manufacturing, payroll, quality, BI, and website', 3490.00, 37900.00, 150, 15360, '["dashboard","notifications","profile","reports","procurement","inventory","suppliers","pos","logistics","marketplace","branches","hr","recruitment","crm","projects","approval","accounting","assets","contracts","documents","workflows","manufacturing","payroll","quality","bi","website","tenders","medical_devices"]', 1),
+('Ultimate', 'ultimate', 'Full Rateb ERP platform with governance and access control', 4990.00, 53900.00, 500, 51200, '["dashboard","procurement","inventory","suppliers","assets","contracts","tenders","reports","medical_devices","accounting","documents","workflows","notifications","access_control","profile","hr","branches","pos","recruitment","crm","projects","approval","manufacturing","payroll","quality","bi","website","logistics","marketplace"]', 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 INSERT INTO rateb_permissions (name, slug, module, description) VALUES

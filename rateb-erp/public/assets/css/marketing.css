@@ -727,6 +727,18 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
 .rateb-mkt-plan-card--featured {
     border-color: var(--cms-primary);
     box-shadow: 0 0 0 1px rgba(26, 95, 180, 0.15);
+    transform: translateY(-4px);
+}
+
+.rateb-mkt-plans-row .rateb-mkt-plan-card--full {
+    height: 100%;
+    min-height: 100%;
+}
+
+@media (min-width: 992px) {
+    .rateb-mkt-plans-row .rateb-mkt-plan-desc {
+        min-height: 3.2rem;
+    }
 }
 
 .rateb-mkt-plan-badge {

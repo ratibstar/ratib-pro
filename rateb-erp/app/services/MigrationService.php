@@ -101,16 +101,20 @@ final class MigrationService
         }
 
         try {
+            $slugs = class_exists(PlanLimitService::class)
+                ? PlanLimitService::canonicalSlugs()
+                : ['launch', 'starter', 'commerce', 'professional', 'enterprise', 'ultimate'];
+            if ($slugs === []) {
+                return $localLog;
+            }
+            $inList = implode(',', array_map(static fn (string $s): string => $pdo->quote($s), $slugs));
             $stmt = $pdo->query(
                 "SELECT slug, max_users, max_branches, price_monthly FROM rateb_plans
-                 WHERE slug IN ('starter','professional','enterprise')"
+                 WHERE slug IN ({$inList})"
             );
             $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
             if ($stmt) {
                 $this->drainStatement($stmt);
-            }
-            if ($rows === []) {
-                return $localLog;
             }
             foreach ($rows as $row) {
                 $slug = (string) ($row['slug'] ?? '');
@@ -125,62 +129,153 @@ final class MigrationService
         }
 
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
-        $catchup = $root . '/migrations/148_marketing_plans_canonical.sql';
-        if (!is_file($catchup)) {
-            return $localLog;
-        }
-        $sql = file_get_contents($catchup);
-        if ($sql === false || trim($sql) === '') {
-            return $localLog;
-        }
-        $log[] = 'Applying marketing plans canonical catchup (148)…';
-        $this->execSqlFile($pdo, $sql);
-        if (!$this->isApplied($pdo, '148_marketing_plans_canonical.sql')) {
-            $this->markApplied($pdo, '148_marketing_plans_canonical.sql');
-        }
 
-        // Prefer config/plan-tiers.php module bundles over any stale SQL snapshot.
-        $this->syncPlanTierModulesFromConfig($pdo, $log);
+        // Prefer config/plan-tiers.php as the single source of truth (6 packages).
+        $this->syncPlanTiersFromConfig($pdo, $log);
 
-        $catchup227 = $root . '/migrations/227_plan_tiers_logistics_modules.sql';
-        if (is_file($catchup227) && !$this->isApplied($pdo, '227_plan_tiers_logistics_modules.sql')) {
-            $sql227 = file_get_contents($catchup227);
-            if (is_string($sql227) && trim($sql227) !== '') {
-                $log[] = 'Applying plan tiers logistics modules catchup (227)…';
-                $this->execSqlFile($pdo, $sql227);
-                $this->markApplied($pdo, '227_plan_tiers_logistics_modules.sql');
+        $catchup241 = $root . '/migrations/241_plan_tiers_six_packages.sql';
+        if (is_file($catchup241) && !$this->isApplied($pdo, '241_plan_tiers_six_packages.sql')) {
+            $sql241 = file_get_contents($catchup241);
+            if (is_string($sql241) && trim($sql241) !== '') {
+                $log[] = 'Applying six-package plan tiers catchup (241)…';
+                $this->execSqlFile($pdo, $sql241);
+                $this->markApplied($pdo, '241_plan_tiers_six_packages.sql');
+                $this->syncPlanTiersFromConfig($pdo, $log);
             }
         }
 
-        $log[] = 'Marketing plans catchup: limits + modules synced from plan-tiers.';
+        $log[] = 'Marketing plans catchup: six packages synced from plan-tiers.';
 
         return $localLog;
+    }
+
+    /** Upsert every tier from config/plan-tiers.php (prices, limits, modules, active). */
+    /** @param list<string> $log */
+    private function syncPlanTiersFromConfig(PDO $pdo, array &$log): void
+    {
+        if (!class_exists(PlanLimitService::class)) {
+            return;
+        }
+        $tiers = PlanLimitService::tierDefinitions();
+        if ($tiers === []) {
+            return;
+        }
+
+        $hasBranches = false;
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM rateb_plans LIKE 'max_branches'");
+            $hasBranches = $col !== false && (bool) $col->fetch(\PDO::FETCH_ASSOC);
+            if ($col) {
+                $this->drainStatement($col);
+            }
+        } catch (\Throwable $e) {
+            $hasBranches = false;
+        }
+
+        foreach ($tiers as $slug => $tier) {
+            if (!is_array($tier)) {
+                continue;
+            }
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '') {
+                continue;
+            }
+            $modules = PlanLimitService::modulesForSlug($slug);
+            $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
+            if (!is_string($json) || $json === '') {
+                continue;
+            }
+            $name = (string) ($tier['name'] ?? ucfirst($slug));
+            $description = (string) ($tier['description'] ?? '');
+            $priceMonthly = (float) ($tier['price_monthly'] ?? 0);
+            $priceYearly = (float) ($tier['price_yearly'] ?? 0);
+            $maxUsers = (int) ($tier['max_users'] ?? 5);
+            $maxStorage = (int) ($tier['max_storage_mb'] ?? 512);
+            $maxBranches = (int) ($tier['max_branches'] ?? 1);
+
+            try {
+                if ($hasBranches) {
+                    $sql = 'INSERT INTO rateb_plans
+                        (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, max_branches, modules, is_active)
+                        VALUES
+                        (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :max_branches, :modules, 1)
+                        ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        description = VALUES(description),
+                        price_monthly = VALUES(price_monthly),
+                        price_yearly = VALUES(price_yearly),
+                        max_users = VALUES(max_users),
+                        max_storage_mb = VALUES(max_storage_mb),
+                        max_branches = VALUES(max_branches),
+                        modules = VALUES(modules),
+                        is_active = 1';
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        'name' => $name,
+                        'slug' => $slug,
+                        'description' => $description,
+                        'price_monthly' => $priceMonthly,
+                        'price_yearly' => $priceYearly,
+                        'max_users' => $maxUsers,
+                        'max_storage_mb' => $maxStorage,
+                        'max_branches' => $maxBranches,
+                        'modules' => $json,
+                    ]);
+                } else {
+                    $sql = 'INSERT INTO rateb_plans
+                        (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, modules, is_active)
+                        VALUES
+                        (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :modules, 1)
+                        ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        description = VALUES(description),
+                        price_monthly = VALUES(price_monthly),
+                        price_yearly = VALUES(price_yearly),
+                        max_users = VALUES(max_users),
+                        max_storage_mb = VALUES(max_storage_mb),
+                        modules = VALUES(modules),
+                        is_active = 1';
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        'name' => $name,
+                        'slug' => $slug,
+                        'description' => $description,
+                        'price_monthly' => $priceMonthly,
+                        'price_yearly' => $priceYearly,
+                        'max_users' => $maxUsers,
+                        'max_storage_mb' => $maxStorage,
+                        'modules' => $json,
+                    ]);
+                }
+                $this->drainStatement($stmt);
+                $log[] = 'Plan tier synced from config: ' . $slug . ' (' . count($modules) . ' modules)';
+            } catch (\Throwable $e) {
+                $log[] = 'Plan tier sync failed for ' . $slug . ': ' . $e->getMessage();
+            }
+        }
+
+        try {
+            $canonical = array_keys($tiers);
+            if ($canonical === []) {
+                return;
+            }
+            $inList = implode(',', array_map(static fn (string $s): string => $pdo->quote(strtolower(trim($s))), $canonical));
+            $stmt = $pdo->exec(
+                "UPDATE rateb_plans SET is_active = 0
+                 WHERE slug NOT IN ({$inList}) AND is_active = 1"
+            );
+            if ($stmt !== false) {
+                $log[] = 'Non-canonical plans deactivated.';
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Plan deactivate skipped: ' . $e->getMessage();
+        }
     }
 
     /** @param list<string> $log */
     private function syncPlanTierModulesFromConfig(PDO $pdo, array &$log): void
     {
-        if (!class_exists(PlanLimitService::class)) {
-            return;
-        }
-        foreach (['starter', 'professional', 'enterprise'] as $slug) {
-            $modules = PlanLimitService::modulesForSlug($slug);
-            if ($modules === []) {
-                continue;
-            }
-            $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
-            if (!is_string($json) || $json === '') {
-                continue;
-            }
-            try {
-                $stmt = $pdo->prepare('UPDATE rateb_plans SET modules = :modules WHERE slug = :slug');
-                $stmt->execute(['modules' => $json, 'slug' => $slug]);
-                $this->drainStatement($stmt);
-                $log[] = 'Plan modules synced from config: ' . $slug . ' (' . count($modules) . ')';
-            } catch (\Throwable $e) {
-                $log[] = 'Plan modules sync failed for ' . $slug . ': ' . $e->getMessage();
-            }
-        }
+        $this->syncPlanTiersFromConfig($pdo, $log);
     }
 
     /** @return list<string> */

@@ -7,7 +7,7 @@ use Rateb\App\Models\Plan;
 
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
-$tierPresets = $tierPresets ?? ['starter', 'professional', 'enterprise'];
+$tierPresets = $tierPresets ?? array_keys(\Rateb\App\Services\PlanLimitService::tierDefinitions());
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>

@@ -18,7 +18,7 @@ $featuredSlug = 'professional';
         <?php if (!empty($sectionLead)) { ?>
         <p class="rateb-mkt-section-lead text-center mb-4"><?php echo Rateb\App\Core\View::escape((string) $sectionLead); ?></p>
         <?php } ?>
-        <div id="ratebMktPricingPackages" class="row g-3 justify-content-center">
+        <div id="ratebMktPricingPackages" class="row g-3 justify-content-center rateb-mkt-plans-row">
             <?php foreach ($plans as $plan) {
                 $slug = trim((string) ($plan['slug'] ?? ''));
                 $isFeatured = $slug === $featuredSlug;

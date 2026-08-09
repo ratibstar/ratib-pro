@@ -1619,8 +1619,15 @@ if (!function_exists('rateb_normalize_marketing_plan_slug')) {
         if (isset($legacy[$slug])) {
             $slug = $legacy[$slug];
         }
+        $canonical = ['launch', 'starter', 'commerce', 'professional', 'enterprise', 'ultimate'];
+        if (class_exists(\Rateb\App\Services\PlanLimitService::class)) {
+            $fromConfig = array_keys(\Rateb\App\Services\PlanLimitService::tierDefinitions());
+            if ($fromConfig !== []) {
+                $canonical = $fromConfig;
+            }
+        }
 
-        return in_array($slug, ['starter', 'professional', 'enterprise'], true) ? $slug : '';
+        return in_array($slug, $canonical, true) ? $slug : '';
     }
 }
 
@@ -1630,9 +1637,12 @@ if (!function_exists('rateb_erp_plan_to_checkout_slug')) {
     {
         $slug = strtolower(trim($erpPlan));
         $map = [
+            'launch' => 'pro',
             'starter' => 'pro',
+            'commerce' => 'gold',
             'professional' => 'gold',
             'enterprise' => 'platinum',
+            'ultimate' => 'platinum',
             'pro' => 'pro',
             'gold' => 'gold',
             'platinum' => 'platinum',
