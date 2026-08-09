@@ -2901,6 +2901,18 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             ? rateb_request_company_id()
             : (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
 
+        // Platform SA: picker can clear tenant scope (?company_id=0) to manage platform users.
+        if ($isSuper && array_key_exists('company_id', $_GET)) {
+            $rawPicker = trim((string) ($_GET['company_id'] ?? ''));
+            if ($rawPicker === '' || $rawPicker === '0') {
+                rateb_clear_ops_company_session();
+                $state['resolved'] = 0;
+                $state['resolved_set'] = true;
+
+                return 0;
+            }
+        }
+
         // Platform super-admin: honour ops company picker (?company_id=) over any leftover
         // rateb_company_id from a previous tenant preview (fixes ddd/22 ignored for 228).
         if ($isSuper && $fromRequest > 0) {

@@ -47,8 +47,10 @@ foreach ($companies as $c) {
             <?php } ?>
             <div class="col-md-5">
                 <label class="form-label mb-1"><?php echo __('select_company'); ?></label>
-                <select class="form-select" name="company_id" required onchange="this.form.submit()">
-                    <option value=""><?php echo __('select_company'); ?>…</option>
+                <select class="form-select" name="company_id" onchange="this.form.submit()">
+                    <option value="0"<?php echo $selectedId < 1 ? ' selected' : ''; ?>>
+                        <?php echo __('ops_company_platform_mode'); ?>
+                    </option>
                     <?php foreach ($companies as $c) { ?>
                     <option value="<?php echo (int) $c['id']; ?>"<?php echo $selectedId === (int) $c['id'] ? ' selected' : ''; ?>>
                         <?php echo Rateb\App\Core\View::escape($c['name'] ?? ''); ?>
@@ -71,5 +73,5 @@ foreach ($companies as $c) {
     </div>
 </div>
 <?php if ($selectedId < 1 && $companies !== []) { ?>
-<div class="alert alert-warning"><?php echo __('select_company_ops'); ?></div>
+<div class="alert alert-secondary py-2"><?php echo __('ops_company_platform_mode_help'); ?></div>
 <?php } ?>

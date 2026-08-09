@@ -1730,6 +1730,8 @@ return [
     'closed' => 'Closed',
     'select_company_ops' => 'Select a company to work on its data (procurement, inventory, assets, accounting…).',
     'ops_company_select_help' => 'As platform admin, pick a company from the list above, then continue. Your choice is remembered for this session.',
+    'ops_company_platform_mode' => 'Platform (no company) — manage super admins',
+    'ops_company_platform_mode_help' => 'Platform mode: to create a super admin open Users → Create and enable Platform Super Admin. Pick a company above for tenant data.',
     'agency_erp_push_title' => 'Push updates to agencies',
     'agency_erp_control_intro' => 'Select agencies, then run file sync and/or database migrations. To wipe business data use Reset data on Control Panel → Manage Agencies (not here).',
     'agency_erp_reset_moved_hint' => 'Data reset (RESET-DATA) is on Control Panel → Manage Agencies → Reset data next to Provision ERP. This page is for updates/migrations only.',
