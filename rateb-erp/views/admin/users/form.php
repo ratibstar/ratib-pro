@@ -9,6 +9,12 @@
 /** @var array<int, array<int, array{value:int,label:string}>> $branchesByCompany */
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+if (!empty($platformUserForm)) {
+    // Keep for=platform on POST action so ops company scope cannot rewrite the save.
+    $action = function_exists('rateb_url_query')
+        ? rateb_url_query($isEdit ? rateb_url('admin/users/' . (int) $item['id']) : rateb_url('admin/users'), ['for' => 'platform'])
+        : ($action . (str_contains($action, '?') ? '&' : '?') . 'for=platform');
+}
 ?>
 <?php if ($isEdit && !empty($loginBarcode)) {
     Rateb\App\Core\View::partial('login-badge-card', [
@@ -22,7 +28,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <?php if (!empty($formHelp)) { ?>
+        <?php if (!empty($formHelp) && empty($platformUserForm)) { ?>
         <div class="alert alert-secondary py-2 small mb-3" role="status">
             <?php echo Rateb\App\Core\View::escape((string) $formHelp); ?>
         </div>
@@ -54,6 +60,10 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                 </div>
                 <div class="col-md-4">
                     <label class="form-label"><?php echo __('companies'); ?></label>
+                    <?php if (!empty($platformUserForm)) { ?>
+                    <input type="hidden" name="company_id" value="">
+                    <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape(__('users_type_platform_sa') . ' — ' . __('users_no_company')); ?>" disabled>
+                    <?php } else { ?>
                     <select class="form-select" name="company_id"<?php echo !empty($hideSuperAdminFlag) ? ' disabled' : ''; ?>>
                         <?php if (empty($hideSuperAdminFlag)) { ?>
                         <option value=""><?php echo __('users_type_platform_sa'); ?> — <?php echo __('users_no_company'); ?></option>
@@ -68,6 +78,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     </select>
                     <?php if (!empty($hideSuperAdminFlag) && !empty($defaultCompanyId)) { ?>
                     <input type="hidden" name="company_id" value="<?php echo (int) $defaultCompanyId; ?>">
+                    <?php } ?>
                     <?php } ?>
                 </div>
                 <div class="col-md-4">
@@ -86,7 +97,13 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     </select>
                 </div>
                 <div class="col-12">
-                    <?php if (empty($hideSuperAdminFlag)) { ?>
+                    <?php if (!empty($platformUserForm)) { ?>
+                    <input type="hidden" name="is_super_admin" value="1">
+                    <div class="alert alert-success py-2 small mb-0">
+                        <i class="fas fa-shield-halved me-1"></i>
+                        <?php echo Rateb\App\Core\View::escape(__('users_create_platform_sa_hint')); ?>
+                    </div>
+                    <?php } elseif (empty($hideSuperAdminFlag)) { ?>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_super_admin" value="1" id="is_super_admin"<?php echo !empty($isSuperAdmin) ? ' checked' : ''; ?>>
                         <label class="form-check-label" for="is_super_admin"><?php echo __('super_admin'); ?></label>

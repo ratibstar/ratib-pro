@@ -1859,9 +1859,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             }
         }
 
+        // Always use /admin/users/create (platform route), not /admin/ops/users/create —
+        // ops path + selected company was forcing company users even from the SA tab.
         $createUrl = rateb_url($this->routePrefix . '/create');
         if ($isPlatformSa && $scopeRaw === 'platform') {
-            $createUrl = rateb_url_query($createUrl, ['for' => 'platform']);
+            $createUrl = rateb_url_query(rateb_url('admin/users/create'), ['for' => 'platform']);
         }
 
         $this->view($this->viewPrefix . '/index', [
@@ -1886,6 +1888,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
 
     public function create(): void
     {
+        if ($this->wantsPlatformUserForm()) {
+            SessionManager::set('_rateb_users_form_platform', 1);
+        } else {
+            SessionManager::forget('_rateb_users_form_platform');
+        }
         $this->view($this->viewPrefix . '/form', $this->userFormData(null), $this->layout());
     }
 
@@ -1897,8 +1904,18 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $for = strtolower(trim((string) $this->input('for', '')));
         $scope = strtolower(trim((string) $this->input('scope', '')));
+        if ($for === 'platform' || $scope === 'platform') {
+            return true;
+        }
+        if (!empty(SessionManager::get('_rateb_users_form_platform'))) {
+            return true;
+        }
+        $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($ref !== '' && (str_contains($ref, 'scope=platform') || str_contains($ref, 'for=platform'))) {
+            return true;
+        }
 
-        return $for === 'platform' || $scope === 'platform';
+        return false;
     }
 
     public function edit(array $params): void
@@ -1965,8 +1982,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'selectedBranches' => $userId > 0 ? $branchSvc->getUserBranchIds($userId) : [],
             'branchesByCompany' => $branchSvc->optionsByCompany(),
             'isSuperAdmin' => $platformForm ? true : !empty($item['is_super_admin']),
-            'hideSuperAdminFlag' => $companyId > 0 && !$platformForm,
-            'defaultCompanyId' => $companyId > 0 ? $companyId : null,
+            // Platform SA must always see the super-admin checkbox (ops company must not hide it).
+            'hideSuperAdminFlag' => $companyId > 0
+                && !$platformForm
+                && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin()),
+            'defaultCompanyId' => ($platformForm || $companyId < 1) ? null : $companyId,
             'platformUserForm' => $platformForm,
             'formHelp' => $formHelp,
             'loginBarcode' => $barcode,
@@ -2051,12 +2071,14 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
 
     private function usersListRedirectUrl(bool $platformSa): string
     {
-        $url = rateb_url($this->routePrefix);
         if ($platformSa && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            $url = rateb_url('admin/users');
+
             return function_exists('rateb_url_query')
                 ? rateb_url_query($url, ['scope' => 'platform'])
                 : ($url . '?scope=platform');
         }
+        $url = rateb_url($this->routePrefix);
 
         return function_exists('rateb_url_query')
             ? rateb_url_query($url, ['scope' => 'company'])
@@ -2156,19 +2178,23 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($password !== '') {
             $this->model->applyPassword($data, $password);
         }
-        $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
+        $checkedSa = (bool) $this->input('is_super_admin');
+        $data['is_super_admin'] = $checkedSa ? 1 : 0;
         $scopedCompanyId = $this->scopedCompanyId();
         $platformForm = $this->wantsPlatformUserForm();
-        if ($platformForm && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            // Explicit platform-SA create/edit from Super Admin tab — ignore ops company.
+        $actorIsPlatformSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+
+        // Platform SA explicitly creating a super-admin — never bind to ops company.
+        if ($actorIsPlatformSa && ($platformForm || $checkedSa)) {
             $data['is_super_admin'] = 1;
             $data['company_id'] = null;
+            SessionManager::forget('_rateb_users_form_platform');
         } elseif ($scopedCompanyId > 0) {
-            // Ops company selected ⇒ always a tenant user, never platform SA.
+            // Ops company selected ⇒ tenant user (unless SA checkbox handled above).
             $data['is_super_admin'] = 0;
             $data['company_id'] = $scopedCompanyId;
+            SessionManager::forget('_rateb_users_form_platform');
         } elseif (!empty($data['is_super_admin'])) {
-            // Platform SA accounts must not belong to a tenant company.
             $data['company_id'] = null;
         } elseif ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
             $data['company_id'] = null;
