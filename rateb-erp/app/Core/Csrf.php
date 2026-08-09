@@ -22,15 +22,59 @@ final class Csrf
     public static function validate(string $token): bool
     {
         SessionManager::start();
-        if ($token === '') {
+        if ($token === '' || strlen($token) < 16) {
             return false;
         }
         $stored = $_SESSION[self::SESSION_KEY] ?? '';
         if (is_string($stored) && $stored !== '' && hash_equals($stored, $token)) {
             return true;
         }
-        $cookie = (string) ($_COOKIE[self::COOKIE_NAME] ?? '');
-        return $cookie !== '' && hash_equals($cookie, $token);
+
+        // Browsers may send duplicate rateb_csrf cookies (path=/ + path=/rateb-erp/public).
+        // PHP keeps only one value in $_COOKIE (often the first) — check every raw value.
+        foreach (self::cookieValues(self::COOKIE_NAME) as $cookie) {
+            if ($cookie !== '' && hash_equals($cookie, $token)) {
+                $_SESSION[self::SESSION_KEY] = $token;
+                self::mirrorCookie($token);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * All values for a cookie name from the raw Cookie header (handles duplicates).
+     *
+     * @return list<string>
+     */
+    private static function cookieValues(string $name): array
+    {
+        $values = [];
+        $raw = (string) ($_SERVER['HTTP_COOKIE'] ?? '');
+        if ($raw !== '') {
+            foreach (explode(';', $raw) as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+                $eq = strpos($part, '=');
+                if ($eq === false) {
+                    continue;
+                }
+                $key = trim(substr($part, 0, $eq));
+                if ($key !== $name) {
+                    continue;
+                }
+                $values[] = rawurldecode(trim(substr($part, $eq + 1)));
+            }
+        }
+        if (isset($_COOKIE[$name])) {
+            $values[] = (string) $_COOKIE[$name];
+        }
+
+        return array_values(array_unique(array_filter($values, static fn ($v) => $v !== '')));
     }
 
     public static function clearCookie(): void

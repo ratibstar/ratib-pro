@@ -31,16 +31,20 @@ final class LoginController extends Controller
             return;
         }
 
-        // Recover from duplicate session cookies (path=/ vs /rateb-erp/public) that break CSRF.
-        // Purge ALL path variants, then destroy+start a clean session and issue CSRF for this page.
+        // Duplicate rateb_erp / rateb_csrf cookies (path=/ vs /rateb-erp/public) break CSRF for
+        // every account in the same browser. Hard-reset on err=csrf|session; otherwise pin the
+        // canonical path and drop legacy path=/ leftovers before rendering a fresh token.
         $err = (string) ($_GET['err'] ?? '');
         if ($err === 'csrf' || $err === 'session') {
             SessionManager::purgeAllAuthCookies();
             SessionManager::destroy();
             // destroy() already starts a fresh session — pin its cookie, do NOT purge again.
             SessionManager::reissueCanonicalSessionCookie();
-            // Issue a fresh CSRF token into the new session so the first login attempt works.
             Csrf::token();
+        } else {
+            SessionManager::start();
+            SessionManager::reissueCanonicalSessionCookie();
+            SessionManager::clearAlternatePathCookies();
         }
 
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {

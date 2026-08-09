@@ -7,6 +7,7 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="rateb-csrf" content="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
     <script>
     (function () {
         try {

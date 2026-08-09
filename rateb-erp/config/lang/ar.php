@@ -747,7 +747,7 @@ return [
     'too_many_attempts' => 'محاولات كثيرة. حاول لاحقاً.',
     'too_many_attempts_agency' => 'محاولات كثيرة لهذا الحساب. انتظر 5 دقائق أو استخدم admin / 123456 للمدير الافتراضي.',
     'agency_erp_login_hint' => 'وكالة ERP: المدير الافتراضي admin وكلمة المرور 123456. حسابات rateb.sa (مثل admin@rateb.sa) لا تعمل هنا — أنشئ المستخدمين من ERP → المستخدمون.',
-    'invalid_request' => 'طلب غير صالح. حدّث الصفحة وحاول مجدداً.',
+    'invalid_request' => 'انتهت صلاحية جلسة الأمان. حدّث الصفحة (Ctrl+F5) ثم سجّل الدخول مرة واحدة.',
     'company_growth' => 'نمو الشركات',
     'subscription_growth' => 'نمو الاشتراكات',
     'monthly_revenue' => 'الإيرادات الشهرية',
