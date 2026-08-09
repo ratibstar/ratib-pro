@@ -725,9 +725,11 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
 }
 
 .rateb-mkt-plan-card--featured {
-    border-color: var(--cms-primary);
-    box-shadow: 0 0 0 1px rgba(26, 95, 180, 0.15);
-    transform: translateY(-4px);
+    border: 2px solid var(--cms-primary);
+    box-shadow: 0 12px 32px rgba(26, 95, 180, 0.28);
+    transform: translateY(-8px);
+    background: linear-gradient(180deg, rgba(26, 95, 180, 0.12) 0%, transparent 42%);
+    z-index: 1;
 }
 
 .rateb-mkt-plans-row .rateb-mkt-plan-card--full {
@@ -741,16 +743,26 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
     }
 }
 
+.rateb-mkt-plan-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    margin: 0 0 0.75rem;
+    min-height: 1.6rem;
+}
+
 .rateb-mkt-plan-badge {
-    position: absolute;
-    top: 1rem;
-    inset-inline-end: 1rem;
+    position: static;
+    display: inline-flex;
+    align-items: center;
     background: var(--cms-primary);
     color: #fff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.28rem 0.7rem;
     border-radius: 999px;
+    line-height: 1.2;
 }
 
 .rateb-mkt-plan-badge--free {
@@ -758,8 +770,44 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
 }
 
 .rateb-mkt-plan-badge--recommended {
-    background: var(--cms-primary);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+    background: #f59e0b;
+    color: #111827;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.85rem;
+}
+
+.rateb-mkt-recommended-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.1rem;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    color: var(--cms-text, #e8eef7);
+}
+
+.rateb-mkt-recommended-banner-label {
+    display: inline-flex;
+    align-items: center;
+    background: #f59e0b;
+    color: #111827;
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+}
+
+.rateb-mkt-recommended-banner-hint {
+    color: var(--cms-muted);
+    font-size: 0.92rem;
+}
+
+.rateb-mkt-plan-card--featured .rateb-mkt-plan-actions .btn-primary {
+    font-weight: 700;
+    box-shadow: 0 6px 16px rgba(26, 95, 180, 0.35);
 }
 
 .rateb-mkt-pricing-promo {

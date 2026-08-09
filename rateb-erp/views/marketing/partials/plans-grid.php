@@ -11,6 +11,25 @@ if ($plans === []) {
 }
 $featuredSlug = PlanLimitService::recommendedSlug();
 $freeMonths = PlanLimitService::freeMonthsYearly();
+// Put recommended first so it leads the grid (top-right in RTL).
+usort($plans, static function (array $a, array $b) use ($featuredSlug): int {
+    $aFeat = trim((string) ($a['slug'] ?? '')) === $featuredSlug ? 0 : 1;
+    $bFeat = trim((string) ($b['slug'] ?? '')) === $featuredSlug ? 0 : 1;
+    if ($aFeat !== $bFeat) {
+        return $aFeat <=> $bFeat;
+    }
+    return ((float) ($a['price_monthly'] ?? 0)) <=> ((float) ($b['price_monthly'] ?? 0));
+});
+$recommendedPlan = null;
+foreach ($plans as $p) {
+    if (trim((string) ($p['slug'] ?? '')) === $featuredSlug) {
+        $recommendedPlan = $p;
+        break;
+    }
+}
+$recommendedLabel = $recommendedPlan !== null
+    ? Plan::marketingName($recommendedPlan)
+    : __('plan_professional_name');
 ?>
 <section class="rateb-mkt-section<?php echo $compact ? ' rateb-mkt-section-alt' : ''; ?>" id="pricing">
     <div class="container">
@@ -20,9 +39,14 @@ $freeMonths = PlanLimitService::freeMonthsYearly();
         <?php if (!empty($sectionLead)) { ?>
         <p class="rateb-mkt-section-lead text-center mb-4"><?php echo Rateb\App\Core\View::escape((string) $sectionLead); ?></p>
         <?php } ?>
-        <p class="rateb-mkt-pricing-promo text-center mb-4">
+        <p class="rateb-mkt-pricing-promo text-center mb-3">
             <span class="rateb-mkt-pricing-promo-pill"><?php echo __('cms_plan_free_months', ['n' => (string) $freeMonths]); ?></span>
             <span class="rateb-mkt-pricing-promo-note"><?php echo __('cms_plan_lowest_market'); ?></span>
+        </p>
+        <p class="rateb-mkt-recommended-banner text-center mb-4">
+            <span class="rateb-mkt-recommended-banner-label"><?php echo __('cms_plan_recommended'); ?></span>
+            <strong><?php echo Rateb\App\Core\View::escape($recommendedLabel); ?></strong>
+            <span class="rateb-mkt-recommended-banner-hint"><?php echo __('cms_plan_recommended_hint'); ?></span>
         </p>
         <div id="ratebMktPricingPackages" class="row g-3 justify-content-center rateb-mkt-plans-row">
             <?php foreach ($plans as $plan) {
@@ -38,11 +62,12 @@ $freeMonths = PlanLimitService::freeMonthsYearly();
                 ?>
             <div class="col-md-6 col-lg-4">
                 <article class="rateb-mkt-plan-card rateb-mkt-plan-card--full<?php echo $isFeatured ? ' rateb-mkt-plan-card--featured' : ''; ?>">
-                    <?php if ($isFeatured) { ?>
-                    <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--recommended"><?php echo __('cms_plan_recommended'); ?></span>
-                    <?php } else { ?>
-                    <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--free"><?php echo __('cms_plan_free_months_short', ['n' => (string) $freeMonths]); ?></span>
-                    <?php } ?>
+                    <div class="rateb-mkt-plan-badges">
+                        <?php if ($isFeatured) { ?>
+                        <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--recommended"><?php echo __('cms_plan_recommended'); ?></span>
+                        <?php } ?>
+                        <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--free"><?php echo __('cms_plan_free_months_short', ['n' => (string) $freeMonths]); ?></span>
+                    </div>
                     <h3 class="h5 mb-1"><?php echo Rateb\App\Core\View::escape(Plan::marketingName($plan)); ?></h3>
                     <p class="rateb-mkt-plan-desc mb-2"><?php echo Rateb\App\Core\View::escape(Plan::marketingDescription($plan)); ?></p>
                     <p class="rateb-mkt-plan-price mb-0">
