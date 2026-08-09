@@ -101,6 +101,94 @@ final class PlanLimitService
         return $rows;
     }
 
+    /**
+     * Insert any missing canonical tiers (e.g. launch / ultimate) into the live DB.
+     * Does not overwrite prices or modules for tiers that already exist.
+     *
+     * @return list<string> inserted slugs
+     */
+    public static function ensureCanonicalPlansPersisted(): array
+    {
+        $inserted = [];
+        try {
+            $pdo = Database::connection();
+        } catch (\Throwable $e) {
+            return $inserted;
+        }
+
+        $hasBranches = false;
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM rateb_plans LIKE 'max_branches'");
+            $hasBranches = $col !== false && (bool) $col->fetch(\PDO::FETCH_ASSOC);
+            if ($col instanceof \PDOStatement) {
+                $col->closeCursor();
+            }
+        } catch (\Throwable $e) {
+            $hasBranches = false;
+        }
+
+        foreach (self::tierDefinitions() as $slug => $tier) {
+            if (!is_array($tier)) {
+                continue;
+            }
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '') {
+                continue;
+            }
+            try {
+                $check = $pdo->prepare('SELECT id FROM rateb_plans WHERE slug = :slug LIMIT 1');
+                $check->execute(['slug' => $slug]);
+                $exists = (bool) $check->fetch(\PDO::FETCH_ASSOC);
+                $check->closeCursor();
+                if ($exists) {
+                    $pdo->prepare('UPDATE rateb_plans SET is_active = 1 WHERE slug = :slug AND is_active = 0')
+                        ->execute(['slug' => $slug]);
+                    continue;
+                }
+            } catch (\Throwable $e) {
+                error_log('ensureCanonicalPlansPersisted check ' . $slug . ': ' . $e->getMessage());
+                continue;
+            }
+
+            $modules = self::modulesForSlug($slug);
+            $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
+            if (!is_string($json) || $json === '') {
+                continue;
+            }
+            $params = [
+                'name' => (string) ($tier['name'] ?? $slug),
+                'slug' => $slug,
+                'description' => (string) ($tier['description'] ?? ''),
+                'price_monthly' => (float) ($tier['price_monthly'] ?? 0),
+                'price_yearly' => (float) ($tier['price_yearly'] ?? 0),
+                'max_users' => (int) ($tier['max_users'] ?? 5),
+                'max_storage_mb' => (int) ($tier['max_storage_mb'] ?? 512),
+                'modules' => $json,
+            ];
+            try {
+                if ($hasBranches) {
+                    $sql = 'INSERT INTO rateb_plans
+                        (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, max_branches, modules, is_active)
+                        VALUES
+                        (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :max_branches, :modules, 1)';
+                    $params['max_branches'] = (int) ($tier['max_branches'] ?? 1);
+                } else {
+                    $sql = 'INSERT INTO rateb_plans
+                        (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, modules, is_active)
+                        VALUES
+                        (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :modules, 1)';
+                }
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $inserted[] = $slug;
+            } catch (\Throwable $e) {
+                error_log('ensureCanonicalPlansPersisted insert ' . $slug . ': ' . $e->getMessage());
+            }
+        }
+
+        return $inserted;
+    }
+
     /** @return array<string, mixed>|null */
     public static function tierForSlug(string $slug): ?array
     {

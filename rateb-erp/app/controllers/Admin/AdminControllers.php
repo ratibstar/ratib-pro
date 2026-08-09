@@ -1553,16 +1553,34 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
-    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    public function index(): void
     {
-        // Upsert the six canonical packages into the live admin DB on every list load.
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         try {
+            \Rateb\App\Services\PlanLimitService::ensureCanonicalPlansPersisted();
             (new \Rateb\App\Services\MigrationService())
                 ->repairMarketingPlansCanonicalIfNeeded(\Rateb\App\Core\Database::connection());
         } catch (\Throwable $e) {
-            error_log('PlansController canonical sync: ' . $e->getMessage());
+            error_log('PlansController ensure plans: ' . $e->getMessage());
         }
 
+        $page = max(1, (int) $this->input('page', 1));
+        // Show all six packages on one page (default list size is only 5).
+        $limit = max(rateb_list_per_page(), 25);
+        $offset = ($page - 1) * $limit;
+        $search = trim((string) $this->input('q', ''));
+
+        $this->view(
+            $this->viewPrefix . '/index',
+            $this->applyPermissionFlags($this->indexViewData($limit, $offset, $page, $search)),
+            $this->layout()
+        );
+    }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         $recommended = \Rateb\App\Services\PlanLimitService::recommendedSlug();

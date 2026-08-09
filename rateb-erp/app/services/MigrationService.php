@@ -143,6 +143,7 @@ final class MigrationService
             '241_plan_tiers_six_packages.sql' => 'six-package plan tiers catchup (241)',
             '242_plan_tiers_market_lowest_promo.sql' => 'market-lowest promo prices catchup (242)',
             '243_plan_tiers_arabic_labels.sql' => 'Arabic plan labels catchup (243)',
+            '244_plan_tiers_ensure_launch_ultimate.sql' => 'ensure launch+ultimate plans catchup (244)',
         ] as $fileName => $label) {
             $catchup = $root . '/migrations/' . $fileName;
             if (!is_file($catchup) || $this->isApplied($pdo, $fileName)) {
