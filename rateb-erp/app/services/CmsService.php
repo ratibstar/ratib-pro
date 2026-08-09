@@ -339,7 +339,7 @@ final class CmsService
             if (!$synced) {
                 $synced = true;
                 try {
-                    (new MigrationService())->repairMarketingPlansCanonicalIfNeeded();
+                    (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
                 } catch (\Throwable $e) {
                     // Best-effort DB sync for checkout/admin; UI still uses config.
                 }

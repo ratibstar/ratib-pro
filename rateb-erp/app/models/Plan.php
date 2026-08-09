@@ -14,6 +14,13 @@ final class Plan extends Model
         'max_users', 'max_storage_mb', 'max_branches', 'modules', 'is_active',
     ];
 
+    protected function listOrderSql(string $alias = ''): string
+    {
+        $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
+
+        return "{$prefix}price_monthly ASC, {$prefix}id ASC";
+    }
+
     public function getActive(): array
     {
         return $this->query('SELECT * FROM rateb_plans WHERE is_active = 1 ORDER BY price_monthly ASC');

@@ -1555,6 +1555,14 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
 
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
+        // Upsert the six canonical packages into the live admin DB on every list load.
+        try {
+            (new \Rateb\App\Services\MigrationService())
+                ->repairMarketingPlansCanonicalIfNeeded(\Rateb\App\Core\Database::connection());
+        } catch (\Throwable $e) {
+            error_log('PlansController canonical sync: ' . $e->getMessage());
+        }
+
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         foreach ($data['items'] as &$row) {

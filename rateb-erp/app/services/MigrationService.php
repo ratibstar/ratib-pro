@@ -93,7 +93,13 @@ final class MigrationService
         }
         try {
             if ($pdo === null) {
-                [$pdo, ] = $this->migrationConnection();
+                // Prefer the live app DB (admin/marketing). migrationConnection()
+                // opens a separate candidate PDO and can miss the admin database.
+                try {
+                    $pdo = Database::connection();
+                } catch (\Throwable $e) {
+                    [$pdo, ] = $this->migrationConnection();
+                }
             }
         } catch (\Throwable $e) {
             $log[] = 'Plans canonical repair skipped: ' . $e->getMessage();
