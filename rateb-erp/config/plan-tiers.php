@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Canonical SaaS plan tiers — limits, pricing, and module bundles.
- * Synced to rateb_plans via migration 242 + MigrationService::syncPlanTiersFromConfig().
+ * Synced to rateb_plans via migration 243 + MigrationService::syncPlanTiersFromConfig().
  *
  * Pricing strategy (Saudi market 2026):
  * - Positioned under common cloud ERP/accounting list prices
@@ -18,8 +18,8 @@ return [
     'recommended_slug' => 'professional',
 
     'launch' => [
-        'name' => 'Launch',
-        'description' => 'Start with the control panel, alerts, and essential reporting',
+        'name' => 'انطلاق',
+        'description' => 'ابدأ بلوحة التحكم والإشعارات والتقارير الأساسية.',
         'price_monthly' => 39.00,
         'price_yearly' => 351.00, // 9 months (3 free)
         'max_users' => 3,
@@ -33,8 +33,8 @@ return [
         ],
     ],
     'starter' => [
-        'name' => 'Starter',
-        'description' => 'Core purchasing operations for clinics and small establishments',
+        'name' => 'أساسي',
+        'description' => 'تشغيل المشتريات والمخزون والموردين للمنشآت الصغيرة.',
         'price_monthly' => 69.00,
         'price_yearly' => 621.00,
         'max_users' => 8,
@@ -51,8 +51,8 @@ return [
         ],
     ],
     'commerce' => [
-        'name' => 'Commerce',
-        'description' => 'Sell, stock, and deliver with POS, logistics, and marketplace',
+        'name' => 'تجاري',
+        'description' => 'البيع والتوزيع عبر نقطة البيع واللوجستيات وسوق الخدمات.',
         'price_monthly' => 99.00,
         'price_yearly' => 891.00,
         'max_users' => 20,
@@ -73,8 +73,8 @@ return [
         ],
     ],
     'professional' => [
-        'name' => 'Professional',
-        'description' => 'Grow with HR, CRM, projects, accounting, and approvals',
+        'name' => 'احترافي',
+        'description' => 'نمو إداري مع الموارد البشرية وCRM والمشاريع والحسابات.',
         'price_monthly' => 129.00,
         'price_yearly' => 1161.00,
         'max_users' => 50,
@@ -105,8 +105,8 @@ return [
         ],
     ],
     'enterprise' => [
-        'name' => 'Enterprise',
-        'description' => 'Industrial depth: manufacturing, payroll, quality, BI, and website',
+        'name' => 'مؤسسات',
+        'description' => 'عمق مؤسسي: التصنيع والرواتب والجودة وذكاء الأعمال.',
         'price_monthly' => 179.00,
         'price_yearly' => 1611.00,
         'max_users' => 150,
@@ -144,8 +144,8 @@ return [
         ],
     ],
     'ultimate' => [
-        'name' => 'Ultimate',
-        'description' => 'Full Rateb ERP platform with governance and access control',
+        'name' => 'متكامل',
+        'description' => 'منصة رتب ERP كاملة مع الحوكمة والتحكم بالوصول.',
         'price_monthly' => 249.00,
         'price_yearly' => 2241.00,
         'max_users' => 500,

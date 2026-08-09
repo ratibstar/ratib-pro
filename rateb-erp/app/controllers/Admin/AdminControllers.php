@@ -1549,7 +1549,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             ['name' => 'max_users', 'label' => 'user_limit'],
             ['name' => 'max_branches', 'label' => 'max_branches'],
             ['name' => 'max_storage_mb', 'label' => 'storage_limit_mb'],
-            ['name' => 'modules_summary', 'label' => 'modules'],
+            ['name' => 'modules_summary', 'label' => 'plan_modules'],
         ];
     }
 
@@ -1567,11 +1567,8 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         $recommended = \Rateb\App\Services\PlanLimitService::recommendedSlug();
         foreach ($data['items'] as &$row) {
-            // Keep DB name so admin edits persist in the list (lang labels are for marketing only).
-            $dbName = trim((string) ($row['name'] ?? ''));
-            if ($dbName === '') {
-                $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
-            }
+            // Prefer localized Arabic labels for canonical tiers in the admin list.
+            $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
             if (strtolower(trim((string) ($row['slug'] ?? ''))) === $recommended) {
                 $row['name'] = trim((string) $row['name']) . ' · ' . __('cms_plan_recommended');
             }

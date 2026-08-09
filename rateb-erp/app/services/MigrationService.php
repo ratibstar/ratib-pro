@@ -142,6 +142,7 @@ final class MigrationService
         foreach ([
             '241_plan_tiers_six_packages.sql' => 'six-package plan tiers catchup (241)',
             '242_plan_tiers_market_lowest_promo.sql' => 'market-lowest promo prices catchup (242)',
+            '243_plan_tiers_arabic_labels.sql' => 'Arabic plan labels catchup (243)',
         ] as $fileName => $label) {
             $catchup = $root . '/migrations/' . $fileName;
             if (!is_file($catchup) || $this->isApplied($pdo, $fileName)) {
@@ -213,13 +214,36 @@ final class MigrationService
             }
             $already = isset($existing[$slug]);
             if ($already && !$overwriteExisting) {
-                // Keep admin-edited prices/limits/modules; only ensure active.
+                // Keep admin-edited prices/limits/modules; ensure active + Arabize English seed labels.
                 try {
                     $stmt = $pdo->prepare('UPDATE rateb_plans SET is_active = 1 WHERE slug = :slug AND is_active = 0');
                     $stmt->execute(['slug' => $slug]);
                     $this->drainStatement($stmt);
                 } catch (\Throwable $e) {
                     $log[] = 'Plan reactivate skipped for ' . $slug . ': ' . $e->getMessage();
+                }
+                $arName = (string) ($tier['name'] ?? '');
+                $arDesc = (string) ($tier['description'] ?? '');
+                if ($arName !== '') {
+                    try {
+                        $stmt = $pdo->prepare(
+                            'UPDATE rateb_plans
+                             SET name = :name, description = :description
+                             WHERE slug = :slug
+                               AND name IN (
+                                   \'Launch\', \'Starter\', \'Commerce\', \'Professional\', \'Enterprise\', \'Ultimate\',
+                                   \'Launch · موصى بها\', \'Professional · موصى بها\'
+                               )'
+                        );
+                        $stmt->execute([
+                            'name' => $arName,
+                            'description' => $arDesc,
+                            'slug' => $slug,
+                        ]);
+                        $this->drainStatement($stmt);
+                    } catch (\Throwable $e) {
+                        $log[] = 'Plan Arabic label skip for ' . $slug . ': ' . $e->getMessage();
+                    }
                 }
                 continue;
             }
