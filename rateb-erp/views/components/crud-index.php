@@ -91,7 +91,7 @@ $ratebRowRecordLabel = static function (array $row): string {
         </a>
         <?php } ?>
         <?php if ($createEnabled) { ?>
-        <a href="<?php echo rateb_url($routePrefix . '/create'); ?>" class="btn btn-primary btn-sm">
+        <a href="<?php echo Rateb\App\Core\View::escape((string) ($createUrl ?? rateb_url($routePrefix . '/create'))); ?>" class="btn btn-primary btn-sm" data-rateb-full-nav="1">
             <i class="fas fa-plus"></i> <?php echo __('create'); ?>
         </a>
         <?php } ?>

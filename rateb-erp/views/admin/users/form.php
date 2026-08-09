@@ -29,6 +29,9 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
         <?php } ?>
         <form method="post" action="<?php echo $action; ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <?php if (!empty($platformUserForm)) { ?>
+            <input type="hidden" name="for" value="platform">
+            <?php } ?>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('name'); ?></label>
