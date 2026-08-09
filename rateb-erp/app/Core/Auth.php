@@ -186,9 +186,10 @@ final class Auth
                 $companyId > 0 ? $companyId : null
             );
         }
-        // After successful login only: pin canonical cookies and drop legacy path=/ duplicates.
+        // Pin canonical path only. Do NOT clearAlternatePathCookies() here — expiring path=/
+        // in the same response as login races the browser and causes err=session on the next
+        // click (e.g. Users) until the user retries several times.
         SessionManager::reissueCanonicalSessionCookie();
-        SessionManager::clearAlternatePathCookies();
         SessionManager::set('_rateb_cookie_pinned', 1);
         if (class_exists(Csrf::class)) {
             Csrf::token();

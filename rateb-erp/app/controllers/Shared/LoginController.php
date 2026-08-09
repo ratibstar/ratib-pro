@@ -31,10 +31,14 @@ final class LoginController extends Controller
             return;
         }
 
-        // Duplicate rateb_erp / rateb_csrf cookies (path=/ vs /rateb-erp/public) break CSRF for
-        // every account in the same browser. Hard-reset on err=csrf|session; otherwise pin the
-        // canonical path and drop legacy path=/ leftovers before rendering a fresh token.
+        // Duplicate rateb_erp / rateb_csrf cookies (path=/ vs /rateb-erp/public) break CSRF.
+        // CRITICAL: never purge when the browser still has a valid session — soft-nav/prefetch
+        // to /admin/users can 302→login?err=session briefly; wiping cookies logged everyone out.
         $err = (string) ($_GET['err'] ?? '');
+        if (($err === 'csrf' || $err === 'session') && Auth::check()) {
+            Response::redirect(rateb_url(Auth::homePath()));
+            return;
+        }
         if ($err === 'csrf' || $err === 'session') {
             SessionManager::purgeAllAuthCookies();
             SessionManager::destroy();
@@ -44,7 +48,7 @@ final class LoginController extends Controller
         } else {
             SessionManager::start();
             SessionManager::reissueCanonicalSessionCookie();
-            SessionManager::clearAlternatePathCookies();
+            // Do not expire path=/ here — races with soft-nav and forces multi-click login.
         }
 
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {

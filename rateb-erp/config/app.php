@@ -2901,11 +2901,17 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             ? rateb_request_company_id()
             : (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
 
-        // Platform SA: picker can clear tenant scope (?company_id=0) to manage platform users.
+        // Platform SA: picker can clear ops tenant (?company_id=0) without destroying identity.
+        // Never call rateb_clear_ops_company_session() here — it zeroed rateb_company_id and
+        // combined with login?err=session cookie purges caused logout on Users navigation.
         if ($isSuper && array_key_exists('company_id', $_GET)) {
             $rawPicker = trim((string) ($_GET['company_id'] ?? ''));
             if ($rawPicker === '' || $rawPicker === '0') {
-                rateb_clear_ops_company_session();
+                \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+                if (function_exists('rateb_ops_company_request_state_reset')) {
+                    rateb_ops_company_request_state_reset();
+                }
+                $state = &rateb_ops_company_request_state();
                 $state['resolved'] = 0;
                 $state['resolved_set'] = true;
 

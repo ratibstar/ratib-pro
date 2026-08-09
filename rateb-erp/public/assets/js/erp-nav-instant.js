@@ -1465,17 +1465,27 @@
             if (!res || !res.ok) {
                 throw new Error('nav_fetch_failed');
             }
+            var finalUrl = String(res.url || href || '');
+            // Never soft-paint login. Following 302→login?err=session used to run the login
+            // recovery purger and wipe a still-valid ERP session (Users click → logout).
+            if (/\/login(?:\/|\?|#|$)/i.test(finalUrl)) {
+                throw new Error('nav_auth_bounce');
+            }
             return res.text().then(function (html) {
                 if (/data-rateb-offline-stub/i.test(html) && !isBrowserOffline()) {
                     throw new Error('nav_stub_reject');
+                }
+                if (/rateb-auth-page/i.test(html)
+                    || /form#password-form|id=["']password-form["']/i.test(html)) {
+                    throw new Error('nav_auth_bounce');
                 }
                 if (isPoisonedOpsHtml(href, html)) {
                     purgePoisonedOpsCaches();
                     throw new Error('nav_poison_reject');
                 }
                 // Idle cache — never block paint / next click on Cache+SW HTML copies.
-                schedulePageCache(res.url || href, html);
-                return { html: html, finalUrl: res.url || href, fromCache: false };
+                schedulePageCache(finalUrl, html);
+                return { html: html, finalUrl: finalUrl, fromCache: false };
             });
         });
         packed._ratebAbort = raw._ratebAbort;
