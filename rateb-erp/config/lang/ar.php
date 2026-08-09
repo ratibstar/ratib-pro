@@ -752,6 +752,7 @@ return [
     'subscription_growth' => 'نمو الاشتراكات',
     'monthly_revenue' => 'الإيرادات الشهرية',
     'super_admin' => 'المدير العام',
+    'users_list_includes_super_admins' => 'تظهر هنا حسابات السوبر أدمن مع مستخدمي الشركة المحددة. حسابات السوبر أدمن غالباً بلا رقم شركة.',
     'company_portal' => 'بوابة الشركة',
     'pending' => 'قيد الانتظار',
     'completed' => 'مكتمل',

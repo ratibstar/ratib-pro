@@ -752,6 +752,8 @@ return [
     'subscription_growth' => 'Subscription Growth',
     'monthly_revenue' => 'Monthly Revenue',
     'super_admin' => 'Super Admin',
+    'users_list_includes_super_admins' => 'Super-admin accounts are listed with the selected company users. Super admins usually have no company id.',
+    'users_list_includes_super_admins' => 'Super-admin accounts are listed with the selected company users. Super admins usually have no company id.',
     'company_portal' => 'Company Portal',
     'pending' => 'Pending',
     'completed' => 'Completed',

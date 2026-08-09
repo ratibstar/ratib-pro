@@ -1767,11 +1767,30 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         $page = max(1, (int) $this->input('page', 1));
-        $limit = rateb_list_per_page();
+        $limit = max(rateb_list_per_page(), 25);
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
         $companyId = $this->scopedCompanyId();
-        if ($companyId > 0) {
+        $isPlatformSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+
+        // Platform SA must always see other super-admins. Company scope previously hid them
+        // (is_super_admin=1 + company_id NULL), which made "users" look empty besides one POS user.
+        if ($companyId > 0 && $isPlatformSa) {
+            $items = $this->model->query(
+                'SELECT * FROM rateb_users
+                 WHERE (COALESCE(is_super_admin, 0) = 1)
+                    OR (COALESCE(is_super_admin, 0) = 0 AND company_id = :cid)
+                 ORDER BY COALESCE(is_super_admin, 0) DESC, id DESC
+                 LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset,
+                ['cid' => $companyId]
+            );
+            $total = (int) ($this->model->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_users
+                 WHERE (COALESCE(is_super_admin, 0) = 1)
+                    OR (COALESCE(is_super_admin, 0) = 0 AND company_id = :cid)',
+                ['cid' => $companyId]
+            )['c'] ?? 0);
+        } elseif ($companyId > 0) {
             $items = $this->model->query(
                 'SELECT * FROM rateb_users
                  WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid
@@ -1784,13 +1803,20 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 ['cid' => $companyId]
             )['c'] ?? 0);
         } else {
-            $items = $this->model->all($limit, $offset);
-            $total = $this->model->count();
+            $items = $this->model->query(
+                'SELECT * FROM rateb_users
+                 ORDER BY COALESCE(is_super_admin, 0) DESC, id DESC
+                 LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset
+            );
+            $total = (int) ($this->model->queryOne('SELECT COUNT(*) AS c FROM rateb_users')['c'] ?? 0);
         }
         foreach ($items as &$row) {
             $row['roles_list'] = $authz->getUserRoleNames((int) $row['id']);
             if (!empty($row['is_super_admin'])) {
                 $row['roles_list'] = __('super_admin') . ($row['roles_list'] !== '' ? ' · ' . $row['roles_list'] : '');
+                if ((int) ($row['company_id'] ?? 0) < 1) {
+                    $row['company_id'] = '—';
+                }
             }
         }
         unset($row);
@@ -1805,6 +1831,10 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'locale', 'label' => 'language'],
         ];
 
+        $listHelp = $isPlatformSa
+            ? __('users_list_includes_super_admins')
+            : '';
+
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
             'items' => $items,
@@ -1817,6 +1847,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
+            'listHelp' => $listHelp,
         ], $this->layout());
     }
 
