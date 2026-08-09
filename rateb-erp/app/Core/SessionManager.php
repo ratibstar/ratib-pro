@@ -164,6 +164,12 @@ final class SessionManager
 
         session_start();
 
+        // PHP keeps only one rateb_erp when path=/ and path=/rateb-erp/public both exist.
+        // If the empty/stale id won, adopt any sibling cookie that still has a logged-in user.
+        if (empty($_SESSION['rateb_user_id'])) {
+            self::adoptAuthenticatedDuplicateSession();
+        }
+
         if (empty($_SESSION['_rateb_init'])) {
             session_regenerate_id(true);
             $_SESSION['_rateb_init'] = time();
@@ -177,6 +183,67 @@ final class SessionManager
             self::reissueCanonicalSessionCookie();
             $_SESSION['_rateb_cookie_pinned'] = 1;
         }
+    }
+
+    /**
+     * When duplicate rateb_erp cookies are sent, try each id until one has rateb_user_id.
+     */
+    private static function adoptAuthenticatedDuplicateSession(): void
+    {
+        $candidates = self::rawCookieValues('rateb_erp');
+        if (count($candidates) < 2) {
+            return;
+        }
+        $current = session_id();
+        foreach ($candidates as $sid) {
+            if ($sid === '' || $sid === $current || !preg_match('/^[a-zA-Z0-9,-]{16,128}$/', $sid)) {
+                continue;
+            }
+            session_write_close();
+            session_id($sid);
+            session_start();
+            if (!empty($_SESSION['rateb_user_id'])) {
+                if (!headers_sent()) {
+                    self::reissueCanonicalSessionCookie();
+                }
+
+                return;
+            }
+        }
+        // Restore original empty session if none authenticated.
+        if (session_id() !== $current && $current !== '') {
+            session_write_close();
+            session_id($current);
+            session_start();
+        }
+    }
+
+    /** @return list<string> */
+    private static function rawCookieValues(string $name): array
+    {
+        $values = [];
+        $raw = (string) ($_SERVER['HTTP_COOKIE'] ?? '');
+        if ($raw !== '') {
+            foreach (explode(';', $raw) as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+                $eq = strpos($part, '=');
+                if ($eq === false) {
+                    continue;
+                }
+                if (trim(substr($part, 0, $eq)) !== $name) {
+                    continue;
+                }
+                $values[] = rawurldecode(trim(substr($part, $eq + 1)));
+            }
+        }
+        if (isset($_COOKIE[$name])) {
+            $values[] = (string) $_COOKIE[$name];
+        }
+
+        return array_values(array_unique(array_filter($values, static fn ($v) => $v !== '')));
     }
 
     /** Re-send session cookie on the canonical app path (migration from legacy path=/). */
