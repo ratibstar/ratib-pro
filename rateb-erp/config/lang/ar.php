@@ -2734,6 +2734,7 @@ return [
     'cms_per_month' => 'شهر',
     'cms_per_year' => 'سنة',
     'cms_plan_popular' => 'الأكثر طلباً',
+    'cms_plan_recommended' => 'موصى بها',
     'cms_plan_free_months' => ':n أشهر مجاناً عند الاشتراك السنوي',
     'cms_plan_free_months_short' => ':n أشهر مجاناً',
     'cms_plan_lowest_market' => 'أقل أسعار ERP متكاملة في السوق السعودي',

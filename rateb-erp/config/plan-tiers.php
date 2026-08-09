@@ -14,6 +14,8 @@ declare(strict_types=1);
  */
 return [
     'free_months_yearly' => 3,
+    /** Highlighted on /site/pricing and default checkout selection. */
+    'recommended_slug' => 'professional',
 
     'launch' => [
         'name' => 'Launch',

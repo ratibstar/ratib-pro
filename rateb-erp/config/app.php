@@ -1660,7 +1660,9 @@ if (!function_exists('rateb_marketing_register_url')) {
         if ($plan !== '') {
             $query['plan'] = strtolower(trim($plan));
         } else {
-            $query['plan'] = 'professional';
+            $query['plan'] = class_exists(\Rateb\App\Services\PlanLimitService::class)
+                ? \Rateb\App\Services\PlanLimitService::recommendedSlug()
+                : 'professional';
         }
         unset($query['open']);
 

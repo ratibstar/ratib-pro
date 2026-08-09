@@ -757,6 +757,11 @@ html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-chip {
     background: #0d9488;
 }
 
+.rateb-mkt-plan-badge--recommended {
+    background: var(--cms-primary);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
 .rateb-mkt-pricing-promo {
     display: flex;
     flex-wrap: wrap;

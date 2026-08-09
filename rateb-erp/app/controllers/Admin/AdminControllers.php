@@ -1565,11 +1565,15 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
 
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
+        $recommended = \Rateb\App\Services\PlanLimitService::recommendedSlug();
         foreach ($data['items'] as &$row) {
             // Keep DB name so admin edits persist in the list (lang labels are for marketing only).
             $dbName = trim((string) ($row['name'] ?? ''));
             if ($dbName === '') {
                 $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
+            }
+            if (strtolower(trim((string) ($row['slug'] ?? ''))) === $recommended) {
+                $row['name'] = trim((string) $row['name']) . ' · ' . __('cms_plan_recommended');
             }
             $row['modules_summary'] = $this->formatModulesSummary($row, $catalog);
         }

@@ -9,7 +9,7 @@ $plans = $plans ?? [];
 if ($plans === []) {
     return;
 }
-$featuredSlug = 'professional';
+$featuredSlug = PlanLimitService::recommendedSlug();
 $freeMonths = PlanLimitService::freeMonthsYearly();
 ?>
 <section class="rateb-mkt-section<?php echo $compact ? ' rateb-mkt-section-alt' : ''; ?>" id="pricing">
@@ -39,7 +39,7 @@ $freeMonths = PlanLimitService::freeMonthsYearly();
             <div class="col-md-6 col-lg-4">
                 <article class="rateb-mkt-plan-card rateb-mkt-plan-card--full<?php echo $isFeatured ? ' rateb-mkt-plan-card--featured' : ''; ?>">
                     <?php if ($isFeatured) { ?>
-                    <span class="rateb-mkt-plan-badge"><?php echo __('cms_plan_popular'); ?></span>
+                    <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--recommended"><?php echo __('cms_plan_recommended'); ?></span>
                     <?php } else { ?>
                     <span class="rateb-mkt-plan-badge rateb-mkt-plan-badge--free"><?php echo __('cms_plan_free_months_short', ['n' => (string) $freeMonths]); ?></span>
                     <?php } ?>
@@ -77,7 +77,7 @@ $freeMonths = PlanLimitService::freeMonthsYearly();
             <?php } ?>
         </div>
         <?php
-        $mktCheckoutPlan = trim((string) ($_GET['plan'] ?? 'professional')) ?: 'professional';
+        $mktCheckoutPlan = trim((string) ($_GET['plan'] ?? $featuredSlug)) ?: $featuredSlug;
         $mktCheckoutYears = isset($_GET['years']) ? (int) $_GET['years'] : 1;
         require RATEB_ROOT . '/views/marketing/partials/agency-checkout-panel.php';
         ?>

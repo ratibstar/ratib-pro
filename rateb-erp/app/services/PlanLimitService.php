@@ -50,6 +50,23 @@ final class PlanLimitService
         return $n > 0 ? $n : 3;
     }
 
+    /** Featured / recommended marketing plan slug (default: professional). */
+    public static function recommendedSlug(): string
+    {
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/plan-tiers.php';
+        $raw = is_file($file) ? require $file : [];
+        $fallback = 'professional';
+        if (!is_array($raw)) {
+            return $fallback;
+        }
+        $slug = strtolower(trim((string) ($raw['recommended_slug'] ?? $fallback)));
+        if ($slug === '' || !isset(self::tierDefinitions()[$slug])) {
+            return $fallback;
+        }
+
+        return $slug;
+    }
+
     /** @return list<string> */
     public static function canonicalSlugs(): array
     {

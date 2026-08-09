@@ -36,11 +36,12 @@ final class MarketingController extends Controller
             if (is_file($helper)) {
                 require_once $helper;
             }
-            $plan = (string) ($_GET['plan'] ?? 'professional');
+            $recommended = \Rateb\App\Services\PlanLimitService::recommendedSlug();
+            $plan = (string) ($_GET['plan'] ?? $recommended);
             $years = isset($_GET['years']) ? (int) $_GET['years'] : 1;
             $url = function_exists('rateb_marketing_register_url')
                 ? rateb_marketing_register_url($plan, $years)
-                : (rateb_site_origin() . '/site/pricing?register=1&plan=professional#pricing');
+                : (rateb_site_origin() . '/site/pricing?register=1&plan=' . rawurlencode($recommended) . '#pricing');
             Response::redirect($url);
             return;
         }

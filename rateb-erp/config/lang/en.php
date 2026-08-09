@@ -2735,6 +2735,7 @@ return [
     'cms_per_month' => 'month',
     'cms_per_year' => 'year',
     'cms_plan_popular' => 'Popular',
+    'cms_plan_recommended' => 'Recommended',
     'cms_plan_free_months' => ':n months free with annual billing',
     'cms_plan_free_months_short' => ':n months free',
     'cms_plan_lowest_market' => 'Lowest full ERP pricing in the Saudi market',
