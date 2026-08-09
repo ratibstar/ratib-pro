@@ -2165,12 +2165,6 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             return;
         }
 
-        $agencyHost = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
-        $dedicated = \Rateb\App\Services\DedicatedTenantPolicy::isDedicated();
-        if (!$agencyHost && !$dedicated) {
-            return;
-        }
-
         $companyId = (int) ($data['company_id'] ?? 0);
         if ($companyId < 1) {
             $companyId = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
@@ -2179,6 +2173,8 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             }
         }
 
+        // Platform SaaS + agency/dedicated: company users need an active subscription row
+        // or login fails with err=access («الاشتراك منتهٍ / موقوف»).
         if ($companyId > 0) {
             try {
                 (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);

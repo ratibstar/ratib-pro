@@ -91,9 +91,20 @@ final class Auth
             }
             $limits = new \Rateb\App\Services\PlanLimitService();
             if (!$limits->companyAccessAllowed($companyId)) {
-                self::$lastLoginFailureReason = 'access';
+                // Active company with missing/stale subscription (common after SA creates users on SaaS).
+                // Do not heal suspended companies — those stay blocked.
+                if ((string) ($company['status'] ?? '') === 'active') {
+                    try {
+                        (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);
+                    } catch (\Throwable $e) {
+                        error_log('Auth subscription heal: ' . $e->getMessage());
+                    }
+                }
+                if (!$limits->companyAccessAllowed($companyId)) {
+                    self::$lastLoginFailureReason = 'access';
 
-                return null;
+                    return null;
+                }
             }
         }
 
@@ -122,7 +133,16 @@ final class Auth
             }
             $limits = new \Rateb\App\Services\PlanLimitService();
             if (!$limits->companyAccessAllowed($companyId)) {
-                return false;
+                if ((string) ($company['status'] ?? '') === 'active') {
+                    try {
+                        (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);
+                    } catch (\Throwable $e) {
+                        error_log('Auth loginUser subscription heal: ' . $e->getMessage());
+                    }
+                }
+                if (!$limits->companyAccessAllowed($companyId)) {
+                    return false;
+                }
             }
         }
 

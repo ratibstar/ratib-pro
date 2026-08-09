@@ -124,6 +124,49 @@ final class LoginController extends Controller
         Response::redirect($url);
     }
 
+    /**
+     * When duplicate/stale session cookies break session CSRF, still accept a login POST
+     * that clearly comes from our login page (same origin/referer) with a well-formed token.
+     */
+    private function acceptSameOriginLoginCsrf(): bool
+    {
+        $token = trim((string) $this->input('_csrf', ''));
+        if ($token === '' || !preg_match('/^[a-f0-9]{32,128}$/i', $token)) {
+            return false;
+        }
+        if (!$this->isSameSiteLoginPost()) {
+            return false;
+        }
+        SessionManager::start();
+        $_SESSION['_csrf_token'] = $token;
+        Csrf::token();
+
+        return true;
+    }
+
+    private function isSameSiteLoginPost(): bool
+    {
+        $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')) ?? '');
+        if ($host === '') {
+            return false;
+        }
+        $origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+        if ($origin !== '') {
+            $oh = strtolower((string) (parse_url($origin, PHP_URL_HOST) ?? ''));
+
+            return $oh === $host || $oh === 'www.' . $host || 'www.' . $oh === $host;
+        }
+        $referer = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+        if ($referer === '') {
+            return false;
+        }
+        $rh = strtolower((string) (parse_url($referer, PHP_URL_HOST) ?? ''));
+        $path = (string) (parse_url($referer, PHP_URL_PATH) ?? '');
+        $hostOk = $rh === $host || $rh === 'www.' . $host || 'www.' . $rh === $host;
+
+        return $hostOk && (bool) preg_match('#/login(?:/|$|\?)#i', $path . '/');
+    }
+
     private function resolveLoginErrorFromRequest(): string
     {
         $map = [
@@ -193,7 +236,7 @@ final class LoginController extends Controller
     {
         $next = $this->safeNextUrl((string) $this->input('next', ''));
         try {
-            if (!$this->validateCsrf()) {
+            if (!$this->validateCsrf() && !$this->acceptSameOriginLoginCsrf()) {
                 $this->loginRedirect('csrf');
             }
 
