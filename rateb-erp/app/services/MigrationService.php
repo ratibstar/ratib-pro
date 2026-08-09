@@ -133,15 +133,22 @@ final class MigrationService
         // Prefer config/plan-tiers.php as the single source of truth (6 packages).
         $this->syncPlanTiersFromConfig($pdo, $log);
 
-        $catchup241 = $root . '/migrations/241_plan_tiers_six_packages.sql';
-        if (is_file($catchup241) && !$this->isApplied($pdo, '241_plan_tiers_six_packages.sql')) {
-            $sql241 = file_get_contents($catchup241);
-            if (is_string($sql241) && trim($sql241) !== '') {
-                $log[] = 'Applying six-package plan tiers catchup (241)…';
-                $this->execSqlFile($pdo, $sql241);
-                $this->markApplied($pdo, '241_plan_tiers_six_packages.sql');
-                $this->syncPlanTiersFromConfig($pdo, $log);
+        foreach ([
+            '241_plan_tiers_six_packages.sql' => 'six-package plan tiers catchup (241)',
+            '242_plan_tiers_market_lowest_promo.sql' => 'market-lowest promo prices catchup (242)',
+        ] as $fileName => $label) {
+            $catchup = $root . '/migrations/' . $fileName;
+            if (!is_file($catchup) || $this->isApplied($pdo, $fileName)) {
+                continue;
             }
+            $sql = file_get_contents($catchup);
+            if (!is_string($sql) || trim($sql) === '') {
+                continue;
+            }
+            $log[] = 'Applying ' . $label . '…';
+            $this->execSqlFile($pdo, $sql);
+            $this->markApplied($pdo, $fileName);
+            $this->syncPlanTiersFromConfig($pdo, $log);
         }
 
         $log[] = 'Marketing plans catchup: six packages synced from plan-tiers.';

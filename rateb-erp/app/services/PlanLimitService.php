@@ -21,15 +21,67 @@ final class PlanLimitService
             return $tiers;
         }
         $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/plan-tiers.php';
-        $tiers = is_file($file) ? require $file : [];
+        $raw = is_file($file) ? require $file : [];
+        if (!is_array($raw)) {
+            $tiers = [];
 
-        return is_array($tiers) ? $tiers : [];
+            return $tiers;
+        }
+        $tiers = [];
+        foreach ($raw as $slug => $tier) {
+            if (!is_string($slug) || !is_array($tier) || !isset($tier['modules'])) {
+                continue;
+            }
+            $tiers[$slug] = $tier;
+        }
+
+        return $tiers;
+    }
+
+    public static function freeMonthsYearly(): int
+    {
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/plan-tiers.php';
+        $raw = is_file($file) ? require $file : [];
+        if (!is_array($raw)) {
+            return 3;
+        }
+        $n = (int) ($raw['free_months_yearly'] ?? 3);
+
+        return $n > 0 ? $n : 3;
     }
 
     /** @return list<string> */
     public static function canonicalSlugs(): array
     {
         return array_keys(self::tierDefinitions());
+    }
+
+    /**
+     * Marketing page rows — always from config so all 6 packages render
+     * even before DB migrations catch up.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function marketingPlanRows(): array
+    {
+        $rows = [];
+        foreach (self::tierDefinitions() as $slug => $tier) {
+            $modules = self::modulesForSlug((string) $slug);
+            $rows[] = [
+                'slug' => (string) $slug,
+                'name' => (string) ($tier['name'] ?? $slug),
+                'description' => (string) ($tier['description'] ?? ''),
+                'price_monthly' => (float) ($tier['price_monthly'] ?? 0),
+                'price_yearly' => (float) ($tier['price_yearly'] ?? 0),
+                'max_users' => (int) ($tier['max_users'] ?? 0),
+                'max_branches' => (int) ($tier['max_branches'] ?? 0),
+                'max_storage_mb' => (int) ($tier['max_storage_mb'] ?? 0),
+                'modules' => json_encode(array_values($modules), JSON_UNESCAPED_UNICODE),
+                'is_active' => 1,
+            ];
+        }
+
+        return $rows;
     }
 
     /** @return array<string, mixed>|null */

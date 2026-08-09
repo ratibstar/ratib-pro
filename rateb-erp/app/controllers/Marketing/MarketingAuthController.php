@@ -286,11 +286,23 @@ final class MarketingAuthController extends Controller
         if ($planSlug === '') {
             return null;
         }
-        $plan = (new Plan())->queryOne(
-            'SELECT * FROM rateb_plans WHERE slug = :slug AND is_active = 1 LIMIT 1',
-            ['slug' => $planSlug]
-        );
+        try {
+            $plan = (new Plan())->queryOne(
+                'SELECT * FROM rateb_plans WHERE slug = :slug AND is_active = 1 LIMIT 1',
+                ['slug' => $planSlug]
+            );
+            if (is_array($plan)) {
+                return $plan;
+            }
+        } catch (\Throwable $e) {
+            // Fall through to config tiers.
+        }
+        foreach (\Rateb\App\Services\PlanLimitService::marketingPlanRows() as $row) {
+            if (($row['slug'] ?? '') === $planSlug) {
+                return $row;
+            }
+        }
 
-        return $plan ?: null;
+        return null;
     }
 }

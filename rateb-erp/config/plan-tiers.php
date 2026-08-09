@@ -3,17 +3,23 @@ declare(strict_types=1);
 
 /**
  * Canonical SaaS plan tiers — limits, pricing, and module bundles.
- * Synced to rateb_plans via migration 241 + MigrationService::syncPlanTiersFromConfig().
+ * Synced to rateb_plans via migration 242 + MigrationService::syncPlanTiersFromConfig().
  *
- * Ladder (6 packages):
- * launch → starter → commerce → professional → enterprise → ultimate
+ * Pricing strategy (Saudi market 2026):
+ * - Positioned under common cloud ERP/accounting list prices
+ *   (Plugin Soft ~46–246 SAR/mo, Daftra 75–159, Qoyod ~48–192, Rewaa ~287+).
+ * - Annual billing = 9 × monthly (3 months free).
+ *
+ * Ladder: launch → starter → commerce → professional → enterprise → ultimate
  */
 return [
+    'free_months_yearly' => 3,
+
     'launch' => [
         'name' => 'Launch',
         'description' => 'Start with the control panel, alerts, and essential reporting',
-        'price_monthly' => 990.00,
-        'price_yearly' => 10900.00,
+        'price_monthly' => 39.00,
+        'price_yearly' => 351.00, // 9 months (3 free)
         'max_users' => 3,
         'max_branches' => 1,
         'max_storage_mb' => 256,
@@ -27,8 +33,8 @@ return [
     'starter' => [
         'name' => 'Starter',
         'description' => 'Core purchasing operations for clinics and small establishments',
-        'price_monthly' => 1500.00,
-        'price_yearly' => 16000.00,
+        'price_monthly' => 69.00,
+        'price_yearly' => 621.00,
         'max_users' => 8,
         'max_branches' => 3,
         'max_storage_mb' => 512,
@@ -45,8 +51,8 @@ return [
     'commerce' => [
         'name' => 'Commerce',
         'description' => 'Sell, stock, and deliver with POS, logistics, and marketplace',
-        'price_monthly' => 1990.00,
-        'price_yearly' => 21900.00,
+        'price_monthly' => 99.00,
+        'price_yearly' => 891.00,
         'max_users' => 20,
         'max_branches' => 5,
         'max_storage_mb' => 2048,
@@ -67,8 +73,8 @@ return [
     'professional' => [
         'name' => 'Professional',
         'description' => 'Grow with HR, CRM, projects, accounting, and approvals',
-        'price_monthly' => 2490.00,
-        'price_yearly' => 26900.00,
+        'price_monthly' => 129.00,
+        'price_yearly' => 1161.00,
         'max_users' => 50,
         'max_branches' => 10,
         'max_storage_mb' => 5120,
@@ -99,8 +105,8 @@ return [
     'enterprise' => [
         'name' => 'Enterprise',
         'description' => 'Industrial depth: manufacturing, payroll, quality, BI, and website',
-        'price_monthly' => 3490.00,
-        'price_yearly' => 37900.00,
+        'price_monthly' => 179.00,
+        'price_yearly' => 1611.00,
         'max_users' => 150,
         'max_branches' => 25,
         'max_storage_mb' => 15360,
@@ -138,8 +144,8 @@ return [
     'ultimate' => [
         'name' => 'Ultimate',
         'description' => 'Full Rateb ERP platform with governance and access control',
-        'price_monthly' => 4990.00,
-        'price_yearly' => 53900.00,
+        'price_monthly' => 249.00,
+        'price_yearly' => 2241.00,
         'max_users' => 500,
         'max_branches' => 100,
         'max_storage_mb' => 51200,

@@ -332,6 +332,21 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function publishedPlans(): array
     {
+        // Config is the marketing source of truth (all 6 packages + promo prices).
+        $fromConfig = PlanLimitService::marketingPlanRows();
+        if ($fromConfig !== []) {
+            static $synced = false;
+            if (!$synced) {
+                $synced = true;
+                try {
+                    (new MigrationService())->repairMarketingPlansCanonicalIfNeeded();
+                } catch (\Throwable $e) {
+                    // Best-effort DB sync for checkout/admin; UI still uses config.
+                }
+            }
+
+            return $fromConfig;
+        }
         try {
             return (new Plan())->getActive();
         } catch (\Throwable $e) {
