@@ -1558,6 +1558,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
+        // Insert missing tiers only — never rewrite prices/names after admin edits.
         try {
             \Rateb\App\Services\PlanLimitService::ensureCanonicalPlansPersisted();
             (new \Rateb\App\Services\MigrationService())
@@ -1579,14 +1580,27 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         );
     }
 
+    protected function redirectAfterSave(int $id): void
+    {
+        // Stay on the edit form so admin can confirm their values persisted.
+        if ($id > 0) {
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+            return;
+        }
+        parent::redirectAfterSave($id);
+    }
+
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         $recommended = \Rateb\App\Services\PlanLimitService::recommendedSlug();
         foreach ($data['items'] as &$row) {
-            // Prefer localized Arabic labels for canonical tiers in the admin list.
-            $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
+            $dbName = trim((string) ($row['name'] ?? ''));
+            // Show DB name; fall back to localized label only when DB name is empty/corrupt.
+            if ($dbName === '' || strtolower($dbName) === 'label' || strtolower($dbName) === (string) ($row['slug'] ?? '')) {
+                $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
+            }
             if (strtolower(trim((string) ($row['slug'] ?? ''))) === $recommended) {
                 $row['name'] = trim((string) $row['name']) . ' · ' . __('cms_plan_recommended');
             }
@@ -1691,6 +1705,20 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             if (array_key_exists($key, $data)) {
                 $data[$key] = rateb_western_digits((string) $data[$key]);
             }
+        }
+        // Keep Arabic names/descriptions intact (JSON_UNESCAPED_UNICODE for modules only).
+        if (isset($data['name'])) {
+            $data['name'] = trim((string) $data['name']);
+        }
+        if (isset($data['description'])) {
+            $data['description'] = trim((string) $data['description']);
+        }
+        $slug = strtolower(trim((string) ($data['slug'] ?? $this->input('slug', ''))));
+        if ($slug !== '' && (trim((string) ($data['name'] ?? '')) === '' || strtolower((string) $data['name']) === 'label')) {
+            $data['name'] = \Rateb\App\Models\Plan::marketingName(['slug' => $slug, 'name' => (string) ($data['name'] ?? '')]);
+        }
+        if ($slug !== '' && (trim((string) ($data['description'] ?? '')) === '' || trim((string) $data['description']) === '. ERP')) {
+            $data['description'] = \Rateb\App\Models\Plan::marketingDescription(['slug' => $slug, 'description' => (string) ($data['description'] ?? '')]);
         }
         $modules = $this->input('modules', []);
         if (is_array($modules)) {

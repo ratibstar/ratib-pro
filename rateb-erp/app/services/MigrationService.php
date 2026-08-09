@@ -144,6 +144,8 @@ final class MigrationService
             '242_plan_tiers_market_lowest_promo.sql' => 'market-lowest promo prices catchup (242)',
             '243_plan_tiers_arabic_labels.sql' => 'Arabic plan labels catchup (243)',
             '244_plan_tiers_ensure_launch_ultimate.sql' => 'ensure launch+ultimate plans catchup (244)',
+            '245_plan_tiers_fix_corrupted_labels.sql' => 'fix corrupted plan labels catchup (245)',
+            '246_plan_tiers_fix_labels_again.sql' => 're-fix ultimate/launch labels catchup (246)',
         ] as $fileName => $label) {
             $catchup = $root . '/migrations/' . $fileName;
             if (!is_file($catchup) || $this->isApplied($pdo, $fileName)) {
@@ -215,36 +217,13 @@ final class MigrationService
             }
             $already = isset($existing[$slug]);
             if ($already && !$overwriteExisting) {
-                // Keep admin-edited prices/limits/modules; ensure active + Arabize English seed labels.
+                // Keep ALL admin edits (name, prices, modules). Only reactivate if needed.
                 try {
                     $stmt = $pdo->prepare('UPDATE rateb_plans SET is_active = 1 WHERE slug = :slug AND is_active = 0');
                     $stmt->execute(['slug' => $slug]);
                     $this->drainStatement($stmt);
                 } catch (\Throwable $e) {
                     $log[] = 'Plan reactivate skipped for ' . $slug . ': ' . $e->getMessage();
-                }
-                $arName = (string) ($tier['name'] ?? '');
-                $arDesc = (string) ($tier['description'] ?? '');
-                if ($arName !== '') {
-                    try {
-                        $stmt = $pdo->prepare(
-                            'UPDATE rateb_plans
-                             SET name = :name, description = :description
-                             WHERE slug = :slug
-                               AND name IN (
-                                   \'Launch\', \'Starter\', \'Commerce\', \'Professional\', \'Enterprise\', \'Ultimate\',
-                                   \'Launch · موصى بها\', \'Professional · موصى بها\'
-                               )'
-                        );
-                        $stmt->execute([
-                            'name' => $arName,
-                            'description' => $arDesc,
-                            'slug' => $slug,
-                        ]);
-                        $this->drainStatement($stmt);
-                    } catch (\Throwable $e) {
-                        $log[] = 'Plan Arabic label skip for ' . $slug . ': ' . $e->getMessage();
-                    }
                 }
                 continue;
             }
@@ -263,21 +242,26 @@ final class MigrationService
             $maxBranches = (int) ($tier['max_branches'] ?? 1);
 
             try {
+                // When not overwriting: never clobber admin edits on duplicate slug.
+                $dupUpdate = $overwriteExisting
+                    ? 'name = VALUES(name),
+                        description = VALUES(description),
+                        price_monthly = VALUES(price_monthly),
+                        price_yearly = VALUES(price_yearly),
+                        max_users = VALUES(max_users),
+                        max_storage_mb = VALUES(max_storage_mb),'
+                        . ($hasBranches ? "\n                        max_branches = VALUES(max_branches)," : '')
+                        . '
+                        modules = VALUES(modules),
+                        is_active = 1'
+                    : 'is_active = 1';
+
                 if ($hasBranches) {
                     $sql = 'INSERT INTO rateb_plans
                         (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, max_branches, modules, is_active)
                         VALUES
                         (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :max_branches, :modules, 1)
-                        ON DUPLICATE KEY UPDATE
-                        name = VALUES(name),
-                        description = VALUES(description),
-                        price_monthly = VALUES(price_monthly),
-                        price_yearly = VALUES(price_yearly),
-                        max_users = VALUES(max_users),
-                        max_storage_mb = VALUES(max_storage_mb),
-                        max_branches = VALUES(max_branches),
-                        modules = VALUES(modules),
-                        is_active = 1';
+                        ON DUPLICATE KEY UPDATE ' . $dupUpdate;
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
                         'name' => $name,
@@ -295,15 +279,7 @@ final class MigrationService
                         (name, slug, description, price_monthly, price_yearly, max_users, max_storage_mb, modules, is_active)
                         VALUES
                         (:name, :slug, :description, :price_monthly, :price_yearly, :max_users, :max_storage_mb, :modules, 1)
-                        ON DUPLICATE KEY UPDATE
-                        name = VALUES(name),
-                        description = VALUES(description),
-                        price_monthly = VALUES(price_monthly),
-                        price_yearly = VALUES(price_yearly),
-                        max_users = VALUES(max_users),
-                        max_storage_mb = VALUES(max_storage_mb),
-                        modules = VALUES(modules),
-                        is_active = 1';
+                        ON DUPLICATE KEY UPDATE ' . $dupUpdate;
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
                         'name' => $name,

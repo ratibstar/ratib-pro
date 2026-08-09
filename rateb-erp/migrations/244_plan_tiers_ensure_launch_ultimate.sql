@@ -22,6 +22,5 @@ INSERT INTO rateb_plans (
     1
 )
 ON DUPLICATE KEY UPDATE
-    is_active = 1,
-    name = VALUES(name),
-    description = VALUES(description);
+    is_active = 1;
+-- Do NOT reset name/description/prices — admin edits must persist.
