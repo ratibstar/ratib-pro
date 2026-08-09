@@ -110,11 +110,32 @@ final class AuthorizationService
         }
         $companyId = $this->userCompanyId($userId);
         if ($companyId < 1) {
-            return '';
+            // Platform staff: roles with company_id IS NULL only.
+            return ' AND r.company_id IS NULL';
         }
         $params['role_cid'] = $companyId;
 
         return ' AND r.company_id = :role_cid';
+    }
+
+    /** Non-SA platform operator (no tenant company) with at least one global role. */
+    public function userIsPlatformStaff(int $userId): bool
+    {
+        if ($userId < 1 || $this->userIsSuperAdmin($userId)) {
+            return false;
+        }
+        if ($this->userCompanyId($userId) > 0) {
+            return false;
+        }
+        $row = (new Role())->queryOne(
+            'SELECT 1 AS ok FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid AND r.company_id IS NULL
+             LIMIT 1',
+            ['uid' => $userId]
+        );
+
+        return $row !== null;
     }
 
     private function userIsSuperAdmin(int $userId): bool
@@ -202,11 +223,18 @@ final class AuthorizationService
             return false;
         }
         $slug = (string) ($role['slug'] ?? '');
-        if ($slug !== '' && in_array($slug, self::platformRoleSlugs(), true)) {
-            return false;
-        }
         $companyId = $this->userCompanyId($userId);
+        $isPlatformRole = $slug !== '' && in_array($slug, self::platformRoleSlugs(), true);
+
+        // Platform staff (no tenant): only global platform roles — never the full SA slug.
         if ($companyId < 1) {
+            return $isPlatformRole
+                && $slug !== 'super-admin'
+                && (int) ($role['company_id'] ?? 0) < 1;
+        }
+
+        // Company users cannot receive platform-scoped roles.
+        if ($isPlatformRole) {
             return false;
         }
 

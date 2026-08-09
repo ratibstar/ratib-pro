@@ -1117,6 +1117,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                   window.addEventListener('online', syncBadge);
                 })();
                 </script>
+                <?php
+                $topbarUserName = trim((string) (\Rateb\App\Core\SessionManager::get('rateb_user_display', '') ?? ''));
+                if ($topbarUserName === '') {
+                    $topbarUser = \Rateb\App\Core\Auth::user();
+                    $topbarUserName = trim((string) ($topbarUser['name'] ?? $topbarUser['email'] ?? ''));
+                }
+                if ($topbarUserName !== '') { ?>
+                <span class="rateb-topbar-user small d-inline-flex align-items-center gap-1" title="<?php echo Rateb\App\Core\View::escape($topbarUserName); ?>">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    <span class="rateb-topbar-user__name"><?php echo Rateb\App\Core\View::escape($topbarUserName); ?></span>
+                </span>
+                <?php } ?>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>" aria-pressed="false"><i class="fas fa-sun"></i></button>
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>" aria-pressed="false"><i class="fas fa-moon"></i></button>

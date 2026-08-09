@@ -47,7 +47,12 @@ final class ErpAuthMiddleware implements MiddlewareInterface
         if (SessionManager::get('rateb_is_super_admin')) {
             return true;
         }
-        if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1) {
+            $uid = (int) SessionManager::get('rateb_user_id', 0);
+            if ($uid > 0 && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
+                return true;
+            }
             Response::redirect(
                 function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login')
             );
@@ -471,6 +476,10 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
 
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1) {
+            $uid = (int) SessionManager::get('rateb_user_id', 0);
+            if ($uid > 0 && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
+                return true;
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }

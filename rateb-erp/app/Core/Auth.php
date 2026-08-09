@@ -44,8 +44,16 @@ final class Auth
         }
 
         $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+        if ($isSuper) {
+            return self::attemptWithUser($user, 'admin');
+        }
+        $companyId = (int) ($user['company_id'] ?? 0);
+        if ($companyId < 1
+            && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) $user['id'])) {
+            return self::attemptWithUser($user, 'platform');
+        }
 
-        return self::attemptWithUser($user, $isSuper ? 'admin' : 'company');
+        return self::attemptWithUser($user, 'company');
     }
 
     /** @param array<string, mixed> $user */
@@ -74,6 +82,18 @@ final class Auth
             self::$lastLoginFailureReason = 'credentials';
 
             return null;
+        }
+        if ($portal === 'platform') {
+            if ($isSuper || (int) ($user['company_id'] ?? 0) > 0) {
+                self::$lastLoginFailureReason = 'credentials';
+
+                return null;
+            }
+            if (!(new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) $user['id'])) {
+                self::$lastLoginFailureReason = 'credentials';
+
+                return null;
+            }
         }
 
         if ($portal === 'company') {
@@ -122,31 +142,36 @@ final class Auth
         }
 
         $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+        $portal = $isSuper ? 'admin' : 'company';
         if (!$isSuper) {
             $companyId = (int) ($user['company_id'] ?? 0);
             if ($companyId < 1) {
-                return false;
-            }
-            $company = (new \Rateb\App\Models\Company())->find($companyId);
-            if (!$company || (string) ($company['status'] ?? '') !== 'active') {
-                return false;
-            }
-            $limits = new \Rateb\App\Services\PlanLimitService();
-            if (!$limits->companyAccessAllowed($companyId)) {
-                if ((string) ($company['status'] ?? '') === 'active') {
-                    try {
-                        (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);
-                    } catch (\Throwable $e) {
-                        error_log('Auth loginUser subscription heal: ' . $e->getMessage());
-                    }
-                }
-                if (!$limits->companyAccessAllowed($companyId)) {
+                if (!(new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) $user['id'])) {
                     return false;
+                }
+                $portal = 'platform';
+            } else {
+                $company = (new \Rateb\App\Models\Company())->find($companyId);
+                if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+                    return false;
+                }
+                $limits = new \Rateb\App\Services\PlanLimitService();
+                if (!$limits->companyAccessAllowed($companyId)) {
+                    if ((string) ($company['status'] ?? '') === 'active') {
+                        try {
+                            (new \Rateb\App\Services\DedicatedCompanySeedService())->ensureCompanyLoginReady($companyId);
+                        } catch (\Throwable $e) {
+                            error_log('Auth loginUser subscription heal: ' . $e->getMessage());
+                        }
+                    }
+                    if (!$limits->companyAccessAllowed($companyId)) {
+                        return false;
+                    }
                 }
             }
         }
 
-        self::establishSession($user, $isSuper ? 'admin' : 'company');
+        self::establishSession($user, $portal);
         return true;
     }
 

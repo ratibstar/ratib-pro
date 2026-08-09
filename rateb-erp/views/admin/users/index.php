@@ -15,6 +15,9 @@ if (!empty($showUsersScopeTabs)) { ?>
     <a class="btn btn-outline-primary<?php echo $scope === 'platform' ? ' active' : ''; ?>"
        href="<?php echo Rateb\App\Core\View::escape($baseList . '?scope=platform'); ?>"
        data-rateb-full-nav="1"><?php echo __('users_scope_platform'); ?></a>
+    <a class="btn btn-outline-primary<?php echo $scope === 'staff' ? ' active' : ''; ?>"
+       href="<?php echo Rateb\App\Core\View::escape($baseList . '?scope=staff'); ?>"
+       data-rateb-full-nav="1"><?php echo __('users_scope_staff'); ?></a>
     <a class="btn btn-outline-primary<?php echo $scope === 'all' ? ' active' : ''; ?>"
        href="<?php echo Rateb\App\Core\View::escape($baseList . '?scope=all'); ?>"
        data-rateb-full-nav="1"><?php echo __('users_scope_all'); ?></a>

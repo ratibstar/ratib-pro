@@ -324,6 +324,19 @@ body.rateb-app {
     z-index: 900;
 }
 
+.rateb-topbar-user {
+    color: var(--rateb-text, #334155);
+    font-weight: 600;
+    max-width: 12rem;
+    min-width: 0;
+}
+
+.rateb-topbar-user__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .rateb-topbar-logout {
     white-space: nowrap;
     flex-shrink: 0;

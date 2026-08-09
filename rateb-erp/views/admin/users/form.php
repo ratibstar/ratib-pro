@@ -14,6 +14,16 @@ if (!empty($platformUserForm)) {
     $action = function_exists('rateb_url_query')
         ? rateb_url_query($isEdit ? rateb_url('admin/users/' . (int) $item['id']) : rateb_url('admin/users'), ['for' => 'platform'])
         : ($action . (str_contains($action, '?') ? '&' : '?') . 'for=platform');
+} elseif (!empty($platformStaffForm)) {
+    $action = function_exists('rateb_url_query')
+        ? rateb_url_query($isEdit ? rateb_url('admin/users/' . (int) $item['id']) : rateb_url('admin/users'), ['for' => 'staff'])
+        : ($action . (str_contains($action, '?') ? '&' : '?') . 'for=staff');
+}
+$cancelUrl = rateb_url($routePrefix);
+if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
+    $cancelUrl = rateb_url_query(rateb_url('admin/users'), ['scope' => 'platform']);
+} elseif (!empty($platformStaffForm) && function_exists('rateb_url_query')) {
+    $cancelUrl = rateb_url_query(rateb_url('admin/users'), ['scope' => 'staff']);
 }
 ?>
 <?php if ($isEdit && !empty($loginBarcode)) {
@@ -28,7 +38,7 @@ if (!empty($platformUserForm)) {
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <?php if (!empty($formHelp) && empty($platformUserForm)) { ?>
+        <?php if (!empty($formHelp) && empty($platformUserForm) && empty($platformStaffForm)) { ?>
         <div class="alert alert-secondary py-2 small mb-3" role="status">
             <?php echo Rateb\App\Core\View::escape((string) $formHelp); ?>
         </div>
@@ -37,6 +47,8 @@ if (!empty($platformUserForm)) {
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php if (!empty($platformUserForm)) { ?>
             <input type="hidden" name="for" value="platform">
+            <?php } elseif (!empty($platformStaffForm)) { ?>
+            <input type="hidden" name="for" value="staff">
             <?php } ?>
             <div class="row g-3">
                 <div class="col-md-6">
@@ -63,6 +75,9 @@ if (!empty($platformUserForm)) {
                     <?php if (!empty($platformUserForm)) { ?>
                     <input type="hidden" name="company_id" value="">
                     <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape(__('users_type_platform_sa') . ' — ' . __('users_no_company')); ?>" disabled>
+                    <?php } elseif (!empty($platformStaffForm)) { ?>
+                    <input type="hidden" name="company_id" value="">
+                    <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape(__('users_type_platform_staff') . ' — ' . __('users_no_company')); ?>" disabled>
                     <?php } else { ?>
                     <select class="form-select" name="company_id"<?php echo !empty($hideSuperAdminFlag) ? ' disabled' : ''; ?>>
                         <?php if (empty($hideSuperAdminFlag)) { ?>
@@ -103,6 +118,12 @@ if (!empty($platformUserForm)) {
                         <i class="fas fa-shield-halved me-1"></i>
                         <?php echo Rateb\App\Core\View::escape(__('users_create_platform_sa_hint')); ?>
                     </div>
+                    <?php } elseif (!empty($platformStaffForm)) { ?>
+                    <input type="hidden" name="is_super_admin" value="0">
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fas fa-user-shield me-1"></i>
+                        <?php echo Rateb\App\Core\View::escape(__('users_create_platform_staff_hint')); ?>
+                    </div>
                     <?php } elseif (empty($hideSuperAdminFlag)) { ?>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_super_admin" value="1" id="is_super_admin"<?php echo !empty($isSuperAdmin) ? ' checked' : ''; ?>>
@@ -118,7 +139,7 @@ if (!empty($platformUserForm)) {
             </div>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
-                <p class="small text-muted mb-3"><?php echo __('branch_roles_form_intro'); ?></p>
+                <p class="small text-muted mb-3"><?php echo !empty($platformStaffForm) ? __('users_staff_roles_intro') : __('branch_roles_form_intro'); ?></p>
                 <?php
                 $rolesGrouped = $rolesGrouped ?? [];
                 $roleGroupMeta = [
@@ -156,7 +177,7 @@ if (!empty($platformUserForm)) {
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
-                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+                <a href="<?php echo Rateb\App\Core\View::escape($cancelUrl); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
             </div>
         </form>
     </div>
