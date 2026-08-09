@@ -171,7 +171,12 @@ final class SessionManager
         }
 
         if (empty($_SESSION['_rateb_init'])) {
-            session_regenerate_id(true);
+            // Regenerating an *empty* session mints Set-Cookie rateb_erp=newEmpty and can
+            // clobber a still-valid sibling cookie during soft-nav/auth bounce. Only rotate
+            // when authenticated (login path uses regenerate() explicitly).
+            if (!empty($_SESSION['rateb_user_id'])) {
+                session_regenerate_id(true);
+            }
             $_SESSION['_rateb_init'] = time();
         }
 

@@ -1450,25 +1450,80 @@
         }).catch(function () { return false; });
     }
 
+    function isLoginUrl(url) {
+        return /\/login(?:\/|\?|#|$)/i.test(String(url || ''));
+    }
+
     function fetchNetworkHtml(href) {
         // Soft-offline: short timeout so hung cloud fetch cannot lock soft-nav / sidebar.
         // True online keeps long budgets (do not race-abort healthy navigations).
         var timeoutMs = isUiOffline()
             ? 2800
             : (isBareAdminHref(href) ? 10000 : (isHeavyNavHref(href) ? 20000 : 12000));
+        // redirect:manual — never follow 302→login. Following login HTML used to Set-Cookie
+        // an empty rateb_erp and wipe the live ERP session (any sidebar icon → logout).
         var raw = fetchWithTimeout(href, {
             credentials: 'same-origin',
             cache: 'no-store',
+            redirect: 'manual',
             headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
         }, timeoutMs);
         var packed = raw.then(function (res) {
-            if (!res || !res.ok) {
+            if (!res) {
                 throw new Error('nav_fetch_failed');
             }
+            var status = res.status | 0;
+            if (status >= 300 && status < 400) {
+                var loc = '';
+                try {
+                    loc = res.headers.get('Location') || '';
+                } catch (eLoc) { /* ignore */ }
+                if (isLoginUrl(loc) || isLoginUrl(href)) {
+                    throw new Error('nav_auth_bounce');
+                }
+                // Other redirects (ops company, trailing slash): one hop with follow.
+                var absLoc = loc;
+                try {
+                    absLoc = loc ? new URL(loc, href).href : '';
+                } catch (eAbs) { /* ignore */ }
+                if (!absLoc) {
+                    throw new Error('nav_fetch_failed');
+                }
+                return fetchWithTimeout(absLoc, {
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    redirect: 'manual',
+                    headers: { Accept: 'text/html', 'X-Rateb-Nav-Swap': '1' }
+                }, timeoutMs).then(function (res2) {
+                    if (!res2) {
+                        throw new Error('nav_fetch_failed');
+                    }
+                    if ((res2.status | 0) >= 300 && (res2.status | 0) < 400) {
+                        var loc2 = '';
+                        try {
+                            loc2 = res2.headers.get('Location') || '';
+                        } catch (e2) { /* ignore */ }
+                        if (isLoginUrl(loc2)) {
+                            throw new Error('nav_auth_bounce');
+                        }
+                        throw new Error('nav_fetch_failed');
+                    }
+                    if (!res2.ok) {
+                        throw new Error('nav_fetch_failed');
+                    }
+                    return res2;
+                });
+            }
+            if (status === 0 && String(res.type || '') === 'opaqueredirect') {
+                throw new Error('nav_auth_bounce');
+            }
+            if (!res.ok) {
+                throw new Error('nav_fetch_failed');
+            }
+            return res;
+        }).then(function (res) {
             var finalUrl = String(res.url || href || '');
-            // Never soft-paint login. Following 302→login?err=session used to run the login
-            // recovery purger and wipe a still-valid ERP session (Users click → logout).
-            if (/\/login(?:\/|\?|#|$)/i.test(finalUrl)) {
+            if (isLoginUrl(finalUrl)) {
                 throw new Error('nav_auth_bounce');
             }
             return res.text().then(function (html) {
@@ -1800,6 +1855,13 @@
                     if (!paintOfflinePageStub(href, opts)) {
                         showNavToast('تعذر فتح الصفحة أوفلاين من الشيل الحالي.', true);
                     }
+                } else if (err && err.message === 'nav_auth_bounce') {
+                    // Stay put. hardNavigate(href) would complete a 302→login and look like logout.
+                    try {
+                        updateActiveNav(lastHref || root.location.href);
+                    } catch (eNav) { /* ignore */ }
+                    showNavToast('تعذر فتح الصفحة — الجلسة ما زالت هنا. حدّث الصفحة (F5) إن استمر الأمر.', true);
+                    lastSoftNavMissHref = '';
                 } else {
                     // Online: never paint fake offline stub (badge says متصل).
                     showSoftNavMissToast(href);

@@ -36,15 +36,24 @@ final class LoginController extends Controller
         }
 
         $err = (string) ($_GET['err'] ?? '');
-        // err=session MUST NOT purge/destroy cookies. Soft-nav and middleware bounce here while
-        // the browser may still hold a valid rateb_erp on another path; purge wiped it and
-        // made every sidebar click + hard refresh look like logout.
+        // Soft-nav / middleware may bounce here while a valid rateb_erp still exists on another
+        // path. NEVER reissueCanonicalSessionCookie() on an unauthenticated login GET — that
+        // Set-Cookies an empty session id and wipes the live ERP session (sidebar → logout).
+        // Soft-nav sends X-Rateb-Nav-Swap; answer 401 without touching cookies.
+        $isNavSwap = isset($_SERVER['HTTP_X_RATEB_NAV_SWAP']);
+        if ($isNavSwap) {
+            if (!headers_sent()) {
+                http_response_code(401);
+                header('X-Rateb-Auth-Required: 1');
+                header('Cache-Control: no-store');
+            }
+            echo 'auth_required';
+            return;
+        }
         if ($err === 'csrf') {
-            // Soft CSRF recovery only: new token in current session. No purgeAllAuthCookies.
+            // Soft CSRF recovery only: new token in current session. No purge / no empty reissue.
             Csrf::regenerate();
-            SessionManager::reissueCanonicalSessionCookie();
         } else {
-            SessionManager::reissueCanonicalSessionCookie();
             Csrf::token();
         }
 
