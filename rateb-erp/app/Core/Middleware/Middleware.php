@@ -32,10 +32,9 @@ final class ErpAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check()) {
+            // Plain login URL — avoid ?err=session (historically triggered cookie purge).
             Response::redirect(
-                function_exists('rateb_list_url')
-                    ? rateb_list_url('login', ['err' => 'session'])
-                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+                function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login')
             );
             return false;
         }
@@ -50,9 +49,7 @@ final class ErpAuthMiddleware implements MiddlewareInterface
         }
         if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
             Response::redirect(
-                function_exists('rateb_list_url')
-                    ? rateb_list_url('login', ['err' => 'session'])
-                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+                function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login')
             );
             return false;
         }
@@ -69,9 +66,7 @@ final class ErpAuthMiddleware implements MiddlewareInterface
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1) {
             Response::redirect(
-                function_exists('rateb_list_url')
-                    ? rateb_list_url('login', ['err' => 'session'])
-                    : (function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'))
+                function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login')
             );
             return false;
         }

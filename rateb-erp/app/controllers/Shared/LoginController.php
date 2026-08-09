@@ -26,29 +26,26 @@ final class LoginController extends Controller
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
             header('Pragma: no-cache');
         }
+
+        // Always start session before Auth::check — otherwise a valid cookie is ignored and
+        // recovery used to purgeAllAuthCookies() and log everyone out on F5 / every nav icon.
+        SessionManager::start();
         if (Auth::check()) {
             Response::redirect(rateb_url(Auth::homePath()));
             return;
         }
 
-        // Duplicate rateb_erp / rateb_csrf cookies (path=/ vs /rateb-erp/public) break CSRF.
-        // CRITICAL: never purge when the browser still has a valid session — soft-nav/prefetch
-        // to /admin/users can 302→login?err=session briefly; wiping cookies logged everyone out.
         $err = (string) ($_GET['err'] ?? '');
-        if (($err === 'csrf' || $err === 'session') && Auth::check()) {
-            Response::redirect(rateb_url(Auth::homePath()));
-            return;
-        }
-        if ($err === 'csrf' || $err === 'session') {
-            SessionManager::purgeAllAuthCookies();
-            SessionManager::destroy();
-            // destroy() already starts a fresh session — pin its cookie, do NOT purge again.
+        // err=session MUST NOT purge/destroy cookies. Soft-nav and middleware bounce here while
+        // the browser may still hold a valid rateb_erp on another path; purge wiped it and
+        // made every sidebar click + hard refresh look like logout.
+        if ($err === 'csrf') {
+            // Soft CSRF recovery only: new token in current session. No purgeAllAuthCookies.
+            Csrf::regenerate();
+            SessionManager::reissueCanonicalSessionCookie();
+        } else {
             SessionManager::reissueCanonicalSessionCookie();
             Csrf::token();
-        } else {
-            SessionManager::start();
-            SessionManager::reissueCanonicalSessionCookie();
-            // Do not expire path=/ here — races with soft-nav and forces multi-click login.
         }
 
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
