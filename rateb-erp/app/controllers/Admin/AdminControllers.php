@@ -1566,7 +1566,11 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $catalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
         foreach ($data['items'] as &$row) {
-            $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
+            // Keep DB name so admin edits persist in the list (lang labels are for marketing only).
+            $dbName = trim((string) ($row['name'] ?? ''));
+            if ($dbName === '') {
+                $row['name'] = \Rateb\App\Models\Plan::marketingName($row);
+            }
             $row['modules_summary'] = $this->formatModulesSummary($row, $catalog);
         }
         unset($row);

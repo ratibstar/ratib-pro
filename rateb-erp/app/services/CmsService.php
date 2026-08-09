@@ -332,26 +332,26 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function publishedPlans(): array
     {
-        // Config is the marketing source of truth (all 6 packages + promo prices).
-        $fromConfig = PlanLimitService::marketingPlanRows();
-        if ($fromConfig !== []) {
-            static $synced = false;
-            if (!$synced) {
-                $synced = true;
-                try {
-                    (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
-                } catch (\Throwable $e) {
-                    // Best-effort DB sync for checkout/admin; UI still uses config.
-                }
+        // DB is editable source of truth; config only seeds missing packages.
+        static $synced = false;
+        if (!$synced) {
+            $synced = true;
+            try {
+                (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
+            } catch (\Throwable $e) {
+                // Best-effort ensure rows exist.
             }
-
-            return $fromConfig;
         }
         try {
-            return (new Plan())->getActive();
+            $dbPlans = (new Plan())->getActive();
+            if ($dbPlans !== []) {
+                return $dbPlans;
+            }
         } catch (\Throwable $e) {
-            return [];
+            // Fall through to config.
         }
+
+        return PlanLimitService::marketingPlanRows();
     }
 
     /** @return array<string, mixed>|null */

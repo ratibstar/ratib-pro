@@ -3,7 +3,6 @@
 /** @var array<string, string> $moduleCatalog */
 /** @var array<int, string> $selectedModules */
 /** @var array<int, string> $tierPresets */
-use Rateb\App\Models\Plan;
 
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
@@ -34,15 +33,8 @@ $tierPresets = $tierPresets ?? array_keys(\Rateb\App\Services\PlanLimitService::
                     $name = (string) ($field['name'] ?? '');
                     $type = (string) ($field['type'] ?? 'text');
                     $label = (string) ($field['label'] ?? $name);
+                    // Use stored DB values so admin edits stick (marketing pages use lang labels separately).
                     $value = $item[$name] ?? '';
-                    if (is_array($item) && in_array($name, ['name', 'description'], true)) {
-                        $itemSlug = trim((string) ($item['slug'] ?? ''));
-                        if ($itemSlug !== '') {
-                            $value = $name === 'name'
-                                ? Plan::marketingName($item)
-                                : Plan::marketingDescription($item);
-                        }
-                    }
                     $isLtrField = $type === 'number' || $name === 'slug';
                     $inputClass = 'form-control' . ($isLtrField ? ' rateb-ltr-num' : '');
                     if ($type === 'number' && $value !== '' && $value !== null) {

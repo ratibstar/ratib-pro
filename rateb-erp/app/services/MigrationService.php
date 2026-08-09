@@ -136,8 +136,8 @@ final class MigrationService
 
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
 
-        // Prefer config/plan-tiers.php as the single source of truth (6 packages).
-        $this->syncPlanTiersFromConfig($pdo, $log);
+        // Routine: insert missing packages only — never overwrite admin edits.
+        $this->syncPlanTiersFromConfig($pdo, $log, false);
 
         foreach ([
             '241_plan_tiers_six_packages.sql' => 'six-package plan tiers catchup (241)',
@@ -154,17 +154,21 @@ final class MigrationService
             $log[] = 'Applying ' . $label . '…';
             $this->execSqlFile($pdo, $sql);
             $this->markApplied($pdo, $fileName);
-            $this->syncPlanTiersFromConfig($pdo, $log);
+            // Migration SQL already wrote prices; only fill any still-missing rows.
+            $this->syncPlanTiersFromConfig($pdo, $log, false);
         }
 
-        $log[] = 'Marketing plans catchup: six packages synced from plan-tiers.';
+        $log[] = 'Marketing plans catchup: canonical packages present (admin edits preserved).';
 
         return $localLog;
     }
 
-    /** Upsert every tier from config/plan-tiers.php (prices, limits, modules, active). */
-    /** @param list<string> $log */
-    private function syncPlanTiersFromConfig(PDO $pdo, array &$log): void
+    /**
+     * Ensure plan tiers exist from config/plan-tiers.php.
+     * @param bool $overwriteExisting When true, reset prices/modules from config (migrations only).
+     * @param list<string> $log
+     */
+    private function syncPlanTiersFromConfig(PDO $pdo, array &$log, bool $overwriteExisting = false): void
     {
         if (!class_exists(PlanLimitService::class)) {
             return;
@@ -185,6 +189,20 @@ final class MigrationService
             $hasBranches = false;
         }
 
+        $existing = [];
+        try {
+            $stmt = $pdo->query('SELECT slug FROM rateb_plans');
+            $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+            if ($stmt) {
+                $this->drainStatement($stmt);
+            }
+            foreach ($rows as $row) {
+                $existing[strtolower(trim((string) ($row['slug'] ?? '')))] = true;
+            }
+        } catch (\Throwable $e) {
+            $log[] = 'Plan existing lookup failed: ' . $e->getMessage();
+        }
+
         foreach ($tiers as $slug => $tier) {
             if (!is_array($tier)) {
                 continue;
@@ -193,6 +211,19 @@ final class MigrationService
             if ($slug === '') {
                 continue;
             }
+            $already = isset($existing[$slug]);
+            if ($already && !$overwriteExisting) {
+                // Keep admin-edited prices/limits/modules; only ensure active.
+                try {
+                    $stmt = $pdo->prepare('UPDATE rateb_plans SET is_active = 1 WHERE slug = :slug AND is_active = 0');
+                    $stmt->execute(['slug' => $slug]);
+                    $this->drainStatement($stmt);
+                } catch (\Throwable $e) {
+                    $log[] = 'Plan reactivate skipped for ' . $slug . ': ' . $e->getMessage();
+                }
+                continue;
+            }
+
             $modules = PlanLimitService::modulesForSlug($slug);
             $json = json_encode(array_values($modules), JSON_UNESCAPED_UNICODE);
             if (!is_string($json) || $json === '') {
@@ -261,10 +292,16 @@ final class MigrationService
                     ]);
                 }
                 $this->drainStatement($stmt);
-                $log[] = 'Plan tier synced from config: ' . $slug . ' (' . count($modules) . ' modules)';
+                $log[] = ($already ? 'Plan tier reset from config: ' : 'Plan tier inserted from config: ')
+                    . $slug . ' (' . count($modules) . ' modules)';
             } catch (\Throwable $e) {
                 $log[] = 'Plan tier sync failed for ' . $slug . ': ' . $e->getMessage();
             }
+        }
+
+        // Only deactivate extras when doing a full config overwrite (migrations).
+        if (!$overwriteExisting) {
+            return;
         }
 
         try {
@@ -288,7 +325,7 @@ final class MigrationService
     /** @param list<string> $log */
     private function syncPlanTierModulesFromConfig(PDO $pdo, array &$log): void
     {
-        $this->syncPlanTiersFromConfig($pdo, $log);
+        $this->syncPlanTiersFromConfig($pdo, $log, false);
     }
 
     /** @return list<string> */
