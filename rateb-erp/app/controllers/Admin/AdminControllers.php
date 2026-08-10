@@ -1985,17 +1985,38 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             SessionManager::set('_rateb_users_form_platform', 1);
         } elseif ($asStaff) {
             SessionManager::set('_rateb_users_form_staff', 1);
-            // Heal mis-saved SA flag so role permissions actually gate login/nav.
-            if (!empty($item['is_super_admin'])) {
-                $this->model->update($id, ['is_super_admin' => 0, 'company_id' => null]);
-                $item['is_super_admin'] = 0;
-                $item['company_id'] = null;
+            // Always force staff flags in DB (PDO/model null updates were silently no-op before).
+            $healed = $this->forcePlatformStaffUserRow($id);
+            $item['is_super_admin'] = 0;
+            $item['company_id'] = null;
+            if ($healed) {
                 (new AuditService())->log('update', $this->entityName, $id, [
                     'heal' => 'platform_staff_from_sa',
                 ]);
+                SessionManager::flash('success', __('users_staff_healed_relogin'));
             }
         }
         $this->view($this->viewPrefix . '/form', $this->userFormData($item), $this->layout());
+    }
+
+    /** Force platform-staff identity in DB. Returns true when a SA flag was cleared. */
+    private function forcePlatformStaffUserRow(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $before = $this->model->find($userId);
+        $wasSa = !empty($before['is_super_admin']);
+        try {
+            \Rateb\App\Core\Database::connection()
+                ->prepare('UPDATE rateb_users SET is_super_admin = 0, company_id = NULL WHERE id = :id LIMIT 1')
+                ->execute(['id' => $userId]);
+        } catch (\Throwable $e) {
+            error_log('forcePlatformStaffUserRow: ' . $e->getMessage());
+            $this->model->update($userId, ['is_super_admin' => 0, 'company_id' => null]);
+        }
+
+        return $wasSa;
     }
 
     /** @return array<string, mixed> */
@@ -2217,6 +2238,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/create'));
         $id = $this->model->create($data);
+        if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
+            $this->forcePlatformStaffUserRow($id);
+            $data['is_super_admin'] = 0;
+            $data['company_id'] = null;
+        }
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
         (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
@@ -2287,6 +2313,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/' . $id . '/edit'));
         $this->model->update($id, $data);
+        if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
+            $this->forcePlatformStaffUserRow($id);
+            $data['is_super_admin'] = 0;
+            $data['company_id'] = null;
+        }
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
         (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);

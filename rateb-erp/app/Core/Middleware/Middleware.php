@@ -402,6 +402,17 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         }
         $jsonOnly = function_exists('rateb_prefers_json_error_response') && rateb_prefers_json_error_response();
         if ($companyId < 1 || $this->module === '') {
+            // Platform staff: no tenant company — allow when RBAC permission for the module exists.
+            $uid = (int) SessionManager::get('rateb_user_id', 0);
+            if ($uid > 0 && $this->module !== ''
+                && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
+                $modPerm = function_exists('rateb_module_permission')
+                    ? (string) rateb_module_permission($this->module)
+                    : '';
+                if ($modPerm !== '' && (new \Rateb\App\Services\AuthorizationService())->userHasPermission($uid, $modPerm)) {
+                    return true;
+                }
+            }
             if ($jsonOnly) {
                 Response::json(['ok' => false, 'error' => __('module_not_allowed'), 'code' => 'module_not_allowed'], 403);
                 return false;

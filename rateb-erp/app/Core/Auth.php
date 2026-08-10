@@ -141,12 +141,28 @@ final class Auth
             return false;
         }
 
+        $userId = (int) ($user['id'] ?? 0);
+        // Demote mis-saved SA who already has platform staff roles (permissions must apply).
+        if ($userId > 0 && (int) ($user['is_super_admin'] ?? 0) === 1 && (int) ($user['company_id'] ?? 0) < 1) {
+            if (self::userHasAssignablePlatformStaffRoles($userId)) {
+                try {
+                    \Rateb\App\Core\Database::connection()
+                        ->prepare('UPDATE rateb_users SET is_super_admin = 0, company_id = NULL WHERE id = :id LIMIT 1')
+                        ->execute(['id' => $userId]);
+                    $user['is_super_admin'] = 0;
+                    $user['company_id'] = null;
+                } catch (\Throwable $e) {
+                    error_log('Auth loginUser staff heal: ' . $e->getMessage());
+                }
+            }
+        }
+
         $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
         $portal = $isSuper ? 'admin' : 'company';
         if (!$isSuper) {
             $companyId = (int) ($user['company_id'] ?? 0);
             if ($companyId < 1) {
-                if (!(new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) $user['id'])) {
+                if (!(new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($userId)) {
                     return false;
                 }
                 $portal = 'platform';
@@ -392,6 +408,18 @@ final class Auth
                 $user = (new User())->find($userId);
                 if (!$user || (string) ($user['status'] ?? '') !== 'active') {
                     self::clearSessionIdentity();
+                } else {
+                    // Keep session SA/company flags in sync with DB (healed staff must not stay SA in cookie).
+                    $dbSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+                    SessionManager::set('rateb_is_super_admin', $dbSuper);
+                    SessionManager::set(
+                        'rateb_user_display',
+                        (string) ($user['name'] ?? $user['display_name'] ?? SessionManager::get('rateb_user_display', ''))
+                    );
+                    if (!$dbSuper) {
+                        $dbCid = $user['company_id'] !== null ? (int) $user['company_id'] : 0;
+                        SessionManager::set('rateb_company_id', $dbCid > 0 ? $dbCid : null);
+                    }
                 }
             } catch (\Throwable $e) {
                 error_log('RATEB session user lookup: ' . $e->getMessage());
@@ -406,6 +434,9 @@ final class Auth
         // Stale super-admin sessions may still have null company_id — re-bind primary/ops tenant.
         if ($companyIdInt < 1 && $isSuper && function_exists('rateb_resolve_erp_shell_company_id')) {
             $companyIdInt = (int) rateb_resolve_erp_shell_company_id();
+            if ($companyIdInt > 0) {
+                SessionManager::set('rateb_company_id', $companyIdInt);
+            }
         }
         TenantContext::setCompanyId($companyIdInt > 0 ? $companyIdInt : null);
         $companyId = $companyIdInt > 0 ? $companyIdInt : null;
@@ -428,6 +459,42 @@ final class Auth
                 $companyId !== null ? (int) $companyId : null
             );
         }
+    }
+
+    /** True when user has a global platform staff role row (ignores is_super_admin flag). */
+    private static function userHasAssignablePlatformStaffRoles(int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $slugs = \Rateb\App\Services\AuthorizationService::platformRoleSlugs();
+        $slugs = array_values(array_filter(
+            $slugs,
+            static fn (string $s): bool => $s !== '' && $s !== 'super-admin'
+        ));
+        if ($slugs === []) {
+            $slugs = ['access-manager', 'accountant', 'accounting-approver'];
+        }
+        $named = [];
+        $parts = [];
+        foreach ($slugs as $i => $slug) {
+            $key = 's' . $i;
+            $parts[] = ':' . $key;
+            $named[$key] = $slug;
+        }
+        $named['uid'] = $userId;
+        $row = (new \Rateb\App\Models\Role())->queryOne(
+            'SELECT 1 AS ok
+             FROM rateb_user_roles ur
+             INNER JOIN rateb_roles r ON r.id = ur.role_id
+             WHERE ur.user_id = :uid
+               AND r.company_id IS NULL
+               AND r.slug IN (' . implode(',', $parts) . ')
+             LIMIT 1',
+            $named
+        );
+
+        return $row !== null;
     }
 
     /** Clear stale ERP session keys without audit/remember-me side effects (safe during bootstrap). */
