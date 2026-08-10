@@ -772,6 +772,8 @@ return [
     'users_convert_to_platform_staff' => 'Convert to platform staff (limited permissions)',
     'users_convert_to_platform_staff_help' => 'Full super admin bypasses roles. To limit access, convert to platform staff, open the lock on a role, save permissions, then assign the role.',
     'users_create_platform_staff_hint' => 'Platform staff: not a super admin, no company. Assign platform roles below to control access (e.g. access manager or accountant).',
+    'platform_staff_home_intro' => 'This is the platform staff home. You only see modules allowed by your assigned roles — not full super-admin access.',
+    'platform_staff_quick_links' => 'Shortcuts for your permissions',
     'users_staff_roles_intro' => 'Choose global platform roles that define what this staff member can do. At least one role is required.',
     'users_staff_roles_lock_intro' => '1) Open the lock / permission count, edit that role’s permissions and save inside the panel. 2) Check the role, then Save at the bottom to assign it to this staff user. After they log in they only get that role’s permissions (not Company Permissions on the SA dashboard).',
     'users_staff_healed_relogin' => 'This account is now platform staff (not super admin). Important: log out, then sign in with this staff email to see the menu limited by their role.',

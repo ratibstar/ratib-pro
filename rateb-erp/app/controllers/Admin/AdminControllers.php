@@ -92,7 +92,65 @@ final class DashboardController extends Controller
         }
 
         $companyId = (int) SessionManager::get('rateb_company_id');
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        // Platform staff: no tenant company — never bounce to SA-only /admin/settings (redirect loop).
+        if ($companyId < 1 && $userId > 0
+            && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($userId)) {
+            $this->renderPlatformStaffHome($userId);
+
+            return;
+        }
         $this->renderCompanyDashboard($companyId);
+    }
+
+    /** Home for platform staff (RBAC roles, no company, not full SA). */
+    private function renderPlatformStaffHome(int $userId): void
+    {
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $roleIds = $authz->getUserRoleIds($userId);
+        $roles = [];
+        $roleModel = new \Rateb\App\Models\Role();
+        foreach ($roleIds as $rid) {
+            $row = $roleModel->find((int) $rid);
+            if ($row && (int) ($row['company_id'] ?? 0) < 1) {
+                $roles[] = $row;
+            }
+        }
+        $quickLinks = [];
+        $candidates = [
+            ['accounting.view', 'admin/accounting', 'accounting_dashboard', 'fa-calculator'],
+            ['access.manage', 'admin/access-control', 'access_control', 'fa-shield-halved'],
+            ['reports.view', 'admin/reports', 'reports', 'fa-chart-pie'],
+            ['dashboard.view', 'admin', 'dashboard', 'fa-chart-line'],
+        ];
+        foreach ($candidates as [$perm, $path, $labelKey, $icon]) {
+            if ($path === 'admin') {
+                continue;
+            }
+            if (!rateb_can($perm)) {
+                continue;
+            }
+            // Platform accounting route is SA oversight — prefer ops accounting for staff.
+            if ($path === 'admin/accounting' && function_exists('rateb_app_route')) {
+                $path = rateb_app_route('accounting');
+            }
+            if ($path === 'admin/reports' && function_exists('rateb_app_route')) {
+                $path = rateb_app_route('reports');
+            }
+            $quickLinks[] = [
+                'href' => rateb_url($path),
+                'label' => __($labelKey),
+                'icon' => $icon,
+            ];
+        }
+        $this->view('admin/staff-home', [
+            'title' => __('dashboard'),
+            'roles' => $roles,
+            'quickLinks' => $quickLinks,
+            'userName' => (string) (SessionManager::get('rateb_user_display')
+                ?: (Auth::user()['name'] ?? '')),
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 
     private function resolveAgencySuperAdminCompanyId(): int

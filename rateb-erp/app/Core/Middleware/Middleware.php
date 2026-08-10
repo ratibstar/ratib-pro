@@ -107,8 +107,17 @@ final class SuperAdminMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || !SessionManager::get('rateb_is_super_admin')) {
+            // Avoid /admin ↔ /admin/settings redirect loops for platform staff.
+            $uid = (int) SessionManager::get('rateb_user_id', 0);
+            if ($uid > 0
+                && !SessionManager::get('rateb_is_super_admin')
+                && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
+                SessionManager::flash('error', __('access_denied'));
+                Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+                return false;
+            }
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
         return true;
