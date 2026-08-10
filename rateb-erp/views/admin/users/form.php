@@ -71,7 +71,7 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
                     <?php } ?>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label"><?php echo __('companies'); ?></label>
+                    <label class="form-label"><?php echo (!empty($platformUserForm) || !empty($platformStaffForm)) ? __('account_type') : __('companies'); ?></label>
                     <?php if (!empty($platformUserForm)) { ?>
                     <input type="hidden" name="company_id" value="">
                     <input class="form-control" type="text" value="<?php echo Rateb\App\Core\View::escape(__('users_type_platform_sa') . ' — ' . __('users_no_company')); ?>" disabled>

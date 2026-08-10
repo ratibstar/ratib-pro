@@ -1419,6 +1419,40 @@ if (!function_exists('rateb_is_ops_route')) {
     }
 }
 
+if (!function_exists('rateb_is_users_accounts_route')) {
+    /** Users list/create/edit under admin or admin/ops. */
+    function rateb_is_users_accounts_route(?string $route = null): bool
+    {
+        $route = function_exists('rateb_normalize_erp_route')
+            ? rateb_normalize_erp_route($route ?? rateb_current_erp_route())
+            : (string) ($route ?? '');
+        if ($route !== '' && (bool) preg_match('#(?:^|/)(?:admin/ops/)?users(?:/|$)#', $route)) {
+            return true;
+        }
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+
+        return (bool) preg_match('#/(?:admin/ops/)?users(?:/|$)#', $path);
+    }
+}
+
+if (!function_exists('rateb_is_platform_accounts_ui')) {
+    /**
+     * Platform SA / platform staff account screens — hide ops company picker.
+     * Triggered by ?scope=staff|platform or ?for=staff|platform on users routes.
+     */
+    function rateb_is_platform_accounts_ui(?string $route = null): bool
+    {
+        if (!rateb_is_users_accounts_route($route)) {
+            return false;
+        }
+        $scope = strtolower(trim((string) ($_GET['scope'] ?? '')));
+        $for = strtolower(trim((string) ($_POST['for'] ?? $_GET['for'] ?? '')));
+
+        return in_array($scope, ['staff', 'platform'], true)
+            || in_array($for, ['staff', 'platform'], true);
+    }
+}
+
 if (!function_exists('rateb_bootstrap_ops_tenant')) {
     /** Ensure TenantContext has company for ops lookups and CRUD (super admin ?company_id=). */
     function rateb_bootstrap_ops_tenant(): void

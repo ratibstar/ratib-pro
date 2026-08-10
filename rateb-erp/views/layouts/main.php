@@ -1212,13 +1212,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </div>
             <?php } ?>
             <?php
-            $showOpsCompanyPicker = rateb_is_super_admin()
+            $platformAccountsUi = function_exists('rateb_is_platform_accounts_ui')
+                && rateb_is_platform_accounts_ui(isset($erpRoute) ? (string) $erpRoute : null);
+            $showOpsCompanyPicker = !$platformAccountsUi
+                && rateb_is_super_admin()
                 && rateb_is_platform_oversight_host()
                 && (
                 rateb_is_ops_route($erpRoute)
                 || strpos($currentPath, '/admin/ops/') !== false
             );
-            if ($showOpsCompanyPicker) {
+            if ($platformAccountsUi && rateb_is_super_admin()) {
+                Rateb\App\Core\View::partial('platform-accounts-banner');
+            } elseif ($showOpsCompanyPicker) {
                 Rateb\App\Core\View::partial('ops-company-select');
             }
             if ($deferModulePageMetrics) {
