@@ -769,6 +769,8 @@ return [
     'users_create_company_hint' => 'You are creating a user for the active company (not a platform super admin). To add a platform SA use the Platform super admins tab then Create. For limited platform access use Platform staff.',
     'users_create_platform_hint' => 'With no active company you can create a platform super admin (no company) or a user linked to a company from the list.',
     'users_create_platform_sa_hint' => 'Creating a platform super admin: full system access, no company. Company roles are not needed. Enable Platform Super Admin and save.',
+    'users_convert_to_platform_staff' => 'Convert to platform staff (limited permissions)',
+    'users_convert_to_platform_staff_help' => 'Full super admin bypasses roles. To limit access, convert to platform staff, open the lock on a role, save permissions, then assign the role.',
     'users_create_platform_staff_hint' => 'Platform staff: not a super admin, no company. Assign platform roles below to control access (e.g. access manager or accountant).',
     'users_staff_roles_intro' => 'Choose global platform roles that define what this staff member can do. At least one role is required.',
     'users_staff_roles_lock_intro' => '1) Open the lock / permission count, edit that role’s permissions and save inside the panel. 2) Check the role, then Save at the bottom to assign it to this staff user. After they log in they only get that role’s permissions (not Company Permissions on the SA dashboard).',
