@@ -1856,11 +1856,27 @@
                         showNavToast('تعذر فتح الصفحة أوفلاين من الشيل الحالي.', true);
                     }
                 } else if (err && err.message === 'nav_auth_bounce') {
-                    // Stay put. hardNavigate(href) would complete a 302→login and look like logout.
+                    // Never paint login under the current POS/admin URL — go to real /login.
                     try {
-                        updateActiveNav(lastHref || root.location.href);
-                    } catch (eNav) { /* ignore */ }
-                    showNavToast('تعذر فتح الصفحة — الجلسة ما زالت هنا. حدّث الصفحة (F5) إن استمر الأمر.', true);
+                        var bounceLogin = '/rateb-erp/public/login';
+                        try {
+                            var bu = new URL(href, root.location.href);
+                            var bm = bu.pathname.match(/^(.*\/public)(?:\/|$)/i);
+                            bounceLogin = (bm ? (bu.origin + bm[1] + '/login') : (bu.origin + bounceLogin));
+                            var nextPath = bu.pathname + (bu.search || '');
+                            var pub = bm ? bm[1] : '/rateb-erp/public';
+                            if (nextPath.indexOf(pub + '/') === 0) {
+                                nextPath = nextPath.slice(pub.length + 1);
+                            }
+                            if (nextPath && !/^login(?:\/|\?|#|$)/i.test(nextPath)) {
+                                bounceLogin += (bounceLogin.indexOf('?') >= 0 ? '&' : '?')
+                                    + 'next=' + encodeURIComponent(nextPath);
+                            }
+                        } catch (eLoginBuild) { /* use default */ }
+                        hardNavigate(bounceLogin);
+                    } catch (eNav) {
+                        hardNavigate('/rateb-erp/public/login');
+                    }
                     lastSoftNavMissHref = '';
                 } else {
                     // Online: never paint fake offline stub (badge says متصل).

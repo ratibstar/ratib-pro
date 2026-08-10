@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260810-nav-redirect-expose-login-v155';
+var SW_BUILD_ID = '20260810-nav-manual-redirect-login-v156';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -594,8 +594,8 @@ function posHttpRedirectResponse(targetUrl) {
 }
 
 /**
- * fetch(redirect:follow) can land on /login HTML while the address bar stays on
- * /admin/ops/pos/... — expose a real 302 so Chrome updates the URL.
+ * fetch(redirect:follow) used to paint /login HTML while the address bar stayed on
+ * /admin/ops/pos/... — never do that. Expose a real 302 so Chrome updates the URL.
  */
 function navigateRedirectChangedDocument(request, finalUrl) {
     try {
@@ -612,11 +612,62 @@ function navigateRedirectChangedDocument(request, finalUrl) {
     }
 }
 
-/** Prefer browser URL update over painting redirected HTML under the original path. */
+function erpLoginUrlFromRequest(request) {
+    try {
+        var u = new URL(String((request && request.url) || ''), self.location.origin);
+        var m = u.pathname.match(/^(.*\/public)(?:\/|$)/i);
+        var login = (m ? (u.origin + m[1] + '/login') : (u.origin + '/rateb-erp/public/login'));
+        // Preserve return path so post-login can reopen POS/admin.
+        var nextPath = u.pathname + (u.search || '');
+        var pub = m ? m[1] : '/rateb-erp/public';
+        if (nextPath.indexOf(pub + '/') === 0) {
+            nextPath = nextPath.slice(pub.length + 1);
+        }
+        if (nextPath && !/^login(?:\/|\?|#|$)/i.test(nextPath)) {
+            login += (login.indexOf('?') >= 0 ? '&' : '?') + 'next=' + encodeURIComponent(nextPath);
+        }
+        return login;
+    } catch (eLoginUrl) {
+        return '/rateb-erp/public/login';
+    }
+}
+
+function looksLikeLoginHtml(html) {
+    var head = String(html || '').slice(0, 6000);
+    return /rateb-auth-page|data-rateb-login|id=["']login-form["']|id=["']password-form["']/i.test(head);
+}
+
+/** Prefer browser URL update over painting redirected / login HTML under the original path. */
 function settleNavigateFetchResponse(request, response) {
     if (!response) {
         return Promise.resolve(null);
     }
+    var status = 0;
+    try {
+        status = response.status | 0;
+    } catch (eSt) {
+        status = 0;
+    }
+    // redirect:manual — pass Location through so the address bar leaves POS/admin.
+    if (status >= 300 && status < 400) {
+        var loc = '';
+        try {
+            loc = response.headers.get('Location') || '';
+        } catch (eLoc) { /* ignore */ }
+        if (loc) {
+            try {
+                return Promise.resolve(posHttpRedirectResponse(new URL(loc, String(request.url || self.location.href)).href));
+            } catch (eAbs) {
+                return Promise.resolve(posHttpRedirectResponse(loc));
+            }
+        }
+        return Promise.resolve(posHttpRedirectResponse(erpLoginUrlFromRequest(request)));
+    }
+    try {
+        if (String(response.type || '') === 'opaqueredirect') {
+            return Promise.resolve(posHttpRedirectResponse(erpLoginUrlFromRequest(request)));
+        }
+    } catch (eOpq) { /* ignore */ }
     try {
         if (response.redirected) {
             var finalUrl = String(response.url || '');
@@ -625,7 +676,26 @@ function settleNavigateFetchResponse(request, response) {
             }
         }
     } catch (eNavSettle) { /* ignore */ }
-    return asNonRedirectedResponse(response);
+
+    return asNonRedirectedResponse(response).then(function (clean) {
+        if (!clean || !clean.ok) {
+            return clean;
+        }
+        try {
+            var reqPath = new URL(String(request.url || ''), self.location.origin).pathname;
+            if (isAuthPath(reqPath)) {
+                return clean;
+            }
+        } catch (eAuthPath) { /* sniff below */ }
+        return clean.clone().text().then(function (html) {
+            if (looksLikeLoginHtml(html)) {
+                return posHttpRedirectResponse(erpLoginUrlFromRequest(request));
+            }
+            return clean;
+        }).catch(function () {
+            return clean;
+        });
+    });
 }
 
 function isSwExposedRedirect(response) {
@@ -817,7 +887,12 @@ function navigatePosAdminCrudDocument(request) {
             return posAdminConnectionRequiredResponse();
         }
         // Soft latch / transient miss: one more plain network attempt (no latch gate).
-        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+        return fetch(navigateFetchInput(request)).then(function (res) {
+            return settleNavigateFetchResponse(request, res);
+        }).then(function (res) {
+            if (isSwExposedRedirect(res)) {
+                return res;
+            }
             if (res && res.ok) {
                 clearCloudNetworkDegraded();
                 return res;
@@ -1629,7 +1704,9 @@ function adminDocumentNavigate(request, url, event) {
             if (cached) {
                 return cached;
             }
-            return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse);
+            return fetch(navigateFetchInput(request)).then(function (res) {
+                return settleNavigateFetchResponse(request, res);
+            });
         });
     }).catch(function () {
         markCloudNetworkDegraded('admin-nav-fail');
@@ -1652,7 +1729,9 @@ function adminDocumentNavigate(request, url, event) {
                 return cached;
             }
             // Last resort online: network again (no fake offline card).
-            return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+            return fetch(navigateFetchInput(request)).then(function (res) {
+                return settleNavigateFetchResponse(request, res);
+            }).then(function (res) {
                 if (res) {
                     return res;
                 }
@@ -3635,8 +3714,9 @@ function fetchErpAssetNetwork(request, timeoutMs) {
  * Local: pass through to PHP (Wi‑Fi off must still load instantly).
  * Cloud: race fetch vs timeout — hung fetch with false navigator.onLine caused ERR_FAILED.
  *
- * Navigate FetchEvents use redirect:"manual". Returning a Response with redirected:true
- * makes Chrome fail the whole event with ERR_FAILED — always rebuild via asNonRedirectedResponse.
+ * Document navigations use redirect:"manual". settleNavigateFetchResponse turns
+ * 302 Location into an SW 302 (X-Rateb-Pos-Redirect) so Chrome updates the URL.
+ * Never follow→login HTML under /admin/ops/pos (address bar would stay on POS).
  */
 function navigateFetchInput(request) {
     try {
@@ -3644,7 +3724,7 @@ function navigateFetchInput(request) {
             method: 'GET',
             credentials: 'same-origin',
             cache: 'no-store',
-            redirect: 'follow',
+            redirect: 'manual',
             headers: {
                 Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Sec-Fetch-Mode': 'navigate',
@@ -3657,6 +3737,21 @@ function navigateFetchInput(request) {
         } catch (e2) {
             return request;
         }
+    }
+}
+
+/** Assets may hop CDNs — follow redirects (not used for HTML documents). */
+function assetFetchInput(request) {
+    try {
+        return new Request(String(request.url || request), {
+            method: String((request && request.method) || 'GET'),
+            credentials: 'same-origin',
+            cache: 'no-store',
+            redirect: 'follow',
+            headers: request && request.headers ? request.headers : undefined
+        });
+    } catch (eAsset) {
+        return request;
     }
 }
 
@@ -5186,13 +5281,16 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         event.respondWith(
-            fetchErpAssetNetwork(navigateFetchInput(event.request), 800).then(function (response) {
-                if (response) {
+            fetch(navigateFetchInput(event.request)).then(function (response) {
+                return settleNavigateFetchResponse(event.request, response);
+            }).then(function (response) {
+                if (isSwExposedRedirect(response)) {
+                    return response;
+                }
+                if (response && response.ok) {
                     var forShell = response.clone();
                     event.waitUntil(putShell(event.request, forShell).catch(function () { return null; }));
-                    return asNonRedirectedResponse(response).then(function (clean) {
-                        return clean || response;
-                    });
+                    return response;
                 }
                 return shellFallback(event.request);
             }).catch(function () {
