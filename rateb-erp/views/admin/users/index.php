@@ -7,7 +7,7 @@ $scope = (string) ($usersScope ?? 'company');
 $baseList = rateb_url($routePrefix ?? 'admin/users');
 $editQuery = match ($scope) {
     'staff' => ['for' => 'staff'],
-    'platform' => ['for' => 'platform'],
+    // Platform SA list: do not force ?for=platform on edit — record decides SA vs staff.
     default => [],
 };
 if (!empty($showUsersScopeTabs)) { ?>

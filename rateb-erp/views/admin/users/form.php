@@ -118,6 +118,18 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
                         <i class="fas fa-shield-halved me-1"></i>
                         <?php echo Rateb\App\Core\View::escape(__('users_create_platform_sa_hint')); ?>
                     </div>
+                    <?php if ($isEdit) {
+                        $convertStaffUrl = function_exists('rateb_url_query')
+                            ? rateb_url_query(rateb_url('admin/users/' . (int) $item['id'] . '/edit'), ['for' => 'staff'])
+                            : (rateb_url('admin/users/' . (int) $item['id'] . '/edit') . '?for=staff');
+                        ?>
+                    <div class="mt-2">
+                        <a class="btn btn-sm btn-outline-warning" href="<?php echo Rateb\App\Core\View::escape($convertStaffUrl); ?>" data-rateb-full-nav="1">
+                            <i class="fas fa-user-lock me-1"></i><?php echo __('users_convert_to_platform_staff'); ?>
+                        </a>
+                        <div class="form-text"><?php echo Rateb\App\Core\View::escape(__('users_convert_to_platform_staff_help')); ?></div>
+                    </div>
+                    <?php } ?>
                     <?php } elseif (!empty($platformStaffForm)) { ?>
                     <input type="hidden" name="is_super_admin" value="0">
                     <div class="alert alert-info py-2 small mb-0">

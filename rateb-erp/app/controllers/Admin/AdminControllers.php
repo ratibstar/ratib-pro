@@ -1972,6 +1972,20 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         SessionManager::forget('_rateb_users_form_platform');
         SessionManager::forget('_rateb_users_form_staff');
         $for = strtolower(trim((string) $this->input('for', '')));
+        // ?for=platform on edit must not force SA UI for staff accounts (or convert intent).
+        if ($for === 'platform' && empty($item['is_super_admin'])) {
+            $for = (int) ($item['company_id'] ?? 0) < 1 ? 'staff' : '';
+        }
+        if ($for === 'staff' && !empty($item['is_super_admin'])) {
+            // Explicit convert: SA → platform staff with role locks.
+            $this->forcePlatformStaffUserRow($id);
+            $item['is_super_admin'] = 0;
+            $item['company_id'] = null;
+            (new AuditService())->log('update', $this->entityName, $id, [
+                'heal' => 'convert_sa_to_platform_staff',
+            ]);
+            SessionManager::flash('success', __('users_staff_healed_relogin'));
+        }
         $authz = new \Rateb\App\Services\AuthorizationService();
         $asStaff = $for === 'staff'
             || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)
@@ -1981,11 +1995,12 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 && (int) ($item['company_id'] ?? 0) < 1
                 && $this->userHasPlatformStaffRoles($authz, (int) $item['id'])
             );
-        if ($for === 'platform' || (!empty($item['is_super_admin']) && !$asStaff)) {
+        if ($for === 'platform' && !empty($item['is_super_admin'])) {
+            SessionManager::set('_rateb_users_form_platform', 1);
+        } elseif (!empty($item['is_super_admin']) && !$asStaff && $for !== 'staff') {
             SessionManager::set('_rateb_users_form_platform', 1);
         } elseif ($asStaff) {
             SessionManager::set('_rateb_users_form_staff', 1);
-            // Always force staff flags in DB (PDO/model null updates were silently no-op before).
             $healed = $this->forcePlatformStaffUserRow($id);
             $item['is_super_admin'] = 0;
             $item['company_id'] = null;
@@ -1994,6 +2009,17 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                     'heal' => 'platform_staff_from_sa',
                 ]);
                 SessionManager::flash('success', __('users_staff_healed_relogin'));
+            }
+        }
+        // Canonical URL for staff edit (avoids ?for=platform sticking on soft-nav).
+        if ($asStaff || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)) {
+            $want = function_exists('rateb_url_query')
+                ? rateb_url_query(rateb_url('admin/users/' . $id . '/edit'), ['for' => 'staff'])
+                : (rateb_url('admin/users/' . $id . '/edit') . '?for=staff');
+            $reqUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+            if ($for !== 'staff' && !str_contains($reqUri, 'for=staff')) {
+                $this->redirect($want);
+                return;
             }
         }
         $this->view($this->viewPrefix . '/form', $this->userFormData($item), $this->layout());
@@ -2039,13 +2065,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $actorIsSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
         $for = strtolower(trim((string) $this->input('for', '')));
         if ($item !== null && $actorIsSa) {
-            // Existing user: record wins over session/referer (except explicit for=).
-            if ($for === 'platform') {
-                $platformForm = true;
-                $staffForm = false;
-            } elseif ($for === 'staff' || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)) {
+            // Existing user: record wins over session/referer (except explicit for=staff convert).
+            if ($for === 'staff' || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)) {
                 $platformForm = false;
                 $staffForm = true;
+            } elseif ($for === 'platform' && !empty($item['is_super_admin'])) {
+                $platformForm = true;
+                $staffForm = false;
             } elseif (!empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1) {
                 // Mis-saved SA who already has platform staff roles → staff lock UI on edit.
                 $platformForm = !$this->userHasPlatformStaffRoles($authz, (int) $item['id']);
