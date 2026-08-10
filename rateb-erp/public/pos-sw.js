@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260810-online-admin-no-fake-offline-v153';
+var SW_BUILD_ID = '20260810-force-live-bypass-noloop-v154';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -950,10 +950,10 @@ function erpInlineShellResponse() {
         + '<p><a href="' + adminHome + '" style="color:#8ab4ff">تحديث لوحة التحكم</a></p>'
         + '<script>(function(){try{if(navigator.onLine===false)return;'
         + 'var scope=' + JSON.stringify(base) + ';'
-        + 'var live=scope+"admin/?rateb_force_live="+Date.now();'
+        + 'var live=scope+"admin/";'
         + 'fetch(scope+"connectivity-probe.json?_="+Date.now(),{cache:"no-store",credentials:"same-origin"})'
         + '.then(function(r){if(r&&r.ok)location.replace(live);})'
-        + '.catch(function(){setTimeout(function(){location.replace(live);},600);});'
+        + '.catch(function(){});'
         + '}catch(e){}})();<\/script>'
         + '</body></html>';
     return new Response(body, {
@@ -1513,10 +1513,13 @@ function adminDocumentNavigate(request, url, event) {
     try {
         if (url && url.searchParams
             && (url.searchParams.get('rateb_force_live') || url.searchParams.get('rateb_live') === '1')) {
-            return fetch(navigateFetchInput(request), { cache: 'no-store', credentials: 'same-origin' })
-                .then(asNonRedirectedResponse)
+            // Prefer real network body; on failure show static help (never re-stamp force_live).
+            return fetch(request, { cache: 'no-store', credentials: 'same-origin', redirect: 'follow' })
                 .then(function (res) {
-                    return res || onlineAdminRetryResponse(url);
+                    if (res && typeof res.status === 'number') {
+                        return res;
+                    }
+                    return onlineAdminRetryResponse(url);
                 })
                 .catch(function () {
                     return onlineAdminRetryResponse(url);
@@ -1602,30 +1605,25 @@ function adminDocumentNavigate(request, url, event) {
     });
 }
 
-/** Online network failed — tell user to reload; do not paint lean offline menu. */
+/** Online network failed — static recovery page (NO auto-redirect loop). */
 function onlineAdminRetryResponse(url) {
-    var href = '/rateb-erp/public/admin/?rateb_force_live=' + Date.now();
+    var href = '/rateb-erp/public/admin/';
     try {
         var base = self.registration.scope;
         if (base.slice(-1) !== '/') {
             base += '/';
         }
-        href = base + 'admin/?rateb_force_live=' + Date.now();
-        if (url && url.href && /\/admin/i.test(String(url.pathname || ''))) {
-            var u = new URL(url.href);
-            u.searchParams.set('rateb_force_live', String(Date.now()));
-            href = u.href;
-        }
+        // Always land on clean /admin/ — never bounce the same URL with a new force_live stamp.
+        href = base + 'admin/';
     } catch (eH) { /* ignore */ }
     var body = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
         + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        + '<meta http-equiv="refresh" content="2;url=' + href.replace(/"/g, '') + '">'
         + '<title>RATEB ERP</title></head>'
         + '<body style="font-family:system-ui;background:#0f1117;color:#e8eaed;padding:2rem;text-align:center">'
-        + '<h1>جاري التحميل…</h1>'
-        + '<p>أنت متصل. نعيد فتح لوحة التحكم مباشرة.</p>'
+        + '<h1>تعذّر تحميل الصفحة عبر الكاش</h1>'
+        + '<p>أنت متصل. اضغط «إعادة التشغيل للتحديث» أعلى المتصفح، ثم افتح لوحة التحكم.</p>'
         + '<p><a style="color:#8ab4ff" href="' + href.replace(/"/g, '') + '">فتح لوحة التحكم</a></p>'
-        + '<script>setTimeout(function(){location.replace(' + JSON.stringify(href) + ');},400);<\/script>'
+        + '<p class="small" style="opacity:.7;margin-top:1.5rem">أو Ctrl+Shift+R لتفريغ الكاش</p>'
         + '</body></html>';
     return new Response(body, {
         status: 200,
@@ -4901,6 +4899,14 @@ self.addEventListener('fetch', function (event) {
             return;
         }
         if (isErpAdminPath(url.pathname) || /\/admin(\/|$)/i.test(url.pathname)) {
+            // Bypass SW entirely for force-live — stops "جاري التحميل" redirect loops.
+            try {
+                if (url.searchParams.get('rateb_force_live')
+                    || url.searchParams.get('rateb_live') === '1') {
+                    releaseBackgroundWarmAfterFirstDocument();
+                    return;
+                }
+            } catch (eBypass) { /* fall through */ }
             // ALWAYS respondWith — never fall through to Chrome «لا يتوفر اتصال».
             // Online: live network (8s) then cache/shell. Offline/soft-latch: shell within 250ms.
             respondWithDocumentAndReleaseWarmGate(
