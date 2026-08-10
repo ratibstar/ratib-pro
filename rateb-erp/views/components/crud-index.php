@@ -14,6 +14,15 @@ $employeeReceiptEnabled = $employeeReceiptEnabled ?? false;
 $statusToggleEnabled = $statusToggleEnabled ?? false;
 $customsInvoiceActions = !empty($customsInvoiceActions);
 $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
+$editQuery = is_array($editQuery ?? null) ? $editQuery : [];
+$editHref = static function (int $id) use ($actionsRoutePrefix, $editQuery): string {
+    $path = $actionsRoutePrefix . '/' . $id . '/edit';
+    if ($editQuery !== [] && function_exists('rateb_url_query')) {
+        return rateb_url_query(rateb_url($path), $editQuery);
+    }
+
+    return rateb_url($path);
+};
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
     $createEnabled = $createEnabled && $canManage;
@@ -429,7 +438,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             </button>
                         </form>
                         <?php } ?>
-                        <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1"><i class="fas fa-edit"></i></a>
+                        <a href="<?php echo Rateb\App\Core\View::escape($editHref((int) $row['id'])); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>

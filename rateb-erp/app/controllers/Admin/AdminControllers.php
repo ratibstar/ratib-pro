@@ -1968,6 +1968,24 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $this->view('errors/404', ['title' => '404']);
             return;
         }
+        // Edit mode follows the user record — never inherit create-session platform/staff flags.
+        SessionManager::forget('_rateb_users_form_platform');
+        SessionManager::forget('_rateb_users_form_staff');
+        $for = strtolower(trim((string) $this->input('for', '')));
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $asStaff = $for === 'staff'
+            || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)
+            || (
+                $for !== 'platform'
+                && !empty($item['is_super_admin'])
+                && (int) ($item['company_id'] ?? 0) < 1
+                && $this->userHasPlatformStaffRoles($authz, (int) $item['id'])
+            );
+        if ($for === 'platform' || (!empty($item['is_super_admin']) && !$asStaff)) {
+            SessionManager::set('_rateb_users_form_platform', 1);
+        } elseif ($asStaff) {
+            SessionManager::set('_rateb_users_form_staff', 1);
+        }
         $this->view($this->viewPrefix . '/form', $this->userFormData($item), $this->layout());
     }
 
@@ -1988,16 +2006,28 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             }
         }
         $branchSvc = new \Rateb\App\Services\BranchService();
-        $platformForm = $this->wantsPlatformUserForm()
-            || ($item !== null && !empty($item['is_super_admin']) && function_exists('rateb_is_super_admin') && rateb_is_super_admin());
-        $staffForm = !$platformForm && (
-            $this->wantsPlatformStaffForm()
-            || ($item !== null
-                && empty($item['is_super_admin'])
-                && (int) ($item['company_id'] ?? 0) < 1
-                && function_exists('rateb_is_super_admin')
-                && rateb_is_super_admin())
-        );
+        $actorIsSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $for = strtolower(trim((string) $this->input('for', '')));
+        if ($item !== null && $actorIsSa) {
+            // Existing user: record wins over session/referer (except explicit for=).
+            if ($for === 'platform') {
+                $platformForm = true;
+                $staffForm = false;
+            } elseif ($for === 'staff' || (empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1)) {
+                $platformForm = false;
+                $staffForm = true;
+            } elseif (!empty($item['is_super_admin']) && (int) ($item['company_id'] ?? 0) < 1) {
+                // Mis-saved SA who already has platform staff roles → staff lock UI on edit.
+                $platformForm = !$this->userHasPlatformStaffRoles($authz, (int) $item['id']);
+                $staffForm = !$platformForm;
+            } else {
+                $platformForm = !empty($item['is_super_admin']);
+                $staffForm = false;
+            }
+        } else {
+            $platformForm = $this->wantsPlatformUserForm();
+            $staffForm = !$platformForm && $this->wantsPlatformStaffForm();
+        }
         $companyId = ($platformForm || $staffForm) ? 0 : $this->scopedCompanyId();
         $rolesCompanyId = $companyId > 0 ? $companyId : (int) ($item['company_id'] ?? 0);
         if ($rolesCompanyId > 0) {
@@ -2006,12 +2036,24 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($staffForm || $platformForm) {
             $authz->ensureSuggestedRoles();
         }
-        $scopedRoles = $authz->allRoles($rolesCompanyId > 0 ? $rolesCompanyId : 0);
+        // Staff/platform forms must use global roles (company_id 0) — never ops-company clones.
+        $scopedRoles = $authz->allRoles(($staffForm || $platformForm) ? 0 : ($rolesCompanyId > 0 ? $rolesCompanyId : 0));
         if ($staffForm) {
-            // Staff use global roles; skip the legacy «super-admin» role slug (use is_super_admin flag instead).
+            $platformSlugs = \Rateb\App\Services\AuthorizationService::platformRoleSlugs();
+            // Staff use global platform roles only; skip legacy «super-admin» slug (flag instead).
             $scopedRoles = array_values(array_filter(
                 $scopedRoles,
-                static fn (array $role): bool => (string) ($role['slug'] ?? '') !== 'super-admin'
+                static function (array $role) use ($platformSlugs): bool {
+                    $slug = (string) ($role['slug'] ?? '');
+                    if ($slug === '' || $slug === 'super-admin') {
+                        return false;
+                    }
+                    if ($platformSlugs === []) {
+                        return (int) ($role['company_id'] ?? 0) < 1;
+                    }
+
+                    return in_array($slug, $platformSlugs, true) && (int) ($role['company_id'] ?? 0) < 1;
+                }
             ));
         }
         $companies = $companyId > 0
@@ -2084,6 +2126,35 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
 
         return $map;
+    }
+
+    /** True when user already has a global platform staff role (not the SA flag/slug). */
+    private function userHasPlatformStaffRoles(\Rateb\App\Services\AuthorizationService $authz, int $userId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+        $roleIds = $authz->getUserRoleIds($userId);
+        if ($roleIds === []) {
+            return false;
+        }
+        $platformSlugs = \Rateb\App\Services\AuthorizationService::platformRoleSlugs();
+        $roleModel = new \Rateb\App\Models\Role();
+        foreach ($roleIds as $rid) {
+            $role = $roleModel->find((int) $rid);
+            if (!$role || (int) ($role['company_id'] ?? 0) > 0) {
+                continue;
+            }
+            $slug = (string) ($role['slug'] ?? '');
+            if ($slug === '' || $slug === 'super-admin') {
+                continue;
+            }
+            if ($platformSlugs === [] || in_array($slug, $platformSlugs, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @param array<int, array<string, mixed>> $roles

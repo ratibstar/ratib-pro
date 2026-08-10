@@ -139,7 +139,9 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
             </div>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
-                <?php if (!empty($platformStaffForm)) { ?>
+                <?php if (!empty($platformUserForm)) { ?>
+                <p class="small text-muted mb-0"><?php echo __('users_create_platform_sa_hint'); ?></p>
+                <?php } elseif (!empty($platformStaffForm)) { ?>
                 <p class="small text-muted mb-3"><?php echo __('users_staff_roles_lock_intro'); ?></p>
                 <?php
                 $returnStaff = function_exists('rateb_url_query')

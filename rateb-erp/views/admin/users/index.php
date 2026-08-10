@@ -5,6 +5,11 @@
 /** @var int $usersScopeCompanyId */
 $scope = (string) ($usersScope ?? 'company');
 $baseList = rateb_url($routePrefix ?? 'admin/users');
+$editQuery = match ($scope) {
+    'staff' => ['for' => 'staff'],
+    'platform' => ['for' => 'platform'],
+    default => [],
+};
 if (!empty($showUsersScopeTabs)) { ?>
 <div class="btn-group btn-group-sm mb-3" role="group" aria-label="<?php echo Rateb\App\Core\View::escape(__('users_scope_label')); ?>">
     <?php if ((int) ($usersScopeCompanyId ?? 0) > 0) { ?>
