@@ -95,7 +95,7 @@
             }
             btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
-                var scope = btn.closest('form') || document;
+                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
                     cb.checked = true;
                 });
@@ -108,7 +108,7 @@
             }
             btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
-                var scope = btn.closest('form') || document;
+                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
                     cb.checked = false;
                 });
@@ -137,7 +137,7 @@
             }
             btn.setAttribute('data-rateb-bound', '1');
             btn.addEventListener('click', function () {
-                var scope = btn.closest('form') || document;
+                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
                 var mod = btn.getAttribute('data-matrix-module');
                 var checks = scope.querySelectorAll('.rateb-matrix-check[data-module="' + mod + '"]');
                 var allOn = Array.prototype.every.call(checks, function (cb) { return cb.checked; });

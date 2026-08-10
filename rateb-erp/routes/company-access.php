@@ -51,5 +51,6 @@ foreach ($accessCrud as $path => [$class, $perm]) {
 }
 
 $router->post($app('users/{id}/regenerate-barcode'), [UsersController::class, 'regenerateBarcode'], $accessMw());
+$router->post($app('roles/{id}/permissions'), [RolesController::class, 'savePermissions'], $accessMw());
 
 $router->get($app('audit-logs'), [AuditLogsController::class, 'index'], $settingsMw());

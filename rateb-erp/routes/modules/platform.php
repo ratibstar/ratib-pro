@@ -157,6 +157,7 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
 }
 
 $router->post('/admin/users/{id}/regenerate-barcode', [UsersController::class, 'regenerateBarcode'], rateb_admin_mw('access.manage'));
+$router->post('/admin/roles/{id}/permissions', [RolesController::class, 'savePermissions'], rateb_admin_mw('access.manage'));
 
 $billingCrud = [
     'payments' => PaymentsController::class,

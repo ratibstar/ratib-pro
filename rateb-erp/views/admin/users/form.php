@@ -139,7 +139,36 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
             </div>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
-                <p class="small text-muted mb-3"><?php echo !empty($platformStaffForm) ? __('users_staff_roles_intro') : __('branch_roles_form_intro'); ?></p>
+                <?php if (!empty($platformStaffForm)) { ?>
+                <p class="small text-muted mb-3"><?php echo __('users_staff_roles_lock_intro'); ?></p>
+                <?php
+                $returnStaff = function_exists('rateb_url_query')
+                    ? rateb_url_query(
+                        $isEdit ? rateb_url('admin/users/' . (int) $item['id'] . '/edit') : rateb_url('admin/users/create'),
+                        ['for' => 'staff']
+                    )
+                    : rateb_url($routePrefix);
+                foreach (($roles ?? []) as $role) {
+                    $rid = (int) ($role['id'] ?? 0);
+                    Rateb\App\Core\View::partial('role-permissions-lock', [
+                        'role' => $role,
+                        'permissionGroups' => $permissionGroups ?? [],
+                        'selectedPermissions' => $rolePermissionMap[$rid] ?? [],
+                        'csrf' => $csrf ?? '',
+                        'saveAction' => rateb_url('admin/roles/' . $rid . '/permissions'),
+                        'returnUrl' => $returnStaff,
+                        'rbacScope' => 'platform',
+                        'showAssignCheckbox' => true,
+                        'selectedRoles' => $selectedRoles ?? [],
+                        'nestedSafe' => true,
+                    ]);
+                }
+                if (($roles ?? []) === []) { ?>
+                <p class="text-muted"><?php echo __('no_data'); ?></p>
+                <?php } ?>
+                <script src="<?php echo rateb_asset('js/role-permissions-lock.js'); ?>"></script>
+                <?php } else { ?>
+                <p class="small text-muted mb-3"><?php echo __('branch_roles_form_intro'); ?></p>
                 <?php
                 $rolesGrouped = $rolesGrouped ?? [];
                 $roleGroupMeta = [
@@ -173,6 +202,7 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
                         <?php } ?>
                     </div>
                 </div>
+                <?php } ?>
                 <?php } ?>
             </div>
             <div class="mt-4 d-flex gap-2">

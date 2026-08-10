@@ -1947,6 +1947,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if (!empty(SessionManager::get('_rateb_users_form_staff'))) {
             return true;
         }
+        // SA create/edit with company_id=0 → staff (not full SA), unless for=platform.
+        if (array_key_exists('company_id', $_GET)) {
+            $rawCid = trim((string) ($_GET['company_id'] ?? ''));
+            if ($rawCid === '' || $rawCid === '0') {
+                return true;
+            }
+        }
         $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
 
         return $ref !== '' && (str_contains($ref, 'scope=staff') || str_contains($ref, 'for=staff'));
@@ -2057,7 +2064,26 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                 )
             )),
             'rolesGrouped' => $this->groupRolesForUserForm($scopedRoles),
+            'permissionGroups' => $staffForm ? $authz->allPermissionsGrouped() : [],
+            'rolePermissionMap' => $staffForm ? $this->rolePermissionMapForRoles($authz, $scopedRoles) : [],
         ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $roles
+     * @return array<int, array<int, int>>
+     */
+    private function rolePermissionMapForRoles(\Rateb\App\Services\AuthorizationService $authz, array $roles): array
+    {
+        $map = [];
+        foreach ($roles as $role) {
+            $rid = (int) ($role['id'] ?? 0);
+            if ($rid > 0) {
+                $map[$rid] = $authz->getRolePermissionIds($rid);
+            }
+        }
+
+        return $map;
     }
 
     /** @param array<int, array<string, mixed>> $roles
@@ -2475,6 +2501,14 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'permission_count', 'label' => 'permissions_count'],
         ];
 
+        $rolePermissionMap = [];
+        foreach ($items as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid > 0) {
+                $rolePermissionMap[$rid] = $authz->getRolePermissionIds($rid);
+            }
+        }
+
         $rolesUrl = rateb_url($this->routePrefix);
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
@@ -2485,7 +2519,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $displayFields,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => $this->bulkEnabled,
+            'bulkEnabled' => $this->bulkEnabled && $rbac['scope'] === 'company',
             'createEnabled' => $this->createEnabled && $rbac['scope'] === 'company',
             'actionsEnabled' => $this->actionsEnabled,
             'rbacScope' => $rbac['scope'],
@@ -2494,7 +2528,47 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             'listHelp' => $rbac['scope'] === 'platform'
                 ? __('rbac_roles_platform_list_help')
                 : '',
+            'roleLockUi' => $rbac['scope'] === 'platform',
+            'permissionGroups' => $authz->allPermissionsGrouped(),
+            'rolePermissionMap' => $rolePermissionMap,
         ], $this->layout());
+    }
+
+    /** Save only permission checkboxes for a role (lock panel). */
+    public function savePermissions(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect($this->rolesListUrl());
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing || !$this->roleInScope($existing)) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect($this->rolesListUrl());
+        }
+        $permIds = array_map('intval', (array) $this->input('permission_ids', []));
+        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        (new AuditService())->log('update', 'role_permissions', $id, ['count' => count($permIds)]);
+
+        $wantsJson = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
+            || strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+        if ($wantsJson) {
+            Response::json([
+                'ok' => true,
+                'role_id' => $id,
+                'count' => count($permIds),
+                'message' => __('role_lock_saved'),
+            ]);
+        }
+
+        SessionManager::flash('success', __('role_lock_saved'));
+        $return = trim((string) $this->input('return', ''));
+        $origin = function_exists('rateb_site_origin') ? rateb_site_origin() : '';
+        if ($return !== '' && $origin !== '' && str_starts_with($return, $origin . '/')) {
+            $this->redirect($return);
+        }
+        $this->redirect($this->rolesListUrl());
     }
 
     public function create(): void
