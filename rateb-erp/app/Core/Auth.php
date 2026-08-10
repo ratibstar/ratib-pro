@@ -243,8 +243,8 @@ final class Auth
     }
 
     /**
-     * Post-login redirect: unified /login opens ERP shell (/admin) for company tenants.
-     * Marketing customer portal is opt-in navigation only, not the default landing page.
+     * Post-login redirect: unified /login opens ERP shell (/admin) for company tenants
+     * and platform staff. Marketing customer portal is opt-in only.
      *
      * @param array<string, mixed> $user
      */
@@ -254,6 +254,11 @@ final class Auth
 
         $next = trim($next);
         if ($next !== '' && !(self::shouldLandOnErpShell($user) && self::urlIsCustomerPortal($next))) {
+            // Never send ERP users (SA / staff / company) to marketing customer login/portal.
+            if (self::shouldLandOnErpShell($user) && self::urlIsMarketingCustomerLogin($next)) {
+                return $erpHome;
+            }
+
             return $next;
         }
 
@@ -271,12 +276,29 @@ final class Auth
             return true;
         }
 
-        return (int) ($user['company_id'] ?? 0) > 0;
+        if ((int) ($user['company_id'] ?? 0) > 0) {
+            return true;
+        }
+
+        // Platform staff: no company, not SA — still ERP /admin (never site/portal).
+        $userId = (int) ($user['id'] ?? 0);
+        if ($userId > 0
+            && (int) ($user['is_super_admin'] ?? 0) !== 1
+            && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($userId)) {
+            return true;
+        }
+
+        return false;
     }
 
     public static function urlIsCustomerPortal(string $url): bool
     {
         return preg_match('#/site/portal(?:[/?#]|$)#i', $url) === 1;
+    }
+
+    public static function urlIsMarketingCustomerLogin(string $url): bool
+    {
+        return preg_match('#/site/login(?:[/?#]|$)#i', $url) === 1;
     }
 
     /** @param array<string, mixed> $user */
@@ -301,6 +323,10 @@ final class Auth
         $userId = (int) ($user['id'] ?? 0);
         if ($userId < 1) {
             return false;
+        }
+
+        if ((new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($userId)) {
+            return true;
         }
 
         $row = (new \Rateb\App\Models\Role())->queryOne(

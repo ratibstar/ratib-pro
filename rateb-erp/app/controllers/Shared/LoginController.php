@@ -418,9 +418,8 @@ final class LoginController extends Controller
             $next = rateb_public_url(ltrim($next, '/'));
         }
         if ($next !== ''
-            && function_exists('rateb_erp_is_dedicated_deployment')
-            && rateb_erp_is_dedicated_deployment()
-            && Auth::urlIsCustomerPortal($next)) {
+            && (Auth::urlIsCustomerPortal($next) || Auth::urlIsMarketingCustomerLogin($next))) {
+            // ERP login must never keep marketing portal/login as next= (staff bounce).
             return '';
         }
 
