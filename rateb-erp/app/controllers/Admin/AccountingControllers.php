@@ -18,19 +18,23 @@ final class AccessControlController extends Controller
     public function index(): void
     {
         $userModel = new \Rateb\App\Models\User();
-        $companyId = $this->scopedCompanyId();
+        $rbac = $this->rbacScope();
+        $companyId = (int) $rbac['company_id'];
+        $authz = new \Rateb\App\Services\AuthorizationService();
         if ($companyId > 0) {
             $users = (int) ($userModel->queryOne(
                 'SELECT COUNT(*) AS c FROM rateb_users WHERE COALESCE(is_super_admin, 0) = 0 AND company_id = :cid',
                 ['cid' => $companyId]
             )['c'] ?? 0);
-            $roles = (int) ((new \Rateb\App\Models\Role())->queryOne(
-                'SELECT COUNT(*) AS c FROM rateb_roles WHERE company_id = :cid',
-                ['cid' => $companyId]
-            )['c'] ?? 0);
+            $roles = count($authz->allRoles($companyId));
         } else {
-            $users = $userModel->count();
-            $roles = count((new \Rateb\App\Services\AuthorizationService())->allRoles(0));
+            $users = (int) ($userModel->queryOne(
+                'SELECT COUNT(*) AS c FROM rateb_users
+                 WHERE COALESCE(is_super_admin, 0) = 1
+                    OR (COALESCE(is_super_admin, 0) = 0 AND (company_id IS NULL OR company_id = 0))'
+            )['c'] ?? 0);
+            $authz->ensureSuggestedRoles();
+            $roles = count($authz->allRoles(0));
         }
         $permissions = (new \Rateb\App\Models\Permission())->count();
 
@@ -39,20 +43,24 @@ final class AccessControlController extends Controller
             'stats' => ['users' => $users, 'roles' => $roles, 'permissions' => $permissions],
             'csrf' => Csrf::token(),
             'scopedCompanyId' => $companyId,
+            'rbacScope' => $rbac['scope'],
+            'rbacOpsCompanyId' => $this->opsCompanyId(),
         ], 'main');
     }
 
     public function matrix(): void
     {
         $authz = new \Rateb\App\Services\AuthorizationService();
-        $companyId = $this->scopedCompanyId();
-        // Bootstrap only when tenant roles are missing — never rewrite catalogs on every GET.
+        $rbac = $this->rbacScope();
+        $companyId = (int) $rbac['company_id'];
         if ($companyId > 0 && !$authz->companyHasTenantRoleBootstrap($companyId)) {
             $authz->ensureCompanyRoles($companyId);
         }
-        // dedupeDuplicateRoles is write-heavy maintenance — not a page-view side effect.
-        $scope = $companyId > 0 ? $companyId : 0;
-        $roles = $authz->allRoles($scope);
+        if ($companyId < 1) {
+            $authz->ensureSuggestedRoles();
+        }
+        $roles = $authz->allRoles($companyId > 0 ? $companyId : 0);
+        $matrixUrl = rateb_app_url('access-control/matrix');
         $this->view('admin/access-control/matrix', [
             'title' => __('permission_matrix'),
             'roles' => $roles,
@@ -60,30 +68,49 @@ final class AccessControlController extends Controller
             'matrix' => $authz->rolePermissionMatrixForRoles($roles),
             'csrf' => Csrf::token(),
             'scopedCompanyId' => $companyId,
+            'rbacScope' => $rbac['scope'],
+            'rbacOpsCompanyId' => $this->opsCompanyId(),
+            'rbacBaseUrl' => $matrixUrl,
+            'matrixFormAction' => function_exists('rateb_url_query')
+                ? rateb_url_query($matrixUrl, ['scope' => $rbac['scope']])
+                : ($matrixUrl . '?scope=' . rawurlencode($rbac['scope'])),
         ], 'main');
     }
 
     public function saveMatrix(): void
     {
+        $rbac = $this->rbacScope();
+        $redirect = function_exists('rateb_url_query')
+            ? rateb_url_query(rateb_app_url('access-control/matrix'), ['scope' => $rbac['scope']])
+            : (rateb_app_url('access-control/matrix') . '?scope=' . rawurlencode($rbac['scope']));
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_app_url('access-control/matrix'));
+            Response::redirect($redirect);
         }
-        $companyId = $this->scopedCompanyId();
+        $companyId = (int) $rbac['company_id'];
         $matrix = (array) $this->input('matrix', []);
         (new \Rateb\App\Services\AuthorizationService())->syncMatrixFromPost($matrix, $companyId > 0 ? $companyId : 0);
-        (new AuditService())->log('update', 'role_permissions_matrix', null, ['roles' => count($matrix), 'company_id' => $companyId]);
+        (new AuditService())->log('update', 'role_permissions_matrix', null, [
+            'roles' => count($matrix),
+            'company_id' => $companyId,
+            'scope' => $rbac['scope'],
+        ]);
         SessionManager::flash('success', __('save') . ' OK');
-        Response::redirect(rateb_app_url('access-control/matrix'));
+        Response::redirect($redirect);
     }
 
-    private function scopedCompanyId(): int
+    /** @return array{scope:string,company_id:int} */
+    private function rbacScope(): array
     {
-        if (!function_exists('rateb_company_access_routes_enabled') || !rateb_company_access_routes_enabled() || rateb_is_super_admin()) {
-            return 0;
-        }
+        return \Rateb\App\Services\AuthorizationService::resolveRbacUiScope(
+            (string) $this->input('scope', '')
+        );
+    }
+
+    private function opsCompanyId(): int
+    {
         if (function_exists('rateb_resolve_ops_company_id')) {
-            $id = rateb_resolve_ops_company_id();
+            $id = (int) rateb_resolve_ops_company_id();
             if ($id > 0) {
                 return $id;
             }

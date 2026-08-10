@@ -380,6 +380,47 @@ final class AuthorizationService
         return 0;
     }
 
+    /**
+     * Explicit RBAC UI scope for platform SA: platform (global staff roles) vs company (tenant clones).
+     * Non-SA always company. Default for SA is platform so ops company picker does not mix scopes.
+     *
+     * @return array{scope:string,company_id:int}
+     */
+    public static function resolveRbacUiScope(?string $scopeRaw = null): array
+    {
+        $isSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $opsId = 0;
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $opsId = (int) rateb_resolve_ops_company_id();
+        }
+        if ($opsId < 1) {
+            $opsId = (int) ($_SESSION['rateb_company_id'] ?? 0);
+        }
+
+        $raw = strtolower(trim((string) ($scopeRaw ?? ($_GET['scope'] ?? $_POST['scope'] ?? ''))));
+        if (!in_array($raw, ['platform', 'company'], true)) {
+            $raw = '';
+        }
+
+        if (!$isSa) {
+            return [
+                'scope' => 'company',
+                'company_id' => $opsId > 0 ? $opsId : self::resolveMatrixCompanyId(),
+            ];
+        }
+
+        if ($raw === 'company') {
+            if ($opsId < 1) {
+                return ['scope' => 'platform', 'company_id' => 0];
+            }
+
+            return ['scope' => 'company', 'company_id' => $opsId];
+        }
+
+        // SA default + scope=platform: ignore ops picker for role/matrix lists.
+        return ['scope' => 'platform', 'company_id' => 0];
+    }
+
     /** @return array<string, mixed>|null */
     public function findRoleBySlug(string $slug, ?int $companyId = null): ?array
     {

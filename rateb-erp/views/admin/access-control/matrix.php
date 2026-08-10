@@ -2,14 +2,25 @@
 /** @var array<int, array<string, mixed>> $roles */
 /** @var array<string, array<int, array<string, mixed>>> $permissionGroups */
 /** @var array<int, array<int, int>> $matrix */
+$formAction = (string) ($matrixFormAction ?? rateb_app_url('access-control/matrix'));
 ?>
 <div class="mb-3">
     <a href="<?php echo rateb_app_url('access-control'); ?>" class="btn btn-outline-secondary btn-sm">
         <i class="fas fa-arrow-right"></i> <?php echo __('access_control'); ?>
     </a>
 </div>
-<form method="post" action="<?php echo rateb_app_url('access-control/matrix'); ?>" id="rateb-perm-matrix">
+<?php
+if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+    Rateb\App\Core\View::partial('rbac-scope-tabs', [
+        'rbacScope' => $rbacScope,
+        'rbacBaseUrl' => $rbacBaseUrl ?? rateb_app_url('access-control/matrix'),
+        'rbacOpsCompanyId' => (int) ($rbacOpsCompanyId ?? 0),
+    ]);
+}
+?>
+<form method="post" action="<?php echo Rateb\App\Core\View::escape($formAction); ?>" id="rateb-perm-matrix">
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+    <input type="hidden" name="scope" value="<?php echo Rateb\App\Core\View::escape((string) ($rbacScope ?? 'platform')); ?>">
     <div class="rateb-card mb-3">
         <div class="rateb-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
             <span><?php echo __('permission_matrix'); ?></span>
@@ -21,7 +32,9 @@
         </div>
         <div class="rateb-card-body py-2 px-3 border-bottom">
             <p class="text-muted small mb-1"><?php echo __('permission_matrix_help'); ?></p>
-            <?php if (!empty($scopedCompanyId)) { ?>
+            <?php if (($rbacScope ?? '') === 'platform' || empty($scopedCompanyId)) { ?>
+            <p class="text-muted small mb-1"><i class="fas fa-shield-halved me-1"></i><?php echo __('permission_matrix_platform_scope_note'); ?></p>
+            <?php } else { ?>
             <p class="text-muted small mb-1"><i class="fas fa-building me-1"></i><?php echo __('permission_matrix_tenant_scope_note'); ?></p>
             <?php } ?>
             <p class="text-muted small mb-0"><i class="fas fa-circle-info me-1"></i><?php echo __('permission_matrix_implies_note'); ?></p>
@@ -107,9 +120,22 @@
             </div>
         </div>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
         <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
-        <a href="<?php echo rateb_app_url('roles'); ?>" class="btn btn-outline-secondary"><?php echo __('roles'); ?></a>
-        <a href="<?php echo rateb_app_url('users'); ?>" class="btn btn-outline-secondary"><?php echo __('users'); ?></a>
+        <?php
+        $rolesLink = rateb_app_url('roles');
+        $usersLink = rateb_app_url('users');
+        if (($rbacScope ?? '') === 'platform' && function_exists('rateb_url_query')) {
+            $rolesLink = rateb_url_query($rolesLink, ['scope' => 'platform']);
+            $usersLink = rateb_url_query(rateb_url('admin/users'), ['scope' => 'staff']);
+        } elseif (($rbacScope ?? '') === 'company' && function_exists('rateb_url_query')) {
+            $rolesLink = rateb_url_query($rolesLink, ['scope' => 'company']);
+            $usersLink = rateb_url_query(rateb_url('admin/users'), ['scope' => 'company']);
+        }
+        ?>
+        <a href="<?php echo Rateb\App\Core\View::escape($rolesLink); ?>" class="btn btn-outline-secondary"><?php echo __('roles'); ?></a>
+        <a href="<?php echo Rateb\App\Core\View::escape($usersLink); ?>" class="btn btn-outline-secondary">
+            <?php echo ($rbacScope ?? '') === 'platform' ? __('users_scope_staff') : __('users'); ?>
+        </a>
     </div>
 </form>

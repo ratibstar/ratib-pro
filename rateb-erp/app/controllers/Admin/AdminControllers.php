@@ -2446,9 +2446,12 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $page = max(1, (int) $this->input('page', 1));
         $limit = rateb_list_per_page();
         $authz = new \Rateb\App\Services\AuthorizationService();
-        $companyId = $this->scopedCompanyId();
+        $rbac = $this->rbacScope();
+        $companyId = (int) $rbac['company_id'];
         if ($companyId > 0) {
             $authz->ensureCompanyRoles($companyId);
+        } else {
+            $authz->ensureSuggestedRoles();
         }
         $items = $authz->allRoles($companyId > 0 ? $companyId : 0);
         $total = count($items);
@@ -2472,6 +2475,7 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'permission_count', 'label' => 'permissions_count'],
         ];
 
+        $rolesUrl = rateb_url($this->routePrefix);
         $this->view($this->viewPrefix . '/index', [
             'title' => __($this->entityName),
             'items' => $items,
@@ -2482,8 +2486,14 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             'fields' => $displayFields,
             'csrf' => Csrf::token(),
             'bulkEnabled' => $this->bulkEnabled,
-            'createEnabled' => $this->createEnabled,
+            'createEnabled' => $this->createEnabled && $rbac['scope'] === 'company',
             'actionsEnabled' => $this->actionsEnabled,
+            'rbacScope' => $rbac['scope'],
+            'rbacOpsCompanyId' => $this->opsCompanyIdForRbac(),
+            'rbacBaseUrl' => $rolesUrl,
+            'listHelp' => $rbac['scope'] === 'platform'
+                ? __('rbac_roles_platform_list_help')
+                : '',
         ], $this->layout());
     }
 
@@ -2554,26 +2564,26 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url($this->routePrefix));
+        $this->redirect($this->rolesListUrl());
     }
 
     public function update(array $params): void
     {
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect($this->rolesListUrl());
         }
         $id = (int) ($params['id'] ?? 0);
         $existing = $this->model->find($id);
         if (!$existing) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url($this->routePrefix));
+            $this->redirect($this->rolesListUrl());
         }
         if (!$this->roleInScope($existing)) {
             $resolved = $this->resolveRoleForActiveCompany($existing);
             if ($resolved === null) {
                 SessionManager::flash('error', __('invalid_request'));
-                $this->redirect(rateb_url($this->routePrefix));
+                $this->redirect($this->rolesListUrl());
             }
             $existing = $resolved;
             $id = (int) $existing['id'];
@@ -2588,12 +2598,18 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect($this->rolesListUrl());
+    }
+
+    private function rolesListUrl(): string
+    {
         $url = rateb_url($this->routePrefix);
-        $cid = $this->scopedCompanyId();
-        if ($cid > 0) {
-            $url .= (str_contains($url, '?') ? '&' : '?') . 'company_id=' . $cid;
+        $rbac = $this->rbacScope();
+        if (function_exists('rateb_url_query')) {
+            return rateb_url_query($url, ['scope' => $rbac['scope']]);
         }
-        $this->redirect($url);
+
+        return $url . '?scope=' . rawurlencode($rbac['scope']);
     }
 
     /** @param array<int, int> $ids */
@@ -2667,7 +2683,27 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
 
     private function scopedCompanyId(): int
     {
-        return \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId();
+        return (int) $this->rbacScope()['company_id'];
+    }
+
+    /** @return array{scope:string,company_id:int} */
+    private function rbacScope(): array
+    {
+        return \Rateb\App\Services\AuthorizationService::resolveRbacUiScope(
+            (string) $this->input('scope', '')
+        );
+    }
+
+    private function opsCompanyIdForRbac(): int
+    {
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = (int) rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        return (int) ($_SESSION['rateb_company_id'] ?? 0);
     }
 
     /** @param array<string, mixed>|null $role */
@@ -2678,7 +2714,8 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }
         $companyId = $this->scopedCompanyId();
         if ($companyId < 1) {
-            return true;
+            // Platform scope: only global roles.
+            return (int) ($role['company_id'] ?? 0) < 1;
         }
 
         return (int) ($role['company_id'] ?? 0) === $companyId;
