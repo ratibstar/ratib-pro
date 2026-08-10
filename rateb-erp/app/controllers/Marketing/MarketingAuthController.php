@@ -31,6 +31,14 @@ final class MarketingAuthController extends Controller
             return;
         }
 
+        // Coming from ERP admin logout / admin shell → staff login, not customer portal.
+        $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($ref !== '' && preg_match('#/(admin(?:/|$)|logout(?:/|\\?|$))#i', $ref)) {
+            Response::redirect(rateb_url('login') . (str_contains($ref, 'logout') ? '?logged_out=1' : ''));
+
+            return;
+        }
+
         if (SessionManager::get('_rateb_2fa_user_id')) {
             $this->renderAuth('marketing/auth/two-factor', __('two_factor_verify'), [
                 'csrf' => Csrf::token(),
@@ -41,6 +49,7 @@ final class MarketingAuthController extends Controller
         $this->renderAuth('marketing/auth/login', __('cms_customer_login'), [
             'csrf' => Csrf::token(),
             'next' => $this->safeNextUrl((string) ($_GET['next'] ?? '')),
+            'staffLoginUrl' => rateb_url('login'),
         ]);
     }
 
@@ -84,9 +93,9 @@ final class MarketingAuthController extends Controller
             $lockout->recordFailure($email);
             if ($preUser && (int) ($preUser['is_super_admin'] ?? 0) === 1) {
                 SessionManager::flash('error', __('cms_admin_use_staff_login'));
-            } else {
-                SessionManager::flash('error', __('invalid_credentials'));
+                Response::redirect(rateb_url('login'));
             }
+            SessionManager::flash('error', __('invalid_credentials'));
             $redirect = $next !== '' ? rateb_url('site/login?next=' . rawurlencode($next)) : rateb_url('site/login');
             Response::redirect($redirect);
         }

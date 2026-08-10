@@ -84,6 +84,10 @@ final class LoginController extends Controller
             }
         }
 
+        if ((string) ($_GET['logged_out'] ?? '') === '1') {
+            SessionManager::flash('success', __('logout_ok'));
+        }
+
         if (SessionManager::get('_rateb_2fa_user_id')) {
             $this->view('shared/auth/two-factor', [
                 'title' => __('two_factor_verify'),
@@ -426,6 +430,9 @@ final class LoginController extends Controller
     public function logout(): void
     {
         Auth::logout();
-        Response::redirect(rateb_url('login'));
+        $url = function_exists('rateb_list_url')
+            ? rateb_list_url('login', ['logged_out' => '1'])
+            : (rateb_url('login') . '?logged_out=1');
+        Response::redirect($url);
     }
 }

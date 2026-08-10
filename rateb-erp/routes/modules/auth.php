@@ -58,7 +58,9 @@ $router->get('/admin/login', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('login'), 301);
 });
 $router->post('/admin/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
-$router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMiddleware::class]);
+// No ErpAuthMiddleware: logout must always clear session and land on ERP staff login,
+// never bounce through company/marketing auth into /site/login.
+$router->get('/admin/logout', [AdminAuthController::class, 'logout']);
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 

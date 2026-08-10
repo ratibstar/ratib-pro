@@ -2892,6 +2892,8 @@ return [
     'cms_password_min' => 'Password must be at least 8 characters.',
     'cms_password_mismatch' => 'Passwords do not match.',
     'cms_admin_use_staff_login' => 'Platform admin accounts must use the staff login page.',
+    'cms_staff_login_hint' => 'Staff or super admin? This page is for website customers only.',
+    'cms_staff_login_link' => 'Rateb ERP staff login',
     'portal_dashboard' => 'My Account',
     'portal_my_account' => 'My Account',
     'portal_welcome' => 'Welcome back',

@@ -2,7 +2,13 @@
 <div class="rateb-auth-page-wrap">
     <div class="rateb-mkt-auth-card">
         <h1 class="h4 text-center mb-1"><?php echo __('cms_customer_login'); ?></h1>
-        <p class="text-muted text-center small mb-4"><?php echo __('cms_customer_login_hint'); ?></p>
+        <p class="text-muted text-center small mb-3"><?php echo __('cms_customer_login_hint'); ?></p>
+        <div class="alert alert-secondary py-2 small mb-4" role="status">
+            <?php echo __('cms_staff_login_hint'); ?>
+            <a class="fw-semibold d-inline-block ms-1" href="<?php echo Rateb\App\Core\View::escape((string) ($staffLoginUrl ?? rateb_url('login'))); ?>">
+                <?php echo __('cms_staff_login_link'); ?>
+            </a>
+        </div>
         <form method="post" action="<?php echo rateb_url('site/login'); ?>" class="rateb-mkt-form">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php if (!empty($next)) { ?>

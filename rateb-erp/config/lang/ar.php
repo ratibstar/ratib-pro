@@ -2890,6 +2890,8 @@ return [
     'cms_password_min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.',
     'cms_password_mismatch' => 'كلمتا المرور غير متطابقتين.',
     'cms_admin_use_staff_login' => 'حسابات إدارة المنصة تستخدم صفحة دخول الموظفين.',
+    'cms_staff_login_hint' => 'موظف أو سوبر أدمن؟ هذه صفحة عملاء الموقع فقط.',
+    'cms_staff_login_link' => 'دخول نظام رتب ERP',
     'portal_dashboard' => 'حسابي',
     'portal_my_account' => 'حسابي',
     'portal_welcome' => 'مرحباً بعودتك',

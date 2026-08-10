@@ -20,7 +20,11 @@ final class AuthController extends Controller
     public function logout(): void
     {
         Auth::logout();
-        Response::redirect(rateb_url('login'));
+        // Always ERP staff login — never marketing /site/login (customer portal).
+        $url = function_exists('rateb_list_url')
+            ? rateb_list_url('login', ['logged_out' => '1'])
+            : (rateb_url('login') . '?logged_out=1');
+        Response::redirect($url);
     }
 }
 
