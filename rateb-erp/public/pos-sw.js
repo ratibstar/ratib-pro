@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260810-force-live-bypass-noloop-v154';
+var SW_BUILD_ID = '20260810-nav-redirect-expose-login-v155';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -593,12 +593,59 @@ function posHttpRedirectResponse(targetUrl) {
     });
 }
 
+/**
+ * fetch(redirect:follow) can land on /login HTML while the address bar stays on
+ * /admin/ops/pos/... — expose a real 302 so Chrome updates the URL.
+ */
+function navigateRedirectChangedDocument(request, finalUrl) {
+    try {
+        var from = new URL(String((request && request.url) || ''), self.location.origin);
+        var to = new URL(String(finalUrl || ''), from.origin);
+        if (from.origin !== to.origin) {
+            return true;
+        }
+        var a = from.pathname.replace(/\/+$/, '') || '/';
+        var b = to.pathname.replace(/\/+$/, '') || '/';
+        return a !== b || from.search !== to.search;
+    } catch (eNavDiff) {
+        return false;
+    }
+}
+
+/** Prefer browser URL update over painting redirected HTML under the original path. */
+function settleNavigateFetchResponse(request, response) {
+    if (!response) {
+        return Promise.resolve(null);
+    }
+    try {
+        if (response.redirected) {
+            var finalUrl = String(response.url || '');
+            if (finalUrl && navigateRedirectChangedDocument(request, finalUrl)) {
+                return Promise.resolve(posHttpRedirectResponse(finalUrl));
+            }
+        }
+    } catch (eNavSettle) { /* ignore */ }
+    return asNonRedirectedResponse(response);
+}
+
+function isSwExposedRedirect(response) {
+    try {
+        return !!(response
+            && response.status >= 300
+            && response.status < 400
+            && response.headers
+            && response.headers.get('X-Rateb-Pos-Redirect'));
+    } catch (eHdr) {
+        return false;
+    }
+}
+
 function posHandleLiveNetworkResponse(response, request) {
     if (response && response.ok) {
         if (response.redirected) {
             try {
                 var finalUrl = String(response.url || '');
-                if (finalUrl && /\/admin(\/|$)/i.test(finalUrl)) {
+                if (finalUrl && navigateRedirectChangedDocument(request, finalUrl)) {
                     return posHttpRedirectResponse(finalUrl);
                 }
             } catch (eRedir) { /* ignore */ }
@@ -637,6 +684,9 @@ function posHandleLiveNetworkResponse(response, request) {
 
 function fetchPosLiveOrShowRetry(request) {
     return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+        if (isSwExposedRedirect(response)) {
+            return response;
+        }
         return posHandleLiveNetworkResponse(response, request);
     }).catch(function () {
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
@@ -721,7 +771,9 @@ function posAdminConnectionRequiredResponse() {
  */
 function fetchPosAdminCrudNetwork(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
-        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+        return fetch(navigateFetchInput(request)).then(function (res) {
+            return settleNavigateFetchResponse(request, res);
+        }).then(function (res) {
             return res || Promise.reject(new Error('empty-response'));
         });
     }
@@ -737,8 +789,14 @@ function fetchPosAdminCrudNetwork(request, timeoutMs) {
     }, ms);
     return fetch(navigateFetchInput(request), {
         signal: ctrl ? ctrl.signal : undefined
-    }).then(asNonRedirectedResponse).then(function (response) {
+    }).then(function (response) {
+        return settleNavigateFetchResponse(request, response);
+    }).then(function (response) {
         clearTimeout(timer);
+        if (isSwExposedRedirect(response)) {
+            clearCloudNetworkDegraded();
+            return response;
+        }
         if (!response || !response.ok) {
             return Promise.reject(new Error('bad-navigate-status'));
         }
@@ -1982,7 +2040,9 @@ function isOnlineOnlyAdminPostPath(pathname) {
  */
 function fetchNavigateNetworkPassthrough(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
-        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+        return fetch(navigateFetchInput(request)).then(function (res) {
+            return settleNavigateFetchResponse(request, res);
+        }).then(function (res) {
             return res || Promise.reject(new Error('empty-response'));
         });
     }
@@ -2001,7 +2061,9 @@ function fetchNavigateNetworkPassthrough(request, timeoutMs) {
     }, ms);
     var network = fetch(navigateFetchInput(request), {
         signal: ctrl ? ctrl.signal : undefined
-    }).then(asNonRedirectedResponse).then(function (response) {
+    }).then(function (response) {
+        return settleNavigateFetchResponse(request, response);
+    }).then(function (response) {
         if (!response) {
             return Promise.reject(new Error('empty-response'));
         }
@@ -2036,6 +2098,9 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
     // Online-only platform management: always prefer live ERP (no fake offline shell).
     if (!isCloudBrowserOffline() && isOnlineOnlyPlatformAdminPath(url && url.pathname)) {
         return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+            if (isSwExposedRedirect(response)) {
+                return response;
+            }
             if (response && response.ok) {
                 var store = caches.open(ERP_OPS_PAGE_CACHE).then(function (opsCache) {
                     return putErpOpsHtmlResponse(opsCache, pageUrl, response.clone());
@@ -2247,6 +2312,9 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
                 return cached;
             }
             return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+                if (isSwExposedRedirect(response)) {
+                    return response;
+                }
                 storeLive(response);
                 return response;
             }).catch(function () {
@@ -2525,6 +2593,10 @@ function navigatePosCloudWithCacheSafety(request, url) {
     }
     // Network-first with live-session budget (CSRF-safe); cache only if network is slow/fails.
     return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+        // Auth bounce (/login) must update the address bar — do not paint login under /pos.
+        if (isSwExposedRedirect(response)) {
+            return response;
+        }
         if (response && response.ok) {
             if (!isBiometricGatePath(url.pathname)) {
                 try {
@@ -3655,7 +3727,9 @@ function putResponseKeys(cache, response, keys) {
 
 function fetchNavigateNetwork(request, timeoutMs) {
     if (isLocalApplianceOrigin()) {
-        return fetch(navigateFetchInput(request)).then(asNonRedirectedResponse).then(function (res) {
+        return fetch(navigateFetchInput(request)).then(function (res) {
+            return settleNavigateFetchResponse(request, res);
+        }).then(function (res) {
             return res || Promise.reject(new Error('empty-response'));
         });
     }
@@ -3673,9 +3747,17 @@ function fetchNavigateNetwork(request, timeoutMs) {
     }, ms);
     var network = fetch(navigateFetchInput(request), {
         signal: ctrl ? ctrl.signal : undefined
-    }).then(asNonRedirectedResponse).then(function (response) {
+    }).then(function (response) {
+        return settleNavigateFetchResponse(request, response);
+    }).then(function (response) {
         // Non-OK (404/500) must fall through to cache — never paint server errors over
         // a good offline snapshot (edit→back to companies-approvals).
+        // 302 auth redirects are ok:false — treat as settled navigation, not cache fallback.
+        if (response && response.status >= 300 && response.status < 400
+            && response.headers && response.headers.get('X-Rateb-Pos-Redirect')) {
+            clearCloudNetworkDegraded();
+            return response;
+        }
         if (!response || !response.ok) {
             return Promise.reject(new Error('bad-navigate-status'));
         }
@@ -4864,6 +4946,9 @@ self.addEventListener('fetch', function (event) {
                 respondWithDocumentAndReleaseWarmGate(
                     event,
                     fetchNavigateNetworkPassthrough(event.request, 15000).then(function (res) {
+                        if (isSwExposedRedirect(res)) {
+                            return res;
+                        }
                         return posHandleLiveNetworkResponse(res, event.request);
                     }).catch(function () {
                         return posHttpRedirectResponse(posAdminRedirectUrl(event.request, false));
