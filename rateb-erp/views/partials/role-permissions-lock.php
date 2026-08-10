@@ -48,9 +48,14 @@ $rbacScope = (string) ($rbacScope ?? 'platform');
             <?php } ?>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge text-bg-secondary rateb-role-lock-count" data-role-count="<?php echo $roleId; ?>">
+            <button type="button"
+                    class="badge text-bg-secondary rateb-role-lock-count border-0"
+                    data-role-count="<?php echo $roleId; ?>"
+                    data-role-lock-toggle="<?php echo $roleId; ?>"
+                    data-bs-target="#<?php echo $panelId; ?>"
+                    title="<?php echo Rateb\App\Core\View::escape(__('role_lock_open_permissions')); ?>">
                 <?php echo (int) $permCount; ?> <?php echo __('permissions'); ?>
-            </span>
+            </button>
             <button type="button"
                     class="btn btn-sm btn-outline-warning rateb-role-lock-toggle"
                     data-role-lock-toggle="<?php echo $roleId; ?>"

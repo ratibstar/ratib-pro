@@ -132,11 +132,13 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
                     <?php } ?>
                 </div>
             </div>
+            <?php if (empty($platformStaffForm) && empty($platformUserForm)) { ?>
             <div class="mt-4" id="user-branches-section" style="display:none">
                 <h3 class="h6 mb-2"><?php echo __('assign_branches'); ?></h3>
                 <p class="small text-muted mb-2" id="user-branches-hint"><?php echo __('branch_access_all_hint'); ?></p>
                 <div class="row g-2" id="user-branches-list"></div>
             </div>
+            <?php } ?>
             <div class="mt-4">
                 <h3 class="h6 mb-2"><?php echo __('assign_roles'); ?></h3>
                 <?php if (!empty($platformUserForm)) { ?>
@@ -152,12 +154,15 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
                     : rateb_url($routePrefix);
                 foreach (($roles ?? []) as $role) {
                     $rid = (int) ($role['id'] ?? 0);
+                    $permSave = function_exists('rateb_app_route')
+                        ? rateb_url(rateb_app_route('roles/' . $rid . '/permissions'))
+                        : rateb_url('admin/roles/' . $rid . '/permissions');
                     Rateb\App\Core\View::partial('role-permissions-lock', [
                         'role' => $role,
                         'permissionGroups' => $permissionGroups ?? [],
                         'selectedPermissions' => $rolePermissionMap[$rid] ?? [],
                         'csrf' => $csrf ?? '',
-                        'saveAction' => rateb_url('admin/roles/' . $rid . '/permissions'),
+                        'saveAction' => $permSave,
                         'returnUrl' => $returnStaff,
                         'rbacScope' => 'platform',
                         'showAssignCheckbox' => true,

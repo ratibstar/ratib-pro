@@ -38,13 +38,15 @@ foreach (
 }
 
 $actions = [];
-if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host() && rateb_is_super_admin()) {
     $actions[] = ['href' => rateb_url('admin/companies/create'), 'label' => __('add_company'), 'icon' => 'fa-plus'];
     if (rateb_nav_can('companies.view')) {
         $actions[] = ['href' => rateb_url('admin/company-permissions'), 'label' => __('company_permissions'), 'icon' => 'fa-sliders'];
     }
 }
-$actions[] = ['href' => rateb_url('admin/users/create'), 'label' => __('add_user'), 'icon' => 'fa-user-plus'];
+if (rateb_nav_can('access.manage')) {
+    $actions[] = ['href' => rateb_url('admin/users/create'), 'label' => __('add_user'), 'icon' => 'fa-user-plus'];
+}
 if (rateb_nav_can('accounting.view', 'accounting')) {
     $accountingHref = (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())
         ? rateb_url('admin/accounting')

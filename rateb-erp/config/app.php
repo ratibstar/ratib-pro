@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260808-coa-tree-clarity-v155');
+define('RATEB_ASSET_BUILD', '20260810-role-lock-link-v156');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3537,6 +3537,12 @@ if (!function_exists('rateb_nav_can')) {
         }
         $companyId = rateb_nav_tenant_company_id_for_gate();
         if ($companyId < 1) {
+            // Platform staff (no tenant): permission RBAC only — skip company module packs.
+            $uid = (int) ($_SESSION['rateb_user_id'] ?? 0);
+            if ($uid > 0 && class_exists(\Rateb\App\Services\AuthorizationService::class)) {
+                return (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid);
+            }
+
             return false;
         }
         static $moduleGate = [];

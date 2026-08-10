@@ -17,12 +17,15 @@
             }
             ev.preventDefault();
             var open = panel.classList.toggle('show');
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            var icon = toggle.querySelector('i.fas');
-            if (icon) {
-                icon.classList.toggle('fa-lock', !open);
-                icon.classList.toggle('fa-lock-open', open);
-            }
+            var roleId = toggle.getAttribute('data-role-lock-toggle') || '';
+            document.querySelectorAll('[data-role-lock-toggle="' + roleId + '"]').forEach(function (btn) {
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                var icon = btn.querySelector('i.fas');
+                if (icon) {
+                    icon.classList.toggle('fa-lock', !open);
+                    icon.classList.toggle('fa-lock-open', open);
+                }
+            });
             return;
         }
 

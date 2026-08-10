@@ -1985,6 +1985,15 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             SessionManager::set('_rateb_users_form_platform', 1);
         } elseif ($asStaff) {
             SessionManager::set('_rateb_users_form_staff', 1);
+            // Heal mis-saved SA flag so role permissions actually gate login/nav.
+            if (!empty($item['is_super_admin'])) {
+                $this->model->update($id, ['is_super_admin' => 0, 'company_id' => null]);
+                $item['is_super_admin'] = 0;
+                $item['company_id'] = null;
+                (new AuditService())->log('update', $this->entityName, $id, [
+                    'heal' => 'platform_staff_from_sa',
+                ]);
+            }
         }
         $this->view($this->viewPrefix . '/form', $this->userFormData($item), $this->layout());
     }
