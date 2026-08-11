@@ -1191,7 +1191,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </div>
             <?php }
             } ?>
-            <?php if (function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session() && rateb_company_branches_nav_enabled()) {
+            <?php
+            $platformAccountsUi = function_exists('rateb_is_platform_accounts_ui')
+                && rateb_is_platform_accounts_ui(isset($erpRoute) ? (string) $erpRoute : null);
+            // Platform SA/staff screens: no company context — hide branch filter + ops picker.
+            if (!$platformAccountsUi && function_exists('rateb_branch_access_all') && rateb_branch_access_all() && !rateb_is_portal_branch_session() && rateb_company_branches_nav_enabled()) {
                 $hoCompanyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? rateb_resolve_ops_company_id());
                 $hoBranches = function_exists('rateb_company_branches_cached')
                     ? rateb_company_branches_cached($hoCompanyId)
@@ -1210,10 +1214,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-building"></i> <?php echo Rateb\App\Core\View::escape(__('branch_filter_all')); ?>
                 <?php } ?>
             </div>
-            <?php } ?>
-            <?php
-            $platformAccountsUi = function_exists('rateb_is_platform_accounts_ui')
-                && rateb_is_platform_accounts_ui(isset($erpRoute) ? (string) $erpRoute : null);
+            <?php }
             $showOpsCompanyPicker = !$platformAccountsUi
                 && rateb_is_super_admin()
                 && rateb_is_platform_oversight_host()

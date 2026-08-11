@@ -26,19 +26,33 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
     $cancelUrl = rateb_url_query(rateb_url('admin/users'), ['scope' => 'staff']);
 }
 ?>
-<?php if ($isEdit && !empty($loginBarcode)) {
+<?php
+$isPlatformAccountForm = !empty($platformUserForm) || !empty($platformStaffForm);
+$badgeScanQrUrl = $badgeScanQrUrl ?? '';
+$badgeLoginUrl = $badgeLoginUrl ?? '';
+$badgeRegenerateAction = $badgeRegenerateAction
+    ?? ($isEdit ? rateb_url($routePrefix . '/' . (int) $item['id'] . '/regenerate-barcode') : '');
+$loginBadgePartial = static function () use ($isEdit, $loginBarcode, $badgeScanQrUrl, $badgeLoginUrl, $csrf, $badgeRegenerateAction): void {
+    if (!$isEdit || empty($loginBarcode)) {
+        return;
+    }
     Rateb\App\Core\View::partial('login-badge-card', [
         'loginBarcode' => $loginBarcode,
-        'badgeScanQrUrl' => $badgeScanQrUrl ?? '',
-        'badgeLoginUrl' => $badgeLoginUrl ?? '',
+        'badgeScanQrUrl' => $badgeScanQrUrl,
+        'badgeLoginUrl' => $badgeLoginUrl,
         'csrf' => $csrf,
-        'regenerateAction' => $badgeRegenerateAction ?? rateb_url($routePrefix . '/' . (int) $item['id'] . '/regenerate-barcode'),
+        'regenerateAction' => $badgeRegenerateAction,
     ]);
-} ?>
+};
+// Platform SA/staff: form + roles first; badge after (avoids QR dominating the edit).
+if (!$isPlatformAccountForm) {
+    $loginBadgePartial();
+}
+?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <?php if (!empty($formHelp) && empty($platformUserForm) && empty($platformStaffForm)) { ?>
+        <?php if (!empty($formHelp) && !$isPlatformAccountForm) { ?>
         <div class="alert alert-secondary py-2 small mb-3" role="status">
             <?php echo Rateb\App\Core\View::escape((string) $formHelp); ?>
         </div>
@@ -231,6 +245,9 @@ if (!empty($platformUserForm) && function_exists('rateb_url_query')) {
         </form>
     </div>
 </div>
+<?php if ($isPlatformAccountForm) {
+    $loginBadgePartial();
+} ?>
 <script>
 (function () {
     var byCompany = <?php echo json_encode($branchesByCompany ?? [], JSON_UNESCAPED_UNICODE); ?>;
