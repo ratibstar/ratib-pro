@@ -47,7 +47,7 @@
 | Reporting | Monthly attendance report, leave report; HRMS board; payroll reports | Ad-hoc SQL per screen | Shared report query layer | `HrService` reports + export helpers | Reporting service with reusable queries |
 | Notifications | ESS reads NotificationService; oversight pending notify | — | Expiry / leave / payroll / attendance alerts | **NotificationService only** | Add HR event triggers |
 | ESS / Mobile | `/api/v1/hr/*` + `ratib_hr_mobile` | Manager approvals missing | Full ESS letters/self-service depth | HrEss* → HrService | Keep thin adapters; never duplicate policy in Flutter |
-| Audit & security | CSRF on forms; tenant models; payroll audit table | Coarse RBAC; email bind risk | Field-level salary ACL; contract audit | AuditService + status_history | Fix bind scope; split payroll perms |
+| Audit & security | CSRF on forms; tenant models; payroll status_history | Coarse RBAC; ESS no hr.view gate; email/user_id bind risk; `rateb_payroll_audit` unused; ops payroll post live without audit | Field-level salary ACL; contract audit; ESS mutation audit | AuditService + status_history | Fix bind scope; block/audit payroll post; split payroll perms; wire payroll_audit or drop claim |
 | Multi-tenant | company_id ubiquitous on new tables | Nullable branch history; email fallback | Strict IDOR tests | TenantContext | Security phase first |
 | Accounting post | — | Metadata refs | Real payroll GL via AccountingService | AccountingService | Adapter only after correctness |
 | Saudi readiness | Leave catalog + recruitment passport/visa | EOS request type; settlement type `eos` | GOSI/WPS/iqama/saudization engines | Config tables later | Core vs Saudi config vs Gov integrations |

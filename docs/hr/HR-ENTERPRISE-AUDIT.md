@@ -276,15 +276,16 @@ Payroll/expenses **cannot** currently create wrong GL from HR because they **do 
 
 `NotificationService` exists and is used by ESS list/mark-read, oversight `notifyOversightPending`, inventory, CRM, contracts, billing.  
 **No dedicated HR notifiers** for contract expiry, probation, document expiry, leave decision, payroll completion, attendance exceptions, birthday.  
+Verified gap: `HrEssLeaveService::apply` inserts `pending` and does **not** call `NotificationService` / `notifyOversightPending` / `WorkflowSubmissionService`. Oversight pending notify is used for procurement submissions today, not leave apply.  
 Do **not** create NotificationService #2.
 
 ### 20. Tenant isolation issues
 
 - Most ops/HRMS/payroll tables have `company_id` + Model `$tenantScoped = true`.  
 - `HrEmployeesController::autoLinkEmployeeUser`: if no user in company, falls back to **global email lookup** (`ORDER BY id ASC LIMIT 1`) — cross-tenant bind risk.  
-- `HrEssEmployeeResolverService`: unscoped SQL by design; if token `company_id` is wrong, **global email fallback** can bind another company’s employee.  
+- `HrEssEmployeeResolverService`: lookup by `user_id` **without** `company_id`; if no row matches token company, it can **return another company’s employee**. Email fallback can be global. Check-in then writes token `company_id` + foreign `employee_id`.  
+- `bindEmployeeUser`: `UPDATE rateb_employees SET user_id … WHERE id = :eid` — **no `company_id` predicate**.  
 - Payroll show query joins lines without extra `company_id` predicate (relies on tenant-scoped `find($periodId)`).  
-- HRMS `DepartmentService` name collision with any non-HR department service — currently HRMS-only file.  
 - Oversight leave approve uses `findByIdUnscoped` (documented: branch filter would hide rows). Correct for oversight, dangerous if copied into company controllers.
 
 ### 21. RBAC issues
@@ -292,7 +293,10 @@ Do **not** create NotificationService #2.
 Module `hr` with slugs: `hr.view|create|update|delete|training|performance|promotions|transfers|admin|manage|oversight`.  
 Entity map (`entity-permissions.php`): `hr`, `hr-employees`, `hr-attendance`, `hr-leaves`, `hr-payroll` all use the **same** `hr.view` / `hr.manage` — **no separation** of payroll-sensitive vs directory-only.  
 Enterprise payroll has its own `payroll.*` module (finer: calculate/review/approve/post).  
-Ops HR payroll is gated by `hr.manage`, not `payroll.approve`.  
+Ops HR payroll is gated by `hr.manage`, not `payroll.approve` / `payroll.post`.  
+Company leave/permission/request/payroll **approve|reject** routes are hard-blocked to platform oversight; **`POST /hr/payroll/{id}/post` is still live** for company `hr.manage` (status flip, no GL, no AuditService log).  
+Enterprise `/payroll/batches/{id}/transition` remains company-side (`payroll.review`/`approve`/`post`) — not redirected to oversight.  
+ESS `/api/v1/hr/*` uses **ApiAuth only** — no `rateb_api_mw('hr')` / `hr.view` plan-module gate. Any bearer with an employee link can use ESS (including change-password).  
 Salary_base is visible on employee index to anyone with `hr.view`.  
 Recruitment is a separate module (`recruitment.*`).
 
@@ -303,20 +307,21 @@ Recruitment is a separate module (`recruitment.*`).
 - Dashboard `HrService::dashboardStats` is 4 aggregate queries (acceptable) but has no caching; does not scale to “thousands of employees per request” for richer dashboards.  
 - HRMS `boardCounts` COUNTs every workflow status per entity (small).  
 - Attendance unique key is good; missing covering indexes for dashboard date+status beyond `idx_attendance_date`.  
+- Missing index on `rateb_employees.user_id` (ESS resolver hot path).  
 - Nav pending badges can COUNT storms (project already disables cold COUNT).
 
 ### 23. Top 10 risks blocking Enterprise-ready HR
 
 1. **Dual Employee SoT** without sync — payroll/ESS use ops; talent/org use HRMS.  
 2. **Dual Payroll SoT** — live generator vs enterprise batch summer; neither posts GL.  
-3. **Attendance is a daily status row, not an engine** — payroll recomputes absences.  
-4. **No employment contract entity** — cannot drive expiry, probation, renewal, salary from contract.  
-5. **Recruitment does not hire into Employee Master.**  
-6. **HRMS is an orphan UI** (not in production HR sidebar) — high chance of a third parallel screen if prompt menu is implemented naively.  
-7. **Sensitive salary on employee row** + coarse `hr.view`.  
-8. **Cross-tenant email bind** on employee↔user linking.  
-9. **`postPayroll` semantic lie** vs Accounting.  
-10. **Fourth HR product** (`pages/hr.php`) if anyone “unifies” the wrong tree.
+3. **ESS tenant bind / attendance write** — resolver can return another tenant’s employee; `bindEmployeeUser` lacks `company_id`.  
+4. **Company can still POST ops payroll `post`** while approve is oversight-only; no AuditService / no GL.  
+5. **Attendance is a daily status row, not an engine** — payroll recomputes absences.  
+6. **No employment contract entity** — cannot drive expiry, probation, renewal, salary from contract.  
+7. **Recruitment does not hire into Employee Master.**  
+8. **HRMS is an orphan UI** (not in production HR sidebar) — high chance of a third parallel screen if prompt menu is implemented naively.  
+9. **Sensitive salary + coarse RBAC** — `hr.view` sees `salary_base`; ESS has no `hr.view` module gate.  
+10. **Fourth HR product** (`pages/hr.php` / root `api/hr/*`) if anyone “unifies” the wrong tree.
 
 ---
 
@@ -381,9 +386,11 @@ Company modules include `hr`, `payroll`, `recruitment` separately.
 
 - Leave/request/permission/payroll-draft → oversight.  
 - HRMS entity workflow + `rateb_hrm_status_history` + `rateb_hrm_timeline`.  
-- Payroll batch workflow + `rateb_payroll_status_history` + `rateb_payroll_audit`.  
+- Payroll batch workflow + `rateb_payroll_status_history`. Table `rateb_payroll_audit` + `PayrollAudit` model exist — **never written by app code**.  
 - `AuditService` used in recruitment agencies; ops HR CRUD relies on generic controller audit where present.  
-- Salary/bank/contract change audit: **incomplete** (no bank fields; salary is a column update).
+- Live oversight leave approve → `HrService` path: **no AuditService** log. Ops payroll `post` and ESS mutations (check-in, leave apply, change-password): **unaudited**.  
+- Salary/bank/contract change audit: **incomplete** (no bank fields; salary is a column update).  
+- ESS payslips: `HrEssPayslipDocumentService` dual-reads legacy `rateb_payroll_lines` **and** enterprise `rateb_payroll_payslips`.
 
 ---
 
@@ -531,11 +538,21 @@ No effective-dated org history (only timeline events if used).
 - God-files: `HrService`, `HumanResourcesDomainServices`, `PayrollDomainServices`.  
 - Additive platforms were explicitly designed **not** to replace live HR — unification was deferred; that deferral is now the main Enterprise blocker.  
 - Prompt menu implementation without unification = **Architecture Conflict (parallel HR)**.  
-- Feature flags: enterprise layers are always-on routes if module enabled; no flag hiding `/hrm` from accidental use.
+- Feature flags: enterprise layers are always-on routes if module enabled; no flag hiding `/hrm` from accidental use.  
+- Six overlapping approval mechanisms (company route block, platform oversight, dormant `WorkflowService` HR entity types, EAP `ApprovalService` unwired, HRMS lifecycle workflow, enterprise `PayrollWorkflowService`) — only oversight + HRMS/payroll-batch workflows are live for HR.  
+- Ops HR tables: **zero FOREIGN KEYs** in 067/074 (indexes only); no vacancy table; GOSI/WPS/Iqama/Saudization absent.  
+- Schema-only HRMS models without domain services: disciplinary, rewards, dependents, emergency contacts, licenses, skills, languages, tags.  
+- Admin extras (not HR module UI): `/admin/hr-mobile` console; SW caches `admin/hr` / recruitment / payroll but **not** `admin/hrm`.
 
 ---
 
-## 17. Phase boundary
+## 17. Independent corroboration (2026-08-14)
+
+Deep-dive agents confirmed the dual-stack map and added the ESS tenant-bind, payroll-post asymmetry, unused `rateb_payroll_audit`, leave-apply notification gap, and missing `user_id` index — incorporated above. Root `HR_*AUDIT*.md` remains Ratib Pro-oriented and is not ERP SoT.
+
+---
+
+## 18. Phase boundary
 
 **HR-0 Audit: COMPLETE.**  
 Next: HR-1 Gap Analysis, HR-2 Architecture, HR-3 Roadmap (same docs set).  

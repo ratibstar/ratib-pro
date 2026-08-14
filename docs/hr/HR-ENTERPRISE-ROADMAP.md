@@ -39,10 +39,13 @@ Each phase below is **small and testable**. Do not skip P0.
 **Goal:** Stop cross-company employee/user bind and salary over-exposure.
 
 1. Remove or strictly gate global email fallback in `HrEmployeesController::autoLinkEmployeeUser`.  
-2. Remove or strictly gate global email fallback in `HrEssEmployeeResolverService`.  
+2. Fix `HrEssEmployeeResolverService`: always scope by token `company_id`; remove unsafe cross-tenant return; `bindEmployeeUser` must include `company_id`.  
 3. Ensure payroll show/export queries include `company_id`.  
-4. Introduce finer permissions for salary/payroll view (seed only; wire gradually).  
-5. Tests: IDOR employee show, ESS resolver company mismatch, payroll period cross-company.
+4. Align ops payroll **post** with approve policy (block company post **or** require oversight + AuditService log); clarify UI “posted ≠ GL”.  
+5. Add index on `rateb_employees.user_id` (additive).  
+6. Decide ESS module gate: require company HR plan / `hr.view` via API middleware where appropriate (without breaking mobile).  
+7. Introduce finer permissions for salary/payroll view (seed only; wire gradually).  
+8. Tests: IDOR employee show, ESS resolver company mismatch, cross-tenant attendance write, payroll period cross-company, payroll post authorization.
 
 **Exit:** Security tests green; no intentional cross-tenant bind.
 
