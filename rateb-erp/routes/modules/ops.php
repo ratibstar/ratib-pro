@@ -856,6 +856,7 @@ foreach ($hrCrudRoutes as $path => $cfg) {
     $router->post($app($path), [$class, 'store'], $mw);
     if ($path === 'hr/employees') {
         $router->get($app('hr/employees/export'), [HrEmployeesController::class, 'export'], $mw);
+        $router->get($app('hr/employees/{id}/360-tab'), [HrEmployeesController::class, 'show360Tab'], $mw);
         $router->get($app('hr/employees/{id}'), [HrEmployeesController::class, 'show'], $mw);
     } else {
         $router->get($app($path . '/export'), [$class, 'export'], rateb_erp_mw('hr', 'reports.export', $cfg['entity']));

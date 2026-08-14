@@ -11,6 +11,7 @@ use Rateb\App\Services\AuditService;
 use Rateb\App\Services\ApprovalOversightService;
 use Rateb\App\Services\DocumentCodeService;
 use Rateb\App\Services\HrApprovalInboxService;
+use Rateb\App\Services\HrEmployee360Service;
 use Rateb\App\Services\HrEmployeeIntegrityService;
 use Rateb\App\Services\HrService;
 
@@ -180,19 +181,126 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
 
     public function show(array $params): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $id = (int) ($params['id'] ?? 0);
-        $profile = (new HrService())->employeeProfile($id);
-        if ($profile === null) {
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? (int) rateb_resolve_ops_company_id()
+            : 0;
+        if ($companyId < 1 || $id < 1) {
             http_response_code(404);
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/show', array_merge($profile, [
-            'title' => (string) ($profile['employee']['name'] ?? __('hr_employees')),
+
+        $auth = $this->employee360AuthFlags();
+        $shell = (new HrEmployee360Service())->loadShell($companyId, $id, $auth);
+        if ($shell === null) {
+            // Foreign / missing employee — same 404 (no existence leak).
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+
+        $activeTab = strtolower(trim((string) ($_GET['tab'] ?? 'overview')));
+        if (!in_array($activeTab, HrEmployee360Service::TABS, true)) {
+            $activeTab = HrEmployee360Service::TAB_OVERVIEW;
+        }
+
+        $this->view($this->viewPrefix . '/show', [
+            'title' => (string) ($shell['header']['name'] ?? __('hr_employees')),
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
-            'canManage' => function_exists('rateb_can_manage_entity') ? rateb_can_manage_entity('hr-employees') : true,
-        ]), $this->layout());
+            'companyId' => $companyId,
+            'employeeId' => $id,
+            'shell' => $shell,
+            'activeTab' => $activeTab,
+            'tabEndpoint' => rateb_url($this->routePrefix . '/' . $id . '/360-tab'),
+            'canManage' => (bool) ($auth['can_manage_employees'] ?? false),
+        ], $this->layout());
+    }
+
+    /**
+     * Phase I — lazy tab fragment for Employee 360 (read-only, company-scoped).
+     * Default: HTML. ?format=json for diagnostics.
+     */
+    public function show360Tab(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? (int) rateb_resolve_ops_company_id()
+            : 0;
+        $tab = strtolower(trim((string) ($_GET['tab'] ?? '')));
+        $format = strtolower(trim((string) ($_GET['format'] ?? 'html')));
+        if ($companyId < 1 || $id < 1 || $tab === '') {
+            http_response_code(404);
+            if ($format === 'json') {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(['success' => false, 'code' => 'not_found'], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo '';
+            }
+            return;
+        }
+        $payload = (new HrEmployee360Service())->loadTab($companyId, $id, $tab, $this->employee360AuthFlags());
+        if ($payload === null) {
+            http_response_code(404);
+            if ($format === 'json') {
+                header('Content-Type: application/json; charset=UTF-8');
+                echo json_encode(['success' => false, 'code' => 'not_found'], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo '';
+            }
+            return;
+        }
+        if ($format === 'json') {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode(['success' => true, 'tab' => $tab, 'data' => $payload['data'] ?? []], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        $this->view($this->viewPrefix . '/360-tab', [
+            'tab' => $tab,
+            'data' => $payload['data'] ?? [],
+        ], null);
+    }
+
+    /** @return array<string, bool> */
+    private function employee360AuthFlags(): array
+    {
+        $canManageEmp = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity('hr-employees')
+            : true;
+        $canViewPayroll = function_exists('rateb_can_view_entity')
+            ? rateb_can_view_entity('hr-payroll')
+            : true;
+        $canManagePayroll = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity('hr-payroll')
+            : false;
+        $canViewLeaves = function_exists('rateb_can_view_entity')
+            ? rateb_can_view_entity('hr-leaves')
+            : true;
+        $canManageLeaves = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity('hr-leaves')
+            : false;
+        $canViewAttendance = function_exists('rateb_can_view_entity')
+            ? rateb_can_view_entity('hr-attendance')
+            : true;
+
+        return [
+            'can_manage_employees' => $canManageEmp,
+            // Salary detail follows payroll view OR employee manage (existing ops pattern).
+            'can_view_salary' => $canViewPayroll || $canManageEmp,
+            'can_view_payroll' => $canViewPayroll || $canManagePayroll,
+            'can_view_leaves' => $canViewLeaves || $canManageLeaves,
+            'can_view_attendance' => $canViewAttendance,
+            'can_create_leave' => $canManageLeaves,
+            'can_create_request' => $canManageLeaves,
+        ];
     }
 
     public function export(): void

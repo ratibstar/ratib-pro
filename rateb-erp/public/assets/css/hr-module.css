@@ -1,4 +1,4 @@
-/* HR module — placeholder page (nav is in main sidebar) */
+/* HR module + Employee Master 360 (Phase I) */
 
 .rateb-hr-placeholder {
     text-align: center;
@@ -10,4 +10,60 @@
     color: var(--rateb-primary);
     opacity: 0.85;
     margin-bottom: 1rem;
+}
+
+.rateb-emp360-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--rateb-primary-contrast, #fff);
+    background: var(--rateb-primary, #0d6efd);
+    flex-shrink: 0;
+}
+
+.rateb-emp360-kpi {
+    border: 1px solid var(--rateb-border, rgba(0, 0, 0, 0.08));
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    background: var(--rateb-surface, transparent);
+    height: 100%;
+}
+
+.rateb-emp360-kpi-label {
+    font-size: 0.75rem;
+    color: var(--rateb-muted, #6c757d);
+    margin-bottom: 0.2rem;
+}
+
+.rateb-emp360-kpi-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.rateb-emp360-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    gap: 0.15rem;
+}
+
+.rateb-emp360-tabs .nav-link {
+    white-space: nowrap;
+}
+
+.rateb-emp360-timeline .list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+@media (max-width: 767.98px) {
+    .rateb-emp360-header .btn {
+        margin-bottom: 0.25rem;
+    }
 }

@@ -260,7 +260,26 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase I — P1 Attendance engine (extend, don’t fork)
+## Phase I — P1 Employee Master 360 (Admin product)
+
+**Status:** COMPLETE (`docs/hr/HR-PHASE-I-EMPLOYEE-360-CERTIFICATION.md`)
+
+**Delivered:**
+
+1. Canonical show route upgraded to Employee 360 (`hr/employees/{id}`).  
+2. `HrEmployee360Service` company-scoped read-only aggregation.  
+3. Header + KPIs + tabs (overview server-rendered; others lazy).  
+4. Leave/attendance/payroll/requests/documents/timeline from existing SoT.  
+5. Salary/payroll gated by existing RBAC; foreign employee → 404.  
+6. Employment contracts / letter PDF / mobile explicitly deferred.
+
+**Exit:** Admin can open an employee and answer “Who is this?” without a second master.
+
+---
+
+## Phase I (legacy roadmap note) — Attendance engine (extend, don’t fork)
+
+**Status:** DEFERRED (renumbered — Employee Master 360 took Phase I product slot per Product Gap Audit)
 
 **Goal:** Raw punch → daily → exceptions → payroll input.
 
