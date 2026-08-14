@@ -51,7 +51,12 @@ final class HrEmployee360Service
         self::TAB_TIMELINE,
     ];
 
-    private const LETTER_TYPES = ['salary_certificate', 'experience_letter', 'end_of_service'];
+    private const LETTER_TYPES = [
+        'salary_certificate',
+        'employment_certificate',
+        'experience_letter',
+        'end_of_service',
+    ];
 
     private HrService $hr;
     private FormLookupService $lookup;
@@ -151,7 +156,6 @@ final class HrEmployee360Service
             'tabs' => self::TABS,
             'ess_linked' => (int) ($emp['user_id'] ?? 0) > 0,
             'deferred' => [
-                'letter_pdf' => true,
                 'unified_documents' => true,
             ],
             'canonical_source' => 'rateb_employees',
@@ -457,18 +461,27 @@ final class HrEmployee360Service
      */
     private function tabRequests(int $companyId, int $employeeId, bool $lettersOnly): array
     {
+        $select = 'id, request_no, request_type, request_date, status, processed_at, notes, created_at';
+        try {
+            if (Database::liveTableHasColumn('rateb_hr_employee_requests', 'document_id')) {
+                $select .= ', document_id, issued_at';
+            }
+        } catch (\Throwable $e) {
+            // pre-migration
+        }
         $rows = (new HrEmployeeRequest())->query(
-            'SELECT id, request_no, request_type, request_date, status, processed_at, notes, created_at
+            "SELECT {$select}
              FROM rateb_hr_employee_requests
              WHERE company_id = :cid AND employee_id = :eid
              ORDER BY id DESC
-             LIMIT 50',
+             LIMIT 50",
             ['cid' => $companyId, 'eid' => $employeeId]
         );
         $out = [];
         foreach (is_array($rows) ? $rows : [] as $row) {
             $type = (string) ($row['request_type'] ?? '');
-            $isLetter = in_array($type, self::LETTER_TYPES, true);
+            $isLetter = in_array($type, self::LETTER_TYPES, true)
+                || HrLetterIssueService::isLetterType($type);
             if ($lettersOnly && !$isLetter) {
                 continue;
             }
@@ -480,6 +493,7 @@ final class HrEmployee360Service
             if ((string) ($row['status'] ?? '') === 'pending') {
                 $progress = $this->matrix->progressSummary('hr_request', (int) ($row['id'] ?? 0), $companyId);
             }
+            $docId = (int) ($row['document_id'] ?? 0);
             $out[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'request_no' => (string) ($row['request_no'] ?? ''),
@@ -488,16 +502,24 @@ final class HrEmployee360Service
                 'status' => (string) ($row['status'] ?? ''),
                 'created_at' => (string) ($row['created_at'] ?? ''),
                 'processed_at' => (string) ($row['processed_at'] ?? ''),
+                'issued_at' => (string) ($row['issued_at'] ?? ''),
                 'stage_name' => $progress['stage_name'] ?? null,
                 'stage_order' => $progress['current_stage_order'] ?? null,
                 'max_stage_order' => $progress['max_stage_order'] ?? null,
-                'pdf_available' => false,
+                'pdf_available' => $docId > 0,
+                'download_url' => $docId > 0
+                    ? rateb_url(rateb_app_route('hr/letters/' . (int) ($row['id'] ?? 0) . '/download'))
+                    : null,
+                'issue_url' => ((string) ($row['status'] ?? '') === 'approved')
+                    ? rateb_url(rateb_app_route('hr/letters/' . (int) ($row['id'] ?? 0) . '/issue'))
+                    : null,
             ];
         }
 
         return [
             'items' => $out,
-            'pdf_deferred' => $lettersOnly,
+            'pdf_deferred' => false,
+            'letters_url' => rateb_url(rateb_app_route('hr/letters')),
         ];
     }
 

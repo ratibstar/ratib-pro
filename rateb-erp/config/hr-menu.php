@@ -57,6 +57,7 @@ return [
         ],
     ],
     ['id' => 'documents-manage', 'label' => 'hr_documents', 'icon' => 'fa-file-lines', 'route' => 'hr/documents'],
+    ['id' => 'letters', 'label' => 'hr_letters', 'icon' => 'fa-file-pdf', 'route' => 'hr/letters'],
     ['id' => 'employee-requests', 'label' => 'hr_employee_requests', 'icon' => 'fa-file-lines', 'route' => 'hr/requests'],
     ['id' => 'fleet-manage', 'label' => 'hr_fleet', 'icon' => 'fa-car', 'route' => 'hr/fleet'],
 ];

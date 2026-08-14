@@ -220,7 +220,13 @@ if ($tab === 'leaves') {
 if ($tab === 'requests' || $tab === 'letters') {
     $items = is_array($data['items'] ?? null) ? $data['items'] : [];
     if ($tab === 'letters') {
-        echo '<p class="small text-muted">' . $escape(__('hr_360_letter_pdf_deferred')) . '</p>';
+        $lettersUrl = (string) ($data['letters_url'] ?? '');
+        echo '<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">';
+        echo '<h2 class="h6 mb-0">' . $escape(__('hr_letters')) . '</h2>';
+        if ($lettersUrl !== '') {
+            echo '<a class="btn btn-sm btn-outline-secondary" href="' . $escape($lettersUrl) . '">' . $escape(__('hr_letters')) . '</a>';
+        }
+        echo '</div>';
     }
     if ($items === []) {
         echo '<p class="text-muted mb-0">' . $escape(__('no_records')) . '</p>';
@@ -233,20 +239,44 @@ if ($tab === 'requests' || $tab === 'letters') {
             <th><?php echo __('date'); ?></th>
             <th><?php echo __('status'); ?></th>
             <th><?php echo __('hr_360_approval_stage'); ?></th>
+            <?php if ($tab === 'letters') { ?>
+            <th><?php echo __('actions'); ?></th>
+            <?php } else { ?>
             <th><?php echo __('created_at'); ?></th>
+            <?php } ?>
         </tr></thead><tbody>
         <?php foreach ($items as $row) {
             $stage = (string) ($row['stage_name'] ?? '');
             if ($stage !== '' && isset($row['stage_order'], $row['max_stage_order'])) {
                 $stage .= ' (' . (int) $row['stage_order'] . '/' . (int) $row['max_stage_order'] . ')';
             }
+            $typeKey = (string) ($row['request_type'] ?? '');
+            $typeLabel = __($typeKey);
+            if ($typeLabel === $typeKey) {
+                $typeLabel = $typeKey;
+            }
             ?>
             <tr>
-                <td><?php echo $escape((string) ($row['request_type'] ?? '')); ?></td>
+                <td><?php echo $escape($typeLabel); ?></td>
                 <td><?php echo $fmtDate((string) ($row['request_date'] ?? '')); ?></td>
                 <td><?php echo $escape(__((string) ($row['status'] ?? ''))); ?></td>
                 <td><?php echo $escape($stage !== '' ? $stage : '—'); ?></td>
+                <?php if ($tab === 'letters') { ?>
+                <td class="d-flex flex-wrap gap-1">
+                    <?php if (!empty($row['pdf_available']) && !empty($row['download_url'])) { ?>
+                    <a class="btn btn-sm btn-outline-primary" href="<?php echo $escape((string) $row['download_url']); ?>"><?php echo __('hr_letter_download'); ?></a>
+                    <?php } elseif (!empty($row['issue_url'])) { ?>
+                    <form method="post" action="<?php echo $escape((string) $row['issue_url']); ?>" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?php echo $escape(\Rateb\App\Core\Csrf::token()); ?>">
+                        <button type="submit" class="btn btn-sm btn-success"><?php echo __('hr_letter_issue'); ?></button>
+                    </form>
+                    <?php } else { ?>
+                    <span class="text-muted small">—</span>
+                    <?php } ?>
+                </td>
+                <?php } else { ?>
                 <td><?php echo $fmtDate((string) ($row['created_at'] ?? '')); ?></td>
+                <?php } ?>
             </tr>
         <?php } ?>
         </tbody></table>

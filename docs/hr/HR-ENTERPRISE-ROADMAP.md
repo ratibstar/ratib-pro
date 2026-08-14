@@ -351,16 +351,20 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase L — P2 Documents & letters
+## Phase L — P1 Letters + Employee Documents
 
-**Goal:** Real document lifecycle on existing storage.
+**Status:** COMPLETE (`docs/hr/HR-PHASE-L-LETTERS-CERTIFICATION.md`)
 
-1. Enable file attach for HR documents using existing storage service.  
-2. Version + expiry + access control.  
-3. Letter templates for salary/experience certificates on request completion.  
-4. ESS document list continues via domain service.
+**Delivered:**
 
-**Exit:** Upload/download audited; expiry notification job.
+1. Letter types: salary / employment / experience / EOS on `rateb_hr_employee_requests`.  
+2. Approve via existing Oversight + Matrix (inbox).  
+3. Arabic PDF issue → `rateb_documents` via DocumentService.  
+4. Download from `hr/letters` + Employee 360 Letters tab.  
+5. Additive migration `251` (`document_id`, `issued_at`, `issued_by`).  
+6. Audit: request create / issue / reissue / download.
+
+**Exit:** Request → approve → issue PDF → download audited.
 
 ---
 

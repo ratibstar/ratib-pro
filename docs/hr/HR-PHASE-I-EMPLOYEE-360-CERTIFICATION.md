@@ -98,7 +98,7 @@ Viewing 360 does **not** write AuditService business events.
 ## Deferred (explicit)
 
 - Employment contracts (delivered in Phase K)
-- Letter PDF generation
+- Letter PDF generation (delivered in Phase L)
 - HireBridge (delivered in Phase K)
 - Manager approval decide path (delivered in Phase J Actionable Inbox)
 - ESS / mobile parity (Phase M)

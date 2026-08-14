@@ -540,6 +540,32 @@ final class HrEmployeeRequestsController extends \Rateb\App\Controllers\CrudCont
         return $data;
     }
 
+    protected function afterSuccessfulStore(int $id, array $data): void
+    {
+        $type = (string) ($data['request_type'] ?? '');
+        if (\Rateb\App\Services\HrLetterIssueService::isLetterType($type)
+            || in_array($type, ['inquiry', 'complaint', 'other'], true)
+        ) {
+            try {
+                $companyId = (int) ($data['company_id'] ?? rateb_resolve_ops_company_id());
+                if ($companyId > 0 && $id > 0) {
+                    \Rateb\App\Services\ApprovalOversightService::notifyPendingSubmission(
+                        $companyId,
+                        'hr_request',
+                        'hr_request #' . $id,
+                        $id
+                    );
+                }
+            } catch (\Throwable $e) {
+                // Non-blocking — request already stored.
+            }
+        }
+        (new AuditService())->log('hr_letter_request_create', 'hr_employee_request', $id, [
+            'request_type' => $type,
+            'employee_id' => (int) ($data['employee_id'] ?? 0),
+        ]);
+    }
+
     public function approve(array $params): void
     {
         $this->workflowAction($params, 'approve', 'approved', 'request_approved');
@@ -576,6 +602,69 @@ final class HrEmployeeRequestsController extends \Rateb\App\Controllers\CrudCont
     protected function layout(): string
     {
         return 'main';
+    }
+}
+
+/**
+ * Phase L — Letters workspace (issue / download PDF after Matrix/Oversight approve).
+ */
+final class HrLettersController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $status = trim((string) $this->input('status', 'all'));
+        $svc = new \Rateb\App\Services\HrLetterIssueService();
+        $items = $companyId > 0 ? $svc->listLetters($companyId, $status === 'all' ? null : $status) : [];
+        $this->view('company/hr/letters/index', [
+            'title' => __('hr_letters'),
+            'companyId' => $companyId,
+            'items' => $items,
+            'statusFilter' => $status,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/letters'),
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-leaves.manage') || rateb_can('hr-employees.manage')),
+        ], 'main');
+    }
+
+    public function issue(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/letters')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = rateb_url(rateb_app_route('hr/letters'));
+        try {
+            (new \Rateb\App\Services\HrLetterIssueService())->issue($companyId, $id);
+            SessionManager::flash('success', __('hr_letter_issued'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect($redirect);
+    }
+
+    public function download(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new \Rateb\App\Services\HrLetterIssueService())->download($companyId, $id);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+            $this->redirect(rateb_url(rateb_app_route('hr/letters')));
+        }
     }
 }
 

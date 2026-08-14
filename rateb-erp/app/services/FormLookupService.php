@@ -145,7 +145,7 @@ final class FormLookupService
                 break;
             case 'employee_request_types':
                 $options = $this->staticOptions([
-                    'salary_certificate', 'end_of_service', 'experience_letter', 'other',
+                    'salary_certificate', 'employment_certificate', 'end_of_service', 'experience_letter', 'other',
                 ], true);
                 break;
             case 'hr_document_types':

@@ -44,6 +44,7 @@ use Rateb\App\Controllers\Company\HrPayrollStructuresController;
 use Rateb\App\Controllers\Company\HrEmployeeDocumentsController;
 use Rateb\App\Controllers\Company\HrFleetController;
 use Rateb\App\Controllers\Company\HrEmployeeRequestsController;
+use Rateb\App\Controllers\Company\HrLettersController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
 use Rateb\App\Controllers\Company\RecruitmentDashboardController;
 use Rateb\App\Controllers\Company\RecruitmentCandidatesController;
@@ -858,6 +859,9 @@ $hrCrudRoutes = [
 
 $hrLeaveMw = rateb_erp_mw('hr', '', 'hr-leaves');
 $router->get($app('hr/leaves/balances'), [HrLeavesController::class, 'balances'], $hrLeaveMw);
+$router->get($app('hr/letters'), [HrLettersController::class, 'index'], $hrLeaveMw);
+$router->post($app('hr/letters/{id}/issue'), [HrLettersController::class, 'issue'], $hrLeaveMw);
+$router->get($app('hr/letters/{id}/download'), [HrLettersController::class, 'download'], $hrLeaveMw);
 
 foreach ($hrCrudRoutes as $path => $cfg) {
     $class = $cfg['class'];

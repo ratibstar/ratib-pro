@@ -158,6 +158,7 @@ final class HrEmployeeRequest extends Model
     protected array $fillable = [
         'company_id', 'request_no', 'employee_id', 'request_type', 'request_date',
         'status', 'processed_by', 'processed_at', 'notes',
+        'document_id', 'issued_at', 'issued_by',
     ];
 }
 

@@ -124,6 +124,77 @@ final class DocumentService
         return ['success' => true, 'path' => $relative];
     }
 
+    /**
+     * Store generated binary content (e.g. issued letter PDF) into rateb_documents.
+     *
+     * @return array{success:bool,document_id?:int,path?:string,error?:string}
+     */
+    public function storeGeneratedBytes(
+        int $companyId,
+        string $entityType,
+        int $entityId,
+        string $bytes,
+        string $fileName,
+        string $mimeType,
+        string $title = ''
+    ): array {
+        if ($companyId < 1 || $entityId < 1 || $bytes === '') {
+            return ['success' => false, 'error' => __('invalid_request')];
+        }
+        $size = strlen($bytes);
+        if ($size > 10 * 1024 * 1024) {
+            return ['success' => false, 'error' => __('file_too_large')];
+        }
+        if (!(new PlanLimitService())->canUploadBytes($companyId, $size)) {
+            return ['success' => false, 'error' => __('storage_limit_exceeded')];
+        }
+
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        if ($ext === '' || !in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            $ext = 'pdf';
+            $fileName .= '.pdf';
+        }
+        $safeName = bin2hex(random_bytes(8)) . '.' . preg_replace('/[^a-z0-9]/', '', $ext);
+        $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
+        $uploadsRoot = StorageHelper::uploadsRoot();
+        $destDir = $uploadsRoot . '/' . $subdir;
+        $dirError = StorageHelper::ensureWritableDir($destDir);
+        if ($dirError !== null) {
+            return ['success' => false, 'error' => $dirError];
+        }
+        $relative = 'uploads/' . $subdir . '/' . $safeName;
+        $full = $destDir . '/' . $safeName;
+        if (file_put_contents($full, $bytes) === false) {
+            return ['success' => false, 'error' => __('upload_save_failed')];
+        }
+
+        $displayName = $this->safeStoredName($fileName, $safeName);
+        $docTitle = $title !== '' ? $title : $displayName;
+        try {
+            $db = \Rateb\App\Core\Database::connection();
+            $db->prepare(
+                'INSERT INTO rateb_documents (company_id, entity_type, entity_id, title, file_name, file_path, mime_type, file_size, uploaded_by)
+                 VALUES (:cid, :et, :eid, :title, :fn, :fp, :mime, :sz, :uid)'
+            )->execute([
+                'cid' => $companyId,
+                'et' => $entityType,
+                'eid' => $entityId,
+                'title' => $docTitle,
+                'fn' => $displayName,
+                'fp' => $relative,
+                'mime' => $mimeType !== '' ? $mimeType : 'application/pdf',
+                'sz' => $size,
+                'uid' => SessionManager::get('rateb_user_id'),
+            ]);
+            $docId = (int) $db->lastInsertId();
+        } catch (\Throwable $e) {
+            @unlink($full);
+            return ['success' => false, 'error' => DatabaseErrorService::userMessage($e)];
+        }
+
+        return ['success' => true, 'document_id' => $docId, 'path' => $relative];
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function listForEntity(string $entityType, int $entityId, int $companyId): array
     {

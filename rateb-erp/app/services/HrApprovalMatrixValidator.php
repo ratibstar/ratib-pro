@@ -19,6 +19,7 @@ final class HrApprovalMatrixValidator
     /** @var list<string> */
     public const REQUEST_TYPES = [
         'salary_certificate',
+        'employment_certificate',
         'end_of_service',
         'experience_letter',
         'other',
