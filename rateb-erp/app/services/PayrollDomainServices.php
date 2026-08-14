@@ -167,12 +167,14 @@ final class EmployeeSalaryService
         if ($structureId !== null) {
             PayrollSupport::assertStructure($structureId, $companyId);
         }
+        $legacyEmployeeId = PayrollSupport::intOrNull($input['legacy_employee_id'] ?? null);
+        HumanResourcesSupport::assertLegacyEmployee($legacyEmployeeId, $companyId);
         $id = (new PayrollEmployeeSalary())->create(array_merge([
             'public_uuid' => PayrollSupport::uuidV4(),
             'company_id' => $companyId,
             'branch_id' => PayrollSupport::intOrNull($input['branch_id'] ?? null) ?? PayrollSupport::branchId(),
             'hrm_employee_profile_id' => PayrollSupport::intOrNull($input['hrm_employee_profile_id'] ?? null),
-            'legacy_employee_id' => PayrollSupport::intOrNull($input['legacy_employee_id'] ?? null),
+            'legacy_employee_id' => $legacyEmployeeId,
             'structure_id' => $structureId,
             'basic_salary' => round($basic, 2),
             'currency_code' => substr(trim((string) ($input['currency_code'] ?? 'SAR')), 0, 3) ?: 'SAR',
@@ -215,7 +217,11 @@ final class EmployeeSalaryService
         }
         foreach (['hrm_employee_profile_id', 'legacy_employee_id'] as $f) {
             if (array_key_exists($f, $input)) {
-                $patch[$f] = PayrollSupport::intOrNull($input[$f]);
+                $val = PayrollSupport::intOrNull($input[$f]);
+                if ($f === 'legacy_employee_id') {
+                    HumanResourcesSupport::assertLegacyEmployee($val, $companyId);
+                }
+                $patch[$f] = $val;
             }
         }
         foreach (['effective_from', 'effective_to', 'notes', 'currency_code'] as $f) {
@@ -232,6 +238,9 @@ final class EmployeeSalaryService
         }
         $patch['version'] = (int) ($row['version'] ?? 1) + 1;
         (new PayrollEmployeeSalary())->update($id, $patch);
+        // Phase C — salary change governance (enterprise path; ops SoT remains salary_base).
+        (new HrEmployeeIntegrityService())->maybeAuditEnterpriseSalaryChange($id, $row, $patch, $companyId);
+        (new PayrollTimelineService())->record('employee_salary_updated', 'Employee salary updated', 'employee_salary', $id);
     }
 }
 

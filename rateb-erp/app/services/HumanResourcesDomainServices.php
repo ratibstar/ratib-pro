@@ -138,13 +138,15 @@ final class EmployeeProfileService
             HumanResourcesSupport::assertProfile($managerId, $companyId);
         }
         $employmentType = substr(trim((string) ($input['employment_type'] ?? 'full_time')), 0, 40) ?: 'full_time';
+        $legacyEmployeeId = HumanResourcesSupport::intOrNull($input['legacy_employee_id'] ?? null);
+        HumanResourcesSupport::assertLegacyEmployee($legacyEmployeeId, $companyId);
         $id = (new HrmEmployeeProfile())->create(array_merge([
             'public_uuid' => HumanResourcesSupport::uuidV4(),
             'company_id' => $companyId,
             'branch_id' => HumanResourcesSupport::intOrNull($input['branch_id'] ?? null)
                 ?? HumanResourcesSupport::branchId(),
             'code' => substr($code, 0, 40),
-            'legacy_employee_id' => HumanResourcesSupport::intOrNull($input['legacy_employee_id'] ?? null),
+            'legacy_employee_id' => $legacyEmployeeId,
             'first_name' => substr($first, 0, 120),
             'last_name' => substr($last, 0, 120),
             'first_name_ar' => HumanResourcesSupport::nullIfEmpty($input['first_name_ar'] ?? null),
@@ -200,7 +202,9 @@ final class EmployeeProfileService
             }
         }
         if (array_key_exists('legacy_employee_id', $input)) {
-            $patch['legacy_employee_id'] = HumanResourcesSupport::intOrNull($input['legacy_employee_id']);
+            $legacyEmployeeId = HumanResourcesSupport::intOrNull($input['legacy_employee_id']);
+            HumanResourcesSupport::assertLegacyEmployee($legacyEmployeeId, $companyId);
+            $patch['legacy_employee_id'] = $legacyEmployeeId;
         }
         if (array_key_exists('department_id', $input)) {
             $deptId = HumanResourcesSupport::intOrNull($input['department_id']);

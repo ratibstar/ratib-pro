@@ -27,6 +27,7 @@ final class HrJobTitle extends Model
 
 final class Employee extends Model
 {
+    /** Canonical live Employee Master for ops HR / ESS / attendance / leave / ops payroll. */
     protected string $table = 'rateb_employees';
     protected bool $tenantScoped = true;
     protected bool $branchScoped = true;

@@ -9,6 +9,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DocumentCodeService;
+use Rateb\App\Services\HrEmployeeIntegrityService;
 use Rateb\App\Services\HrService;
 
 final class HrDashboardController extends Controller
@@ -111,6 +112,27 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         if (is_array($user) && (int) ($user['id'] ?? 0) > 0) {
             $data['user_id'] = (int) $user['id'];
         }
+    }
+
+    /**
+     * Phase C — dedicated salary_base create audit (old/new + effective_date).
+     *
+     * @param array<string, mixed> $data
+     */
+    protected function afterSuccessfulStore(int $id, array $data): void
+    {
+        (new HrEmployeeIntegrityService())->maybeAuditOpsSalaryCreated($id, $data);
+    }
+
+    /**
+     * Phase C — dedicated salary_base change audit when Admin edits employee.
+     *
+     * @param array<string, mixed>|null $old
+     * @param array<string, mixed> $data
+     */
+    protected function afterSuccessfulUpdate(int $id, ?array $old, array $data): void
+    {
+        (new HrEmployeeIntegrityService())->maybeAuditOpsSalaryChange($id, $old, $data);
     }
 
     public function show(array $params): void

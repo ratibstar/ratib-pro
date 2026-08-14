@@ -62,15 +62,33 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase C — P0 Employee Master integrity
 
-**Goal:** One live master + optional rich profile.
+**Status:** COMPLETE (2026-08-14)  
+**Audit:** `docs/hr/HR-PHASE-C-EMPLOYEE-MASTER-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-C-EMPLOYEE-MASTER-CERTIFICATION.md`
 
-1. Inventory orphan HRMS profiles (`legacy_employee_id` null).  
-2. Admin tool: link HRMS profile ↔ ops employee (manual, audited).  
-3. Policy: creating “active” HRMS profile requires ops employee link (feature-flagged).  
-4. Extend ops employee fields **additively** only where missing and required for P1 (e.g. manager_user_id / manager_employee_id, name_ar) — **no destructive ALTER**.  
-5. Audit log on salary_base changes.
+### Scope completed
 
-**Exit:** Linkage report; salary change audit; no second master write path for ESS.
+1. C0 — Employee Master audit (canonical = `rateb_employees`).  
+2. C1 — Canonical identity documented; no Employee2.  
+3. C2 — HRMS soft-link `legacy_employee_id` same-company assert; no auto-merge.  
+4. C3 — Read-only duplicate/orphan diagnostics (`HrEmployeeIntegrityService::diagnoseCompany`).  
+5. C4 — Ops `salary_base` + enterprise salary change audit (old/new/effective) via existing `AuditService` / `PayrollAudit`.  
+6. C5 — `tests/hr/HrPhaseCSecurityTest.php` + Phase B regression.
+
+### Deferred
+
+- Production orphan remediation / FK migrations.  
+- Manual Admin “link HRMS ↔ ops” UI tool.  
+- Employment contracts module.  
+- Payroll calculation rewrite (Phase D).
+
+### Remaining risks
+
+- Dual representation (ops + HRMS) remains until manual linking improves.  
+- Historical orphan rows may exist; diagnostics report only.  
+- Direct DB salary updates outside app still unaudited.
+
+**Exit:** Linkage/salary audit hardening without second master. **Met.**
 
 ---
 

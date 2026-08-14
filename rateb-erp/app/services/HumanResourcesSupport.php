@@ -133,6 +133,27 @@ final class HumanResourcesSupport
         return $row;
     }
 
+    /**
+     * Phase C — legacy_employee_id must point at ops rateb_employees in the same company.
+     * Null/0 clears the soft-link (allowed). Cross-company or missing employee → deny.
+     */
+    public static function assertLegacyEmployee(?int $legacyEmployeeId, int $companyId): void
+    {
+        if ($legacyEmployeeId === null || $legacyEmployeeId < 1) {
+            return;
+        }
+        if ($companyId < 1) {
+            throw new \InvalidArgumentException('legacy_employee_company_required');
+        }
+        $row = (new \Rateb\App\Models\Employee())->queryOne(
+            'SELECT id FROM rateb_employees WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $legacyEmployeeId, 'cid' => $companyId]
+        );
+        if (!is_array($row) || (int) ($row['id'] ?? 0) < 1) {
+            throw new \InvalidArgumentException('legacy_employee_tenant_mismatch');
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public static function findDepartment(int $id, int $companyId): ?array
     {

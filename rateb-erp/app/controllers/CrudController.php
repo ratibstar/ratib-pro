@@ -396,6 +396,7 @@ abstract class CrudController extends Controller
             $item = $this->resolveRecordForWrite($id);
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('create', $this->entityName, $id, $data);
+            $this->afterSuccessfulStore((int) $id, $data);
             if ($attachmentOk) {
                 SessionManager::flash('success', __('saved_ok'));
             }
@@ -404,6 +405,15 @@ abstract class CrudController extends Controller
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $this->redirectAfterSave($id);
+    }
+
+    /**
+     * Hook after successful create + generic audit. Override in subclasses (e.g. salary governance).
+     *
+     * @param array<string, mixed> $data
+     */
+    protected function afterSuccessfulStore(int $id, array $data): void
+    {
     }
 
     protected function redirectAfterSave(int $id): void
@@ -489,6 +499,7 @@ abstract class CrudController extends Controller
             $item = $this->resolveRecordForWrite($id);
             $attachmentOk = $this->saveEntityAttachment($id, is_array($item) ? $item : null);
             (new AuditService())->log('update', $this->entityName, $id, $data);
+            $this->afterSuccessfulUpdate($id, is_array($old) ? $old : null, $data);
             if ($attachmentOk) {
                 SessionManager::flash('success', __('saved_ok'));
             }
@@ -497,6 +508,16 @@ abstract class CrudController extends Controller
             $this->redirect($failUrl);
         }
         $this->redirectAfterSave($id);
+    }
+
+    /**
+     * Hook after successful update + generic audit. Override in subclasses (e.g. salary governance).
+     *
+     * @param array<string, mixed>|null $old
+     * @param array<string, mixed> $data
+     */
+    protected function afterSuccessfulUpdate(int $id, ?array $old, array $data): void
+    {
     }
 
     public function destroy(array $params): void
