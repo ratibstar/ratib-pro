@@ -100,7 +100,7 @@ Viewing 360 does **not** write AuditService business events.
 - Employment contracts
 - Letter PDF generation
 - HireBridge
-- Manager approval decide path
+- Manager approval decide path (delivered in Phase J Actionable Inbox)
 - ESS / mobile parity (Phase M)
 - Working-day / half-day leave
 - GPS attendance

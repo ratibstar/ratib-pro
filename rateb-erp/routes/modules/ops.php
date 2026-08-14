@@ -368,6 +368,8 @@ $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::clas
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
 $router->get($app('hr/approvals-inbox'), [HrApprovalInboxController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+// Decide auth is server-side (matrix user/role/oversight) — do not require hr.manage at the route.
+$router->post($app('hr/approvals-inbox/decide'), [HrApprovalInboxController::class, 'decide'], rateb_erp_mw('hr', '', 'hr'));
 
 /** Phase 15A — Recruitment ONLINE (no offline hooks). */
 $recMw = rateb_erp_mw('recruitment', '', 'recruitment-candidates');

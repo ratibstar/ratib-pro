@@ -38,8 +38,9 @@ final class HrDashboardController extends Controller
 }
 
 /**
- * Phase F — company-scoped HR Approval Inbox (read-only aggregator).
- * Approve/reject remains on platform oversight — company approve routes stay blocked.
+ * Phase F + J — company-scoped HR Approval Inbox.
+ * Decide uses ApprovalOversightService::process (matrix intact).
+ * Legacy company hr/{id}/approve routes stay blocked.
  */
 final class HrApprovalInboxController extends Controller
 {
@@ -58,8 +59,14 @@ final class HrApprovalInboxController extends Controller
         if (!in_array($type, $allowed, true)) {
             $type = 'all';
         }
+        $actorUserId = (int) (SessionManager::get('rateb_user_id') ?? 0);
         $payload = $companyId > 0
-            ? (new HrApprovalInboxService())->inbox($companyId, $type === 'all' ? null : $type, 200)
+            ? (new HrApprovalInboxService())->inbox(
+                $companyId,
+                $type === 'all' ? null : $type,
+                200,
+                $actorUserId
+            )
             : ['items' => [], 'counts' => ['total' => 0], 'deferred' => []];
         $this->view('company/hr/approvals/inbox', [
             'title' => __('hr_approval_inbox'),
@@ -70,7 +77,56 @@ final class HrApprovalInboxController extends Controller
             'typeFilter' => $type,
             'isSuperAdmin' => function_exists('rateb_is_super_admin') && rateb_is_super_admin(),
             'routePrefix' => rateb_app_route('hr/approvals-inbox'),
+            'decideUrl' => rateb_url(rateb_app_route('hr/approvals-inbox/decide')),
+            'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    /**
+     * Phase J — approve/reject from company inbox (Oversight + Matrix only).
+     */
+    public function decide(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/approvals-inbox')));
+        }
+
+        $companyId = rateb_resolve_ops_company_id();
+        $actorUserId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        $sourceKey = trim((string) $this->input('source_key', ''));
+        $recordId = (int) $this->input('record_id', 0);
+        $action = trim((string) $this->input('action', ''));
+        $comment = trim((string) $this->input('comment', ''));
+        $typeFilter = trim((string) $this->input('type_filter', 'all'));
+
+        $redirect = rateb_url(rateb_app_route('hr/approvals-inbox'));
+        if ($typeFilter !== '' && $typeFilter !== 'all') {
+            $redirect .= '?type=' . rawurlencode($typeFilter);
+        }
+
+        if ($companyId < 1 || $actorUserId < 1 || $recordId < 1 || $sourceKey === '') {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect($redirect);
+        }
+
+        try {
+            $result = (new HrApprovalInboxService())->decide(
+                $companyId,
+                $actorUserId,
+                $sourceKey,
+                $recordId,
+                $action,
+                $comment !== '' ? $comment : null
+            );
+            SessionManager::flash('success', (string) ($result['message'] ?? __('saved_ok')));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect($redirect);
     }
 }
 

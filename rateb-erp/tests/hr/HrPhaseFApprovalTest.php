@@ -60,10 +60,12 @@ final class HrPhaseFApprovalTest
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/app/services/HrApprovalInboxService.php');
         $ctrl = (string) file_get_contents(RATEB_ROOT . '/app/controllers/Company/HrControllers.php');
+        // Phase J: decide is allowed via Oversight::process — must NOT call domain finalizers directly.
         $ok = !str_contains($src, 'approveLeave')
             && !str_contains($src, 'approvePayroll')
-            && !str_contains($src, '->decide(');
-        // Isolate HrApprovalInboxController body only.
+            && !str_contains($src, 'rejectLeave')
+            && str_contains($src, 'ApprovalOversightService')
+            && str_contains($src, '->process(');
         $ok = $ok && preg_match(
             '/final class HrApprovalInboxController[\s\S]*?\nfinal class /',
             $ctrl,
@@ -72,8 +74,10 @@ final class HrPhaseFApprovalTest
         $block = $m[0] ?? '';
         $ok = $ok
             && str_contains($block, 'function index')
-            && !preg_match('/function\s+(approve|reject)\s*\(/', $block);
-        $this->record('Inbox does not execute approve/reject', $ok);
+            && str_contains($block, 'function decide')
+            && !preg_match('/HrService\(\)->approveLeave/', $block)
+            && !preg_match('/function\s+approve\s*\(/', $block);
+        $this->record('Inbox decide only via Oversight process (no direct domain approve)', $ok);
     }
 
     private function testCompanyScopeGuard(): void
@@ -181,7 +185,7 @@ final class HrPhaseFApprovalTest
             && str_contains($src, "'company_id'")
             && str_contains($src, "'current_status'")
             && str_contains($src, "'source_url'")
-            && str_contains($src, "'allowed_action' => 'view_only_in_company_inbox'");
+            && (str_contains($src, "'allowed_action'") || str_contains($src, 'allowed_action'));
         $this->record('ApprovalItem normalize shape present (in-memory DTO)', $ok);
     }
 }

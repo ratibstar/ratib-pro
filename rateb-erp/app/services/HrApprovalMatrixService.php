@@ -67,6 +67,19 @@ final class HrApprovalMatrixService
         }
 
         if ($action === 'reject') {
+            // Phase J: reject must also be stage-authorized (not open to any caller).
+            $progress = $this->getOrStartProgress($companyId, $sourceKey, $recordId, $requestType, $matrix, $stages);
+            $snapshot = $this->decodeSnapshot((string) ($progress['stages_snapshot_json'] ?? '[]'));
+            $currentOrder = (int) ($progress['current_stage_order'] ?? 1);
+            $currentStage = $this->stageByOrder($snapshot, $currentOrder) ?? ($stages[0] ?? null);
+            if ($currentStage !== null) {
+                if (!$this->actorMayAct($currentStage, $actorUserId, $companyId)) {
+                    throw new \RuntimeException(__('access_denied'));
+                }
+                if ($this->isSelfApprovalBlocked($sourceKey, $recordId, $companyId, $currentStage, $actorUserId)) {
+                    throw new \RuntimeException(__('access_denied'));
+                }
+            }
             $this->markProgressRejected($companyId, $sourceKey, $recordId, $actorUserId, $matrix, $stages, $requestType);
             return self::OUTCOME_FINALIZE;
         }
@@ -631,7 +644,8 @@ final class HrApprovalMatrixService
         }
         $type = (string) ($stage['approver_type'] ?? 'oversight');
         if ($type === 'oversight') {
-            return true;
+            // Phase J: oversight stage ≠ open to every company user.
+            return $this->actorHasCompanyHrDecideAuthority($actorUserId);
         }
         if ($actorUserId < 1) {
             return false;
@@ -652,6 +666,213 @@ final class HrApprovalMatrixService
         }
         // Unknown types must never silently pass (Phase H).
         return false;
+    }
+
+    /**
+     * Company-safe decide authority for oversight-type stages / no-matrix passthrough.
+     * Platform SA always qualifies. Company actors need hr.manage or hr.oversight.
+     */
+    public function actorHasCompanyHrDecideAuthority(int $actorUserId = 0): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if ($actorUserId < 1) {
+            $actorUserId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0);
+        }
+        if ($actorUserId < 1) {
+            return false;
+        }
+        if (function_exists('rateb_can')) {
+            if (rateb_can('hr.manage') || rateb_can('hr.oversight')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Phase J — whether actor may decide this HR item now (matrix-aware).
+     * Does not invent manager hierarchy. Payroll is never matrix-gated here.
+     */
+    public function canActorDecide(
+        string $sourceKey,
+        int $recordId,
+        int $companyId,
+        int $actorUserId,
+        string $action = 'approve'
+    ): bool {
+        $action = $action === 'reject' ? 'reject' : 'approve';
+        if (!in_array($sourceKey, self::SUPPORTED_SOURCES, true) || $recordId < 1 || $companyId < 1) {
+            return false;
+        }
+        if ($actorUserId < 1 && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
+            return false;
+        }
+        try {
+            if (!$this->schemaReady()) {
+                return $this->actorHasCompanyHrDecideAuthority($actorUserId);
+            }
+            $requestType = $this->resolveRequestType($sourceKey, $recordId, $companyId);
+            $matrix = $this->resolveMatrix($companyId, $sourceKey, $requestType);
+            if ($matrix === null) {
+                return $this->actorHasCompanyHrDecideAuthority($actorUserId);
+            }
+            $stages = $this->loadEnabledStages((int) $matrix['id'], $companyId);
+            if ($stages === []) {
+                return $this->actorHasCompanyHrDecideAuthority($actorUserId);
+            }
+            $progress = $this->findProgressRow($companyId, $sourceKey, $recordId);
+            $snapshot = $progress !== null
+                ? $this->decodeSnapshot((string) ($progress['stages_snapshot_json'] ?? '[]'))
+                : $this->stagesToSnapshot($stages);
+            if ($snapshot === []) {
+                return $this->actorHasCompanyHrDecideAuthority($actorUserId);
+            }
+            $order = (int) ($progress['current_stage_order'] ?? 1);
+            $stage = $this->stageByOrder($snapshot, $order) ?? ($snapshot[0] ?? null);
+            if ($stage === null) {
+                return false;
+            }
+            if (!$this->actorMayAct($stage, $actorUserId, $companyId)) {
+                return false;
+            }
+            if ($action === 'approve'
+                && $this->isSelfApprovalBlocked($sourceKey, $recordId, $companyId, $stage, $actorUserId)
+            ) {
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array{
+     *   has_matrix:bool,
+     *   current_stage_order:?int,
+     *   max_stage_order:?int,
+     *   stage_name:?string,
+     *   stage_code:?string,
+     *   approver_type:?string,
+     *   last_actor_user_id:?int,
+     *   matrix_version:?int
+     * }|null
+     */
+    public function decisionContext(string $sourceKey, int $recordId, int $companyId): ?array
+    {
+        if (!in_array($sourceKey, self::SUPPORTED_SOURCES, true) || $recordId < 1 || $companyId < 1) {
+            return null;
+        }
+        if (!$this->schemaReady()) {
+            return [
+                'has_matrix' => false,
+                'current_stage_order' => null,
+                'max_stage_order' => null,
+                'stage_name' => null,
+                'stage_code' => null,
+                'approver_type' => null,
+                'approver_reference' => null,
+                'last_actor_user_id' => null,
+                'last_action_at' => null,
+                'next_stage_name' => null,
+                'next_outcome' => 'domain_finalize',
+                'matrix_version' => null,
+            ];
+        }
+        $requestType = $this->resolveRequestType($sourceKey, $recordId, $companyId);
+        $matrix = $this->resolveMatrix($companyId, $sourceKey, $requestType);
+        if ($matrix === null) {
+            return [
+                'has_matrix' => false,
+                'current_stage_order' => null,
+                'max_stage_order' => null,
+                'stage_name' => null,
+                'stage_code' => null,
+                'approver_type' => null,
+                'approver_reference' => null,
+                'last_actor_user_id' => null,
+                'last_action_at' => null,
+                'next_stage_name' => null,
+                'next_outcome' => 'domain_finalize',
+                'matrix_version' => null,
+            ];
+        }
+        $stages = $this->loadEnabledStages((int) $matrix['id'], $companyId);
+        $progress = $this->findProgressRow($companyId, $sourceKey, $recordId);
+        $snapshot = $progress !== null
+            ? $this->decodeSnapshot((string) ($progress['stages_snapshot_json'] ?? '[]'))
+            : $this->stagesToSnapshot($stages);
+        $order = (int) ($progress['current_stage_order'] ?? 1);
+        $stage = $this->stageByOrder($snapshot, $order);
+
+        $max = $this->maxStageOrder($snapshot);
+        $isFinal = $order >= $max;
+        $nextStage = !$isFinal ? $this->stageByOrder($snapshot, $order + 1) : null;
+
+        return [
+            'has_matrix' => true,
+            'current_stage_order' => $order,
+            'max_stage_order' => $max,
+            'stage_name' => (string) ($stage['name'] ?? ('stage_' . $order)),
+            'stage_code' => (string) ($stage['code'] ?? ''),
+            'approver_type' => (string) ($stage['approver_type'] ?? 'oversight'),
+            'approver_reference' => (string) ($stage['approver_reference'] ?? ''),
+            'last_actor_user_id' => isset($progress['last_actor_user_id'])
+                ? (int) $progress['last_actor_user_id']
+                : null,
+            'last_action_at' => isset($progress['last_action_at'])
+                ? (string) $progress['last_action_at']
+                : null,
+            'next_stage_name' => $nextStage !== null
+                ? (string) ($nextStage['name'] ?? ('stage_' . ($order + 1)))
+                : null,
+            'next_outcome' => $isFinal ? 'domain_finalize' : 'advance_stage',
+            'matrix_version' => (int) ($progress['matrix_version'] ?? $matrix['version'] ?? 0),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findProgressRow(int $companyId, string $sourceKey, int $recordId): ?array
+    {
+        if ($companyId < 1 || $recordId < 1 || !$this->schemaReady()) {
+            return null;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT * FROM rateb_hr_approval_progress
+             WHERE company_id = :cid AND source_key = :sk AND record_id = :rid
+             LIMIT 1'
+        );
+        $stmt->execute(['cid' => $companyId, 'sk' => $sourceKey, 'rid' => $recordId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $stages
+     * @return list<array<string, mixed>>
+     */
+    private function stagesToSnapshot(array $stages): array
+    {
+        $out = [];
+        foreach ($stages as $s) {
+            $out[] = [
+                'stage_order' => (int) ($s['stage_order'] ?? 0),
+                'code' => (string) ($s['code'] ?? ''),
+                'name' => (string) ($s['name'] ?? ''),
+                'approver_type' => (string) ($s['approver_type'] ?? 'oversight'),
+                'approver_reference' => $s['approver_reference'] ?? null,
+            ];
+        }
+
+        return $out;
     }
 
     /**

@@ -294,7 +294,26 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase J — P1 Employment contracts
+## Phase J — P0 Actionable Approval Inbox (Company product)
+
+**Status:** COMPLETE (`docs/hr/HR-PHASE-J-ACTIONABLE-INBOX-CERTIFICATION.md`)
+
+**Delivered:**
+
+1. `hr/approvals-inbox` actionable for leave / permission / request via Oversight + Matrix.  
+2. Server-side actor authorization (`canActorDecide`: user / role / oversight).  
+3. Intermediate matrix stages advance without domain finalize; final uses existing finalizers.  
+4. Payroll remains view-only in this inbox.  
+5. Legacy company `hr/*/approve` routes stay blocked.  
+6. Optional comment audited on inbox decide; stage / last actor / next outcome in UI.
+
+**Exit:** Authorized company actors can approve/reject from the inbox without ApprovalEngine3.
+
+---
+
+## Phase J (legacy roadmap note) — P1 Employment contracts
+
+**Status:** DEFERRED (renumbered — Actionable Inbox took Phase J product slot per Product Gap Audit)
 
 **Goal:** First-class contracts for the live employee.
 
