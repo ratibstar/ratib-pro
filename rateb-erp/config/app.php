@@ -3435,6 +3435,13 @@ if (!function_exists('rateb_ops_nav_pending_badge')) {
         $path = ltrim($resourcePath, '/');
         $counts = rateb_ops_nav_counts();
         $direct = (int) ($counts[$path] ?? 0);
+        if ($path === 'hr/approvals-inbox') {
+            return $direct
+                + (int) ($counts['hr/leaves'] ?? 0)
+                + (int) ($counts['hr/permission-requests'] ?? 0)
+                + (int) ($counts['hr/requests'] ?? 0)
+                + (int) ($counts['hr/payroll'] ?? 0);
+        }
         if ($path === 'accounting') {
             return $direct
                 + (int) ($counts['journal-entries'] ?? 0)

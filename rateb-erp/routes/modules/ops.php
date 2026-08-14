@@ -24,6 +24,7 @@ use Rateb\App\Controllers\Admin\AccountingControlController;
 use Rateb\App\Controllers\Company\InterBranchTransfersController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\HrDashboardController;
+use Rateb\App\Controllers\Company\HrApprovalInboxController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
 use Rateb\App\Controllers\Company\HrDepartmentsController;
 use Rateb\App\Controllers\Company\HrJobTitlesController;
@@ -366,6 +367,7 @@ $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::cl
 $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+$router->get($app('hr/approvals-inbox'), [HrApprovalInboxController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
 
 /** Phase 15A — Recruitment ONLINE (no offline hooks). */
 $recMw = rateb_erp_mw('recruitment', '', 'recruitment-candidates');

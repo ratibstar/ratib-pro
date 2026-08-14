@@ -159,15 +159,31 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase F — P1 Approval Inbox unification
 
-**Goal:** One HR pending inbox UX on top of `ApprovalOversightService`.
+**Status:** COMPLETE (2026-08-14)  
+**Audit:** `docs/hr/HR-PHASE-F-APPROVAL-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-F-APPROVAL-CERTIFICATION.md`
 
-1. HR Approval Inbox page listing leave / permission / request / payroll (+ later decisions).  
-2. Columns: type, employee, requester, age, amount (if any), link.  
-3. Keep company-side approve blocked; actions go through oversight services.  
-4. Optional: priority/SLA fields additive later.  
-5. Wire prompt “عمليات بانتظار إجراء” to this inbox (labels), not four orphan pages.
+### Completed
 
-**Exit:** Inbox usable; existing oversight still works.
+1. F0 — Mapped leave/permission/request/payroll pending sources to `ApprovalOversightService`.  
+2. `HrApprovalInboxService` — company-scoped read-only aggregator + ApprovalItem DTO.  
+3. `GET hr/approvals-inbox` + menu **عمليات بانتظار إجراء** + dashboard banner.  
+4. Company approve routes remain blocked; SA deep-links to oversight.  
+5. Decisions/Expenses documented deferred (modules absent).  
+6. Tests: `tests/hr/HrPhaseFApprovalTest.php` + B–E/ESS regressions.
+
+### Deferred
+
+- Decisions / HR expenses queues.  
+- Approval matrix stages (Phase G).  
+- Priority/SLA fields.
+
+### Remaining risks
+
+- Inbox counts depend on oversight source definitions staying in sync.  
+- Company users can view pending but cannot approve (by design).
+
+**Exit:** Inbox usable; existing oversight still works. **Met.**
 
 ---
 

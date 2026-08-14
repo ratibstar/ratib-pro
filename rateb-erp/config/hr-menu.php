@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 return [
     ['id' => 'overview', 'label' => 'hr_overview', 'icon' => 'fa-gauge-high', 'route' => 'hr'],
+    ['id' => 'approvals-inbox', 'label' => 'hr_pending_actions', 'icon' => 'fa-inbox', 'route' => 'hr/approvals-inbox'],
     ['id' => 'employees', 'label' => 'hr_employee_list', 'icon' => 'fa-list', 'route' => 'hr/employees'],
     ['id' => 'departments', 'label' => 'hr_departments', 'icon' => 'fa-sitemap', 'route' => 'hr/departments'],
     ['id' => 'job-titles', 'label' => 'hr_job_titles', 'icon' => 'fa-id-badge', 'route' => 'hr/job-titles'],

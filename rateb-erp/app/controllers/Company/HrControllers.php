@@ -9,6 +9,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DocumentCodeService;
+use Rateb\App\Services\HrApprovalInboxService;
 use Rateb\App\Services\HrEmployeeIntegrityService;
 use Rateb\App\Services\HrService;
 
@@ -22,10 +23,51 @@ final class HrDashboardController extends Controller
         HrService::bootstrapTenant();
         $companyId = rateb_resolve_ops_company_id();
         $stats = (new HrService())->dashboardStats($companyId);
+        $inboxCounts = $companyId > 0
+            ? (new HrApprovalInboxService())->counts($companyId)
+            : ['total' => 0, 'leave' => 0, 'permission' => 0, 'request' => 0, 'payroll' => 0];
         $this->view('company/hr/dashboard', [
             'title' => __('human_resources'),
             'stats' => $stats,
             'companyId' => $companyId,
+            'inboxCounts' => $inboxCounts,
+        ], 'main');
+    }
+}
+
+/**
+ * Phase F — company-scoped HR Approval Inbox (read-only aggregator).
+ * Approve/reject remains on platform oversight — company approve routes stay blocked.
+ */
+final class HrApprovalInboxController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $type = trim((string) $this->input('type', 'all'));
+        if ($type === '') {
+            $type = 'all';
+        }
+        $allowed = ['all', 'leave', 'permission', 'request', 'payroll'];
+        if (!in_array($type, $allowed, true)) {
+            $type = 'all';
+        }
+        $payload = $companyId > 0
+            ? (new HrApprovalInboxService())->inbox($companyId, $type === 'all' ? null : $type, 200)
+            : ['items' => [], 'counts' => ['total' => 0], 'deferred' => []];
+        $this->view('company/hr/approvals/inbox', [
+            'title' => __('hr_approval_inbox'),
+            'companyId' => $companyId,
+            'items' => $payload['items'],
+            'counts' => $payload['counts'],
+            'deferred' => $payload['deferred'],
+            'typeFilter' => $type,
+            'isSuperAdmin' => function_exists('rateb_is_super_admin') && rateb_is_super_admin(),
+            'routePrefix' => rateb_app_route('hr/approvals-inbox'),
         ], 'main');
     }
 }
