@@ -426,7 +426,7 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase P — ESS Parity + Manager Self-Service — COMPLETE
 
-**Commit:** (pending ship)  
+**Commit:** `ebb3de21`  
 **Cert:** `docs/hr/HR-PHASE-P-ESS-MANAGER-CERTIFICATION.md`
 
 | Gate | Result |
