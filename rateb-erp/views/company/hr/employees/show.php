@@ -21,6 +21,7 @@ $tabEndpoint = (string) ($tabEndpoint ?? '');
 $employeeId = (int) ($employeeId ?? ($header['id'] ?? 0));
 $essLinked = !empty($shell['ess_linked']);
 $canManage = (bool) ($canManage ?? false);
+$hubLinks = $hubLinks ?? (new \Rateb\App\Services\HrCommandCenterService())->employee360HubLinks();
 
 $escape = static fn ($v): string => \Rateb\App\Core\View::escape((string) $v);
 $status = (string) ($header['status'] ?? 'active');
@@ -141,6 +142,29 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);
                         <div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo $escape(number_format((float) $kpis['salary_base'], 2)); ?></div>
                     </div>
                 </div>
+                <?php } ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="rateb-card mb-3">
+        <div class="rateb-card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 mb-0"><?php echo __('hr_cc_360_hub'); ?></h2>
+                <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr')); ?>"><?php echo __('hr_command_center'); ?></a>
+            </div>
+            <div class="rateb-emp360-hub">
+                <?php foreach ($hubLinks as $hub) {
+                    $tab = (string) ($hub['tab'] ?? '');
+                    $icon = (string) ($hub['icon'] ?? 'fa-circle');
+                    $isActive = $activeTab === $tab;
+                    ?>
+                    <a href="<?php echo $escape(rateb_url($routePrefix . '/' . $employeeId) . '?tab=' . rawurlencode($tab)); ?>"
+                       class="<?php echo $isActive ? 'is-active' : ''; ?>"
+                       data-rateb-emp360-tab="<?php echo $escape($tab); ?>">
+                        <i class="fas <?php echo $escape($icon); ?>"></i>
+                        <span><?php echo $escape(__((string) ($hub['label'] ?? ''))); ?></span>
+                    </a>
                 <?php } ?>
             </div>
         </div>

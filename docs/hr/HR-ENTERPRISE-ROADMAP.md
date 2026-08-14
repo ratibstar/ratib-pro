@@ -386,15 +386,23 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase N — P2 Performance & org nav
+## Phase N — HR Command Center (visible product upgrade)
 
-**Goal:** Bring HRMS talent features into the main HR product surface.
+**Status:** COMPLETE (2026-08-14)  
+**Certification:** `docs/hr/HR-PHASE-N-HR-COMMAND-CENTER-CERTIFICATION.md`
 
-1. Add Performance / Org / Training entries to `hr-menu.php` (routes stay `/hrm/*` or redirect).  
-2. Performance cycles / self vs manager review (extend 23A).  
-3. Do not create Performance2 tables.
+**Goal:** Make Admin HR feel like one integrated system on entry.
 
-**Exit:** Users reach performance from HR nav; 23A tests green.
+1. HR Command Center dashboard (workforce today, pending approvals/decisions, contracts, payroll, recent activity).  
+2. Quick actions + employee search → Employee 360.  
+3. Approval Center card (leave/request/decision/permission).  
+4. Alerts via `NotificationService` + bounded domain queries.  
+5. Employee 360 hub links.  
+6. No SoT / payroll / approval / leave / ESS / mobile changes. No migration.
+
+**Exit:** Users landing on `hr` see a command center, not a thin stat strip. **Met.**
+
+> Note: Earlier roadmap draft used “Phase N” for Performance/org nav. That work is **deferred** (does not block this Command Center certification).
 
 ---
 

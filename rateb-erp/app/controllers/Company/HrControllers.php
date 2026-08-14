@@ -24,15 +24,25 @@ final class HrDashboardController extends Controller
         }
         HrService::bootstrapTenant();
         $companyId = rateb_resolve_ops_company_id();
-        $stats = (new HrService())->dashboardStats($companyId);
-        $inboxCounts = $companyId > 0
-            ? (new HrApprovalInboxService())->counts($companyId)
-            : ['total' => 0, 'leave' => 0, 'permission' => 0, 'request' => 0, 'payroll' => 0];
+        $actorUserId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        $cc = (new \Rateb\App\Services\HrCommandCenterService())->dashboard($companyId, $actorUserId);
         $this->view('company/hr/dashboard', [
-            'title' => __('human_resources'),
-            'stats' => $stats,
+            'title' => __('hr_command_center'),
             'companyId' => $companyId,
-            'inboxCounts' => $inboxCounts,
+            'stats' => $cc['stats'],
+            'inboxCounts' => $cc['inbox'],
+            'approvalCenter' => $cc['approval_center'],
+            'pendingDecisions' => $cc['pending_decisions'],
+            'contractsExpiring' => $cc['contracts_expiring'],
+            'contractsExpiringCount' => $cc['contracts_expiring_count'],
+            'recentPayrolls' => $cc['recent_payrolls'],
+            'recentRequests' => $cc['recent_requests'],
+            'recentDecisions' => $cc['recent_decisions'],
+            'upcomingLeaves' => $cc['upcoming_leaves'],
+            'alerts' => $cc['alerts'],
+            'quickActions' => $cc['quick_actions'],
+            'hubLinks' => $cc['hub_links'],
+            'lookupUrl' => rateb_url(rateb_app_route('hr/employees/lookup')),
         ], 'main');
     }
 }
@@ -274,7 +284,29 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
             'activeTab' => $activeTab,
             'tabEndpoint' => rateb_url($this->routePrefix . '/' . $id . '/360-tab'),
             'canManage' => (bool) ($auth['can_manage_employees'] ?? false),
+            'hubLinks' => (new \Rateb\App\Services\HrCommandCenterService())->employee360HubLinks(),
         ], $this->layout());
+    }
+
+    /**
+     * Phase N — bounded employee lookup for Command Center search (JSON).
+     */
+    public function lookup(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? (int) rateb_resolve_ops_company_id()
+            : 0;
+        $q = trim((string) ($_GET['q'] ?? ''));
+        header('Content-Type: application/json; charset=UTF-8');
+        if ($companyId < 1) {
+            echo json_encode(['success' => true, 'items' => []], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $items = (new \Rateb\App\Services\HrCommandCenterService())->searchEmployees($companyId, $q);
+        echo json_encode(['success' => true, 'items' => $items], JSON_UNESCAPED_UNICODE);
     }
 
     /**

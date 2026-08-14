@@ -7,7 +7,7 @@ declare(strict_types=1);
  * @return list<array<string, mixed>>
  */
 return [
-    ['id' => 'overview', 'label' => 'hr_overview', 'icon' => 'fa-gauge-high', 'route' => 'hr'],
+    ['id' => 'overview', 'label' => 'hr_command_center', 'icon' => 'fa-gauge-high', 'route' => 'hr'],
     ['id' => 'approvals-inbox', 'label' => 'hr_pending_actions', 'icon' => 'fa-inbox', 'route' => 'hr/approvals-inbox'],
     ['id' => 'employees', 'label' => 'hr_employee_list', 'icon' => 'fa-list', 'route' => 'hr/employees'],
     ['id' => 'employment-contracts', 'label' => 'hr_employment_contracts', 'icon' => 'fa-file-signature', 'route' => 'hr/employment-contracts'],
