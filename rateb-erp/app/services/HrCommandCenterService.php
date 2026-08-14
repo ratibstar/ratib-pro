@@ -38,6 +38,7 @@ final class HrCommandCenterService
         $inbox = (new HrApprovalInboxService())->counts($companyId);
         $pendingDecisions = $this->countPendingDecisions($companyId);
         $ops = (new HrOpsAutomationService())->commandCenterOps($companyId);
+        $saudi = (new HrSaudiComplianceService())->readinessSummary($companyId);
 
         return [
             'stats' => $stats,
@@ -57,7 +58,7 @@ final class HrCommandCenterService
             'recent_requests' => $this->recentRequests($companyId, self::LIST_LIMIT),
             'recent_decisions' => $this->recentDecisions($companyId, self::LIST_LIMIT),
             'upcoming_leaves' => $this->upcomingLeaves($companyId, self::UPCOMING_LEAVE_DAYS, self::LIST_LIMIT),
-            'alerts' => $this->buildAlerts($companyId, $actorUserId, $inbox, $pendingDecisions, $ops),
+            'alerts' => $this->buildAlerts($companyId, $actorUserId, $inbox, $pendingDecisions, $ops, $saudi),
             'quick_actions' => $this->quickActions(),
             'hub_links' => $this->employee360HubLinks(),
             'ops' => $ops,
@@ -69,6 +70,7 @@ final class HrCommandCenterService
                 $companyId,
                 $this->actorCanViewSalary()
             ),
+            'saudi_readiness' => $saudi,
         ];
     }
 
@@ -183,6 +185,7 @@ final class HrCommandCenterService
             ['id' => 'contract', 'label' => 'hr_cc_qa_contract', 'route' => 'hr/employment-contracts', 'icon' => 'fa-file-signature'],
             ['id' => 'organization', 'label' => 'hr_organization', 'route' => 'hr/organization', 'icon' => 'fa-project-diagram'],
             ['id' => 'analytics', 'label' => 'hr_analytics', 'route' => 'hr/analytics', 'icon' => 'fa-chart-pie'],
+            ['id' => 'saudi', 'label' => 'hr_saudi_compliance', 'route' => 'hr/saudi-compliance', 'icon' => 'fa-flag'],
             ['id' => 'inbox', 'label' => 'hr_cc_qa_inbox', 'route' => 'hr/approvals-inbox', 'icon' => 'fa-inbox'],
         ];
     }
@@ -212,11 +215,29 @@ final class HrCommandCenterService
     /**
      * @param array<string, int> $inbox
      * @param array<string, mixed> $ops
+     * @param array<string, mixed> $saudi
      * @return list<array<string, mixed>>
      */
-    private function buildAlerts(int $companyId, int $actorUserId, array $inbox, int $pendingDecisions, array $ops = []): array
+    private function buildAlerts(int $companyId, int $actorUserId, array $inbox, int $pendingDecisions, array $ops = [], array $saudi = []): array
     {
         $alerts = [];
+        $missing = (int) ($saudi['missing_data'] ?? 0);
+        $gosiEx = (int) ($saudi['gosi_exceptions'] ?? 0);
+        $wpsEx = (int) ($saudi['wps_exceptions'] ?? 0);
+        if ($missing > 0 || $gosiEx > 0 || $wpsEx > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'code' => 'saudi_readiness',
+                'title' => __('hr_saudi_readiness'),
+                'message' => __('hr_r_cc_alert_body', [
+                    'pct' => (int) ($saudi['readiness_pct'] ?? 0),
+                    'missing' => $missing,
+                    'gosi' => $gosiEx,
+                    'wps' => $wpsEx,
+                ]),
+                'url' => rateb_url(rateb_app_route('hr/saudi-compliance')),
+            ];
+        }
         $overdue = (int) ($ops['overdue_approvals'] ?? 0);
         if ($overdue > 0) {
             $alerts[] = [
@@ -526,6 +547,16 @@ final class HrCommandCenterService
                 'contracts_30d' => 0,
                 'by_department_top' => [],
                 'salary_avg' => null,
+            ],
+            'saudi_readiness' => [
+                'readiness_pct' => 0,
+                'active_employees' => 0,
+                'ready_employees' => 0,
+                'missing_data' => 0,
+                'gosi_exceptions' => 0,
+                'wps_exceptions' => 0,
+                'external_send_enabled' => false,
+                'schema_ready_r' => false,
             ],
         ];
     }

@@ -43,6 +43,7 @@ final class HrDashboardController extends Controller
             'quickActions' => $cc['quick_actions'],
             'hubLinks' => $cc['hub_links'],
             'analyticsWidgets' => $cc['analytics_widgets'] ?? [],
+            'saudiReadiness' => $cc['saudi_readiness'] ?? [],
             'ops' => $cc['ops'] ?? [],
             'overdueApprovals' => (int) ($cc['overdue_approvals'] ?? 0),
             'contractMilestones' => $cc['contract_milestones'] ?? ['d30' => 0, 'd15' => 0, 'd7' => 0],

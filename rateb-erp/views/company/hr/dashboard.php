@@ -371,6 +371,23 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
 
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-flag me-1"></i> <?php echo __('hr_saudi_readiness'); ?></span>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr/saudi-compliance')); ?>"><?php echo __('hr_saudi_compliance'); ?></a>
+    </div>
+    <div class="rateb-card-body">
+        <?php $sr = $saudiReadiness ?? []; ?>
+        <div class="row g-2">
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_r_readiness_pct'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($sr['readiness_pct'] ?? 0); ?>%</div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_r_missing_data'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($sr['missing_data'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_r_gosi_exceptions'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($sr['gosi_exceptions'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_r_wps_exceptions'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($sr['wps_exceptions'] ?? 0); ?></div></div></div>
+        </div>
+        <p class="text-muted small mb-0 mt-2"><?php echo __('hr_saudi_no_external_send'); ?></p>
+    </div>
+</div>
+
+<div class="rateb-card mb-3">
+    <div class="rateb-card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-chart-pie me-1"></i> <?php echo __('hr_o_analytics_widgets'); ?></span>
         <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr/analytics')); ?>"><?php echo __('hr_analytics'); ?></a>
     </div>

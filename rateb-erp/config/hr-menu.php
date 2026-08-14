@@ -18,7 +18,9 @@ return [
     ['id' => 'organization', 'label' => 'hr_organization', 'icon' => 'fa-project-diagram', 'route' => 'hr/organization'],
     ['id' => 'succession', 'label' => 'hr_succession', 'icon' => 'fa-people-arrows', 'route' => 'hr/succession'],
     ['id' => 'analytics', 'label' => 'hr_analytics', 'icon' => 'fa-chart-pie', 'route' => 'hr/analytics'],
+    ['id' => 'saudi-compliance', 'label' => 'hr_saudi_compliance', 'icon' => 'fa-flag', 'route' => 'hr/saudi-compliance'],
     ['id' => 'reports-hub', 'label' => 'hr_reports_hub', 'icon' => 'fa-file-excel', 'route' => 'hr/reports-hub'],
+    ['id' => 'saudi-reports', 'label' => 'hr_saudi_reports', 'icon' => 'fa-file-shield', 'route' => 'hr/saudi-compliance/reports'],
     ['id' => 'holidays', 'label' => 'hr_holidays', 'icon' => 'fa-calendar-day', 'route' => 'hr/holidays'],
     [
         'id' => 'attendance-group',

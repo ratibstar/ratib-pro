@@ -224,6 +224,7 @@ return array (
   'Rateb\\App\\Controllers\\Company\\HrPayrollStructuresController' => '/app/controllers/Company/HrExtendedControllers.php',
   'Rateb\\App\\Controllers\\Company\\HrPermissionRequestsController' => '/app/controllers/Company/HrExtendedControllers.php',
   'Rateb\\App\\Controllers\\Company\\HrReportsController' => '/app/controllers/Company/HrControllers.php',
+  'Rateb\\App\\Controllers\\Company\\HrSaudiComplianceController' => '/app/controllers/Company/HrExtendedControllers.php',
   'Rateb\\App\\Controllers\\Company\\HrSuccessionController' => '/app/controllers/Company/HrExtendedControllers.php',
   'Rateb\\App\\Controllers\\Company\\HrWorkplacesController' => '/app/controllers/Company/HrExtendedControllers.php',
   'Rateb\\App\\Controllers\\Company\\HrmCompetenciesController' => '/app/controllers/Company/HumanResourcesControllers.php',

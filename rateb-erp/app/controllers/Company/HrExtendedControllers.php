@@ -1400,3 +1400,282 @@ final class HrManagerPortalController extends Controller
         $this->redirect(rateb_url(rateb_app_route('hr/manager')));
     }
 }
+
+/** Phase R — Saudi HR compliance readiness (GOSI/WPS local only; no external send). */
+final class HrSaudiComplianceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $svc = new \Rateb\App\Services\HrSaudiComplianceService();
+        $canViewSalary = $this->canViewSaudiSalary();
+        $summary = $companyId > 0 ? $svc->readinessSummary($companyId) : [];
+        $profiles = $companyId > 0 ? $svc->employeeComplianceProfiles($companyId, 200) : [];
+        if (!$canViewSalary) {
+            foreach ($profiles as &$p) {
+                $p['salary_base'] = null;
+                $p['housing_allowance'] = null;
+                $p['transport_allowance'] = null;
+                $p['other_gosi_allowances'] = null;
+                if (isset($p['gosi'])) {
+                    $p['gosi']['contribution_base'] = null;
+                    $p['gosi']['employee_amount'] = null;
+                    $p['gosi']['employer_amount'] = null;
+                }
+            }
+            unset($p);
+        }
+        $this->view('company/hr/saudi/index', [
+            'title' => __('hr_saudi_compliance'),
+            'companyId' => $companyId,
+            'summary' => $summary,
+            'profiles' => $profiles,
+            'canViewSalary' => $canViewSalary,
+            'schemaReady' => $svc->schemaReady(),
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/saudi-compliance'),
+            'year' => (int) date('Y'),
+            'month' => (int) date('n'),
+            'batches' => $companyId > 0 ? $svc->listWpsBatches($companyId, 10) : [],
+        ], 'main');
+    }
+
+    public function saveEmployee(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')));
+            return;
+        }
+        $employeeId = (int) $this->input('employee_id', 0);
+        $actor = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        try {
+            (new \Rateb\App\Services\HrSaudiComplianceService())->upsertEmployeeSaudiData($companyId, $employeeId, [
+                'gosi_number' => $this->input('gosi_number', ''),
+                'gosi_subscription_status' => $this->input('gosi_subscription_status', ''),
+                'wps_iban' => $this->input('wps_iban', ''),
+                'wps_bank_code' => $this->input('wps_bank_code', ''),
+                'bank_name' => $this->input('bank_name', ''),
+                'nationality_code' => $this->input('nationality_code', ''),
+                'iqama_number' => $this->input('iqama_number', ''),
+                'iqama_expiry' => $this->input('iqama_expiry', ''),
+                'mol_contract_number' => $this->input('mol_contract_number', ''),
+                'employment_type' => $this->input('employment_type', ''),
+                'saudi_classification' => $this->input('saudi_classification', ''),
+                'gosi_eligible' => $this->input('gosi_eligible', '1'),
+                'housing_allowance' => $this->input('housing_allowance', ''),
+                'transport_allowance' => $this->input('transport_allowance', ''),
+                'other_gosi_allowances' => $this->input('other_gosi_allowances', ''),
+                'saudi_notes' => $this->input('saudi_notes', ''),
+            ], $actor);
+            SessionManager::flash('success', __('hr_r_employee_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('invalid_request'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')));
+    }
+
+    public function buildGosi(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')));
+            return;
+        }
+        $year = (int) $this->input('period_year', date('Y'));
+        $month = (int) $this->input('period_month', date('n'));
+        $actor = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        try {
+            $result = (new \Rateb\App\Services\HrSaudiComplianceService())->buildGosiPeriod($companyId, $year, $month, $actor);
+            SessionManager::flash('success', __('hr_r_gosi_built', [
+                'lines' => (int) ($result['lines'] ?? 0),
+                'exceptions' => (int) ($result['exceptions'] ?? 0),
+            ]));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('invalid_request'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')) . '?tab=gosi&period_year=' . $year . '&period_month=' . $month);
+    }
+
+    public function buildWps(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')));
+            return;
+        }
+        $year = (int) $this->input('period_year', date('Y'));
+        $month = (int) $this->input('period_month', date('n'));
+        $actor = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        try {
+            $result = (new \Rateb\App\Services\HrSaudiComplianceService())->buildWpsBatch($companyId, $year, $month, $actor);
+            SessionManager::flash('success', __('hr_r_wps_built', [
+                'ready' => (int) ($result['ready_count'] ?? 0),
+                'exceptions' => (int) ($result['exception_count'] ?? 0),
+            ]));
+            $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')) . '?tab=wps&batch_id=' . (int) ($result['batch_id'] ?? 0));
+            return;
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('invalid_request'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/saudi-compliance')) . '?tab=wps');
+    }
+
+    public function reports(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $type = trim((string) $this->input('type', 'missing'));
+        $year = (int) $this->input('period_year', date('Y'));
+        $month = (int) $this->input('period_month', date('n'));
+        $batchId = (int) $this->input('batch_id', 0);
+        $canViewSalary = $this->canViewSaudiSalary();
+        $svc = new \Rateb\App\Services\HrSaudiComplianceService();
+        $rows = [];
+        if ($companyId > 0) {
+            $rows = match ($type) {
+                'gosi' => $canViewSalary ? $svc->gosiReportRows($companyId, $year, $month) : [],
+                'wps' => $svc->wpsReportRows($companyId, $batchId),
+                'reconciliation' => $svc->payrollReconciliationRows($companyId, $year, $month, $canViewSalary),
+                default => $svc->missingDataReportRows($companyId),
+            };
+        }
+        $exportQs = http_build_query([
+            'type' => $type,
+            'period_year' => $year,
+            'period_month' => $month,
+            'batch_id' => $batchId,
+        ]);
+        $this->view('company/hr/saudi/reports', [
+            'title' => __('hr_saudi_reports'),
+            'companyId' => $companyId,
+            'type' => $type,
+            'rows' => $rows,
+            'year' => $year,
+            'month' => $month,
+            'batchId' => $batchId,
+            'canViewSalary' => $canViewSalary,
+            'exportRoute' => rateb_app_url('hr/saudi-compliance/export') . '?' . $exportQs,
+            'exportEnabled' => function_exists('rateb_can_export_entity') ? rateb_can_export_entity('hr') : true,
+            'routePrefix' => rateb_app_route('hr/saudi-compliance'),
+            'batches' => $companyId > 0 ? $svc->listWpsBatches($companyId, 20) : [],
+        ], 'main');
+    }
+
+    public function export(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $type = trim((string) $this->input('type', 'missing'));
+        $year = (int) $this->input('period_year', date('Y'));
+        $month = (int) $this->input('period_month', date('n'));
+        $batchId = (int) $this->input('batch_id', 0);
+        $canViewSalary = $this->canViewSaudiSalary();
+        $svc = new \Rateb\App\Services\HrSaudiComplianceService();
+        $rows = [];
+        $columns = [];
+        if ($companyId > 0) {
+            if ($type === 'gosi' && $canViewSalary) {
+                $rows = $svc->gosiReportRows($companyId, $year, $month);
+                $columns = [
+                    ['name' => 'employee_code', 'label' => __('employee_code')],
+                    ['name' => 'employee_name', 'label' => __('employee')],
+                    ['name' => 'saudi_classification', 'label' => __('hr_r_classification')],
+                    ['name' => 'contribution_base', 'label' => __('hr_r_contribution_base')],
+                    ['name' => 'employee_amount', 'label' => __('hr_r_employee_amount')],
+                    ['name' => 'employer_amount', 'label' => __('hr_r_employer_amount')],
+                    ['name' => 'validation_status', 'label' => __('status')],
+                    ['name' => 'external_sent', 'label' => __('hr_r_external_sent')],
+                ];
+            } elseif ($type === 'wps') {
+                $rows = $svc->wpsReportRows($companyId, $batchId);
+                $columns = [
+                    ['name' => 'employee_code', 'label' => __('employee_code')],
+                    ['name' => 'employee_name', 'label' => __('employee')],
+                    ['name' => 'national_id', 'label' => __('national_id')],
+                    ['name' => 'iban', 'label' => __('hr_r_iban')],
+                    ['name' => 'bank_code', 'label' => __('hr_r_bank_code')],
+                    ['name' => 'net_salary', 'label' => __('net')],
+                    ['name' => 'ready', 'label' => __('hr_r_ready')],
+                    ['name' => 'validation_notes', 'label' => __('notes')],
+                    ['name' => 'external_sent', 'label' => __('hr_r_external_sent')],
+                ];
+                if (!$canViewSalary) {
+                    foreach ($rows as &$r) {
+                        $r['net_salary'] = null;
+                        $r['basic_salary'] = null;
+                        $r['allowances'] = null;
+                        $r['deductions'] = null;
+                    }
+                    unset($r);
+                }
+            } elseif ($type === 'reconciliation' && $canViewSalary) {
+                $rows = $svc->payrollReconciliationRows($companyId, $year, $month, true);
+                $columns = [
+                    ['name' => 'employee_code', 'label' => __('employee_code')],
+                    ['name' => 'employee_name', 'label' => __('employee')],
+                    ['name' => 'payroll_gross', 'label' => __('hr_r_payroll_gross')],
+                    ['name' => 'gosi_base', 'label' => __('hr_r_contribution_base')],
+                    ['name' => 'delta', 'label' => __('hr_r_delta')],
+                    ['name' => 'net_salary', 'label' => __('net')],
+                    ['name' => 'validation_status', 'label' => __('status')],
+                ];
+            } else {
+                $rows = $svc->missingDataReportRows($companyId);
+                $columns = [
+                    ['name' => 'employee_code', 'label' => __('employee_code')],
+                    ['name' => 'name', 'label' => __('employee')],
+                    ['name' => 'national_id', 'label' => __('national_id')],
+                    ['name' => 'saudi_classification', 'label' => __('hr_r_classification')],
+                    ['name' => 'issues', 'label' => __('hr_r_issues')],
+                ];
+            }
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send(
+            'hr',
+            $columns,
+            $rows,
+            __('hr_saudi_reports') . ' — ' . $type,
+            'hr'
+        );
+    }
+
+    private function canViewSaudiSalary(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (function_exists('rateb_can_view_entity') && rateb_can_view_entity('hr-payroll')) {
+            return true;
+        }
+        if (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity('hr-employees')) {
+            return true;
+        }
+
+        return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
+    }
+}
