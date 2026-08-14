@@ -71,6 +71,10 @@ final class HrCommandCenterService
                 $this->actorCanViewSalary()
             ),
             'saudi_readiness' => $saudi,
+            'workforce_intelligence' => (new HrWorkforceIntelligenceService())->commandWidgets(
+                $companyId,
+                $this->actorCanViewSalary()
+            ),
         ];
     }
 
@@ -185,6 +189,7 @@ final class HrCommandCenterService
             ['id' => 'contract', 'label' => 'hr_cc_qa_contract', 'route' => 'hr/employment-contracts', 'icon' => 'fa-file-signature'],
             ['id' => 'organization', 'label' => 'hr_organization', 'route' => 'hr/organization', 'icon' => 'fa-project-diagram'],
             ['id' => 'analytics', 'label' => 'hr_analytics', 'route' => 'hr/analytics', 'icon' => 'fa-chart-pie'],
+            ['id' => 'workforce', 'label' => 'hr_workforce_intelligence', 'route' => 'hr/workforce', 'icon' => 'fa-brain'],
             ['id' => 'saudi', 'label' => 'hr_saudi_compliance', 'route' => 'hr/saudi-compliance', 'icon' => 'fa-flag'],
             ['id' => 'inbox', 'label' => 'hr_cc_qa_inbox', 'route' => 'hr/approvals-inbox', 'icon' => 'fa-inbox'],
         ];
@@ -557,6 +562,16 @@ final class HrCommandCenterService
                 'wps_exceptions' => 0,
                 'external_send_enabled' => false,
                 'schema_ready_r' => false,
+            ],
+            'workforce_intelligence' => [
+                'headcount' => 0,
+                'turnover_pct' => 0,
+                'workforce_gap' => 0,
+                'contract_risk' => 0,
+                'attendance_risk' => 0,
+                'hiring_hired' => 0,
+                'saudi_readiness_pct' => 0,
+                'payroll_cost' => null,
             ],
         ];
     }

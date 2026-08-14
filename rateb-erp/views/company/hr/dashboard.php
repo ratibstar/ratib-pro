@@ -371,6 +371,22 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
 
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-brain me-1"></i> <?php echo __('hr_workforce_intelligence'); ?></span>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr/workforce')); ?>"><?php echo __('hr_s_open_executive'); ?></a>
+    </div>
+    <div class="rateb-card-body">
+        <?php $wi = $workforceIntelligence ?? []; ?>
+        <div class="row g-2">
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_s_headcount'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($wi['headcount'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_s_turnover'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo $escape(number_format((float) ($wi['turnover_pct'] ?? 0), 1)); ?>%</div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_s_workforce_gap'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($wi['workforce_gap'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_s_contract_risk'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($wi['contract_risk'] ?? 0); ?></div></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="rateb-card mb-3">
+    <div class="rateb-card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-flag me-1"></i> <?php echo __('hr_saudi_readiness'); ?></span>
         <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr/saudi-compliance')); ?>"><?php echo __('hr_saudi_compliance'); ?></a>
     </div>

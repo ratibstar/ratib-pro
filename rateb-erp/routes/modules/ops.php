@@ -51,6 +51,7 @@ use Rateb\App\Controllers\Company\HrOrganizationController;
 use Rateb\App\Controllers\Company\HrSuccessionController;
 use Rateb\App\Controllers\Company\HrAnalyticsController;
 use Rateb\App\Controllers\Company\HrSaudiComplianceController;
+use Rateb\App\Controllers\Company\HrWorkforceIntelligenceController;
 use Rateb\App\Controllers\Company\HrEssPortalController;
 use Rateb\App\Controllers\Company\HrManagerPortalController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
@@ -893,6 +894,9 @@ $router->post($app('hr/saudi-compliance/gosi-build'), [HrSaudiComplianceControll
 $router->post($app('hr/saudi-compliance/wps-build'), [HrSaudiComplianceController::class, 'buildWps'], $hrEmpMwDec);
 $router->get($app('hr/saudi-compliance/reports'), [HrSaudiComplianceController::class, 'reports'], rateb_erp_mw('hr', '', 'hr'));
 $router->get($app('hr/saudi-compliance/export'), [HrSaudiComplianceController::class, 'export'], rateb_erp_mw('hr', '', 'hr'));
+$router->get($app('hr/workforce'), [HrWorkforceIntelligenceController::class, 'index'], $hrEmpMwDec);
+$router->post($app('hr/workforce/plan'), [HrWorkforceIntelligenceController::class, 'savePlan'], $hrEmpMwDec);
+$router->get($app('hr/workforce/export'), [HrWorkforceIntelligenceController::class, 'export'], rateb_erp_mw('hr', '', 'hr'));
 $router->get($app('hr/ess'), [HrEssPortalController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
 $router->post($app('hr/ess/certificates'), [HrEssPortalController::class, 'requestCertificate'], rateb_erp_mw('hr', '', 'hr'));
 $router->get($app('hr/manager'), [HrManagerPortalController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));

@@ -1679,3 +1679,119 @@ final class HrSaudiComplianceController extends Controller
         return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
     }
 }
+
+/** Phase S — Workforce Intelligence & Planning (executive decision support). */
+final class HrWorkforceIntelligenceController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $filters = $this->filtersFromInput();
+        $canViewSalary = $this->canViewSalary();
+        $svc = new \Rateb\App\Services\HrWorkforceIntelligenceService();
+        $org = new \Rateb\App\Services\HrOrganizationService();
+        $dash = $companyId > 0
+            ? $svc->executiveDashboard($companyId, $filters, $canViewSalary)
+            : [];
+        $exportQs = http_build_query(array_merge($filters, []));
+        $this->view('company/hr/workforce/index', [
+            'title' => __('hr_workforce_intelligence'),
+            'companyId' => $companyId,
+            'dashboard' => $dash,
+            'filters' => $filters,
+            'departments' => $companyId > 0 ? $org->listDepartments($companyId) : [],
+            'jobTitles' => $companyId > 0 ? $org->listJobTitles($companyId) : [],
+            'canViewSalary' => $canViewSalary,
+            'schemaReady' => $svc->schemaReady(),
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/workforce'),
+            'exportRoute' => rateb_app_url('hr/workforce/export') . ($exportQs !== '' ? '?' . $exportQs : ''),
+            'exportEnabled' => function_exists('rateb_can_export_entity') ? rateb_can_export_entity('hr') : true,
+        ], 'main');
+    }
+
+    public function savePlan(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/workforce')));
+            return;
+        }
+        $actor = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        try {
+            (new \Rateb\App\Services\HrWorkforceIntelligenceService())->upsertPlanTarget($companyId, [
+                'period_year' => $this->input('period_year', date('Y')),
+                'period_month' => $this->input('period_month', date('n')),
+                'department_id' => $this->input('department_id', 0),
+                'job_title_id' => $this->input('job_title_id', 0),
+                'target_headcount' => $this->input('target_headcount', 0),
+                'planned_hires' => $this->input('planned_hires', ''),
+                'notes' => $this->input('notes', ''),
+            ], $actor);
+            SessionManager::flash('success', __('hr_s_plan_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('invalid_request'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/workforce')));
+    }
+
+    public function export(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $filters = $this->filtersFromInput();
+        $canViewSalary = $this->canViewSalary();
+        $rows = $companyId > 0
+            ? (new \Rateb\App\Services\HrWorkforceIntelligenceService())->executiveExportRows($companyId, $filters, $canViewSalary)
+            : [];
+        \Rateb\App\Controllers\Shared\ExportController::send(
+            'hr_s_executive',
+            [
+                ['name' => 'metric', 'label' => __('metric')],
+                ['name' => 'value', 'label' => __('value')],
+            ],
+            $rows,
+            __('hr_workforce_intelligence'),
+            'hr'
+        );
+    }
+
+    /** @return array<string,mixed> */
+    private function filtersFromInput(): array
+    {
+        return (new \Rateb\App\Services\HrWorkforceIntelligenceService())->normalizeFilters([
+            'department_id' => $this->input('department_id', 0),
+            'job_title_id' => $this->input('job_title_id', 0),
+            'employment_type' => $this->input('employment_type', ''),
+            'saudi_classification' => $this->input('saudi_classification', ''),
+            'date_from' => $this->input('date_from', date('Y-m-01')),
+            'date_to' => $this->input('date_to', date('Y-m-d')),
+        ]);
+    }
+
+    private function canViewSalary(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (function_exists('rateb_can_view_entity') && rateb_can_view_entity('hr-payroll')) {
+            return true;
+        }
+        if (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity('hr-employees')) {
+            return true;
+        }
+
+        return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
+    }
+}
