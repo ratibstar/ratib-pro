@@ -41,7 +41,41 @@ if ($tab === 'employment') {
         }
         ?>
     </dl>
-    <div class="alert alert-light border small mb-0"><?php echo __('hr_360_contracts_deferred'); ?></div>
+    <h2 class="h6"><?php echo __('hr_employment_contracts'); ?></h2>
+    <?php
+    $contracts = is_array($data['contracts'] ?? null) ? $data['contracts'] : [];
+    if ($contracts === []) {
+        echo '<p class="text-muted small mb-2">' . $escape(__('hr_360_no_contracts')) . '</p>';
+    } else {
+        echo '<div class="table-responsive mb-2"><table class="table table-sm rateb-table mb-0"><thead><tr>';
+        echo '<th>' . $escape(__('hr_contract_no')) . '</th>';
+        echo '<th>' . $escape(__('start_date')) . '</th>';
+        echo '<th>' . $escape(__('end_date')) . '</th>';
+        echo '<th>' . $escape(__('salary')) . '</th>';
+        echo '<th>' . $escape(__('status')) . '</th>';
+        echo '</tr></thead><tbody>';
+        foreach ($contracts as $c) {
+            $st = (string) ($c['status'] ?? '');
+            $stLabel = __('hr_contract_status_' . $st);
+            if ($stLabel === 'hr_contract_status_' . $st) {
+                $stLabel = $st;
+            }
+            echo '<tr>';
+            echo '<td class="rateb-ltr-num"><a href="' . $escape(rateb_url(rateb_app_route('hr/employment-contracts/' . (int) ($c['id'] ?? 0)))) . '">'
+                . $escape((string) ($c['contract_no'] ?? '')) . '</a></td>';
+            echo '<td class="rateb-ltr-num">' . $escape($fmtDate((string) ($c['start_date'] ?? ''))) . '</td>';
+            echo '<td class="rateb-ltr-num">' . $escape($fmtDate((string) ($c['end_date'] ?? ''))) . '</td>';
+            echo '<td class="rateb-ltr-num">' . $escape(number_format((float) ($c['salary'] ?? 0), 2)) . '</td>';
+            echo '<td>' . $escape($stLabel) . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table></div>';
+    }
+    $reg = (string) ($data['contracts_register_url'] ?? '');
+    if ($reg !== '') {
+        echo '<a class="btn btn-sm btn-outline-secondary" href="' . $escape($reg) . '">' . $escape(__('hr_employment_contracts')) . '</a>';
+    }
+    ?>
     <?php
     return;
 }

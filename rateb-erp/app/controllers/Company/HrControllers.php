@@ -1119,3 +1119,158 @@ final class HrReportsController extends Controller
         ], $rows, __('hr_leave_report'), 'hr');
     }
 }
+
+/**
+ * Phase K — HR employment contracts register (not commercial contracts).
+ */
+final class HrEmploymentContractsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $status = trim((string) $this->input('status', 'all'));
+        $svc = new \Rateb\App\Services\HrEmploymentContractService();
+        $items = $companyId > 0
+            ? $svc->listForCompany($companyId, $status === 'all' ? null : $status)
+            : [];
+        $employees = $companyId > 0
+            ? (new \Rateb\App\Models\Employee())->query(
+                "SELECT id, name, employee_code FROM rateb_employees
+                 WHERE company_id = :cid AND status = 'active'
+                 ORDER BY name ASC LIMIT 500",
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/hr/employment-contracts/index', [
+            'title' => __('hr_employment_contracts'),
+            'companyId' => $companyId,
+            'items' => $items,
+            'employees' => is_array($employees) ? $employees : [],
+            'statusFilter' => $status,
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage') || rateb_can('hr-employees.create')),
+            'csrf' => Csrf::token(),
+            'storeUrl' => rateb_url(rateb_app_route('hr/employment-contracts')),
+            'routePrefix' => rateb_app_route('hr/employment-contracts'),
+        ], 'main');
+    }
+
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $row = $companyId > 0
+            ? (new \Rateb\App\Services\HrEmploymentContractService())->findForCompany($companyId, $id)
+            : null;
+        if ($row === null) {
+            http_response_code(404);
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url(rateb_app_route('hr/employment-contracts')));
+        }
+        $this->view('company/hr/employment-contracts/show', [
+            'title' => __('hr_employment_contract'),
+            'companyId' => $companyId,
+            'item' => $row,
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage') || rateb_can('hr-employees.update')),
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/employment-contracts'),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        $this->guardWrite();
+        $companyId = rateb_resolve_ops_company_id();
+        $redirect = rateb_url(rateb_app_route('hr/employment-contracts'));
+        try {
+            $row = (new \Rateb\App\Services\HrEmploymentContractService())->create($companyId, [
+                'employee_id' => (int) $this->input('employee_id', 0),
+                'contract_no' => trim((string) $this->input('contract_no', '')),
+                'start_date' => trim((string) $this->input('start_date', '')),
+                'end_date' => trim((string) $this->input('end_date', '')),
+                'salary' => (float) $this->input('salary', 0),
+                'alert_days' => (int) $this->input('alert_days', 30),
+                'notes' => trim((string) $this->input('notes', '')),
+                'status' => 'draft',
+            ]);
+            SessionManager::flash('success', __('hr_employment_contract_created'));
+            $this->redirect(rateb_url(rateb_app_route('hr/employment-contracts/' . (int) $row['id'])));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+            $this->redirect($redirect);
+        }
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardWrite();
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = rateb_url(rateb_app_route('hr/employment-contracts/' . $id));
+        try {
+            (new \Rateb\App\Services\HrEmploymentContractService())->update($companyId, $id, [
+                'start_date' => trim((string) $this->input('start_date', '')),
+                'end_date' => trim((string) $this->input('end_date', '')),
+                'salary' => (float) $this->input('salary', 0),
+                'alert_days' => (int) $this->input('alert_days', 30),
+                'notes' => trim((string) $this->input('notes', '')),
+            ]);
+            SessionManager::flash('success', __('saved_ok'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect($redirect);
+    }
+
+    public function activate(array $params): void
+    {
+        $this->guardWrite();
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = rateb_url(rateb_app_route('hr/employment-contracts/' . $id));
+        try {
+            (new \Rateb\App\Services\HrEmploymentContractService())->activate($companyId, $id);
+            SessionManager::flash('success', __('hr_employment_contract_activated'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect($redirect);
+    }
+
+    public function terminate(array $params): void
+    {
+        $this->guardWrite();
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = rateb_url(rateb_app_route('hr/employment-contracts/' . $id));
+        try {
+            (new \Rateb\App\Services\HrEmploymentContractService())->terminate(
+                $companyId,
+                $id,
+                trim((string) $this->input('notes', ''))
+            );
+            SessionManager::flash('success', __('hr_employment_contract_terminated'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect($redirect);
+    }
+
+    private function guardWrite(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/employment-contracts')));
+        }
+    }
+}

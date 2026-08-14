@@ -34,6 +34,7 @@ final class Employee extends Model
     protected array $fillable = [
         'company_id', 'employee_code', 'name', 'email', 'phone', 'national_id',
         'department_id', 'job_title_id', 'branch_id', 'job_title', 'hire_date', 'salary_base', 'user_id', 'status', 'notes',
+        'recruitment_candidate_id',
     ];
 }
 
@@ -176,5 +177,17 @@ final class HrDocument extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'employee_id', 'title', 'doc_type', 'issue_date', 'expiry_date', 'notes',
+    ];
+}
+
+/** Phase K — HR employment contracts (not commercial rateb_contracts). */
+final class HrEmploymentContract extends Model
+{
+    protected string $table = 'rateb_hr_employment_contracts';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'employee_id', 'contract_no', 'start_date', 'end_date', 'salary', 'status',
+        'alert_days', 'recruitment_candidate_id', 'recruitment_contract_id', 'notes',
+        'activated_at', 'terminated_at', 'created_by', 'updated_by',
     ];
 }

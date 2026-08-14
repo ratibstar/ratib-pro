@@ -328,17 +328,26 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase K — P2 Recruitment HireBridge
+## Phase K — P0/P1 HireBridge + Employment contracts
 
-**Goal:** Candidate → Employee without duplicate independent records.
+**Status:** COMPLETE (`docs/hr/HR-PHASE-K-HIREBRIDGE-CONTRACTS-CERTIFICATION.md`)
 
-1. On recruitment `deployed` / accepted offer: create or link `rateb_employees`.  
-2. Optional HRMS profile create with `legacy_employee_id`.  
-3. Idempotent by candidate id.  
-4. Prevent duplicate candidates (unique national id per company if present).  
-5. Do not modify recruitment ownership of candidate tables.
+**Delivered:**
 
-**Exit:** One happy-path hire creates linked employee; tests for idempotency.
+1. `ready→deployed` HireBridge → create/link `rateb_employees` (idempotent).  
+2. Duplicate prevention via `recruitment_candidate_id` + national_id link.  
+3. Additive `rateb_hr_employment_contracts` (not commercial contracts).  
+4. Lifecycle draft→active→expired/terminated + near-expiry alerts.  
+5. Admin register + Employee 360 Employment tab.  
+6. Tenant isolation, `hr-employees` RBAC, AuditService events.
+
+**Exit:** Hire creates/links employee; employment contracts visible and actionable in Admin HR.
+
+---
+
+## Phase K (legacy roadmap note) — P2 Recruitment HireBridge only
+
+**Status:** SUPERSEDED by Phase K product delivery above (HireBridge shipped with employment contracts).
 
 ---
 

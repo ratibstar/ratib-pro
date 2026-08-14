@@ -172,9 +172,14 @@ final class HrPhaseIEmployee360Test
         );
 
         $this->record(
-            'I no employment contracts invented',
-            str_contains($svc, 'contracts_deferred')
-            && str_contains($show, 'hr_360_contracts_deferred')
+            'I employment contracts wired (Phase K)',
+            str_contains($svc, 'HrEmploymentContractService')
+            && str_contains($svc, "contracts_deferred' => false")
+            && is_file(RATEB_ROOT . '/views/company/hr/employees/360-tab.php')
+            && str_contains(
+                (string) file_get_contents(RATEB_ROOT . '/views/company/hr/employees/360-tab.php'),
+                'hr_employment_contracts'
+            )
         );
 
         return $this->results;

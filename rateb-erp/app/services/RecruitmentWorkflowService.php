@@ -10,6 +10,7 @@ use Rateb\App\Models\RecruitmentStatusHistory;
 /**
  * Candidate lifecycle transitions — sole authority for workflow_status changes.
  * Future Offline Replay must call transition() — never mutate status directly.
+ * Phase K: ready→deployed runs HireBridge before committing status.
  */
 final class RecruitmentWorkflowService
 {
@@ -59,7 +60,7 @@ final class RecruitmentWorkflowService
     }
 
     /**
-     * @return array{ok: bool, candidate_id: int, from: string, to: string}
+     * @return array{ok: bool, candidate_id: int, from: string, to: string, hire?: array<string, mixed>}
      */
     public function transition(int $candidateId, string $toStatus, ?string $reason = null): array
     {
@@ -73,6 +74,12 @@ final class RecruitmentWorkflowService
         $allowed = self::allowedTransitions()[$from] ?? [];
         if (!in_array($to, $allowed, true)) {
             throw new \RuntimeException('workflow_transition_denied');
+        }
+
+        // Phase K HireBridge before status commit (failure keeps candidate on ready).
+        $hire = null;
+        if ($to === self::STATUS_DEPLOYED) {
+            $hire = (new HrHireBridgeService())->hireFromCandidate($candidateId, $companyId);
         }
 
         (new RecruitmentCandidate())->update($candidateId, array_merge([
@@ -103,6 +110,19 @@ final class RecruitmentWorkflowService
             'reason' => $reason,
         ]);
 
-        return ['ok' => true, 'candidate_id' => $candidateId, 'from' => $from, 'to' => $to];
+        $result = ['ok' => true, 'candidate_id' => $candidateId, 'from' => $from, 'to' => $to];
+        if (is_array($hire)) {
+            $result['hire'] = $hire;
+            (new RecruitmentTimelineService())->record(
+                $candidateId,
+                'hirebridge',
+                'HireBridge → employee #' . (int) ($hire['employee_id'] ?? 0),
+                ($hire['created'] ?? false) ? 'created' : 'linked',
+                'hr_employees',
+                (int) ($hire['employee_id'] ?? 0)
+            );
+        }
+
+        return $result;
     }
 }

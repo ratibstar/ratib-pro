@@ -31,6 +31,8 @@ final class CronService
             'supplier_comm_automations' => (new SupplierCommService())->processAutomations(),
             'contract_status' => (new ContractAutomationService())->processStatusUpdates(),
             'contract_renewal_reminders' => (new ContractAutomationService())->processRenewalReminders(),
+            'hr_employment_contract_status' => (new HrEmploymentContractService())->processExpiryStatus(),
+            'hr_employment_contract_alerts' => (new HrEmploymentContractService())->processExpiryAlerts(),
             'asset_maintenance' => (new AssetDeviceAutomationService())->processAssetMaintenanceReminders(),
             'device_maintenance' => (new AssetDeviceAutomationService())->processDeviceMaintenanceReminders(),
             'warranty_alerts' => (new AssetDeviceAutomationService())->processWarrantyExpiryAlerts(),

@@ -151,7 +151,6 @@ final class HrEmployee360Service
             'tabs' => self::TABS,
             'ess_linked' => (int) ($emp['user_id'] ?? 0) > 0,
             'deferred' => [
-                'employment_contracts' => true,
                 'letter_pdf' => true,
                 'unified_documents' => true,
             ],
@@ -320,6 +319,13 @@ final class HrEmployee360Service
     private function tabEmployment(array $emp, int $companyId): array
     {
         $header = $this->buildHeader($emp, $companyId);
+        $employeeId = (int) ($emp['id'] ?? 0);
+        $contracts = [];
+        try {
+            $contracts = (new HrEmploymentContractService())->listForEmployee($companyId, $employeeId);
+        } catch (\Throwable $e) {
+            $contracts = [];
+        }
 
         return [
             'fields' => [
@@ -332,9 +338,9 @@ final class HrEmployee360Service
                 'status' => $header['status'],
                 'national_id' => (string) ($emp['national_id'] ?? ''),
             ],
-            'contracts' => [],
-            'contracts_deferred' => true,
-            'contracts_note' => 'employment_contracts_deferred',
+            'contracts' => $contracts,
+            'contracts_deferred' => false,
+            'contracts_register_url' => rateb_url(rateb_app_route('hr/employment-contracts')),
         ];
     }
 

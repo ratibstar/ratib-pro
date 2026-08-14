@@ -26,6 +26,7 @@ use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccoun
 use Rateb\App\Controllers\Company\HrDashboardController;
 use Rateb\App\Controllers\Company\HrApprovalInboxController;
 use Rateb\App\Controllers\Company\HrEmployeesController;
+use Rateb\App\Controllers\Company\HrEmploymentContractsController;
 use Rateb\App\Controllers\Company\HrDepartmentsController;
 use Rateb\App\Controllers\Company\HrJobTitlesController;
 use Rateb\App\Controllers\Company\HrAttendanceController;
@@ -370,6 +371,14 @@ $router->get($app('hr'), [HrDashboardController::class, 'index'], rateb_erp_mw('
 $router->get($app('hr/approvals-inbox'), [HrApprovalInboxController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
 // Decide auth is server-side (matrix user/role/oversight) — do not require hr.manage at the route.
 $router->post($app('hr/approvals-inbox/decide'), [HrApprovalInboxController::class, 'decide'], rateb_erp_mw('hr', '', 'hr'));
+
+$hrEmpMw = rateb_erp_mw('hr', '', 'hr-employees');
+$router->get($app('hr/employment-contracts'), [HrEmploymentContractsController::class, 'index'], $hrEmpMw);
+$router->post($app('hr/employment-contracts'), [HrEmploymentContractsController::class, 'store'], $hrEmpMw);
+$router->get($app('hr/employment-contracts/{id}'), [HrEmploymentContractsController::class, 'show'], $hrEmpMw);
+$router->post($app('hr/employment-contracts/{id}/update'), [HrEmploymentContractsController::class, 'update'], $hrEmpMw);
+$router->post($app('hr/employment-contracts/{id}/activate'), [HrEmploymentContractsController::class, 'activate'], $hrEmpMw);
+$router->post($app('hr/employment-contracts/{id}/terminate'), [HrEmploymentContractsController::class, 'terminate'], $hrEmpMw);
 
 /** Phase 15A — Recruitment ONLINE (no offline hooks). */
 $recMw = rateb_erp_mw('recruitment', '', 'recruitment-candidates');
