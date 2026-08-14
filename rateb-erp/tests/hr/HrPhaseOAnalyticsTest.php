@@ -63,6 +63,8 @@ final class HrPhaseOAnalyticsTest
             && str_contains($ana, 'leaveSummary')
             && str_contains($ana, 'contractsExpiring')
             && str_contains($ana, 'recruitmentSummary')
+            && str_contains($ana, 'basic_salary + pl.allowances')
+            && !str_contains($ana, 'pl.gross_salary')
             && str_contains($ops, 'hr/analytics')
         );
 
