@@ -406,18 +406,25 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase O — P3 Succession, analytics, ESS, Saudi integrations
+## Phase O — Organization + Succession + HR Analytics
 
-1. Succession tables for critical positions / successors / readiness.  
-2. Reporting architecture service (workforce, turnover, OT, contract expiry, movements).  
-3. ESS manager approvals API (authorized only).  
-4. Saudi config module (identifiers, iqama expiry).  
-5. GOSI / WPS connectors as separate integration packages — feature-flagged, not claimed “compliant” until certified.  
-6. Dashboard enterprise tiles with cached aggregates.
+**Status:** COMPLETE (2026-08-14)  
+**Certification:** `docs/hr/HR-PHASE-O-ANALYTICS-CERTIFICATION.md`
 
-**Exit:** Optional modules behind flags; core HR unaffected if OFF.
+1. Organization structure from `rateb_hr_departments` / job titles / `rateb_employees` + 360 links.  
+2. Additive succession tables + Admin UI (critical role, holder, successors, readiness, skill gaps).  
+3. Analytics snapshot + reports hub with filters and existing ExportController.  
+4. Command Center analytics widgets.  
+5. Salary aggregates gated by payroll/employee RBAC.  
+6. No SoT / payroll formula / accounting / approval / leave / ESS / mobile / GOSI changes.
+
+**Deferred from earlier O draft:** ESS manager API, Saudi/GOSI/WPS packages, cached enterprise tiles.
+
+**Exit:** Managers can answer headcount / structure / attendance-leave-payroll-contracts attention from Admin HR. **Met.**
 
 ---
+
+## Phase P — (not started)
 
 ## Cross-cutting for every implementation phase
 

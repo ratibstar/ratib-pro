@@ -42,6 +42,7 @@ final class HrDashboardController extends Controller
             'alerts' => $cc['alerts'],
             'quickActions' => $cc['quick_actions'],
             'hubLinks' => $cc['hub_links'],
+            'analyticsWidgets' => $cc['analytics_widgets'] ?? [],
             'lookupUrl' => rateb_url(rateb_app_route('hr/employees/lookup')),
         ], 'main');
     }

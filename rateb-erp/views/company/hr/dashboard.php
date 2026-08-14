@@ -320,7 +320,43 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
 </div>
 
 <div class="rateb-card mb-3">
-    <div class="rateb-card-header"><i class="fas fa-user me-1"></i> <?php echo __('hr_cc_360_hub'); ?></div>
+    <div class="rateb-card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-chart-pie me-1"></i> <?php echo __('hr_o_analytics_widgets'); ?></span>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url(rateb_app_route('hr/analytics')); ?>"><?php echo __('hr_analytics'); ?></a>
+    </div>
+    <div class="rateb-card-body">
+        <?php $aw = $analyticsWidgets ?? []; ?>
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_active_employees'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($aw['headcount_active'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_o_absent_30d'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($aw['absent_30d'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_o_late_30d'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($aw['late_30d'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_cc_contracts_expiring'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($aw['contracts_30d'] ?? 0); ?></div></div></div>
+        </div>
+        <?php if (($aw['salary_avg'] ?? null) !== null) { ?>
+            <p class="small mb-2"><?php echo __('hr_o_salary_avg'); ?>: <span class="rateb-ltr-num fw-semibold"><?php echo $escape(number_format((float) $aw['salary_avg'], 2)); ?></span></p>
+        <?php } ?>
+        <?php $deptTop = is_array($aw['by_department_top'] ?? null) ? $aw['by_department_top'] : []; ?>
+        <?php if ($deptTop !== []) { ?>
+            <div class="table-responsive">
+                <table class="table rateb-table table-sm mb-0">
+                    <thead><tr><th><?php echo __('department'); ?></th><th class="text-end"><?php echo __('hr_o_count'); ?></th></tr></thead>
+                    <tbody>
+                    <?php foreach ($deptTop as $d) { ?>
+                        <tr>
+                            <td><?php echo $escape((string) ($d['department_name'] ?? '')); ?></td>
+                            <td class="text-end rateb-ltr-num"><?php echo (int) ($d['count'] ?? 0); ?></td>
+                        </tr>
+                    <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php } else { ?>
+            <p class="text-muted small mb-0"><?php echo __('hr_o_empty_dept'); ?></p>
+        <?php } ?>
+    </div>
+</div>
+
+<div class="rateb-card mb-3">
     <div class="rateb-card-body">
         <p class="text-muted small"><?php echo __('hr_cc_360_hub_hint'); ?></p>
         <div class="row g-2">

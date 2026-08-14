@@ -59,6 +59,10 @@ final class HrCommandCenterService
             'alerts' => $this->buildAlerts($companyId, $actorUserId, $inbox, $pendingDecisions),
             'quick_actions' => $this->quickActions(),
             'hub_links' => $this->employee360HubLinks(),
+            'analytics_widgets' => (new HrAnalyticsService())->commandWidgets(
+                $companyId,
+                $this->actorCanViewSalary()
+            ),
         ];
     }
 
@@ -171,6 +175,8 @@ final class HrCommandCenterService
             ['id' => 'decision', 'label' => 'hr_cc_qa_decision', 'route' => 'hr/decisions/create', 'icon' => 'fa-gavel'],
             ['id' => 'disciplinary', 'label' => 'hr_cc_qa_disciplinary', 'route' => 'hr/disciplinary/create', 'icon' => 'fa-triangle-exclamation'],
             ['id' => 'contract', 'label' => 'hr_cc_qa_contract', 'route' => 'hr/employment-contracts', 'icon' => 'fa-file-signature'],
+            ['id' => 'organization', 'label' => 'hr_organization', 'route' => 'hr/organization', 'icon' => 'fa-project-diagram'],
+            ['id' => 'analytics', 'label' => 'hr_analytics', 'route' => 'hr/analytics', 'icon' => 'fa-chart-pie'],
             ['id' => 'inbox', 'label' => 'hr_cc_qa_inbox', 'route' => 'hr/approvals-inbox', 'icon' => 'fa-inbox'],
         ];
     }
@@ -467,6 +473,30 @@ final class HrCommandCenterService
             'alerts' => [],
             'quick_actions' => $this->quickActions(),
             'hub_links' => $this->employee360HubLinks(),
+            'analytics_widgets' => [
+                'headcount_active' => 0,
+                'absent_30d' => 0,
+                'late_30d' => 0,
+                'pending_leaves' => 0,
+                'contracts_30d' => 0,
+                'by_department_top' => [],
+                'salary_avg' => null,
+            ],
         ];
+    }
+
+    private function actorCanViewSalary(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (function_exists('rateb_can_view_entity') && rateb_can_view_entity('hr-payroll')) {
+            return true;
+        }
+        if (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity('hr-employees')) {
+            return true;
+        }
+
+        return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
     }
 }

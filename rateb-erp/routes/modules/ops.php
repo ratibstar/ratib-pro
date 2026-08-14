@@ -47,6 +47,9 @@ use Rateb\App\Controllers\Company\HrEmployeeRequestsController;
 use Rateb\App\Controllers\Company\HrLettersController;
 use Rateb\App\Controllers\Company\HrDecisionsController;
 use Rateb\App\Controllers\Company\HrDisciplinaryController;
+use Rateb\App\Controllers\Company\HrOrganizationController;
+use Rateb\App\Controllers\Company\HrSuccessionController;
+use Rateb\App\Controllers\Company\HrAnalyticsController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
 use Rateb\App\Controllers\Company\RecruitmentDashboardController;
 use Rateb\App\Controllers\Company\RecruitmentCandidatesController;
@@ -872,6 +875,15 @@ $router->post($app('hr/decisions/{id}/execute'), [HrDecisionsController::class, 
 $router->get($app('hr/disciplinary'), [HrDisciplinaryController::class, 'index'], $hrEmpMwDec);
 $router->get($app('hr/disciplinary/create'), [HrDisciplinaryController::class, 'create'], $hrEmpMwDec);
 $router->post($app('hr/disciplinary'), [HrDisciplinaryController::class, 'store'], $hrEmpMwDec);
+$router->get($app('hr/organization'), [HrOrganizationController::class, 'index'], $hrEmpMwDec);
+$router->get($app('hr/succession'), [HrSuccessionController::class, 'index'], $hrEmpMwDec);
+$router->get($app('hr/succession/create'), [HrSuccessionController::class, 'create'], $hrEmpMwDec);
+$router->post($app('hr/succession'), [HrSuccessionController::class, 'store'], $hrEmpMwDec);
+$router->get($app('hr/succession/{id}'), [HrSuccessionController::class, 'show'], $hrEmpMwDec);
+$router->post($app('hr/succession/{id}/candidates'), [HrSuccessionController::class, 'storeCandidate'], $hrEmpMwDec);
+$router->get($app('hr/analytics'), [HrAnalyticsController::class, 'index'], $hrEmpMwDec);
+$router->get($app('hr/reports-hub'), [HrAnalyticsController::class, 'reports'], rateb_erp_mw('hr', '', 'hr'));
+$router->get($app('hr/reports-hub/export'), [HrAnalyticsController::class, 'export'], rateb_erp_mw('hr', '', 'hr'));
 
 foreach ($hrCrudRoutes as $path => $cfg) {
     $class = $cfg['class'];

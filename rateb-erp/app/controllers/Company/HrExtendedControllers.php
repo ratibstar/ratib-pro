@@ -951,3 +951,341 @@ final class HrDisciplinaryController extends Controller
         }
     }
 }
+
+/** Phase O — Organization structure (departments / positions / employees). */
+final class HrOrganizationController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $filters = [
+            'department_id' => (int) $this->input('department_id', 0),
+            'job_title_id' => (int) $this->input('job_title_id', 0),
+            'status' => (string) $this->input('status', ''),
+        ];
+        $org = new \Rateb\App\Services\HrOrganizationService();
+        $data = $companyId > 0 ? $org->structure($companyId, $filters) : ['departments' => [], 'unassigned' => ['employees' => [], 'employee_count' => 0], 'totals' => ['employees' => 0, 'departments' => 0]];
+        $this->view('company/hr/organization/index', [
+            'title' => __('hr_organization'),
+            'companyId' => $companyId,
+            'data' => $data,
+            'filters' => $filters,
+            'departments' => $companyId > 0 ? $org->listDepartments($companyId) : [],
+            'jobTitles' => $companyId > 0 ? $org->listJobTitles($companyId) : [],
+            'routePrefix' => rateb_app_route('hr/organization'),
+        ], 'main');
+    }
+}
+
+/** Phase O — Succession planning. */
+final class HrSuccessionController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $svc = new \Rateb\App\Services\HrSuccessionService();
+        $this->view('company/hr/succession/index', [
+            'title' => __('hr_succession'),
+            'companyId' => $companyId,
+            'schemaReady' => $svc->schemaReady(),
+            'items' => $companyId > 0 ? $svc->listPositions($companyId) : [],
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/succession'),
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage')),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $org = new \Rateb\App\Services\HrOrganizationService();
+        $employees = $companyId > 0
+            ? (new \Rateb\App\Models\Employee())->query(
+                "SELECT id, name, employee_code FROM rateb_employees WHERE company_id = :cid ORDER BY name ASC LIMIT 500",
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/hr/succession/create', [
+            'title' => __('hr_succession_new_position'),
+            'companyId' => $companyId,
+            'departments' => $companyId > 0 ? $org->listDepartments($companyId) : [],
+            'jobTitles' => $companyId > 0 ? $org->listJobTitles($companyId) : [],
+            'employees' => $employees,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/succession'),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/succession/create')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        try {
+            $result = (new \Rateb\App\Services\HrSuccessionService())->createPosition($companyId, [
+                'title' => (string) $this->input('title', ''),
+                'code' => (string) $this->input('code', ''),
+                'department_id' => (int) $this->input('department_id', 0),
+                'job_title_id' => (int) $this->input('job_title_id', 0),
+                'current_employee_id' => (int) $this->input('current_employee_id', 0),
+                'skill_gap_notes' => (string) $this->input('skill_gap_notes', ''),
+                'is_critical' => 1,
+            ]);
+            SessionManager::flash('success', __('hr_succession_position_created') . ' ' . ($result['code'] ?? ''));
+            $this->redirect(rateb_url(rateb_app_route('hr/succession/' . $result['id'])));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('save_failed'));
+            $this->redirect(rateb_url(rateb_app_route('hr/succession/create')));
+        }
+    }
+
+    public function show(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $svc = new \Rateb\App\Services\HrSuccessionService();
+        $pos = $companyId > 0 ? $svc->findPosition($companyId, $id) : null;
+        if ($pos === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $employees = (new \Rateb\App\Models\Employee())->query(
+            "SELECT id, name, employee_code FROM rateb_employees
+             WHERE company_id = :cid AND status = 'active' ORDER BY name ASC LIMIT 500",
+            ['cid' => $companyId]
+        );
+        $this->view('company/hr/succession/show', [
+            'title' => (string) ($pos['title'] ?? __('hr_succession')),
+            'companyId' => $companyId,
+            'position' => $pos,
+            'candidates' => $svc->listCandidates($companyId, $id),
+            'employees' => $employees,
+            'readiness' => \Rateb\App\Services\HrSuccessionService::READINESS,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/succession'),
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage')),
+        ], 'main');
+    }
+
+    public function storeCandidate(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/succession')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new \Rateb\App\Services\HrSuccessionService())->addCandidate($companyId, $id, [
+                'employee_id' => (int) $this->input('employee_id', 0),
+                'readiness' => (string) $this->input('readiness', 'developing'),
+                'rank_order' => (int) $this->input('rank_order', 1),
+                'skill_gap_notes' => (string) $this->input('skill_gap_notes', ''),
+                'notes' => (string) $this->input('notes', ''),
+            ]);
+            SessionManager::flash('success', __('hr_succession_candidate_saved'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('save_failed'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/succession/' . $id)));
+    }
+}
+
+/** Phase O — Analytics + reports hub. */
+final class HrAnalyticsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $filters = $this->filtersFromInput();
+        $canViewSalary = $this->canViewSalary();
+        $org = new \Rateb\App\Services\HrOrganizationService();
+        $snap = $companyId > 0
+            ? (new \Rateb\App\Services\HrAnalyticsService())->snapshot($companyId, $filters, $canViewSalary)
+            : [];
+        $this->view('company/hr/analytics/index', [
+            'title' => __('hr_analytics'),
+            'companyId' => $companyId,
+            'snapshot' => $snap,
+            'filters' => $filters,
+            'departments' => $companyId > 0 ? $org->listDepartments($companyId) : [],
+            'jobTitles' => $companyId > 0 ? $org->listJobTitles($companyId) : [],
+            'canViewSalary' => $canViewSalary,
+            'routePrefix' => rateb_app_route('hr/analytics'),
+        ], 'main');
+    }
+
+    public function reports(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $type = trim((string) $this->input('type', 'employees'));
+        $filters = $this->filtersFromInput();
+        $canViewSalary = $this->canViewSalary();
+        $svc = new \Rateb\App\Services\HrAnalyticsService();
+        $org = new \Rateb\App\Services\HrOrganizationService();
+        $rows = [];
+        if ($companyId > 0) {
+            $rows = match ($type) {
+                'attendance' => $svc->attendanceReportRows($companyId, $filters),
+                'leaves' => $svc->leaveReportRows($companyId, $filters),
+                'payroll' => $svc->payrollSummaryRows($companyId, $filters, $canViewSalary),
+                'contracts' => $svc->contractsExpiryRows($companyId, 60),
+                'recruitment' => $svc->recruitmentSummary($companyId),
+                default => $svc->employeeReportRows($companyId, $filters),
+            };
+        }
+        $exportRoute = rateb_app_url('hr/reports-hub/export') . '?' . http_build_query(array_merge($filters, ['type' => $type]));
+        $this->view('company/hr/analytics/reports', [
+            'title' => __('hr_reports_hub'),
+            'companyId' => $companyId,
+            'type' => $type,
+            'rows' => $rows,
+            'filters' => $filters,
+            'departments' => $companyId > 0 ? $org->listDepartments($companyId) : [],
+            'jobTitles' => $companyId > 0 ? $org->listJobTitles($companyId) : [],
+            'canViewSalary' => $canViewSalary,
+            'exportRoute' => $exportRoute,
+            'exportEnabled' => function_exists('rateb_can_export_entity') ? rateb_can_export_entity('hr') : true,
+            'routePrefix' => rateb_app_route('hr/reports-hub'),
+        ], 'main');
+    }
+
+    public function export(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $type = trim((string) $this->input('type', 'employees'));
+        $filters = $this->filtersFromInput();
+        $canViewSalary = $this->canViewSalary();
+        $svc = new \Rateb\App\Services\HrAnalyticsService();
+        $rows = match ($type) {
+            'attendance' => $svc->attendanceReportRows($companyId, $filters),
+            'leaves' => $svc->leaveReportRows($companyId, $filters),
+            'payroll' => $svc->payrollSummaryRows($companyId, $filters, $canViewSalary),
+            'contracts' => $svc->contractsExpiryRows($companyId, 60),
+            'recruitment' => array_map(static fn ($r) => [
+                'status' => $r['status'] ?? '',
+                'count' => $r['count'] ?? 0,
+            ], $svc->recruitmentSummary($companyId)),
+            default => $svc->employeeReportRows($companyId, $filters),
+        };
+        $columns = match ($type) {
+            'attendance' => [
+                ['name' => 'employee_code', 'label' => __('employee_code')],
+                ['name' => 'name', 'label' => __('name')],
+                ['name' => 'present_days', 'label' => __('present_days')],
+                ['name' => 'late_days', 'label' => __('hr_cc_late_today')],
+                ['name' => 'absent_days', 'label' => __('absent_days')],
+                ['name' => 'leave_days', 'label' => __('leave_days')],
+            ],
+            'leaves' => [
+                ['name' => 'employee_code', 'label' => __('employee_code')],
+                ['name' => 'name', 'label' => __('name')],
+                ['name' => 'leave_type', 'label' => __('leave_type')],
+                ['name' => 'status', 'label' => __('status')],
+                ['name' => 'start_date', 'label' => __('start_date')],
+                ['name' => 'end_date', 'label' => __('end_date')],
+                ['name' => 'days', 'label' => __('days')],
+            ],
+            'payroll' => [
+                ['name' => 'period_year', 'label' => __('period_year')],
+                ['name' => 'period_month', 'label' => __('period_month')],
+                ['name' => 'status', 'label' => __('status')],
+                ['name' => 'line_count', 'label' => __('hr_o_line_count')],
+                ['name' => 'gross_total', 'label' => __('hr_360_gross')],
+                ['name' => 'net_total', 'label' => __('net_salary')],
+            ],
+            'contracts' => [
+                ['name' => 'contract_no', 'label' => __('hr_contract_no')],
+                ['name' => 'employee_code', 'label' => __('employee_code')],
+                ['name' => 'employee_name', 'label' => __('name')],
+                ['name' => 'end_date', 'label' => __('end_date')],
+                ['name' => 'status', 'label' => __('status')],
+            ],
+            'recruitment' => [
+                ['name' => 'status', 'label' => __('status')],
+                ['name' => 'count', 'label' => __('hr_o_count')],
+            ],
+            default => [
+                ['name' => 'employee_code', 'label' => __('employee_code')],
+                ['name' => 'name', 'label' => __('name')],
+                ['name' => 'department_name', 'label' => __('department')],
+                ['name' => 'job_title_name', 'label' => __('job_title')],
+                ['name' => 'status', 'label' => __('status')],
+                ['name' => 'hire_date', 'label' => __('hire_date')],
+            ],
+        };
+        if ($type === 'payroll' && !$canViewSalary) {
+            $rows = [];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send(
+            'hr_o_' . $type,
+            $columns,
+            $rows,
+            __('hr_reports_hub') . ' — ' . $type,
+            'hr'
+        );
+    }
+
+    /** @return array{department_id:int,job_title_id:int,status:string,date_from:string,date_to:string} */
+    private function filtersFromInput(): array
+    {
+        return [
+            'department_id' => (int) $this->input('department_id', 0),
+            'job_title_id' => (int) $this->input('job_title_id', 0),
+            'status' => (string) $this->input('status', ''),
+            'date_from' => (string) $this->input('date_from', date('Y-m-01')),
+            'date_to' => (string) $this->input('date_to', date('Y-m-d')),
+        ];
+    }
+
+    private function canViewSalary(): bool
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        if (function_exists('rateb_can_view_entity') && rateb_can_view_entity('hr-payroll')) {
+            return true;
+        }
+        if (function_exists('rateb_can_manage_entity') && rateb_can_manage_entity('hr-employees')) {
+            return true;
+        }
+
+        return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
+    }
+}

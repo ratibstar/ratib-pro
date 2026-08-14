@@ -211,3 +211,7 @@
     width: 1rem;
     text-align: center;
 }
+
+.rateb-hr-org-dept .rateb-card-header {
+    font-weight: 600;
+}

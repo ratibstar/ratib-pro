@@ -13,6 +13,10 @@ return [
     ['id' => 'employment-contracts', 'label' => 'hr_employment_contracts', 'icon' => 'fa-file-signature', 'route' => 'hr/employment-contracts'],
     ['id' => 'departments', 'label' => 'hr_departments', 'icon' => 'fa-sitemap', 'route' => 'hr/departments'],
     ['id' => 'job-titles', 'label' => 'hr_job_titles', 'icon' => 'fa-id-badge', 'route' => 'hr/job-titles'],
+    ['id' => 'organization', 'label' => 'hr_organization', 'icon' => 'fa-project-diagram', 'route' => 'hr/organization'],
+    ['id' => 'succession', 'label' => 'hr_succession', 'icon' => 'fa-people-arrows', 'route' => 'hr/succession'],
+    ['id' => 'analytics', 'label' => 'hr_analytics', 'icon' => 'fa-chart-pie', 'route' => 'hr/analytics'],
+    ['id' => 'reports-hub', 'label' => 'hr_reports_hub', 'icon' => 'fa-file-excel', 'route' => 'hr/reports-hub'],
     ['id' => 'holidays', 'label' => 'hr_holidays', 'icon' => 'fa-calendar-day', 'route' => 'hr/holidays'],
     [
         'id' => 'attendance-group',
