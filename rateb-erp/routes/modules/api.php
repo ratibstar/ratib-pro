@@ -55,6 +55,19 @@ $router->get('/api/v1/hr/ratings', [\Rateb\App\Controllers\Api\HrEssRatingsContr
 $router->get('/api/v1/hr/payment-methods', [\Rateb\App\Controllers\Api\HrEssPaymentMethodsController::class, 'list'], $api);
 $router->post('/api/v1/hr/settings/change-password', [\Rateb\App\Controllers\Api\HrEssSettingsController::class, 'changePassword'], $api);
 
+/** Phase P — ESS parity + manager self-service (same HR SoT; no new approval engine). */
+$router->get('/api/v1/hr/me/360', [\Rateb\App\Controllers\Api\HrEssPhasePController::class, 'me360'], $api);
+$router->get('/api/v1/hr/letters', [\Rateb\App\Controllers\Api\HrEssPhasePController::class, 'letters'], $api);
+$router->get('/api/v1/hr/letters/{id}/file', [\Rateb\App\Controllers\Api\HrEssPhasePController::class, 'letterFile'], $api);
+$router->get('/api/v1/hr/decisions', [\Rateb\App\Controllers\Api\HrEssPhasePController::class, 'decisions'], $api);
+$router->get('/api/v1/hr/manager/team', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'team'], $api);
+$router->get('/api/v1/hr/manager/attendance', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'attendance'], $api);
+$router->get('/api/v1/hr/manager/leave', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'leave'], $api);
+$router->get('/api/v1/hr/manager/requests', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'requests'], $api);
+$router->get('/api/v1/hr/manager/approvals', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'approvals'], $api);
+$router->post('/api/v1/hr/manager/approvals/decide', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'decide'], $api);
+$router->get('/api/v1/hr/manager/employees/{id}', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'employee'], $api);
+
 $router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigController::class, 'config'], $api);
 
 $router->post('/api/v1/mobile/devices/register', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'register'], $api);

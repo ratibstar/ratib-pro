@@ -15,7 +15,7 @@ use Rateb\App\Models\User;
 final class HrEssPhaseCService
 {
     /** Explicit ESS request DTO columns — never SELECT *. */
-    private const REQUEST_DTO_COLUMNS = 'id, request_no, request_type, request_date, status, notes, created_at';
+    private const REQUEST_DTO_COLUMNS = 'id, request_no, request_type, request_date, status, notes, document_id, created_at';
 
     /**
      * @return array{status:int, body:array<string,mixed>}
@@ -145,16 +145,24 @@ final class HrEssPhaseCService
         }
         $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
         $type = strtolower(trim((string) ($input['request_type'] ?? 'inquiry')));
-        if (!in_array($type, ['inquiry', 'complaint'], true)) {
+        $allowed = array_merge(
+            ['inquiry', 'complaint'],
+            HrLetterIssueService::LETTER_TYPES
+        );
+        if (!in_array($type, $allowed, true)) {
             $type = 'inquiry';
         }
         $notes = trim((string) ($input['notes'] ?? $input['message'] ?? ''));
-        if ($notes === '') {
+        if ($notes === '' && !HrLetterIssueService::isLetterType($type)) {
             return $this->fail(422, 'message_required', 'Message is required');
         }
+        if ($notes === '' && HrLetterIssueService::isLetterType($type)) {
+            $notes = 'ESS certificate request: ' . $type;
+        }
+        $prefix = HrLetterIssueService::isLetterType($type) ? 'LTR' : strtoupper(substr($type, 0, 3));
         $id = (new HrEmployeeRequest())->create([
             'company_id' => $companyId,
-            'request_no' => 'ESS-' . strtoupper(substr($type, 0, 3)) . '-' . date('YmdHis'),
+            'request_no' => 'ESS-' . $prefix . '-' . date('YmdHis'),
             'employee_id' => $employeeId,
             'request_type' => $type,
             'request_date' => date('Y-m-d'),
@@ -162,12 +170,127 @@ final class HrEssPhaseCService
             'notes' => mb_substr($notes, 0, 2000),
         ]);
 
+        $label = function_exists('__') ? (string) __('hr_employee_requests') : 'hr_request';
+        ApprovalOversightService::notifyPendingSubmission(
+            $companyId,
+            'hr_request',
+            $label !== '' ? $label : 'hr_request',
+            (int) $id
+        );
+
         return [
             'status' => 200,
             'body' => [
                 'success' => true,
                 'id' => $id,
                 'request_type' => $type,
+                'is_certificate' => HrLetterIssueService::isLetterType($type),
+            ],
+        ];
+    }
+
+    /**
+     * List certificate / letter requests for the bound employee (same letter SoT).
+     *
+     * @return array{status:int, body:array<string,mixed>}
+     */
+    public function listLetters(int $userId, int $companyId): array
+    {
+        $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
+        if ((int) ($resolved['status'] ?? 0) !== 200) {
+            return $this->normalizeFailure($resolved);
+        }
+        $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
+        $placeholders = implode(',', array_fill(0, count(HrLetterIssueService::LETTER_TYPES), '?'));
+        $params = array_merge([$companyId, $employeeId], HrLetterIssueService::LETTER_TYPES);
+        $rows = (new HrEmployeeRequest())->query(
+            "SELECT id, request_no, request_type, request_date, status, notes, document_id, issued_at, created_at
+             FROM rateb_hr_employee_requests
+             WHERE company_id = ? AND employee_id = ? AND request_type IN ({$placeholders})
+             ORDER BY id DESC LIMIT 100",
+            $params
+        );
+
+        return [
+            'status' => 200,
+            'body' => [
+                'success' => true,
+                'certificate_types' => HrLetterIssueService::LETTER_TYPES,
+                'letters' => is_array($rows) ? $rows : [],
+            ],
+        ];
+    }
+
+    /**
+     * Download issued letter PDF for own request only (DocumentService SoT).
+     *
+     * @return array{status:int,body?:array<string,mixed>,file?:array{path:string,mime:string,filename:string}}
+     */
+    public function downloadLetter(int $userId, int $companyId, int $requestId): array
+    {
+        $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
+        if ((int) ($resolved['status'] ?? 0) !== 200) {
+            return $this->normalizeFailure($resolved);
+        }
+        $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
+        if ($requestId < 1) {
+            return $this->fail(422, 'invalid_request', 'Invalid letter request id');
+        }
+        $letters = new HrLetterIssueService();
+        $row = $letters->findLetterRequest($companyId, $requestId);
+        if ($row === null || (int) ($row['employee_id'] ?? 0) !== $employeeId) {
+            return $this->fail(404, 'not_found', 'Letter not found');
+        }
+        $documentId = (int) ($row['document_id'] ?? 0);
+        if ($documentId < 1) {
+            return $this->fail(404, 'not_issued', 'Letter PDF not issued yet');
+        }
+        $doc = (new DocumentService())->findById($documentId);
+        if (!is_array($doc)
+            || (int) ($doc['company_id'] ?? 0) !== $companyId
+            || (int) ($doc['entity_id'] ?? 0) !== $employeeId
+        ) {
+            return $this->fail(403, 'forbidden', 'Document ownership check failed');
+        }
+        $path = \Rateb\App\Helpers\StorageHelper::resolveFilePath((string) ($doc['file_path'] ?? ''));
+        if ($path === '' || !is_file($path)) {
+            return $this->fail(404, 'not_found', 'Letter file missing');
+        }
+
+        return [
+            'status' => 200,
+            'file' => [
+                'path' => $path,
+                'mime' => (string) ($doc['mime_type'] ?? 'application/pdf'),
+                'filename' => (string) ($doc['file_name'] ?? ('letter-' . $requestId . '.pdf')),
+            ],
+        ];
+    }
+
+    /**
+     * Read-only decisions/status for bound employee.
+     *
+     * @return array{status:int, body:array<string,mixed>}
+     */
+    public function listDecisions(int $userId, int $companyId): array
+    {
+        $resolved = (new HrEssEmployeeResolverService())->resolveCurrentEmployee($userId, $companyId);
+        if ((int) ($resolved['status'] ?? 0) !== 200) {
+            return $this->normalizeFailure($resolved);
+        }
+        $employeeId = (int) ($resolved['body']['employee']['id'] ?? 0);
+        $rows = [];
+        try {
+            $rows = (new HrDecisionService())->listForEmployee($companyId, $employeeId, 50);
+        } catch (\Throwable $e) {
+            $rows = [];
+        }
+
+        return [
+            'status' => 200,
+            'body' => [
+                'success' => true,
+                'decisions' => $rows,
             ],
         ];
     }

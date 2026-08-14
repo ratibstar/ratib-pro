@@ -424,7 +424,28 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase P — (not started)
+## Phase P — ESS Parity + Manager Self-Service — COMPLETE
+
+**Commit:** (pending ship)  
+**Cert:** `docs/hr/HR-PHASE-P-ESS-MANAGER-CERTIFICATION.md`
+
+| Gate | Result |
+|------|--------|
+| P0 ESS | PASS |
+| P1 Manager | PASS |
+| P2 Approvals | PASS |
+| P3 Certificates | PASS |
+| P4 Payslips | PASS |
+| P5 Notifications | PASS |
+| P6 Security | PASS |
+| P7 Saudi HR foundation | PASS |
+| P8 Regression | PASS |
+
+**Exit:** Employee ESS + manager team on same HR SoT. **Met.**
+
+---
+
+## Phase Q — (not started)
 
 ## Cross-cutting for every implementation phase
 

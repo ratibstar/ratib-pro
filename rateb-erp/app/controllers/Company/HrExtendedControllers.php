@@ -1289,3 +1289,114 @@ final class HrAnalyticsController extends Controller
         return function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-payroll.view'));
     }
 }
+
+/** Phase P — ESS self-service portal (Admin shell; same ESS services / SoT). */
+final class HrEssPortalController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        $result = $companyId > 0 && $userId > 0
+            ? (new \Rateb\App\Services\HrEss360Service())->simplified360($userId, $companyId)
+            : ['status' => 401, 'body' => ['success' => false, 'code' => 'unauthorized', 'message' => 'Unauthorized']];
+        $this->view('company/hr/ess/index', [
+            'title' => __('hr_ess_portal'),
+            'companyId' => $companyId,
+            'payload' => (int) ($result['status'] ?? 0) === 200 ? ($result['body'] ?? []) : null,
+            'error' => (int) ($result['status'] ?? 0) === 200 ? null : ($result['body']['message'] ?? __('employee_unbound')),
+            'errorCode' => (int) ($result['status'] ?? 0) === 200 ? null : ($result['body']['code'] ?? ''),
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/ess'),
+            'certificateTypes' => \Rateb\App\Services\HrLetterIssueService::LETTER_TYPES,
+        ], 'main');
+    }
+
+    public function requestCertificate(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/ess')));
+            return;
+        }
+        $result = (new \Rateb\App\Services\HrEssPhaseCService())->submitInquiry($userId, $companyId, [
+            'request_type' => (string) $this->input('request_type', 'employment_certificate'),
+            'notes' => (string) $this->input('notes', ''),
+        ]);
+        if ((int) ($result['status'] ?? 0) === 200) {
+            SessionManager::flash('success', __('hr_ess_certificate_requested'));
+        } else {
+            SessionManager::flash('error', (string) ($result['body']['message'] ?? __('invalid_request')));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/ess')));
+    }
+}
+
+/** Phase P — Manager My Team portal (Admin shell). */
+final class HrManagerPortalController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        $svc = new \Rateb\App\Services\HrManagerTeamService();
+        $team = $companyId > 0 && $userId > 0 ? $svc->myTeam($userId, $companyId) : ['status' => 401, 'body' => []];
+        $approvals = $companyId > 0 && $userId > 0 ? $svc->teamApprovals($userId, $companyId) : ['status' => 401, 'body' => ['items' => []]];
+        $leave = $companyId > 0 && $userId > 0 ? $svc->teamLeave($userId, $companyId, 'pending') : ['status' => 401, 'body' => ['items' => []]];
+        $saudi = (new \Rateb\App\Services\HrSaudiComplianceFoundationService())->foundationAudit($companyId);
+        $this->view('company/hr/manager/index', [
+            'title' => __('hr_manager_my_team'),
+            'companyId' => $companyId,
+            'team' => (int) ($team['status'] ?? 0) === 200 ? ($team['body'] ?? []) : null,
+            'approvals' => (int) ($approvals['status'] ?? 0) === 200 ? ($approvals['body']['items'] ?? []) : [],
+            'pendingLeave' => (int) ($leave['status'] ?? 0) === 200 ? ($leave['body']['items'] ?? []) : [],
+            'error' => (int) ($team['status'] ?? 0) === 200 ? null : ($team['body']['message'] ?? __('employee_unbound')),
+            'saudiFoundation' => $saudi,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/manager'),
+        ], 'main');
+    }
+
+    public function decide(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url(rateb_app_route('hr/manager')));
+            return;
+        }
+        $result = (new \Rateb\App\Services\HrManagerTeamService())->decide(
+            $userId,
+            $companyId,
+            (string) $this->input('source_key', ''),
+            (int) $this->input('record_id', 0),
+            (string) $this->input('action', 'approve'),
+            (string) $this->input('comment', '')
+        );
+        if ((int) ($result['status'] ?? 0) === 200) {
+            SessionManager::flash('success', (string) ($result['body']['decision']['message'] ?? __('hr_inbox_approved')));
+        } else {
+            SessionManager::flash('error', (string) ($result['body']['message'] ?? __('access_denied')));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/manager')));
+    }
+}

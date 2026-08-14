@@ -152,6 +152,14 @@ final class HrEssPermissionRequestService
             return $this->fail(500, 'submit_failed', 'Could not create permission request');
         }
 
+        $label = function_exists('__') ? (string) __('hr_permission_requests') : 'hr_permission';
+        ApprovalOversightService::notifyPendingSubmission(
+            $companyId,
+            'hr_permission',
+            $label !== '' ? $label : 'hr_permission',
+            (int) $id
+        );
+
         $row = (new HrPermissionRequest())->queryOne(
             'SELECT id, permission_date, time_from, time_to, reason, status, created_at
              FROM rateb_hr_permission_requests

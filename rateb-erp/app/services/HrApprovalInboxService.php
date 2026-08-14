@@ -220,6 +220,7 @@ final class HrApprovalInboxService
             'title' => (string) ($row['type_label'] ?? $sourceKey),
             'reference' => (string) ($row['reference'] ?? ''),
             'requester' => (string) ($row['company_name'] ?? ''),
+            'employee_id' => (int) ($subject['employee_id'] ?? 0),
             'employee_name' => (string) ($subject['employee_name'] ?? ''),
             'employee_code' => (string) ($subject['employee_code'] ?? ''),
             'summary' => (string) ($subject['summary'] ?? ''),
@@ -306,11 +307,11 @@ final class HrApprovalInboxService
     }
 
     /**
-     * @return array{employee_name:string,employee_code:string,summary:string}
+     * @return array{employee_id:int,employee_name:string,employee_code:string,summary:string}
      */
     private function resolveSubject(string $sourceKey, int $recordId, int $companyId): array
     {
-        $empty = ['employee_name' => '', 'employee_code' => '', 'summary' => ''];
+        $empty = ['employee_id' => 0, 'employee_name' => '', 'employee_code' => '', 'summary' => ''];
         if ($recordId < 1 || $companyId < 1) {
             return $empty;
         }
@@ -318,7 +319,7 @@ final class HrApprovalInboxService
             $db = Database::connection();
             if ($sourceKey === 'hr_leave') {
                 $stmt = $db->prepare(
-                    "SELECT e.name, e.employee_code, lr.start_date, lr.end_date, lr.days, lt.name AS leave_type
+                    "SELECT e.id AS employee_id, e.name, e.employee_code, lr.start_date, lr.end_date, lr.days, lt.name AS leave_type
                      FROM rateb_leave_requests lr
                      JOIN rateb_employees e ON e.id = lr.employee_id AND e.company_id = lr.company_id
                      LEFT JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id AND lt.company_id = lr.company_id
@@ -330,6 +331,7 @@ final class HrApprovalInboxService
                     return $empty;
                 }
                 return [
+                    'employee_id' => (int) ($row['employee_id'] ?? 0),
                     'employee_name' => (string) ($row['name'] ?? ''),
                     'employee_code' => (string) ($row['employee_code'] ?? ''),
                     'summary' => trim(
@@ -341,7 +343,7 @@ final class HrApprovalInboxService
             }
             if ($sourceKey === 'hr_permission') {
                 $stmt = $db->prepare(
-                    "SELECT e.name, e.employee_code, p.permission_date, p.time_from, p.time_to
+                    "SELECT e.id AS employee_id, e.name, e.employee_code, p.permission_date, p.time_from, p.time_to
                      FROM rateb_hr_permission_requests p
                      JOIN rateb_employees e ON e.id = p.employee_id AND e.company_id = p.company_id
                      WHERE p.id = :id AND p.company_id = :cid LIMIT 1"
@@ -352,6 +354,7 @@ final class HrApprovalInboxService
                     return $empty;
                 }
                 return [
+                    'employee_id' => (int) ($row['employee_id'] ?? 0),
                     'employee_name' => (string) ($row['name'] ?? ''),
                     'employee_code' => (string) ($row['employee_code'] ?? ''),
                     'summary' => trim(
@@ -362,7 +365,7 @@ final class HrApprovalInboxService
             }
             if ($sourceKey === 'hr_request') {
                 $stmt = $db->prepare(
-                    "SELECT e.name, e.employee_code, r.request_type, r.request_date
+                    "SELECT e.id AS employee_id, e.name, e.employee_code, r.request_type, r.request_date
                      FROM rateb_hr_employee_requests r
                      JOIN rateb_employees e ON e.id = r.employee_id AND e.company_id = r.company_id
                      WHERE r.id = :id AND r.company_id = :cid LIMIT 1"
@@ -373,6 +376,7 @@ final class HrApprovalInboxService
                     return $empty;
                 }
                 return [
+                    'employee_id' => (int) ($row['employee_id'] ?? 0),
                     'employee_name' => (string) ($row['name'] ?? ''),
                     'employee_code' => (string) ($row['employee_code'] ?? ''),
                     'summary' => trim(
@@ -391,6 +395,7 @@ final class HrApprovalInboxService
                     return $empty;
                 }
                 return [
+                    'employee_id' => 0,
                     'employee_name' => '',
                     'employee_code' => '',
                     'summary' => sprintf(
@@ -403,7 +408,7 @@ final class HrApprovalInboxService
             }
             if ($sourceKey === 'hr_decision') {
                 $stmt = $db->prepare(
-                    "SELECT e.name, e.employee_code, d.decision_type, d.decision_no, d.effective_date
+                    "SELECT e.id AS employee_id, e.name, e.employee_code, d.decision_type, d.decision_no, d.effective_date
                      FROM rateb_hr_decisions d
                      JOIN rateb_employees e ON e.id = d.employee_id AND e.company_id = d.company_id
                      WHERE d.id = :id AND d.company_id = :cid LIMIT 1"
@@ -414,6 +419,7 @@ final class HrApprovalInboxService
                     return $empty;
                 }
                 return [
+                    'employee_id' => (int) ($row['employee_id'] ?? 0),
                     'employee_name' => (string) ($row['name'] ?? ''),
                     'employee_code' => (string) ($row['employee_code'] ?? ''),
                     'summary' => trim(

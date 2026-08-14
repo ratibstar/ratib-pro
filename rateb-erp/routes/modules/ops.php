@@ -50,6 +50,8 @@ use Rateb\App\Controllers\Company\HrDisciplinaryController;
 use Rateb\App\Controllers\Company\HrOrganizationController;
 use Rateb\App\Controllers\Company\HrSuccessionController;
 use Rateb\App\Controllers\Company\HrAnalyticsController;
+use Rateb\App\Controllers\Company\HrEssPortalController;
+use Rateb\App\Controllers\Company\HrManagerPortalController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
 use Rateb\App\Controllers\Company\RecruitmentDashboardController;
 use Rateb\App\Controllers\Company\RecruitmentCandidatesController;
@@ -884,6 +886,10 @@ $router->post($app('hr/succession/{id}/candidates'), [HrSuccessionController::cl
 $router->get($app('hr/analytics'), [HrAnalyticsController::class, 'index'], $hrEmpMwDec);
 $router->get($app('hr/reports-hub'), [HrAnalyticsController::class, 'reports'], rateb_erp_mw('hr', '', 'hr'));
 $router->get($app('hr/reports-hub/export'), [HrAnalyticsController::class, 'export'], rateb_erp_mw('hr', '', 'hr'));
+$router->get($app('hr/ess'), [HrEssPortalController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+$router->post($app('hr/ess/certificates'), [HrEssPortalController::class, 'requestCertificate'], rateb_erp_mw('hr', '', 'hr'));
+$router->get($app('hr/manager'), [HrManagerPortalController::class, 'index'], rateb_erp_mw('hr', '', 'hr'));
+$router->post($app('hr/manager/decide'), [HrManagerPortalController::class, 'decide'], rateb_erp_mw('hr', '', 'hr'));
 
 foreach ($hrCrudRoutes as $path => $cfg) {
     $class = $cfg['class'];

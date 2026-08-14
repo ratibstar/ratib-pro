@@ -9,6 +9,8 @@ declare(strict_types=1);
 return [
     ['id' => 'overview', 'label' => 'hr_command_center', 'icon' => 'fa-gauge-high', 'route' => 'hr'],
     ['id' => 'approvals-inbox', 'label' => 'hr_pending_actions', 'icon' => 'fa-inbox', 'route' => 'hr/approvals-inbox'],
+    ['id' => 'ess-portal', 'label' => 'hr_ess_portal', 'icon' => 'fa-user', 'route' => 'hr/ess'],
+    ['id' => 'manager-team', 'label' => 'hr_manager_my_team', 'icon' => 'fa-users', 'route' => 'hr/manager'],
     ['id' => 'employees', 'label' => 'hr_employee_list', 'icon' => 'fa-list', 'route' => 'hr/employees'],
     ['id' => 'employment-contracts', 'label' => 'hr_employment_contracts', 'icon' => 'fa-file-signature', 'route' => 'hr/employment-contracts'],
     ['id' => 'departments', 'label' => 'hr_departments', 'icon' => 'fa-sitemap', 'route' => 'hr/departments'],

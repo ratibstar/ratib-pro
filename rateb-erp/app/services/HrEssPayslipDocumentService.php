@@ -86,7 +86,7 @@ final class HrEssPayslipDocumentService
     }
 
     /**
-     * Stream a read-only text slip (existing amounts only — no calculation).
+     * Stream a read-only payslip PDF from existing amounts (no payroll recalculation).
      *
      * @return array{status:int,body?:array<string,mixed>,stream?:array{filename:string,mime:string,content:string}}
      */
@@ -101,22 +101,44 @@ final class HrEssPayslipDocumentService
             return $this->fail(404, 'not_found', 'Payslip not found');
         }
 
-        $lines = [
-            'RATEB ESS Payslip',
-            'Period: ' . (string) ($dto['period'] ?? ''),
-            'Gross: ' . (string) ($dto['gross_amount'] ?? ''),
-            'Net: ' . (string) ($dto['net_amount'] ?? ''),
-            'Status: ' . (string) ($dto['status'] ?? ''),
-        ];
-        $content = implode("\n", $lines) . "\n";
-        $filename = 'payslip-' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($dto['id'] ?? 'slip')) . '.txt';
+        $resolved = $this->resolve($userId, $companyId);
+        $employee = is_array($resolved['body']['employee'] ?? null) ? $resolved['body']['employee'] : [];
+        $empName = (string) ($employee['name'] ?? '');
+        $empCode = (string) ($employee['employee_code'] ?? '');
+
+        try {
+            $pdf = (new \Rateb\App\Lib\HrLetterPdf\HrLetterPdfRenderer())->render([
+                'title' => 'كشف راتب / Payslip',
+                'company_name' => 'RATEB ESS',
+                'body_lines' => [
+                    'هذا الكشف يعرض المبالغ المحسوبة مسبقاً في النظام دون إعادة احتساب.',
+                    'Period: ' . (string) ($dto['period'] ?? ''),
+                    'Gross: ' . (string) ($dto['gross_amount'] ?? ''),
+                    'Net: ' . (string) ($dto['net_amount'] ?? ''),
+                    'Status: ' . (string) ($dto['status'] ?? ''),
+                ],
+                'employee_name' => $empName,
+                'employee_code' => $empCode,
+                'national_id' => '',
+                'job_title' => '',
+                'hire_date' => '',
+                'salary_line' => 'Net: ' . (string) ($dto['net_amount'] ?? ''),
+                'request_no' => (string) ($dto['id'] ?? $payslipKey),
+                'issue_date' => date('Y-m-d'),
+                'footer' => 'إدارة الموارد البشرية',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->fail(500, 'pdf_unavailable', 'Payslip PDF unavailable');
+        }
+
+        $filename = 'payslip-' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) ($dto['id'] ?? 'slip')) . '.pdf';
 
         return [
             'status' => 200,
             'stream' => [
                 'filename' => $filename,
-                'mime' => 'text/plain; charset=UTF-8',
-                'content' => $content,
+                'mime' => 'application/pdf',
+                'content' => $pdf,
             ],
         ];
     }
