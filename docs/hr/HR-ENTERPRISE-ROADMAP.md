@@ -127,15 +127,33 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase E — P0 Accounting adapter (flagged OFF)
 
-**Goal:** Real GL path without turning it on in production by default.
+**Status:** COMPLETE (2026-08-14) — **flag remains OFF in production**  
+**Audit:** `docs/hr/HR-PHASE-E-ACCOUNTING-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-E-ACCOUNTING-CERTIFICATION.md`
 
-1. Design `PayrollAccountingAdapter` calling `AccountingService` only.  
-2. Map accounts via HR Settings (additive config).  
-3. Feature flag `hr.payroll.gl_posting`.  
-4. When OFF: keep status-only post. When ON: journal + status in one transaction.  
-5. Accounting regression tests with flag ON in test env.
+### Completed
 
-**Exit:** Adapter merged; production flag OFF.
+1. E0 — AccountingService API + COA payroll accounts audited.  
+2. `HrPayrollAccountingConfig` — env flag `HR_PAYROLL_ACCOUNTING_ENABLED` default OFF.  
+3. `HrPayrollAccountingAdapter` — maps payroll line sums → `AccountingService::createManualDraft`.  
+4. Company / fiscal / idempotency / failure audit wired.  
+5. Reconciliation diagnostic aware of flag + journal marker.  
+6. Tests: `tests/hr/HrPhaseEAccountingTest.php` + B/C/D/ESS regressions.
+
+### Deferred
+
+- Enabling flag in production.  
+- Ledger-auto-posted journals.  
+- Cost-center / per-component mapping.  
+- Bank / WPS (out of scope).
+
+### Remaining risks
+
+- Operators enabling the flag without staging validation.  
+- Draft journals still require finance posting discipline.  
+- Closed fiscal periods cause accounting_failed while payroll stays posted.
+
+**Exit:** Adapter merged; production flag OFF. **Met.**
 
 ---
 

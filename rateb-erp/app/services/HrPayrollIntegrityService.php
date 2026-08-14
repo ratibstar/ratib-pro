@@ -7,10 +7,11 @@ use Rateb\App\Models\PayrollLine;
 use Rateb\App\Models\PayrollPeriod;
 
 /**
- * Phase D — read-only payroll reconciliation / state integrity diagnostics.
+ * Phase D/E — read-only payroll reconciliation / state integrity diagnostics.
  *
  * Does NOT mutate payroll, accounting, or transfers.
- * Ops post = status lock only (no GL, no bank transfer).
+ * Flag OFF: ops post = status lock only (no GL).
+ * Flag ON: may have a DRAFT journal referenced by [HR_PAYROLL_PERIOD:{id}] marker.
  */
 final class HrPayrollIntegrityService
 {
@@ -25,6 +26,9 @@ final class HrPayrollIntegrityService
      *   sum_allowances: float,
      *   sum_deductions: float,
      *   sum_net: float,
+     *   accounting_flag_enabled: bool,
+     *   accounting_journal_id: int|null,
+     *   accounting_state: string,
      *   gl_interaction: string,
      *   bank_transfer_interaction: string,
      *   notes: list<string>
@@ -42,6 +46,9 @@ final class HrPayrollIntegrityService
             'sum_allowances' => 0.0,
             'sum_deductions' => 0.0,
             'sum_net' => 0.0,
+            'accounting_flag_enabled' => HrPayrollAccountingConfig::isEnabled(),
+            'accounting_journal_id' => null,
+            'accounting_state' => 'n/a',
             'gl_interaction' => 'none',
             'bank_transfer_interaction' => 'none',
             'notes' => ['period_not_found_or_wrong_company'],
@@ -72,13 +79,38 @@ final class HrPayrollIntegrityService
         );
 
         $status = (string) ($period['status'] ?? '');
+        $flagOn = HrPayrollAccountingConfig::isEnabled();
+        $journalId = (new HrPayrollAccountingAdapter())->findExistingJournalId($companyId, $periodId);
+
+        $accountingState = 'none_expected';
+        $glInteraction = 'none_expected';
         $notes = [
-            'Ops payroll post is a status lock only — not an AccountingService GL post.',
+            'Ops payroll post is a status lock. Ledger GL auto-post is not default.',
             'No ops payroll bank-transfer workflow is wired.',
-            'Enterprise accounting_post_ref (if any) is metadata only.',
+            'Feature flag HR_PAYROLL_ACCOUNTING_ENABLED default OFF.',
         ];
-        if ($status === 'posted') {
-            $notes[] = 'Period is posted (locked). GL missing is EXPECTED until Phase E adapter.';
+
+        if ($flagOn) {
+            if ($status === 'posted' && $journalId === null) {
+                $accountingState = 'missing_while_flag_on';
+                $glInteraction = 'draft_missing';
+                $notes[] = 'Payroll posted + flag ON but no draft journal marker found.';
+            } elseif ($journalId !== null) {
+                $accountingState = 'draft_or_linked';
+                $glInteraction = 'draft_journal_present';
+                $notes[] = 'Accounting draft/reference found via HR_PAYROLL_PERIOD marker.';
+                $notes[] = 'Draft journal ≠ ledger posted; finance must post journal separately.';
+            } else {
+                $accountingState = 'not_applicable_yet';
+                $glInteraction = 'none_yet';
+            }
+        } else {
+            if ($journalId !== null) {
+                $accountingState = 'unexpected_journal_while_flag_off';
+                $notes[] = 'Journal marker exists while flag OFF — investigate manual/legacy entry.';
+            } elseif ($status === 'posted') {
+                $notes[] = 'Period is posted (locked). GL missing is EXPECTED while flag OFF.';
+            }
             $notes[] = 'Bank transfer missing is EXPECTED.';
         }
 
@@ -92,23 +124,12 @@ final class HrPayrollIntegrityService
             'sum_allowances' => round((float) ($sums['sum_allowances'] ?? 0), 2),
             'sum_deductions' => round((float) ($sums['sum_deductions'] ?? 0), 2),
             'sum_net' => round((float) ($sums['sum_net'] ?? 0), 2),
-            'gl_interaction' => 'none_expected',
+            'accounting_flag_enabled' => $flagOn,
+            'accounting_journal_id' => $journalId,
+            'accounting_state' => $accountingState,
+            'gl_interaction' => $glInteraction,
             'bank_transfer_interaction' => 'none_expected',
             'notes' => $notes,
         ];
-    }
-
-    /**
-     * Source-level contract: postPayroll must not call AccountingService.
-     * Used by Phase D tests (also callable from diagnostics).
-     */
-    public static function postPayrollCallsAccounting(): bool
-    {
-        $src = (string) file_get_contents(dirname(__DIR__) . '/services/HrService.php');
-        if (!preg_match('/function postPayroll\s*\([\s\S]*?\n    public function /', $src, $m)) {
-            // Fallback: scan whole file for AccountingService near postPayroll name usage
-            return str_contains($src, 'AccountingService') && str_contains($src, 'function postPayroll');
-        }
-        return str_contains($m[0], 'AccountingService');
     }
 }

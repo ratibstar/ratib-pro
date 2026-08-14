@@ -402,26 +402,38 @@ final class HrService
      * Approved → posted only. Cannot bypass approval (draft/rejected → posted denied).
      * Optional $expectedCompanyId enforces tenant isolation (IDOR guard).
      *
-     * Phase D: status lock only — does NOT create GL journals or bank transfers.
-     * Idempotent: already-posted periods return without a second audit row.
+     * Phase D: status lock only by default — does NOT create GL journals or bank transfers.
+     * Phase E: when HR_PAYROLL_ACCOUNTING_ENABLED=true, optionally creates a DRAFT journal
+     * via HrPayrollAccountingAdapter (AccountingService). Flag defaults OFF.
+     * Idempotent: already-posted periods return without a second payroll audit row;
+     * adapter itself is idempotent for journals.
      */
     public function postPayroll(int $periodId, ?int $expectedCompanyId = null): void
     {
         $period = $this->loadPayrollPeriodForMutation($periodId, $expectedCompanyId);
         $status = (string) ($period['status'] ?? '');
         if ($status === 'posted') {
-            // Idempotent lock — no duplicate audit / no GL / no transfer side effects.
+            // Idempotent lock — optional accounting retry when flag ON.
+            if (HrPayrollAccountingConfig::isEnabled()) {
+                (new HrPayrollAccountingAdapter())->ensureDraftJournal($periodId, $expectedCompanyId);
+            }
             return;
         }
         if ($status !== 'approved') {
             throw new \RuntimeException(__('payroll_not_approved'));
         }
         (new PayrollPeriod())->update($periodId, ['status' => 'posted']);
+        $flagOn = HrPayrollAccountingConfig::isEnabled();
         $this->recordPayrollAudit('posted', $period, 'approved', 'posted', [
             'gl_posted' => false,
             'bank_transfer' => false,
             'note' => 'payroll_status_lock_only',
+            'accounting_flag_enabled' => $flagOn,
         ]);
+        if ($flagOn) {
+            // Best-effort draft journal; payroll remains posted even if accounting fails.
+            (new HrPayrollAccountingAdapter())->ensureDraftJournal($periodId, $expectedCompanyId);
+        }
     }
 
     /**
