@@ -189,15 +189,32 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase G — P1 Requests + Approval Matrix
 
-**Goal:** Configurable stages without a second workflow product.
+**Status:** COMPLETE (2026-08-14)  
+**Audit:** `docs/hr/HR-PHASE-G-APPROVAL-MATRIX-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-G-APPROVAL-MATRIX-CERTIFICATION.md`
 
-1. Additive matrix tables (request_type → stages).  
-2. Map leave / employee requests / permission into matrix where possible.  
-3. Extend request types (transfer, resignation, attendance correction, advance) carefully.  
-4. ESS create still hits same domain services.  
-5. Tests per type for stage skip rules.
+### Completed
 
-**Exit:** At least leave + certificate request use matrix config.
+1. Additive `rateb_hr_approval_matrices` / `_stages` / `_progress` (version + stage snapshot).  
+2. `HrApprovalMatrixService` — governance overlay; no domain status writes.  
+3. `ApprovalOversightService` gates leave / permission / request; final stage uses existing finalizers.  
+4. No matrix ⇒ exact pre-G single-shot behavior.  
+5. Certificate via `request_type` on employee requests (no separate workflow).  
+6. EAP / Legacy WorkflowService not used for HR decide.  
+7. Tests: `tests/hr/HrPhaseGApprovalMatrixTest.php`.
+
+### Deferred
+
+- Company stage-actor UI (inbox stays read-only).  
+- Manager hierarchy.  
+- Dedicated matrix admin screens (`saveMatrix` API ready).
+
+### Remaining risks
+
+- In-flight progress depends on snapshot integrity.  
+- Role/user stage checks matter only if non-SA actors reach Oversight process.
+
+**Exit:** Leave + certificate/request can use matrix config; fallback intact. **Met.**
 
 ---
 

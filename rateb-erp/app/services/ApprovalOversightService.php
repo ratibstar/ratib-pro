@@ -1039,19 +1039,30 @@ final class ApprovalOversightService
         }
 
         $hr = new HrService();
-        if ($sourceKey === 'hr_leave') {
-            if ($action === 'approve') {
-                $hr->approveLeave($recordId, $uid);
-            } else {
-                $hr->rejectLeave($recordId, $uid);
+        if ($sourceKey === 'hr_leave' || $sourceKey === 'hr_permission' || $sourceKey === 'hr_request') {
+            // Phase G: optional matrix overlay — domain finalize only on final stage / passthrough.
+            $gate = (new HrApprovalMatrixService())->gateOversightDecision(
+                $sourceKey,
+                $recordId,
+                $companyId,
+                $action,
+                $uid
+            );
+            if ($gate === HrApprovalMatrixService::OUTCOME_STAGE_ADVANCED) {
+                return;
             }
-            return;
-        }
-        if ($sourceKey === 'hr_permission') {
-            $this->setHrStatus('rateb_hr_permission_requests', $recordId, $companyId, $action, $uid);
-            return;
-        }
-        if ($sourceKey === 'hr_request') {
+            if ($sourceKey === 'hr_leave') {
+                if ($action === 'approve') {
+                    $hr->approveLeave($recordId, $uid);
+                } else {
+                    $hr->rejectLeave($recordId, $uid);
+                }
+                return;
+            }
+            if ($sourceKey === 'hr_permission') {
+                $this->setHrStatus('rateb_hr_permission_requests', $recordId, $companyId, $action, $uid);
+                return;
+            }
             $this->setEmployeeRequestStatus($recordId, $companyId, $action, $uid);
             return;
         }
@@ -1251,10 +1262,12 @@ final class ApprovalOversightService
         }
         if ($sourceKey === 'hr_leave') {
             $this->resetHrStatus('rateb_leave_requests', $recordId, $companyId);
+            (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
             return;
         }
         if ($sourceKey === 'hr_permission') {
             $this->resetHrStatus('rateb_hr_permission_requests', $recordId, $companyId);
+            (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
             return;
         }
         if ($sourceKey === 'hr_request') {
@@ -1270,6 +1283,7 @@ final class ApprovalOversightService
             if ($stmt->rowCount() < 1) {
                 throw new \RuntimeException(__('invalid_request'));
             }
+            (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
             return;
         }
         if ($sourceKey === 'contract_renewal') {
