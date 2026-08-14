@@ -94,16 +94,34 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase D — P0 Payroll correctness (no rewrite)
 
-**Goal:** Make live payroll honest and less N+1; do not rebuild engine.
+**Status:** COMPLETE (2026-08-14)  
+**Audit:** `docs/hr/HR-PHASE-D-PAYROLL-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-D-PAYROLL-CORRECTNESS-CERTIFICATION.md`
 
-1. Extract `PayrollAttendanceInput` from attendance absences (single query per period).  
-2. Refactor `generatePayrollLines` to batch-load structures/loans/absences.  
-3. Rename UI copy / flash messages so “posted” ≠ “posted to GL” until Accounting adapter exists.  
-4. Document field-level formula in payslip notes.  
-5. Regression tests for generate/approve/post status transitions.  
-6. **Do not** switch SoT to enterprise batches in this phase.
+### Completed
 
-**Exit:** Same business results, clearer semantics, faster generate, tests.
+1. D0 — Full ops payroll flow traced (attendance → lines → approve → post; no GL/transfer).  
+2. D1 — Absence inputs batch-loaded; period BETWEEN month bounds; leave ≠ absent.  
+3. D2 — Formula documented; `salary_base` confirmed; enterprise overlay not competing.  
+4. D3 — State machine unchanged; `post` idempotent when already posted.  
+5. D4 — UI/lang clarify posted ≠ GL ≠ bank; audit flags `gl_posted`/`bank_transfer` false.  
+6. D5 — Read-only `HrPayrollIntegrityService::diagnosePeriod`.  
+7. D6 — `tests/hr/HrPhaseDSecurityTest.php` + B/C/ESS regressions.
+
+### Deferred
+
+- Unpaid leave payroll distinction.  
+- Historical effective-dated ops salary.  
+- GL adapter (Phase E, flag OFF).  
+- Bank / WPS transfers.
+
+### Remaining risks
+
+- Operators may still mentally equate “post” with accounting until training/UI habit settles.  
+- Generate-time salary snapshot can diverge from intended effective dates without process discipline.  
+- N+1 removed for absences/structures/loans; other HR report queries unchanged.
+
+**Exit:** Same business formula, clearer financial-state semantics, tests. **Met.**
 
 ---
 

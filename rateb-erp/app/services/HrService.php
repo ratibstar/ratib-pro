@@ -190,6 +190,15 @@ final class HrService
         }
     }
 
+    /**
+     * Build draft payroll lines for a period.
+     *
+     * Formula (unchanged):
+     *   net = max(0, salary_base + structure_allowances - (structure_deductions + loans + absent_days*(salary_base/30)))
+     * Absence input: rateb_attendance_records.status = 'absent' within calendar month only.
+     * Leave days (status=leave) are NOT deducted. Enterprise salary overlay is NOT used.
+     * Phase D: batch-load absence / structure / loan inputs (same totals, no N+1).
+     */
     public function generatePayrollLines(int $periodId): int
     {
         $period = (new PayrollPeriod())->find($periodId);
@@ -211,34 +220,43 @@ final class HrService
              WHERE company_id = :cid AND status = 'active'",
             ['cid' => $companyId]
         );
+        if (!is_array($employees) || $employees === []) {
+            return 0;
+        }
 
         $lineModel = new PayrollLine();
+        $existingRows = $lineModel->query(
+            'SELECT employee_id FROM rateb_payroll_lines WHERE period_id = :pid AND company_id = :cid',
+            ['pid' => $periodId, 'cid' => $companyId]
+        );
+        $existingEmployeeIds = [];
+        foreach (is_array($existingRows) ? $existingRows : [] as $row) {
+            $eid = (int) ($row['employee_id'] ?? 0);
+            if ($eid > 0) {
+                $existingEmployeeIds[$eid] = true;
+            }
+        }
+
+        $absentByEmployee = $this->batchAbsenceDaysByEmployee($companyId, $start, $end);
+        $structureRowsByEmployee = $this->batchPayrollStructureRows($companyId);
+        $loanByEmployee = $this->batchLoanInstallmentsByEmployee($companyId, $end);
+
         $created = 0;
         foreach ($employees as $emp) {
             $employeeId = (int) ($emp['id'] ?? 0);
-            if ($employeeId < 1) {
-                continue;
-            }
-            $existing = $lineModel->queryOne(
-                'SELECT id FROM rateb_payroll_lines WHERE period_id = :pid AND employee_id = :eid LIMIT 1',
-                ['pid' => $periodId, 'eid' => $employeeId]
-            );
-            if ($existing) {
+            if ($employeeId < 1 || isset($existingEmployeeIds[$employeeId])) {
                 continue;
             }
 
             $basic = (float) ($emp['salary_base'] ?? 0);
-            $absentDays = (int) ((new AttendanceRecord())->queryOne(
-                "SELECT COUNT(*) AS c FROM rateb_attendance_records
-                 WHERE company_id = :cid AND employee_id = :eid
-                   AND attendance_date BETWEEN :s AND :e AND status = 'absent'",
-                ['cid' => $companyId, 'eid' => $employeeId, 's' => $start, 'e' => $end]
-            )['c'] ?? 0);
-
+            $absentDays = (int) ($absentByEmployee[$employeeId] ?? 0);
             $daily = $basic > 0 ? $basic / 30 : 0;
             $absentDeduction = round($daily * $absentDays, 2);
-            $structure = $this->payrollStructureTotals($companyId, $employeeId, $basic);
-            $loanDeduction = $this->loanInstallmentDeduction($companyId, $employeeId, $start, $end);
+            $structure = $this->payrollStructureTotalsFromRows(
+                $structureRowsByEmployee[$employeeId] ?? [],
+                $basic
+            );
+            $loanDeduction = (float) ($loanByEmployee[$employeeId] ?? 0.0);
             $allowances = $structure['allowances'];
             $deductions = round($structure['deductions'] + $loanDeduction + $absentDeduction, 2);
             $net = max(0, round($basic + $allowances - $deductions, 2));
@@ -266,9 +284,105 @@ final class HrService
         if ($created > 0) {
             $this->recordPayrollAudit('calculated', $period, (string) ($period['status'] ?? 'draft'), (string) ($period['status'] ?? 'draft'), [
                 'lines_created' => $created,
+                'period_start' => $start,
+                'period_end' => $end,
+                'gl_posted' => false,
+                'bank_transfer' => false,
             ]);
         }
         return $created;
+    }
+
+    /**
+     * @return array<int, int> employee_id => absent day count in [start,end]
+     */
+    private function batchAbsenceDaysByEmployee(int $companyId, string $start, string $end): array
+    {
+        $rows = (new AttendanceRecord())->query(
+            "SELECT employee_id, COUNT(*) AS c FROM rateb_attendance_records
+             WHERE company_id = :cid
+               AND attendance_date BETWEEN :s AND :e
+               AND status = 'absent'
+             GROUP BY employee_id",
+            ['cid' => $companyId, 's' => $start, 'e' => $end]
+        );
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $eid = (int) ($row['employee_id'] ?? 0);
+            if ($eid > 0) {
+                $out[$eid] = (int) ($row['c'] ?? 0);
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @return array<int, list<array<string, mixed>>>
+     */
+    private function batchPayrollStructureRows(int $companyId): array
+    {
+        $rows = (new HrPayrollStructure())->query(
+            "SELECT ps.employee_id, ps.value, pc.component_type, pc.calc_type
+             FROM rateb_hr_payroll_structures ps
+             JOIN rateb_hr_payroll_components pc ON pc.id = ps.component_id
+             WHERE ps.company_id = :cid AND pc.status = 'active'",
+            ['cid' => $companyId]
+        );
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $eid = (int) ($row['employee_id'] ?? 0);
+            if ($eid < 1) {
+                continue;
+            }
+            $out[$eid][] = $row;
+        }
+        return $out;
+    }
+
+    /**
+     * @return array<int, float>
+     */
+    private function batchLoanInstallmentsByEmployee(int $companyId, string $periodEnd): array
+    {
+        $rows = (new HrLoan())->query(
+            "SELECT employee_id, COALESCE(SUM(installment_amount), 0) AS total
+             FROM rateb_hr_loans
+             WHERE company_id = :cid AND status = 'active'
+               AND paid_installments < installments_count
+               AND start_date <= :end
+             GROUP BY employee_id",
+            ['cid' => $companyId, 'end' => $periodEnd]
+        );
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $eid = (int) ($row['employee_id'] ?? 0);
+            if ($eid > 0) {
+                $out[$eid] = round((float) ($row['total'] ?? 0), 2);
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return array{allowances: float, deductions: float}
+     */
+    private function payrollStructureTotalsFromRows(array $rows, float $basicSalary): array
+    {
+        $allowances = 0.0;
+        $deductions = 0.0;
+        foreach ($rows as $row) {
+            $amount = $this->payrollComponentAmount($row, $basicSalary);
+            if (($row['component_type'] ?? '') === 'allowance') {
+                $allowances += $amount;
+            } else {
+                $deductions += $amount;
+            }
+        }
+        return [
+            'allowances' => round($allowances, 2),
+            'deductions' => round($deductions, 2),
+        ];
     }
 
     /**
@@ -287,16 +401,27 @@ final class HrService
     /**
      * Approved → posted only. Cannot bypass approval (draft/rejected → posted denied).
      * Optional $expectedCompanyId enforces tenant isolation (IDOR guard).
+     *
+     * Phase D: status lock only — does NOT create GL journals or bank transfers.
+     * Idempotent: already-posted periods return without a second audit row.
      */
     public function postPayroll(int $periodId, ?int $expectedCompanyId = null): void
     {
         $period = $this->loadPayrollPeriodForMutation($periodId, $expectedCompanyId);
         $status = (string) ($period['status'] ?? '');
+        if ($status === 'posted') {
+            // Idempotent lock — no duplicate audit / no GL / no transfer side effects.
+            return;
+        }
         if ($status !== 'approved') {
             throw new \RuntimeException(__('payroll_not_approved'));
         }
         (new PayrollPeriod())->update($periodId, ['status' => 'posted']);
-        $this->recordPayrollAudit('posted', $period, 'approved', 'posted');
+        $this->recordPayrollAudit('posted', $period, 'approved', 'posted', [
+            'gl_posted' => false,
+            'bank_transfer' => false,
+            'note' => 'payroll_status_lock_only',
+        ]);
     }
 
     /**
@@ -839,20 +964,7 @@ final class HrService
              WHERE ps.company_id = :cid AND ps.employee_id = :eid AND pc.status = 'active'",
             ['cid' => $companyId, 'eid' => $employeeId]
         );
-        $allowances = 0.0;
-        $deductions = 0.0;
-        foreach ($rows as $row) {
-            $amount = $this->payrollComponentAmount($row, $basicSalary);
-            if (($row['component_type'] ?? '') === 'allowance') {
-                $allowances += $amount;
-            } else {
-                $deductions += $amount;
-            }
-        }
-        return [
-            'allowances' => round($allowances, 2),
-            'deductions' => round($deductions, 2),
-        ];
+        return $this->payrollStructureTotalsFromRows(is_array($rows) ? $rows : [], $basicSalary);
     }
 
     /** @param array<string, mixed> $row */

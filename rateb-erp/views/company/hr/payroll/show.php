@@ -42,6 +42,12 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll-list']);
             ]); ?>
         </div>
     </div>
+    <?php if ($status === 'posted' || $status === 'approved') { ?>
+    <div class="alert alert-info mb-0 rounded-0 border-0 border-bottom small">
+        <i class="fas fa-info-circle"></i>
+        <?php echo __('payroll_posted_status_note'); ?>
+    </div>
+    <?php } ?>
     <div class="rateb-card-body p-0">
         <div class="table-responsive">
             <table class="table rateb-table mb-0">
