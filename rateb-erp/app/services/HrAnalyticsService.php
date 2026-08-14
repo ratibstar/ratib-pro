@@ -145,7 +145,7 @@ final class HrAnalyticsService
         $sql = 'SELECT pp.period_year, pp.period_month, pp.status,
                        COUNT(pl.id) AS line_count,
                        ROUND(SUM(pl.net_salary), 2) AS net_total,
-                       ROUND(SUM(pl.gross_salary), 2) AS gross_total
+                       ROUND(SUM(pl.basic_salary + pl.allowances), 2) AS gross_total
                 FROM rateb_payroll_periods pp
                 LEFT JOIN rateb_payroll_lines pl ON pl.period_id = pp.id AND pl.company_id = pp.company_id
                 WHERE pp.company_id = :cid
