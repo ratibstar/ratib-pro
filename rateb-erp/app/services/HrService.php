@@ -33,7 +33,7 @@ final class HrService
         }
         $emp = (new Employee())->queryOne(
             "SELECT COUNT(*) AS total,
-                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_count
              FROM rateb_employees WHERE company_id = :cid",
             ['cid' => $companyId]
         );
@@ -57,7 +57,7 @@ final class HrService
         );
         return [
             'employees' => (int) ($emp['total'] ?? 0),
-            'active' => (int) ($emp['active'] ?? 0),
+            'active' => (int) ($emp['active_count'] ?? $emp['active'] ?? 0),
             'present_today' => (int) ($att['present'] ?? 0),
             'absent_today' => (int) ($att['absent'] ?? 0),
             'pending_leaves' => (int) ($leaves['c'] ?? 0),

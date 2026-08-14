@@ -278,9 +278,9 @@ final class HrAnalyticsService
     {
         $sql = "SELECT
                     COUNT(*) AS total,
-                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
-                    SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive,
-                    SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS terminated
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_count,
+                    SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive_count,
+                    SUM(CASE WHEN status = 'terminated' THEN 1 ELSE 0 END) AS terminated_count
                 FROM rateb_employees WHERE company_id = :cid";
         $params = ['cid' => $companyId];
         $sql .= $this->employeeFilterSql($filters, $params, '', false);
@@ -290,9 +290,9 @@ final class HrAnalyticsService
 
         return [
             'total' => (int) ($row['total'] ?? 0),
-            'active' => (int) ($row['active'] ?? 0),
-            'inactive' => (int) ($row['inactive'] ?? 0),
-            'terminated' => (int) ($row['terminated'] ?? 0),
+            'active' => (int) ($row['active_count'] ?? 0),
+            'inactive' => (int) ($row['inactive_count'] ?? 0),
+            'terminated' => (int) ($row['terminated_count'] ?? 0),
         ];
     }
 

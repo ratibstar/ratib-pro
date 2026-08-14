@@ -66,7 +66,7 @@ final class HrApprovalInboxController extends Controller
         if ($type === '') {
             $type = 'all';
         }
-        $allowed = ['all', 'leave', 'permission', 'request', 'payroll'];
+        $allowed = ['all', 'leave', 'permission', 'request', 'payroll', 'decision'];
         if (!in_array($type, $allowed, true)) {
             $type = 'all';
         }

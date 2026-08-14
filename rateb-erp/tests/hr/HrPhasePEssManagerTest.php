@@ -169,6 +169,26 @@ final class HrPhasePEssManagerTest
             && !str_contains($manager, 'class ApprovalEngine')
         );
 
+        $classmap = $this->file('/app/Core/generated-classmap.php');
+        $this->record(
+            'Classmap includes Phase F–P bag controllers (autoload fix)',
+            str_contains($classmap, 'HrApprovalInboxController')
+            && str_contains($classmap, 'HrOrganizationController')
+            && str_contains($classmap, 'HrEssPortalController')
+            && str_contains($classmap, 'HrManagerPortalController')
+            && str_contains($classmap, 'HrAnalyticsController')
+            && str_contains($classmap, 'HrLettersController')
+            && str_contains($classmap, 'HrDecisionsController')
+        );
+
+        $this->record(
+            'MariaDB-safe headcount aliases (no AS active/terminated)',
+            str_contains($this->file('/app/services/HrAnalyticsService.php'), 'active_count')
+            && str_contains($this->file('/app/services/HrAnalyticsService.php'), 'terminated_count')
+            && str_contains($this->file('/app/services/HrService.php'), 'active_count')
+            && !preg_match('/AS\s+terminated\b/', $this->file('/app/services/HrAnalyticsService.php'))
+        );
+
         $this->record(
             'Direct API bypass guards: no client employee_id trust in Phase P services',
             !preg_match('/\$_(GET|POST|REQUEST)\s*\[\s*[\'"]employee_id[\'"]\s*\]/', $ess360 . $manager . $phaseC)

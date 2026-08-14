@@ -83,10 +83,18 @@ final class Company extends Model
         $row = $this->queryOne(
             "SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
-                SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) AS suspended
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_count,
+                SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) AS suspended_count
              FROM rateb_companies"
         );
-        return $row ?: ['total' => 0, 'active' => 0, 'suspended' => 0];
+        if (!is_array($row)) {
+            return ['total' => 0, 'active' => 0, 'suspended' => 0];
+        }
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'active' => (int) ($row['active_count'] ?? $row['active'] ?? 0),
+            'suspended' => (int) ($row['suspended_count'] ?? $row['suspended'] ?? 0),
+        ];
     }
 }

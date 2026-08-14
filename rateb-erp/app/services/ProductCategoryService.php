@@ -22,19 +22,19 @@ final class ProductCategoryService
         }
         $row = (new ProductCategory())->queryOne(
             "SELECT COUNT(*) AS total,
-                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active,
-                    SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) AS inactive,
-                    SUM(CASE WHEN is_visible = 1 THEN 1 ELSE 0 END) AS visible,
-                    SUM(CASE WHEN is_visible = 0 THEN 1 ELSE 0 END) AS hidden
+                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_count,
+                    SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) AS inactive_count,
+                    SUM(CASE WHEN is_visible = 1 THEN 1 ELSE 0 END) AS visible_count,
+                    SUM(CASE WHEN is_visible = 0 THEN 1 ELSE 0 END) AS hidden_count
              FROM rateb_product_categories WHERE company_id = :cid",
             ['cid' => $companyId]
         );
         return [
             'total' => (int) ($row['total'] ?? 0),
-            'active' => (int) ($row['active'] ?? 0),
-            'inactive' => (int) ($row['inactive'] ?? 0),
-            'visible' => (int) ($row['visible'] ?? 0),
-            'hidden' => (int) ($row['hidden'] ?? 0),
+            'active' => (int) ($row['active_count'] ?? $row['active'] ?? 0),
+            'inactive' => (int) ($row['inactive_count'] ?? $row['inactive'] ?? 0),
+            'visible' => (int) ($row['visible_count'] ?? $row['visible'] ?? 0),
+            'hidden' => (int) ($row['hidden_count'] ?? $row['hidden'] ?? 0),
         ];
     }
 
