@@ -145,7 +145,7 @@ final class HrmDisciplinaryAction extends Model
 {
     protected string $table = 'rateb_hrm_disciplinary_actions';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['public_uuid', 'company_id', 'branch_id', 'employee_profile_id', 'code', 'action_type', 'title', 'action_date', 'severity_date', 'description', 'status', 'notes', 'version', 'created_by', 'updated_by', 'deleted_at'];
+    protected array $fillable = ['public_uuid', 'company_id', 'branch_id', 'employee_profile_id', 'legacy_employee_id', 'code', 'action_type', 'title', 'action_date', 'severity_date', 'description', 'status', 'notes', 'version', 'created_by', 'updated_by', 'deleted_at'];
 }
 
 final class HrmReward extends Model

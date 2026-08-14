@@ -21,12 +21,14 @@ final class HrApprovalMatrixService
     public const SOURCE_LEAVE = 'hr_leave';
     public const SOURCE_PERMISSION = 'hr_permission';
     public const SOURCE_REQUEST = 'hr_request';
+    public const SOURCE_DECISION = 'hr_decision';
 
     /** @var list<string> */
     public const SUPPORTED_SOURCES = [
         self::SOURCE_LEAVE,
         self::SOURCE_PERMISSION,
         self::SOURCE_REQUEST,
+        self::SOURCE_DECISION,
     ];
 
     public const OUTCOME_PASSTHROUGH = 'passthrough';
@@ -466,16 +468,26 @@ final class HrApprovalMatrixService
 
     private function resolveRequestType(string $sourceKey, int $recordId, int $companyId): string
     {
-        if ($sourceKey !== self::SOURCE_REQUEST) {
-            return '';
+        if ($sourceKey === self::SOURCE_REQUEST) {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                'SELECT request_type FROM rateb_hr_employee_requests
+                 WHERE id = :id AND company_id = :cid LIMIT 1'
+            );
+            $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
+            return trim((string) ($stmt->fetchColumn() ?: ''));
         }
-        $db = Database::connection();
-        $stmt = $db->prepare(
-            'SELECT request_type FROM rateb_hr_employee_requests
-             WHERE id = :id AND company_id = :cid LIMIT 1'
-        );
-        $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
-        return trim((string) ($stmt->fetchColumn() ?: ''));
+        if ($sourceKey === self::SOURCE_DECISION) {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                'SELECT decision_type FROM rateb_hr_decisions
+                 WHERE id = :id AND company_id = :cid LIMIT 1'
+            );
+            $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
+            return trim((string) ($stmt->fetchColumn() ?: ''));
+        }
+
+        return '';
     }
 
     /**
@@ -902,6 +914,19 @@ final class HrApprovalMatrixService
 
     private function resolveRequesterUserId(string $sourceKey, int $recordId, int $companyId): int
     {
+        if ($sourceKey === self::SOURCE_DECISION) {
+            try {
+                $db = Database::connection();
+                $stmt = $db->prepare(
+                    'SELECT created_by FROM rateb_hr_decisions
+                     WHERE id = :id AND company_id = :cid LIMIT 1'
+                );
+                $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
+                return (int) ($stmt->fetchColumn() ?: 0);
+            } catch (\Throwable $e) {
+                return 0;
+            }
+        }
         $table = match ($sourceKey) {
             self::SOURCE_LEAVE => 'rateb_leave_requests',
             self::SOURCE_PERMISSION => 'rateb_hr_permission_requests',

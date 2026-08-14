@@ -167,9 +167,9 @@ final class HrPhaseHMatrixGovernanceTest
         $ok = str_contains($src, "'hr_leave'")
             && str_contains($src, "'hr_permission'")
             && str_contains($src, "'hr_request'")
-            && !str_contains($src, 'hr_decision')
+            && str_contains($src, 'hr_decision') // Phase M additive
             && !str_contains($src, 'hr_expense');
-        $this->record('Only Phase G sources supported', $ok);
+        $this->record('Supported sources include Phase G + M (no expenses engine)', $ok);
     }
 
     private function testCompanyApproveStillBlocked(): void

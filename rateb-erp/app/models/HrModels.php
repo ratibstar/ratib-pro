@@ -38,6 +38,19 @@ final class Employee extends Model
     ];
 }
 
+/** Phase M — HR employee decisions (ops SoT; Oversight source hr_decision). */
+final class HrDecision extends Model
+{
+    protected string $table = 'rateb_hr_decisions';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'employee_id', 'decision_no', 'decision_type', 'effective_date', 'reason',
+        'payload_json', 'status', 'linked_promotion_id', 'linked_transfer_id', 'linked_disciplinary_id',
+        'created_by', 'updated_by', 'approved_by', 'approved_at', 'rejected_by', 'rejected_at',
+        'executed_by', 'executed_at',
+    ];
+}
+
 final class AttendanceRecord extends Model
 {
     protected string $table = 'rateb_attendance_records';

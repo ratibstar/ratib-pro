@@ -370,15 +370,19 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase M — P2 Decisions & disciplinary
 
+**Status:** COMPLETE (2026-08-14)  
+**Certification:** `docs/hr/HR-PHASE-M-DECISIONS-DISCIPLINARY-CERTIFICATION.md`
+
 **Goal:** Unify decisions; activate disciplinary schema.
 
-1. Decision facade + additive header table linking existing promotion/transfer rows.  
-2. Types: termination, salary stop, salary adjustment, promotion, transfer, absence deduction, payroll approval (link).  
-3. Disciplinary service/UI on `rateb_hrm_disciplinary_actions`.  
-4. Side effects go through EmployeeMaster / Attendance / Payroll transactions — no silent column edits.  
-5. Full audit trail.
+1. Decision facade + additive `rateb_hr_decisions` (Oversight source `hr_decision`).  
+2. Types: promotion, salary adjustment/movement, transfer, salary stop, absence deduction, termination.  
+3. Disciplinary service/UI on `rateb_hrm_disciplinary_actions` linked to `rateb_employees`.  
+4. Side effects on Employee Master after approval only (execute-once CAS); salary audited; no payroll formula rewrite.  
+5. Full audit trail (create / approve / reject / execute).  
+6. Employee 360 Decisions + Violations tabs; inbox actionable.
 
-**Exit:** At least termination + promotion decision flows; disciplinary CRUD.
+**Exit:** At least termination + promotion decision flows; disciplinary CRUD. **Met.**
 
 ---
 

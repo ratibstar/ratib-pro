@@ -103,11 +103,13 @@ final class HrPhaseFApprovalTest
     private function testDecisionsExpensesDeferred(): void
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/app/services/HrApprovalInboxService.php');
+        // Phase M: decisions are actionable; expenses remain deferred.
         $ok = str_contains($src, "'decision' => 0")
             && str_contains($src, "'expense' => 0")
             && str_contains($src, 'deferred')
-            && str_contains($src, 'not present');
-        $this->record('Decisions/Expenses documented as deferred (not invented)', $ok);
+            && str_contains($src, 'hr_decision')
+            && str_contains($src, 'Expenses pending queue not present');
+        $this->record('Expenses deferred; decisions wired (Phase M)', $ok);
     }
 
     private function testRouteRegistered(): void

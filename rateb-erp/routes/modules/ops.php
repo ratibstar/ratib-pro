@@ -45,6 +45,8 @@ use Rateb\App\Controllers\Company\HrEmployeeDocumentsController;
 use Rateb\App\Controllers\Company\HrFleetController;
 use Rateb\App\Controllers\Company\HrEmployeeRequestsController;
 use Rateb\App\Controllers\Company\HrLettersController;
+use Rateb\App\Controllers\Company\HrDecisionsController;
+use Rateb\App\Controllers\Company\HrDisciplinaryController;
 use Rateb\App\Controllers\Company\HrAttendanceBulkController;
 use Rateb\App\Controllers\Company\RecruitmentDashboardController;
 use Rateb\App\Controllers\Company\RecruitmentCandidatesController;
@@ -862,6 +864,14 @@ $router->get($app('hr/leaves/balances'), [HrLeavesController::class, 'balances']
 $router->get($app('hr/letters'), [HrLettersController::class, 'index'], $hrLeaveMw);
 $router->post($app('hr/letters/{id}/issue'), [HrLettersController::class, 'issue'], $hrLeaveMw);
 $router->get($app('hr/letters/{id}/download'), [HrLettersController::class, 'download'], $hrLeaveMw);
+$hrEmpMwDec = rateb_erp_mw('hr', '', 'hr-employees');
+$router->get($app('hr/decisions'), [HrDecisionsController::class, 'index'], $hrEmpMwDec);
+$router->get($app('hr/decisions/create'), [HrDecisionsController::class, 'create'], $hrEmpMwDec);
+$router->post($app('hr/decisions'), [HrDecisionsController::class, 'store'], $hrEmpMwDec);
+$router->post($app('hr/decisions/{id}/execute'), [HrDecisionsController::class, 'execute'], $hrEmpMwDec);
+$router->get($app('hr/disciplinary'), [HrDisciplinaryController::class, 'index'], $hrEmpMwDec);
+$router->get($app('hr/disciplinary/create'), [HrDisciplinaryController::class, 'create'], $hrEmpMwDec);
+$router->post($app('hr/disciplinary'), [HrDisciplinaryController::class, 'store'], $hrEmpMwDec);
 
 foreach ($hrCrudRoutes as $path => $cfg) {
     $class = $cfg['class'];

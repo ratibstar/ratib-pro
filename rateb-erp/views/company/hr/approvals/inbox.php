@@ -54,6 +54,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
                         'leave' => __('hr_leaves'),
                         'permission' => __('hr_permission_requests'),
                         'request' => __('hr_employee_requests'),
+                        'decision' => __('hr_decisions'),
                         'payroll' => __('hr_payroll'),
                     ];
                     foreach ($opts as $val => $label) {
@@ -66,9 +67,10 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
         </form>
 
         <div class="row g-2 mb-3">
-            <div class="col-6 col-md-3"><div class="border rounded p-2 small"><?php echo __('hr_leaves'); ?>: <strong><?php echo (int) ($counts['leave'] ?? 0); ?></strong></div></div>
-            <div class="col-6 col-md-3"><div class="border rounded p-2 small"><?php echo __('hr_permission_requests'); ?>: <strong><?php echo (int) ($counts['permission'] ?? 0); ?></strong></div></div>
-            <div class="col-6 col-md-3"><div class="border rounded p-2 small"><?php echo __('hr_employee_requests'); ?>: <strong><?php echo (int) ($counts['request'] ?? 0); ?></strong></div></div>
+            <div class="col-6 col-md-2"><div class="border rounded p-2 small"><?php echo __('hr_leaves'); ?>: <strong><?php echo (int) ($counts['leave'] ?? 0); ?></strong></div></div>
+            <div class="col-6 col-md-2"><div class="border rounded p-2 small"><?php echo __('hr_permission_requests'); ?>: <strong><?php echo (int) ($counts['permission'] ?? 0); ?></strong></div></div>
+            <div class="col-6 col-md-2"><div class="border rounded p-2 small"><?php echo __('hr_employee_requests'); ?>: <strong><?php echo (int) ($counts['request'] ?? 0); ?></strong></div></div>
+            <div class="col-6 col-md-3"><div class="border rounded p-2 small"><?php echo __('hr_decisions'); ?>: <strong><?php echo (int) ($counts['decision'] ?? 0); ?></strong></div></div>
             <div class="col-6 col-md-3"><div class="border rounded p-2 small"><?php echo __('hr_payroll'); ?>: <strong><?php echo (int) ($counts['payroll'] ?? 0); ?></strong></div></div>
         </div>
 

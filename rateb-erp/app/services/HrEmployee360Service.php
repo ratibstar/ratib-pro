@@ -33,6 +33,7 @@ final class HrEmployee360Service
     public const TAB_LETTERS = 'letters';
     public const TAB_PAYROLL = 'payroll';
     public const TAB_DOCUMENTS = 'documents';
+    public const TAB_DECISIONS = 'decisions';
     public const TAB_VIOLATIONS = 'violations';
     public const TAB_TIMELINE = 'timeline';
 
@@ -47,6 +48,7 @@ final class HrEmployee360Service
         self::TAB_LETTERS,
         self::TAB_PAYROLL,
         self::TAB_DOCUMENTS,
+        self::TAB_DECISIONS,
         self::TAB_VIOLATIONS,
         self::TAB_TIMELINE,
     ];
@@ -226,6 +228,10 @@ final class HrEmployee360Service
             self::TAB_DOCUMENTS => [
                 'tab' => $tab,
                 'data' => $this->tabDocuments($companyId, $employeeId),
+            ],
+            self::TAB_DECISIONS => [
+                'tab' => $tab,
+                'data' => $this->tabDecisions($companyId, $employeeId),
             ],
             self::TAB_VIOLATIONS => [
                 'tab' => $tab,
@@ -600,6 +606,30 @@ final class HrEmployee360Service
     /**
      * @return array<string, mixed>
      */
+    private function tabDecisions(int $companyId, int $employeeId): array
+    {
+        $svc = new HrDecisionService();
+        if (!$svc->schemaReady()) {
+            return [
+                'items' => [],
+                'available' => false,
+                'decisions_url' => rateb_url(rateb_app_route('hr/decisions')),
+                'note' => 'decisions_module_deferred',
+            ];
+        }
+        $items = $svc->listForEmployee($companyId, $employeeId, 30);
+
+        return [
+            'items' => $items,
+            'available' => true,
+            'decisions_url' => rateb_url(rateb_app_route('hr/decisions')),
+            'note' => $items === [] ? 'no_records' : null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function tabViolations(int $companyId, int $employeeId): array
     {
         if (!$this->tableExists('rateb_hrm_disciplinary_actions')
@@ -608,28 +638,18 @@ final class HrEmployee360Service
             return [
                 'items' => [],
                 'available' => false,
+                'disciplinary_url' => rateb_url(rateb_app_route('hr/disciplinary')),
                 'note' => 'violations_module_deferred',
             ];
         }
 
         try {
-            $rows = Database::connection()->prepare(
-                'SELECT d.id, d.code, d.action_type, d.title, d.action_date, d.status, d.created_at
-                 FROM rateb_hrm_disciplinary_actions d
-                 INNER JOIN rateb_hrm_employee_profiles p ON p.id = d.employee_profile_id
-                 WHERE d.company_id = :cid
-                   AND p.company_id = :cid2
-                   AND p.legacy_employee_id = :eid
-                   AND d.deleted_at IS NULL
-                 ORDER BY d.id DESC
-                 LIMIT 20'
-            );
-            $rows->execute(['cid' => $companyId, 'cid2' => $companyId, 'eid' => $employeeId]);
-            $items = $rows->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $items = (new HrDisciplinaryService())->listForEmployee($companyId, $employeeId, 20);
         } catch (\Throwable $e) {
             return [
                 'items' => [],
                 'available' => false,
+                'disciplinary_url' => rateb_url(rateb_app_route('hr/disciplinary')),
                 'note' => 'violations_module_deferred',
             ];
         }
@@ -637,6 +657,7 @@ final class HrEmployee360Service
         return [
             'items' => $items,
             'available' => true,
+            'disciplinary_url' => rateb_url(rateb_app_route('hr/disciplinary/create')) . '?employee_id=' . $employeeId,
             'note' => $items === [] ? 'no_records' : null,
         ];
     }
@@ -717,6 +738,35 @@ final class HrEmployee360Service
                 'label' => 'request_submitted',
                 'detail' => (string) ($row['request_type'] ?? ''),
             ];
+        }
+
+        if ((new HrDecisionService())->schemaReady()) {
+            try {
+                $decisions = Database::connection()->prepare(
+                    'SELECT decision_no, decision_type, status, created_at, executed_at, effective_date
+                     FROM rateb_hr_decisions
+                     WHERE company_id = :cid AND employee_id = :eid
+                     ORDER BY id DESC
+                     LIMIT 20'
+                );
+                $decisions->execute(['cid' => $companyId, 'eid' => $employeeId]);
+                foreach ($decisions->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                    $at = (string) (($row['executed_at'] ?? '') !== '' && $row['executed_at'] !== null
+                        ? $row['executed_at']
+                        : ($row['created_at'] ?? $row['effective_date'] ?? ''));
+                    $events[] = [
+                        'at' => $at,
+                        'type' => 'decision_' . (string) ($row['status'] ?? ''),
+                        'label' => 'hr_decision',
+                        'detail' => trim(
+                            (string) ($row['decision_no'] ?? '') . ' · '
+                            . (string) ($row['decision_type'] ?? '')
+                        ),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // schema drift — skip
+            }
         }
 
         $payroll = (new PayrollLine())->query(

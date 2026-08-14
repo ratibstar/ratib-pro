@@ -23,11 +23,12 @@ final class HrPhaseJApprovalInboxTest
         $ctrlBlock = $this->inboxControllerBlock($ctrl);
 
         $this->record(
-            'J1 actionable sources leave/permission/request only',
+            'J1 actionable sources leave/permission/request/decision (not payroll)',
             str_contains($inbox, 'ACTIONABLE_SOURCES')
             && str_contains($inbox, "'hr_leave'")
             && str_contains($inbox, "'hr_permission'")
             && str_contains($inbox, "'hr_request'")
+            && str_contains($inbox, "'hr_decision'")
             && str_contains($inbox, 'hr_inbox_payroll_not_actionable')
             && preg_match("/ACTIONABLE_SOURCES\s*=\s*\[[^\]]*hr_payroll/", $inbox) !== 1
         );

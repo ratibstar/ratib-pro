@@ -766,3 +766,188 @@ final class HrAttendanceBulkController extends Controller
         $this->redirect(rateb_url(rateb_app_route('hr/attendance/bulk')) . '?date=' . urlencode($date));
     }
 }
+
+/** Phase M — HR employee decisions (approve via inbox/Matrix; execute once). */
+final class HrDecisionsController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $status = trim((string) $this->input('status', 'all'));
+        $type = trim((string) $this->input('type', 'all'));
+        $svc = new \Rateb\App\Services\HrDecisionService();
+        $items = $companyId > 0 ? $svc->list($companyId, $status === 'all' ? null : $status, $type === 'all' ? null : $type) : [];
+        $this->view('company/hr/decisions/index', [
+            'title' => __('hr_decisions'),
+            'companyId' => $companyId,
+            'items' => $items,
+            'statusFilter' => $status,
+            'typeFilter' => $type,
+            'decisionTypes' => \Rateb\App\Services\HrDecisionService::TYPES,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/decisions'),
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage')),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $employees = $companyId > 0
+            ? (new \Rateb\App\Models\Employee())->query(
+                "SELECT id, employee_code, name, status FROM rateb_employees
+                 WHERE company_id = :cid ORDER BY name ASC LIMIT 500",
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/hr/decisions/create', [
+            'title' => __('hr_decision_new'),
+            'companyId' => $companyId,
+            'employees' => $employees,
+            'decisionTypes' => \Rateb\App\Services\HrDecisionService::TYPES,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/decisions'),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/decisions/create')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        try {
+            $result = (new \Rateb\App\Services\HrDecisionService())->create($companyId, [
+                'employee_id' => (int) $this->input('employee_id', 0),
+                'decision_type' => (string) $this->input('decision_type', ''),
+                'effective_date' => (string) $this->input('effective_date', ''),
+                'reason' => (string) $this->input('reason', ''),
+                'new_salary_base' => $this->input('new_salary_base', null),
+                'new_job_title' => (string) $this->input('new_job_title', ''),
+                'new_department_id' => (int) $this->input('new_department_id', 0),
+                'new_branch_id' => (int) $this->input('new_branch_id', 0),
+                'deduction_days' => $this->input('deduction_days', null),
+                'deduction_amount' => $this->input('deduction_amount', null),
+                'note' => (string) $this->input('note', ''),
+            ]);
+            SessionManager::flash('success', __('hr_decision_created') . ' ' . ($result['decision_no'] ?? ''));
+            $this->redirect(rateb_url(rateb_app_route('hr/decisions')));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('save_failed'));
+            $this->redirect(rateb_url(rateb_app_route('hr/decisions/create')));
+        }
+    }
+
+    public function execute(array $params): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/decisions')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $out = (new \Rateb\App\Services\HrDecisionService())->execute($companyId, $id);
+            SessionManager::flash(
+                'success',
+                $out['already'] ? __('hr_decision_already_executed') : __('hr_decision_executed')
+            );
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('access_denied'));
+        }
+        $this->redirect(rateb_url(rateb_app_route('hr/decisions')));
+    }
+}
+
+/** Phase M — Disciplinary linked to rateb_employees. */
+final class HrDisciplinaryController extends Controller
+{
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $employeeId = (int) $this->input('employee_id', 0);
+        $svc = new \Rateb\App\Services\HrDisciplinaryService();
+        $items = $companyId > 0
+            ? $svc->list($companyId, $employeeId > 0 ? $employeeId : null)
+            : [];
+        $this->view('company/hr/disciplinary/index', [
+            'title' => __('hr_disciplinary'),
+            'companyId' => $companyId,
+            'items' => $items,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/disciplinary'),
+            'canManage' => function_exists('rateb_can') && (rateb_can('hr.manage') || rateb_can('hr-employees.manage')),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $companyId = rateb_resolve_ops_company_id();
+        $employees = $companyId > 0
+            ? (new \Rateb\App\Models\Employee())->query(
+                "SELECT id, employee_code, name FROM rateb_employees
+                 WHERE company_id = :cid ORDER BY name ASC LIMIT 500",
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/hr/disciplinary/create', [
+            'title' => __('hr_disciplinary_new'),
+            'companyId' => $companyId,
+            'employees' => $employees,
+            'actionTypes' => \Rateb\App\Services\HrDisciplinaryService::ACTION_TYPES,
+            'csrf' => Csrf::token(),
+            'routePrefix' => rateb_app_route('hr/disciplinary'),
+            'prefillEmployeeId' => (int) $this->input('employee_id', 0),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url(rateb_app_route('hr/disciplinary/create')));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        try {
+            $result = (new \Rateb\App\Services\HrDisciplinaryService())->create($companyId, [
+                'employee_id' => (int) $this->input('employee_id', 0),
+                'action_type' => (string) $this->input('action_type', 'warning'),
+                'title' => (string) $this->input('title', ''),
+                'action_date' => (string) $this->input('action_date', ''),
+                'description' => (string) $this->input('description', ''),
+                'notes' => (string) $this->input('notes', ''),
+            ]);
+            SessionManager::flash('success', __('hr_disciplinary_created') . ' ' . ($result['code'] ?? ''));
+            $this->redirect(rateb_url(rateb_app_route('hr/disciplinary')));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage() !== '' ? $e->getMessage() : __('save_failed'));
+            $this->redirect(rateb_url(rateb_app_route('hr/disciplinary/create')));
+        }
+    }
+}

@@ -607,6 +607,17 @@ final class ApprovalOversightService
                 'route' => 'hr/payroll',
                 'queue_route' => 'hr/payroll',
             ],
+            'hr_decision' => [
+                'category' => 'hr',
+                'label' => 'hr_decisions',
+                'table' => 'rateb_hr_decisions',
+                'no_column' => 'decision_no',
+                'date_column' => 'created_at',
+                'status_column' => 'status',
+                'status_value' => 'pending',
+                'route' => 'hr/decisions',
+                'queue_route' => 'hr/decisions',
+            ],
         ];
     }
 
@@ -1039,8 +1050,8 @@ final class ApprovalOversightService
         }
 
         $hr = new HrService();
-        if ($sourceKey === 'hr_leave' || $sourceKey === 'hr_permission' || $sourceKey === 'hr_request') {
-            // Phase G: optional matrix overlay — domain finalize only on final stage / passthrough.
+        if ($sourceKey === 'hr_leave' || $sourceKey === 'hr_permission' || $sourceKey === 'hr_request' || $sourceKey === 'hr_decision') {
+            // Phase G/M: optional matrix overlay — domain finalize only on final stage / passthrough.
             $gate = (new HrApprovalMatrixService())->gateOversightDecision(
                 $sourceKey,
                 $recordId,
@@ -1061,6 +1072,15 @@ final class ApprovalOversightService
             }
             if ($sourceKey === 'hr_permission') {
                 $this->setHrStatus('rateb_hr_permission_requests', $recordId, $companyId, $action, $uid);
+                return;
+            }
+            if ($sourceKey === 'hr_decision') {
+                $dec = new HrDecisionService();
+                if ($action === 'approve') {
+                    $dec->finalizeApprove($companyId, $recordId, $uid);
+                } else {
+                    $dec->finalizeReject($companyId, $recordId, $uid);
+                }
                 return;
             }
             $this->setEmployeeRequestStatus($recordId, $companyId, $action, $uid);
@@ -1283,6 +1303,11 @@ final class ApprovalOversightService
             if ($stmt->rowCount() < 1) {
                 throw new \RuntimeException(__('invalid_request'));
             }
+            (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
+            return;
+        }
+        if ($sourceKey === 'hr_decision') {
+            (new HrDecisionService())->undoToPending($companyId, $recordId);
             (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
             return;
         }

@@ -19,11 +19,11 @@ use PDO;
 final class HrApprovalInboxService
 {
     /** @var list<string> */
-    public const HR_SOURCE_KEYS = ['hr_leave', 'hr_permission', 'hr_request', 'hr_payroll'];
+    public const HR_SOURCE_KEYS = ['hr_leave', 'hr_permission', 'hr_request', 'hr_payroll', 'hr_decision'];
 
-    /** Sources that may be decided from the company inbox (Phase J). */
+    /** Sources that may be decided from the company inbox (Phase J + M). */
     /** @var list<string> */
-    public const ACTIONABLE_SOURCES = ['hr_leave', 'hr_permission', 'hr_request'];
+    public const ACTIONABLE_SOURCES = ['hr_leave', 'hr_permission', 'hr_request', 'hr_decision'];
 
     /** @var array<string, string> source_key => inbox type */
     public const TYPE_BY_SOURCE = [
@@ -31,6 +31,7 @@ final class HrApprovalInboxService
         'hr_permission' => 'permission',
         'hr_request' => 'request',
         'hr_payroll' => 'payroll',
+        'hr_decision' => 'decision',
     ];
 
     /**
@@ -52,7 +53,6 @@ final class HrApprovalInboxService
             'total' => 0,
         ];
         $deferred = [
-            'decision' => 'HR Decisions module not present in live ops — deferred.',
             'expense' => 'HR Expenses pending queue not present — accounting vouchers stay in Accounting oversight.',
         ];
 
@@ -261,6 +261,7 @@ final class HrApprovalInboxService
             'hr_permission' => 'rateb_hr_permission_requests',
             'hr_request' => 'rateb_hr_employee_requests',
             'hr_payroll' => 'rateb_payroll_periods',
+            'hr_decision' => 'rateb_hr_decisions',
             default => '',
         };
         if ($table === '' || $recordId < 1) {
@@ -285,6 +286,7 @@ final class HrApprovalInboxService
             'hr_leave' => 'rateb_leave_requests',
             'hr_permission' => 'rateb_hr_permission_requests',
             'hr_request' => 'rateb_hr_employee_requests',
+            'hr_decision' => 'rateb_hr_decisions',
             default => '',
         };
         if ($table === '') {
@@ -396,6 +398,28 @@ final class HrApprovalInboxService
                         (int) ($row['period_year'] ?? 0),
                         (int) ($row['period_month'] ?? 0),
                         (string) ($row['status'] ?? '')
+                    ),
+                ];
+            }
+            if ($sourceKey === 'hr_decision') {
+                $stmt = $db->prepare(
+                    "SELECT e.name, e.employee_code, d.decision_type, d.decision_no, d.effective_date
+                     FROM rateb_hr_decisions d
+                     JOIN rateb_employees e ON e.id = d.employee_id AND e.company_id = d.company_id
+                     WHERE d.id = :id AND d.company_id = :cid LIMIT 1"
+                );
+                $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$row) {
+                    return $empty;
+                }
+                return [
+                    'employee_name' => (string) ($row['name'] ?? ''),
+                    'employee_code' => (string) ($row['employee_code'] ?? ''),
+                    'summary' => trim(
+                        (string) ($row['decision_no'] ?? '') . ' · '
+                        . (string) ($row['decision_type'] ?? '') . ' · '
+                        . (string) ($row['effective_date'] ?? '')
                     ),
                 ];
             }

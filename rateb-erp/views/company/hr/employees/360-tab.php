@@ -358,8 +358,54 @@ if ($tab === 'documents') {
     return;
 }
 
+if ($tab === 'decisions') {
+    $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+    $decisionsUrl = (string) ($data['decisions_url'] ?? '');
+    echo '<div class="d-flex justify-content-between align-items-center mb-2">';
+    echo '<h2 class="h6 mb-0">' . $escape(__('hr_decisions')) . '</h2>';
+    if ($decisionsUrl !== '') {
+        echo '<a class="btn btn-sm btn-outline-secondary" href="' . $escape($decisionsUrl) . '">' . $escape(__('hr_decisions')) . '</a>';
+    }
+    echo '</div>';
+    if (empty($data['available'])) {
+        echo '<p class="text-muted mb-0">' . $escape(__('hr_360_decisions_unavailable')) . '</p>';
+        return;
+    }
+    if ($items === []) {
+        echo '<p class="text-muted mb-0">' . $escape(__('no_records')) . '</p>';
+        return;
+    }
+    ?>
+    <div class="table-responsive">
+        <table class="table rateb-table table-sm mb-0"><thead><tr>
+            <th><?php echo __('hr_decision_no'); ?></th>
+            <th><?php echo __('type'); ?></th>
+            <th><?php echo __('date'); ?></th>
+            <th><?php echo __('status'); ?></th>
+        </tr></thead><tbody>
+        <?php foreach ($items as $row) { ?>
+            <tr>
+                <td class="rateb-ltr-num"><?php echo $escape((string) ($row['decision_no'] ?? '')); ?></td>
+                <td><?php echo $escape(__('hr_decision_type_' . (string) ($row['decision_type'] ?? ''))); ?></td>
+                <td class="rateb-ltr-num"><?php echo $fmtDate((string) ($row['effective_date'] ?? $row['created_at'] ?? '')); ?></td>
+                <td><?php echo $escape((string) ($row['status'] ?? '')); ?></td>
+            </tr>
+        <?php } ?>
+        </tbody></table>
+    </div>
+    <?php
+    return;
+}
+
 if ($tab === 'violations') {
     $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+    $discUrl = (string) ($data['disciplinary_url'] ?? '');
+    echo '<div class="d-flex justify-content-between align-items-center mb-2">';
+    echo '<h2 class="h6 mb-0">' . $escape(__('hr_disciplinary')) . '</h2>';
+    if ($discUrl !== '') {
+        echo '<a class="btn btn-sm btn-outline-primary" href="' . $escape($discUrl) . '">' . $escape(__('hr_disciplinary_new')) . '</a>';
+    }
+    echo '</div>';
     if (empty($data['available'])) {
         echo '<p class="text-muted mb-0">' . $escape(__('hr_360_violations_unavailable')) . '</p>';
         return;

@@ -36,6 +36,7 @@ $tabLabels = [
     'letters' => __('hr_360_tab_letters'),
     'payroll' => __('hr_360_tab_payroll'),
     'documents' => __('hr_360_tab_documents'),
+    'decisions' => __('hr_360_tab_decisions'),
     'violations' => __('hr_360_tab_violations'),
     'timeline' => __('hr_360_tab_timeline'),
 ];
