@@ -43,6 +43,11 @@ final class HrDashboardController extends Controller
             'quickActions' => $cc['quick_actions'],
             'hubLinks' => $cc['hub_links'],
             'analyticsWidgets' => $cc['analytics_widgets'] ?? [],
+            'ops' => $cc['ops'] ?? [],
+            'overdueApprovals' => (int) ($cc['overdue_approvals'] ?? 0),
+            'contractMilestones' => $cc['contract_milestones'] ?? ['d30' => 0, 'd15' => 0, 'd7' => 0],
+            'attendanceAlerts' => $cc['attendance_alerts'] ?? ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')],
+            'hrTasks' => $cc['hr_tasks'] ?? [],
             'lookupUrl' => rateb_url(rateb_app_route('hr/employees/lookup')),
         ], 'main');
     }

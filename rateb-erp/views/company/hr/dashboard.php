@@ -32,6 +32,10 @@ $alerts = $alerts ?? [];
 $quickActions = $quickActions ?? [];
 $hubLinks = $hubLinks ?? [];
 $lookupUrl = (string) ($lookupUrl ?? rateb_url(rateb_app_route('hr/employees/lookup')));
+$overdueApprovals = (int) ($overdueApprovals ?? 0);
+$contractMilestones = $contractMilestones ?? ['d30' => 0, 'd15' => 0, 'd7' => 0];
+$attendanceAlerts = $attendanceAlerts ?? ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')];
+$hrTasks = $hrTasks ?? [];
 $escape = static fn ($v): string => \Rateb\App\Core\View::escape((string) $v);
 $approvalTotal = (int) ($approvalCenter['total'] ?? 0);
 
@@ -121,6 +125,8 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
         ['label' => __('hr_pending_actions'), 'value' => $approvalTotal, 'href' => rateb_url(rateb_app_route('hr/approvals-inbox'))],
         ['label' => __('hr_cc_pending_decisions'), 'value' => $pendingDecisions, 'href' => rateb_url(rateb_app_route('hr/approvals-inbox')) . '?type=decision'],
         ['label' => __('hr_cc_contracts_expiring'), 'value' => $contractsExpiringCount, 'href' => rateb_url(rateb_app_route('hr/employment-contracts'))],
+        ['label' => __('hr_q_task_overdue_approvals'), 'value' => $overdueApprovals, 'href' => rateb_url(rateb_app_route('hr/approvals-inbox'))],
+        ['label' => __('hr_q_tile_attendance_alerts'), 'value' => (int) ($attendanceAlerts['absent'] ?? 0) + (int) ($attendanceAlerts['late'] ?? 0), 'href' => rateb_url(rateb_app_route('hr/attendance'))],
     ];
     foreach ($statTiles as $tile) { ?>
         <div class="col-6 col-md-4 col-xl-3">
@@ -132,6 +138,50 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
             </a>
         </div>
     <?php } ?>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <div class="rateb-card h-100">
+            <div class="rateb-card-header"><?php echo __('hr_q_contracts_milestones'); ?></div>
+            <div class="rateb-card-body">
+                <div class="d-flex justify-content-between small mb-1"><span>30d</span><strong class="rateb-ltr-num"><?php echo (int) ($contractMilestones['d30'] ?? 0); ?></strong></div>
+                <div class="d-flex justify-content-between small mb-1"><span>15d</span><strong class="rateb-ltr-num"><?php echo (int) ($contractMilestones['d15'] ?? 0); ?></strong></div>
+                <div class="d-flex justify-content-between small"><span>7d</span><strong class="rateb-ltr-num"><?php echo (int) ($contractMilestones['d7'] ?? 0); ?></strong></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="rateb-card h-100">
+            <div class="rateb-card-header"><?php echo __('hr_q_task_attendance'); ?></div>
+            <div class="rateb-card-body">
+                <div class="d-flex justify-content-between small mb-1"><span><?php echo __('hr_absent_today'); ?></span><strong class="rateb-ltr-num"><?php echo (int) ($attendanceAlerts['absent'] ?? 0); ?></strong></div>
+                <div class="d-flex justify-content-between small mb-1"><span><?php echo __('hr_cc_late_today'); ?></span><strong class="rateb-ltr-num"><?php echo (int) ($attendanceAlerts['late'] ?? 0); ?></strong></div>
+                <div class="small text-muted rateb-ltr-num"><?php echo $escape((string) ($attendanceAlerts['date'] ?? '')); ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="rateb-card h-100">
+            <div class="rateb-card-header"><?php echo __('hr_q_hr_tasks'); ?></div>
+            <div class="rateb-card-body p-0">
+                <?php if ($hrTasks === []) { ?>
+                    <p class="text-muted small p-3 mb-0"><?php echo __('hr_q_no_tasks'); ?></p>
+                <?php } else { ?>
+                <ul class="list-group list-group-flush">
+                    <?php foreach ($hrTasks as $task) { ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="<?php echo $escape((string) ($task['url'] ?? '#')); ?>">
+                                <?php echo $escape(__((string) ($task['label'] ?? ''))); ?>
+                            </a>
+                            <span class="badge text-bg-secondary rateb-ltr-num"><?php echo (int) ($task['count'] ?? 0); ?></span>
+                        </li>
+                    <?php } ?>
+                </ul>
+                <?php } ?>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="rateb-card mb-3">

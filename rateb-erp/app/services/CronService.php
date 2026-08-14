@@ -33,6 +33,7 @@ final class CronService
             'contract_renewal_reminders' => (new ContractAutomationService())->processRenewalReminders(),
             'hr_employment_contract_status' => (new HrEmploymentContractService())->processExpiryStatus(),
             'hr_employment_contract_alerts' => (new HrEmploymentContractService())->processExpiryAlerts(),
+            'hr_ops_automation' => 0,
             'asset_maintenance' => (new AssetDeviceAutomationService())->processAssetMaintenanceReminders(),
             'device_maintenance' => (new AssetDeviceAutomationService())->processDeviceMaintenanceReminders(),
             'warranty_alerts' => (new AssetDeviceAutomationService())->processWarrantyExpiryAlerts(),
@@ -45,6 +46,17 @@ final class CronService
             'cms_pages_published' => 0,
             'cms_articles_published' => 0,
         ];
+
+        $ops = (new HrOpsAutomationService())->runAll();
+        $stats['hr_ops_automation'] = (int) array_sum([
+            (int) ($ops['contracts'] ?? 0),
+            (int) ($ops['leaves'] ?? 0),
+            (int) ($ops['attendance'] ?? 0),
+            (int) ($ops['payroll'] ?? 0),
+            (int) ($ops['requests'] ?? 0),
+            (int) ($ops['decisions'] ?? 0),
+            (int) ($ops['escalations'] ?? 0),
+        ]);
 
         $cmsPublish = (new CmsCronService())->publishScheduled();
         $stats['cms_pages_published'] = $cmsPublish['pages'];

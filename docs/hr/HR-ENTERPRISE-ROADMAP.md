@@ -445,7 +445,29 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase Q — (not started)
+## Phase Q — HR Operations Automation — COMPLETE
+
+**Commit:** (pending ship)  
+**Cert:** `docs/hr/HR-PHASE-Q-OPERATIONS-AUTOMATION-CERTIFICATION.md`
+
+| Gate | Result |
+|------|--------|
+| Q0 Contracts automation | PASS |
+| Q1 Leave reminders | PASS |
+| Q2 Attendance summary | PASS |
+| Q3 Payroll reminders | PASS |
+| Q4 Requests/Decisions + escalation | PASS |
+| Q5 Existing engines only | PASS |
+| Q6 Idempotency ledger | PASS |
+| Q7 Audit | PASS |
+| Q8 Security / tenant | PASS |
+| Q9 Command Center + regression | PASS |
+
+**Exit:** Daily HR ops reminders via cron + NotificationService + Command Center. **Met.**
+
+---
+
+## Phase R — (not started)
 
 ## Cross-cutting for every implementation phase
 

@@ -37,6 +37,7 @@ final class HrCommandCenterService
         $stats = $this->workforceStats($companyId);
         $inbox = (new HrApprovalInboxService())->counts($companyId);
         $pendingDecisions = $this->countPendingDecisions($companyId);
+        $ops = (new HrOpsAutomationService())->commandCenterOps($companyId);
 
         return [
             'stats' => $stats,
@@ -56,9 +57,14 @@ final class HrCommandCenterService
             'recent_requests' => $this->recentRequests($companyId, self::LIST_LIMIT),
             'recent_decisions' => $this->recentDecisions($companyId, self::LIST_LIMIT),
             'upcoming_leaves' => $this->upcomingLeaves($companyId, self::UPCOMING_LEAVE_DAYS, self::LIST_LIMIT),
-            'alerts' => $this->buildAlerts($companyId, $actorUserId, $inbox, $pendingDecisions),
+            'alerts' => $this->buildAlerts($companyId, $actorUserId, $inbox, $pendingDecisions, $ops),
             'quick_actions' => $this->quickActions(),
             'hub_links' => $this->employee360HubLinks(),
+            'ops' => $ops,
+            'overdue_approvals' => (int) ($ops['overdue_approvals'] ?? 0),
+            'contract_milestones' => $ops['contracts'] ?? ['d30' => 0, 'd15' => 0, 'd7' => 0],
+            'attendance_alerts' => $ops['attendance'] ?? ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')],
+            'hr_tasks' => $ops['tasks'] ?? [],
             'analytics_widgets' => (new HrAnalyticsService())->commandWidgets(
                 $companyId,
                 $this->actorCanViewSalary()
@@ -205,11 +211,22 @@ final class HrCommandCenterService
 
     /**
      * @param array<string, int> $inbox
+     * @param array<string, mixed> $ops
      * @return list<array<string, mixed>>
      */
-    private function buildAlerts(int $companyId, int $actorUserId, array $inbox, int $pendingDecisions): array
+    private function buildAlerts(int $companyId, int $actorUserId, array $inbox, int $pendingDecisions, array $ops = []): array
     {
         $alerts = [];
+        $overdue = (int) ($ops['overdue_approvals'] ?? 0);
+        if ($overdue > 0) {
+            $alerts[] = [
+                'type' => 'danger',
+                'code' => 'overdue_approvals',
+                'title' => __('hr_q_task_overdue_approvals'),
+                'message' => __('hr_q_overdue_approvals_body', ['count' => $overdue]),
+                'url' => rateb_url(rateb_app_route('hr/approvals-inbox')),
+            ];
+        }
         $pendingTotal = (int) ($inbox['total'] ?? 0);
         if ($pendingTotal > 0) {
             $alerts[] = [
@@ -229,14 +246,31 @@ final class HrCommandCenterService
                 'url' => rateb_url(rateb_app_route('hr/approvals-inbox')) . '?type=decision',
             ];
         }
-        $expiring = $this->countContractsExpiringSoon($companyId, self::CONTRACT_ALERT_DAYS);
-        if ($expiring > 0) {
+        $d7 = (int) (($ops['contracts']['d7'] ?? 0));
+        $d15 = (int) (($ops['contracts']['d15'] ?? 0));
+        $d30 = (int) (($ops['contracts']['d30'] ?? 0));
+        if ($d7 > 0 || $d15 > 0 || $d30 > 0) {
             $alerts[] = [
-                'type' => 'info',
+                'type' => $d7 > 0 ? 'warning' : 'info',
                 'code' => 'contracts_expiring',
                 'title' => __('hr_cc_alert_contracts_expiring'),
-                'message' => __('hr_cc_alert_contracts_expiring_body', ['count' => $expiring]),
+                'message' => __('hr_q_contracts_milestones_body', [
+                    'd7' => $d7,
+                    'd15' => $d15,
+                    'd30' => $d30,
+                ]),
                 'url' => rateb_url(rateb_app_route('hr/employment-contracts')),
+            ];
+        }
+        $absent = (int) (($ops['attendance']['absent'] ?? 0));
+        $late = (int) (($ops['attendance']['late'] ?? 0));
+        if ($absent > 0 || $late > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'code' => 'attendance_alerts',
+                'title' => __('hr_q_task_attendance'),
+                'message' => __('hr_q_attendance_alert_body', ['absent' => $absent, 'late' => $late]),
+                'url' => rateb_url(rateb_app_route('hr/attendance')),
             ];
         }
         $upcoming = count($this->upcomingLeaves($companyId, self::UPCOMING_LEAVE_DAYS, 1));
@@ -268,7 +302,7 @@ final class HrCommandCenterService
             }
         }
 
-        return array_slice($alerts, 0, 12);
+        return array_slice($alerts, 0, 14);
     }
 
     private function countPendingDecisions(int $companyId): int
@@ -473,6 +507,17 @@ final class HrCommandCenterService
             'alerts' => [],
             'quick_actions' => $this->quickActions(),
             'hub_links' => $this->employee360HubLinks(),
+            'ops' => [
+                'overdue_approvals' => 0,
+                'contracts' => ['d30' => 0, 'd15' => 0, 'd7' => 0],
+                'attendance' => ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')],
+                'tasks' => [],
+                'escalation_days' => HrOpsAutomationService::DEFAULT_ESCALATION_DAYS,
+            ],
+            'overdue_approvals' => 0,
+            'contract_milestones' => ['d30' => 0, 'd15' => 0, 'd7' => 0],
+            'attendance_alerts' => ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')],
+            'hr_tasks' => [],
             'analytics_widgets' => [
                 'headcount_active' => 0,
                 'absent_30d' => 0,
