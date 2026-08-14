@@ -447,7 +447,7 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase Q — HR Operations Automation — COMPLETE
 
-**Commit:** (pending ship)  
+**Commit:** `21e66699`  
 **Cert:** `docs/hr/HR-PHASE-Q-OPERATIONS-AUTOMATION-CERTIFICATION.md`
 
 | Gate | Result |

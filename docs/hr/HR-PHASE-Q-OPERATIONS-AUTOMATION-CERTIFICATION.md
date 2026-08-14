@@ -2,7 +2,9 @@
 
 **Status:** COMPLETE  
 **Date:** 2026-08-14  
-**Base:** Phase P ESS/Manager (`ebb3de21` + production hotfixes)
+**Base:** Phase P ESS/Manager (`ebb3de21` + production hotfixes)  
+**Commit:** `21e66699`  
+**Deploy:** [success](https://github.com/ratibstar/ratib-pro/actions/runs/31839773764)
 
 ---
 
