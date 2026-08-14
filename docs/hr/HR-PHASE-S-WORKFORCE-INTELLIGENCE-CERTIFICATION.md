@@ -1,10 +1,10 @@
 # RATIB ERP — HR Phase S Workforce Intelligence Certification
 
-**Status:** COMPLETE (pending deploy stamp)  
+**Status:** COMPLETE  
 **Date:** 2026-08-15  
 **Base:** Phase R Saudi Compliance (`50ad4cf4` / stamp `00f22f4a`)  
-**Commit:** _(pending)_  
-**Deploy:** _(pending)_
+**Commit:** `a48cce77`  
+**Deploy:** [success](https://github.com/ratibstar/ratib-pro/actions/runs/31848322456)
 
 ---
 
@@ -44,8 +44,8 @@ Turn HR into an executive decision-support layer: workforce planning, attrition,
 
 | Suite | Result |
 |-------|--------|
-| `run-hr-phase-s-tests.php` | _(pending)_ |
-| Phase B–R regressions | _(pending)_ |
+| `run-hr-phase-s-tests.php` | **CLEAR** |
+| Phase B–R regressions | **CLEAR** |
 
 ---
 
@@ -56,4 +56,4 @@ Turn HR into an executive decision-support layer: workforce planning, attrition,
 - GOSI employer cost is a readiness model (Phase R rates), not a live filing.  
 - Time-to-hire requires recruitment status history rows.
 
-**Exit:** Executive workforce intelligence is available in Admin and on Command Center. **Met (post-deploy).**
+**Exit:** Executive workforce intelligence is available in Admin and on Command Center. **Met.**
