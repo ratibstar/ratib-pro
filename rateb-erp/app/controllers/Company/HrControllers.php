@@ -100,19 +100,14 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = (int) rateb_resolve_ops_company_id();
         }
-        $userModel = new \Rateb\App\Models\User();
-        $user = $companyId > 0
-            ? $userModel->queryOne(
-                'SELECT id FROM rateb_users WHERE LOWER(TRIM(email)) = :em AND company_id = :cid LIMIT 1',
-                ['em' => $email, 'cid' => $companyId]
-            )
-            : null;
-        if (!is_array($user)) {
-            $user = $userModel->queryOne(
-                'SELECT id FROM rateb_users WHERE LOWER(TRIM(email)) = :em ORDER BY id ASC LIMIT 1',
-                ['em' => $email]
-            );
+        // Phase B: company-scoped bind only — never link a user from another tenant.
+        if ($companyId < 1) {
+            return;
         }
+        $user = (new \Rateb\App\Models\User())->queryOne(
+            'SELECT id FROM rateb_users WHERE LOWER(TRIM(email)) = :em AND company_id = :cid LIMIT 1',
+            ['em' => $email, 'cid' => $companyId]
+        );
         if (is_array($user) && (int) ($user['id'] ?? 0) > 0) {
             $data['user_id'] = (int) $user['id'];
         }
@@ -590,10 +585,10 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
         $lines = (new \Rateb\App\Models\PayrollLine())->query(
             "SELECT pl.*, e.name AS employee_name, e.employee_code
              FROM rateb_payroll_lines pl
-             JOIN rateb_employees e ON e.id = pl.employee_id
-             WHERE pl.period_id = :pid
+             JOIN rateb_employees e ON e.id = pl.employee_id AND e.company_id = pl.company_id
+             WHERE pl.period_id = :pid AND pl.company_id = :cid
              ORDER BY e.name ASC",
-            ['pid' => $id]
+            ['pid' => $id, 'cid' => (int) ($period['company_id'] ?? 0)]
         );
         $this->view($this->viewPrefix . '/show', [
             'title' => __('hr_payroll'),
@@ -634,9 +629,9 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
         $lines = (new \Rateb\App\Models\PayrollLine())->query(
             "SELECT pl.*, e.name AS employee_name, e.employee_code
              FROM rateb_payroll_lines pl
-             JOIN rateb_employees e ON e.id = pl.employee_id
-             WHERE pl.period_id = :pid ORDER BY e.name ASC",
-            ['pid' => $id]
+             JOIN rateb_employees e ON e.id = pl.employee_id AND e.company_id = pl.company_id
+             WHERE pl.period_id = :pid AND pl.company_id = :cid ORDER BY e.name ASC",
+            ['pid' => $id, 'cid' => (int) ($period['company_id'] ?? 0)]
         );
         $exportRows = [];
         foreach ($lines as $line) {
@@ -668,9 +663,9 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
         $line = (new \Rateb\App\Models\PayrollLine())->queryOne(
             "SELECT pl.*, e.name AS employee_name, e.employee_code, e.job_title, e.national_id
              FROM rateb_payroll_lines pl
-             JOIN rateb_employees e ON e.id = pl.employee_id
-             WHERE pl.id = :lid AND pl.period_id = :pid LIMIT 1",
-            ['lid' => $lineId, 'pid' => $periodId]
+             JOIN rateb_employees e ON e.id = pl.employee_id AND e.company_id = pl.company_id
+             WHERE pl.id = :lid AND pl.period_id = :pid AND pl.company_id = :cid LIMIT 1",
+            ['lid' => $lineId, 'pid' => $periodId, 'cid' => (int) ($period['company_id'] ?? 0)]
         );
         if (!$period || !$line) {
             http_response_code(404);
@@ -692,8 +687,9 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
         try {
-            (new HrService())->approvePayroll($id);
+            (new HrService())->approvePayroll($id, $companyId > 0 ? $companyId : null);
             SessionManager::flash('success', __('payroll_approved'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
@@ -709,8 +705,10 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $companyId = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
         try {
-            (new HrService())->postPayroll($id);
+            // Service enforces approved → posted only (cannot bypass oversight approval).
+            (new HrService())->postPayroll($id, $companyId > 0 ? $companyId : null);
             SessionManager::flash('success', __('payroll_posted'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());

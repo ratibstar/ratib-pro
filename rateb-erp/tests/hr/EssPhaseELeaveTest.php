@@ -25,6 +25,7 @@ final class EssPhaseELeaveTest
         $this->testDuplicateAndValidationCodes();
         $this->testOfflineDraftActionUnchanged();
         $this->testInclusiveDaysFormula();
+        $this->testOversightNotifyWired();
 
         return $this->results;
     }
@@ -165,5 +166,13 @@ final class EssPhaseELeaveTest
         $svc = $ref->newInstanceWithoutConstructor();
         $days = $m->invoke($svc, '2026-07-01', '2026-07-03');
         $this->record('Inclusive days formula matches Admin/offline', $days === 3, 'days=' . $days);
+    }
+
+    private function testOversightNotifyWired(): void
+    {
+        $src = (string) file_get_contents(RATEB_ROOT . '/app/services/HrEssLeaveService.php');
+        $ok = str_contains($src, 'ApprovalOversightService::notifyPendingSubmission')
+            && str_contains($src, "'hr_leave'");
+        $this->record('ESS leave apply wires oversight pending notification', $ok);
     }
 }

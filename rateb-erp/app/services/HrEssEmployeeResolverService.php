@@ -10,6 +10,7 @@ use Rateb\App\Models\User;
  * ESS identity resolver — existing rateb_employees.user_id linkage only.
  * Owns lookup, tenant scope, cardinality, and response payload shape for /api/v1/hr/me.
  *
+ * Phase B: every resolution and bind is company-scoped. Cross-tenant fallbacks removed.
  * Lookups use unscoped SQL (bypass branch filters) so mobile login works for
  * company employees even when the ERP user was mis-tagged as platform SA.
  */
@@ -31,6 +32,16 @@ final class HrEssEmployeeResolverService
                     'success' => false,
                     'code' => 'unauthorized',
                     'message' => 'Unauthorized',
+                ],
+            ];
+        }
+        if ($companyId < 1) {
+            return [
+                'status' => 403,
+                'body' => [
+                    'success' => false,
+                    'code' => 'company_required',
+                    'message' => 'Company context required',
                 ],
             ];
         }
@@ -60,9 +71,21 @@ final class HrEssEmployeeResolverService
         }
 
         $employee = $rows[0];
+        if ((int) ($employee['company_id'] ?? 0) !== $companyId) {
+            return [
+                'status' => 403,
+                'body' => [
+                    'success' => false,
+                    'code' => 'tenant_mismatch',
+                    'message' => 'Employee does not belong to this company',
+                ],
+            ];
+        }
         if ((int) ($employee['user_id'] ?? 0) < 1) {
-            $this->bindEmployeeUser((int) $employee['id'], $userId);
-            $employee['user_id'] = $userId;
+            $bound = $this->bindEmployeeUser((int) $employee['id'], $userId, $companyId);
+            if ($bound) {
+                $employee['user_id'] = $userId;
+            }
         }
 
         return [
@@ -74,6 +97,35 @@ final class HrEssEmployeeResolverService
         ];
     }
 
+    /**
+     * Bind user to employee only when both belong to the same company.
+     * Returns false when the bind is denied or no row updated.
+     */
+    public function bindEmployeeUser(int $employeeId, int $userId, int $companyId): bool
+    {
+        if ($employeeId < 1 || $userId < 1 || $companyId < 1) {
+            return false;
+        }
+        try {
+            $stmt = Database::connection()->prepare(
+                'UPDATE rateb_employees
+                 SET user_id = :uid
+                 WHERE id = :eid
+                   AND company_id = :cid
+                   AND (user_id IS NULL OR user_id = 0 OR user_id = :uid2)'
+            );
+            $stmt->execute([
+                'uid' => $userId,
+                'uid2' => $userId,
+                'eid' => $employeeId,
+                'cid' => $companyId,
+            ]);
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /** @return list<array<string, mixed>> */
     private function employeesForUser(int $userId, int $companyId): array
     {
@@ -81,21 +133,12 @@ final class HrEssEmployeeResolverService
             'SELECT id, company_id, employee_code, name, email, phone, status, user_id,
                     department_id, job_title_id, branch_id, hire_date
              FROM rateb_employees
-             WHERE user_id = :uid
+             WHERE user_id = :uid AND company_id = :cid
              ORDER BY id ASC
              LIMIT 3',
-            ['uid' => $userId]
+            ['uid' => $userId, 'cid' => $companyId]
         );
         if ($byUser !== []) {
-            if ($companyId > 0) {
-                $inCompany = array_values(array_filter(
-                    $byUser,
-                    static fn (array $row): bool => (int) ($row['company_id'] ?? 0) === $companyId
-                ));
-                if ($inCompany !== []) {
-                    return $inCompany;
-                }
-            }
             return $byUser;
         }
 
@@ -104,31 +147,14 @@ final class HrEssEmployeeResolverService
             return [];
         }
 
-        $params = ['em' => $email];
-        $sql = 'SELECT id, company_id, employee_code, name, email, phone, status, user_id,
-                       department_id, job_title_id, branch_id, hire_date
-                FROM rateb_employees
-                WHERE LOWER(TRIM(email)) = :em';
-        if ($companyId > 0) {
-            $sql .= ' AND company_id = :cid';
-            $params['cid'] = $companyId;
-        }
-        $sql .= ' ORDER BY id ASC LIMIT 3';
-
-        $byEmail = $this->fetchEmployees($sql, $params);
-        if ($byEmail !== [] || $companyId < 1) {
-            return $byEmail;
-        }
-
-        // Token company may be wrong (platform SA / fallback). Match email globally.
         return $this->fetchEmployees(
             'SELECT id, company_id, employee_code, name, email, phone, status, user_id,
                     department_id, job_title_id, branch_id, hire_date
              FROM rateb_employees
-             WHERE LOWER(TRIM(email)) = :em
+             WHERE LOWER(TRIM(email)) = :em AND company_id = :cid
              ORDER BY id ASC
              LIMIT 3',
-            ['em' => $email]
+            ['em' => $email, 'cid' => $companyId]
         );
     }
 
@@ -151,21 +177,6 @@ final class HrEssEmployeeResolverService
             return is_array($rows) ? $rows : [];
         } catch (\Throwable $e) {
             return [];
-        }
-    }
-
-    private function bindEmployeeUser(int $employeeId, int $userId): void
-    {
-        if ($employeeId < 1 || $userId < 1) {
-            return;
-        }
-        try {
-            $stmt = Database::connection()->prepare(
-                'UPDATE rateb_employees SET user_id = :uid WHERE id = :eid AND (user_id IS NULL OR user_id = 0)'
-            );
-            $stmt->execute(['uid' => $userId, 'eid' => $employeeId]);
-        } catch (\Throwable $e) {
-            // non-fatal — resolver still returns employee row
         }
     }
 }

@@ -36,18 +36,27 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase B — P0 Security & tenant hardening
 
-**Goal:** Stop cross-company employee/user bind and salary over-exposure.
+**Status:** COMPLETE (2026-08-14)  
+**Certification:** `docs/hr/HR-PHASE-B-SECURITY-CERTIFICATION.md`
 
-1. Remove or strictly gate global email fallback in `HrEmployeesController::autoLinkEmployeeUser`.  
-2. Fix `HrEssEmployeeResolverService`: always scope by token `company_id`; remove unsafe cross-tenant return; `bindEmployeeUser` must include `company_id`.  
-3. Ensure payroll show/export queries include `company_id`.  
-4. Align ops payroll **post** with approve policy (block company post **or** require oversight + AuditService log); clarify UI “posted ≠ GL”.  
-5. Add index on `rateb_employees.user_id` (additive).  
-6. Decide ESS module gate: require company HR plan / `hr.view` via API middleware where appropriate (without breaking mobile).  
-7. Introduce finer permissions for salary/payroll view (seed only; wire gradually).  
-8. Tests: IDOR employee show, ESS resolver company mismatch, cross-tenant attendance write, payroll period cross-company, payroll post authorization.
+### Implemented controls
 
-**Exit:** Security tests green; no intentional cross-tenant bind.
+1. ESS resolver + `bindEmployeeUser` company-scoped; no cross-tenant fallback.  
+2. Admin `autoLinkEmployeeUser` company-scoped only.  
+3. Ops payroll `approve`/`post` tenant guard; `post` requires `approved` (no draft bypass).  
+4. Payroll show/export/payslip queries scoped by `company_id`.  
+5. `rateb_payroll_audit` + `AuditService` on calculate/approve/post.  
+6. ESS leave apply → `ApprovalOversightService::notifyPendingSubmission` (existing NotificationService).  
+7. Additive index migration `247_hr_phase_b_ess_user_company_index.sql`.  
+8. Tests: `tests/hr/HrPhaseBSecurityTest.php`.
+
+### Remaining risks
+
+- Company post-after-approve remains intentional UI workflow (not oversight-only).  
+- ESS API still lacks `hr.view` module middleware gate (deferred).  
+- Pre-existing Phase 23A nav/route test drift (out of scope).
+
+**Exit:** Security tests green; no intentional cross-tenant bind. **Met.**
 
 ---
 

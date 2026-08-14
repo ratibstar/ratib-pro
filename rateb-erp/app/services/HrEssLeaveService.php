@@ -176,6 +176,17 @@ final class HrEssLeaveService
         $id = (new LeaveRequest())->create($create);
         $row = $this->hr()->findLeaveRequestForEmployee($companyId, $employeeId, $id);
 
+        // Notify after persist only — reuse existing oversight notifier (no second NotificationService).
+        if ($id > 0) {
+            $label = function_exists('__') ? (string) __('hr_leaves') : 'hr_leaves';
+            ApprovalOversightService::notifyPendingSubmission(
+                $companyId,
+                'hr_leave',
+                $label !== '' ? $label : 'hr_leaves',
+                $id
+            );
+        }
+
         return $this->ok([
             'request' => $this->requestDto($row),
             'leave_request_id' => $id,

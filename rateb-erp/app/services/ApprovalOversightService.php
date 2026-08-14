@@ -1057,7 +1057,7 @@ final class ApprovalOversightService
         }
         if ($sourceKey === 'hr_payroll') {
             if ($action === 'approve') {
-                $hr->approvePayroll($recordId);
+                $hr->approvePayroll($recordId, $companyId > 0 ? $companyId : null);
             } else {
                 throw new \RuntimeException(__('invalid_request'));
             }

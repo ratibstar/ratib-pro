@@ -14,6 +14,7 @@ use Rateb\App\Models\HrPayrollStructure;
 use Rateb\App\Models\LeaveBalance;
 use Rateb\App\Models\LeaveRequest;
 use Rateb\App\Models\LeaveType;
+use Rateb\App\Models\PayrollAudit;
 use Rateb\App\Models\PayrollLine;
 use Rateb\App\Models\PayrollPeriod;
 
@@ -262,25 +263,122 @@ final class HrService
             ]);
             $created++;
         }
+        if ($created > 0) {
+            $this->recordPayrollAudit('calculated', $period, (string) ($period['status'] ?? 'draft'), (string) ($period['status'] ?? 'draft'), [
+                'lines_created' => $created,
+            ]);
+        }
         return $created;
     }
 
-    public function approvePayroll(int $periodId): void
+    /**
+     * Draft → approved. Optional $expectedCompanyId enforces tenant isolation (IDOR guard).
+     */
+    public function approvePayroll(int $periodId, ?int $expectedCompanyId = null): void
     {
-        $period = (new PayrollPeriod())->find($periodId);
-        if (!$period || ($period['status'] ?? '') !== 'draft') {
+        $period = $this->loadPayrollPeriodForMutation($periodId, $expectedCompanyId);
+        if (($period['status'] ?? '') !== 'draft') {
             throw new \RuntimeException(__('payroll_not_draft'));
         }
         (new PayrollPeriod())->update($periodId, ['status' => 'approved']);
+        $this->recordPayrollAudit('approved', $period, 'draft', 'approved');
     }
 
-    public function postPayroll(int $periodId): void
+    /**
+     * Approved → posted only. Cannot bypass approval (draft/rejected → posted denied).
+     * Optional $expectedCompanyId enforces tenant isolation (IDOR guard).
+     */
+    public function postPayroll(int $periodId, ?int $expectedCompanyId = null): void
     {
-        $period = (new PayrollPeriod())->find($periodId);
-        if (!$period || ($period['status'] ?? '') !== 'approved') {
+        $period = $this->loadPayrollPeriodForMutation($periodId, $expectedCompanyId);
+        $status = (string) ($period['status'] ?? '');
+        if ($status !== 'approved') {
             throw new \RuntimeException(__('payroll_not_approved'));
         }
         (new PayrollPeriod())->update($periodId, ['status' => 'posted']);
+        $this->recordPayrollAudit('posted', $period, 'approved', 'posted');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function loadPayrollPeriodForMutation(int $periodId, ?int $expectedCompanyId): array
+    {
+        $period = (new PayrollPeriod())->findByIdUnscoped($periodId);
+        if (!is_array($period)) {
+            throw new \RuntimeException(__('record_not_found'));
+        }
+        $periodCompanyId = (int) ($period['company_id'] ?? 0);
+        $cid = $expectedCompanyId !== null && $expectedCompanyId > 0
+            ? $expectedCompanyId
+            : (int) (TenantContext::companyId() ?? 0);
+        if ($cid > 0 && $periodCompanyId !== $cid) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        if ($cid < 1 && function_exists('rateb_is_super_admin') && !rateb_is_super_admin()) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        return $period;
+    }
+
+    /**
+     * Append-only payroll audit: rateb_payroll_audit + rateb_audit_logs.
+     *
+     * @param array<string, mixed> $period
+     * @param array<string, mixed> $extra
+     */
+    private function recordPayrollAudit(
+        string $action,
+        array $period,
+        string $fromStatus,
+        string $toStatus,
+        array $extra = []
+    ): void {
+        $periodId = (int) ($period['id'] ?? 0);
+        $companyId = (int) ($period['company_id'] ?? 0);
+        $payload = array_merge([
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'period_year' => $period['period_year'] ?? null,
+            'period_month' => $period['period_month'] ?? null,
+            'source' => 'hr_ops_payroll',
+        ], $extra);
+
+        try {
+            (new AuditService())->log('payroll_' . $action, 'hr_payroll_period', $periodId, $payload);
+        } catch (\Throwable $e) {
+            // Audit must not block payroll mutation.
+        }
+
+        if ($companyId < 1 || $periodId < 1) {
+            return;
+        }
+        try {
+            $uid = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0);
+            (new PayrollAudit())->create([
+                'public_uuid' => $this->payrollAuditUuid(),
+                'company_id' => $companyId,
+                'branch_id' => isset($period['branch_id']) ? (int) $period['branch_id'] : null,
+                'entity_type' => 'hr_payroll_period',
+                'entity_id' => $periodId,
+                'action' => $action,
+                'payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                'status' => 'active',
+                'version' => 1,
+                'created_by' => $uid > 0 ? $uid : null,
+                'updated_by' => $uid > 0 ? $uid : null,
+            ]);
+        } catch (\Throwable $e) {
+            // Best-effort: schema may lag on older tenants until migration 190 applied.
+        }
+    }
+
+    private function payrollAuditUuid(): string
+    {
+        $data = random_bytes(16);
+        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
     public function approveLeave(int $requestId, int $userId): void
