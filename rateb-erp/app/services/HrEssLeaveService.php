@@ -159,21 +159,29 @@ final class HrEssLeaveService
         $reason = trim((string) ($payload['reason'] ?? ''));
         $branchId = (int) ($employee['branch_id'] ?? 0);
 
-        $create = [
-            'company_id' => $companyId,
-            'employee_id' => $employeeId,
-            'leave_type_id' => $leaveTypeId,
-            'start_date' => $start,
-            'end_date' => $end,
-            'days' => $days,
-            'reason' => $reason !== '' ? $reason : null,
-            'status' => 'pending',
-        ];
-        if ($branchId > 0) {
-            $create['branch_id'] = $branchId;
+        try {
+            $id = $this->hr()->createPendingLeaveRequest(
+                $companyId,
+                $employeeId,
+                $leaveTypeId,
+                $start,
+                $end,
+                (float) $days,
+                $reason !== '' ? $reason : null,
+                $branchId > 0 ? $branchId : null,
+                $userId
+            );
+        } catch (\RuntimeException $e) {
+            $msg = $e->getMessage();
+            if ($msg === __('leave_overlap_conflict') || str_contains($msg, 'overlap')) {
+                return $this->fail(409, 'duplicate_request', 'Overlapping leave request already exists');
+            }
+            if ($msg === __('leave_balance_insufficient') || str_contains($msg, 'balance')) {
+                return $this->fail(422, 'insufficient_balance', 'Requested days exceed remaining leave balance');
+            }
+            return $this->fail(422, 'validation_error', $msg !== '' ? $msg : 'Leave request rejected');
         }
 
-        $id = (new LeaveRequest())->create($create);
         $row = $this->hr()->findLeaveRequestForEmployee($companyId, $employeeId, $id);
 
         // Notify after persist only — reuse existing oversight notifier (no second NotificationService).
@@ -191,6 +199,36 @@ final class HrEssLeaveService
             'request' => $this->requestDto($row),
             'leave_request_id' => $id,
         ], 201);
+    }
+
+    /**
+     * @return array{status:int,body:array<string,mixed>}
+     */
+    public function cancel(int $userId, int $companyId, int $requestId): array
+    {
+        $resolved = $this->resolveEmployee($userId, $companyId);
+        if ((int) ($resolved['status'] ?? 0) !== 200) {
+            return $resolved;
+        }
+        $employeeId = $this->employeeIdFromResolved($resolved);
+        if ($requestId < 1) {
+            return $this->fail(422, 'invalid_request', 'Invalid leave request id');
+        }
+        $row = $this->hr()->findLeaveRequestForEmployee($companyId, $employeeId, $requestId);
+        if ($row === null) {
+            return $this->fail(404, 'not_found', 'Leave request not found');
+        }
+        try {
+            $this->hr()->cancelLeave($requestId, $userId);
+        } catch (\RuntimeException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'posted_payroll') || $msg === __('leave_cancel_blocked_posted_payroll')) {
+                return $this->fail(409, 'posted_payroll', 'Cannot cancel leave overlapping posted payroll');
+            }
+            return $this->fail(422, 'cancel_failed', $msg !== '' ? $msg : 'Cancel failed');
+        }
+        $updated = $this->hr()->findLeaveRequestForEmployee($companyId, $employeeId, $requestId);
+        return $this->ok(['request' => $this->requestDto($updated)]);
     }
 
     /**

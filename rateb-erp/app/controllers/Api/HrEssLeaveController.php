@@ -57,6 +57,16 @@ final class HrEssLeaveController extends Controller
         Response::json($result['body'], (int) $result['status']);
     }
 
+    public function cancel(array $params = []): void
+    {
+        $result = (new HrEssLeaveService())->cancel(
+            (int) TenantContext::apiUserId(),
+            (int) TenantContext::companyId(),
+            (int) ($params['id'] ?? 0)
+        );
+        Response::json($result['body'], (int) $result['status']);
+    }
+
     /** @return array<string,mixed> */
     private function jsonBody(): array
     {

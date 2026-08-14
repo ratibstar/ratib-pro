@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\ApprovalOversightService;
 use Rateb\App\Services\DocumentCodeService;
 use Rateb\App\Services\HrApprovalInboxService;
 use Rateb\App\Services\HrEmployeeIntegrityService;
@@ -510,10 +511,67 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
             $start = strtotime((string) $data['start_date']);
             $end = strtotime((string) $data['end_date']);
             if ($start !== false && $end !== false && $end >= $start) {
+                // Calendar-day semantics intentionally preserved (Phase H2).
                 $data['days'] = (int) round(($end - $start) / 86400) + 1;
             }
         }
         return $data;
+    }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        HrService::bootstrapTenant();
+        $data = $this->collectData();
+        $companyId = rateb_resolve_ops_company_id();
+        try {
+            $id = (new HrService())->createPendingLeaveRequest(
+                $companyId,
+                (int) ($data['employee_id'] ?? 0),
+                (int) ($data['leave_type_id'] ?? 0),
+                (string) ($data['start_date'] ?? ''),
+                (string) ($data['end_date'] ?? ''),
+                (float) ($data['days'] ?? 0),
+                isset($data['reason']) ? (string) $data['reason'] : null,
+                isset($data['branch_id']) ? (int) $data['branch_id'] : null,
+                (int) (SessionManager::get('rateb_user_id') ?? 0)
+            );
+            ApprovalOversightService::notifyPendingSubmission(
+                $companyId,
+                'hr_leave',
+                (string) __('hr_leaves'),
+                $id
+            );
+            SessionManager::flash('success', __('saved_ok'));
+            $this->redirect(rateb_url($this->routePrefix));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+    }
+
+    public function cancel(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            (new HrService())->cancelLeave($id, (int) (SessionManager::get('rateb_user_id') ?? 0));
+            SessionManager::flash('success', __('leave_cancelled'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function approve(array $params): void

@@ -244,17 +244,19 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ## Phase H2 — P1 Leave depth (former Phase H charter)
 
-**Status:** NOT STARTED (deferred; numbering superseded by Matrix Governance)
+**Status:** COMPLETE (`docs/hr/HR-PHASE-H2-LEAVE-CERTIFICATION.md`)
 
-**Goal:** Closer to enterprise leave without breaking ESS.
+**Delivered:**
 
-1. Balance history / carry-forward / expiry fields (additive).  
-2. Cancellation & return-from-leave flows.  
-3. Unpaid leave → payroll input flag.  
-4. Keep `HrEssLeaveService` → `HrService`.  
-5. Notification triggers on submit/approve/reject via `NotificationService`.
+1. Canonical create: `HrService::createPendingLeaveRequest` (Admin + ESS).  
+2. Overlap + balance overdraw guards (transaction + employee `FOR UPDATE`).  
+3. Paid/unpaid via `leave_types.paid` + `paid_snapshot`; unpaid → batch payroll deduct days (existing `/30`).  
+4. Cancel + Oversight undo: restore balance once; reverse only `leave_request_id` attendance.  
+5. Posted payroll overlap blocks cancel/undo (no silent mutate).  
+6. Additive migration `249_hr_phase_h2_leave_integrity.sql`.  
+7. Tests: `run-hr-phase-h2-leave-tests.php` + B–H / ESS regressions CLEAR.
 
-**Exit:** ESS leave tests still green; new leave tests added.
+**Deferred (explicit):** working-day/holiday calendar; AM/PM half-day; balance carry-forward/expiry; payroll correction engine for already-posted periods.
 
 ---
 

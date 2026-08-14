@@ -1261,7 +1261,7 @@ final class ApprovalOversightService
             return;
         }
         if ($sourceKey === 'hr_leave') {
-            $this->resetHrStatus('rateb_leave_requests', $recordId, $companyId);
+            (new HrService())->undoLeaveApproval($recordId);
             (new HrApprovalMatrixService())->resetProgress($sourceKey, $recordId, $companyId);
             return;
         }

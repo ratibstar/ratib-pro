@@ -33,6 +33,7 @@ $router->get('/api/v1/hr/leave/balances', [\Rateb\App\Controllers\Api\HrEssLeave
 $router->get('/api/v1/hr/leave/requests', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'requests'], $api);
 $router->get('/api/v1/hr/leave/requests/{id}', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'show'], $api);
 $router->post('/api/v1/hr/leave/apply', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'apply'], $api);
+$router->post('/api/v1/hr/leave/requests/{id}/cancel', [\Rateb\App\Controllers\Api\HrEssLeaveController::class, 'cancel'], $api);
 $router->get('/api/v1/hr/payslips', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'index'], $api);
 $router->get('/api/v1/hr/payslips/{id}', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'show'], $api);
 $router->get('/api/v1/hr/payslips/{id}/file', [\Rateb\App\Controllers\Api\HrEssPayslipController::class, 'file'], $api);

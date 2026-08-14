@@ -879,6 +879,7 @@ foreach ($hrCrudRoutes as $path => $cfg) {
 $hrLeaveMw = rateb_erp_mw('hr', '', 'hr-leaves');
 $router->post($app('hr/leaves/{id}/approve'), $blockCompanyApprovalAction, $hrLeaveMw);
 $router->post($app('hr/leaves/{id}/reject'), $blockCompanyApprovalAction, $hrLeaveMw);
+$router->post($app('hr/leaves/{id}/cancel'), [HrLeavesController::class, 'cancel'], $hrLeaveMw);
 $router->post($app('hr/permission-requests/{id}/approve'), $blockCompanyApprovalAction, $hrAttMw);
 $router->post($app('hr/permission-requests/{id}/reject'), $blockCompanyApprovalAction, $hrAttMw);
 $router->post($app('hr/requests/{id}/approve'), $blockCompanyApprovalAction, $hrLeaveMw);

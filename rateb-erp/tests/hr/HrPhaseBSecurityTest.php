@@ -134,17 +134,23 @@ final class HrPhaseBSecurityTest
     private function testLeaveApplyNotifiesOversight(): void
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/app/services/HrEssLeaveService.php');
+        $createNeedle = str_contains($src, 'createPendingLeaveRequest')
+            ? 'createPendingLeaveRequest'
+            : 'LeaveRequest())->create';
         $ok = str_contains($src, 'ApprovalOversightService::notifyPendingSubmission')
             && str_contains($src, "'hr_leave'")
-            && str_contains($src, 'LeaveRequest())->create')
-            && strpos($src, 'LeaveRequest())->create') < strpos($src, 'notifyPendingSubmission');
+            && str_contains($src, $createNeedle)
+            && strpos($src, $createNeedle) < strpos($src, 'notifyPendingSubmission');
         $this->record('ESS leave apply notifies oversight after create', $ok);
     }
 
     private function testLeaveNotifyAfterPersistOnly(): void
     {
         $src = (string) file_get_contents(RATEB_ROOT . '/app/services/HrEssLeaveService.php');
-        $createPos = strpos($src, '(new LeaveRequest())->create($create)');
+        $createPos = strpos($src, 'createPendingLeaveRequest');
+        if ($createPos === false) {
+            $createPos = strpos($src, '(new LeaveRequest())->create($create)');
+        }
         $notifyPos = strpos($src, 'notifyPendingSubmission');
         $ok = $createPos !== false && $notifyPos !== false && $createPos < $notifyPos
             && str_contains($src, 'if ($id > 0)');

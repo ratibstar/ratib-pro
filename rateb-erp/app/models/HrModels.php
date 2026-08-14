@@ -43,7 +43,7 @@ final class AttendanceRecord extends Model
     protected bool $tenantScoped = true;
     protected bool $branchScoped = true;
     protected array $fillable = [
-        'company_id', 'employee_id', 'attendance_date', 'check_in', 'check_out', 'status', 'notes', 'branch_id',
+        'company_id', 'employee_id', 'attendance_date', 'check_in', 'check_out', 'status', 'notes', 'branch_id', 'leave_request_id',
     ];
 }
 
@@ -61,7 +61,7 @@ final class LeaveRequest extends Model
     protected bool $branchScoped = true;
     protected array $fillable = [
         'company_id', 'employee_id', 'leave_type_id', 'start_date', 'end_date',
-        'days', 'reason', 'status', 'approved_by', 'approved_at', 'branch_id',
+        'days', 'paid_snapshot', 'reason', 'status', 'approved_by', 'approved_at', 'branch_id',
     ];
 }
 

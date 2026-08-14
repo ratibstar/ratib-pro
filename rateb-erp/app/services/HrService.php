@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
+use Rateb\App\Core\Database;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\AttendanceRecord;
 use Rateb\App\Models\Company;
@@ -17,6 +18,7 @@ use Rateb\App\Models\LeaveType;
 use Rateb\App\Models\PayrollAudit;
 use Rateb\App\Models\PayrollLine;
 use Rateb\App\Models\PayrollPeriod;
+use PDO;
 
 final class HrService
 {
@@ -193,10 +195,13 @@ final class HrService
     /**
      * Build draft payroll lines for a period.
      *
-     * Formula (unchanged):
-     *   net = max(0, salary_base + structure_allowances - (structure_deductions + loans + absent_days*(salary_base/30)))
-     * Absence input: rateb_attendance_records.status = 'absent' within calendar month only.
-     * Leave days (status=leave) are NOT deducted. Enterprise salary overlay is NOT used.
+     * Formula (unchanged core):
+     *   net = max(0, salary_base + structure_allowances - (structure_deductions + loans + deduct_days*(salary_base/30)))
+     * Absence input: rateb_attendance_records.status = 'absent' within calendar month.
+     * Leave days (status=leave) are NOT deducted as absence; paid leave stays non-deductible.
+     * Phase H2: unpaid approved leave days (paid_snapshot=0) batch-added to deduct_days — same /30 rate.
+     * Paid leave (attendance status=leave, paid_snapshot=1) is NOT deducted.
+     * Enterprise salary overlay is NOT used.
      * Phase D: batch-load absence / structure / loan inputs (same totals, no N+1).
      */
     public function generatePayrollLines(int $periodId): int
@@ -238,6 +243,7 @@ final class HrService
         }
 
         $absentByEmployee = $this->batchAbsenceDaysByEmployee($companyId, $start, $end);
+        $unpaidLeaveByEmployee = $this->batchUnpaidLeaveDaysByEmployee($companyId, $start, $end);
         $structureRowsByEmployee = $this->batchPayrollStructureRows($companyId);
         $loanByEmployee = $this->batchLoanInstallmentsByEmployee($companyId, $end);
 
@@ -250,8 +256,10 @@ final class HrService
 
             $basic = (float) ($emp['salary_base'] ?? 0);
             $absentDays = (int) ($absentByEmployee[$employeeId] ?? 0);
+            $unpaidLeaveDays = (int) ($unpaidLeaveByEmployee[$employeeId] ?? 0);
+            $deductDays = $absentDays + $unpaidLeaveDays;
             $daily = $basic > 0 ? $basic / 30 : 0;
-            $absentDeduction = round($daily * $absentDays, 2);
+            $absentDeduction = round($daily * $deductDays, 2);
             $structure = $this->payrollStructureTotalsFromRows(
                 $structureRowsByEmployee[$employeeId] ?? [],
                 $basic
@@ -264,6 +272,9 @@ final class HrService
             $notes = [];
             if ($absentDays > 0) {
                 $notes[] = __('payroll_absence_deduction', ['days' => $absentDays]);
+            }
+            if ($unpaidLeaveDays > 0) {
+                $notes[] = __('payroll_unpaid_leave_deduction', ['days' => $unpaidLeaveDays]);
             }
             if ($loanDeduction > 0) {
                 $notes[] = __('payroll_loan_deduction', ['amount' => number_format($loanDeduction, 2)]);
@@ -520,32 +531,390 @@ final class HrService
 
     public function approveLeave(int $requestId, int $userId): void
     {
-        // Unscoped: oversight may approve while branch filter would hide the row.
-        $leaveModel = new LeaveRequest();
-        $req = $leaveModel->findByIdUnscoped($requestId);
-        if (!$req || ($req['status'] ?? '') !== 'pending') {
-            throw new \RuntimeException(__('leave_not_pending'));
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare(
+                'SELECT * FROM rateb_leave_requests WHERE id = :id FOR UPDATE'
+            );
+            $stmt->execute(['id' => $requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$req || ($req['status'] ?? '') !== 'pending') {
+                throw new \RuntimeException(__('leave_not_pending'));
+            }
+            $companyId = (int) ($req['company_id'] ?? 0);
+            $type = (new LeaveType())->queryOne(
+                'SELECT id, paid FROM rateb_leave_types WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => (int) ($req['leave_type_id'] ?? 0), 'cid' => $companyId]
+            );
+            $paidSnapshot = (int) ($type['paid'] ?? 1) === 1 ? 1 : 0;
+            $hasPaidSnap = $this->leaveRequestHasPaidSnapshotColumn();
+            if ($hasPaidSnap) {
+                $upd = $db->prepare(
+                    'UPDATE rateb_leave_requests
+                     SET status = \'approved\', approved_by = :uid, approved_at = NOW(), paid_snapshot = :paid
+                     WHERE id = :id AND status = \'pending\''
+                );
+                $upd->execute([
+                    'uid' => $userId > 0 ? $userId : null,
+                    'paid' => $paidSnapshot,
+                    'id' => $requestId,
+                ]);
+            } else {
+                $upd = $db->prepare(
+                    'UPDATE rateb_leave_requests
+                     SET status = \'approved\', approved_by = :uid, approved_at = NOW()
+                     WHERE id = :id AND status = \'pending\''
+                );
+                $upd->execute([
+                    'uid' => $userId > 0 ? $userId : null,
+                    'id' => $requestId,
+                ]);
+            }
+            if ($upd->rowCount() < 1) {
+                throw new \RuntimeException(__('leave_not_pending'));
+            }
+            $req['paid_snapshot'] = $paidSnapshot;
+            $req['status'] = 'approved';
+            $this->applyApprovedLeave($req, $requestId);
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
         }
-        $leaveModel->update($requestId, [
-            'status' => 'approved',
-            'approved_by' => $userId > 0 ? $userId : null,
-            'approved_at' => date('Y-m-d H:i:s'),
+
+        $this->auditLeave('leave_approved', $requestId, [
+            'company_id' => (int) ($req['company_id'] ?? 0),
+            'paid_snapshot' => (int) ($req['paid_snapshot'] ?? 1),
+            'days' => (float) ($req['days'] ?? 0),
         ]);
-        $this->applyApprovedLeave($req);
+        $this->auditLeave('balance_consumed', $requestId, [
+            'company_id' => (int) ($req['company_id'] ?? 0),
+            'days' => (float) ($req['days'] ?? 0),
+        ]);
+        if ((int) ($req['paid_snapshot'] ?? 1) === 0) {
+            $this->auditLeave('unpaid_leave_payroll_input', $requestId, [
+                'company_id' => (int) ($req['company_id'] ?? 0),
+                'note' => 'paid_snapshot=0; payroll deducts via batch unpaid leave days',
+            ]);
+        }
+        $this->notifyLeaveOutcome((int) ($req['company_id'] ?? 0), (int) ($req['employee_id'] ?? 0), $requestId, 'approved');
     }
 
     public function rejectLeave(int $requestId, int $userId): void
     {
-        $leaveModel = new LeaveRequest();
-        $req = $leaveModel->findByIdUnscoped($requestId);
-        if (!$req || ($req['status'] ?? '') !== 'pending') {
-            throw new \RuntimeException(__('leave_not_pending'));
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare('SELECT * FROM rateb_leave_requests WHERE id = :id FOR UPDATE');
+            $stmt->execute(['id' => $requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$req || ($req['status'] ?? '') !== 'pending') {
+                throw new \RuntimeException(__('leave_not_pending'));
+            }
+            $upd = $db->prepare(
+                'UPDATE rateb_leave_requests
+                 SET status = \'rejected\', approved_by = :uid, approved_at = NOW()
+                 WHERE id = :id AND status = \'pending\''
+            );
+            $upd->execute(['uid' => $userId > 0 ? $userId : null, 'id' => $requestId]);
+            if ($upd->rowCount() < 1) {
+                throw new \RuntimeException(__('leave_not_pending'));
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
         }
-        $leaveModel->update($requestId, [
-            'status' => 'rejected',
-            'approved_by' => $userId > 0 ? $userId : null,
-            'approved_at' => date('Y-m-d H:i:s'),
+        $this->auditLeave('leave_rejected', $requestId, [
+            'company_id' => (int) ($req['company_id'] ?? 0),
         ]);
+        $this->notifyLeaveOutcome((int) ($req['company_id'] ?? 0), (int) ($req['employee_id'] ?? 0), $requestId, 'rejected');
+    }
+
+    /**
+     * Safe cancellation: pending|approved → cancelled. Restores balance once; reverses leave-owned attendance only.
+     */
+    public function cancelLeave(int $requestId, int $userId): void
+    {
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare('SELECT * FROM rateb_leave_requests WHERE id = :id FOR UPDATE');
+            $stmt->execute(['id' => $requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$req) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            $status = (string) ($req['status'] ?? '');
+            if ($status === 'cancelled') {
+                $db->commit();
+                return;
+            }
+            if ($status === 'rejected') {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            if (!in_array($status, ['pending', 'approved'], true)) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            $companyId = (int) ($req['company_id'] ?? 0);
+            $employeeId = (int) ($req['employee_id'] ?? 0);
+            $start = (string) ($req['start_date'] ?? '');
+            $end = (string) ($req['end_date'] ?? '');
+            if ($status === 'approved' && $this->hasPostedPayrollOverlappingLeave($companyId, $employeeId, $start, $end)) {
+                throw new \RuntimeException(__('leave_cancel_blocked_posted_payroll'));
+            }
+            if ($status === 'approved') {
+                $this->reverseLeaveOwnedAttendance($companyId, $requestId);
+            }
+            $upd = $db->prepare(
+                'UPDATE rateb_leave_requests
+                 SET status = \'cancelled\', approved_by = :uid, approved_at = NOW()
+                 WHERE id = :id AND status IN (\'pending\', \'approved\')'
+            );
+            $upd->execute(['uid' => $userId > 0 ? $userId : null, 'id' => $requestId]);
+            if ($upd->rowCount() < 1) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            if ($status === 'approved') {
+                $year = (int) date('Y', strtotime($start) ?: time());
+                $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+        $wasApproved = ((string) ($req['status'] ?? '')) === 'approved';
+        $this->auditLeave('leave_cancelled', $requestId, [
+            'company_id' => (int) ($req['company_id'] ?? 0),
+            'from_status' => (string) ($req['status'] ?? ''),
+        ]);
+        if ($wasApproved) {
+            $this->auditLeave('balance_restored', $requestId, [
+                'company_id' => (int) ($req['company_id'] ?? 0),
+                'days' => (float) ($req['days'] ?? 0),
+            ]);
+        }
+        $this->notifyLeaveOutcome((int) ($req['company_id'] ?? 0), (int) ($req['employee_id'] ?? 0), $requestId, 'cancelled');
+    }
+
+    /**
+     * Oversight undo: approved → pending. Reverses leave-owned attendance; restores balance via sync.
+     */
+    public function undoLeaveApproval(int $requestId): void
+    {
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare('SELECT * FROM rateb_leave_requests WHERE id = :id FOR UPDATE');
+            $stmt->execute(['id' => $requestId]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$req) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            $status = (string) ($req['status'] ?? '');
+            if ($status === 'pending') {
+                $db->commit();
+                return;
+            }
+            if ($status !== 'approved' && $status !== 'rejected') {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            $companyId = (int) ($req['company_id'] ?? 0);
+            $employeeId = (int) ($req['employee_id'] ?? 0);
+            $start = (string) ($req['start_date'] ?? '');
+            $end = (string) ($req['end_date'] ?? '');
+            if ($status === 'approved' && $this->hasPostedPayrollOverlappingLeave($companyId, $employeeId, $start, $end)) {
+                throw new \RuntimeException(__('leave_undo_blocked_posted_payroll'));
+            }
+            if ($status === 'approved') {
+                $this->reverseLeaveOwnedAttendance($companyId, $requestId);
+            }
+            $upd = $db->prepare(
+                'UPDATE rateb_leave_requests
+                 SET status = \'pending\', approved_by = NULL, approved_at = NULL'
+                . ($this->leaveRequestHasPaidSnapshotColumn() ? ', paid_snapshot = NULL' : '')
+                . ' WHERE id = :id AND status IN (\'approved\', \'rejected\')'
+            );
+            $upd->execute(['id' => $requestId]);
+            if ($upd->rowCount() < 1) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            if ($status === 'approved') {
+                $year = (int) date('Y', strtotime($start) ?: time());
+                $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+        $this->auditLeave('leave_undo', $requestId, [
+            'company_id' => (int) ($req['company_id'] ?? 0),
+            'from_status' => (string) ($req['status'] ?? ''),
+        ]);
+        if (((string) ($req['status'] ?? '')) === 'approved') {
+            $this->auditLeave('balance_restored', $requestId, [
+                'company_id' => (int) ($req['company_id'] ?? 0),
+                'days' => (float) ($req['days'] ?? 0),
+            ]);
+        }
+    }
+
+    /**
+     * Canonical pending leave create (ESS + Admin). Locks employee row; overlap + balance guards.
+     *
+     * @param array<string, mixed> $extra
+     */
+    public function createPendingLeaveRequest(
+        int $companyId,
+        int $employeeId,
+        int $leaveTypeId,
+        string $startDate,
+        string $endDate,
+        float $days,
+        ?string $reason = null,
+        ?int $branchId = null,
+        ?int $actorUserId = null
+    ): int {
+        if ($companyId < 1 || $employeeId < 1 || $leaveTypeId < 1) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        if ($startDate === '' || $endDate === '' || $endDate < $startDate || $days <= 0) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $empLock = $db->prepare(
+                'SELECT id, branch_id FROM rateb_employees WHERE id = :id AND company_id = :cid FOR UPDATE'
+            );
+            $empLock->execute(['id' => $employeeId, 'cid' => $companyId]);
+            $emp = $empLock->fetch(PDO::FETCH_ASSOC);
+            if (!$emp) {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            $type = (new LeaveType())->queryOne(
+                'SELECT id, status, days_per_year FROM rateb_leave_types
+                 WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $leaveTypeId, 'cid' => $companyId]
+            );
+            if (!$type || strtolower((string) ($type['status'] ?? '')) === 'inactive') {
+                throw new \RuntimeException(__('invalid_request'));
+            }
+            if ($this->hasOverlappingLeaveRequest($companyId, $employeeId, $startDate, $endDate)) {
+                throw new \RuntimeException(__('leave_overlap_conflict'));
+            }
+            $year = (int) date('Y', strtotime($startDate) ?: time());
+            $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
+            $bal = (new LeaveBalance())->queryOne(
+                'SELECT entitled_days, used_days FROM rateb_leave_balances
+                 WHERE company_id = :cid AND employee_id = :eid AND leave_type_id = :tid AND balance_year = :y
+                 LIMIT 1',
+                ['cid' => $companyId, 'eid' => $employeeId, 'tid' => $leaveTypeId, 'y' => $year]
+            );
+            $entitled = (float) ($bal['entitled_days'] ?? 0);
+            $used = (float) ($bal['used_days'] ?? 0);
+            $remaining = $entitled - $used;
+            $daysPerYear = $type['days_per_year'];
+            $hasCap = $daysPerYear !== null && $daysPerYear !== '' && (float) $daysPerYear > 0;
+            if ($hasCap && $days > $remaining + 0.0001) {
+                throw new \RuntimeException(__('leave_balance_insufficient'));
+            }
+
+            $bid = $branchId !== null && $branchId > 0 ? $branchId : (int) ($emp['branch_id'] ?? 0);
+            $ins = $db->prepare(
+                'INSERT INTO rateb_leave_requests
+                    (company_id, employee_id, leave_type_id, start_date, end_date, days, reason, status, branch_id)
+                 VALUES
+                    (:cid, :eid, :tid, :s, :e, :days, :reason, \'pending\', :bid)'
+            );
+            $ins->execute([
+                'cid' => $companyId,
+                'eid' => $employeeId,
+                'tid' => $leaveTypeId,
+                's' => $startDate,
+                'e' => $endDate,
+                'days' => $days,
+                'reason' => $reason !== null && $reason !== '' ? $reason : null,
+                'bid' => $bid > 0 ? $bid : null,
+            ]);
+            $id = (int) $db->lastInsertId();
+            $db->commit();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+
+        $this->auditLeave('leave_created', $id, [
+            'company_id' => $companyId,
+            'employee_id' => $employeeId,
+            'days' => $days,
+            'actor_user_id' => $actorUserId,
+        ]);
+        $this->auditLeave('leave_submitted', $id, [
+            'company_id' => $companyId,
+        ]);
+        return $id;
+    }
+
+    /**
+     * @deprecated use createPendingLeaveRequest — kept for call-site clarity in validators
+     */
+    public function assertLeaveSubmissionAllowed(
+        int $companyId,
+        int $employeeId,
+        int $leaveTypeId,
+        string $startDate,
+        string $endDate,
+        float $days,
+        bool $lock = true
+    ): void {
+        // Dry-run path without insert: reuse create guards via temporary check only.
+        if ($companyId < 1 || $employeeId < 1 || $leaveTypeId < 1) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        if ($startDate === '' || $endDate === '' || $endDate < $startDate || $days <= 0) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $type = (new LeaveType())->queryOne(
+            'SELECT id, status, days_per_year FROM rateb_leave_types
+             WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $leaveTypeId, 'cid' => $companyId]
+        );
+        if (!$type || strtolower((string) ($type['status'] ?? '')) === 'inactive') {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        if ($this->hasOverlappingLeaveRequest($companyId, $employeeId, $startDate, $endDate)) {
+            throw new \RuntimeException(__('leave_overlap_conflict'));
+        }
+        $year = (int) date('Y', strtotime($startDate) ?: time());
+        $this->syncLeaveBalancesForEmployee($companyId, $employeeId, $year);
+        $bal = (new LeaveBalance())->queryOne(
+            'SELECT entitled_days, used_days FROM rateb_leave_balances
+             WHERE company_id = :cid AND employee_id = :eid AND leave_type_id = :tid AND balance_year = :y
+             LIMIT 1',
+            ['cid' => $companyId, 'eid' => $employeeId, 'tid' => $leaveTypeId, 'y' => $year]
+        );
+        $entitled = (float) ($bal['entitled_days'] ?? 0);
+        $used = (float) ($bal['used_days'] ?? 0);
+        $remaining = $entitled - $used;
+        $daysPerYear = $type['days_per_year'];
+        $hasCap = $daysPerYear !== null && $daysPerYear !== '' && (float) $daysPerYear > 0;
+        if ($hasCap && $days > $remaining + 0.0001) {
+            throw new \RuntimeException(__('leave_balance_insufficient'));
+        }
     }
 
     public static function bootstrapTenant(): void
@@ -922,13 +1291,14 @@ final class HrService
     }
 
     /** @param array<string, mixed> $req */
-    private function applyApprovedLeave(array $req): void
+    private function applyApprovedLeave(array $req, int $requestId = 0): void
     {
         $companyId = (int) ($req['company_id'] ?? 0);
         $employeeId = (int) ($req['employee_id'] ?? 0);
         $start = (string) ($req['start_date'] ?? '');
         $end = (string) ($req['end_date'] ?? '');
-        if ($companyId < 1 || $employeeId < 1 || $start === '' || $end === '') {
+        $requestId = $requestId > 0 ? $requestId : (int) ($req['id'] ?? 0);
+        if ($companyId < 1 || $employeeId < 1 || $start === '' || $end === '' || $requestId < 1) {
             return;
         }
         $year = (int) date('Y', strtotime($start));
@@ -940,6 +1310,7 @@ final class HrService
             $branchId = (int) ($emp['branch_id'] ?? 0);
         }
 
+        $hasLeaveRequestCol = $this->attendanceHasLeaveRequestIdColumn();
         $attModel = new AttendanceRecord();
         $cursor = strtotime($start);
         $endTs = strtotime($end);
@@ -960,9 +1331,201 @@ final class HrService
                 if ($branchId > 0) {
                     $row['branch_id'] = $branchId;
                 }
+                if ($hasLeaveRequestCol) {
+                    $row['leave_request_id'] = $requestId;
+                }
                 $attModel->create($row);
             }
             $cursor = strtotime('+1 day', $cursor);
+        }
+    }
+
+    /** Delete only attendance rows owned by this leave request (leave_request_id). */
+    private function reverseLeaveOwnedAttendance(int $companyId, int $leaveRequestId): int
+    {
+        if ($companyId < 1 || $leaveRequestId < 1 || !$this->attendanceHasLeaveRequestIdColumn()) {
+            return 0;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'DELETE FROM rateb_attendance_records
+             WHERE company_id = :cid AND leave_request_id = :lid AND status = \'leave\''
+        );
+        $stmt->execute(['cid' => $companyId, 'lid' => $leaveRequestId]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Unpaid leave days overlapping payroll period (calendar-day intersection).
+     * Uses paid_snapshot when set; else leave_types.paid. Does not rewrite payroll formula.
+     *
+     * @return array<int, int> employee_id => day count
+     */
+    private function batchUnpaidLeaveDaysByEmployee(int $companyId, string $start, string $end): array
+    {
+        $paidExpr = $this->leaveRequestHasPaidSnapshotColumn()
+            ? 'COALESCE(lr.paid_snapshot, lt.paid, 1)'
+            : 'COALESCE(lt.paid, 1)';
+        $rows = (new LeaveRequest())->query(
+            "SELECT lr.employee_id, lr.start_date, lr.end_date,
+                    {$paidExpr} AS is_paid
+             FROM rateb_leave_requests lr
+             JOIN rateb_leave_types lt ON lt.id = lr.leave_type_id AND lt.company_id = lr.company_id
+             WHERE lr.company_id = :cid
+               AND lr.status = 'approved'
+               AND lr.start_date <= :e AND lr.end_date >= :s",
+            ['cid' => $companyId, 's' => $start, 'e' => $end]
+        );
+        $out = [];
+        $periodStart = strtotime($start);
+        $periodEnd = strtotime($end);
+        if ($periodStart === false || $periodEnd === false) {
+            return [];
+        }
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            if ((int) ($row['is_paid'] ?? 1) === 1) {
+                continue;
+            }
+            $eid = (int) ($row['employee_id'] ?? 0);
+            $ls = strtotime((string) ($row['start_date'] ?? ''));
+            $le = strtotime((string) ($row['end_date'] ?? ''));
+            if ($eid < 1 || $ls === false || $le === false) {
+                continue;
+            }
+            $from = max($periodStart, $ls);
+            $to = min($periodEnd, $le);
+            if ($to < $from) {
+                continue;
+            }
+            $days = (int) round(($to - $from) / 86400) + 1;
+            $out[$eid] = ($out[$eid] ?? 0) + max(0, $days);
+        }
+        return $out;
+    }
+
+    public function hasPostedPayrollOverlappingLeave(
+        int $companyId,
+        int $employeeId,
+        string $start,
+        string $end
+    ): bool {
+        if ($companyId < 1 || $start === '' || $end === '') {
+            return false;
+        }
+        $periods = (new PayrollPeriod())->query(
+            "SELECT id, period_year, period_month FROM rateb_payroll_periods
+             WHERE company_id = :cid AND status = 'posted'",
+            ['cid' => $companyId]
+        );
+        $leaveStart = strtotime($start);
+        $leaveEnd = strtotime($end);
+        if ($leaveStart === false || $leaveEnd === false) {
+            return false;
+        }
+        foreach (is_array($periods) ? $periods : [] as $p) {
+            $y = (int) ($p['period_year'] ?? 0);
+            $m = (int) ($p['period_month'] ?? 0);
+            if ($y < 1 || $m < 1) {
+                continue;
+            }
+            $ps = strtotime(sprintf('%04d-%02d-01', $y, $m));
+            $pe = strtotime(date('Y-m-t', $ps ?: time()));
+            if ($ps === false || $pe === false) {
+                continue;
+            }
+            if ($leaveStart <= $pe && $leaveEnd >= $ps) {
+                // Posted period overlaps leave dates — block cancel/undo (do not mutate posted payroll).
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function leaveRequestHasPaidSnapshotColumn(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $db = Database::connection();
+            $stmt = $db->query(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'rateb_leave_requests'
+                   AND COLUMN_NAME = 'paid_snapshot'"
+            );
+            $cached = ((int) ($stmt ? $stmt->fetchColumn() : 0)) > 0;
+        } catch (\Throwable $e) {
+            $cached = false;
+        }
+        return $cached;
+    }
+
+    private function attendanceHasLeaveRequestIdColumn(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $db = Database::connection();
+            $stmt = $db->query(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = 'rateb_attendance_records'
+                   AND COLUMN_NAME = 'leave_request_id'"
+            );
+            $cached = ((int) ($stmt ? $stmt->fetchColumn() : 0)) > 0;
+        } catch (\Throwable $e) {
+            $cached = false;
+        }
+        return $cached;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function auditLeave(string $action, int $leaveRequestId, array $payload = []): void
+    {
+        try {
+            (new AuditService())->log($action, 'hr_leave', $leaveRequestId, $payload);
+        } catch (\Throwable $e) {
+            // best-effort
+        }
+    }
+
+    private function notifyLeaveOutcome(int $companyId, int $employeeId, int $leaveRequestId, string $outcome): void
+    {
+        if ($companyId < 1 || $employeeId < 1) {
+            return;
+        }
+        try {
+            $emp = (new Employee())->queryOne(
+                'SELECT user_id FROM rateb_employees WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $employeeId, 'cid' => $companyId]
+            );
+            $uid = (int) ($emp['user_id'] ?? 0);
+            if ($uid < 1) {
+                return;
+            }
+            $titleKey = match ($outcome) {
+                'approved' => 'leave_approved',
+                'rejected' => 'leave_rejected',
+                'cancelled' => 'leave_cancelled',
+                default => 'leave_updated',
+            };
+            $title = function_exists('__') ? (string) __($titleKey) : $titleKey;
+            (new NotificationService())->notifyUser(
+                $uid,
+                $companyId,
+                $title !== '' ? $title : $titleKey,
+                $title,
+                'info',
+                'hr_leave_' . $outcome,
+                'hr_leave',
+                $leaveRequestId
+            );
+        } catch (\Throwable $e) {
+            // best-effort
         }
     }
 
