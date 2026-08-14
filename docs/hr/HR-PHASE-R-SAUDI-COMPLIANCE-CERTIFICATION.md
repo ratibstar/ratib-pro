@@ -1,10 +1,10 @@
 # RATIB ERP — HR Phase R Saudi Compliance Certification
 
-**Status:** COMPLETE (pending deploy stamp)  
+**Status:** COMPLETE  
 **Date:** 2026-08-15  
-**Base:** Phase Q Operations Automation  
-**Commit:** _(pending)_  
-**Deploy:** _(pending)_
+**Base:** Phase Q Operations Automation (`00d73f93`)  
+**Commit:** `50ad4cf4`  
+**Deploy:** [success](https://github.com/ratibstar/ratib-pro/actions/runs/31847528991)
 
 ---
 
@@ -43,8 +43,8 @@ Prepare RATIB for Saudi HR compliance (GOSI / WPS) with local eligibility, contr
 
 | Suite | Result |
 |-------|--------|
-| `run-hr-phase-r-tests.php` | _(pending)_ |
-| Phase B–Q regressions | _(pending)_ |
+| `run-hr-phase-r-tests.php` | **CLEAR** |
+| Phase B–Q regressions | **CLEAR** |
 
 ---
 
@@ -55,4 +55,4 @@ Prepare RATIB for Saudi HR compliance (GOSI / WPS) with local eligibility, contr
 - WPS builds require an existing payroll period with lines.  
 - Contribution base uses employee salary + optional housing/transport/other fields when present.
 
-**Exit:** Saudi HR readiness foundation is local-only and visible on Command Center. **Met (post-deploy).**
+**Exit:** Saudi HR readiness foundation is local-only and visible on Command Center. **Met.**
