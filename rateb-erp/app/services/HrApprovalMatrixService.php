@@ -7,11 +7,12 @@ use PDO;
 use Rateb\App\Core\Database;
 
 /**
- * Phase G — HR approval matrix governance overlay (not an approval engine).
+ * Phase G/H — HR approval matrix governance overlay (not an approval engine).
  *
- * - No matrix / tables missing → passthrough (exact pre-G Oversight behavior).
+ * - No matrix / tables missing / disabled → passthrough (exact pre-G Oversight behavior).
  * - Matrix present → stage progression; domain finalize only on final stage.
  * - Progress binds matrix_id + matrix_version + stages_snapshot_json (versioning).
+ * - Phase H: validated draft/activate/deactivate; no silent approver coercion.
  * - Does NOT UPDATE domain status directly; callers invoke existing finalizers.
  * - Does NOT use EAP or Legacy WorkflowService.
  */
@@ -85,6 +86,9 @@ final class HrApprovalMatrixService
         if (!$this->actorMayAct($currentStage, $actorUserId, $companyId)) {
             throw new \RuntimeException(__('access_denied'));
         }
+        if ($this->isSelfApprovalBlocked($sourceKey, $recordId, $companyId, $currentStage, $actorUserId)) {
+            throw new \RuntimeException(__('access_denied'));
+        }
 
         $maxOrder = $this->maxStageOrder($snapshot);
         if ($currentOrder < $maxOrder) {
@@ -147,9 +151,12 @@ final class HrApprovalMatrixService
     }
 
     /**
-     * Upsert matrix + replace stages (bumps version when an existing matrix is updated).
+     * Upsert matrix + replace stages.
+     * Phase H: always validates; default persists as DRAFT (enabled=0) unless $activate=true.
+     * In-flight progress keeps frozen snapshot when matrix version bumps.
      *
      * @param list<array{stage_order:int,code:string,name:string,approver_type?:string,approver_reference?:?string}> $stages
+     * @return array{matrix_id:int,enabled:int,version:int,warnings:list<string>}
      */
     public function saveMatrix(
         int $companyId,
@@ -157,19 +164,27 @@ final class HrApprovalMatrixService
         string $requestType,
         string $name,
         array $stages,
-        ?int $actorUserId = null
-    ): int {
-        if ($companyId < 1 || !in_array($sourceKey, self::SUPPORTED_SOURCES, true)) {
-            throw new \RuntimeException(__('invalid_request'));
-        }
+        ?int $actorUserId = null,
+        bool $activate = false
+    ): array {
         if (!$this->schemaReady()) {
             throw new \RuntimeException(__('db_schema_outdated'));
         }
         $requestType = trim($requestType);
-        $normalizedStages = $this->normalizeStageInput($stages);
-        if ($normalizedStages === []) {
-            throw new \RuntimeException(__('invalid_request'));
+        $validation = (new HrApprovalMatrixValidator())->validate(
+            $companyId,
+            $sourceKey,
+            $requestType,
+            $name,
+            $stages,
+            $activate
+        );
+        if (!$validation['ok']) {
+            throw new \RuntimeException('matrix_validation_failed:' . implode(',', $validation['errors']));
         }
+        /** @var list<array{stage_order:int,code:string,name:string,approver_type:string,approver_reference:?string}> $normalizedStages */
+        $normalizedStages = $validation['stages'];
+        $enabled = $activate ? 1 : 0;
 
         $db = Database::connection();
         $existing = $this->findMatrixRow($companyId, $sourceKey, $requestType);
@@ -178,11 +193,12 @@ final class HrApprovalMatrixService
             $newVersion = (int) ($existing['version'] ?? 1) + 1;
             $stmt = $db->prepare(
                 'UPDATE rateb_hr_approval_matrices
-                 SET name = :name, enabled = 1, version = :ver, updated_by = :uid
+                 SET name = :name, enabled = :en, version = :ver, updated_by = :uid
                  WHERE id = :id AND company_id = :cid'
             );
             $stmt->execute([
-                'name' => $name !== '' ? $name : null,
+                'name' => trim($name),
+                'en' => $enabled,
                 'ver' => $newVersion,
                 'uid' => $actorUserId,
                 'id' => $matrixId,
@@ -191,20 +207,23 @@ final class HrApprovalMatrixService
             $db->prepare(
                 'DELETE FROM rateb_hr_approval_matrix_stages WHERE matrix_id = :mid AND company_id = :cid'
             )->execute(['mid' => $matrixId, 'cid' => $companyId]);
+            $version = $newVersion;
         } else {
             $stmt = $db->prepare(
                 'INSERT INTO rateb_hr_approval_matrices
                     (company_id, source_key, request_type, name, enabled, version, created_by, updated_by)
-                 VALUES (:cid, :sk, :rt, :name, 1, 1, :uid, :uid)'
+                 VALUES (:cid, :sk, :rt, :name, :en, 1, :uid, :uid)'
             );
             $stmt->execute([
                 'cid' => $companyId,
                 'sk' => $sourceKey,
                 'rt' => $requestType,
-                'name' => $name !== '' ? $name : null,
+                'name' => trim($name),
+                'en' => $enabled,
                 'uid' => $actorUserId,
             ]);
             $matrixId = (int) $db->lastInsertId();
+            $version = 1;
         }
 
         $ins = $db->prepare(
@@ -224,7 +243,123 @@ final class HrApprovalMatrixService
             ]);
         }
 
-        return $matrixId;
+        $this->auditConfig($activate ? 'hr_matrix_save_activate' : 'hr_matrix_save_draft', $matrixId, [
+            'company_id' => $companyId,
+            'source_key' => $sourceKey,
+            'request_type' => $requestType,
+            'enabled' => $enabled,
+            'version' => $version,
+            'stage_count' => count($normalizedStages),
+            'warnings' => $validation['warnings'],
+        ]);
+
+        return [
+            'matrix_id' => $matrixId,
+            'enabled' => $enabled,
+            'version' => $version,
+            'warnings' => $validation['warnings'],
+        ];
+    }
+
+    /**
+     * Activate after validation (DRAFT → ACTIVE). Does not rewrite in-flight snapshots.
+     *
+     * @return array{matrix_id:int,enabled:int,version:int,warnings:list<string>}
+     */
+    public function activateMatrix(int $companyId, int $matrixId, ?int $actorUserId = null): array
+    {
+        $row = $this->requireCompanyMatrix($companyId, $matrixId);
+        $stages = $this->loadEnabledStages($matrixId, $companyId);
+        $validation = (new HrApprovalMatrixValidator())->validate(
+            $companyId,
+            (string) $row['source_key'],
+            (string) ($row['request_type'] ?? ''),
+            (string) ($row['name'] ?? ''),
+            $stages,
+            true
+        );
+        if (!$validation['ok']) {
+            throw new \RuntimeException('matrix_validation_failed:' . implode(',', $validation['errors']));
+        }
+
+        $db = Database::connection();
+        $newVersion = (int) ($row['version'] ?? 1);
+        // Activation without stage rewrite does not bump version; stage rewrite uses saveMatrix.
+        $stmt = $db->prepare(
+            'UPDATE rateb_hr_approval_matrices
+             SET enabled = 1, updated_by = :uid
+             WHERE id = :id AND company_id = :cid'
+        );
+        $stmt->execute([
+            'uid' => $actorUserId,
+            'id' => $matrixId,
+            'cid' => $companyId,
+        ]);
+
+        $this->auditConfig('hr_matrix_activate', $matrixId, [
+            'company_id' => $companyId,
+            'source_key' => (string) $row['source_key'],
+            'request_type' => (string) ($row['request_type'] ?? ''),
+            'version' => $newVersion,
+            'warnings' => $validation['warnings'],
+        ]);
+
+        return [
+            'matrix_id' => $matrixId,
+            'enabled' => 1,
+            'version' => $newVersion,
+            'warnings' => $validation['warnings'],
+        ];
+    }
+
+    /**
+     * Safe rollback: disable matrix. In-flight progress keeps frozen snapshot path.
+     */
+    public function deactivateMatrix(int $companyId, int $matrixId, ?int $actorUserId = null): void
+    {
+        $row = $this->requireCompanyMatrix($companyId, $matrixId);
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'UPDATE rateb_hr_approval_matrices
+             SET enabled = 0, updated_by = :uid
+             WHERE id = :id AND company_id = :cid'
+        );
+        $stmt->execute([
+            'uid' => $actorUserId,
+            'id' => $matrixId,
+            'cid' => $companyId,
+        ]);
+        $this->auditConfig('hr_matrix_deactivate', $matrixId, [
+            'company_id' => $companyId,
+            'source_key' => (string) $row['source_key'],
+            'request_type' => (string) ($row['request_type'] ?? ''),
+            'version' => (int) ($row['version'] ?? 0),
+            'note' => 'in_flight_progress_keeps_snapshot',
+        ]);
+    }
+
+    /**
+     * Validate without persisting.
+     *
+     * @param list<array<string, mixed>> $stages
+     * @return array{ok:bool,errors:list<string>,warnings:list<string>,stages:list<array<string,mixed>>}
+     */
+    public function validateMatrixConfig(
+        int $companyId,
+        string $sourceKey,
+        string $requestType,
+        string $name,
+        array $stages,
+        bool $forActivation = true
+    ): array {
+        return (new HrApprovalMatrixValidator())->validate(
+            $companyId,
+            $sourceKey,
+            trim($requestType),
+            $name,
+            $stages,
+            $forActivation
+        );
     }
 
     public function schemaReady(): bool
@@ -238,7 +373,11 @@ final class HrApprovalMatrixService
         }
     }
 
-    /** @return array<string, mixed>|null */
+    /**
+     * Specific request_type beats wildcard (empty). Only enabled matrices are selectable.
+     *
+     * @return array<string, mixed>|null
+     */
     private function resolveMatrix(int $companyId, string $sourceKey, string $requestType): ?array
     {
         $exact = $this->findMatrixRow($companyId, $sourceKey, $requestType);
@@ -252,6 +391,34 @@ final class HrApprovalMatrixService
             }
         }
         return null;
+    }
+
+    /** @return array<string, mixed> */
+    private function requireCompanyMatrix(int $companyId, int $matrixId): array
+    {
+        if ($companyId < 1 || $matrixId < 1 || !$this->schemaReady()) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT * FROM rateb_hr_approval_matrices WHERE id = :id AND company_id = :cid LIMIT 1'
+        );
+        $stmt->execute(['id' => $matrixId, 'cid' => $companyId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new \RuntimeException(__('invalid_request'));
+        }
+        return $row;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function auditConfig(string $action, int $matrixId, array $payload): void
+    {
+        try {
+            (new AuditService())->log($action, 'hr_approval_matrix', $matrixId, $payload);
+        } catch (\Throwable $e) {
+            // Config audit must not block governance writes.
+        }
     }
 
     /** @return array<string, mixed>|null */
@@ -483,7 +650,59 @@ final class HrApprovalMatrixService
             }
             return in_array($roleId, (new AuthorizationService())->getUserRoleIds($actorUserId), true);
         }
+        // Unknown types must never silently pass (Phase H).
         return false;
+    }
+
+    /**
+     * Runtime self-approval guard: fixed user stage cannot be the request's employee user (non-SA).
+     *
+     * @param array<string, mixed> $stage
+     */
+    private function isSelfApprovalBlocked(
+        string $sourceKey,
+        int $recordId,
+        int $companyId,
+        array $stage,
+        int $actorUserId
+    ): bool {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return false;
+        }
+        if ((string) ($stage['approver_type'] ?? '') !== 'user' || $actorUserId < 1) {
+            return false;
+        }
+        $requesterUserId = $this->resolveRequesterUserId($sourceKey, $recordId, $companyId);
+        if ($requesterUserId < 1) {
+            return false;
+        }
+        return $requesterUserId === $actorUserId;
+    }
+
+    private function resolveRequesterUserId(string $sourceKey, int $recordId, int $companyId): int
+    {
+        $table = match ($sourceKey) {
+            self::SOURCE_LEAVE => 'rateb_leave_requests',
+            self::SOURCE_PERMISSION => 'rateb_hr_permission_requests',
+            self::SOURCE_REQUEST => 'rateb_hr_employee_requests',
+            default => '',
+        };
+        if ($table === '') {
+            return 0;
+        }
+        try {
+            $db = Database::connection();
+            $sql = 'SELECT e.user_id
+                    FROM ' . $table . ' t
+                    INNER JOIN rateb_employees e ON e.id = t.employee_id AND e.company_id = t.company_id
+                    WHERE t.id = :id AND t.company_id = :cid
+                    LIMIT 1';
+            $stmt = $db->prepare($sql);
+            $stmt->execute(['id' => $recordId, 'cid' => $companyId]);
+            return (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**
@@ -536,45 +755,5 @@ final class HrApprovalMatrixService
             $max = max($max, (int) ($stage['stage_order'] ?? 0));
         }
         return $max;
-    }
-
-    /**
-     * @param list<array{stage_order?:int,code?:string,name?:string,approver_type?:string,approver_reference?:?string}> $stages
-     * @return list<array{stage_order:int,code:string,name:string,approver_type:string,approver_reference:?string}>
-     */
-    private function normalizeStageInput(array $stages): array
-    {
-        $out = [];
-        $orders = [];
-        foreach ($stages as $stage) {
-            $order = (int) ($stage['stage_order'] ?? 0);
-            $code = trim((string) ($stage['code'] ?? ''));
-            $name = trim((string) ($stage['name'] ?? ''));
-            if ($order < 1 || $code === '' || $name === '') {
-                continue;
-            }
-            if (isset($orders[$order])) {
-                continue;
-            }
-            $atype = strtolower(trim((string) ($stage['approver_type'] ?? 'oversight')));
-            if (!in_array($atype, ['oversight', 'user', 'role'], true)) {
-                $atype = 'oversight';
-            }
-            $aref = $stage['approver_reference'] ?? null;
-            $aref = $aref !== null && trim((string) $aref) !== '' ? trim((string) $aref) : null;
-            if ($atype === 'oversight') {
-                $aref = null;
-            }
-            $orders[$order] = true;
-            $out[] = [
-                'stage_order' => $order,
-                'code' => $code,
-                'name' => $name,
-                'approver_type' => $atype,
-                'approver_reference' => $aref,
-            ];
-        }
-        usort($out, static fn ($a, $b) => $a['stage_order'] <=> $b['stage_order']);
-        return $out;
     }
 }

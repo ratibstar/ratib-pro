@@ -218,7 +218,33 @@ Each phase below is **small and testable**. Do not skip P0.
 
 ---
 
-## Phase H — P1 Leave depth
+## Phase H — P1 Approval Matrix Production Governance
+
+**Status:** COMPLETE (2026-08-14)  
+**Audit:** `docs/hr/HR-PHASE-H-MATRIX-GOVERNANCE-AUDIT.md`  
+**Certification:** `docs/hr/HR-PHASE-H-MATRIX-GOVERNANCE-CERTIFICATION.md`
+
+### Completed
+
+1. `HrApprovalMatrixValidator` — hard reject invalid sources/stages/approvers.  
+2. `saveMatrix` defaults to DRAFT (`enabled=0`); `activateMatrix` / `deactivateMatrix`.  
+3. No silent coercion of unknown approver types.  
+4. Company-scoped user/role validation; specific `request_type` beats wildcard.  
+5. Runtime self-approval guard; config changes via `AuditService`.  
+6. Tests: `tests/hr/HrPhaseHMatrixGovernanceTest.php`.
+
+### Deferred
+
+- Matrix admin UI.  
+- SoD hard-fail policy (warnings only today).
+
+**Exit:** Unsafe matrices cannot activate; Oversight engine unchanged. **Met.**
+
+---
+
+## Phase H2 — P1 Leave depth (former Phase H charter)
+
+**Status:** NOT STARTED (deferred; numbering superseded by Matrix Governance)
 
 **Goal:** Closer to enterprise leave without breaking ESS.
 

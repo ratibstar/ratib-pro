@@ -98,5 +98,5 @@ Approver types implemented: `oversight`, `user`, `role` (via `AuthorizationServi
 
 - Company-side stage actor UI (inbox remains read-only)
 - Manager hierarchy resolver
-- Matrix admin CRUD screens (service `saveMatrix` available for config/tests)
-- Phase H leave depth
+- Matrix admin CRUD screens (service `saveMatrix` / activate / deactivate available)
+- Former “Leave depth” charter → **Phase H2**
