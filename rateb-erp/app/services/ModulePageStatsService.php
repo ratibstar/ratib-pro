@@ -274,6 +274,16 @@ final class ModulePageStatsService
                 ['label' => __('approvals_total_pending'), 'value' => $this->intStr((int) ($summary['total'] ?? 0)), 'tone' => 'red'],
             ]);
         }
+        if (str_contains($route, 'hr-approvals')) {
+            return $this->cards([
+                ['label' => __('hr_approvals_oversight'), 'value' => $this->intStr((int) ($menu['hr'] ?? 0)), 'tone' => 'orange'],
+                ['label' => __('hr_leaves'), 'value' => $this->intStr((int) ($summary['hr_leave'] ?? 0)), 'tone' => 'yellow'],
+                ['label' => __('hr_permission_requests'), 'value' => $this->intStr((int) ($summary['hr_permission'] ?? 0)), 'tone' => 'blue'],
+                ['label' => __('hr_employee_requests'), 'value' => $this->intStr((int) ($summary['hr_request'] ?? 0)), 'tone' => 'purple'],
+                ['label' => __('hr_decisions'), 'value' => $this->intStr((int) ($summary['hr_decision'] ?? 0)), 'tone' => 'teal'],
+                ['label' => __('hr_payroll'), 'value' => $this->intStr((int) ($summary['hr_payroll'] ?? 0)), 'tone' => 'green'],
+            ]);
+        }
         if (str_contains($route, 'workflows')) {
             return $this->cards([
                 ['label' => __('workflow_definitions'), 'value' => $this->intStr($this->countRows('rateb_workflow_definitions', $filter)), 'tone' => 'blue'],
@@ -284,6 +294,7 @@ final class ModulePageStatsService
 
         return $this->cards([
             ['label' => __('approvals_oversight'), 'value' => $this->intStr((int) ($menu['approvals'] ?? 0)), 'tone' => 'orange'],
+            ['label' => __('hr_approvals_oversight'), 'value' => $this->intStr((int) ($menu['hr'] ?? 0)), 'tone' => 'green'],
             ['label' => __('procurement_oversight'), 'value' => $this->intStr((int) ($menu['procurement'] ?? 0)), 'tone' => 'blue'],
             ['label' => __('inventory_oversight'), 'value' => $this->intStr((int) ($menu['inventory'] ?? 0)), 'tone' => 'teal'],
             ['label' => __('rfq_oversight'), 'value' => $this->intStr((int) ($menu['rfq'] ?? 0)), 'tone' => 'purple'],

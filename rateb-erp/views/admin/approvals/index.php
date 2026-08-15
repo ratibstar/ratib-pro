@@ -5,6 +5,9 @@
 /** @var array<int, array<string, mixed>> $companies */
 /** @var array{company_id:int,status:string,date_from:string,date_to:string} $filters */
 $typeFilter = (string) ($typeFilter ?? '');
+$hrType = (string) ($hrType ?? '');
+$hrTypeOptions = $hrTypeOptions ?? \Rateb\App\Services\ApprovalOversightService::hrTypeOptions();
+$isHrPage = $typeFilter === 'hr';
 $csrfToken = (string) ($csrf ?? '');
 $canBulk = true;
 $colSpan = 6;
@@ -19,6 +22,7 @@ $approvalsConfig = [
     'rejectUrl' => rateb_url('admin/oversight/approvals/reject'),
     'undoUrl' => rateb_url('admin/oversight/approvals/undo'),
     'typeFilter' => $typeFilter,
+    'hrType' => $hrType,
     'companyFilter' => (int) ($filters['company_id'] ?? 0),
     'labels' => [
         'view' => __('view'),
@@ -65,6 +69,12 @@ $approvalsConfig = [
                         </select>
                     </div>
                     <?php } ?>
+                    <?php if ($isHrPage) { ?>
+                    <input type="hidden" name="type" value="hr">
+                    <?php if ($hrType !== '') { ?>
+                    <input type="hidden" name="hr_type" value="<?php echo Rateb\App\Core\View::escape($hrType); ?>">
+                    <?php } ?>
+                    <?php } else { ?>
                     <div class="col-md-3">
                         <label class="form-label rateb-form-label"><?php echo __('approval_category'); ?></label>
                         <select class="form-select" name="type">
@@ -75,13 +85,20 @@ $approvalsConfig = [
                             <?php } ?>
                         </select>
                     </div>
+                    <?php } ?>
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100"><?php echo __('filter'); ?></button>
                     </div>
                     <div class="col-md-2">
+                        <?php if ($isHrPage) { ?>
+                        <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-check-double"></i> <?php echo __('approvals_oversight'); ?>
+                        </a>
+                        <?php } else { ?>
                         <a href="<?php echo rateb_url('admin/oversight/workflows'); ?>" class="btn btn-outline-secondary w-100">
                             <i class="fas fa-diagram-project"></i> <?php echo __('workflow_definitions'); ?>
                         </a>
+                        <?php } ?>
                     </div>
                 </div>
             </div>
@@ -89,18 +106,53 @@ $approvalsConfig = [
     </div>
 
     <div class="col-12">
+        <?php
+        $companyIdQ = (int) ($filters['company_id'] ?? 0);
+        $approvalsBase = rateb_url('admin/oversight/approvals');
+        $companiesBase = rateb_url('admin/oversight/companies-approvals');
+        $hrBase = rateb_url('admin/oversight/hr-approvals');
+        $hrTotal = 0;
+        foreach (\Rateb\App\Services\ApprovalOversightService::hrSourceKeys() as $hk) {
+            $hrTotal += (int) ($summary[$hk] ?? 0);
+        }
+        if ($isHrPage) {
+            $tabQs = $companyIdQ > 0 ? ['company_id' => $companyIdQ] : [];
+            $allHref = $hrBase . ($tabQs !== [] ? '?' . http_build_query($tabQs) : '');
+            ?>
+        <nav class="rateb-hr-approval-tabs" aria-label="<?php echo Rateb\App\Core\View::escape(__('hr_approvals_oversight')); ?>">
+            <a href="<?php echo Rateb\App\Core\View::escape($allHref); ?>"
+               class="rateb-hr-approval-tab<?php echo $hrType === '' ? ' is-active' : ''; ?>"
+               data-rateb-soft-nav="1"
+               data-summary-card="hr_total">
+                <span><?php echo __('all'); ?></span>
+                <span class="rateb-hr-approval-tab-badge" data-summary-count><?php echo $hrTotal; ?></span>
+            </a>
+            <?php foreach ($hrTypeOptions as $tabVal => $tabMeta) {
+                $tabCount = (int) ($summary[$tabMeta['source']] ?? 0);
+                $hrefQs = $tabQs;
+                $hrefQs['hr_type'] = $tabVal;
+                $tabHref = $hrBase . '?' . http_build_query($hrefQs);
+                $tabActive = $hrType === $tabVal;
+                ?>
+            <a href="<?php echo Rateb\App\Core\View::escape($tabHref); ?>"
+               class="rateb-hr-approval-tab<?php echo $tabActive ? ' is-active' : ''; ?>"
+               data-rateb-soft-nav="1"
+               data-summary-card="<?php echo Rateb\App\Core\View::escape((string) $tabMeta['source']); ?>">
+                <span><?php echo __($tabMeta['label']); ?></span>
+                <span class="rateb-hr-approval-tab-badge" data-summary-count><?php echo $tabCount; ?></span>
+            </a>
+            <?php } ?>
+        </nav>
+        <?php } else { ?>
         <div class="row g-2">
             <?php
-            $companyIdQ = (int) ($filters['company_id'] ?? 0);
-            $approvalsBase = rateb_url('admin/oversight/approvals');
-            $companiesBase = rateb_url('admin/oversight/companies-approvals');
             $cards = [
                 ['key' => 'total', 'label' => 'approvals_total_pending', 'class' => 'primary', 'type' => '', 'href' => $approvalsBase],
                 ['key' => 'company_registration', 'label' => 'companies_approvals_oversight', 'class' => 'info', 'type' => 'companies', 'href' => $companiesBase],
                 ['key' => 'workflow_instance', 'label' => 'approval_category_workflow', 'class' => 'warning', 'type' => 'workflow', 'href' => $approvalsBase],
                 ['key' => 'journal_entry', 'label' => 'approval_category_accounting', 'class' => 'info', 'type' => 'accounting', 'href' => $approvalsBase],
                 ['key' => 'supplier_evaluation', 'label' => 'approval_category_manager', 'class' => 'secondary', 'type' => 'manager', 'href' => $approvalsBase],
-                ['key' => 'hr_leave', 'label' => 'approval_category_hr', 'class' => 'success', 'type' => 'hr', 'href' => $approvalsBase],
+                ['key' => 'hr_total', 'label' => 'hr_approvals_oversight', 'class' => 'success', 'type' => 'hr', 'href' => $hrBase],
             ];
             foreach ($cards as $card) {
                 $count = (int) ($summary[$card['key']] ?? 0);
@@ -114,15 +166,11 @@ $approvalsConfig = [
                         $count += (int) ($summary[$mk] ?? 0);
                     }
                 }
-                if ($card['key'] === 'hr_leave') {
-                    $hrKeys = ['hr_leave', 'hr_permission', 'hr_request', 'hr_payroll'];
-                    $count = 0;
-                    foreach ($hrKeys as $hk) {
-                        $count += (int) ($summary[$hk] ?? 0);
-                    }
+                if ($card['key'] === 'hr_total') {
+                    $count = $hrTotal;
                 }
                 $qs = [];
-                if ($card['type'] !== '') {
+                if ($card['type'] !== '' && $card['type'] !== 'hr') {
                     $qs['type'] = $card['type'];
                 }
                 if ($companyIdQ > 0) {
@@ -130,8 +178,7 @@ $approvalsConfig = [
                 }
                 $cardHref = $card['href'] . ($qs !== [] ? '?' . http_build_query($qs) : '');
                 $isActive = ($card['type'] === '' && $typeFilter === '')
-                    || ($card['type'] !== '' && $typeFilter === $card['type'])
-                    || ($card['type'] === 'companies' && $typeFilter === 'companies');
+                    || ($card['type'] !== '' && $typeFilter === $card['type']);
                 ?>
             <div class="col-6 col-md">
                 <a href="<?php echo Rateb\App\Core\View::escape($cardHref); ?>"
@@ -146,13 +193,14 @@ $approvalsConfig = [
             </div>
             <?php } ?>
         </div>
+        <?php } ?>
     </div>
 
     <div class="col-12">
         <div class="rateb-card">
             <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span><?php echo __('approvals_oversight'); ?></span>
-                <span class="text-muted small"><?php echo __('admin_oversight_approvals_hint'); ?></span>
+                <span><?php echo $isHrPage ? __('hr_approvals_oversight') : __('approvals_oversight'); ?></span>
+                <span class="text-muted small"><?php echo $isHrPage ? __('hr_approvals_oversight_hint') : __('admin_oversight_approvals_hint'); ?></span>
             </div>
             <?php if (!empty($items)) { ?>
             <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>

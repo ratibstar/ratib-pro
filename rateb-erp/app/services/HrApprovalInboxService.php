@@ -256,7 +256,7 @@ final class HrApprovalInboxService
             'source_url' => (string) ($row['view_url'] ?? ''),
             'queue_url' => (string) ($row['queue_url'] ?? ''),
             'source_module' => 'hr',
-            'oversight_url' => rateb_url('admin/oversight/approvals') . '?type=hr',
+            'oversight_url' => rateb_url('admin/oversight/hr-approvals'),
         ];
     }
 

@@ -39,6 +39,34 @@ final class ApprovalOversightService
         ];
     }
 
+    /** @return list<string> */
+    public static function hrSourceKeys(): array
+    {
+        return ['hr_leave', 'hr_permission', 'hr_request', 'hr_decision', 'hr_payroll'];
+    }
+
+    /**
+     * HR oversight type tabs: query value => [label key, source_key].
+     *
+     * @return array<string, array{label: string, source: string}>
+     */
+    public static function hrTypeOptions(): array
+    {
+        return [
+            'leave' => ['label' => 'hr_leaves', 'source' => 'hr_leave'],
+            'permission' => ['label' => 'hr_permission_requests', 'source' => 'hr_permission'],
+            'request' => ['label' => 'hr_employee_requests', 'source' => 'hr_request'],
+            'decision' => ['label' => 'hr_decisions', 'source' => 'hr_decision'],
+            'payroll' => ['label' => 'hr_payroll', 'source' => 'hr_payroll'],
+        ];
+    }
+
+    public static function hrSourceKeyForType(string $hrType): ?string
+    {
+        $opts = self::hrTypeOptions();
+        return isset($opts[$hrType]) ? $opts[$hrType]['source'] : null;
+    }
+
     /** @return array<string, int> */
     public function summary(?int $companyFilter = null, bool $bypassCache = false): array
     {
@@ -73,12 +101,13 @@ final class ApprovalOversightService
      * Derive sidebar menu badges from a summary() payload (no extra COUNTs).
      *
      * @param array<string, int> $summary
-     * @return array{approvals:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,company_pending:int,total:int}
+     * @return array{approvals:int,hr:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,company_pending:int,total:int}
      */
     public function menuCountsFromSummary(array $summary): array
     {
         $counts = [
             'approvals' => 0,
+            'hr' => 0,
             'procurement' => 0,
             'rfq' => 0,
             'inventory' => 0,
@@ -104,13 +133,14 @@ final class ApprovalOversightService
     /**
      * Pending approval counts per admin oversight sidebar menu.
      *
-     * @return array{approvals:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,total:int}
+     * @return array{approvals:int,hr:int,procurement:int,rfq:int,inventory:int,supplier_evaluations:int,total:int}
      */
     public function menuCounts(?int $companyFilter = null): array
     {
         // Never run schema ALTER from sidebar/nav — that blocked /admin for 30–60s.
         $counts = [
             'approvals' => 0,
+            'hr' => 0,
             'procurement' => 0,
             'rfq' => 0,
             'inventory' => 0,
@@ -281,6 +311,7 @@ final class ApprovalOversightService
     {
         return match ($sourceKey) {
             'company_registration' => 'approvals',
+            'hr_leave', 'hr_permission', 'hr_request', 'hr_payroll', 'hr_decision' => 'hr',
             'supplier_evaluation' => 'supplier_evaluations',
             'inventory_audit', 'warehouse_transfer' => 'inventory',
             default => 'approvals',
@@ -401,12 +432,16 @@ final class ApprovalOversightService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200): array
+    public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200, ?string $sourceKeyFilter = null): array
     {
         // Never ALTER schema on list GET — approve/reject paths ensure columns when needed.
         $items = [];
-        $perSource = max(10, (int) ceil($limit / max(1, count($this->sources()))));
+        $sourceCount = $sourceKeyFilter !== null && $sourceKeyFilter !== '' ? 1 : count($this->sources());
+        $perSource = max(10, (int) ceil($limit / max(1, $sourceCount)));
         foreach ($this->sources() as $key => $source) {
+            if ($sourceKeyFilter !== null && $sourceKeyFilter !== '' && $key !== $sourceKeyFilter) {
+                continue;
+            }
             if ($typeFilter !== null && $typeFilter !== '' && ($source['category'] ?? '') !== $typeFilter) {
                 continue;
             }

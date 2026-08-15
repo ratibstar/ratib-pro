@@ -1373,6 +1373,53 @@ a.rateb-approval-summary-card .text-muted {
     color: var(--rateb-text-muted, #94a3b8) !important;
 }
 
+/* HR approvals — type tabs with pending badges */
+.rateb-hr-approval-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+a.rateb-hr-approval-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--rateb-border, #334155);
+    border-radius: 999px;
+    color: inherit;
+    text-decoration: none;
+    background: var(--rateb-card, rgba(15, 23, 42, 0.45));
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+a.rateb-hr-approval-tab:hover {
+    filter: brightness(1.08);
+    border-color: rgba(250, 204, 21, 0.55);
+}
+
+a.rateb-hr-approval-tab.is-active {
+    border-color: rgba(250, 204, 21, 0.85);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.35);
+    background: rgba(250, 204, 21, 0.12);
+}
+
+.rateb-hr-approval-tab-badge {
+    display: inline-flex;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.35rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #facc15;
+    color: #111827;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Approvals oversight — horizontal action chips + inline detail panel */
 table.rateb-approvals-table th.rateb-th-actions,
 table.rateb-approvals-table td.rateb-actions-cell {

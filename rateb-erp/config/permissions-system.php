@@ -714,6 +714,7 @@ return [
         'admin/settings' => 'settings.manage',
         'admin/reports' => 'reports.view',
         'admin/oversight/companies-approvals' => 'companies.view',
+        'admin/oversight/hr-approvals' => 'workflows.view',
         'admin/oversight/procurement' => 'procurement.oversight',
         'admin/oversight/rfq' => 'procurement.oversight',
         'admin/oversight/inventory' => 'inventory.oversight',

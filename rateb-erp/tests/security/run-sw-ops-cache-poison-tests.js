@@ -72,6 +72,7 @@ assert('admin nav never bypasses to Chrome interstitial', /ALWAYS respondWith â€
 assert('respondWith document gate never rejects', /respondWithDocumentAndReleaseWarmGate[\s\S]{0,800}?\.catch\(function/.test(source));
 assert('SW warms agency-updates for offline', /leanOpsCritical[\s\S]*admin\/agency-updates/.test(source));
 assert('SW warms companies-approvals for offline', source.includes("'admin/oversight/companies-approvals'"));
+assert('SW warms hr-approvals for offline', source.includes("'admin/oversight/hr-approvals'"));
 assert('SW HTML warm delayed for online charts', /HTML warm ~8s after shell assets[\s\S]*8000/.test(source));
 assert('SW warms hr/holidays for offline', /leanOpsCritical[\s\S]*admin\/hr\/holidays/.test(source));
 assert('SW warms accounting hub', /leanOpsCritical[\s\S]*admin\/ops\/accounting/.test(source));

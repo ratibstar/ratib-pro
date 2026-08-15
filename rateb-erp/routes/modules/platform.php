@@ -259,6 +259,7 @@ $router->post('/admin/workflows', static function (): void {
 }, [ErpAuthMiddleware::class]);
 $router->get('/admin/oversight/approvals', [AdminApprovalsController::class, 'index'], rateb_platform_oversight_mw('workflows.view'));
 $router->get('/admin/oversight/companies-approvals', [AdminApprovalsController::class, 'companiesApprovals'], rateb_platform_oversight_mw('companies.view'));
+$router->get('/admin/oversight/hr-approvals', [AdminApprovalsController::class, 'hrApprovals'], rateb_platform_oversight_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/count', [AdminApprovalsController::class, 'count'], rateb_platform_oversight_mw('workflows.view'));
 $router->get('/admin/oversight/approvals/detail', [AdminApprovalsController::class, 'detail'], rateb_platform_oversight_mw('workflows.view'));
 $router->post('/admin/oversight/approvals/decide', [AdminApprovalsController::class, 'decideAction'], rateb_platform_oversight_mw('workflows.manage'));

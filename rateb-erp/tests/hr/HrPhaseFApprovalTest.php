@@ -28,6 +28,7 @@ final class HrPhaseFApprovalTest
         $this->testNoApprovalEngine2();
         $this->testBadgeAggregatesHrRoutes();
         $this->testNormalizeApprovalItemShape();
+        $this->testOversightHrApprovalsWired();
 
         return $this->results;
     }
@@ -176,8 +177,29 @@ final class HrPhaseFApprovalTest
         $src = (string) file_get_contents(RATEB_ROOT . '/config/app.php');
         $ok = str_contains($src, "path === 'hr/approvals-inbox'")
             && str_contains($src, "counts['hr/leaves']")
-            && str_contains($src, "counts['hr/payroll']");
+            && str_contains($src, "counts['hr/payroll']")
+            && str_contains($src, "counts['hr/decisions']");
         $this->record('Nav badge aggregates HR pending routes for inbox', $ok);
+    }
+
+    private function testOversightHrApprovalsWired(): void
+    {
+        $svc = (string) file_get_contents(RATEB_ROOT . '/app/services/ApprovalOversightService.php');
+        $ok = str_contains($svc, "'hr_leave', 'hr_permission', 'hr_request', 'hr_payroll', 'hr_decision' => 'hr'")
+            && str_contains($svc, 'function hrTypeOptions')
+            && str_contains($svc, "'hr' => 0");
+        $routes = (string) file_get_contents(RATEB_ROOT . '/routes/modules/platform.php');
+        $ok = $ok && str_contains($routes, 'admin/oversight/hr-approvals')
+            && str_contains($routes, 'hrApprovals');
+        $nav = (string) file_get_contents(RATEB_ROOT . '/views/layouts/main.php');
+        $ok = $ok && str_contains($nav, 'admin/oversight/hr-approvals')
+            && str_contains($nav, 'hr_approvals_oversight');
+        $view = (string) file_get_contents(RATEB_ROOT . '/views/admin/approvals/index.php');
+        $ok = $ok && str_contains($view, 'rateb-hr-approval-tabs')
+            && str_contains($view, 'hr_type');
+        $ar = (string) file_get_contents(RATEB_ROOT . '/config/lang/ar.php');
+        $ok = $ok && str_contains($ar, 'اعتمادات الموارد البشرية');
+        $this->record('Oversight HR approvals page + type badges wired', $ok);
     }
 
     private function testNormalizeApprovalItemShape(): void

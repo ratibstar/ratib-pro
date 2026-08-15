@@ -191,6 +191,12 @@ final class AdminApprovalsController extends Controller
         $this->index();
     }
 
+    public function hrApprovals(): void
+    {
+        $_GET['type'] = 'hr';
+        $this->index();
+    }
+
     public function index(): void
     {
         if (!headers_sent()) {
@@ -200,27 +206,38 @@ final class AdminApprovalsController extends Controller
         $filters = $ofs->parse();
         $companyFilter = $filters['company_id'] > 0 ? $filters['company_id'] : null;
         $typeFilter = trim((string) ($_GET['type'] ?? ''));
+        $hrType = trim((string) ($_GET['hr_type'] ?? ''));
+        $hrSource = $typeFilter === 'hr' ? ApprovalOversightService::hrSourceKeyForType($hrType) : null;
         $svc = new ApprovalOversightService();
         $summary = $svc->summary($companyFilter);
         SessionManager::set('rateb_oversight_approvals_seen', (int) ($summary['total'] ?? 0));
         // Warm nav badges from this page's summary — avoid a second COUNT storm in the layout.
         try {
-            SessionManager::set('rateb_oversight_menu_counts', [
+            SessionManager::set('rateb_oversight_menu_counts_v2', [
                 'exp' => time() + 300,
                 'data' => $svc->menuCountsFromSummary($summary),
             ]);
         } catch (\Throwable $e) {
             // Best-effort badge warm.
         }
-        $formPath = $typeFilter === 'companies'
-            ? 'admin/oversight/companies-approvals'
-            : 'admin/oversight/approvals';
+        $formPath = match ($typeFilter) {
+            'companies' => 'admin/oversight/companies-approvals',
+            'hr' => 'admin/oversight/hr-approvals',
+            default => 'admin/oversight/approvals',
+        };
         $this->view('admin/approvals/index', [
-            'title' => __('approvals_oversight'),
-            'items' => $svc->listPending($companyFilter, $typeFilter !== '' ? $typeFilter : null),
+            'title' => $typeFilter === 'hr' ? __('hr_approvals_oversight') : __('approvals_oversight'),
+            'items' => $svc->listPending(
+                $companyFilter,
+                $typeFilter !== '' ? $typeFilter : null,
+                200,
+                $hrSource
+            ),
             'summary' => $summary,
             'typeOptions' => ApprovalOversightService::typeOptions(),
             'typeFilter' => $typeFilter,
+            'hrType' => $hrType,
+            'hrTypeOptions' => ApprovalOversightService::hrTypeOptions(),
             'companies' => $ofs->companies(),
             'filters' => $filters,
             'formAction' => rateb_url($formPath),
@@ -365,7 +382,7 @@ final class AdminApprovalsController extends Controller
         try {
             $payload['summary'] = $svc->summary($filterCompany, true);
             $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
-            SessionManager::set('rateb_oversight_menu_counts', [
+            SessionManager::set('rateb_oversight_menu_counts_v2', [
                 'exp' => time() + 300,
                 'data' => $payload['menu_counts'],
             ]);
@@ -456,6 +473,7 @@ final class AdminApprovalsController extends Controller
     {
         try {
             SessionManager::forget('rateb_oversight_menu_counts');
+            SessionManager::forget('rateb_oversight_menu_counts_v2');
             SessionManager::forget('rateb_oversight_approvals_seen');
             SessionManager::forget('rateb_approval_summary_v1_0');
             $cid = (int) $this->input('company_id', 0);
@@ -523,7 +541,7 @@ final class AdminApprovalsController extends Controller
                     $filterCompany = $companyId > 0 ? $companyId : null;
                     $payload['summary'] = $svc->summary($filterCompany, true);
                     $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
-                    SessionManager::set('rateb_oversight_menu_counts', [
+                    SessionManager::set('rateb_oversight_menu_counts_v2', [
                         'exp' => time() + 300,
                         'data' => $payload['menu_counts'],
                     ]);
@@ -553,7 +571,12 @@ final class AdminApprovalsController extends Controller
         if ($type !== '') {
             $qs['type'] = $type;
         }
-        $url = rateb_url('admin/oversight/approvals' . ($qs !== [] ? '?' . http_build_query($qs) : ''));
+        $path = $type === 'hr' ? 'admin/oversight/hr-approvals' : 'admin/oversight/approvals';
+        $hrType = trim((string) $this->input('hr_type', ''));
+        if ($type === 'hr' && $hrType !== '' && ApprovalOversightService::hrSourceKeyForType($hrType) !== null) {
+            $qs['hr_type'] = $hrType;
+        }
+        $url = rateb_url($path . ($qs !== [] ? '?' . http_build_query($qs) : ''));
         Response::redirect($url);
     }
 

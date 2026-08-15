@@ -349,8 +349,9 @@
             return 'journal_entry';
         }
         if (sourceKey === 'hr_leave' || sourceKey === 'hr_permission'
-            || sourceKey === 'hr_request' || sourceKey === 'hr_payroll') {
-            return 'hr_leave';
+            || sourceKey === 'hr_request' || sourceKey === 'hr_payroll'
+            || sourceKey === 'hr_decision') {
+            return 'hr_total';
         }
         return 'supplier_evaluation';
     }
@@ -373,10 +374,14 @@
                 + intOrZero(summary.inventory_audit);
         }
         if (cardKey === 'hr_leave') {
+            return intOrZero(summary.hr_leave);
+        }
+        if (cardKey === 'hr_total') {
             return intOrZero(summary.hr_leave)
                 + intOrZero(summary.hr_permission)
                 + intOrZero(summary.hr_request)
-                + intOrZero(summary.hr_payroll);
+                + intOrZero(summary.hr_payroll)
+                + intOrZero(summary.hr_decision);
         }
         return intOrZero(summary[cardKey]);
     }
@@ -479,6 +484,7 @@
             return;
         }
         var approvalsLink = setNavBadge('/admin/oversight/approvals', menuCounts.approvals);
+        setNavBadge('/admin/oversight/hr-approvals', menuCounts.hr);
         setNavBadge('/admin/oversight/companies-approvals', menuCounts.company_pending);
         setNavBadge('/admin/oversight/procurement', menuCounts.procurement);
         setNavBadge('/admin/oversight/rfq', menuCounts.rfq);
@@ -489,6 +495,7 @@
         setGroupBadgeNear(approvalsLink, menuCounts.total);
         // Subgroup badge (متابعة المنصة) sums child link badges; recompute from known keys.
         var subTotal = intOrZero(menuCounts.approvals)
+            + intOrZero(menuCounts.hr)
             + intOrZero(menuCounts.procurement)
             + intOrZero(menuCounts.rfq)
             + intOrZero(menuCounts.inventory)
@@ -572,7 +579,7 @@
                 // Optimistic local bump when server omitted summary.
                 var root = rootEl();
                 if (root) {
-                    [['total', -1], [summaryCardKeyForSource(sourceKey), -1]].forEach(function (pair) {
+                    [['total', -1], [summaryCardKeyForSource(sourceKey), -1], [sourceKey, -1]].forEach(function (pair) {
                         var card = root.querySelector('[data-summary-card="' + pair[0] + '"] [data-summary-count]');
                         if (!card) {
                             return;
@@ -651,6 +658,9 @@
             form.append('company_id', row.getAttribute('data-company-id') || '');
             if (config.typeFilter) {
                 form.append('type_filter', config.typeFilter);
+            }
+            if (config.hrType) {
+                form.append('hr_type', config.hrType);
             }
 
             setRowBusy(key, true);
@@ -830,6 +840,9 @@
             form.append('items', JSON.stringify(items));
             if (config.typeFilter) {
                 form.append('type_filter', config.typeFilter);
+            }
+            if (config.hrType) {
+                form.append('hr_type', config.hrType);
             }
             if (config.companyFilter) {
                 form.append('company_id', String(config.companyFilter));

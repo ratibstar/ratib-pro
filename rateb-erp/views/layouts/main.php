@@ -52,6 +52,7 @@ if (isset($_GET['dismiss_subscription_alert'])
 $approvalsOversightJs = $erpRoute !== '' && (
     str_starts_with($erpRoute, 'admin/oversight/approvals')
     || str_starts_with($erpRoute, 'admin/oversight/companies-approvals')
+    || str_starts_with($erpRoute, 'admin/oversight/hr-approvals')
 );
 if ($approvalsOversightJs && rateb_is_super_admin()) {
     \Rateb\App\Core\SessionManager::set('rateb_oversight_approvals_seen', rateb_oversight_pending_approvals_count());
@@ -828,6 +829,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             $oversightLinkBadges = [
                 'admin/oversight/companies-approvals' => rateb_nav_can('companies.view') ? (int) (($oversightCounts['company_pending'] ?? 0)) : 0,
                 'admin/oversight/approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['approvals'] ?? 0) : 0,
+                'admin/oversight/hr-approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['hr'] ?? 0) : 0,
                 'admin/oversight/procurement' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['procurement'] ?? 0) : 0,
                 'admin/oversight/rfq' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['rfq'] ?? 0) : 0,
                 'admin/oversight/inventory' => rateb_nav_can('inventory.manage') ? (int) ($oversightCounts['inventory'] ?? 0) : 0,
@@ -859,6 +861,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                         ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
                         ['admin/subscription-engine', 'subscription_engine_admin', 'fa-heartbeat', 'subscriptions.view'],
                         ['admin/oversight/approvals', 'approvals_oversight', 'fa-check-double', 'workflows.view'],
+                        ['admin/oversight/hr-approvals', 'hr_approvals_oversight', 'fa-user-check', 'workflows.view'],
                         ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
                         ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                         ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],

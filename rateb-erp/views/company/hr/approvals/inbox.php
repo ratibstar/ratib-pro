@@ -35,7 +35,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
         </span>
         <div class="d-flex flex-wrap gap-2">
             <?php if ($isSuperAdmin) { ?>
-            <a href="<?php echo rateb_url('admin/oversight/approvals'); ?>?type=hr" class="btn btn-sm btn-outline-warning">
+            <a href="<?php echo rateb_url('admin/oversight/hr-approvals'); ?>" class="btn btn-sm btn-outline-warning">
                 <i class="fas fa-gavel"></i> <?php echo __('approvals_open_oversight'); ?>
             </a>
             <?php } ?>
@@ -191,7 +191,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
                             <?php } ?>
 
                             <?php if ($isSuperAdmin) { ?>
-                            <a href="<?php echo $escape((string) ($item['oversight_url'] ?? rateb_url('admin/oversight/approvals'))); ?>" class="btn btn-sm btn-outline-warning"><?php echo __('approvals_open_oversight'); ?></a>
+                            <a href="<?php echo $escape((string) ($item['oversight_url'] ?? rateb_url('admin/oversight/hr-approvals'))); ?>" class="btn btn-sm btn-outline-warning"><?php echo __('approvals_open_oversight'); ?></a>
                             <?php } ?>
                         </div>
                     </td>

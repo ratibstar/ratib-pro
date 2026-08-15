@@ -3293,6 +3293,7 @@ if (!function_exists('rateb_oversight_menu_counts')) {
         }
         $empty = [
             'approvals' => 0,
+            'hr' => 0,
             'procurement' => 0,
             'rfq' => 0,
             'inventory' => 0,
@@ -3304,7 +3305,7 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             $cached = $empty;
             return $cached;
         }
-        $sessionKey = 'rateb_oversight_menu_counts';
+        $sessionKey = 'rateb_oversight_menu_counts_v2';
         $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
         if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
             $cached = $raw['data'];
@@ -3336,6 +3337,7 @@ if (!function_exists('rateb_oversight_menu_badge')) {
     {
         $map = [
             'admin/oversight/approvals' => 'approvals',
+            'admin/oversight/hr-approvals' => 'hr',
             'admin/oversight/companies-approvals' => 'company_pending',
             'admin/oversight/procurement' => 'procurement',
             'admin/oversight/rfq' => 'rfq',
@@ -3440,6 +3442,7 @@ if (!function_exists('rateb_ops_nav_pending_badge')) {
                 + (int) ($counts['hr/leaves'] ?? 0)
                 + (int) ($counts['hr/permission-requests'] ?? 0)
                 + (int) ($counts['hr/requests'] ?? 0)
+                + (int) ($counts['hr/decisions'] ?? 0)
                 + (int) ($counts['hr/payroll'] ?? 0);
         }
         if ($path === 'accounting') {

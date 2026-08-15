@@ -911,6 +911,8 @@ return [
     'inventory_oversight' => 'مراقبة المخزون',
     'rfq_oversight' => 'مراقبة عروض الأسعار',
     'approvals_oversight' => 'مراقبة الاعتمادات',
+    'hr_approvals_oversight' => 'اعتمادات الموارد البشرية',
+    'hr_approvals_oversight_hint' => 'اعتماد ورفض إجازات الموظفين والاستئذانات والطلبات والقرارات ومسير الرواتب من مراقبة الإدارة.',
     'ops_nav_pending_hint' => 'مسودات أو إجراءات مطلوبة في العمليات',
     'supplier_evaluations_oversight' => 'مراقبة تقييم الموردين',
     'approvals_total_pending' => 'إجمالي الاعتمادات المعلقة',
