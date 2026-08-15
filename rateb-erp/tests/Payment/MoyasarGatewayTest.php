@@ -25,7 +25,7 @@ final class MoyasarGatewayTest
         require_once $root . '/app/Payment/DTOs/PaymentStatus.php';
         require_once $root . '/app/Payment/Gateways/MoyasarErrorMapper.php';
         require_once $root . '/app/Payment/Gateways/MoyasarHttpClient.php';
-        require_once $root . '/app/Services/Logger.php';
+        require_once $root . '/app/services/Logger.php';
         require_once $root . '/app/Payment/Gateways/MoyasarGateway.php';
     }
 
