@@ -2,7 +2,10 @@
 declare(strict_types=1);
 
 /**
- * HR module sidebar — no duplicate routes, all items implemented.
+ * HR module sidebar — Command Center is the primary entry. No duplicate routes.
+ *
+ * Saudi reports live under the Saudi compliance hub (not a second menu item).
+ * reports-hub remains ops exports only.
  *
  * @return list<array<string, mixed>>
  */
@@ -20,8 +23,7 @@ return [
     ['id' => 'analytics', 'label' => 'hr_analytics', 'icon' => 'fa-chart-pie', 'route' => 'hr/analytics'],
     ['id' => 'workforce', 'label' => 'hr_workforce_intelligence', 'icon' => 'fa-brain', 'route' => 'hr/workforce'],
     ['id' => 'saudi-compliance', 'label' => 'hr_saudi_compliance', 'icon' => 'fa-flag', 'route' => 'hr/saudi-compliance'],
-    ['id' => 'reports-hub', 'label' => 'hr_reports_hub', 'icon' => 'fa-file-excel', 'route' => 'hr/reports-hub'],
-    ['id' => 'saudi-reports', 'label' => 'hr_saudi_reports', 'icon' => 'fa-file-shield', 'route' => 'hr/saudi-compliance/reports'],
+    ['id' => 'reports-hub', 'label' => 'hr_reports_hub_ops', 'icon' => 'fa-file-excel', 'route' => 'hr/reports-hub'],
     ['id' => 'holidays', 'label' => 'hr_holidays', 'icon' => 'fa-calendar-day', 'route' => 'hr/holidays'],
     [
         'id' => 'attendance-group',

@@ -793,6 +793,8 @@ final class HrApprovalMatrixService
                 'next_stage_name' => null,
                 'next_outcome' => 'domain_finalize',
                 'matrix_version' => null,
+                'progress_status' => 'pending',
+                'stages_history' => [],
             ];
         }
         $requestType = $this->resolveRequestType($sourceKey, $recordId, $companyId);
@@ -811,6 +813,8 @@ final class HrApprovalMatrixService
                 'next_stage_name' => null,
                 'next_outcome' => 'domain_finalize',
                 'matrix_version' => null,
+                'progress_status' => 'pending',
+                'stages_history' => [],
             ];
         }
         $stages = $this->loadEnabledStages((int) $matrix['id'], $companyId);
@@ -824,6 +828,39 @@ final class HrApprovalMatrixService
         $max = $this->maxStageOrder($snapshot);
         $isFinal = $order >= $max;
         $nextStage = !$isFinal ? $this->stageByOrder($snapshot, $order + 1) : null;
+        $progressStatus = (string) ($progress['status'] ?? 'in_progress');
+        if ($progressStatus === '') {
+            $progressStatus = 'in_progress';
+        }
+        $history = [];
+        foreach ($snapshot as $s) {
+            $ord = (int) ($s['stage_order'] ?? 0);
+            if ($ord < 1) {
+                continue;
+            }
+            $state = 'pending';
+            if ($progressStatus === 'completed' || $progressStatus === 'rejected') {
+                $state = $ord < $order || ($progressStatus === 'completed' && $ord <= $order) ? $progressStatus : 'pending';
+                if ($progressStatus === 'rejected' && $ord === $order) {
+                    $state = 'rejected';
+                } elseif ($progressStatus === 'rejected' && $ord < $order) {
+                    $state = 'done';
+                } elseif ($progressStatus === 'completed') {
+                    $state = 'done';
+                }
+            } elseif ($ord < $order) {
+                $state = 'done';
+            } elseif ($ord === $order) {
+                $state = 'current';
+            }
+            $history[] = [
+                'stage_order' => $ord,
+                'code' => (string) ($s['code'] ?? ''),
+                'name' => (string) ($s['name'] ?? ('stage_' . $ord)),
+                'approver_type' => (string) ($s['approver_type'] ?? ''),
+                'state' => $state,
+            ];
+        }
 
         return [
             'has_matrix' => true,
@@ -844,6 +881,8 @@ final class HrApprovalMatrixService
                 : null,
             'next_outcome' => $isFinal ? 'domain_finalize' : 'advance_stage',
             'matrix_version' => (int) ($progress['matrix_version'] ?? $matrix['version'] ?? 0),
+            'progress_status' => $progressStatus,
+            'stages_history' => $history,
         ];
     }
 

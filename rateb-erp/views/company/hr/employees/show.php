@@ -40,6 +40,8 @@ $tabLabels = [
     'decisions' => __('hr_360_tab_decisions'),
     'violations' => __('hr_360_tab_violations'),
     'timeline' => __('hr_360_tab_timeline'),
+    'saudi' => __('hr_360_tab_saudi'),
+    'risk' => __('hr_360_tab_risk'),
 ];
 
 Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'employees']);

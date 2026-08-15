@@ -186,6 +186,47 @@ final class HrSaudiComplianceService
     }
 
     /**
+     * Single-employee compliance profile (Employee 360). Company + id scoped; LIMIT 1.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function employeeComplianceProfile(int $companyId, int $employeeId): ?array
+    {
+        if ($companyId < 1 || $employeeId < 1 || !$this->foundationReady()) {
+            return null;
+        }
+        $hasExtra = Database::liveTableHasColumn('rateb_hr_saudi_employment_fields', 'employment_type');
+        $extraCols = $hasExtra
+            ? ', s.employment_type, s.saudi_classification, s.gosi_eligible, s.housing_allowance, s.transport_allowance, s.other_gosi_allowances, s.bank_name'
+            : '';
+        $sql = "SELECT e.id, e.employee_code, e.name, e.national_id, e.hire_date, e.salary_base, e.status,
+                       e.job_title, e.department_id,
+                       s.gosi_number, s.gosi_subscription_status, s.wps_iban, s.wps_bank_code,
+                       s.nationality_code, s.iqama_number, s.iqama_expiry, s.mol_contract_number
+                       {$extraCols},
+                       c.start_date AS contract_start, c.end_date AS contract_end, c.salary AS contract_salary, c.status AS contract_status
+                FROM rateb_employees e
+                LEFT JOIN rateb_hr_saudi_employment_fields s
+                  ON s.company_id = e.company_id AND s.employee_id = e.id
+                LEFT JOIN rateb_hr_employment_contracts c
+                  ON c.company_id = e.company_id AND c.employee_id = e.id AND c.status = 'active'
+                WHERE e.company_id = :cid AND e.id = :eid
+                LIMIT 1";
+        try {
+            $stmt = Database::connection()->prepare($sql);
+            $stmt->execute(['cid' => $companyId, 'eid' => $employeeId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return $this->buildProfile($row);
+    }
+
+    /**
      * @param array<string,mixed> $row
      * @return array<string,mixed>
      */

@@ -246,6 +246,11 @@ final class HrApprovalInboxService
             'next_stage_name' => $ctx['next_stage_name'] ?? null,
             'next_outcome' => $ctx['next_outcome'] ?? ($actionable ? 'domain_finalize' : null),
             'has_matrix' => (bool) ($ctx['has_matrix'] ?? false),
+            'progress_status' => (string) ($ctx['progress_status'] ?? 'pending'),
+            'pending_or_final' => in_array((string) ($ctx['progress_status'] ?? ''), ['completed', 'rejected'], true)
+                ? 'final'
+                : 'pending',
+            'stages_history' => is_array($ctx['stages_history'] ?? null) ? $ctx['stages_history'] : [],
             'priority' => null,
             'amount' => null,
             'source_url' => (string) ($row['view_url'] ?? ''),

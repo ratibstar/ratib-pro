@@ -28,7 +28,7 @@ $types = [
     'wps' => __('hr_r_report_wps'),
     'reconciliation' => __('hr_r_report_reconciliation'),
 ];
-Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'saudi-reports']);
+Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'saudi-compliance']);
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/hr-module.css'); ?>">
 

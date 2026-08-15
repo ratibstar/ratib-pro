@@ -75,6 +75,7 @@ final class HrCommandCenterService
                 $companyId,
                 $this->actorCanViewSalary()
             ),
+            'integrity' => (new HrEnterpriseReadinessService())->compactIntegrityForCompany($companyId),
         ];
     }
 
@@ -214,6 +215,8 @@ final class HrCommandCenterService
             ['tab' => 'decisions', 'label' => 'hr_360_tab_decisions', 'icon' => 'fa-gavel'],
             ['tab' => 'violations', 'label' => 'hr_360_tab_violations', 'icon' => 'fa-triangle-exclamation'],
             ['tab' => 'timeline', 'label' => 'hr_360_tab_timeline', 'icon' => 'fa-timeline'],
+            ['tab' => 'saudi', 'label' => 'hr_360_tab_saudi', 'icon' => 'fa-flag'],
+            ['tab' => 'risk', 'label' => 'hr_360_tab_risk', 'icon' => 'fa-shield-halved'],
         ];
     }
 
@@ -572,6 +575,16 @@ final class HrCommandCenterService
                 'hiring_hired' => 0,
                 'saudi_readiness_pct' => 0,
                 'payroll_cost' => null,
+            ],
+            'integrity' => [
+                'duplicate_groups' => 0,
+                'orphan_total' => 0,
+                'orphans' => [],
+                'hrms' => [],
+                'contracts' => [],
+                'salary' => [],
+                'notes' => [],
+                'auto_repair' => false,
             ],
         ];
     }

@@ -141,6 +141,22 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
                         } elseif ($actionable && $nextOutcome === 'domain_finalize') {
                             echo '<div class="text-muted">' . $escape(__('hr_inbox_next_finalize')) . '</div>';
                         }
+                        $pStatus = (string) ($item['progress_status'] ?? '');
+                        $pendingOrFinal = (string) ($item['pending_or_final'] ?? '');
+                        if ($pStatus !== '') {
+                            echo '<div class="text-muted">' . $escape(__('status') . ': ' . $pStatus
+                                . ($pendingOrFinal !== '' ? ' · ' . $pendingOrFinal : '')) . '</div>';
+                        }
+                        $hist = is_array($item['stages_history'] ?? null) ? $item['stages_history'] : [];
+                        if ($hist !== []) {
+                            echo '<ol class="small mb-0 ps-3">';
+                            foreach ($hist as $hs) {
+                                $hsName = (string) ($hs['name'] ?? '');
+                                $hsState = (string) ($hs['state'] ?? '');
+                                echo '<li>' . $escape($hsName . ($hsState !== '' ? ' — ' . $hsState : '')) . '</li>';
+                            }
+                            echo '</ol>';
+                        }
                         ?>
                     </td>
                     <td>

@@ -463,4 +463,57 @@ if ($tab === 'timeline') {
     return;
 }
 
+if ($tab === 'saudi') {
+    $fields = is_array($data['fields'] ?? null) ? $data['fields'] : [];
+    $issues = is_array($data['issues'] ?? null) ? $data['issues'] : [];
+    $gosi = is_array($data['gosi'] ?? null) ? $data['gosi'] : [];
+    $wps = is_array($data['wps'] ?? null) ? $data['wps'] : [];
+    ?>
+    <h2 class="h6"><?php echo __('hr_360_tab_saudi'); ?></h2>
+    <p class="text-muted small"><?php echo __('hr_saudi_no_external_send'); ?></p>
+    <dl class="row small mb-3">
+        <?php
+        $smap = [
+            'national_id' => __('national_id'),
+            'nationality_code' => __('hr_r_nationality'),
+            'saudi_classification' => __('hr_r_classification'),
+            'employment_type' => __('hr_r_employment_type'),
+            'iqama_number' => __('hr_r_iqama'),
+            'gosi_number' => __('hr_r_gosi_number'),
+            'wps_iban' => __('hr_r_iban'),
+        ];
+        foreach ($smap as $key => $label) {
+            echo '<dt class="col-sm-3">' . $escape($label) . '</dt>';
+            echo '<dd class="col-sm-9 rateb-ltr-num">' . $escape((string) ($fields[$key] ?? '—')) . '</dd>';
+        }
+        ?>
+    </dl>
+    <p class="small mb-1"><?php echo __('hr_r_issues'); ?>: <?php echo $escape($issues === [] ? '—' : implode(', ', $issues)); ?></p>
+    <p class="small mb-1">GOSI: <?php echo !empty($gosi['exception']) ? $escape(__('hr_r_exception')) : $escape(__('hr_r_ready')); ?></p>
+    <p class="small mb-2">WPS: <?php echo !empty($wps['exception']) ? $escape(__('hr_r_exception')) : $escape(__('hr_r_ready')); ?></p>
+    <?php if (($data['hub_url'] ?? '') !== '') { ?>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo $escape((string) $data['hub_url']); ?>"><?php echo __('hr_saudi_compliance'); ?></a>
+    <?php } ?>
+    <?php
+    return;
+}
+
+if ($tab === 'risk') {
+    ?>
+    <h2 class="h6"><?php echo __('hr_360_tab_risk'); ?></h2>
+    <ul class="list-unstyled small mb-3">
+        <li><?php echo __('hr_s_contract_risk'); ?>: <span class="rateb-ltr-num fw-semibold"><?php echo (int) ($data['contract_expiring_30d'] ?? 0); ?></span></li>
+        <li><?php echo __('hr_s_frequent_absent'); ?> (30d): <span class="rateb-ltr-num fw-semibold"><?php echo (int) ($data['absent_30d'] ?? 0); ?></span></li>
+        <li><?php echo __('hr_s_frequent_late'); ?> (30d): <span class="rateb-ltr-num fw-semibold"><?php echo (int) ($data['late_30d'] ?? 0); ?></span></li>
+        <li><?php echo __('hr_s_overdue_requests'); ?>: <span class="rateb-ltr-num fw-semibold"><?php echo (int) ($data['overdue_requests'] ?? 0); ?></span></li>
+        <li><?php echo __('hr_r_missing_data'); ?>: <span class="rateb-ltr-num fw-semibold"><?php echo (int) ($data['missing_saudi_fields'] ?? 0); ?></span></li>
+        <li>GOSI/WPS: <?php echo !empty($data['gosi_exception']) || !empty($data['wps_exception']) ? $escape(__('hr_r_exception')) : $escape(__('hr_r_ready')); ?></li>
+    </ul>
+    <?php if (($data['workforce_url'] ?? '') !== '') { ?>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo $escape((string) $data['workforce_url']); ?>"><?php echo __('hr_workforce_intelligence'); ?></a>
+    <?php } ?>
+    <?php
+    return;
+}
+
 echo '<p class="text-muted mb-0">' . $escape(__('hr_coming_soon')) . '</p>';

@@ -50,6 +50,14 @@ final class HrDashboardController extends Controller
             'contractMilestones' => $cc['contract_milestones'] ?? ['d30' => 0, 'd15' => 0, 'd7' => 0],
             'attendanceAlerts' => $cc['attendance_alerts'] ?? ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')],
             'hrTasks' => $cc['hr_tasks'] ?? [],
+            'integrity' => $cc['integrity'] ?? [
+                'duplicate_groups' => 0,
+                'orphan_total' => 0,
+                'orphans' => [],
+                'hrms' => [],
+                'notes' => [],
+                'auto_repair' => false,
+            ],
             'lookupUrl' => rateb_url(rateb_app_route('hr/employees/lookup')),
         ], 'main');
     }
@@ -368,30 +376,33 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
     /** @return array<string, bool> */
     private function employee360AuthFlags(): array
     {
-        $canManageEmp = function_exists('rateb_can_manage_entity')
+        $hasView = function_exists('rateb_can_view_entity');
+        $hasManage = function_exists('rateb_can_manage_entity');
+        $rbacReady = $hasView && $hasManage;
+        $canManageEmp = $hasManage
             ? rateb_can_manage_entity('hr-employees')
             : true;
-        $canViewPayroll = function_exists('rateb_can_view_entity')
+        $canViewPayroll = $hasView
             ? rateb_can_view_entity('hr-payroll')
-            : true;
-        $canManagePayroll = function_exists('rateb_can_manage_entity')
+            : false;
+        $canManagePayroll = $hasManage
             ? rateb_can_manage_entity('hr-payroll')
             : false;
-        $canViewLeaves = function_exists('rateb_can_view_entity')
+        $canViewLeaves = $hasView
             ? rateb_can_view_entity('hr-leaves')
             : true;
-        $canManageLeaves = function_exists('rateb_can_manage_entity')
+        $canManageLeaves = $hasManage
             ? rateb_can_manage_entity('hr-leaves')
             : false;
-        $canViewAttendance = function_exists('rateb_can_view_entity')
+        $canViewAttendance = $hasView
             ? rateb_can_view_entity('hr-attendance')
             : true;
 
         return [
             'can_manage_employees' => $canManageEmp,
-            // Salary detail follows payroll view OR employee manage (existing ops pattern).
-            'can_view_salary' => $canViewPayroll || $canManageEmp,
-            'can_view_payroll' => $canViewPayroll || $canManagePayroll,
+            // Salary: RBAC when helpers exist; deny-by-default if RBAC helpers are missing.
+            'can_view_salary' => $rbacReady ? ($canViewPayroll || $canManageEmp) : false,
+            'can_view_payroll' => $rbacReady ? ($canViewPayroll || $canManagePayroll) : false,
             'can_view_leaves' => $canViewLeaves || $canManageLeaves,
             'can_view_attendance' => $canViewAttendance,
             'can_create_leave' => $canManageLeaves,

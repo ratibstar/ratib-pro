@@ -36,6 +36,8 @@ final class HrEmployee360Service
     public const TAB_DECISIONS = 'decisions';
     public const TAB_VIOLATIONS = 'violations';
     public const TAB_TIMELINE = 'timeline';
+    public const TAB_SAUDI = 'saudi';
+    public const TAB_RISK = 'risk';
 
     /** @var list<string> */
     public const TABS = [
@@ -51,6 +53,8 @@ final class HrEmployee360Service
         self::TAB_DECISIONS,
         self::TAB_VIOLATIONS,
         self::TAB_TIMELINE,
+        self::TAB_SAUDI,
+        self::TAB_RISK,
     ];
 
     private const LETTER_TYPES = [
@@ -240,6 +244,14 @@ final class HrEmployee360Service
             self::TAB_TIMELINE => [
                 'tab' => $tab,
                 'data' => $this->tabTimeline($companyId, $employeeId, $emp),
+            ],
+            self::TAB_SAUDI => [
+                'tab' => $tab,
+                'data' => $this->tabSaudi($companyId, $employeeId, $canViewSalary),
+            ],
+            self::TAB_RISK => [
+                'tab' => $tab,
+                'data' => $this->tabWorkforceRisk($companyId, $employeeId),
             ],
             default => null,
         };
@@ -797,6 +809,112 @@ final class HrEmployee360Service
         });
 
         return ['items' => array_slice($events, 0, 60)];
+    }
+
+    /**
+     * Phase T — Saudi compliance tab (single-employee reuse; no company-wide loop).
+     *
+     * @return array<string, mixed>
+     */
+    private function tabSaudi(int $companyId, int $employeeId, bool $canViewSalary): array
+    {
+        $profile = (new HrSaudiComplianceService())->employeeComplianceProfile($companyId, $employeeId);
+        if ($profile === null) {
+            return [
+                'fields' => [],
+                'issues' => [],
+                'gosi' => ['exception' => false, 'issues' => []],
+                'wps' => ['exception' => false, 'issues' => []],
+                'external_sent' => 0,
+                'hub_url' => rateb_url(rateb_app_route('hr/saudi-compliance')),
+            ];
+        }
+        if (!$canViewSalary) {
+            $profile['salary_base'] = null;
+            $profile['housing_allowance'] = null;
+            $profile['transport_allowance'] = null;
+            $profile['other_gosi_allowances'] = null;
+            if (isset($profile['gosi']) && is_array($profile['gosi'])) {
+                $profile['gosi']['contribution_base'] = null;
+                $profile['gosi']['employee_amount'] = null;
+                $profile['gosi']['employer_amount'] = null;
+            }
+        }
+
+        return [
+            'fields' => $profile,
+            'issues' => is_array($profile['issues'] ?? null) ? $profile['issues'] : [],
+            'gosi' => is_array($profile['gosi'] ?? null) ? $profile['gosi'] : [],
+            'wps' => is_array($profile['wps'] ?? null) ? $profile['wps'] : [],
+            'external_sent' => 0,
+            'hub_url' => rateb_url(rateb_app_route('hr/saudi-compliance')),
+        ];
+    }
+
+    /**
+     * Phase T — workforce risk for one employee (bounded counts; no 360-in-loop).
+     *
+     * @return array<string, mixed>
+     */
+    private function tabWorkforceRisk(int $companyId, int $employeeId): array
+    {
+        $from = date('Y-m-d', strtotime('-30 days'));
+        $to = date('Y-m-d');
+        $contractSoon = 0;
+        if ($this->tableExists('rateb_hr_employment_contracts')) {
+            $row = (new Employee())->queryOne(
+                "SELECT COUNT(*) AS c FROM rateb_hr_employment_contracts
+                 WHERE company_id = :cid AND employee_id = :eid AND status = 'active'
+                   AND end_date IS NOT NULL
+                   AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)",
+                ['cid' => $companyId, 'eid' => $employeeId]
+            );
+            $contractSoon = (int) ($row['c'] ?? 0);
+        }
+        $absents = $this->countAttendanceStatus($companyId, $employeeId, 'absent', $from, $to);
+        $lates = $this->countAttendanceStatus($companyId, $employeeId, 'late', $from, $to);
+        $overdue = 0;
+        if ($this->tableExists('rateb_hr_employee_requests')) {
+            $row = (new Employee())->queryOne(
+                "SELECT COUNT(*) AS c FROM rateb_hr_employee_requests
+                 WHERE company_id = :cid AND employee_id = :eid AND status = 'pending'
+                   AND created_at < DATE_SUB(NOW(), INTERVAL 3 DAY)",
+                ['cid' => $companyId, 'eid' => $employeeId]
+            );
+            $overdue = (int) ($row['c'] ?? 0);
+        }
+        $saudi = $this->tabSaudi($companyId, $employeeId, false);
+        $gosiEx = !empty($saudi['gosi']['exception']);
+        $wpsEx = !empty($saudi['wps']['exception']);
+        $missing = is_array($saudi['issues'] ?? null) ? count($saudi['issues']) : 0;
+
+        return [
+            'contract_expiring_30d' => $contractSoon,
+            'absent_30d' => $absents,
+            'late_30d' => $lates,
+            'overdue_requests' => $overdue,
+            'missing_saudi_fields' => $missing,
+            'gosi_exception' => $gosiEx,
+            'wps_exception' => $wpsEx,
+            'workforce_url' => rateb_url(rateb_app_route('hr/workforce')),
+        ];
+    }
+
+    private function countAttendanceStatus(
+        int $companyId,
+        int $employeeId,
+        string $status,
+        string $from,
+        string $to
+    ): int {
+        $row = (new Employee())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_attendance_records
+             WHERE company_id = :cid AND employee_id = :eid AND status = :st
+               AND attendance_date BETWEEN :df AND :dt',
+            ['cid' => $companyId, 'eid' => $employeeId, 'st' => $status, 'df' => $from, 'dt' => $to]
+        );
+
+        return (int) ($row['c'] ?? 0);
     }
 
     /**

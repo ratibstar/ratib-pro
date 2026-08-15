@@ -79,6 +79,19 @@ final class HrEnterpriseReadinessService
                 'external_send_enabled' => false,
                 'connectors_off' => true,
             ],
+            'required_configuration' => [
+                'HR_PAYROLL_ACCOUNTING_ENABLED' => 'default OFF (Phase E adapter)',
+                'HR_PAYROLL_EXPENSE_ACCOUNT_CODE' => 'required only if payroll accounting is enabled',
+                'HR_PAYROLL_PAYABLE_ACCOUNT_CODE' => 'required only if payroll accounting is enabled',
+                'cron_schedule' => 'php bin/erp-cron.php every 5–15 minutes',
+            ],
+            'deployment_prerequisites' => [
+                'Apply migrations 247 through 257 in order (additive; no DROP)',
+                'ERP UI only at /public/admin/* — no V2 SPA production frontend',
+                'GOSI/WPS external send remains hardcoded OFF',
+                'CronService::runAll via bin/erp-cron.php',
+            ],
+            'production_blockers' => $this->productionBlockers($missing, $saudi),
             'automation' => [
                 'idempotency' => 'HrOpsAutomationService::claimReminder unique ledger',
                 'retry_safety' => 'Duplicate claim returns false; no domain approve/post',
@@ -86,12 +99,26 @@ final class HrEnterpriseReadinessService
             ],
             'security' => [
                 'tenant_isolation' => 'company_id on all HR queries',
-                'salary_privacy' => 'RBAC hr-payroll / hr.manage gated',
+                'salary_privacy' => 'RBAC hr-payroll / hr.manage gated; 360 deny-by-default without helpers',
                 'ess_binding' => 'HrEssEmployeeResolverService company+user',
                 'external_gosi_wps' => 'OFF — external_sent default 0',
             ],
             'policy' => 'Phase T hardens and documents B–S; no new business engines.',
         ];
+    }
+
+    /**
+     * Compact Command Center integrity widget (read-only COUNTs).
+     *
+     * @return array<string,mixed>
+     */
+    public function compactIntegrityForCompany(int $companyId): array
+    {
+        $integrity = $companyId > 0
+            ? (new HrEmployeeIntegrityService())->diagnoseCompany($companyId)
+            : ['duplicates' => [], 'orphans' => [], 'hrms' => [], 'notes' => ['company_id_required']];
+
+        return $this->compactIntegrity($integrity);
     }
 
     /**
@@ -174,8 +201,36 @@ final class HrEnterpriseReadinessService
             'orphan_total' => $orphanTotal,
             'orphans' => $orphans,
             'hrms' => is_array($integrity['hrms'] ?? null) ? $integrity['hrms'] : [],
+            'contracts' => is_array($integrity['contracts'] ?? null) ? $integrity['contracts'] : [],
+            'salary' => is_array($integrity['salary'] ?? null) ? $integrity['salary'] : [],
             'notes' => is_array($integrity['notes'] ?? null) ? $integrity['notes'] : [],
             'auto_repair' => false,
         ];
+    }
+
+    /**
+     * @param list<array<string,mixed>> $missing
+     * @param array<string,mixed> $saudi
+     * @return list<string>
+     */
+    private function productionBlockers(array $missing, array $saudi): array
+    {
+        $out = [];
+        if ($missing !== []) {
+            $names = [];
+            foreach ($missing as $row) {
+                $names[] = (string) ($row['file'] ?? '');
+            }
+            $out[] = 'HR migrations 247–257 incomplete: ' . implode(', ', array_filter($names));
+        }
+        if (!empty($saudi['external_send_enabled'])) {
+            $out[] = 'GOSI/WPS external send must remain OFF';
+        }
+        $flags = $this->featureFlags();
+        if (!empty($flags['gosi_wps_external_send']['enabled'])) {
+            $out[] = 'gosi_wps_external_send feature flag is ON — production forbidden';
+        }
+
+        return $out;
     }
 }

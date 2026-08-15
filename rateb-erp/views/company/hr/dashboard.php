@@ -36,6 +36,14 @@ $overdueApprovals = (int) ($overdueApprovals ?? 0);
 $contractMilestones = $contractMilestones ?? ['d30' => 0, 'd15' => 0, 'd7' => 0];
 $attendanceAlerts = $attendanceAlerts ?? ['absent' => 0, 'late' => 0, 'date' => date('Y-m-d')];
 $hrTasks = $hrTasks ?? [];
+$integrity = $integrity ?? [
+    'duplicate_groups' => 0,
+    'orphan_total' => 0,
+    'orphans' => [],
+    'hrms' => [],
+    'notes' => [],
+    'auto_repair' => false,
+];
 $escape = static fn ($v): string => \Rateb\App\Core\View::escape((string) $v);
 $approvalTotal = (int) ($approvalCenter['total'] ?? 0);
 
@@ -399,6 +407,26 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
             <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_r_wps_exceptions'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($sr['wps_exceptions'] ?? 0); ?></div></div></div>
         </div>
         <p class="text-muted small mb-0 mt-2"><?php echo __('hr_saudi_no_external_send'); ?></p>
+    </div>
+</div>
+
+<div class="rateb-card mb-3">
+    <div class="rateb-card-header">
+        <span><i class="fas fa-heart-pulse me-1"></i> <?php echo __('hr_t_integrity'); ?></span>
+    </div>
+    <div class="rateb-card-body">
+        <?php
+        $ig = $integrity ?? [];
+        $igOrphans = is_array($ig['orphans'] ?? null) ? $ig['orphans'] : [];
+        $igHrms = is_array($ig['hrms'] ?? null) ? $ig['hrms'] : [];
+        ?>
+        <div class="row g-2">
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_t_integrity_duplicates'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($ig['duplicate_groups'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_t_integrity_orphans'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($ig['orphan_total'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_t_integrity_hrms'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($igHrms['profiles_unlinked_legacy'] ?? 0) + (int) ($igHrms['profiles_orphan_legacy'] ?? 0); ?></div></div></div>
+            <div class="col-6 col-md-3"><div class="rateb-emp360-kpi"><div class="rateb-emp360-kpi-label"><?php echo __('hr_employment_contracts'); ?></div><div class="rateb-emp360-kpi-value rateb-ltr-num"><?php echo (int) ($igOrphans['contracts_missing_employee'] ?? 0); ?></div></div></div>
+        </div>
+        <p class="text-muted small mb-0 mt-2"><?php echo __('hr_t_integrity_readonly'); ?></p>
     </div>
 </div>
 

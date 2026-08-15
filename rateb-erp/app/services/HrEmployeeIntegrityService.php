@@ -6,6 +6,7 @@ namespace Rateb\App\Services;
 use Rateb\App\Models\Employee;
 use Rateb\App\Models\HrmEmployeeProfile;
 use Rateb\App\Models\PayrollAudit;
+use Rateb\App\Core\Database;
 
 /**
  * Phase C — Employee Master integrity diagnostics + salary-change governance helpers.
@@ -253,6 +254,39 @@ final class HrEmployeeIntegrityService
             ['cid' => $companyId]
         )['c'] ?? 0));
 
+        $orphanContracts = $this->safeCount(
+            $emp,
+            'SELECT COUNT(*) AS c FROM rateb_hr_employment_contracts c
+             LEFT JOIN rateb_employees e ON e.id = c.employee_id AND e.company_id = c.company_id
+             WHERE c.company_id = :cid AND e.id IS NULL',
+            ['cid' => $companyId],
+            'rateb_hr_employment_contracts'
+        );
+        $activeZeroSalaryContracts = $this->safeCount(
+            $emp,
+            "SELECT COUNT(*) AS c FROM rateb_hr_employment_contracts
+             WHERE company_id = :cid AND status = 'active'
+               AND (salary IS NULL OR salary <= 0)",
+            ['cid' => $companyId],
+            'rateb_hr_employment_contracts'
+        );
+        $orphanSalaryRows = $this->safeCount(
+            $emp,
+            'SELECT COUNT(*) AS c FROM rateb_payroll_employee_salary s
+             LEFT JOIN rateb_employees e ON e.id = s.legacy_employee_id AND e.company_id = s.company_id
+             WHERE s.company_id = :cid AND s.deleted_at IS NULL
+               AND s.legacy_employee_id IS NOT NULL AND s.legacy_employee_id > 0
+               AND e.id IS NULL',
+            ['cid' => $companyId],
+            'rateb_payroll_employee_salary'
+        );
+        $employeesZeroSalary = (int) (($emp->queryOne(
+            "SELECT COUNT(*) AS c FROM rateb_employees
+             WHERE company_id = :cid AND status = 'active'
+               AND (salary_base IS NULL OR salary_base <= 0)",
+            ['cid' => $companyId]
+        )['c'] ?? 0));
+
         return [
             'company_id' => $companyId,
             'duplicates' => [
@@ -265,17 +299,45 @@ final class HrEmployeeIntegrityService
                 'leave_missing_employee' => $orphanLeave,
                 'payroll_lines_missing_employee' => $orphanPayrollLines,
                 'leave_cross_company_employee' => $crossCompanyLeave,
+                'contracts_missing_employee' => $orphanContracts,
+                'payroll_salary_missing_employee' => $orphanSalaryRows,
             ],
             'hrms' => [
                 'profiles_unlinked_legacy' => $hrmsUnlinked,
                 'profiles_orphan_legacy' => $hrmsOrphanLink,
             ],
+            'contracts' => [
+                'orphans' => $orphanContracts,
+                'active_zero_salary' => $activeZeroSalaryContracts,
+            ],
+            'salary' => [
+                'enterprise_rows_orphan_legacy' => $orphanSalaryRows,
+                'active_employees_zero_salary_base' => $employeesZeroSalary,
+            ],
             'notes' => [
                 'Email duplicates are informational only — email is not unique employee identity.',
                 'No automatic merge/delete performed.',
                 'FK migrations deferred until orphan counts are zero.',
+                'Contract and salary checks are read-only COUNTs (Phase T).',
             ],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function safeCount(Employee $emp, string $sql, array $params, string $table): int
+    {
+        try {
+            if (!Database::tableExists($table)) {
+                return 0;
+            }
+            $row = $emp->queryOne($sql, $params);
+
+            return (int) ($row['c'] ?? 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     private function uuidV4(): string
