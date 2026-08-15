@@ -1303,12 +1303,12 @@ final class HrEssPortalController extends Controller
         $userId = (int) (SessionManager::get('rateb_user_id') ?? 0);
         $result = $companyId > 0 && $userId > 0
             ? (new \Rateb\App\Services\HrEss360Service())->simplified360($userId, $companyId)
-            : ['status' => 401, 'body' => ['success' => false, 'code' => 'unauthorized', 'message' => 'Unauthorized']];
+            : ['status' => 401, 'body' => ['success' => false, 'code' => 'unauthorized', 'message' => rateb_error_message('unauthorized')]];
         $this->view('company/hr/ess/index', [
             'title' => __('hr_ess_portal'),
             'companyId' => $companyId,
             'payload' => (int) ($result['status'] ?? 0) === 200 ? ($result['body'] ?? []) : null,
-            'error' => (int) ($result['status'] ?? 0) === 200 ? null : ($result['body']['message'] ?? __('employee_unbound')),
+            'error' => (int) ($result['status'] ?? 0) === 200 ? null : rateb_error_message((string) ($result['body']['code'] ?? 'employee_unbound'), (string) ($result['body']['message'] ?? '')),
             'errorCode' => (int) ($result['status'] ?? 0) === 200 ? null : ($result['body']['code'] ?? ''),
             'csrf' => Csrf::token(),
             'routePrefix' => rateb_app_route('hr/ess'),
@@ -1364,7 +1364,7 @@ final class HrManagerPortalController extends Controller
             'team' => (int) ($team['status'] ?? 0) === 200 ? ($team['body'] ?? []) : null,
             'approvals' => (int) ($approvals['status'] ?? 0) === 200 ? ($approvals['body']['items'] ?? []) : [],
             'pendingLeave' => (int) ($leave['status'] ?? 0) === 200 ? ($leave['body']['items'] ?? []) : [],
-            'error' => (int) ($team['status'] ?? 0) === 200 ? null : ($team['body']['message'] ?? __('employee_unbound')),
+            'error' => (int) ($team['status'] ?? 0) === 200 ? null : rateb_error_message((string) ($team['body']['code'] ?? 'employee_unbound'), (string) ($team['body']['message'] ?? '')),
             'saudiFoundation' => $saudi,
             'csrf' => Csrf::token(),
             'routePrefix' => rateb_app_route('hr/manager'),

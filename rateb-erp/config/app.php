@@ -3827,7 +3827,56 @@ if (!function_exists('__')) {
         foreach ($replace as $k => $v) {
             $text = str_replace(':' . $k, (string) $v, $text);
         }
+        // Never paint English prose in a non-English UI when the key was missing.
+        if ($text === $key && $locale !== 'en'
+            && str_contains($key, ' ')
+            && preg_match('/[A-Za-z]{4,}/', $key)
+            && !preg_match('/\p{Arabic}/u', $key)
+        ) {
+            $generic = $cache[$locale]['error'] ?? '';
+            if (is_string($generic) && $generic !== '' && $generic !== 'error') {
+                return $generic;
+            }
+        }
         return $text;
+    }
+}
+
+if (!function_exists('rateb_error_message')) {
+    /** User-facing error: translate by code; never leak English into Arabic UI. */
+    function rateb_error_message(string $code, string $fallback = ''): string
+    {
+        $code = trim($code);
+        if ($code !== '') {
+            $translated = __($code);
+            if ($translated !== $code) {
+                return $translated;
+            }
+        }
+        $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
+        if ($locale !== 'en') {
+            if ($fallback !== '' && preg_match('/\p{Arabic}/u', $fallback)) {
+                return $fallback;
+            }
+            $generic = __('error');
+            return $generic !== 'error' ? $generic : ($code !== '' ? $code : '');
+        }
+        if ($fallback !== '') {
+            return $fallback;
+        }
+        return $code !== '' ? $code : __('error');
+    }
+}
+
+if (!function_exists('rateb_status_label')) {
+    function rateb_status_label(string $status): string
+    {
+        $status = trim($status);
+        if ($status === '') {
+            return '';
+        }
+        $translated = __($status);
+        return $translated !== $status ? $translated : $status;
     }
 }
 

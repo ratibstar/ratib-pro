@@ -2,7 +2,6 @@
 /** @var int $companyId */
 /** @var list<array<string, mixed>> $items */
 /** @var array<string, int> $counts */
-/** @var list<string> $deferred */
 /** @var string $typeFilter */
 /** @var bool $isSuperAdmin */
 /** @var string $routePrefix */
@@ -11,7 +10,6 @@
 $companyId = (int) ($companyId ?? 0);
 $items = $items ?? [];
 $counts = $counts ?? [];
-$deferred = $deferred ?? [];
 $typeFilter = (string) ($typeFilter ?? 'all');
 $isSuperAdmin = (bool) ($isSuperAdmin ?? false);
 $routePrefix = (string) ($routePrefix ?? rateb_app_route('hr/approvals-inbox'));
@@ -202,16 +200,6 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'approvals-inbox']);
             </table>
         </div>
 
-        <?php if ($deferred !== []) { ?>
-        <div class="alert alert-light border mt-3 mb-0 small">
-            <strong><?php echo __('hr_approval_inbox_deferred'); ?></strong>
-            <ul class="mb-0 mt-1">
-                <?php foreach ($deferred as $note) { ?>
-                <li><?php echo $escape((string) $note); ?></li>
-                <?php } ?>
-            </ul>
-        </div>
-        <?php } ?>
     </div>
 </div>
 <?php Rateb\App\Core\View::partial('hr-nav-end'); ?>

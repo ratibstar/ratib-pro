@@ -51,7 +51,7 @@ $notifications = is_array($payload['notifications'] ?? null) ? $payload['notific
                 <div class="fw-semibold"><?php echo $escape((string) ($profile['name'] ?? $payload['employee']['name'] ?? '')); ?></div>
                 <div class="small text-muted rateb-ltr-num"><?php echo $escape((string) ($profile['employee_code'] ?? '')); ?></div>
                 <div class="small mt-2"><?php echo $escape((string) ($profile['department_name'] ?? '')); ?> · <?php echo $escape((string) ($profile['job_title'] ?? '')); ?></div>
-                <div class="small"><?php echo __('status'); ?>: <?php echo $escape((string) ($profile['status'] ?? '')); ?></div>
+                <div class="small"><?php echo __('status'); ?>: <?php echo $escape(rateb_status_label((string) ($profile['status'] ?? ''))); ?></div>
             </div>
         </div>
     </div>
@@ -121,7 +121,7 @@ $notifications = is_array($payload['notifications'] ?? null) ? $payload['notific
                             <tr>
                                 <td class="rateb-ltr-num"><?php echo $escape((string) ($row['start_date'] ?? '')); ?></td>
                                 <td class="rateb-ltr-num"><?php echo $escape((string) ($row['end_date'] ?? '')); ?></td>
-                                <td><?php echo $escape((string) ($row['status'] ?? '')); ?></td>
+                                <td><?php echo $escape(rateb_status_label((string) ($row['status'] ?? ''))); ?></td>
                             </tr>
                         <?php } ?>
                         </tbody>
@@ -141,8 +141,8 @@ $notifications = is_array($payload['notifications'] ?? null) ? $payload['notific
                         if ($reqShow === []) { echo '<tr><td colspan="3" class="text-muted">' . $escape(__('no_records')) . '</td></tr>'; }
                         foreach (array_slice($reqShow, 0, 8) as $row) { ?>
                             <tr>
-                                <td><?php echo $escape((string) ($row['request_type'] ?? '')); ?></td>
-                                <td><?php echo $escape((string) ($row['status'] ?? '')); ?></td>
+                                <td><?php echo $escape(__((string) ($row['request_type'] ?? ''))); ?></td>
+                                <td><?php echo $escape(rateb_status_label((string) ($row['status'] ?? ''))); ?></td>
                                 <td class="rateb-ltr-num"><?php echo $escape((string) ($row['request_no'] ?? $row['id'] ?? '')); ?></td>
                             </tr>
                         <?php } ?>
@@ -165,7 +165,7 @@ $notifications = is_array($payload['notifications'] ?? null) ? $payload['notific
                             <tr>
                                 <td class="rateb-ltr-num"><?php echo $escape((string) ($row['period'] ?? '')); ?></td>
                                 <td class="rateb-ltr-num"><?php echo $escape((string) ($row['net_amount'] ?? '')); ?></td>
-                                <td><?php echo $escape((string) ($row['status'] ?? '')); ?></td>
+                                <td><?php echo $escape(rateb_status_label((string) ($row['status'] ?? ''))); ?></td>
                             </tr>
                         <?php } ?>
                         </tbody>
@@ -180,8 +180,8 @@ $notifications = is_array($payload['notifications'] ?? null) ? $payload['notific
                 <?php foreach (array_slice($decisions, 0, 5) as $d) { ?>
                     <div class="small border-bottom py-1">
                         <?php echo $escape((string) ($d['decision_no'] ?? '')); ?>
-                        · <?php echo $escape((string) ($d['decision_type'] ?? '')); ?>
-                        · <?php echo $escape((string) ($d['status'] ?? '')); ?>
+                        · <?php echo $escape(__((string) ($d['decision_type'] ?? ''))); ?>
+                        · <?php echo $escape(rateb_status_label((string) ($d['status'] ?? ''))); ?>
                     </div>
                 <?php } ?>
                 <?php if ($decisions === []) { echo '<p class="text-muted small mb-0">' . $escape(__('no_records')) . '</p>'; } ?>

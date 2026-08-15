@@ -74,7 +74,8 @@ final class HrPhaseMDecisionsTest
             str_contains($inbox, "'hr_decision'")
             && str_contains($inbox, 'ACTIONABLE_SOURCES')
             && preg_match("/ACTIONABLE_SOURCES\s*=\s*\[[^\]]*hr_decision/", $inbox) === 1
-            && str_contains($inbox, 'Expenses pending queue not present')
+            && str_contains($inbox, "'expense' => 0")
+            && str_contains($inbox, 'they stay in Accounting oversight')
             && !str_contains($inbox, 'HR Decisions module not present')
         );
 

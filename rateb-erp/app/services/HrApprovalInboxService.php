@@ -52,9 +52,8 @@ final class HrApprovalInboxService
             'expense' => 0,
             'total' => 0,
         ];
-        $deferred = [
-            'expense' => 'HR Expenses pending queue not present — accounting vouchers stay in Accounting oversight.',
-        ];
+        // Expenses are accounting vouchers — they stay in Accounting oversight, not this inbox.
+        $deferred = [];
 
         if ($companyId < 1) {
             return [

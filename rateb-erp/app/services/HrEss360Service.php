@@ -111,7 +111,7 @@ final class HrEss360Service
             'body' => [
                 'success' => false,
                 'code' => $code,
-                'message' => $message,
+                'message' => rateb_error_message($code, $message),
             ],
         ];
     }
@@ -127,7 +127,7 @@ final class HrEss360Service
         return $this->fail(
             (int) ($result['status'] ?? 500),
             (string) ($body['code'] ?? 'error'),
-            (string) ($body['message'] ?? 'Request failed')
+            (string) ($body['message'] ?? '')
         );
     }
 }

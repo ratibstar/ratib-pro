@@ -421,7 +421,7 @@ final class HrManagerTeamService
             'body' => [
                 'success' => false,
                 'code' => $code,
-                'message' => $message,
+                'message' => rateb_error_message($code, $message),
             ],
         ];
     }

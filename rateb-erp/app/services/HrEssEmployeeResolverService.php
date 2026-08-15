@@ -31,7 +31,7 @@ final class HrEssEmployeeResolverService
                 'body' => [
                     'success' => false,
                     'code' => 'unauthorized',
-                    'message' => 'Unauthorized',
+                    'message' => rateb_error_message('unauthorized', 'Unauthorized'),
                 ],
             ];
         }
@@ -41,7 +41,7 @@ final class HrEssEmployeeResolverService
                 'body' => [
                     'success' => false,
                     'code' => 'company_required',
-                    'message' => 'Company context required',
+                    'message' => rateb_error_message('company_required', 'Company context required'),
                 ],
             ];
         }
@@ -55,7 +55,7 @@ final class HrEssEmployeeResolverService
                 'body' => [
                     'success' => false,
                     'code' => 'employee_unbound',
-                    'message' => 'No employee linked to this user',
+                    'message' => rateb_error_message('employee_unbound', 'No employee linked to this user'),
                 ],
             ];
         }
@@ -65,7 +65,7 @@ final class HrEssEmployeeResolverService
                 'body' => [
                     'success' => false,
                     'code' => 'employee_ambiguous',
-                    'message' => 'Multiple employees linked to this user',
+                    'message' => rateb_error_message('employee_ambiguous', 'Multiple employees linked to this user'),
                 ],
             ];
         }
@@ -77,7 +77,7 @@ final class HrEssEmployeeResolverService
                 'body' => [
                     'success' => false,
                     'code' => 'tenant_mismatch',
-                    'message' => 'Employee does not belong to this company',
+                    'message' => rateb_error_message('tenant_mismatch', 'Employee does not belong to this company'),
                 ],
             ];
         }
