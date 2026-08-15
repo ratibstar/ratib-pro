@@ -1,7 +1,7 @@
 # RATIB ERP — HR Phase T Production Readiness
 
-**Status:** READY (local connectors OFF)  
-**Date:** 2026-08-15  
+**Commit:** `a248e1d0`  
+**Deploy:** [success](https://github.com/ratibstar/ratib-pro/actions/runs/31868520686)  
 **Scope:** Enterprise hardening of Phases B–S. No new business engines.
 
 This document is the production-facing inventory for HR go-live. It does **not** enable live GOSI/WPS, rewrite payroll, or start Phase U.
