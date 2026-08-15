@@ -495,15 +495,23 @@ final class InventoryOfflinePhase3Test
     {
         $this->enableInventoryFlags();
         $queue = new OfflineQueueService();
-        $result = $queue->enqueueBatch([
-            [
-                'client_id' => 'inv-int-1',
-                'module' => 'inventory',
-                'action' => 'stock_movement.create',
-                'payload' => ['inventory_id' => 1, 'quantity' => 1, 'movement_type' => 'in'],
-                'version' => 1,
-            ],
-        ], ['company_id' => 1, 'branch_id' => 1, 'user_id' => 1]);
+        // Tenant-scoped create in OfflineQueueService requires the ambient TenantContext
+        // company to match the payload company_id (cross-tenant write guard). Mirror the
+        // safe set/reset pattern used by the sibling offline tests.
+        TenantContext::setCompanyId(1);
+        try {
+            $result = $queue->enqueueBatch([
+                [
+                    'client_id' => 'inv-int-1',
+                    'module' => 'inventory',
+                    'action' => 'stock_movement.create',
+                    'payload' => ['inventory_id' => 1, 'quantity' => 1, 'movement_type' => 'in'],
+                    'version' => 1,
+                ],
+            ], ['company_id' => 1, 'branch_id' => 1, 'user_id' => 1]);
+        } finally {
+            TenantContext::setCompanyId(null);
+        }
         $ok = is_array($result)
             && (isset($result['accepted']) || isset($result['rejected']))
             && (
