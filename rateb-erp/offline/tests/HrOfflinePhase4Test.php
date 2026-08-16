@@ -416,15 +416,23 @@ final class HrOfflinePhase4Test
     private function testQueueHrEnqueuePath(): void
     {
         $this->enableHrFlags();
-        $result = (new OfflineQueueService())->enqueueBatch([
-            [
-                'client_id' => 'hr-int-1',
-                'module' => 'hr',
-                'action' => 'attendance.create',
-                'payload' => ['employee_id' => 1, 'attendance_date' => '2026-07-11', 'status' => 'present'],
-                'version' => 1,
-            ],
-        ], ['company_id' => 1, 'branch_id' => 1, 'user_id' => 1]);
+        // Tenant-scoped create in OfflineQueueService requires the ambient TenantContext
+        // company to match the payload company_id (cross-tenant write guard). Mirror the
+        // safe set/reset pattern used by the sibling offline tests.
+        TenantContext::setCompanyId(1);
+        try {
+            $result = (new OfflineQueueService())->enqueueBatch([
+                [
+                    'client_id' => 'hr-int-1',
+                    'module' => 'hr',
+                    'action' => 'attendance.create',
+                    'payload' => ['employee_id' => 1, 'attendance_date' => '2026-07-11', 'status' => 'present'],
+                    'version' => 1,
+                ],
+            ], ['company_id' => 1, 'branch_id' => 1, 'user_id' => 1]);
+        } finally {
+            TenantContext::setCompanyId(null);
+        }
         $ok = is_array($result) && (isset($result['accepted']) || isset($result['rejected']));
         $this->record('queue HR enqueue path (DB optional)', $ok, json_encode($result) ?: '');
         $this->clearHrEnv();
