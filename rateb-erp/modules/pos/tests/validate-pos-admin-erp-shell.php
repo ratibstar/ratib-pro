@@ -47,6 +47,7 @@ assert_true(
     'شاشة البيع native-opens POS register',
     str_contains($side, 'data-pos-open-register="1"')
     && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), '__ratebGoPosRegister')
+    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), 'data-pos-open-register="1"')
     && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
 );
 assert_true(

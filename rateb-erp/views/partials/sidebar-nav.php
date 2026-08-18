@@ -82,7 +82,8 @@ $renderNavGroup = static function (
 $opsSection = static function (
     string $title,
     array $links,
-    string $groupIcon = 'fa-folder-open'
+    string $groupIcon = 'fa-folder-open',
+    bool $eager = false
 ) use ($opsLink, $navActive, $renderNavGroup): void {
     $hasActive = false;
     $hasVisible = false;
@@ -112,7 +113,7 @@ $opsSection = static function (
     if (!$hasVisible) {
         return;
     }
-    $renderNavGroup($title, $groupIcon, $hasActive, static function () use ($links, $opsLink): void {
+    $renderNavGroup($title, $groupIcon, $hasActive || $eager, static function () use ($links, $opsLink): void {
         foreach ($links as $link) {
             $opsLink($link[0], $link[1], $link[2], $link[3] ?? '', $link[4] ?? '');
         }

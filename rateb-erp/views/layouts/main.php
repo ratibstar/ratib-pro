@@ -855,6 +855,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </button>
             <?php } ?>
+            <?php if (rateb_nav_can('pos.register', 'pos')) { ?>
+            <a href="<?php echo htmlspecialchars(rateb_app_url('pos/register'), ENT_QUOTES, 'UTF-8'); ?>"
+               class="rateb-nav-link<?php echo $navActive(rateb_app_route('pos/register')) || $navActive(rateb_app_route('pos')) ? ' active' : ''; ?>"
+               data-pos-open-register="1"
+               data-rateb-full-nav="1">
+                <i class="fas fa-keyboard"></i><span><?php echo __('pos_register'); ?></span>
+            </a>
+            <?php } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
             <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" data-rateb-href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>" onclick="return false;">
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
