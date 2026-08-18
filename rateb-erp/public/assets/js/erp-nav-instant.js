@@ -1731,6 +1731,14 @@
 
     function swapTo(href, opts) {
         opts = opts || {};
+        try {
+            var posUrl = new URL(href, root.location.href);
+            if (POS_RUNTIME_RE.test(posUrl.pathname)) {
+                navigating = false;
+                root.location.assign(posUrl.href);
+                return Promise.resolve(true);
+            }
+        } catch (ePosSwap) { /* continue soft-nav */ }
         if (navigating) {
             // Latest click wins: optimistic chrome + supersede in-flight fetch immediately.
             pendingNavHref = href;
@@ -1993,6 +2001,9 @@
             ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
             : null;
         if (!a) {
+            return;
+        }
+        if (root.__ratebGoPosRegister && root.__ratebGoPosRegister(a, ev)) {
             return;
         }
         // Full-nav for selling shell / biometric / logout only.

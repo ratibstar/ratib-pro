@@ -74,7 +74,21 @@
     }
 
     function goRegister() {
-        window.location.href = (config.urls && config.urls.register) || '/pos/register';
+        if (config.urls && config.urls.register) {
+            window.location.href = config.urls.register;
+            return;
+        }
+        try {
+            var u = new URL(window.location.href);
+            var next = u.pathname.replace(/\/biometric\/?$/i, '/register');
+            if (!/\/register\/?$/i.test(next)) {
+                next = next.replace(/\/?$/, '') + '/register';
+            }
+            u.pathname = next;
+            window.location.href = u.href;
+        } catch (eGo) {
+            window.location.href = '/rateb-erp/public/admin/ops/pos/register';
+        }
     }
 
     function fetchJson(url, options) {

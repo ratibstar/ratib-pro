@@ -23,6 +23,9 @@ function assert_true(string $name, bool $ok, string $detail = ''): void
 $base = (string) file_get_contents($root . '/modules/pos/app/Controllers/PosBaseController.php');
 $view = (string) file_get_contents($root . '/modules/pos/app/Support/PosView.php');
 $side = (string) file_get_contents($root . '/views/partials/sidebar-nav.php');
+$posNav = (string) file_get_contents($root . '/modules/pos/views/partials/sidebar-pos-nav.php');
+$dash = (string) file_get_contents($root . '/modules/pos/views/dashboard/index.php');
+$gateJs = (string) file_get_contents($root . '/public/assets/pos/js/pos-biometric-gate.js');
 $nav = (string) file_get_contents($root . '/public/assets/js/erp-nav-instant.js');
 $reg = (string) file_get_contents($root . '/modules/pos/app/Controllers/PosRegisterController.php');
 $bio = (string) file_get_contents($root . '/modules/pos/app/Controllers/PosBiometricAuthController.php');
@@ -35,6 +38,29 @@ assert_true('terminals no longer forces pos-pages-shell', !str_contains($term, '
 assert_true('register still uses pos-shell', str_contains($reg, "'pos-shell'"));
 assert_true('biometric still uses pos-shell', str_contains($bio, "'pos-shell'"));
 assert_true('sidebar full-nav only register/biometric', str_contains($side, "pos/register") && !preg_match("/str_starts_with\(\\\$resourcePath, 'pos\/'\);/", $side));
+assert_true(
+    'sidebar شاشة البيع opens pos/register',
+    str_contains($posNav, "['pos/register', 'pos_register'")
+    && !preg_match("/\['pos',\s*'pos_register'/", $posNav)
+);
+assert_true(
+    'شاشة البيع native-opens POS register',
+    str_contains($side, 'data-pos-open-register="1"')
+    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), '__ratebGoPosRegister')
+    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), 'data-pos-open-register="1"')
+    && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
+);
+assert_true(
+    'dashboard فتح شاشة البيع full-navs to pos/register',
+    str_contains($dash, "rateb_app_url('pos/register')")
+    && str_contains($dash, 'data-rateb-full-nav="1"')
+    && !str_contains($dash, "rateb_app_url('pos')")
+);
+assert_true(
+    'biometric gate does not fallback to bare /pos/register',
+    str_contains($gateJs, 'replace(/\\/biometric\\/?$/i, \'/register\')')
+    && !preg_match('#\|\| [\'"]/pos/register[\'"]#', $gateJs)
+);
 assert_true('nav soft-nav Admin POS (no POS_ADMIN forceFull)', !str_contains($nav, 'POS_ADMIN_PAGES_RE'));
 assert_true('SW soft-nav allows POS admin HTML', str_contains($sw, 'isPosRuntimePath(url.pathname)'));
 $swBuildOk = (bool) preg_match("/var\s+SW_BUILD_ID\s*=\s*'([^']+)'/", $sw, $swBuildMatch);

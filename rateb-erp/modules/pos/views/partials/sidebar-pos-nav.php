@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 $opsSection(__('pos_nav_section'), [
     ['pos/dashboard', 'pos_dashboard', 'fa-cash-register', 'pos', 'pos.view'],
-    ['pos', 'pos_register', 'fa-keyboard', 'pos', 'pos.register'],
+    ['pos/register', 'pos_register', 'fa-keyboard', 'pos', 'pos.register'],
     ['pos/terminals', 'pos_terminals', 'fa-desktop', 'pos', 'pos.view'],
     ['pos/shifts', 'pos_shifts', 'fa-clock', 'pos', 'pos.view'],
     ['pos/cash-drawers', 'pos_cash_drawers', 'fa-money-bill', 'pos', 'pos.view'],
@@ -15,4 +15,4 @@ $opsSection(__('pos_nav_section'), [
     ['pos/settings', 'pos_settings', 'fa-sliders', 'pos', 'pos.settings.manage'],
     ['guest-menu', 'guest_menu_nav', 'fa-qrcode', 'pos', 'pos.view'],
     ['guest-menu/orders', 'guest_menu_orders_nav', 'fa-receipt', 'pos', 'pos.view'],
-], 'fa-cash-register');
+], 'fa-cash-register', true);
