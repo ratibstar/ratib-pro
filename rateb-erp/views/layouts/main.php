@@ -183,25 +183,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) {
                 return false;
             }
-            var form = a.closest ? a.closest('form.rateb-pos-register-open, form[data-pos-open-register="1"]') : null;
-            if (!form && a.tagName === 'FORM' && a.getAttribute('data-pos-open-register') === '1') {
-                form = a;
-            }
-            if (form) {
-                if (ev) {
-                    ev.preventDefault();
-                    try { ev.stopImmediatePropagation(); } catch (eSipF) { ev.stopPropagation(); }
-                }
-                try {
-                    form.submit();
-                } catch (eSub) {
-                    var action = form.getAttribute('action') || '';
-                    if (action) {
-                        location.assign(action);
-                    }
-                }
-                return true;
-            }
             var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
             var label = String(a.textContent || '').replace(/\s+/g, ' ');
             var path = '';
@@ -220,24 +201,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ev.preventDefault();
                 try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
             }
-            var dest = raw;
-            try {
-                var u = new URL(raw, location.href);
-                if (!/\/(register|biometric)$/i.test(u.pathname.replace(/\/+$/, ''))) {
-                    u.pathname = u.pathname.replace(/\/+$/, '') + '/register';
-                }
-                u.searchParams.set('rateb_live', '1');
-                dest = u.href;
-            } catch (eDest) {
-                var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
-                dest = location.origin + pub + '/admin/ops/pos/register?rateb_live=1';
-            }
-            location.assign(dest);
+            var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+            location.replace(location.origin + pub + '/admin/ops/pos/register');
             return true;
         };
         document.addEventListener('click', function (ev) {
             try {
-                var aEarly = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href], form.rateb-pos-register-open, .rateb-pos-register-open button') : null;
+                var aEarly = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
                 if (aEarly && window.__ratebGoPosRegister(aEarly, ev)) {
                     return;
                 }
@@ -875,26 +845,13 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </button>
             <?php } ?>
-            <?php if (rateb_nav_can('pos.register', 'pos')) {
-                $posOpen = function_exists('rateb_pos_register_open_form_parts') ? rateb_pos_register_open_form_parts() : null;
-                $posOpenActive = $navActive(rateb_app_route('pos/register')) || $navActive(rateb_app_route('pos')) ? ' active' : '';
-                if (is_array($posOpen)) { ?>
-            <form method="get" action="<?php echo htmlspecialchars($posOpen['action'], ENT_QUOTES, 'UTF-8'); ?>" class="rateb-pos-register-open" data-pos-open-register="1">
-                <?php foreach ($posOpen['fields'] as $posFieldName => $posFieldValue) { ?>
-                <input type="hidden" name="<?php echo htmlspecialchars((string) $posFieldName, ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars((string) $posFieldValue, ENT_QUOTES, 'UTF-8'); ?>">
-                <?php } ?>
-                <button type="submit" class="rateb-nav-link<?php echo $posOpenActive; ?>">
-                    <i class="fas fa-keyboard"></i><span><?php echo __('pos_register'); ?></span>
-                </button>
-            </form>
-                <?php } else { ?>
-            <a href="<?php echo htmlspecialchars(rateb_app_url('pos/register'), ENT_QUOTES, 'UTF-8'); ?>"
-               class="rateb-nav-link<?php echo $posOpenActive; ?>"
+            <?php if (rateb_nav_can('pos.register', 'pos')) { ?>
+            <a href="<?php echo htmlspecialchars(rateb_url('admin/ops/pos/register'), ENT_QUOTES, 'UTF-8'); ?>"
+               class="rateb-nav-link<?php echo $navActive('admin/ops/pos/register') || $navActive('admin/ops/pos') ? ' active' : ''; ?>"
                data-pos-open-register="1"
                data-rateb-full-nav="1">
                 <i class="fas fa-keyboard"></i><span><?php echo __('pos_register'); ?></span>
             </a>
-                <?php } ?>
             <?php } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
             <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" data-rateb-href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>" onclick="return false;">
@@ -1068,7 +1025,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   function onSidebarClick(ev) {
     // Soft-nav ONLY for Admin links / dashboard button — never browser full navigation.
     var a = ev.target && ev.target.closest
-      ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav], form.rateb-pos-register-open, .rateb-pos-register-open button')
+      ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
       : null;
     if (a) {
       try {

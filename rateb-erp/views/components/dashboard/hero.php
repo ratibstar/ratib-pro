@@ -23,18 +23,6 @@ $tag = $tag ?? __('dashboard');
             }
             $icon = !empty($act['icon']) ? '<i class="fas ' . Rateb\App\Core\View::escape((string) $act['icon']) . '"></i>' : '';
             $label = Rateb\App\Core\View::escape((string) ($act['label'] ?? ''));
-            if (!empty($act['form_get'])) {
-                $fields = is_array($act['fields'] ?? null) ? $act['fields'] : [];
-                ?>
-        <form method="get" action="<?php echo Rateb\App\Core\View::escape((string) $act['href']); ?>" class="d-inline m-0 rateb-pos-register-open" data-pos-open-register="1">
-            <?php foreach ($fields as $fieldName => $fieldValue) { ?>
-            <input type="hidden" name="<?php echo Rateb\App\Core\View::escape((string) $fieldName); ?>" value="<?php echo Rateb\App\Core\View::escape((string) $fieldValue); ?>">
-            <?php } ?>
-            <button type="submit" class="<?php echo $cls; ?>"><?php echo $icon; ?><span class="cm-btn__lbl"><?php echo $label; ?></span></button>
-        </form>
-                <?php
-                continue;
-            }
             if (!empty($act['form'])) {
                 ?>
         <form method="post" action="<?php echo Rateb\App\Core\View::escape((string) $act['href']); ?>" class="d-inline m-0">

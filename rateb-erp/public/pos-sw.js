@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v43';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260818-pos-register-open-v160';
+var SW_BUILD_ID = '20260818-pos-register-url-v161';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -571,7 +571,22 @@ function posCompanyIdFromRequest(request) {
     }
 }
 
+function posRegisterDocumentUrl() {
+    var base = posErpScopeBase();
+    try {
+        return new URL('admin/ops/pos/register', base).href;
+    } catch (eReg) {
+        return base + 'admin/ops/pos/register';
+    }
+}
+
 function posAdminRedirectUrl(request, preferCompanyEdit) {
+    try {
+        var req = new URL(String((request && request.url) || ''), self.location.origin);
+        if (isPosRuntimePath(req.pathname) || isRegisterShellPath(req.pathname) || isBiometricGatePath(req.pathname)) {
+            return posRegisterDocumentUrl();
+        }
+    } catch (ePosKeep) { /* fall through */ }
     var base = posErpScopeBase();
     // Never bounce ops module denials to company edit — that trapped Super Admin
     // on "module not in plan" while opening logistics/procurement soft-nav.
@@ -711,11 +726,24 @@ function isSwExposedRedirect(response) {
 }
 
 function posHandleLiveNetworkResponse(response, request) {
+    var posRuntime = false;
+    try {
+        var ru = new URL(String((request && request.url) || ''), self.location.origin);
+        posRuntime = isPosRuntimePath(ru.pathname) || isRegisterShellPath(ru.pathname);
+    } catch (eRt) { posRuntime = false; }
     if (response && response.ok) {
         if (response.redirected) {
             try {
                 var finalUrl = String(response.url || '');
                 if (finalUrl && navigateRedirectChangedDocument(request, finalUrl)) {
+                    if (posRuntime) {
+                        try {
+                            var fu = new URL(finalUrl, self.location.origin);
+                            if (/\/admin\/?$/i.test(fu.pathname.replace(/\/+$/, ''))) {
+                                return posHttpRedirectResponse(posRegisterDocumentUrl());
+                            }
+                        } catch (eKeepPos) { /* ignore */ }
+                    }
                     return posHttpRedirectResponse(finalUrl);
                 }
             } catch (eRedir) { /* ignore */ }
@@ -723,6 +751,9 @@ function posHandleLiveNetworkResponse(response, request) {
         return Promise.resolve(response);
     }
     if (!response) {
+        if (posRuntime) {
+            return Promise.resolve(null);
+        }
         return Promise.resolve(posHttpRedirectResponse(posAdminRedirectUrl(request, false)));
     }
     return response.clone().text().then(function (body) {
@@ -744,7 +775,13 @@ function posHandleLiveNetworkResponse(response, request) {
                     });
                 }
             } catch (ePass) { /* fall through */ }
+            if (posRuntime) {
+                return response;
+            }
             return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
+        }
+        if (posRuntime) {
+            return response;
         }
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     }).catch(function () {

@@ -25,32 +25,22 @@ $opsLink = static function (
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
     $href = rateb_app_url($resourcePath);
-    // Selling register/biometric only — native GET form (pos-shell).
-    // <a> clicks are swallowed by Admin soft-nav / pending-nav; forms are not.
+    // Selling register/biometric only — full document load (pos-shell).
     $isPosFullNav = $resourcePath === 'pos'
         || $resourcePath === 'pos/register'
         || str_starts_with($resourcePath, 'pos/register/')
         || $resourcePath === 'pos/biometric'
         || str_starts_with($resourcePath, 'pos/biometric/');
-    $inner = '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
-    if ($badge > 0) {
-        $inner .= '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';
-    }
-    if ($isPosFullNav && function_exists('rateb_pos_register_open_form_parts')) {
-        $form = rateb_pos_register_open_form_parts();
-        echo '<form method="get" action="' . Rateb\App\Core\View::escape($form['action']) . '" class="rateb-pos-register-open" data-pos-open-register="1">';
-        foreach ($form['fields'] as $name => $value) {
-            echo '<input type="hidden" name="' . Rateb\App\Core\View::escape((string) $name) . '" value="' . Rateb\App\Core\View::escape((string) $value) . '">';
-        }
-        echo '<button type="submit" class="rateb-nav-link' . $active . '">' . $inner . '</button></form>';
-        return;
-    }
     if ($isPosFullNav) {
+        $href = rateb_url('admin/ops/pos/register');
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     }
-    echo $inner;
+    echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span>';
+    if ($badge > 0) {
+        echo '<span class="rateb-nav-badge rateb-nav-badge--pending" title="' . Rateb\App\Core\View::escape(__('ops_nav_pending_hint')) . '">' . $badge . '</span>';
+    }
     echo '</a>';
 };
 

@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260818-pos-register-open-v160');
+define('RATEB_ASSET_BUILD', '20260818-pos-register-url-v161');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3264,39 +3264,10 @@ if (!function_exists('rateb_app_url')) {
     }
 }
 
-if (!function_exists('rateb_pos_register_open_form_parts')) {
-    /**
-     * Native GET form so شاشة البيع cannot be swallowed by Admin soft-nav.
-     *
-     * @return array{action:string,fields:array<string,string>}
-     */
-    function rateb_pos_register_open_form_parts(): array
+if (!function_exists('rateb_pos_register_url')) {
+    function rateb_pos_register_url(): string
     {
-        $url = function_exists('rateb_app_url') ? rateb_app_url('pos/register') : '/admin/ops/pos/register';
-        $parts = parse_url($url);
-        $fields = [];
-        if (is_array($parts) && !empty($parts['query'])) {
-            parse_str((string) $parts['query'], $parsed);
-            foreach ($parsed as $k => $v) {
-                if (is_string($k) && (is_string($v) || is_numeric($v))) {
-                    $fields[$k] = (string) $v;
-                }
-            }
-        }
-        $fields['rateb_live'] = '1';
-        $action = '/admin/ops/pos/register';
-        if (is_array($parts)) {
-            $action = '';
-            if (isset($parts['scheme'], $parts['host'])) {
-                $action = $parts['scheme'] . '://' . $parts['host'];
-                if (isset($parts['port'])) {
-                    $action .= ':' . $parts['port'];
-                }
-            }
-            $action .= (string) ($parts['path'] ?? '/admin/ops/pos/register');
-        }
-
-        return ['action' => $action, 'fields' => $fields];
+        return rateb_url('admin/ops/pos/register');
     }
 }
 

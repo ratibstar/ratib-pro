@@ -1735,7 +1735,8 @@
             var posUrl = new URL(href, root.location.href);
             if (POS_RUNTIME_RE.test(posUrl.pathname)) {
                 navigating = false;
-                root.location.assign(posUrl.href);
+                var pub = (root.location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+                root.location.replace(root.location.origin + pub + '/admin/ops/pos/register');
                 return Promise.resolve(true);
             }
         } catch (ePosSwap) { /* continue soft-nav */ }
@@ -1998,7 +1999,7 @@
 
     function onClick(ev) {
         var a = ev.target && ev.target.closest
-            ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav], form.rateb-pos-register-open, .rateb-pos-register-open button')
+            ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
             : null;
         if (!a) {
             return;
@@ -2027,6 +2028,11 @@
                 if (forceFull) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSipPos) { ev.stopPropagation(); }
+                    if (POS_RUNTIME_RE.test(fu.pathname)) {
+                        var pubPos = (root.location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+                        root.location.replace(root.location.origin + pubPos + '/admin/ops/pos/register');
+                        return;
+                    }
                     root.location.href = forceHref;
                     return;
                 }
