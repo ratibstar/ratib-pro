@@ -176,15 +176,58 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
          * while F5 paints from SW cache. */
         window.__RATEB_PENDING_NAV__ = window.__RATEB_PENDING_NAV__ || '';
         window.__RATEB_NAV_READY__ = false;
+        window.__ratebGoPosRegister = function (a, ev) {
+            if (!a) {
+                return false;
+            }
+            if (ev && (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey)) {
+                return false;
+            }
+            var raw = a.getAttribute('data-rateb-href') || a.getAttribute('href') || '';
+            var label = String(a.textContent || '').replace(/\s+/g, ' ');
+            var path = '';
+            try {
+                path = new URL(raw, location.href).pathname.replace(/\/+$/, '');
+            } catch (ePath) {
+                path = String(raw || '');
+            }
+            var isReg = a.getAttribute('data-pos-open-register') === '1'
+                || /شاشة البيع/.test(label)
+                || /\/(?:admin\/ops\/)?pos(?:\/register|\/biometric)?$/.test(path);
+            if (!isReg) {
+                return false;
+            }
+            if (ev) {
+                ev.preventDefault();
+                try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
+            }
+            var dest = raw;
+            try {
+                var u = new URL(raw, location.href);
+                if (!/\/(register|biometric)$/i.test(u.pathname.replace(/\/+$/, ''))) {
+                    u.pathname = u.pathname.replace(/\/+$/, '') + '/register';
+                }
+                dest = u.href;
+            } catch (eDest) {
+                var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+                dest = location.origin + pub + '/admin/ops/pos/register' + (location.search || '');
+            }
+            location.assign(dest);
+            return true;
+        };
         document.addEventListener('click', function (ev) {
             try {
+                var aEarly = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
+                if (aEarly && window.__ratebGoPosRegister(aEarly, ev)) {
+                    return;
+                }
                 if (window.__RATEB_NAV_READY__) {
                     return;
                 }
                 if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
                     return;
                 }
-                var a = ev.target && ev.target.closest ? ev.target.closest('a[href], a[data-rateb-href]') : null;
+                var a = aEarly;
                 if (!a) {
                     return;
                 }
@@ -992,6 +1035,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
           return;
         }
         if (a.hasAttribute('download')) {
+          return;
+        }
+        if (window.__ratebGoPosRegister && window.__ratebGoPosRegister(a, ev)) {
           return;
         }
         if (a.getAttribute('data-rateb-full-nav') === '1') {

@@ -44,6 +44,12 @@ assert_true(
     && !preg_match("/\['pos',\s*'pos_register'/", $posNav)
 );
 assert_true(
+    'شاشة البيع native-opens POS register',
+    str_contains($side, 'data-pos-open-register="1"')
+    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), '__ratebGoPosRegister')
+    && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
+);
+assert_true(
     'dashboard فتح شاشة البيع full-navs to pos/register',
     str_contains($dash, "rateb_app_url('pos/register')")
     && str_contains($dash, 'data-rateb-full-nav="1"')

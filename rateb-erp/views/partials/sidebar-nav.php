@@ -33,7 +33,7 @@ $opsLink = static function (
         || $resourcePath === 'pos/biometric'
         || str_starts_with($resourcePath, 'pos/biometric/');
     if ($isPosFullNav) {
-        echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '">';
+        echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     }
