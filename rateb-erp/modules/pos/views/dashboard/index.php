@@ -7,7 +7,7 @@ declare(strict_types=1);
 <div class="rateb-pos-page rateb-pos-dashboard">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h1 class="h3 mb-0"><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_dashboard')); ?></h1>
-        <a href="<?php echo rateb_app_url('pos'); ?>" class="btn btn-primary"><?php echo __('pos_open_register'); ?></a>
+        <a href="<?php echo rateb_app_url('pos/register'); ?>" class="btn btn-primary" data-rateb-full-nav="1"><?php echo __('pos_open_register'); ?></a>
     </div>
     <div class="alert alert-info"><?php echo __('pos_scaffold_notice'); ?></div>
     <div class="row g-3">
