@@ -36,6 +36,17 @@ $actions = [
     ['href' => rateb_app_url('inventory'), 'label' => __('inventory'), 'icon' => 'fa-boxes-stacked'],
     ['href' => rateb_app_url('suppliers'), 'label' => __('suppliers'), 'icon' => 'fa-truck-field'],
 ];
+if (rateb_nav_can('pos.register', 'pos') && function_exists('rateb_pos_register_open_form_parts')) {
+    $posOpenDash = rateb_pos_register_open_form_parts();
+    array_unshift($actions, [
+        'href' => $posOpenDash['action'],
+        'label' => __('pos_register'),
+        'icon' => 'fa-keyboard',
+        'primary' => true,
+        'form_get' => true,
+        'fields' => $posOpenDash['fields'],
+    ]);
+}
 if (rateb_nav_can('accounting.view', 'accounting')) {
     array_unshift($actions, [
         'href' => rateb_app_url('accounting'),

@@ -7,7 +7,15 @@ declare(strict_types=1);
 <div class="rateb-pos-page rateb-pos-dashboard">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h1 class="h3 mb-0"><?php echo \Rateb\App\Pos\Support\PosView::escape($title ?? __('pos_dashboard')); ?></h1>
-        <a href="<?php echo rateb_app_url('pos/register'); ?>" class="btn btn-primary" data-rateb-full-nav="1" data-pos-open-register="1"><?php echo __('pos_open_register'); ?></a>
+        <?php
+        $posOpenDash = function_exists('rateb_pos_register_open_form_parts') ? rateb_pos_register_open_form_parts() : ['action' => rateb_app_url('pos/register'), 'fields' => ['rateb_live' => '1']];
+        ?>
+        <form method="get" action="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) $posOpenDash['action']); ?>" class="rateb-pos-register-open d-inline" data-pos-open-register="1">
+            <?php foreach ($posOpenDash['fields'] as $posFieldName => $posFieldValue) { ?>
+            <input type="hidden" name="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) $posFieldName); ?>" value="<?php echo \Rateb\App\Pos\Support\PosView::escape((string) $posFieldValue); ?>">
+            <?php } ?>
+            <button type="submit" class="btn btn-primary"><?php echo __('pos_open_register'); ?></button>
+        </form>
     </div>
     <div class="alert alert-info"><?php echo __('pos_scaffold_notice'); ?></div>
     <div class="row g-3">

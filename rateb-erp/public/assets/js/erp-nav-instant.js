@@ -1998,7 +1998,7 @@
 
     function onClick(ev) {
         var a = ev.target && ev.target.closest
-            ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav]')
+            ? ev.target.closest('a[href], a[data-rateb-href], button[data-rateb-href], [data-rateb-dashboard-nav], form.rateb-pos-register-open, .rateb-pos-register-open button')
             : null;
         if (!a) {
             return;
@@ -2155,6 +2155,17 @@
                     var data = (ev && ev.data) || {};
                     if (data.type === 'RATEB_HTML_CACHE_BUST') {
                         purgePoisonedOpsCaches();
+                        try {
+                            var bustBuild = String(data.build || '');
+                            var bustKey = 'rateb_html_bust_reload_' + bustBuild;
+                            if (bustBuild && !sessionStorage.getItem(bustKey)
+                                && !/\/pos\/(register|biometric)(\/|$)/i.test(String(root.location.pathname || ''))) {
+                                sessionStorage.setItem(bustKey, '1');
+                                var bu = new URL(root.location.href);
+                                bu.searchParams.set('rateb_live', '1');
+                                root.location.replace(bu.href);
+                            }
+                        } catch (eBustReload) { /* ignore */ }
                     }
                 });
             }

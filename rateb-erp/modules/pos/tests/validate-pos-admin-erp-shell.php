@@ -46,14 +46,16 @@ assert_true(
 assert_true(
     'شاشة البيع native-opens POS register',
     str_contains($side, 'data-pos-open-register="1"')
+    && str_contains($side, 'form method="get"')
+    && str_contains($side, 'rateb-pos-register-open')
     && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), '__ratebGoPosRegister')
-    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), 'data-pos-open-register="1"')
+    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), 'rateb-pos-register-open')
     && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
 );
 assert_true(
     'dashboard فتح شاشة البيع full-navs to pos/register',
-    str_contains($dash, "rateb_app_url('pos/register')")
-    && str_contains($dash, 'data-rateb-full-nav="1"')
+    str_contains($dash, 'rateb-pos-register-open')
+    && str_contains($dash, 'pos_open_register')
     && !str_contains($dash, "rateb_app_url('pos')")
 );
 assert_true(
@@ -62,7 +64,7 @@ assert_true(
     && !preg_match('#\|\| [\'"]/pos/register[\'"]#', $gateJs)
 );
 assert_true('nav soft-nav Admin POS (no POS_ADMIN forceFull)', !str_contains($nav, 'POS_ADMIN_PAGES_RE'));
-assert_true('SW soft-nav allows POS admin HTML', str_contains($sw, 'isPosRuntimePath(url.pathname)'));
+assert_true('SW activate reloads stale Admin tabs', str_contains($sw, 'client.navigate(navUrl)'));
 $swBuildOk = (bool) preg_match("/var\s+SW_BUILD_ID\s*=\s*'([^']+)'/", $sw, $swBuildMatch);
 $swBuildVer = 0;
 if ($swBuildOk && preg_match('/v(\d+)/', (string) ($swBuildMatch[1] ?? ''), $swVerMatch)) {
@@ -70,7 +72,7 @@ if ($swBuildOk && preg_match('/v(\d+)/', (string) ($swBuildMatch[1] ?? ''), $swV
 }
 assert_true(
     'SW build bumped',
-    $swBuildOk && ($swBuildVer >= 130 || str_contains($sw, 'pos-admin-passthrough-v130')),
+    $swBuildOk && ($swBuildVer >= 160 || str_contains($sw, 'pos-register-open-v160')),
     $swBuildOk ? ('build=' . (string) ($swBuildMatch[1] ?? '')) : 'missing SW_BUILD_ID'
 );
 assert_true(

@@ -249,6 +249,23 @@ body.rateb-app {
     line-height: 1.35;
 }
 
+button.rateb-nav-link {
+    width: calc(100% - 1rem);
+    background: transparent;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: inherit;
+    color: inherit;
+}
+
+form.rateb-pos-register-open {
+    margin: 0;
+    display: block;
+}
+
 .rateb-nav-link i {
     width: 1.15rem;
     flex-shrink: 0;

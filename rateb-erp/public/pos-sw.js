@@ -5,9 +5,9 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v43';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260810-nav-manual-redirect-login-v156';
+var SW_BUILD_ID = '20260818-pos-register-open-v160';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -4697,6 +4697,13 @@ self.addEventListener('activate', function (event) {
                                             if (!isValidErpOpsHtmlBody(href, html)) {
                                                 return null;
                                             }
+                                            try {
+                                                var migratePath = new URL(href).pathname.replace(/\/+$/, '');
+                                                if (/\/admin$/i.test(migratePath)
+                                                    && String(html).indexOf('data-pos-open-register') === -1) {
+                                                    return null;
+                                                }
+                                            } catch (eSkipStaleAdmin) { /* keep */ }
                                             var clean = new Response(html, {
                                                 status: 200,
                                                 headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Rateb-Ops-Page': '1' }
@@ -4737,6 +4744,20 @@ self.addEventListener('activate', function (event) {
                             at: Date.now()
                         });
                     } catch (eMsg) { /* ignore */ }
+                    try {
+                        var cu = String(client.url || '');
+                        if (typeof client.navigate === 'function'
+                            && /\/admin(\/|$)/i.test(cu)
+                            && !/\/pos\/(register|biometric)(\/|$|\?)/i.test(cu)) {
+                            var navUrl = cu;
+                            try {
+                                var nu = new URL(cu);
+                                nu.searchParams.set('rateb_live', '1');
+                                navUrl = nu.href;
+                            } catch (eNu) { /* keep */ }
+                            client.navigate(navUrl);
+                        }
+                    } catch (eNavClient) { /* ignore */ }
                 });
                 return null;
             });
