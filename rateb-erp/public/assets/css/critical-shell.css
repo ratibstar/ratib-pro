@@ -33,7 +33,8 @@ body.rateb-app{margin:0;font-family:var(--rateb-font);background:var(--rateb-bg)
 .rateb-nav-group-body,.rateb-nav-subgroup-body{display:none}
 .rateb-nav-group.is-open>.rateb-nav-group-body,.rateb-nav-subgroup.is-open>.rateb-nav-subgroup-body{display:block}
 .rateb-nav-link{display:flex;align-items:center;gap:.65rem;padding:.55rem 1.15rem;margin:.1rem .5rem;border-radius:8px;color:var(--rateb-sidebar-text);text-decoration:none;font-size:.92rem;border-left:3px solid transparent}
-button.rateb-nav-link{width:calc(100% - 1rem);background:transparent;border-top:none;border-bottom:none;border-right:none;cursor:pointer;font:inherit;text-align:inherit}
+form.rateb-pos-register-open{margin:0;display:block}
+form.rateb-pos-register-open.d-inline{display:inline}
 .rateb-nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
 .rateb-nav-link.active{background:var(--rateb-sidebar-active);color:#fff;border-left-color:var(--rateb-accent)}
 .rateb-nav-link i{width:1.15rem;flex-shrink:0;text-align:center}

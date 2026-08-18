@@ -1735,7 +1735,8 @@
             var posUrl = new URL(href, root.location.href);
             if (POS_RUNTIME_RE.test(posUrl.pathname)) {
                 navigating = false;
-                root.location.assign(posUrl.href);
+                var pub = (root.location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+                root.location.replace(root.location.origin + pub + '/admin/ops/pos/register');
                 return Promise.resolve(true);
             }
         } catch (ePosSwap) { /* continue soft-nav */ }
@@ -2027,6 +2028,11 @@
                 if (forceFull) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSipPos) { ev.stopPropagation(); }
+                    if (POS_RUNTIME_RE.test(fu.pathname)) {
+                        var pubPos = (root.location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+                        root.location.replace(root.location.origin + pubPos + '/admin/ops/pos/register');
+                        return;
+                    }
                     root.location.href = forceHref;
                     return;
                 }
@@ -2155,6 +2161,17 @@
                     var data = (ev && ev.data) || {};
                     if (data.type === 'RATEB_HTML_CACHE_BUST') {
                         purgePoisonedOpsCaches();
+                        try {
+                            var bustBuild = String(data.build || '');
+                            var bustKey = 'rateb_html_bust_reload_' + bustBuild;
+                            if (bustBuild && !sessionStorage.getItem(bustKey)
+                                && !/\/pos\/(register|biometric)(\/|$)/i.test(String(root.location.pathname || ''))) {
+                                sessionStorage.setItem(bustKey, '1');
+                                var bu = new URL(root.location.href);
+                                bu.searchParams.set('rateb_live', '1');
+                                root.location.replace(bu.href);
+                            }
+                        } catch (eBustReload) { /* ignore */ }
                     }
                 });
             }

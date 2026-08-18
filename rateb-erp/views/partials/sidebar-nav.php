@@ -26,13 +26,13 @@ $opsLink = static function (
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
     $href = rateb_app_url($resourcePath);
     // Selling register/biometric only — full document load (pos-shell).
-    // Other POS admin pages use Admin main layout and soft-nav like Inventory/HR.
     $isPosFullNav = $resourcePath === 'pos'
         || $resourcePath === 'pos/register'
         || str_starts_with($resourcePath, 'pos/register/')
         || $resourcePath === 'pos/biometric'
         || str_starts_with($resourcePath, 'pos/biometric/');
     if ($isPosFullNav) {
+        $href = rateb_url('admin/ops/pos/register');
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
