@@ -34,6 +34,9 @@ $opsLink = static function (
     $href = $isPosFullNav
         ? rateb_url_with_ops_company('admin/ops/pos/register')
         : rateb_app_url($resourcePath);
+    if ($isPosFullNav && function_exists('rateb_url_set_query_param')) {
+        $href = rateb_url_set_query_param($href, 'rateb_live', '1');
+    }
     if ($isPosFullNav) {
         echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
     } else {

@@ -2027,7 +2027,14 @@
                 if (forceFull) {
                     ev.preventDefault();
                     try { ev.stopImmediatePropagation(); } catch (eSipPos) { ev.stopPropagation(); }
-                    root.location.href = forceHref;
+                    try {
+                        if (POS_RUNTIME_RE.test(fu.pathname)) {
+                            fu.searchParams.set('rateb_live', '1');
+                            fu.searchParams.set('_nav', String(Date.now()));
+                            forceHref = fu.href;
+                        }
+                    } catch (eLive) { /* keep forceHref */ }
+                    root.location.assign(forceHref);
                     return;
                 }
             }

@@ -204,11 +204,23 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
             var q = '';
             try {
-                q = new URL(raw, location.href).search || location.search || '';
+                var src = new URL(raw, location.href);
+                q = src.search || location.search || '';
             } catch (eQ) {
                 q = location.search || '';
             }
-            location.replace(location.origin + pub + '/admin/ops/pos/register' + q);
+            var dest = location.origin + pub + '/admin/ops/pos/register' + q;
+            try {
+                var du = new URL(dest);
+                du.searchParams.set('rateb_live', '1');
+                du.searchParams.set('_nav', String(Date.now()));
+                dest = du.href;
+            } catch (eLive) { /* keep dest */ }
+            try {
+                window.top.location.assign(dest);
+            } catch (eTop) {
+                location.assign(dest);
+            }
             return true;
         };
         document.addEventListener('click', function (ev) {

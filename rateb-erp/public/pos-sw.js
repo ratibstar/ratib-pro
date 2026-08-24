@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260810-nav-manual-redirect-login-v156';
+var SW_BUILD_ID = '20260824-pos-register-live-bypass-v161';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -722,7 +722,19 @@ function posHandleLiveNetworkResponse(response, request) {
         }
         return Promise.resolve(response);
     }
+    var reqPath = '';
+    try {
+        reqPath = new URL(String((request && request.url) || ''), self.location.origin).pathname;
+    } catch (ePath) { /* ignore */ }
+    var isRuntime = isPosRuntimePath(reqPath);
     if (!response) {
+        if (isRuntime) {
+            try {
+                var uMiss = new URL(String((request && request.url) || ''), self.location.origin);
+                uMiss.searchParams.set('rateb_live', '1');
+                return Promise.resolve(posHttpRedirectResponse(uMiss.href));
+            } catch (eMiss) { /* fall through */ }
+        }
         return Promise.resolve(posHttpRedirectResponse(posAdminRedirectUrl(request, false)));
     }
     return response.clone().text().then(function (body) {
@@ -744,10 +756,31 @@ function posHandleLiveNetworkResponse(response, request) {
                     });
                 }
             } catch (ePass) { /* fall through */ }
+            if (isRuntime) {
+                try {
+                    var uGate = new URL(String((request && request.url) || ''), self.location.origin);
+                    uGate.searchParams.set('rateb_live', '1');
+                    return posHttpRedirectResponse(uGate.href);
+                } catch (eGate) { /* fall through */ }
+            }
             return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
+        }
+        if (isRuntime) {
+            try {
+                var uBad = new URL(String((request && request.url) || ''), self.location.origin);
+                uBad.searchParams.set('rateb_live', '1');
+                return posHttpRedirectResponse(uBad.href);
+            } catch (eBad) { /* fall through */ }
         }
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     }).catch(function () {
+        if (isRuntime) {
+            try {
+                var uCatch = new URL(String((request && request.url) || ''), self.location.origin);
+                uCatch.searchParams.set('rateb_live', '1');
+                return posHttpRedirectResponse(uCatch.href);
+            } catch (eCatch) { /* fall through */ }
+        }
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     });
 }
@@ -759,6 +792,14 @@ function fetchPosLiveOrShowRetry(request) {
         }
         return posHandleLiveNetworkResponse(response, request);
     }).catch(function () {
+        // Never bounce the selling shell to /admin — keep the cashier on POS.
+        try {
+            var u = new URL(String((request && request.url) || ''), self.location.origin);
+            if (isPosRuntimePath(u.pathname)) {
+                u.searchParams.set('rateb_live', '1');
+                return posHttpRedirectResponse(u.href);
+            }
+        } catch (ePosRetry) { /* fall through */ }
         return posHttpRedirectResponse(posAdminRedirectUrl(request, false));
     });
 }
@@ -5037,20 +5078,12 @@ self.addEventListener('fetch', function (event) {
             );
             return;
         }
-        if (isPosNavigation(url)) {
-            // Live bypass: always hit PHP when user explicitly asks (recovery from stale SW cache).
-            if (url.searchParams.get('rateb_live') === '1') {
-                respondWithDocumentAndReleaseWarmGate(
-                    event,
-                    fetchNavigateNetworkPassthrough(event.request, 15000).then(function (res) {
-                        if (isSwExposedRedirect(res)) {
-                            return res;
-                        }
-                        return posHandleLiveNetworkResponse(res, event.request);
-                    }).catch(function () {
-                        return posHttpRedirectResponse(posAdminRedirectUrl(event.request, false));
-                    })
-                );
+            if (isPosNavigation(url)) {
+            // Live bypass: hit PHP directly — never synthesize a bounce to /admin.
+            if (url.searchParams.get('rateb_live') === '1'
+                || url.searchParams.get('rateb_force_live')
+                || url.searchParams.get('_nav')) {
+                releaseBackgroundWarmAfterFirstDocument();
                 return;
             }
             // POS admin CRUD now uses Admin ERP HTML. Online: never intercept (no false

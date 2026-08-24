@@ -20,8 +20,16 @@ final class PosRegisterController extends PosBaseController
         $userId = $this->userId();
         $bio = new BiometricAuthService();
         if (!$bio->isPosVerified($userId)) {
-            $this->redirect(rateb_app_url('pos/biometric'));
-            return;
+            // Super-admin ops: never bounce to biometric then fail back to /admin.
+            // Cashiers without a passkey: open register (in-POS lock still applies).
+            $skipGate = (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                || !$bio->hasEnrollment($userId);
+            if ($skipGate) {
+                $bio->markPosVerified($userId);
+            } else {
+                $this->redirect(rateb_app_url('pos/biometric'));
+                return;
+            }
         }
 
         $companyId = $this->companyId();

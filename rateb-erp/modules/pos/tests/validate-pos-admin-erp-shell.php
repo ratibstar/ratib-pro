@@ -48,10 +48,18 @@ assert_true(
     'شاشة البيع native-opens POS register',
     str_contains($side, 'data-pos-open-register="1"')
     && str_contains($side, 'admin/ops/pos/register')
+    && str_contains($side, "rateb_url_set_query_param(\$href, 'rateb_live', '1')")
     && str_contains($mainLayout, '__ratebGoPosRegister')
     && str_contains($mainLayout, '/admin/ops/pos/register')
+    && str_contains($mainLayout, "rateb_live")
     && !str_contains($mainLayout, "rateb_nav_can('pos.register'")
     && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
+);
+assert_true(
+    'SW never bounces live POS register to /admin',
+    str_contains($sw, "rateb_live') === '1'")
+    && str_contains($sw, 'releaseBackgroundWarmAfterFirstDocument')
+    && preg_match("/var\s+SW_BUILD_ID\s*=\s*'20260824-pos-register-live-bypass-v161'/", $sw) === 1
 );
 assert_true(
     'dashboard فتح شاشة البيع full-navs to pos/register',
