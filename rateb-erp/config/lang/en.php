@@ -66,6 +66,7 @@ return [
     'ticket_no' => 'Ticket No',
     'auto_ticket_no_hint' => 'Generated automatically on save — no manual entry needed.',
     'support_ticket_routing_hint' => 'After submit, the ticket appears in Support Tickets for platform admins (Super Admin / settings.manage).',
+    'support_tickets_platform_hint' => 'As RATIB platform owner: open Support Tickets on admin.rateb.sa, then pick the company from «Select Company» above to view its tickets.',
     'st_subject_login' => 'Login or session issue',
     'st_subject_permissions' => 'Permissions or user roles',
     'st_subject_billing' => 'Subscription or billing',

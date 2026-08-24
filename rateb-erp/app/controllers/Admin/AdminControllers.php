@@ -4042,11 +4042,73 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $this->fields = $this->baseFields();
         $this->indexFields = [
             ['name' => 'ticket_no', 'label' => 'ticket_no'],
-            ['name' => 'subject', 'label' => 'subject'],
+            ['name' => 'subject', 'label' => 'subject', 'type' => 'clip'],
             ['name' => 'priority', 'label' => 'priority'],
-            ['name' => 'status', 'label' => 'status'],
-            ['name' => 'created_at', 'label' => 'created_at'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+            ['name' => 'created_at', 'label' => 'created_at', 'type' => 'datetime'],
         ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    protected function resolveIndexFields(): array
+    {
+        $fields = $this->indexFields;
+        if (\Rateb\App\Core\TenantContext::isSuperAdmin()) {
+            array_unshift($fields, [
+                'name' => 'company_name',
+                'label' => 'companies',
+                'type' => 'clip',
+            ]);
+        }
+
+        return $fields;
+    }
+
+    /** @return array<string, mixed> */
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $data['items'] = $this->enrichTicketRows(is_array($data['items'] ?? null) ? $data['items'] : []);
+
+        return $data;
+    }
+
+    /** @param list<array<string, mixed>> $items */
+    private function enrichTicketRows(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+        $companyIds = [];
+        foreach ($items as $row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            if ($cid > 0) {
+                $companyIds[$cid] = $cid;
+            }
+        }
+        $names = [];
+        if ($companyIds !== []) {
+            $ids = array_values($companyIds);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                $rows = $this->model->query(
+                    'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
+                    $ids
+                );
+                foreach ($rows as $company) {
+                    $names[(int) ($company['id'] ?? 0)] = (string) ($company['name'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                $names = [];
+            }
+        }
+        foreach ($items as &$row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            $row['company_name'] = $names[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+        }
+        unset($row);
+
+        return $items;
     }
 
     public function create(): void
@@ -4125,9 +4187,13 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             $data['status'] = 'open';
         }
         $subject = trim((string) ($data['subject'] ?? ''));
-        if ($subject !== '' && str_starts_with($subject, 'st_subject_')) {
-            $data['subject'] = __($subject);
+        if ($subject === '') {
+            $subject = $this->resolveHybridInput('subject');
         }
+        if ($subject !== '' && str_starts_with($subject, 'st_subject_')) {
+            $subject = __($subject);
+        }
+        $data['subject'] = $subject;
 
         return $data;
     }

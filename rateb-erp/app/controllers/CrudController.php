@@ -856,6 +856,10 @@ abstract class CrudController extends Controller
             $name = $field['name'];
             $type = (string) ($field['type'] ?? 'text');
             $raw = trim((string) $this->input($name, ''));
+            if ($type === 'hybrid') {
+                $data[$name] = $this->resolveHybridInput($name);
+                continue;
+            }
             if ($type === 'fk') {
                 $data[$name] = ($raw === '' || $raw === '0') ? null : (int) $raw;
                 continue;
@@ -885,6 +889,20 @@ abstract class CrudController extends Controller
             $data[$name] = $raw;
         }
         return $data;
+    }
+
+    protected function resolveHybridInput(string $name): string
+    {
+        $value = trim((string) $this->input($name, ''));
+        if ($value !== '') {
+            return $value;
+        }
+        $pick = trim((string) $this->input($name . '_pick', ''));
+        if ($pick === '__manual__') {
+            return trim((string) $this->input($name . '_manual', ''));
+        }
+
+        return $pick;
     }
 
     /** @param array<string, mixed> $record */

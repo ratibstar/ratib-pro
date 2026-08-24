@@ -1337,6 +1337,9 @@ $ratebCriticalScripts = [
     // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
     rateb_asset('js/approvals-oversight.js'),
 ];
+if (!empty($layoutAssets['formHybrid'])) {
+    $ratebCriticalScripts[] = rateb_asset('js/form-hybrid.js');
+}
 /* Idle order: bootstrap → modal/confirm deps → page tools → connectivity last (network probe). */
 $ratebIdleScripts = [
     rateb_bootstrap_js(),
@@ -1351,9 +1354,6 @@ if (!empty($layoutAssets['tableTools'])) {
 }
 if (!empty($layoutAssets['dateInputs'])) {
     $ratebIdleScripts[] = rateb_asset('js/rateb-date-inputs.js');
-}
-if (!empty($layoutAssets['formHybrid'])) {
-    $ratebIdleScripts[] = rateb_asset('js/form-hybrid.js');
 }
 if (!empty($layoutAssets['fiscalYear'])) {
     $ratebIdleScripts[] = rateb_asset('js/form-fiscal-year.js');

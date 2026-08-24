@@ -12,10 +12,12 @@
         }
         if (sel.value === MANUAL) {
             manual.style.display = '';
+            manual.disabled = false;
             manual.required = true;
             hidden.value = manual.value;
         } else {
             manual.style.display = 'none';
+            manual.disabled = true;
             manual.required = false;
             hidden.value = sel.value;
         }
@@ -41,9 +43,24 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function syncAllHybrids(form) {
+        if (!form || !form.querySelectorAll) {
+            return;
+        }
+        form.querySelectorAll('.rateb-hybrid-field').forEach(syncHybrid);
+    }
+
+    document.addEventListener('submit', function (e) {
+        syncAllHybrids(e.target);
+    }, true);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            initHybrid(document);
+        });
+    } else {
         initHybrid(document);
-    });
+    }
 
     window.ratebInitHybridFields = initHybrid;
 })();

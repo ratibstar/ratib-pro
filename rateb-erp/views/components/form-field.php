@@ -68,6 +68,7 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         ?>
     <div class="rateb-hybrid-field">
         <select class="form-select rateb-form-control rateb-hybrid-select" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
+                name="<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
             <option value=""><?php echo __('select'); ?></option>
             <?php foreach ($options as $opt) { ?>
@@ -79,8 +80,10 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         </select>
         <input type="text" class="form-control rateb-form-control rateb-hybrid-manual mt-1"
                id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
+               name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                placeholder="<?php echo __('type_manually'); ?>"
                value="<?php echo Rateb\App\Core\View::escape($manualValue); ?>"
+               <?php echo $pickValue === '__manual__' ? '' : 'disabled'; ?>
                style="<?php echo $pickValue === '__manual__' ? '' : 'display:none'; ?>">
         <input type="hidden" class="rateb-hybrid-value" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
                value="<?php echo Rateb\App\Core\View::escape($selectedValue); ?>">

@@ -66,6 +66,7 @@ return [
     'ticket_no' => 'رقم التذكرة',
     'auto_ticket_no_hint' => 'يُولَّد تلقائياً عند الحفظ — لا حاجة لإدخاله يدوياً.',
     'support_ticket_routing_hint' => 'بعد الإرسال تُحفظ التذكرة في قائمة «تذاكر الدعم» لمديري المنصة (Super Admin / صلاحية إدارة الإعدادات).',
+    'support_tickets_platform_hint' => 'كمالك منصة رتب: افتح تذاكر الدعم من admin.rateb.sa ثم اختر الشركة من «اختر الشركة» أعلاه لعرض تذاكرها.',
     'st_subject_login' => 'مشكلة تسجيل الدخول أو الجلسة',
     'st_subject_permissions' => 'صلاحيات أو أدوار المستخدمين',
     'st_subject_billing' => 'الاشتراك أو الفوترة',
