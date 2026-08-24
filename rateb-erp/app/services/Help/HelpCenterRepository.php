@@ -109,6 +109,15 @@ final class HelpCenterRepository
             }
             $out[] = $this->presentArticleCard($article);
         }
+        foreach ($this->dbPublishedArticles() as $article) {
+            if ((string) ($article['module'] ?? '') !== $moduleSlug) {
+                continue;
+            }
+            if (!$this->gate->canSeeAudience((string) ($article['audience'] ?? 'all'))) {
+                continue;
+            }
+            $out[] = $this->presentArticleCard($article);
+        }
 
         return $out;
     }
@@ -142,6 +151,14 @@ final class HelpCenterRepository
             return $this->presentArticleFull($article, $module);
         }
 
+        $dbArticle = $this->loadDbArticleBySlug($slug);
+        if ($dbArticle !== null) {
+            $moduleSlug = (string) ($dbArticle['module'] ?? '');
+            $module = $moduleSlug !== '' ? $this->module($moduleSlug) : null;
+
+            return $this->presentArticleFull($dbArticle, $module);
+        }
+
         return null;
     }
 
@@ -159,6 +176,39 @@ final class HelpCenterRepository
             if ((string) ($article['status'] ?? '') !== 'published') {
                 continue;
             }
+            if (!$this->gate->canSeeAudience((string) ($article['audience'] ?? 'all'))) {
+                continue;
+            }
+            $moduleSlug = (string) ($article['module'] ?? '');
+            $mod = $modules[$moduleSlug] ?? null;
+            if ($mod !== null) {
+                $gate = isset($mod['module_gate']) ? (string) $mod['module_gate'] : null;
+                if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
+                    continue;
+                }
+            }
+            $out[] = [
+                'slug' => (string) ($article['slug'] ?? ''),
+                'module' => $moduleSlug,
+                'title' => $locale === 'en'
+                    ? (string) ($article['title_en'] ?? $article['title_ar'] ?? '')
+                    : (string) ($article['title_ar'] ?? $article['title_en'] ?? ''),
+                'summary' => $locale === 'en'
+                    ? (string) ($article['summary_en'] ?? $article['summary_ar'] ?? '')
+                    : (string) ($article['summary_ar'] ?? $article['summary_en'] ?? ''),
+                'module_title' => $mod === null
+                    ? $moduleSlug
+                    : ($locale === 'en'
+                        ? (string) ($mod['title_en'] ?? $mod['title_ar'] ?? $moduleSlug)
+                        : (string) ($mod['title_ar'] ?? $mod['title_en'] ?? $moduleSlug)),
+                'keywords' => array_values(array_map('strval', $article['keywords'] ?? [])),
+                'difficulty' => (string) ($article['difficulty'] ?? 'beginner'),
+                'minutes' => (int) ($article['minutes'] ?? 3),
+                'icon' => (string) ($article['icon'] ?? 'fa-circle-question'),
+                'type' => 'article',
+            ];
+        }
+        foreach ($this->dbPublishedArticles() as $article) {
             if (!$this->gate->canSeeAudience((string) ($article['audience'] ?? 'all'))) {
                 continue;
             }
@@ -256,6 +306,107 @@ final class HelpCenterRepository
         }
 
         return $counts;
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function dbPublishedArticles(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        $cache = [];
+        try {
+            $rows = (new \Rateb\App\Models\HelpArticle())->all(300, 0, ['status' => 'published']);
+            foreach ($rows as $row) {
+                $mapped = $this->mapDbRowToArticle($row);
+                if ($mapped !== null) {
+                    $cache[] = $mapped;
+                }
+            }
+        } catch (\Throwable $e) {
+            $cache = [];
+        }
+
+        return $cache;
+    }
+
+    /** @return array<string,mixed>|null */
+    private function loadDbArticleBySlug(string $slug): ?array
+    {
+        foreach ($this->dbPublishedArticles() as $article) {
+            if ((string) ($article['slug'] ?? '') === $slug) {
+                if (!$this->gate->canSeeAudience((string) ($article['audience'] ?? 'all'))) {
+                    return null;
+                }
+
+                return $article;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>|null
+     */
+    private function mapDbRowToArticle(array $row): ?array
+    {
+        $slug = (string) ($row['slug'] ?? '');
+        if ($slug === '' || (string) ($row['status'] ?? '') !== 'published') {
+            return null;
+        }
+        $kw = json_decode((string) ($row['keywords_json'] ?? '[]'), true);
+        $related = json_decode((string) ($row['related_json'] ?? '[]'), true);
+        $bodyAr = json_decode((string) ($row['body_json_ar'] ?? '{}'), true);
+        $bodyEn = json_decode((string) ($row['body_json_en'] ?? '{}'), true);
+        if (!is_array($kw)) {
+            $kw = [];
+        }
+        if (!is_array($related)) {
+            $related = [];
+        }
+        if (!is_array($bodyAr)) {
+            $bodyAr = [];
+        }
+        if (!is_array($bodyEn)) {
+            $bodyEn = [];
+        }
+
+        return [
+            'slug' => $slug,
+            'module' => (string) ($row['module_slug'] ?? ''),
+            'title_ar' => (string) ($row['title_ar'] ?? ''),
+            'title_en' => (string) ($row['title_en'] ?? ''),
+            'summary_ar' => (string) ($row['summary_ar'] ?? ''),
+            'summary_en' => (string) ($row['summary_en'] ?? ''),
+            'keywords' => array_values(array_map('strval', $kw)),
+            'difficulty' => (string) ($row['difficulty'] ?? 'beginner'),
+            'minutes' => (int) ($row['minutes'] ?? 3),
+            'audience' => (string) ($row['audience'] ?? 'all'),
+            'icon' => (string) ($row['icon'] ?? 'fa-circle-question'),
+            'related' => array_values(array_map('strval', $related)),
+            'sort' => (int) ($row['sort_order'] ?? 0),
+            'status' => 'published',
+            'sections' => [
+                'what' => ['ar' => (string) ($bodyAr['what'] ?? ''), 'en' => (string) ($bodyEn['what'] ?? '')],
+                'when' => ['ar' => (string) ($bodyAr['when'] ?? ''), 'en' => (string) ($bodyEn['when'] ?? '')],
+                'steps' => [
+                    'ar' => array_values(array_map('strval', $bodyAr['steps'] ?? [])),
+                    'en' => array_values(array_map('strval', $bodyEn['steps'] ?? [])),
+                ],
+                'example' => ['ar' => (string) ($bodyAr['example'] ?? ''), 'en' => (string) ($bodyEn['example'] ?? '')],
+                'tips' => [
+                    'ar' => array_values(array_map('strval', $bodyAr['tips'] ?? [])),
+                    'en' => array_values(array_map('strval', $bodyEn['tips'] ?? [])),
+                ],
+                'mistakes' => [
+                    'ar' => array_values(array_map('strval', $bodyAr['mistakes'] ?? [])),
+                    'en' => array_values(array_map('strval', $bodyEn['mistakes'] ?? [])),
+                ],
+            ],
+        ];
     }
 
     /** @param array<string,mixed> $article @return array<string,mixed> */

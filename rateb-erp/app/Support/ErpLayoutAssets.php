@@ -26,10 +26,11 @@ final class ErpLayoutAssets
     {
         $route = trim($erpRoute, '/');
         $isCreateEdit = (bool) preg_match('#/(create|edit)(/|$)#', $route);
+        $isHelpRoute = str_starts_with($route, 'admin/help');
         $isLeanDashboard = in_array($route, ['admin', 'admin/executive-dashboard'], true)
-            || str_starts_with($route, 'admin/help');
+            || $isHelpRoute;
 
-        $charts = $isLeanDashboard
+        $charts = (!$isHelpRoute && $isLeanDashboard)
             || $route === 'admin/ops/accounting'
             || str_ends_with($route, '/accounting')
             || str_contains($route, 'cfo-dashboard');

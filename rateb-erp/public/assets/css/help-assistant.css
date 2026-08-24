@@ -1,0 +1,383 @@
+/* RATIB AI Help Assistant — bottom-left floating chat */
+.rateb-ha-root {
+  --ha-accent: #2dd4bf;
+  --ha-accent-2: #3b82f6;
+  --ha-bg: color-mix(in srgb, var(--rateb-surface-elevated, #1c2940) 92%, transparent);
+  --ha-border: color-mix(in srgb, var(--ha-accent) 35%, var(--rateb-border, #2a3a52));
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 1050;
+  font-family: var(--rateb-font, system-ui, sans-serif);
+  pointer-events: none;
+}
+
+.rateb-ha-root * {
+  box-sizing: border-box;
+}
+
+.rateb-ha-fab {
+  pointer-events: auto;
+  width: 3.35rem;
+  height: 3.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ha-accent) 55%, transparent);
+  background: linear-gradient(145deg, #0f766e, #1d4ed8 70%);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(45, 212, 191, 0.35);
+  animation: rateb-ha-pulse 2.8s ease-in-out infinite;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rateb-ha-fab:hover,
+.rateb-ha-fab:focus-visible {
+  transform: scale(1.06);
+  outline: none;
+  animation: none;
+  box-shadow: 0 14px 32px rgba(45, 212, 191, 0.28);
+}
+
+.rateb-ha-fab[aria-expanded="true"] {
+  animation: none;
+}
+
+@keyframes rateb-ha-pulse {
+  0%, 100% { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(45, 212, 191, 0.3); }
+  50% { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 8px rgba(45, 212, 191, 0); }
+}
+
+.rateb-ha-panel {
+  pointer-events: auto;
+  position: absolute;
+  left: 0;
+  bottom: calc(3.35rem + 0.65rem);
+  width: min(24.5rem, calc(100vw - 1.5rem));
+  max-height: min(34rem, calc(100vh - 5.5rem));
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--ha-border);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--ha-accent) 10%, transparent), transparent 40%),
+    var(--rateb-surface-elevated, #1c2940);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  color: var(--rateb-text, #e2e8f0);
+  transform-origin: bottom left;
+  animation: rateb-ha-open 0.22s ease;
+}
+
+.rateb-ha-panel[hidden] {
+  display: none !important;
+}
+
+@keyframes rateb-ha-open {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.rateb-ha-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 0.9rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--rateb-border, #2a3a52) 80%, transparent);
+  background: color-mix(in srgb, #0b1120 35%, transparent);
+}
+
+.rateb-ha-header__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.25), rgba(59, 130, 246, 0.22));
+  color: var(--ha-accent);
+  flex: 0 0 auto;
+}
+
+.rateb-ha-header__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.rateb-ha-header__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.rateb-ha-header__sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--rateb-text-muted, #94a3b8);
+}
+
+.rateb-ha-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.rateb-ha-icon-btn {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--rateb-text-muted, #94a3b8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rateb-ha-icon-btn:hover,
+.rateb-ha-icon-btn:focus-visible {
+  color: var(--rateb-text, #e2e8f0);
+  background: rgba(148, 163, 184, 0.12);
+  outline: none;
+}
+
+.rateb-ha-icon-btn.is-active {
+  color: var(--ha-accent);
+  border-color: color-mix(in srgb, var(--ha-accent) 40%, transparent);
+}
+
+.rateb-ha-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-height: 14rem;
+}
+
+.rateb-ha-msg {
+  max-width: 92%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rateb-ha-msg--bot {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--rateb-surface, #151f32) 88%, #000);
+  border: 1px solid var(--rateb-border, #2a3a52);
+  border-start-start-radius: 6px;
+}
+
+.rateb-ha-msg--user {
+  align-self: flex-end;
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.22), rgba(59, 130, 246, 0.2));
+  border: 1px solid color-mix(in srgb, var(--ha-accent) 35%, transparent);
+  border-start-end-radius: 6px;
+}
+
+.rateb-ha-msg__meta {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--rateb-text-muted, #94a3b8);
+}
+
+.rateb-ha-typing {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  color: var(--rateb-text-muted, #94a3b8);
+  padding: 0.2rem 0.35rem;
+}
+
+.rateb-ha-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.rateb-ha-chip {
+  pointer-events: auto;
+  border: 1px solid color-mix(in srgb, var(--ha-accent) 35%, var(--rateb-border, #2a3a52));
+  background: color-mix(in srgb, var(--ha-accent) 10%, transparent);
+  color: var(--rateb-text, #e2e8f0);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rateb-ha-chip:hover,
+.rateb-ha-chip:focus-visible {
+  background: color-mix(in srgb, var(--ha-accent) 20%, transparent);
+  border-color: var(--ha-accent);
+  outline: none;
+}
+
+.rateb-ha-card {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ha-accent-2) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ha-accent-2) 28%, transparent);
+}
+
+.rateb-ha-card__title {
+  font-weight: 700;
+  font-size: 0.86rem;
+  margin: 0 0 0.25rem;
+}
+
+.rateb-ha-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.rateb-ha-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ha-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--ha-accent) 16%, transparent);
+  color: var(--ha-accent);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rateb-ha-btn:hover,
+.rateb-ha-btn:focus-visible {
+  background: color-mix(in srgb, var(--ha-accent) 26%, transparent);
+  outline: none;
+}
+
+.rateb-ha-btn--ghost {
+  background: transparent;
+  color: var(--rateb-text-muted, #94a3b8);
+  border-color: var(--rateb-border, #2a3a52);
+}
+
+.rateb-ha-related {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.rateb-ha-related a {
+  color: var(--rateb-text, #e2e8f0);
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.2rem;
+  border-radius: 0.4rem;
+}
+
+.rateb-ha-related a:hover,
+.rateb-ha-related a:focus-visible {
+  background: rgba(148, 163, 184, 0.1);
+  outline: none;
+}
+
+.rateb-ha-footer {
+  border-top: 1px solid color-mix(in srgb, var(--rateb-border, #2a3a52) 80%, transparent);
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  gap: 0.45rem;
+  background: color-mix(in srgb, #0b1120 40%, transparent);
+}
+
+.rateb-ha-input {
+  flex: 1;
+  min-width: 0;
+  border-radius: 999px;
+  border: 1px solid var(--rateb-border, #2a3a52);
+  background: var(--rateb-input-bg, #0f172a);
+  color: var(--rateb-text, #e2e8f0);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+}
+
+.rateb-ha-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--ha-accent) 55%, transparent);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+}
+
+.rateb-ha-send {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(145deg, #14b8a6, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.rateb-ha-send:hover,
+.rateb-ha-send:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.rateb-ha-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767.98px) {
+  .rateb-ha-root {
+    left: 0.65rem;
+    bottom: 0.65rem;
+    right: 0.65rem;
+  }
+
+  .rateb-ha-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: min(82vh, 36rem);
+    border-radius: 18px 18px 0 0;
+    animation: rateb-ha-sheet 0.24s ease;
+  }
+
+  @keyframes rateb-ha-sheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rateb-ha-fab,
+  .rateb-ha-panel {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Hide on dense POS shells if body marks them */
+body.rateb-pos-shell .rateb-ha-root,
+body[data-rateb-hide-help-assistant="1"] .rateb-ha-root {
+  display: none !important;
+}

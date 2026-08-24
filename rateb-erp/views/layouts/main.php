@@ -1374,7 +1374,7 @@ if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
-$ratebIdleScripts[] = rateb_asset('js/help-widget.js');
+$ratebIdleScripts[] = rateb_asset('js/help-assistant.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */
@@ -1387,18 +1387,18 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
 if (!empty($layoutAssets['charts']) && ($erpRoute === 'admin' || $erpRoute === 'admin/executive-dashboard')) {
     $deferAssetScripts[] = rateb_asset('js/dashboard-charts-defer.js');
 }
-$ratebHelpWidgetCfg = [
-    'homeUrl' => rateb_url('admin/help'),
-    'contextUrl' => rateb_url('admin/help/api/context'),
-    'cssUrl' => rateb_asset('css/help-center.css'),
+$ratebHelpAssistantCfg = [
+    'bootstrapUrl' => rateb_url('admin/help/assistant/bootstrap'),
+    'askUrl' => rateb_url('admin/help/assistant/ask'),
+    'trackUrl' => rateb_url('admin/help/assistant/track'),
+    'cssUrl' => rateb_asset('css/help-assistant.css'),
+    'helpHomeUrl' => rateb_url('admin/help'),
     'erpRoute' => (string) $erpRoute,
-    'label' => __('help_center'),
-    'searchPlaceholder' => __('help_search_placeholder'),
-    'openLabel' => __('help_open_center'),
-    'contextLabel' => __('help_context_for'),
+    'locale' => function_exists('rateb_locale') ? rateb_locale() : 'ar',
+    'csrf' => \Rateb\App\Core\Csrf::token(),
 ];
-echo '<script type="application/json" id="rateb-help-widget-cfg">'
-    . json_encode($ratebHelpWidgetCfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+echo '<script type="application/json" id="rateb-help-assistant-cfg">'
+    . json_encode($ratebHelpAssistantCfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     . "</script>\n";
 /* PERF Fix2: preload critical scripts so downloads overlap; injector still controls exec order. */
 foreach ($ratebCriticalScripts as $ratebCritSrc) {

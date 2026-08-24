@@ -203,7 +203,7 @@ return [
         'desc_ar' => 'احتساب الرواتب والبدلات والخصومات.',
         'desc_en' => 'Payroll runs, allowances, and deductions.',
         'audience' => 'manager',
-        'route_hints' => ['payroll', 'hrm'],
+        'route_hints' => ['payroll'],
         'module_gate' => 'payroll',
     ],
     [
