@@ -201,18 +201,14 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ev.preventDefault();
                 try { ev.stopImmediatePropagation(); } catch (eSip) { ev.stopPropagation(); }
             }
-            var dest = raw;
+            var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
+            var q = '';
             try {
-                var u = new URL(raw, location.href);
-                if (!/\/(register|biometric)$/i.test(u.pathname.replace(/\/+$/, ''))) {
-                    u.pathname = u.pathname.replace(/\/+$/, '') + '/register';
-                }
-                dest = u.href;
-            } catch (eDest) {
-                var pub = (location.pathname.match(/^(.*\/public)/i) || [null, '/rateb-erp/public'])[1];
-                dest = location.origin + pub + '/admin/ops/pos/register' + (location.search || '');
+                q = new URL(raw, location.href).search || location.search || '';
+            } catch (eQ) {
+                q = location.search || '';
             }
-            location.assign(dest);
+            location.replace(location.origin + pub + '/admin/ops/pos/register' + q);
             return true;
         };
         document.addEventListener('click', function (ev) {
@@ -854,14 +850,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 data-rateb-dashboard-nav="1">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </button>
-            <?php } ?>
-            <?php if (rateb_nav_can('pos.register', 'pos')) { ?>
-            <a href="<?php echo htmlspecialchars(rateb_app_url('pos/register'), ENT_QUOTES, 'UTF-8'); ?>"
-               class="rateb-nav-link<?php echo $navActive(rateb_app_route('pos/register')) || $navActive(rateb_app_route('pos')) ? ' active' : ''; ?>"
-               data-pos-open-register="1"
-               data-rateb-full-nav="1">
-                <i class="fas fa-keyboard"></i><span><?php echo __('pos_register'); ?></span>
-            </a>
             <?php } ?>
             <?php if (function_exists('rateb_hr_mobile_console_accessible') && rateb_hr_mobile_console_accessible()) { ?>
             <a href="<?php echo rateb_url('admin/hr-mobile'); ?>" data-rateb-href="<?php echo rateb_url('admin/hr-mobile'); ?>" class="rateb-nav-link<?php echo $navActive('admin/hr-mobile') ? ' active' : ''; ?>" onclick="return false;">

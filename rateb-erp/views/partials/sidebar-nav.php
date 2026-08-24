@@ -24,16 +24,18 @@ $opsLink = static function (
     $route = rateb_app_route($resourcePath);
     $active = $navActive($route) ? ' active' : '';
     $badge = function_exists('rateb_ops_nav_pending_badge') ? rateb_ops_nav_pending_badge($resourcePath) : 0;
-    $href = rateb_app_url($resourcePath);
-    // Selling register/biometric only — full document load (pos-shell).
-    // Other POS admin pages use Admin main layout and soft-nav like Inventory/HR.
+    // Selling register/biometric only — hard URL + full document load (pos-shell).
+    // Never emit admin/pos/pos (broken) — always admin/ops/pos/register.
     $isPosFullNav = $resourcePath === 'pos'
         || $resourcePath === 'pos/register'
         || str_starts_with($resourcePath, 'pos/register/')
         || $resourcePath === 'pos/biometric'
         || str_starts_with($resourcePath, 'pos/biometric/');
+    $href = $isPosFullNav
+        ? rateb_url_with_ops_company('admin/ops/pos/register')
+        : rateb_app_url($resourcePath);
     if ($isPosFullNav) {
-        echo '<a href="' . $href . '" data-rateb-href="' . $href . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
+        echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     }

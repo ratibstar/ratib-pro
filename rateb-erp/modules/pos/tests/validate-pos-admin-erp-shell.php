@@ -43,11 +43,14 @@ assert_true(
     str_contains($posNav, "['pos/register', 'pos_register'")
     && !preg_match("/\['pos',\s*'pos_register'/", $posNav)
 );
+$mainLayout = (string) file_get_contents($root . '/views/layouts/main.php');
 assert_true(
     'شاشة البيع native-opens POS register',
     str_contains($side, 'data-pos-open-register="1"')
-    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), '__ratebGoPosRegister')
-    && str_contains((string) file_get_contents($root . '/views/layouts/main.php'), 'data-pos-open-register="1"')
+    && str_contains($side, 'admin/ops/pos/register')
+    && str_contains($mainLayout, '__ratebGoPosRegister')
+    && str_contains($mainLayout, '/admin/ops/pos/register')
+    && !str_contains($mainLayout, "rateb_nav_can('pos.register'")
     && str_contains($nav, 'POS_RUNTIME_RE.test(posUrl.pathname)')
 );
 assert_true(
