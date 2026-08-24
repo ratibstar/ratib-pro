@@ -42,9 +42,7 @@ if ($canPoll && class_exists(ErpSystemAlertService::class)) {
         </div>
         <div class="rateb-system-flash-alert__body">
             <div class="rateb-system-flash-alert__title"><?php echo View::escape((string) ($alert['title'] ?? '')); ?></div>
-            <?php if (!empty($alert['message'])) { ?>
-            <div class="rateb-system-flash-alert__message"><?php echo nl2br(View::escape((string) $alert['message'])); ?></div>
-            <?php } ?>
+            <?php View::partial('system-flash-alert-body', ['alert' => $alert]); ?>
         </div>
         <?php if ($url !== '' && $url !== '#') { ?>
         <a href="<?php echo View::escape($url); ?>" class="rateb-system-flash-alert__action btn btn-sm btn-light" data-rateb-full-nav="1">

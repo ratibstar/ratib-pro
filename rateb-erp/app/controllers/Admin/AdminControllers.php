@@ -4085,11 +4085,56 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         parent::edit($params);
     }
 
+    public function reply(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix));
+        }
+        $ticketId = (int) ($params['id'] ?? 0);
+        $body = trim((string) $this->input('reply_body', ''));
+        if ($ticketId < 1 || $body === '') {
+            \Rateb\App\Core\SessionManager::flash('error', __('support_ticket_reply_required'));
+            \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix . '/' . $ticketId . '/edit'));
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $record = $this->resolveRecordForWrite($ticketId);
+        if (!$record) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+
+            return;
+        }
+        $companyName = '';
+        $cid = (int) ($record['company_id'] ?? 0);
+        if ($cid > 0) {
+            try {
+                $crow = $this->model->queryOne('SELECT name FROM rateb_companies WHERE id = :id LIMIT 1', ['id' => $cid]);
+                $companyName = (string) ($crow['name'] ?? '');
+            } catch (\Throwable $e) {
+                $companyName = '';
+            }
+        }
+        $record['company_name'] = $companyName;
+
+        (new \Rateb\App\Services\SupportTicketReplyService())->addStaffReply(
+            $ticketId,
+            (int) \Rateb\App\Core\SessionManager::get('rateb_user_id', 0),
+            $body,
+            $record
+        );
+        (new \Rateb\App\Services\SupportTicketAlertService())->markTicketSeen($ticketId);
+        \Rateb\App\Core\SessionManager::flash('success', __('support_ticket_reply_sent'));
+        \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix . '/' . $ticketId . '/edit'));
+    }
+
     /** @return array<string, mixed> */
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         $alertSvc = new \Rateb\App\Services\SupportTicketAlertService();
-        if ($alertSvc->platformListAllTickets()) {
+        if ($alertSvc->shouldListAllTickets()) {
             if (function_exists('rateb_bootstrap_ops_tenant')) {
                 rateb_bootstrap_ops_tenant();
             }
@@ -4241,6 +4286,10 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         }
         $data['subject'] = $subject;
 
+        if (trim((string) ($data['message'] ?? '')) === '') {
+            unset($data['message']);
+        }
+
         return $data;
     }
 
@@ -4253,7 +4302,34 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             $extra['fields'] = $this->baseFields($isCreate);
         }
 
-        return parent::formViewData($extra);
+        $data = parent::formViewData($extra);
+        $item = is_array($data['item'] ?? null) ? $data['item'] : null;
+        $ticketId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        if ($ticketId > 0 && is_array($item)) {
+            $replySvc = new \Rateb\App\Services\SupportTicketReplyService();
+            $data['conversation'] = $replySvc->conversation($ticketId, $item);
+            $data['canReply'] = function_exists('rateb_can') && rateb_can('settings.manage');
+            $data['replyAction'] = rateb_url($this->routePrefix . '/' . $ticketId . '/reply');
+            $cid = (int) ($item['company_id'] ?? 0);
+            if ($cid > 0) {
+                try {
+                    $crow = $this->model->queryOne('SELECT name FROM rateb_companies WHERE id = :id LIMIT 1', ['id' => $cid]);
+                    $data['companyLabel'] = (string) ($crow['name'] ?? ('#' . $cid));
+                } catch (\Throwable $e) {
+                    $data['companyLabel'] = '#' . $cid;
+                }
+            }
+            $filtered = [];
+            foreach ($data['fields'] as $field) {
+                if ((string) ($field['name'] ?? '') === 'message') {
+                    continue;
+                }
+                $filtered[] = $field;
+            }
+            $data['fields'] = $filtered;
+        }
+
+        return $data;
     }
 
     /** @param array<string, mixed> $data */

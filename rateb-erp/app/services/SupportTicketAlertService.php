@@ -15,6 +15,7 @@ final class SupportTicketAlertService
 {
     public const TRIGGER_OPEN = 'support_ticket_open';
     public const TRIGGER_RESPONDED = 'support_ticket_responded';
+    public const TRIGGER_REPLY = 'support_ticket_reply';
     public const ENTITY = 'support_ticket';
     private const SEEN_SESSION_KEY = 'rateb_support_ticket_seen_ids';
 
@@ -38,7 +39,13 @@ final class SupportTicketAlertService
 
     public function superAdminViewsAllTickets(): bool
     {
-        return $this->platformListAllTickets();
+        return $this->shouldListAllTickets();
+    }
+
+    /** Super Admin on rateb.sa lists all tickets (matches global flash alerts). */
+    public function shouldListAllTickets(): bool
+    {
+        return $this->platformListAllTickets() || $this->alertsUseGlobalScope();
     }
 
     public function openCountForViewer(): int
@@ -184,7 +191,7 @@ final class SupportTicketAlertService
     /** @return list<array<string, mixed>> */
     public function listTickets(int $limit, int $offset, string $search = ''): array
     {
-        if ($this->platformListAllTickets()) {
+        if ($this->shouldListAllTickets()) {
             return $this->listAllScoped($limit, $offset, $search, null);
         }
         $model = new SupportTicket();
@@ -194,7 +201,7 @@ final class SupportTicketAlertService
 
     public function countTickets(string $search = ''): int
     {
-        if ($this->platformListAllTickets()) {
+        if ($this->shouldListAllTickets()) {
             return $this->countAllScoped($search, null);
         }
 
@@ -407,6 +414,51 @@ final class SupportTicketAlertService
                 __('support_ticket_alert_created_body', ['ticket' => $ticketNo]),
                 'info',
                 self::TRIGGER_OPEN,
+                self::ENTITY,
+                $ticketId
+            );
+        }
+    }
+
+    /** @param array<string, mixed> $ticket */
+    public function notifyOnReply(int $ticketId, array $ticket, string $replyBody): void
+    {
+        if ($ticketId < 1) {
+            return;
+        }
+        $companyId = (int) ($ticket['company_id'] ?? 0);
+        $companyName = (string) ($ticket['company_name'] ?? $this->resolveCompanyName($companyId));
+        $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
+        $preview = mb_strlen($replyBody) > 120 ? (mb_substr($replyBody, 0, 117) . '…') : $replyBody;
+        $title = __('support_ticket_alert_reply_title', ['ticket' => $ticketNo]);
+        $message = __('support_ticket_alert_reply_body', [
+            'ticket' => $ticketNo,
+            'company' => $companyName,
+            'preview' => $preview,
+        ]);
+        $notifier = new NotificationService();
+
+        $creatorId = (int) ($ticket['user_id'] ?? 0);
+        if ($creatorId > 0) {
+            $notifier->notifyUser(
+                $creatorId,
+                $companyId > 0 ? $companyId : null,
+                $title,
+                $message,
+                'info',
+                self::TRIGGER_REPLY,
+                self::ENTITY,
+                $ticketId
+            );
+        }
+
+        if ($companyId > 0) {
+            $notifier->notifyCompany(
+                $companyId,
+                $title,
+                $message,
+                'info',
+                self::TRIGGER_REPLY,
                 self::ENTITY,
                 $ticketId
             );

@@ -6,6 +6,7 @@ namespace Rateb\App\Services;
 /**
  * Global ERP flash alerts for open support tickets (all layout pages).
  *
+ * @phpstan-type ErpFlashPreviewItem array{ticket_no:string,company:string,subject:string}
  * @phpstan-type ErpFlashAlert array{
  *   key:string,
  *   severity:string,
@@ -17,7 +18,8 @@ namespace Rateb\App\Services;
  *   pulse:bool,
  *   icon:string,
  *   count?:int,
- *   ticket_ids?:list<int>
+ *   ticket_ids?:list<int>,
+ *   preview_items?:list<ErpFlashPreviewItem>
  * }
  */
 final class ErpSystemAlertService
@@ -36,7 +38,7 @@ final class ErpSystemAlertService
     }
 
     /**
-     * Single aggregate alert (count + preview lines).
+     * Single aggregate alert with structured ticket previews.
      *
      * @param list<array<string, mixed>> $tickets
      * @return ErpFlashAlert|null
@@ -48,7 +50,7 @@ final class ErpSystemAlertService
         }
 
         $supportSvc = new SupportTicketAlertService();
-        $lines = [];
+        $previewItems = [];
         $ticketIds = [];
         foreach ($tickets as $ticket) {
             $ticketId = (int) ($ticket['id'] ?? 0);
@@ -56,25 +58,20 @@ final class ErpSystemAlertService
                 continue;
             }
             $ticketIds[] = $ticketId;
-            $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
-            $companyName = (string) ($ticket['company_name'] ?? '—');
-            $subject = trim((string) ($ticket['subject'] ?? ''));
-            $lines[] = (string) __('support_ticket_flash_line', [
-                'ticket' => $ticketNo,
-                'company' => $companyName,
-                'subject' => $subject !== '' ? $subject : '—',
-            ]);
-        }
-        if ($count > count($lines)) {
-            $remaining = $count - count($lines);
-            $lines[] = (string) __('support_ticket_flash_more', ['count' => (string) $remaining]);
+            $previewItems[] = [
+                'ticket_no' => (string) ($ticket['ticket_no'] ?? ('#' . $ticketId)),
+                'company' => (string) ($ticket['company_name'] ?? '—'),
+                'subject' => trim((string) ($ticket['subject'] ?? '')) ?: '—',
+            ];
         }
 
         return [
             'key' => 'support_tickets_unread',
             'severity' => 'warning',
             'title' => (string) __('support_ticket_flash_aggregate_title', ['count' => (string) $count]),
-            'message' => implode("\n", $lines),
+            'message' => '',
+            'preview_items' => $previewItems,
+            'more_count' => max(0, $count - count($previewItems)),
             'url' => $supportSvc->supportTicketsListUrl(),
             'action_label' => (string) __('support_ticket_banner_action'),
             'persistent' => true,

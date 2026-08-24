@@ -430,3 +430,10 @@ final class SupportTicket extends Model
         'company_id', 'user_id', 'ticket_no', 'subject', 'priority', 'status', 'message', 'assigned_to', 'branch_id',
     ];
 }
+
+final class SupportTicketReply extends Model
+{
+    protected string $table = 'rateb_support_ticket_replies';
+    protected bool $tenantScoped = false;
+    protected array $fillable = ['ticket_id', 'company_id', 'user_id', 'is_staff', 'body'];
+}

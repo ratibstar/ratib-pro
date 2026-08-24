@@ -43,6 +43,9 @@ foreach ($accessCrud as $path => [$class, $perm]) {
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
+    if ($path === 'support-tickets') {
+        $router->post($app($path . '/{id}/reply'), [$class, 'reply'], $mw);
+    }
     $router->get($app($path . '/{id}/documents/panel'), [$class, 'documentsPanel'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);

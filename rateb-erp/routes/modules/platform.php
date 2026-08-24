@@ -149,6 +149,9 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
+    if ($path === 'support-tickets') {
+        $router->post('/admin/' . $path . '/{id}/reply', [$class, 'reply'], rateb_admin_mw($perm));
+    }
     $router->get('/admin/' . $path . '/{id}/documents/panel', [$class, 'documentsPanel'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));

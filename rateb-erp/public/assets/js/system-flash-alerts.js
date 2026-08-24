@@ -25,6 +25,29 @@
         return escapeHtml(text).replace(/\n/g, '<br>');
     }
 
+    function renderPreviewItems(alert) {
+        var items = Array.isArray(alert.preview_items) ? alert.preview_items : [];
+        if (!items.length) {
+            return alert.message
+                ? '<div class="rateb-system-flash-alert__message">' + nl2br(alert.message) + '</div>'
+                : '';
+        }
+        var html = '<ul class="rateb-system-flash-tickets">';
+        items.forEach(function (row) {
+            html += '<li class="rateb-system-flash-tickets__item">'
+                + '<span class="rateb-system-flash-tickets__no">' + escapeHtml(row.ticket_no || '') + '</span>'
+                + '<span class="rateb-system-flash-tickets__company">' + escapeHtml(row.company || '') + '</span>'
+                + '<span class="rateb-system-flash-tickets__subject">' + escapeHtml(row.subject || '') + '</span>'
+                + '</li>';
+        });
+        var more = parseInt(alert.more_count, 10) || 0;
+        if (more > 0) {
+            html += '<li class="rateb-system-flash-tickets__more">+' + escapeHtml(String(more)) + '</li>';
+        }
+        html += '</ul>';
+        return html;
+    }
+
     function renderAlert(alert) {
         if (!alert || !alert.key) {
             return '';
@@ -41,9 +64,7 @@
             ? '<a href="' + escapeHtml(url) + '" class="rateb-system-flash-alert__action btn btn-sm btn-light" data-rateb-full-nav="1">'
                 + escapeHtml(alert.action_label || 'View') + '</a>'
             : '';
-        var message = alert.message
-            ? '<div class="rateb-system-flash-alert__message">' + nl2br(alert.message) + '</div>'
-            : '';
+        var preview = renderPreviewItems(alert);
 
         return ''
             + '<div class="rateb-system-flash-alert rateb-system-flash-alert--' + escapeHtml(severity) + pulse + '"'
@@ -55,7 +76,7 @@
             + '</div>'
             + '<div class="rateb-system-flash-alert__body">'
             + '<div class="rateb-system-flash-alert__title">' + escapeHtml(alert.title || '') + '</div>'
-            + message
+            + preview
             + '</div>'
             + action
             + '</div>';
