@@ -10,6 +10,7 @@ declare(strict_types=1);
 return [
     ['id' => 'auth', 'file' => 'routes/modules/auth.php'],
     ['id' => 'dashboard', 'file' => 'routes/modules/dashboard.php'],
+    ['id' => 'help', 'file' => 'routes/modules/help.php'],
     ['id' => 'subscription', 'file' => 'routes/modules/subscription.php'],
     ['id' => 'platform', 'file' => 'routes/modules/platform.php'],
     ['id' => 'marketing', 'file' => 'routes/modules/marketing.php'],

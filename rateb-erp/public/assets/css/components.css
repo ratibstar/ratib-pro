@@ -1682,3 +1682,56 @@ table.rateb-approvals-table td.rateb-actions-cell {
 .rateb-confirm-modal .modal-footer .btn {
     min-width: 5.5rem;
 }
+
+/* Help Center topbar button (global chrome) */
+.rateb-help-nav-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 31px;
+    padding: 0.28rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(59, 130, 246, 0.14));
+    color: #e6fffa !important;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-decoration: none !important;
+    box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.35);
+    animation: rateb-help-pulse 2.8s ease-in-out infinite;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    flex: 0 0 auto;
+}
+
+.rateb-help-nav-btn:hover,
+.rateb-help-nav-btn:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(45, 212, 191, 0.85);
+    box-shadow: 0 0 18px rgba(45, 212, 191, 0.28);
+    outline: none;
+    animation: none;
+}
+
+.rateb-help-nav-btn__label {
+    white-space: nowrap;
+}
+
+@keyframes rateb-help-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.28); }
+    50% { box-shadow: 0 0 0 6px rgba(45, 212, 191, 0); }
+}
+
+@media (max-width: 767.98px) {
+    .rateb-help-nav-btn__label {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rateb-help-nav-btn {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+

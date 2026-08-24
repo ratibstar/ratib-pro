@@ -131,6 +131,13 @@ final class RouteModuleLoader
             return self::orderWant($want);
         }
 
+        // In-app Help Center (all authenticated ERP users).
+        if ($path === '/admin/help' || str_starts_with($path, '/admin/help/')) {
+            $want = ['auth' => true, 'help' => true];
+
+            return self::orderWant($want);
+        }
+
         if (self::isAuthPath($path)) {
             $want = ['auth' => true];
 

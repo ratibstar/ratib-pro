@@ -1191,6 +1191,17 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>" aria-pressed="false"><i class="fas fa-moon"></i></button>
                     <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="<?php echo __('theme_auto'); ?>" aria-pressed="false"><i class="fas fa-circle-half-stroke"></i></button>
                 </div>
+                <?php if (empty($ratebHelpNavRendered)) {
+                    $ratebHelpNavRendered = true; ?>
+                <a href="<?php echo rateb_url('admin/help'); ?>"
+                   id="rateb-help-center-nav-btn"
+                   class="rateb-help-nav-btn"
+                   title="<?php echo Rateb\App\Core\View::escape(__('help_center')); ?>"
+                   aria-label="<?php echo Rateb\App\Core\View::escape(__('help_center')); ?>">
+                    <i class="fas fa-circle-question" aria-hidden="true"></i>
+                    <span class="rateb-help-nav-btn__label"><?php echo Rateb\App\Core\View::escape(__('help_center')); ?></span>
+                </a>
+                <?php } ?>
                 <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" data-rateb-full-nav="1" title="<?php echo __('logout'); ?>">
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
                 </a>
@@ -1363,6 +1374,7 @@ if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
+$ratebIdleScripts[] = rateb_asset('js/help-widget.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */
@@ -1375,6 +1387,19 @@ foreach ($layoutAssets['defer'] ?? [] as $deferFile) {
 if (!empty($layoutAssets['charts']) && ($erpRoute === 'admin' || $erpRoute === 'admin/executive-dashboard')) {
     $deferAssetScripts[] = rateb_asset('js/dashboard-charts-defer.js');
 }
+$ratebHelpWidgetCfg = [
+    'homeUrl' => rateb_url('admin/help'),
+    'contextUrl' => rateb_url('admin/help/api/context'),
+    'cssUrl' => rateb_asset('css/help-center.css'),
+    'erpRoute' => (string) $erpRoute,
+    'label' => __('help_center'),
+    'searchPlaceholder' => __('help_search_placeholder'),
+    'openLabel' => __('help_open_center'),
+    'contextLabel' => __('help_context_for'),
+];
+echo '<script type="application/json" id="rateb-help-widget-cfg">'
+    . json_encode($ratebHelpWidgetCfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+    . "</script>\n";
 /* PERF Fix2: preload critical scripts so downloads overlap; injector still controls exec order. */
 foreach ($ratebCriticalScripts as $ratebCritSrc) {
     echo '<link rel="preload" href="' . htmlspecialchars((string) $ratebCritSrc, ENT_QUOTES, 'UTF-8') . '" as="script">' . "\n";
