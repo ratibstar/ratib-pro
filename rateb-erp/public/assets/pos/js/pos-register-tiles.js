@@ -27,10 +27,10 @@
     var modesToggle = root.querySelector('[data-pos-modes-toggle]');
     var modesMenu = root.querySelector('[data-pos-modes-menu]');
 
-    var TILE_MIN = 158;
-    var TILE_GAP = 10;
-    var TILE_PAD = 12;
-    var TILE_H = 148;
+    var TILE_MIN = 136;
+    var TILE_GAP = 8;
+    var TILE_PAD = 8;
+    var TILE_H = 112;
     var ROW_BUFFER = 2;
 
     var CAT_PALETTE = [
