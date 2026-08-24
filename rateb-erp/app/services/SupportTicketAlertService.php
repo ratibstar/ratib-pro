@@ -735,4 +735,61 @@ final class SupportTicketAlertService
             return '#' . $companyId;
         }
     }
+
+    /** ticket_no is globally unique — allocate ST- numbers across all companies. */
+    public function generateNextTicketNo(): string
+    {
+        $prefix = \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET;
+        $startPos = strlen($prefix) + 1;
+        try {
+            $row = (new SupportTicket())->queryOne(
+                sprintf(
+                    'SELECT MAX(CAST(SUBSTRING(ticket_no, %d) AS UNSIGNED)) AS m
+                     FROM rateb_support_tickets WHERE ticket_no LIKE :like',
+                    $startPos
+                ),
+                ['like' => $prefix . '%']
+            );
+        } catch (\Throwable $e) {
+            $row = null;
+        }
+        $next = (int) ($row['m'] ?? 0) + 1;
+
+        for ($attempt = 0; $attempt < 20; $attempt++) {
+            $candidate = $prefix . str_pad((string) ($next + $attempt), 4, '0', STR_PAD_LEFT);
+            $exists = (new SupportTicket())->queryOne(
+                'SELECT id FROM rateb_support_tickets WHERE ticket_no = :no LIMIT 1',
+                ['no' => $candidate]
+            );
+            if ($exists === null) {
+                return $candidate;
+            }
+        }
+
+        return $prefix . str_pad((string) ($next + 20), 4, '0', STR_PAD_LEFT);
+    }
+
+    public function deleteTicket(int $ticketId): bool
+    {
+        if ($ticketId < 1) {
+            return false;
+        }
+        $pdo = Database::connection();
+        try {
+            $pdo->prepare('DELETE FROM rateb_support_ticket_replies WHERE ticket_id = :id')
+                ->execute(['id' => $ticketId]);
+        } catch (\Throwable $e) {
+            // replies table may not exist yet on older deployments
+        }
+        try {
+            $pdo->prepare('DELETE FROM rateb_notifications WHERE entity_type = :et AND entity_id = :id')
+                ->execute(['et' => self::ENTITY, 'id' => $ticketId]);
+        } catch (\Throwable $e) {
+            // best-effort
+        }
+        $stmt = $pdo->prepare('DELETE FROM rateb_support_tickets WHERE id = :id');
+        $stmt->execute(['id' => $ticketId]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

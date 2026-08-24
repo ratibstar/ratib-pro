@@ -4175,18 +4175,106 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     public function create(): void
     {
         $this->guardManage();
-        if (function_exists('rateb_bootstrap_ops_tenant')) {
-            rateb_bootstrap_ops_tenant();
-        }
-        $preview = $this->model->generateDocumentCode(
-            \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET,
-            'ticket_no'
-        );
+        $this->ensureTicketWriteContext();
+        $preview = (new \Rateb\App\Services\SupportTicketAlertService())->generateNextTicketNo();
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => ['ticket_no' => $preview],
             'fields' => $this->baseFields(true),
         ]), $this->layout());
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        $this->ensureTicketWriteContext();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $record = $this->resolveRecordForWrite($id);
+        if (!$record) {
+            SessionManager::flash('error', __('record_not_found'));
+            $this->redirect(rateb_url($this->routePrefix));
+
+            return;
+        }
+
+        $alertSvc = new \Rateb\App\Services\SupportTicketAlertService();
+        try {
+            if (!$alertSvc->deleteTicket($id)) {
+                SessionManager::flash('error', __('record_not_found'));
+            } else {
+                (new AuditService())->log('delete', $this->entityName, $id);
+                $alertSvc->markTicketSeen($id);
+                SessionManager::flash('success', __('delete') . ' OK');
+            }
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        $this->ensureTicketWriteContext();
+        if (!$this->bulkEnabled) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+
+            return;
+        }
+
+        $alertSvc = new \Rateb\App\Services\SupportTicketAlertService();
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->resolveRecordForWrite($id) === null) {
+                continue;
+            }
+            if ($alertSvc->deleteTicket($id)) {
+                ++$deleted;
+                $alertSvc->markTicketSeen($id);
+                (new AuditService())->log('bulk_delete', $this->entityName, $id);
+            }
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => (string) $deleted]));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    private function ensureTicketWriteContext(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+        if ($companyId < 1) {
+            $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        }
+        if ($companyId < 1) {
+            $companyId = \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
+        }
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+            if (function_exists('rateb_adopt_ops_company_id')) {
+                rateb_adopt_ops_company_id($companyId);
+            }
+        }
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -4233,10 +4321,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     {
         $data = parent::collectData();
         if (trim((string) ($data['ticket_no'] ?? '')) === '') {
-            $data['ticket_no'] = $this->model->generateDocumentCode(
-                \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET,
-                'ticket_no'
-            );
+            $data['ticket_no'] = (new \Rateb\App\Services\SupportTicketAlertService())->generateNextTicketNo();
         }
         if (empty($data['user_id'])) {
             $data['user_id'] = (int) SessionManager::get('rateb_user_id', 0) ?: null;
