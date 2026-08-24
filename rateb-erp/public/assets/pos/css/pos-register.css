@@ -21,7 +21,9 @@
     --pos-font: 'Cairo', 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --pos-header-h: 52px;
     --pos-nav-w: 72px;
-    --pos-cart-w: 380px;
+    --pos-cart-w: 420px;
+    --pos-cart-row-h: 34px;
+    --pos-cart-visible-rows: 15;
     --pos-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --pos-dur: 160ms;
 }
@@ -1296,39 +1298,43 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__order-bar {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--pos-border);
     background: var(--pos-surface-2);
+    flex-shrink: 0;
 }
 
 .rateb-pos__order-no {
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: var(--pos-ticket-text);
+    color: var(--pos-text-muted);
+    line-height: 1.2;
 }
 
 .rateb-pos__order-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    gap: 4px;
     width: 100%;
     max-width: 100%;
 }
 
 .rateb-pos__order-btn {
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 30px;
+    padding: 0 8px;
     border: none;
     border-radius: var(--pos-radius-sm);
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rateb-pos__order-btn--new {
@@ -1353,9 +1359,59 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__saved {
     flex-shrink: 0;
-    padding: 10px 12px 12px;
+    padding: 0;
     border-bottom: 1px solid var(--pos-border);
     background: var(--pos-surface-2);
+}
+
+.rateb-pos__saved-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    list-style: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pos-ticket-text);
+    user-select: none;
+}
+
+.rateb-pos__saved-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rateb-pos__saved-summary::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-inline-end: 2px solid var(--pos-text-muted);
+    border-bottom: 2px solid var(--pos-text-muted);
+    transform: rotate(45deg);
+    transition: transform var(--pos-dur) var(--pos-ease);
+    flex-shrink: 0;
+}
+
+.rateb-pos__saved[open] .rateb-pos__saved-summary::after {
+    transform: rotate(-135deg);
+}
+
+.rateb-pos__saved-summary-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.rateb-pos__saved-summary-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pos-text-muted);
+    white-space: nowrap;
+}
+
+.rateb-pos__saved-body {
+    padding: 0 12px 10px;
 }
 
 .rateb-pos__saved-head {
@@ -1409,7 +1465,7 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__saved-panel {
-    max-height: 132px;
+    max-height: 96px;
     overflow: auto;
 }
 
@@ -1479,19 +1535,20 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__ticket-customer {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
     margin: 0;
-    padding: 12px 16px;
+    padding: 8px 12px;
     border: none;
     border-bottom: 1px solid var(--pos-border);
     background: var(--pos-ticket-bg);
     color: var(--pos-ticket-text);
     font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     text-align: start;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .rateb-pos__ticket-customer span:not(.rateb-pos__icon) {
@@ -1524,19 +1581,65 @@ html[dir="rtl"] .rateb-pos__nav {
     gap: 8px;
 }
 
+.rateb-pos__cart-table .rateb-pos__ticket-lines {
+    display: table-row-group;
+    padding: 0;
+    overflow: visible;
+    gap: 0;
+    flex: none;
+}
+
 .rateb-pos__ticket-body {
-    flex: 1;
-    min-height: 0;
+    flex: 1 1 auto;
+    min-height: calc(var(--pos-cart-row-h) * var(--pos-cart-visible-rows) + 28px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
+@media (max-height: 820px) {
+    .rateb-pos__ticket-body {
+        min-height: calc(var(--pos-cart-row-h) * 10 + 28px);
+    }
+}
+
+@media (max-height: 700px) {
+    .rateb-pos__ticket-body {
+        min-height: calc(var(--pos-cart-row-h) * 8 + 28px);
+    }
+}
+
 .rateb-pos__cart-toolbar {
     display: flex;
-    justify-content: flex-end;
-    padding: 8px 12px 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px 4px;
     flex-shrink: 0;
+}
+
+.rateb-pos__cart-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pos-ticket-text);
+}
+
+.rateb-pos__cart-count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--pos-accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
 }
 
 .rateb-pos__cart-clear-all {
@@ -1589,27 +1692,47 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__ticket-foot {
     flex-shrink: 0;
-    padding: 16px;
+    padding: 8px 10px 10px;
     border-top: 1px solid var(--pos-border);
     background: var(--pos-ticket-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rateb-pos__ticket-pay-cluster {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+}
+
+.rateb-pos__ticket-pay-cluster:not(:has(.rateb-pos__ticket-utils)) {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 1360px) {
+    .rateb-pos__ticket-pay-cluster {
+        grid-template-columns: 1fr;
+    }
 }
 
 .rateb-pos__ticket-utils {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 10px;
+    gap: 4px;
+    margin-top: 0;
 }
 
 .rateb-pos__util-btn {
-    min-height: 44px;
-    padding: 0 10px;
+    min-height: 32px;
+    padding: 0 6px;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     color: var(--pos-ticket-text);
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
 }
@@ -1622,8 +1745,8 @@ html[dir="rtl"] .rateb-pos__nav {
     border-color: color-mix(in srgb, var(--pos-accent) 35%, var(--pos-border));
     background: color-mix(in srgb, var(--pos-accent) 8%, var(--pos-surface-2));
     color: var(--pos-accent);
-    font-size: 13px;
-    min-height: 46px;
+    font-size: 11px;
+    min-height: 32px;
 }
 
 .rateb-pos__util-btn--accent:hover {
@@ -1746,15 +1869,15 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__totals {
-    margin: 0 0 12px;
+    margin: 0;
 }
 
 .rateb-pos__totals-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 4px 0;
-    font-size: 14px;
+    padding: 1px 0;
+    font-size: 12px;
 }
 
 .rateb-pos__totals-row dt {
@@ -1771,23 +1894,23 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__totals-row--muted dd,
 .rateb-pos__totals-row--muted dt {
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .rateb-pos__totals-row--total {
-    padding-top: 8px;
-    margin-top: 4px;
+    padding-top: 6px;
+    margin-top: 2px;
     border-top: 1px solid var(--pos-border);
 }
 
 .rateb-pos__totals-row--total dt {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--pos-text);
 }
 
 .rateb-pos__totals-row--total dd {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
 }
 
@@ -1808,15 +1931,15 @@ html[dir="rtl"] .rateb-pos__nav {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    min-height: 72px;
-    padding: 0 24px;
+    min-height: 48px;
+    padding: 0 14px;
     border: none;
     border-radius: var(--pos-radius);
     background: linear-gradient(135deg, var(--pos-accent) 0%, var(--pos-accent-hover) 100%);
     color: #fff;
-    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.28);
+    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.24);
     font: inherit;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: background var(--pos-dur) var(--pos-ease), transform var(--pos-dur) var(--pos-ease), opacity var(--pos-dur) var(--pos-ease), box-shadow var(--pos-dur) var(--pos-ease);
@@ -1839,7 +1962,7 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__charge-amount {
     font-variant-numeric: tabular-nums;
-    font-size: 20px;
+    font-size: 17px;
 }
 
 .rateb-pos__charge--sm {
@@ -2533,12 +2656,15 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__totals-row--grand dt {
-    font-size: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    padding-top: 4px;
 }
 
 .rateb-pos__totals-row--grand dd {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 800;
+    padding-top: 4px;
 }
 
 /* Customer panel */
@@ -3117,16 +3243,16 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__pay-methods {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 4px;
+    margin-bottom: 0;
 }
 
 .rateb-pos__pay-quick {
-    min-height: 44px;
+    min-height: 32px;
     border: none;
     border-radius: var(--pos-radius-sm);
     font: inherit;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: #fff;
     cursor: pointer;
@@ -3144,24 +3270,25 @@ html[dir="rtl"] .rateb-pos__nav {
     flex: 1;
     min-height: 0;
     overflow: auto;
+    overscroll-behavior: contain;
 }
 
 .rateb-pos__cart-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .rateb-pos__cart-table th,
 .rateb-pos__cart-table td {
-    padding: 8px 6px;
+    padding: 3px 4px;
     border-bottom: 1px solid var(--pos-border);
     text-align: start;
     vertical-align: middle;
 }
 
 .rateb-pos__cart-table th {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--pos-text-muted);
     text-transform: uppercase;
@@ -3170,6 +3297,19 @@ html[dir="rtl"] .rateb-pos__nav {
     top: 0;
     background: var(--pos-ticket-bg);
     z-index: 1;
+    height: 24px;
+}
+
+/* Table rows must stay table-row (legacy card styles use display:grid). */
+.rateb-pos__cart-table .rateb-pos__line {
+    display: table-row;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    gap: 0;
+    grid-template-columns: none;
+    height: var(--pos-cart-row-h);
 }
 
 .rateb-pos__cart-table .rateb-pos__line.is-selected {
@@ -3177,8 +3317,55 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__cart-table .rateb-pos__line-photo {
-    width: 40px;
-    height: 40px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+}
+
+.rateb-pos__cart-table .rateb-pos__line-name {
+    font-size: 12px;
+    font-weight: 600;
+    max-width: 120px;
+}
+
+.rateb-pos__cart-table .rateb-pos__line-qty {
+    padding: 0;
+    gap: 2px;
+    background: transparent;
+}
+
+.rateb-pos__cart-table .rateb-pos-qty-btn {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    font-size: 14px;
+    border-radius: 4px;
+    background: var(--pos-surface-2);
+}
+
+.rateb-pos__cart-table .rateb-pos-qty-value {
+    min-width: 18px;
+    font-size: 12px;
+}
+
+.rateb-pos__cart-table .rateb-pos__line-price,
+.rateb-pos__cart-table .rateb-pos__line-unit {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.rateb-pos__cart-table .rateb-pos__line-remove {
+    width: 26px;
+    height: 26px;
+}
+
+.rateb-pos__cart-table .rateb-pos__line-remove svg {
+    width: 14px;
+    height: 14px;
 }
 
 .rateb-pos__tile-sku {
@@ -3201,15 +3388,46 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__shift-dock {
     position: absolute;
-    bottom: 16px;
-    inset-inline-end: calc(var(--pos-cart-w) + 16px);
-    width: min(280px, calc(100% - var(--pos-nav-w) - var(--pos-cart-w) - 48px));
-    padding: 14px;
+    bottom: 12px;
+    inset-inline-end: calc(var(--pos-cart-w) + 12px);
+    width: auto;
+    max-width: min(280px, calc(100% - var(--pos-nav-w) - var(--pos-cart-w) - 40px));
+    padding: 0;
     border-radius: var(--pos-radius);
     background: var(--pos-surface);
     border: 1px solid var(--pos-border);
     box-shadow: var(--pos-shadow);
     z-index: 20;
+}
+
+.rateb-pos__shift-dock-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    cursor: pointer;
+    padding: 8px 10px;
+    font: inherit;
+    user-select: none;
+}
+
+.rateb-pos__shift-dock-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rateb-pos__shift-dock-cashier {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pos-text-muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rateb-pos__shift-dock-body {
+    padding: 0 10px 10px;
+    border-top: 1px solid var(--pos-border);
 }
 
 .rateb-pos__shift-dock-head {
@@ -3263,17 +3481,27 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__shift-dock-close {
-    width: 100%;
-    min-height: 40px;
-    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-height: 28px;
+    margin-top: 0;
+    padding: 0 10px;
     border: none;
     border-radius: var(--pos-radius-sm);
     background: var(--pos-danger);
     color: #fff;
     font: inherit;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
+    text-decoration: none;
     cursor: pointer;
+}
+
+.rateb-pos__shift-dock-close--inline {
+    margin-inline-start: auto;
+    flex-shrink: 0;
 }
 
 .rateb-pos__shift-dock-close[hidden] { display: none !important; }
@@ -3484,6 +3712,10 @@ html[dir="rtl"] .rateb-pos__nav {
 
     .rateb-pos__catalog { grid-column: 1; grid-row: 2; }
     .rateb-pos__ticket { grid-column: 1; grid-row: 3; }
+
+    .rateb-pos__ticket-body {
+        min-height: calc(var(--pos-cart-row-h) * 6 + 28px);
+    }
 
     .rateb-pos__shift-dock {
         inset-inline-end: 16px;
