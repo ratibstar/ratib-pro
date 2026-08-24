@@ -4067,6 +4067,31 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     /** @return array<string, mixed> */
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
+        $alertSvc = new \Rateb\App\Services\SupportTicketAlertService();
+        if ($alertSvc->platformListAllTickets()) {
+            if (function_exists('rateb_bootstrap_ops_tenant')) {
+                rateb_bootstrap_ops_tenant();
+            }
+            $items = $this->enrichTicketRows($alertSvc->listTickets($limit, $offset, $search));
+
+            return $this->applyPermissionFlags([
+                'title' => __($this->entityName),
+                'items' => $items,
+                'total' => $alertSvc->countTickets($search),
+                'page' => $page,
+                'limit' => $limit,
+                'search' => $search,
+                'routePrefix' => $this->routePrefix,
+                'exportRoute' => rateb_url($this->routePrefix . '/export'),
+                'fields' => $this->resolveIndexFields(),
+                'csrf' => \Rateb\App\Core\Csrf::token(),
+                'bulkEnabled' => $this->bulkEnabled,
+                'createEnabled' => $this->createEnabled,
+                'actionsEnabled' => $this->actionsEnabled,
+                'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
+            ]);
+        }
+
         $data = parent::indexViewData($limit, $offset, $page, $search);
         $data['items'] = $this->enrichTicketRows(is_array($data['items'] ?? null) ? $data['items'] : []);
 
@@ -4208,6 +4233,18 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         }
 
         return parent::formViewData($extra);
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function afterSuccessfulStore(int $id, array $data): void
+    {
+        (new \Rateb\App\Services\SupportTicketAlertService())->notifyOnCreate($id, array_merge($data, ['id' => $id]));
+    }
+
+    /** @param array<string, mixed>|null $old @param array<string, mixed> $data */
+    protected function afterSuccessfulUpdate(int $id, ?array $old, array $data): void
+    {
+        (new \Rateb\App\Services\SupportTicketAlertService())->handleStatusChange($id, $old, $data);
     }
 }
 

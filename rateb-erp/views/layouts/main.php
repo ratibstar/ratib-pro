@@ -956,6 +956,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
             require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
+            <?php
+            $supportTicketsRoute = function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets';
+            $supportTicketOpenBadge = 0;
+            if (class_exists(\Rateb\App\Services\SupportTicketAlertService::class) && rateb_nav_can('settings.manage')) {
+                $supportTicketOpenBadge = (new \Rateb\App\Services\SupportTicketAlertService())->openCountForViewer();
+            }
             $accessControlLinks = [
                 ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],
                 ['admin/access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access.manage'],
@@ -967,13 +973,23 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 $accessControlLinks[] = ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'];
             }
             $accessControlLinks[] = ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'];
-            $accessControlLinks[] = ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'];
+            $accessControlLinks[] = [$supportTicketsRoute, 'support_tickets', 'fa-life-ring', 'settings.manage'];
             $accessControlLinks[] = ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'];
             if (function_exists('rateb_email_diagnostics_accessible') && rateb_email_diagnostics_accessible()) {
                 $accessControlLinks[] = ['admin/email-diagnostics', 'email_diagnostics', 'fa-stethoscope', 'settings.manage'];
             }
             $accessControlLinks[] = ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'];
-            $adminSection(__('access_control'), $accessControlLinks, 'fa-key');
+            $supportTicketLinkBadges = [$supportTicketsRoute => $supportTicketOpenBadge];
+            $adminSection(
+                __('access_control'),
+                $accessControlLinks,
+                'fa-key',
+                0,
+                $supportTicketLinkBadges,
+                '',
+                'rateb-nav-badge--pending',
+                'support_tickets_pending_hint'
+            );
             ?>
             <?php } ?>
         </nav>
@@ -1247,6 +1263,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 include $subscriptionAlertPartial;
             } elseif (is_file($subscriptionAlertBanner)) {
                 include $subscriptionAlertBanner;
+            }
+            $supportTicketsAlertPartial = RATEB_VIEWS_PATH . '/partials/support-tickets-alert.php';
+            if (is_file($supportTicketsAlertPartial)) {
+                include $supportTicketsAlertPartial;
             }
             ?>
             <?php Rateb\App\Core\View::partial('flash'); ?>
