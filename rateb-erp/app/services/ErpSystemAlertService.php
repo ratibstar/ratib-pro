@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Rateb\App\Services;
 
-use Rateb\App\Core\SessionManager;
-
 /**
- * Global ERP flash alerts (support tickets + unread notifications) for all layout pages.
+ * Global ERP flash alerts for open support tickets (all layout pages).
+ *
+ * Only support tickets appear here — subscription, approval, and other notifications
+ * stay on their dedicated pages/banners to avoid a cluttered flash stack.
  *
  * @phpstan-type ErpFlashAlert array{
  *   key:string,
@@ -25,19 +26,34 @@ final class ErpSystemAlertService
     /** @return list<ErpFlashAlert> */
     public function alertsForLayout(): array
     {
-        $alerts = [];
         $supportSvc = new SupportTicketAlertService();
-        $openTickets = $supportSvc->openCountForViewer();
-        if ($openTickets > 0) {
-            $isPlatform = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $tickets = $supportSvc->listOpenTicketsForViewer(5);
+        if ($tickets === []) {
+            return [];
+        }
+
+        $alerts = [];
+        $listUrl = $supportSvc->supportTicketsListUrl();
+        foreach ($tickets as $ticket) {
+            $ticketId = (int) ($ticket['id'] ?? 0);
+            if ($ticketId < 1) {
+                continue;
+            }
+            $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
+            $companyName = (string) ($ticket['company_name'] ?? '—');
+            $subject = trim((string) ($ticket['subject'] ?? ''));
+
             $alerts[] = [
-                'key' => 'support_tickets_open',
-                'severity' => 'info',
-                'title' => (string) __('support_ticket_banner_title', ['count' => (string) $openTickets]),
-                'message' => (string) ($isPlatform
-                    ? __('support_ticket_banner_platform_hint')
-                    : __('support_ticket_banner_tenant_hint')),
-                'url' => $supportSvc->supportTicketsListUrl(),
+                'key' => 'support_ticket_' . $ticketId,
+                'severity' => 'warning',
+                'title' => (string) __('support_ticket_flash_title', [
+                    'ticket' => $ticketNo,
+                    'company' => $companyName,
+                ]),
+                'message' => (string) __('support_ticket_flash_body', [
+                    'subject' => $subject !== '' ? $subject : '—',
+                ]),
+                'url' => $listUrl,
                 'action_label' => (string) __('support_ticket_banner_action'),
                 'persistent' => true,
                 'pulse' => true,
@@ -45,59 +61,6 @@ final class ErpSystemAlertService
             ];
         }
 
-        $userId = (int) SessionManager::get('rateb_user_id', 0);
-        if ($userId > 0) {
-            $exclude = $openTickets > 0 ? [SupportTicketAlertService::TRIGGER_OPEN] : [];
-            $rows = (new NotificationService())->listUnreadFlashForUser($userId, 4, $exclude);
-            foreach ($rows as $row) {
-                $alerts[] = $this->notificationToAlert($row, $supportSvc);
-            }
-        }
-
         return $alerts;
-    }
-
-    /** @param array<string, mixed> $row @return ErpFlashAlert */
-    private function notificationToAlert(array $row, SupportTicketAlertService $supportSvc): array
-    {
-        $trigger = (string) ($row['trigger_type'] ?? '');
-        $entityType = (string) ($row['entity_type'] ?? '');
-        $type = (string) ($row['type'] ?? 'info');
-        $severity = match ($type) {
-            'danger', 'error' => 'danger',
-            'warning' => 'warning',
-            'success' => 'success',
-            default => 'info',
-        };
-        if ($trigger === SupportTicketAlertService::TRIGGER_OPEN) {
-            $severity = 'warning';
-        }
-
-        $persistent = in_array($trigger, [
-            SupportTicketAlertService::TRIGGER_OPEN,
-        ], true);
-
-        return [
-            'key' => 'notif_' . (int) ($row['id'] ?? 0),
-            'severity' => $severity,
-            'title' => (string) ($row['title'] ?? ''),
-            'message' => (string) ($row['message'] ?? ''),
-            'url' => $this->resolveNotificationUrl($row, $supportSvc),
-            'action_label' => (string) __('system_flash_alert_view'),
-            'persistent' => $persistent,
-            'pulse' => true,
-            'icon' => $entityType === SupportTicketAlertService::ENTITY ? 'fa-life-ring' : 'fa-bell',
-        ];
-    }
-
-    /** @param array<string, mixed> $row */
-    private function resolveNotificationUrl(array $row, SupportTicketAlertService $supportSvc): string
-    {
-        $entityType = (string) ($row['entity_type'] ?? '');
-        if ($entityType === SupportTicketAlertService::ENTITY) {
-            return $supportSvc->supportTicketsListUrl();
-        }
-
-        return function_exists('rateb_app_url') ? rateb_app_url('notifications') : rateb_url('admin/notifications');
     }
 }

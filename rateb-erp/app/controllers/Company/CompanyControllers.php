@@ -2286,13 +2286,21 @@ final class NotificationsController extends Controller
 {
     public function index(): void
     {
-        $items = (new \Rateb\App\Services\NotificationService())->listForUser(
-            (int) SessionManager::get('rateb_user_id'),
-            (int) SessionManager::get('rateb_company_id')
-        );
+        $userId = (int) SessionManager::get('rateb_user_id');
+        $companyId = (int) SessionManager::get('rateb_company_id');
+        $svc = new \Rateb\App\Services\NotificationService();
+        $items = $svc->enrichRowsForDisplay($svc->listForUser($userId, $companyId));
         $this->view('company/notifications/index', [
             'title' => __('notifications'),
             'items' => $items,
+            'fields' => [
+                ['name' => 'created_at', 'label' => 'created_at', 'type' => 'datetime'],
+                ['name' => 'title', 'label' => 'title', 'type' => 'clip'],
+                ['name' => 'message', 'label' => 'message', 'type' => 'clip'],
+                ['name' => 'company_display', 'label' => 'companies', 'type' => 'clip'],
+                ['name' => 'ticket_no', 'label' => 'ticket_no', 'type' => 'clip'],
+                ['name' => 'type', 'label' => 'type'],
+            ],
             'csrf' => Csrf::token(),
         ], 'main');
     }

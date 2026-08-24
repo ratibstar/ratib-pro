@@ -237,6 +237,81 @@ final class NotificationService
         return (new Notification())->query($sql, $params);
     }
 
+    /**
+     * Human-readable columns for the notifications index (company name, ticket no).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    public function enrichRowsForDisplay(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $companyIds = [];
+        $ticketIds = [];
+        foreach ($rows as $row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            if ($cid > 0) {
+                $companyIds[$cid] = $cid;
+            }
+            if ((string) ($row['entity_type'] ?? '') === SupportTicketAlertService::ENTITY) {
+                $tid = (int) ($row['entity_id'] ?? 0);
+                if ($tid > 0) {
+                    $ticketIds[$tid] = $tid;
+                }
+            }
+        }
+
+        $companyNames = [];
+        if ($companyIds !== []) {
+            $ids = array_values($companyIds);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                foreach ((new Notification())->query(
+                    'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
+                    $ids
+                ) as $company) {
+                    $companyNames[(int) ($company['id'] ?? 0)] = (string) ($company['name'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                $companyNames = [];
+            }
+        }
+
+        $ticketNos = [];
+        if ($ticketIds !== []) {
+            $ids = array_values($ticketIds);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                foreach ((new Notification())->query(
+                    'SELECT id, ticket_no FROM rateb_support_tickets WHERE id IN (' . $placeholders . ')',
+                    $ids
+                ) as $ticket) {
+                    $ticketNos[(int) ($ticket['id'] ?? 0)] = (string) ($ticket['ticket_no'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                $ticketNos = [];
+            }
+        }
+
+        foreach ($rows as &$row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            $row['company_display'] = $companyNames[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+            $row['ticket_no'] = '—';
+            if ((string) ($row['entity_type'] ?? '') === SupportTicketAlertService::ENTITY) {
+                $tid = (int) ($row['entity_id'] ?? 0);
+                if ($tid > 0 && isset($ticketNos[$tid]) && $ticketNos[$tid] !== '') {
+                    $row['ticket_no'] = $ticketNos[$tid];
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
     /** Mark all notifications visible to the user as read (tenant-scoped). */
     public function markAllReadForUser(int $userId, int $companyId): int
     {

@@ -67,6 +67,53 @@ final class SupportTicketAlertService
         return 0;
     }
 
+    /**
+     * Open support tickets visible to the current viewer (for flash alerts).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listOpenTicketsForViewer(int $limit = 5): array
+    {
+        $limit = max(1, min(8, $limit));
+        $params = [];
+        $sql = 'SELECT id, ticket_no, subject, company_id, user_id, status, created_at
+                FROM rateb_support_tickets
+                WHERE status IN (\'open\')';
+
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            if (!$this->superAdminViewsAllTickets()) {
+                $companyId = $this->resolvedCompanyId();
+                if ($companyId > 0) {
+                    $sql .= ' AND company_id = :company_id';
+                    $params['company_id'] = $companyId;
+                }
+            }
+        } elseif (function_exists('rateb_can') && rateb_can('settings.manage')) {
+            $companyId = $this->resolvedCompanyId();
+            if ($companyId > 0) {
+                $sql .= ' AND company_id = :company_id';
+                $params['company_id'] = $companyId;
+            }
+        } else {
+            $userId = (int) SessionManager::get('rateb_user_id', 0);
+            if ($userId < 1) {
+                return [];
+            }
+            $sql .= ' AND user_id = :user_id';
+            $params['user_id'] = $userId;
+        }
+
+        $sql .= ' ORDER BY id DESC LIMIT ' . $limit;
+
+        try {
+            $rows = (new SupportTicket())->query($sql, $params);
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return $this->enrichWithCompanyNames($rows);
+    }
+
     public function supportTicketsListUrl(): string
     {
         $base = function_exists('rateb_app_url')
@@ -199,11 +246,16 @@ final class SupportTicketAlertService
             return;
         }
         $companyId = (int) ($ticket['company_id'] ?? 0);
+        $companyName = (string) ($ticket['company_name'] ?? $this->resolveCompanyName($companyId));
         $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
         $subject = (string) ($ticket['subject'] ?? '');
-        $title = __('support_ticket_alert_new_title');
+        $title = __('support_ticket_alert_new_title', [
+            'ticket' => $ticketNo,
+            'company' => $companyName,
+        ]);
         $message = __('support_ticket_alert_new_body', [
             'ticket' => $ticketNo,
+            'company' => $companyName,
             'subject' => $subject,
         ]);
         $notifier = new NotificationService();
@@ -350,5 +402,61 @@ final class SupportTicketAlertService
         }
 
         return 0;
+    }
+
+    /** @param list<array<string, mixed>> $rows @return list<array<string, mixed>> */
+    private function enrichWithCompanyNames(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+        $companyIds = [];
+        foreach ($rows as $row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            if ($cid > 0) {
+                $companyIds[$cid] = $cid;
+            }
+        }
+        $names = [];
+        if ($companyIds !== []) {
+            $ids = array_values($companyIds);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                $companyRows = (new SupportTicket())->query(
+                    'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
+                    $ids
+                );
+                foreach ($companyRows as $company) {
+                    $names[(int) ($company['id'] ?? 0)] = (string) ($company['name'] ?? '');
+                }
+            } catch (\Throwable $e) {
+                $names = [];
+            }
+        }
+        foreach ($rows as &$row) {
+            $cid = (int) ($row['company_id'] ?? 0);
+            $row['company_name'] = $names[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private function resolveCompanyName(int $companyId): string
+    {
+        if ($companyId < 1) {
+            return '—';
+        }
+        try {
+            $row = (new SupportTicket())->queryOne(
+                'SELECT name FROM rateb_companies WHERE id = :id LIMIT 1',
+                ['id' => $companyId]
+            );
+            $name = trim((string) ($row['name'] ?? ''));
+
+            return $name !== '' ? $name : ('#' . $companyId);
+        } catch (\Throwable $e) {
+            return '#' . $companyId;
+        }
     }
 }
