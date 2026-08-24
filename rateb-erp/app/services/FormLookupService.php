@@ -204,6 +204,9 @@ final class FormLookupService
             case 'departments':
                 $options = $this->departmentOptions();
                 break;
+            case 'support_ticket_subjects':
+                $options = $this->supportTicketSubjectOptions();
+                break;
             case 'permission_modules':
                 $options = $this->moduleOptions();
                 break;
@@ -1629,6 +1632,24 @@ final class FormLookupService
             $out[] = ['value' => (string) ($row[$valueKey] ?? ''), 'label' => $label];
         }
         return $out;
+    }
+
+    /**
+     * @return list<FormOption>
+     */
+    private function supportTicketSubjectOptions(): array
+    {
+        return $this->staticOptions([
+            'st_subject_login',
+            'st_subject_permissions',
+            'st_subject_billing',
+            'st_subject_bug',
+            'st_subject_feature',
+            'st_subject_training',
+            'st_subject_data',
+            'st_subject_performance',
+            'st_subject_integration',
+        ], true);
     }
 
     /**

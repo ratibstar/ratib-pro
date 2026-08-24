@@ -4039,13 +4039,109 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $this->viewPrefix = 'admin/support-tickets';
         $this->routePrefix = rateb_app_route('support-tickets');
         $this->entityName = 'support_tickets';
-        $this->fields = [
-            ['name' => 'ticket_no', 'label' => 'Ticket No', 'type' => 'text'],
-            ['name' => 'subject', 'label' => 'Subject', 'type' => 'text'],
-            ['name' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['open', 'in_progress', 'resolved', 'closed']],
-            ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
+        $this->fields = $this->baseFields();
+        $this->indexFields = [
+            ['name' => 'ticket_no', 'label' => 'ticket_no'],
+            ['name' => 'subject', 'label' => 'subject'],
+            ['name' => 'priority', 'label' => 'priority'],
+            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'created_at', 'label' => 'created_at'],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $preview = $this->model->generateDocumentCode(
+            \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET,
+            'ticket_no'
+        );
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __($this->entityName),
+            'item' => ['ticket_no' => $preview],
+            'fields' => $this->baseFields(true),
+        ]), $this->layout());
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function baseFields(bool $creating = false): array
+    {
+        $ticketField = [
+            'name' => 'ticket_no',
+            'label' => 'ticket_no',
+            'type' => 'text',
+            'col' => 'col-md-6',
+            'hint' => $creating ? 'auto_ticket_no_hint' : '',
+        ];
+        if ($creating) {
+            $ticketField['display_only'] = true;
+            $ticketField['readonly'] = true;
+        } else {
+            $ticketField['readonly'] = true;
+        }
+
+        return [
+            $ticketField,
+            [
+                'name' => 'subject',
+                'label' => 'subject',
+                'type' => 'hybrid',
+                'lookup' => 'support_ticket_subjects',
+                'required' => true,
+                'col' => 'col-md-6',
+            ],
+            ['name' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent'], 'col' => 'col-md-6'],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['open', 'in_progress', 'resolved', 'closed'], 'col' => 'col-md-6'],
+            [
+                'name' => 'message',
+                'label' => 'Message',
+                'type' => 'textarea',
+                'col' => 'col-12',
+                'hint' => 'support_ticket_routing_hint',
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        if (trim((string) ($data['ticket_no'] ?? '')) === '') {
+            $data['ticket_no'] = $this->model->generateDocumentCode(
+                \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET,
+                'ticket_no'
+            );
+        }
+        if (empty($data['user_id'])) {
+            $data['user_id'] = (int) SessionManager::get('rateb_user_id', 0) ?: null;
+        }
+        if (($data['priority'] ?? '') === '') {
+            $data['priority'] = 'medium';
+        }
+        if (($data['status'] ?? '') === '') {
+            $data['status'] = 'open';
+        }
+        $subject = trim((string) ($data['subject'] ?? ''));
+        if ($subject !== '' && str_starts_with($subject, 'st_subject_')) {
+            $data['subject'] = __($subject);
+        }
+
+        return $data;
+    }
+
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        if (!isset($extra['fields'])) {
+            $item = $extra['item'] ?? null;
+            $isCreate = !is_array($item) || (int) ($item['id'] ?? 0) < 1;
+            $extra['fields'] = $this->baseFields($isCreate);
+        }
+
+        return parent::formViewData($extra);
     }
 }
 
