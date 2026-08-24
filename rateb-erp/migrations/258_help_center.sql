@@ -1,4 +1,3 @@
-<?php
 -- RATEB ERP — In-app Help Center schema (admin CMS ready; runtime content may use file catalog)
 SET NAMES utf8mb4;
 
