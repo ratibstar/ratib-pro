@@ -262,10 +262,13 @@ final class HelpCenterRepository
     private function presentArticleCard(array $article): array
     {
         $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
+        $slug = (string) ($article['slug'] ?? '');
+        $module = (string) ($article['module'] ?? '');
 
         return [
-            'slug' => (string) ($article['slug'] ?? ''),
-            'module' => (string) ($article['module'] ?? ''),
+            'slug' => $slug,
+            'module' => $module,
+            'accent' => $this->resolveArticleAccent($module, $slug),
             'title' => $locale === 'en'
                 ? (string) ($article['title_en'] ?? $article['title_ar'] ?? '')
                 : (string) ($article['title_ar'] ?? $article['title_en'] ?? ''),
@@ -276,6 +279,25 @@ final class HelpCenterRepository
             'minutes' => (int) ($article['minutes'] ?? 3),
             'icon' => (string) ($article['icon'] ?? 'fa-circle-question'),
         ];
+    }
+
+    /**
+     * Soft modern color mix: module accent as base + per-article offset for a varied grid.
+     */
+    private function resolveArticleAccent(string $moduleSlug, string $articleSlug): string
+    {
+        static $palette = [
+            'sky', 'teal', 'amber', 'blue', 'emerald', 'orange', 'pink',
+            'cyan', 'violet', 'indigo', 'purple', 'green', 'rose', 'fuchsia', 'yellow',
+        ];
+        $moduleAccent = (string) (HelpContentBuilder::modulesBySlug()[$moduleSlug]['accent'] ?? 'sky');
+        $base = array_search($moduleAccent, $palette, true);
+        if ($base === false) {
+            $base = 0;
+        }
+        $offset = abs((int) crc32($articleSlug !== '' ? $articleSlug : $moduleSlug)) % count($palette);
+
+        return $palette[($base + $offset) % count($palette)];
     }
 
     /**
@@ -320,9 +342,12 @@ final class HelpCenterRepository
             }
         }
 
+        $moduleSlug = (string) ($article['module'] ?? '');
+
         return [
             'slug' => $slug,
-            'module' => (string) ($article['module'] ?? ''),
+            'module' => $moduleSlug,
+            'accent' => $this->resolveArticleAccent($moduleSlug, $slug),
             'module_meta' => $module,
             'title' => $locale === 'en'
                 ? (string) ($article['title_en'] ?? $article['title_ar'] ?? '')

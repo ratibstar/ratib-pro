@@ -388,30 +388,49 @@
 }
 
 .hc-article-card {
+  --hc-accent: #38bdf8;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   padding: 1rem;
   border-radius: var(--hc-radius);
-  background: var(--rateb-surface);
-  border: 1px solid var(--rateb-border);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--hc-accent) 12%, transparent), transparent 55%),
+    var(--rateb-surface);
+  border: 1px solid color-mix(in srgb, var(--hc-accent) 28%, var(--rateb-border));
+  border-bottom: 3px solid var(--hc-accent);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.hc-article-card::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--hc-accent), color-mix(in srgb, var(--hc-accent) 35%, transparent));
+  opacity: 0.9;
 }
 
 .hc-article-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--hc-accent) 18%, rgba(0, 0, 0, 0.22));
+  border-color: color-mix(in srgb, var(--hc-accent) 48%, var(--rateb-border));
 }
 
 .hc-article-card__icon {
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 0.75rem;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 0.8rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(59, 130, 246, 0.12);
-  color: var(--rateb-primary);
+  background: color-mix(in srgb, var(--hc-accent) 18%, transparent);
+  color: var(--hc-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hc-accent) 28%, transparent);
 }
 
 .hc-article-card__title {
@@ -439,6 +458,44 @@
 
 .hc-article-card__open {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--hc-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--hc-accent) 14%, transparent);
+  color: var(--hc-accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.hc-article-card__open:hover,
+.hc-article-card__open:focus-visible {
+  background: color-mix(in srgb, var(--hc-accent) 24%, transparent);
+  border-color: var(--hc-accent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+html[dir="ltr"] .hc-article-card__open .fa-arrow-left,
+body:not(.rateb-rtl) .hc-article-card__open .fa-arrow-left {
+  transform: scaleX(-1);
+}
+
+.hc-article-page .hc-panel {
+  border-color: color-mix(in srgb, var(--hc-accent, var(--rateb-accent)) 22%, var(--rateb-border));
+}
+
+.hc-article-page .hc-panel h3 {
+  color: color-mix(in srgb, var(--hc-accent, var(--rateb-accent)) 55%, var(--rateb-text));
+}
+
+.hc-article-page .hc-steps li::marker,
+.hc-article-page .hc-panel ul li::marker {
+  color: var(--hc-accent, var(--rateb-accent));
 }
 
 .hc-badge {

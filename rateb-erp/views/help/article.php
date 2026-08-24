@@ -11,13 +11,14 @@ $moduleSlug = (string) ($article['module'] ?? '');
 $moduleTitle = is_array($moduleMeta) ? (string) ($moduleMeta['title'] ?? $moduleSlug) : $moduleSlug;
 $moduleUrl = $moduleSlug !== '' ? rateb_url('admin/help/module/' . rawurlencode($moduleSlug)) : $helpHomeUrl;
 $difficulty = (string) ($article['difficulty'] ?? 'beginner');
+$accent = preg_replace('/[^a-z]/', '', (string) ($article['accent'] ?? ($moduleMeta['accent'] ?? 'sky'))) ?: 'sky';
 $diffLabel = __('help_difficulty_' . $difficulty);
 if ($diffLabel === 'help_difficulty_' . $difficulty) {
     $diffLabel = $difficulty;
 }
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/help-center.css'); ?>">
-<article class="hc-page hc-article-page">
+<article class="hc-page hc-article-page hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>">
     <?php View::partial('help/breadcrumb', [
         'crumbs' => [
             ['label' => __('help_center'), 'url' => $helpHomeUrl],
