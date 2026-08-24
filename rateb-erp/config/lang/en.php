@@ -69,7 +69,7 @@ return [
     'support_tickets_platform_hint' => 'As RATIB platform owner: open Support Tickets on admin.rateb.sa, then pick the company from «Select Company» above to view its tickets.',
     'support_tickets_pending_hint' => 'Support tickets awaiting response',
     'support_ticket_banner_title' => 'You have :count support ticket(s) awaiting response',
-    'support_ticket_banner_platform_hint' => 'Tickets from all client companies — alerts stay until status leaves Open.',
+    'support_ticket_banner_platform_hint' => 'Tickets from all client companies — pick Platform (no company) or use company_id=0 in the URL.',
     'support_ticket_banner_tenant_hint' => 'Alerts stay visible until the ticket is responded to (status changed).',
     'support_ticket_banner_action' => 'View tickets',
     'support_ticket_alert_new_title' => 'New support ticket',

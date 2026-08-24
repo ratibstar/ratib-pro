@@ -25,19 +25,32 @@ final class SupportTicketAlertService
         if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
             return false;
         }
-        if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
-            return false;
-        }
         if (array_key_exists('company_id', $_GET)) {
             return (int) ($_GET['company_id'] ?? 0) === 0;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            return (int) rateb_resolve_ops_company_id() === 0;
         }
 
         return true;
     }
 
+    public function superAdminViewsAllTickets(): bool
+    {
+        return $this->platformListAllTickets();
+    }
+
     public function openCountForViewer(): int
     {
-        if ($this->platformListAllTickets()) {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            if ($this->superAdminViewsAllTickets()) {
+                return $this->countOpenGlobally();
+            }
+            $companyId = $this->resolvedCompanyId();
+            if ($companyId > 0) {
+                return $this->countOpenForCompany($companyId);
+            }
+
             return $this->countOpenGlobally();
         }
         if (function_exists('rateb_can') && rateb_can('settings.manage')) {
@@ -56,17 +69,16 @@ final class SupportTicketAlertService
 
     public function supportTicketsListUrl(): string
     {
-        $route = function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets';
-        if ($this->platformListAllTickets() || (
-            function_exists('rateb_is_platform_oversight_host')
-            && rateb_is_platform_oversight_host()
-            && function_exists('rateb_is_super_admin')
-            && rateb_is_super_admin()
-        )) {
-            return rateb_url($route . '?company_id=0');
+        $base = function_exists('rateb_app_url')
+            ? rateb_app_url('support-tickets')
+            : rateb_url(function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets');
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return function_exists('rateb_url_set_query_param')
+                ? rateb_url_set_query_param($base, 'company_id', '0')
+                : $base;
         }
 
-        return function_exists('rateb_app_url') ? rateb_app_url('support-tickets') : rateb_url($route);
+        return $base;
     }
 
     /** @return list<array<string, mixed>> */

@@ -15,7 +15,7 @@ if ($openCount < 1) {
 }
 
 $url = $svc->supportTicketsListUrl();
-$isPlatform = function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+$isPlatform = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
 ?>
 <div class="rateb-st-alert-wrap" data-support-tickets-alert="1" role="status">
     <div class="rateb-st-alert">

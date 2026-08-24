@@ -4053,7 +4053,8 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     protected function resolveIndexFields(): array
     {
         $fields = $this->indexFields;
-        if (\Rateb\App\Core\TenantContext::isSuperAdmin()) {
+        if ((function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+            || \Rateb\App\Core\TenantContext::isSuperAdmin()) {
             array_unshift($fields, [
                 'name' => 'company_name',
                 'label' => 'companies',

@@ -69,7 +69,7 @@ return [
     'support_tickets_platform_hint' => 'كمالك منصة رتب: افتح تذاكر الدعم من admin.rateb.sa ثم اختر الشركة من «اختر الشركة» أعلاه لعرض تذاكرها.',
     'support_tickets_pending_hint' => 'تذاكر دعم بانتظار الرد',
     'support_ticket_banner_title' => 'لديك :count تذكرة/تذاكر دعم بانتظار الرد',
-    'support_ticket_banner_platform_hint' => 'تذاكر من جميع شركات العملاء — تبقى التنبيهات حتى تغيير الحالة من «مفتوحة».',
+    'support_ticket_banner_platform_hint' => 'تذاكر من جميع شركات العملاء — اختر «المنصة (بدون شركة)» أو افتح الرابط مع company_id=0.',
     'support_ticket_banner_tenant_hint' => 'تبقى التنبيهات ثابتة حتى يتم الرد على التذكرة (تغيير الحالة).',
     'support_ticket_banner_action' => 'عرض التذاكر',
     'support_ticket_alert_new_title' => 'تذكرة دعم جديدة',
