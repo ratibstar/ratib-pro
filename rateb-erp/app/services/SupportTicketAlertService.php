@@ -375,6 +375,10 @@ final class SupportTicketAlertService
             return;
         }
         $companyId = (int) ($ticket['company_id'] ?? 0);
+        $senderCompanyId = $this->resolveSenderCompanyId($ticket);
+        if ($senderCompanyId > 0) {
+            $companyId = $senderCompanyId;
+        }
         $companyName = (string) ($ticket['company_name'] ?? $this->resolveCompanyName($companyId));
         $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
         $subject = (string) ($ticket['subject'] ?? '');
@@ -427,6 +431,10 @@ final class SupportTicketAlertService
             return;
         }
         $companyId = (int) ($ticket['company_id'] ?? 0);
+        $senderCompanyId = $this->resolveSenderCompanyId($ticket);
+        if ($senderCompanyId > 0) {
+            $companyId = $senderCompanyId;
+        }
         $companyName = (string) ($ticket['company_name'] ?? $this->resolveCompanyName($companyId));
         $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
         $preview = mb_strlen($replyBody) > 120 ? (mb_substr($replyBody, 0, 117) . '…') : $replyBody;
@@ -580,41 +588,134 @@ final class SupportTicketAlertService
     }
 
     /** @param list<array<string, mixed>> $rows @return list<array<string, mixed>> */
+    public function enrichTicketRows(array $rows): array
+    {
+        return $this->enrichWithSenderCompanyNames($rows);
+    }
+
+    /** @param list<array<string, mixed>> $rows @return list<array<string, mixed>> */
     private function enrichWithCompanyNames(array $rows): array
+    {
+        return $this->enrichWithSenderCompanyNames($rows);
+    }
+
+    /**
+     * Prefer the submitting user's company (الشركة المرسلة) over ticket.company_id.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function enrichWithSenderCompanyNames(array $rows): array
     {
         if ($rows === []) {
             return [];
         }
+
         $companyIds = [];
+        $userIds = [];
         foreach ($rows as $row) {
             $cid = (int) ($row['company_id'] ?? 0);
             if ($cid > 0) {
                 $companyIds[$cid] = $cid;
             }
-        }
-        $names = [];
-        if ($companyIds !== []) {
-            $ids = array_values($companyIds);
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            try {
-                $companyRows = (new SupportTicket())->query(
-                    'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
-                    $ids
-                );
-                foreach ($companyRows as $company) {
-                    $names[(int) ($company['id'] ?? 0)] = (string) ($company['name'] ?? '');
-                }
-            } catch (\Throwable $e) {
-                $names = [];
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0) {
+                $userIds[$uid] = $uid;
             }
         }
+
+        $companyNames = $this->loadCompanyNameMap(array_values($companyIds));
+        $userSenderCompanies = [];
+        if ($userIds !== []) {
+            $uids = array_values($userIds);
+            $userPh = implode(',', array_fill(0, count($uids), '?'));
+            try {
+                foreach ((new SupportTicket())->query(
+                    'SELECT u.id AS user_id, u.company_id, c.name AS company_name
+                     FROM rateb_users u
+                     LEFT JOIN rateb_companies c ON c.id = u.company_id
+                     WHERE u.id IN (' . $userPh . ')',
+                    $uids
+                ) as $userRow) {
+                    $uid = (int) ($userRow['user_id'] ?? 0);
+                    $ucid = (int) ($userRow['company_id'] ?? 0);
+                    $uname = trim((string) ($userRow['company_name'] ?? ''));
+                    if ($uid > 0 && $ucid > 0) {
+                        $userSenderCompanies[$uid] = [
+                            'company_id' => $ucid,
+                            'company_name' => $uname !== '' ? $uname : ('#' . $ucid),
+                        ];
+                        $companyNames[$ucid] = $uname !== '' ? $uname : ('#' . $ucid);
+                    }
+                }
+            } catch (\Throwable $e) {
+                $userSenderCompanies = [];
+            }
+        }
+
         foreach ($rows as &$row) {
+            $uid = (int) ($row['user_id'] ?? 0);
             $cid = (int) ($row['company_id'] ?? 0);
-            $row['company_name'] = $names[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+            if ($uid > 0 && isset($userSenderCompanies[$uid])) {
+                $row['sender_company_id'] = $userSenderCompanies[$uid]['company_id'];
+                $row['company_name'] = $userSenderCompanies[$uid]['company_name'];
+            } else {
+                $row['sender_company_id'] = $cid > 0 ? $cid : 0;
+                $row['company_name'] = $companyNames[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+            }
         }
         unset($row);
 
         return $rows;
+    }
+
+    /** @param list<int> $ids @return array<int, string> */
+    private function loadCompanyNameMap(array $ids): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        if ($ids === []) {
+            return [];
+        }
+        $names = [];
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        try {
+            foreach ((new SupportTicket())->query(
+                'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
+                $ids
+            ) as $company) {
+                $id = (int) ($company['id'] ?? 0);
+                $name = trim((string) ($company['name'] ?? ''));
+                if ($id > 0) {
+                    $names[$id] = $name !== '' ? $name : ('#' . $id);
+                }
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return $names;
+    }
+
+    /** @param array<string, mixed> $ticket */
+    private function resolveSenderCompanyId(array $ticket): int
+    {
+        $userId = (int) ($ticket['user_id'] ?? 0);
+        if ($userId > 0) {
+            try {
+                $row = (new SupportTicket())->queryOne(
+                    'SELECT company_id FROM rateb_users WHERE id = :id LIMIT 1',
+                    ['id' => $userId]
+                );
+                $userCompanyId = (int) ($row['company_id'] ?? 0);
+                if ($userCompanyId > 0) {
+                    return $userCompanyId;
+                }
+            } catch (\Throwable $e) {
+                // fall through
+            }
+        }
+
+        return (int) ($ticket['company_id'] ?? 0);
     }
 
     private function resolveCompanyName(int $companyId): string

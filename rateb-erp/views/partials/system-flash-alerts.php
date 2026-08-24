@@ -22,6 +22,7 @@ if ($canPoll && class_exists(ErpSystemAlertService::class)) {
      data-rateb-system-flash-enabled="<?php echo $canPoll ? '1' : '0'; ?>"
      role="region"
      aria-label="<?php echo View::escape(__('system_flash_alerts_region')); ?>">
+<script>window.__RATEB_FLASH_COL_TICKET__=<?php echo json_encode(__('ticket_no'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_COMPANY__=<?php echo json_encode(__('companies'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_SUBJECT__=<?php echo json_encode(__('subject'), JSON_UNESCAPED_UNICODE); ?>;</script>
     <?php foreach ($alerts as $alert) {
         $severity = (string) ($alert['severity'] ?? 'info');
         $pulse = !empty($alert['pulse']);

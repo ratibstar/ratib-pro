@@ -10,6 +10,11 @@ if ($previewItems === [] && empty($alert['message'])) {
 ?>
 <?php if ($previewItems !== []) { ?>
 <ul class="rateb-system-flash-tickets">
+    <li class="rateb-system-flash-tickets__head" aria-hidden="true">
+        <span class="rateb-system-flash-tickets__no"><?php echo Rateb\App\Core\View::escape(__('ticket_no')); ?></span>
+        <span class="rateb-system-flash-tickets__company"><?php echo Rateb\App\Core\View::escape(__('companies')); ?></span>
+        <span class="rateb-system-flash-tickets__subject"><?php echo Rateb\App\Core\View::escape(__('subject')); ?></span>
+    </li>
     <?php foreach ($previewItems as $row) {
         if (!is_array($row)) {
             continue;

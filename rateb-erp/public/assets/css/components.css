@@ -684,6 +684,16 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     gap: 0.35rem;
 }
 
+.rateb-system-flash-tickets__head {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, auto) minmax(4rem, 1fr) minmax(5rem, 1.4fr);
+    gap: 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    opacity: 0.72;
+    padding: 0 0.5rem;
+}
+
 .rateb-system-flash-tickets__item {
     display: grid;
     grid-template-columns: minmax(4.5rem, auto) minmax(4rem, 1fr) minmax(5rem, 1.4fr);

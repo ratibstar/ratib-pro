@@ -4118,6 +4118,8 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             }
         }
         $record['company_name'] = $companyName;
+        $enriched = (new \Rateb\App\Services\SupportTicketAlertService())->enrichTicketRows([$record]);
+        $record = $enriched[0] ?? $record;
 
         (new \Rateb\App\Services\SupportTicketReplyService())->addStaffReply(
             $ticketId,
@@ -4167,39 +4169,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     /** @param list<array<string, mixed>> $items */
     private function enrichTicketRows(array $items): array
     {
-        if ($items === []) {
-            return [];
-        }
-        $companyIds = [];
-        foreach ($items as $row) {
-            $cid = (int) ($row['company_id'] ?? 0);
-            if ($cid > 0) {
-                $companyIds[$cid] = $cid;
-            }
-        }
-        $names = [];
-        if ($companyIds !== []) {
-            $ids = array_values($companyIds);
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            try {
-                $rows = $this->model->query(
-                    'SELECT id, name FROM rateb_companies WHERE id IN (' . $placeholders . ')',
-                    $ids
-                );
-                foreach ($rows as $company) {
-                    $names[(int) ($company['id'] ?? 0)] = (string) ($company['name'] ?? '');
-                }
-            } catch (\Throwable $e) {
-                $names = [];
-            }
-        }
-        foreach ($items as &$row) {
-            $cid = (int) ($row['company_id'] ?? 0);
-            $row['company_name'] = $names[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
-        }
-        unset($row);
-
-        return $items;
+        return (new \Rateb\App\Services\SupportTicketAlertService())->enrichTicketRows($items);
     }
 
     public function create(): void
@@ -4290,6 +4260,17 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             unset($data['message']);
         }
 
+        $sessionCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
+        $isSuper = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        if (!$isSuper && $sessionCompanyId > 0) {
+            $data['company_id'] = $sessionCompanyId;
+        } elseif ($isSuper && (int) ($data['company_id'] ?? 0) < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $opsCompanyId = (int) rateb_resolve_ops_company_id();
+            if ($opsCompanyId > 0) {
+                $data['company_id'] = $opsCompanyId;
+            }
+        }
+
         return $data;
     }
 
@@ -4310,14 +4291,11 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             $data['conversation'] = $replySvc->conversation($ticketId, $item);
             $data['canReply'] = function_exists('rateb_can') && rateb_can('settings.manage');
             $data['replyAction'] = rateb_url($this->routePrefix . '/' . $ticketId . '/reply');
-            $cid = (int) ($item['company_id'] ?? 0);
-            if ($cid > 0) {
-                try {
-                    $crow = $this->model->queryOne('SELECT name FROM rateb_companies WHERE id = :id LIMIT 1', ['id' => $cid]);
-                    $data['companyLabel'] = (string) ($crow['name'] ?? ('#' . $cid));
-                } catch (\Throwable $e) {
-                    $data['companyLabel'] = '#' . $cid;
-                }
+            $enriched = (new \Rateb\App\Services\SupportTicketAlertService())->enrichTicketRows([$item]);
+            $data['companyLabel'] = (string) ($enriched[0]['company_name'] ?? '');
+            if ($data['companyLabel'] === '') {
+                $cid = (int) ($item['company_id'] ?? 0);
+                $data['companyLabel'] = $cid > 0 ? ('#' . $cid) : '—';
             }
             $filtered = [];
             foreach ($data['fields'] as $field) {

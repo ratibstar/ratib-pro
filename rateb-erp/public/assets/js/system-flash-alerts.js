@@ -33,6 +33,11 @@
                 : '';
         }
         var html = '<ul class="rateb-system-flash-tickets">';
+        html += '<li class="rateb-system-flash-tickets__head" aria-hidden="true">'
+            + '<span class="rateb-system-flash-tickets__no">' + escapeHtml(window.__RATEB_FLASH_COL_TICKET__ || 'Ticket') + '</span>'
+            + '<span class="rateb-system-flash-tickets__company">' + escapeHtml(window.__RATEB_FLASH_COL_COMPANY__ || 'Company') + '</span>'
+            + '<span class="rateb-system-flash-tickets__subject">' + escapeHtml(window.__RATEB_FLASH_COL_SUBJECT__ || 'Subject') + '</span>'
+            + '</li>';
         items.forEach(function (row) {
             html += '<li class="rateb-system-flash-tickets__item">'
                 + '<span class="rateb-system-flash-tickets__no">' + escapeHtml(row.ticket_no || '') + '</span>'
