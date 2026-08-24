@@ -13,6 +13,8 @@ use Rateb\App\Models\SupportTicket;
  */
 final class SupportTicketAlertService
 {
+    private const TICKET_NO_PREFIX = 'ST-';
+
     public const TRIGGER_OPEN = 'support_ticket_open';
     public const TRIGGER_RESPONDED = 'support_ticket_responded';
     public const TRIGGER_REPLY = 'support_ticket_reply';
@@ -739,7 +741,7 @@ final class SupportTicketAlertService
     /** ticket_no is globally unique — allocate ST- numbers across all companies. */
     public function generateNextTicketNo(): string
     {
-        $prefix = \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPORT_TICKET;
+        $prefix = self::TICKET_NO_PREFIX;
         $startPos = strlen($prefix) + 1;
         try {
             $row = (new SupportTicket())->queryOne(
@@ -750,23 +752,23 @@ final class SupportTicketAlertService
                 ),
                 ['like' => $prefix . '%']
             );
-        } catch (\Throwable $e) {
-            $row = null;
-        }
-        $next = (int) ($row['m'] ?? 0) + 1;
+            $next = (int) ($row['m'] ?? 0) + 1;
 
-        for ($attempt = 0; $attempt < 20; $attempt++) {
-            $candidate = $prefix . str_pad((string) ($next + $attempt), 4, '0', STR_PAD_LEFT);
-            $exists = (new SupportTicket())->queryOne(
-                'SELECT id FROM rateb_support_tickets WHERE ticket_no = :no LIMIT 1',
-                ['no' => $candidate]
-            );
-            if ($exists === null) {
-                return $candidate;
+            for ($attempt = 0; $attempt < 20; $attempt++) {
+                $candidate = $prefix . str_pad((string) ($next + $attempt), 4, '0', STR_PAD_LEFT);
+                $exists = (new SupportTicket())->queryOne(
+                    'SELECT id FROM rateb_support_tickets WHERE ticket_no = :no LIMIT 1',
+                    ['no' => $candidate]
+                );
+                if ($exists === null) {
+                    return $candidate;
+                }
             }
-        }
 
-        return $prefix . str_pad((string) ($next + 20), 4, '0', STR_PAD_LEFT);
+            return $prefix . str_pad((string) ($next + 20), 4, '0', STR_PAD_LEFT);
+        } catch (\Throwable $e) {
+            return $prefix . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
+        }
     }
 
     public function deleteTicket(int $ticketId): bool

@@ -4176,12 +4176,13 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     {
         $this->guardManage();
         $this->ensureTicketWriteContext();
-        $preview = (new \Rateb\App\Services\SupportTicketAlertService())->generateNextTicketNo();
-        $this->view($this->viewPrefix . '/form', $this->formViewData([
-            'title' => __('create') . ' ' . __($this->entityName),
-            'item' => ['ticket_no' => $preview],
-            'fields' => $this->baseFields(true),
-        ]), $this->layout());
+        parent::create();
+    }
+
+    public function store(): void
+    {
+        $this->ensureTicketWriteContext();
+        parent::store();
     }
 
     public function destroy(array $params): void
@@ -4371,6 +4372,18 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $data = parent::formViewData($extra);
         $item = is_array($data['item'] ?? null) ? $data['item'] : null;
         $ticketId = is_array($item) ? (int) ($item['id'] ?? 0) : 0;
+        if ($ticketId < 1) {
+            if (!is_array($data['item'])) {
+                $data['item'] = [];
+            }
+            if (trim((string) ($data['item']['ticket_no'] ?? '')) === '') {
+                try {
+                    $data['item']['ticket_no'] = (new \Rateb\App\Services\SupportTicketAlertService())->generateNextTicketNo();
+                } catch (\Throwable $e) {
+                    $data['item']['ticket_no'] = '';
+                }
+            }
+        }
         if ($ticketId > 0 && is_array($item)) {
             $replySvc = new \Rateb\App\Services\SupportTicketReplyService();
             $data['conversation'] = $replySvc->conversation($ticketId, $item);
