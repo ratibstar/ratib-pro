@@ -1353,6 +1353,7 @@ $ratebCriticalScripts = [
     rateb_asset('js/app.js'),
     // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
     rateb_asset('js/module-page-stats.js'),
+    rateb_asset('js/system-flash-alerts.js'),
     // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
     rateb_asset('js/approvals-oversight.js'),
 ];

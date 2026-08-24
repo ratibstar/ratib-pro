@@ -6,9 +6,6 @@ namespace Rateb\App\Services;
 /**
  * Global ERP flash alerts for open support tickets (all layout pages).
  *
- * Only support tickets appear here — subscription, approval, and other notifications
- * stay on their dedicated pages/banners to avoid a cluttered flash stack.
- *
  * @phpstan-type ErpFlashAlert array{
  *   key:string,
  *   severity:string,
@@ -18,7 +15,9 @@ namespace Rateb\App\Services;
  *   action_label:string,
  *   persistent:bool,
  *   pulse:bool,
- *   icon:string
+ *   icon:string,
+ *   count?:int,
+ *   ticket_ids?:list<int>
  * }
  */
 final class ErpSystemAlertService
@@ -26,41 +25,63 @@ final class ErpSystemAlertService
     /** @return list<ErpFlashAlert> */
     public function alertsForLayout(): array
     {
-        $supportSvc = new SupportTicketAlertService();
-        $tickets = $supportSvc->listOpenTicketsForViewer(5);
-        if ($tickets === []) {
+        $svc = new SupportTicketAlertService();
+        $count = $svc->unreadOpenCountForViewer();
+        if ($count < 1) {
             return [];
         }
+        $alert = $this->buildSupportTicketAlert($count, $svc->listUnreadOpenTicketsForViewer(5));
 
-        $alerts = [];
-        $listUrl = $supportSvc->supportTicketsListUrl();
+        return $alert !== null ? [$alert] : [];
+    }
+
+    /**
+     * Single aggregate alert (count + preview lines).
+     *
+     * @param list<array<string, mixed>> $tickets
+     * @return ErpFlashAlert|null
+     */
+    public function buildSupportTicketAlert(int $count, array $tickets): ?array
+    {
+        if ($count < 1) {
+            return null;
+        }
+
+        $supportSvc = new SupportTicketAlertService();
+        $lines = [];
+        $ticketIds = [];
         foreach ($tickets as $ticket) {
             $ticketId = (int) ($ticket['id'] ?? 0);
             if ($ticketId < 1) {
                 continue;
             }
+            $ticketIds[] = $ticketId;
             $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
             $companyName = (string) ($ticket['company_name'] ?? '—');
             $subject = trim((string) ($ticket['subject'] ?? ''));
-
-            $alerts[] = [
-                'key' => 'support_ticket_' . $ticketId,
-                'severity' => 'warning',
-                'title' => (string) __('support_ticket_flash_title', [
-                    'ticket' => $ticketNo,
-                    'company' => $companyName,
-                ]),
-                'message' => (string) __('support_ticket_flash_body', [
-                    'subject' => $subject !== '' ? $subject : '—',
-                ]),
-                'url' => $listUrl,
-                'action_label' => (string) __('support_ticket_banner_action'),
-                'persistent' => true,
-                'pulse' => true,
-                'icon' => 'fa-life-ring',
-            ];
+            $lines[] = (string) __('support_ticket_flash_line', [
+                'ticket' => $ticketNo,
+                'company' => $companyName,
+                'subject' => $subject !== '' ? $subject : '—',
+            ]);
+        }
+        if ($count > count($lines)) {
+            $remaining = $count - count($lines);
+            $lines[] = (string) __('support_ticket_flash_more', ['count' => (string) $remaining]);
         }
 
-        return $alerts;
+        return [
+            'key' => 'support_tickets_unread',
+            'severity' => 'warning',
+            'title' => (string) __('support_ticket_flash_aggregate_title', ['count' => (string) $count]),
+            'message' => implode("\n", $lines),
+            'url' => $supportSvc->supportTicketsListUrl(),
+            'action_label' => (string) __('support_ticket_banner_action'),
+            'persistent' => true,
+            'pulse' => true,
+            'icon' => 'fa-life-ring',
+            'count' => $count,
+            'ticket_ids' => $ticketIds,
+        ];
     }
 }

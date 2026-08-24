@@ -213,6 +213,8 @@ final class RouteModuleLoader
         return $path === '/admin'
             || $path === '/admin/executive-dashboard'
             || $path === '/admin/api/module-metrics'
+            || $path === '/admin/api/support-ticket-alerts'
+            || str_starts_with($path, '/admin/api/support-ticket-alerts/')
             || $path === '/admin/api/dashboard-charts';
     }
 

@@ -4,33 +4,46 @@ declare(strict_types=1);
 use Rateb\App\Core\View;
 use Rateb\App\Services\ErpSystemAlertService;
 
-if (!class_exists(ErpSystemAlertService::class)) {
-    return;
-}
+$pollUrl = function_exists('rateb_url') ? rateb_url('admin/api/support-ticket-alerts') : '';
+$markSeenUrl = function_exists('rateb_url') ? rateb_url('admin/api/support-ticket-alerts/seen') : '';
+$canPoll = $pollUrl !== ''
+    && function_exists('rateb_nav_can')
+    && rateb_nav_can('settings.manage');
 
-$alerts = (new ErpSystemAlertService())->alertsForLayout();
-if ($alerts === []) {
-    return;
+$alerts = [];
+if ($canPoll && class_exists(ErpSystemAlertService::class)) {
+    $alerts = (new ErpSystemAlertService())->alertsForLayout();
 }
 ?>
-<div class="rateb-system-flash-stack" data-rateb-system-flash="1" role="region" aria-label="<?php echo View::escape(__('system_flash_alerts_region')); ?>">
+<div class="rateb-system-flash-stack<?php echo $alerts === [] ? ' rateb-system-flash-stack--empty' : ''; ?>"
+     data-rateb-system-flash="1"
+     data-rateb-system-flash-poll="<?php echo View::escape($pollUrl); ?>"
+     data-rateb-system-flash-mark-seen="<?php echo View::escape($markSeenUrl); ?>"
+     data-rateb-system-flash-enabled="<?php echo $canPoll ? '1' : '0'; ?>"
+     role="region"
+     aria-label="<?php echo View::escape(__('system_flash_alerts_region')); ?>">
     <?php foreach ($alerts as $alert) {
         $severity = (string) ($alert['severity'] ?? 'info');
         $pulse = !empty($alert['pulse']);
         $persistent = !empty($alert['persistent']);
         $icon = (string) ($alert['icon'] ?? 'fa-bell');
         $url = (string) ($alert['url'] ?? '#');
+        $count = (int) ($alert['count'] ?? 0);
         ?>
     <div class="rateb-system-flash-alert rateb-system-flash-alert--<?php echo View::escape($severity); ?><?php echo $pulse ? ' rateb-system-flash-alert--pulse' : ''; ?>"
          data-alert-key="<?php echo View::escape((string) ($alert['key'] ?? '')); ?>"
+         data-alert-count="<?php echo View::escape((string) $count); ?>"
          role="alert">
         <div class="rateb-system-flash-alert__icon" aria-hidden="true">
             <i class="fas <?php echo View::escape($icon); ?>"></i>
+            <?php if ($count > 0) { ?>
+            <span class="rateb-system-flash-alert__badge"><?php echo View::escape((string) $count); ?></span>
+            <?php } ?>
         </div>
         <div class="rateb-system-flash-alert__body">
             <div class="rateb-system-flash-alert__title"><?php echo View::escape((string) ($alert['title'] ?? '')); ?></div>
             <?php if (!empty($alert['message'])) { ?>
-            <div class="rateb-system-flash-alert__message"><?php echo View::escape((string) $alert['message']); ?></div>
+            <div class="rateb-system-flash-alert__message"><?php echo nl2br(View::escape((string) $alert['message'])); ?></div>
             <?php } ?>
         </div>
         <?php if ($url !== '' && $url !== '#') { ?>
@@ -44,15 +57,3 @@ if ($alerts === []) {
     </div>
     <?php } ?>
 </div>
-<script>
-(function () {
-    if (window.__RATEB_SYSTEM_FLASH__) return;
-    window.__RATEB_SYSTEM_FLASH__ = 1;
-    document.addEventListener('click', function (e) {
-        var btn = e.target && e.target.closest ? e.target.closest('.rateb-system-flash-alert__close') : null;
-        if (!btn) return;
-        var box = btn.closest('.rateb-system-flash-alert');
-        if (box) box.remove();
-    });
-})();
-</script>

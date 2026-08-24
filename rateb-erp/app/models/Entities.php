@@ -425,7 +425,7 @@ final class SupportTicket extends Model
 {
     protected string $table = 'rateb_support_tickets';
     protected bool $tenantScoped = true;
-    protected bool $branchScoped = true;
+    protected bool $branchScoped = false;
     protected array $fillable = [
         'company_id', 'user_id', 'ticket_no', 'subject', 'priority', 'status', 'message', 'assigned_to', 'branch_id',
     ];

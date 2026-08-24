@@ -4065,6 +4065,26 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         return $fields;
     }
 
+    public function index(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        parent::index();
+    }
+
+    public function edit(array $params): void
+    {
+        $ticketId = (int) ($params['id'] ?? 0);
+        if ($ticketId > 0) {
+            (new \Rateb\App\Services\SupportTicketAlertService())->markTicketSeen($ticketId);
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        parent::edit($params);
+    }
+
     /** @return array<string, mixed> */
     protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {

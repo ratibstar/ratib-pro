@@ -16,6 +16,7 @@ final class SupportTicketAlertService
     public const TRIGGER_OPEN = 'support_ticket_open';
     public const TRIGGER_RESPONDED = 'support_ticket_responded';
     public const ENTITY = 'support_ticket';
+    private const SEEN_SESSION_KEY = 'rateb_support_ticket_seen_ids';
 
     /** @var list<string> */
     private const OPEN_STATUSES = ['open'];
@@ -42,29 +43,81 @@ final class SupportTicketAlertService
 
     public function openCountForViewer(): int
     {
+        return $this->unreadOpenCountForViewer();
+    }
+
+    public function unreadOpenCountForViewer(): int
+    {
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            if ($this->alertsUseGlobalScope()) {
+                return $this->countUnreadOpenScoped(null);
+            }
             if ($this->superAdminViewsAllTickets()) {
-                return $this->countOpenGlobally();
+                return $this->countUnreadOpenScoped(null);
             }
             $companyId = $this->resolvedCompanyId();
             if ($companyId > 0) {
-                return $this->countOpenForCompany($companyId);
+                return $this->countUnreadOpenScoped($companyId);
             }
 
-            return $this->countOpenGlobally();
+            return $this->countUnreadOpenScoped(null);
         }
         if (function_exists('rateb_can') && rateb_can('settings.manage')) {
             $companyId = $this->resolvedCompanyId();
             if ($companyId > 0) {
-                return $this->countOpenForCompany($companyId);
+                return $this->countUnreadOpenScoped($companyId);
             }
         }
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId > 0) {
-            return $this->countOpenForUser($userId);
+            return $this->countUnreadOpenForUser($userId);
         }
 
         return 0;
+    }
+
+    /**
+     * Open tickets not yet opened/read by the current viewer.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listUnreadOpenTicketsForViewer(int $limit = 5): array
+    {
+        $open = $this->listOpenTicketsForViewer(max($limit, 5) * 3);
+        $seen = $this->seenTicketIds();
+        $unread = [];
+        foreach ($open as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            $unread[] = $row;
+            if (count($unread) >= $limit) {
+                break;
+            }
+        }
+
+        return $unread;
+    }
+
+    public function markTicketSeen(int $ticketId): void
+    {
+        if ($ticketId < 1) {
+            return;
+        }
+        $seen = SessionManager::get(self::SEEN_SESSION_KEY, []);
+        if (!is_array($seen)) {
+            $seen = [];
+        }
+        $seen[$ticketId] = $ticketId;
+        SessionManager::set(self::SEEN_SESSION_KEY, $seen);
+    }
+
+    /** Flash alerts for platform super-admin always span all companies. */
+    public function alertsUseGlobalScope(): bool
+    {
+        return function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
     }
 
     /**
@@ -81,7 +134,7 @@ final class SupportTicketAlertService
                 WHERE status IN (\'open\')';
 
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            if (!$this->superAdminViewsAllTickets()) {
+            if (!$this->alertsUseGlobalScope() && !$this->superAdminViewsAllTickets()) {
                 $companyId = $this->resolvedCompanyId();
                 if ($companyId > 0) {
                     $sql .= ' AND company_id = :company_id';
@@ -239,6 +292,75 @@ final class SupportTicketAlertService
         return (int) ($row['c'] ?? 0);
     }
 
+    private function countUnreadOpenScoped(?int $companyId): int
+    {
+        $params = [];
+        $sql = 'SELECT id FROM rateb_support_tickets WHERE status IN (\'open\')';
+        if ($companyId !== null && $companyId > 0) {
+            $sql .= ' AND company_id = :company_id';
+            $params['company_id'] = $companyId;
+        }
+        try {
+            $rows = (new SupportTicket())->query($sql, $params);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+        $seen = $this->seenTicketIds();
+        $count = 0;
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0 && !isset($seen[$id])) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    private function countUnreadOpenForUser(int $userId): int
+    {
+        if ($userId < 1) {
+            return 0;
+        }
+        try {
+            $rows = (new SupportTicket())->query(
+                'SELECT id FROM rateb_support_tickets
+                 WHERE user_id = :uid AND status IN (\'open\')',
+                ['uid' => $userId]
+            );
+        } catch (\Throwable $e) {
+            return 0;
+        }
+        $seen = $this->seenTicketIds();
+        $count = 0;
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0 && !isset($seen[$id])) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    /** @return array<int, int> */
+    private function seenTicketIds(): array
+    {
+        $seen = SessionManager::get(self::SEEN_SESSION_KEY, []);
+        if (!is_array($seen)) {
+            return [];
+        }
+        $out = [];
+        foreach ($seen as $key => $value) {
+            $id = is_int($key) ? $key : (int) $value;
+            if ($id > 0) {
+                $out[$id] = $id;
+            }
+        }
+
+        return $out;
+    }
+
     /** @param array<string, mixed> $ticket */
     public function notifyOnCreate(int $ticketId, array $ticket): void
     {
@@ -306,6 +428,7 @@ final class SupportTicketAlertService
         }
 
         $this->markEntityNotificationsRead($ticketId);
+        $this->markTicketSeen($ticketId);
 
         $creatorId = (int) ($old['user_id'] ?? $data['user_id'] ?? 0);
         $companyId = (int) ($old['company_id'] ?? $data['company_id'] ?? 0);

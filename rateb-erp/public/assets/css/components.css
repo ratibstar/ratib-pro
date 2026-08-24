@@ -548,6 +548,12 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     animation: rateb-system-flash-in 0.4s ease-out, rateb-system-flash-pulse 2.4s ease-in-out infinite;
 }
 
+.rateb-system-flash-stack--empty {
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+}
+
 .rateb-system-flash-alert__icon {
     flex: 0 0 auto;
     width: 2.35rem;
@@ -556,6 +562,24 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     display: grid;
     place-items: center;
     font-size: 1rem;
+    position: relative;
+}
+
+.rateb-system-flash-alert__badge {
+    position: absolute;
+    top: -0.35rem;
+    inset-inline-end: -0.35rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: #f59e0b;
+    color: #111827;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.15rem;
+    text-align: center;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.85);
 }
 
 .rateb-system-flash-alert__body {
