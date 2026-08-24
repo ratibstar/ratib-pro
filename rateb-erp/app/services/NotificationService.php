@@ -206,6 +206,37 @@ final class NotificationService
         return true;
     }
 
+    /**
+     * Unread in-app notifications for global flash alerts (user-targeted only).
+     *
+     * @param list<string> $excludeTriggers
+     * @return list<array<string, mixed>>
+     */
+    public function listUnreadFlashForUser(int $userId, int $limit = 5, array $excludeTriggers = []): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $safeLimit = max(1, min(10, $limit));
+        $sql = 'SELECT id, company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at
+                FROM rateb_notifications
+                WHERE user_id = :uid AND (is_read = 0 OR is_read IS NULL)';
+        $params = ['uid' => $userId];
+        $excludeTriggers = array_values(array_filter(array_map('strval', $excludeTriggers)));
+        if ($excludeTriggers !== []) {
+            $parts = [];
+            foreach ($excludeTriggers as $i => $trigger) {
+                $key = 'ex' . $i;
+                $parts[] = ':' . $key;
+                $params[$key] = $trigger;
+            }
+            $sql .= ' AND (trigger_type IS NULL OR trigger_type NOT IN (' . implode(',', $parts) . '))';
+        }
+        $sql .= ' ORDER BY id DESC LIMIT ' . $safeLimit;
+
+        return (new Notification())->query($sql, $params);
+    }
+
     /** Mark all notifications visible to the user as read (tenant-scoped). */
     public function markAllReadForUser(int $userId, int $companyId): int
     {

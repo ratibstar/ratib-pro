@@ -77,6 +77,8 @@ return [
     'support_ticket_alert_created_body' => 'Your ticket :ticket was submitted — awaiting support response.',
     'support_ticket_alert_responded_title' => 'Your ticket was updated',
     'support_ticket_alert_responded_body' => 'Ticket :ticket — status: :status',
+    'system_flash_alerts_region' => 'System alerts',
+    'system_flash_alert_view' => 'View',
     'st_subject_login' => 'Login or session issue',
     'st_subject_permissions' => 'Permissions or user roles',
     'st_subject_billing' => 'Subscription or billing',

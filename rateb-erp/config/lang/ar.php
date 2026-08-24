@@ -77,6 +77,8 @@ return [
     'support_ticket_alert_created_body' => 'تم إرسال تذكرتك :ticket — بانتظار رد فريق الدعم.',
     'support_ticket_alert_responded_title' => 'تم الرد على تذكرتك',
     'support_ticket_alert_responded_body' => 'تذكرة :ticket — الحالة: :status',
+    'system_flash_alerts_region' => 'تنبيهات النظام',
+    'system_flash_alert_view' => 'عرض',
     'st_subject_login' => 'مشكلة تسجيل الدخول أو الجلسة',
     'st_subject_permissions' => 'صلاحيات أو أدوار المستخدمين',
     'st_subject_billing' => 'الاشتراك أو الفوترة',

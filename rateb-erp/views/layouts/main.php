@@ -1263,9 +1263,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             } elseif (is_file($subscriptionAlertBanner)) {
                 include $subscriptionAlertBanner;
             }
-            $supportTicketsAlertPartial = RATEB_VIEWS_PATH . '/partials/support-tickets-alert.php';
-            if (is_file($supportTicketsAlertPartial)) {
-                include $supportTicketsAlertPartial;
+            $systemFlashPartial = RATEB_VIEWS_PATH . '/partials/system-flash-alerts.php';
+            if (is_file($systemFlashPartial)) {
+                include $systemFlashPartial;
             }
             ?>
             <?php Rateb\App\Core\View::partial('flash'); ?>
