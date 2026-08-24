@@ -956,7 +956,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
             require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
-            <?php
             $supportTicketsRoute = function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets';
             $supportTicketOpenBadge = 0;
             if (class_exists(\Rateb\App\Services\SupportTicketAlertService::class) && rateb_nav_can('settings.manage')) {
