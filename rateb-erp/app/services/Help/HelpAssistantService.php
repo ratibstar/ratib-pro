@@ -303,17 +303,17 @@ final class HelpAssistantService
         return $locale === 'en' ? 'en' : 'ar';
     }
 
+    /** Public contact page — not the internal ERP support-tickets module. */
     private function supportUrl(): string
     {
-        if (function_exists('rateb_app_url')) {
-            try {
-                return rateb_app_url('support-tickets');
-            } catch (\Throwable $e) {
-                // fall through
-            }
+        $override = trim((string) (getenv('RATEB_HELP_SUPPORT_URL') ?: ''));
+        if ($override !== '') {
+            return function_exists('rateb_external_url')
+                ? rateb_external_url($override)
+                : $override;
         }
 
-        return rateb_url('admin/support');
+        return rateb_url('site/contact');
     }
 
     /** @return list<string> */
