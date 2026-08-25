@@ -25,6 +25,8 @@ $saveAction = (string) ($saveAction ?? '');
 $returnUrl = (string) ($returnUrl ?? '');
 $csrf = (string) ($csrf ?? '');
 $rbacScope = (string) ($rbacScope ?? 'platform');
+$showRoleSlug = !function_exists('rateb_locale') || rateb_locale() !== 'ar';
+$isSuperAdminRole = $slug === 'super-admin';
 ?>
 <div class="rateb-role-lock-card border rounded mb-2 p-2" data-role-lock="<?php echo $roleId; ?>">
     <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
@@ -37,13 +39,17 @@ $rbacScope = (string) ($rbacScope ?? 'platform');
                        <?php echo in_array($roleId, $selectedRoles, true) ? ' checked' : ''; ?>>
                 <label class="form-check-label" for="role_<?php echo $roleId; ?>">
                     <strong><?php echo Rateb\App\Core\View::escape($label); ?></strong>
+                    <?php if ($showRoleSlug) { ?>
                     <small class="text-muted">(<?php echo Rateb\App\Core\View::escape($slug); ?>)</small>
+                    <?php } ?>
                 </label>
             </div>
             <?php } else { ?>
             <div class="min-w-0">
                 <strong class="d-block text-truncate"><?php echo Rateb\App\Core\View::escape($label); ?></strong>
+                <?php if ($showRoleSlug) { ?>
                 <small class="text-muted"><?php echo Rateb\App\Core\View::escape($slug); ?></small>
+                <?php } ?>
             </div>
             <?php } ?>
         </div>
@@ -84,6 +90,11 @@ $rbacScope = (string) ($rbacScope ?? 'platform');
             <input type="hidden" name="scope" value="<?php echo Rateb\App\Core\View::escape($rbacScope); ?>">
         <?php } ?>
             <p class="small text-muted mb-2"><?php echo __('role_lock_help'); ?></p>
+            <?php if ($isSuperAdminRole) { ?>
+            <div class="alert alert-warning py-2 small mb-2" role="alert">
+                <?php echo __('role_super_admin_matrix_bypass_note'); ?>
+            </div>
+            <?php } ?>
             <div class="d-flex flex-wrap gap-2 mb-2">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-matrix-select-all="1"><?php echo __('select_all'); ?></button>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-matrix-select-none="1"><?php echo __('deselect_all'); ?></button>

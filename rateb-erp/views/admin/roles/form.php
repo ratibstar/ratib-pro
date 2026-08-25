@@ -3,10 +3,17 @@
 /** @var array<int, int> $selectedPermissions */
 $isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+$roleSlug = (string) ($item['slug'] ?? '');
+$isSuperAdminRole = $roleSlug === 'super-admin';
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
+        <?php if ($isSuperAdminRole) { ?>
+        <div class="alert alert-warning small mb-3" role="alert">
+            <?php echo __('role_super_admin_matrix_bypass_note'); ?>
+        </div>
+        <?php } ?>
         <form method="post" action="<?php echo $action; ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3 mb-4">

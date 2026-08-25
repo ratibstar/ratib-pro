@@ -634,6 +634,7 @@ final class AuthorizationService
                 ['slug' => $slug]
             );
             $roleId = (int) ($existing['id'] ?? 0);
+            $created = false;
             if ($roleId < 1) {
                 $roleId = $roleModel->create([
                     'company_id' => null,
@@ -642,11 +643,15 @@ final class AuthorizationService
                     'description' => (string) $def['description'],
                     'is_system' => !empty($def['is_system']) ? 1 : 0,
                 ]);
+                $created = $roleId > 0;
             }
             if ($roleId < 1 || $def['permissions'] === null) {
                 continue;
             }
-            $this->grantRolePermissionsBySlugs($roleId, $def['permissions']);
+            // Seed once on create only — do not undo platform matrix edits.
+            if ($created) {
+                $this->grantRolePermissionsBySlugs($roleId, $def['permissions']);
+            }
         }
     }
 
@@ -657,6 +662,7 @@ final class AuthorizationService
         }
         $this->ensureSuggestedRoles();
         $roleModel = new Role();
+        $createdSlugs = [];
         foreach (self::tenantRoleSlugs() as $slug) {
             $def = self::suggestedDefinitionForSlug($slug);
             if ($def === null) {
@@ -681,6 +687,9 @@ final class AuthorizationService
             if ($roleId < 1) {
                 continue;
             }
+            if ($created) {
+                $createdSlugs[] = $slug;
+            }
             if ($def['permissions'] === ['__company_full_access__']) {
                 // Seed full catalog only on first create — never wipe a saved custom matrix.
                 if ($created) {
@@ -694,22 +703,29 @@ final class AuthorizationService
                 }
                 continue;
             }
-            if (is_array($def['permissions'])) {
+            // Seed suggested bundles only on create — matrix unchecks must stick.
+            if ($created && is_array($def['permissions'])) {
                 $this->grantRolePermissionsBySlugs($roleId, $def['permissions']);
             }
         }
-        $this->syncBranchRolePermissionCatalogForCompany($companyId);
-        $this->syncPosRolePermissionCatalogForCompany($companyId);
+        // Branch/POS catalog sync only for roles created in this pass (never re-force).
+        if ($createdSlugs !== []) {
+            $this->syncBranchRolePermissionCatalogForCompany($companyId, $createdSlugs);
+            $this->syncPosRolePermissionCatalogForCompany($companyId, $createdSlugs);
+        }
     }
 
     /** Idempotently grant branch role permission bundles for one company. */
-    public function syncBranchRolePermissionCatalogForCompany(int $companyId): void
+    public function syncBranchRolePermissionCatalogForCompany(int $companyId, ?array $onlySlugs = null): void
     {
         if ($companyId < 1) {
             return;
         }
         $roleModel = new Role();
         foreach (BranchAccessService::branchRoleSlugs() as $slug) {
+            if ($onlySlugs !== null && !in_array($slug, $onlySlugs, true)) {
+                continue;
+            }
             $permSlugs = BranchAccessService::branchRolePermissionSlugs($slug);
             if ($permSlugs === []) {
                 continue;
@@ -725,7 +741,7 @@ final class AuthorizationService
         }
     }
 
-    public function syncPosRolePermissionCatalogForCompany(int $companyId): void
+    public function syncPosRolePermissionCatalogForCompany(int $companyId, ?array $onlySlugs = null): void
     {
         if ($companyId < 1) {
             return;
@@ -745,6 +761,9 @@ final class AuthorizationService
         ];
         $roleModel = new Role();
         foreach ($bundles as $slug => $permSlugs) {
+            if ($onlySlugs !== null && !in_array($slug, $onlySlugs, true)) {
+                continue;
+            }
             $row = $roleModel->queryOne(
                 'SELECT id FROM rateb_roles WHERE slug = :slug AND company_id = :cid LIMIT 1',
                 ['slug' => $slug, 'cid' => $companyId]
@@ -854,16 +873,10 @@ final class AuthorizationService
         if ($companyId < 1 || !self::isAgencyPermissionMatrixContext()) {
             return;
         }
+        // Ensure permission rows + missing role shells only.
+        // Never re-grant catalog permissions — role matrix saves must stick (POS, access, …).
         $this->ensureTenantSelfServicePermissionRows();
         $this->ensureCompanyRoles($companyId);
-        $role = $this->findRoleBySlug('company-full-access', $companyId);
-        if (!$role) {
-            return;
-        }
-        $roleId = (int) $role['id'];
-        // Additive ops modules only — never re-force access/settings/notifications
-        // (those stay under the saved role matrix after first seed).
-        $this->grantCompanyFullAccessPermissions($roleId);
     }
 
     /**
