@@ -239,12 +239,13 @@ final class SupportTicketPlatformMirrorService
                  VALUES
                     (:cid, :uid, :title, :msg, :type, :tt, :et, :eid, 0, NOW())'
             );
+            $insSimple = null;
             while ($row = $admins->fetch(\PDO::FETCH_ASSOC)) {
                 $uid = (int) ($row['id'] ?? 0);
                 if ($uid < 1) {
                     continue;
                 }
-                $ins->execute([
+                $params = [
                     'cid' => $companyId > 0 ? $companyId : null,
                     'uid' => $uid,
                     'title' => $title,
@@ -253,7 +254,26 @@ final class SupportTicketPlatformMirrorService
                     'tt' => SupportTicketAlertService::TRIGGER_OPEN,
                     'et' => SupportTicketAlertService::ENTITY,
                     'eid' => $platformTicketId,
-                ]);
+                ];
+                try {
+                    $ins->execute($params);
+                } catch (\Throwable $e) {
+                    if ($insSimple === null) {
+                        $insSimple = $pdo->prepare(
+                            'INSERT INTO rateb_notifications
+                                (company_id, user_id, title, message, type, is_read, created_at)
+                             VALUES
+                                (:cid, :uid, :title, :msg, :type, 0, NOW())'
+                        );
+                    }
+                    $insSimple->execute([
+                        'cid' => $params['cid'],
+                        'uid' => $params['uid'],
+                        'title' => $params['title'],
+                        'msg' => $params['msg'],
+                        'type' => $params['type'],
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService notify: ' . $e->getMessage());
