@@ -5,6 +5,9 @@ $isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $roleSlug = (string) ($item['slug'] ?? '');
 $isSuperAdminRole = $roleSlug === 'super-admin';
+$viewerRoles = is_array($viewerRoles ?? null) ? $viewerRoles : [];
+$viewerPermissionCount = (int) ($viewerPermissionCount ?? 0);
+$editingOwnAssignedRole = !empty($editingOwnAssignedRole);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -14,7 +17,37 @@ $isSuperAdminRole = $roleSlug === 'super-admin';
             <?php echo __('role_super_admin_matrix_bypass_note'); ?>
         </div>
         <?php } ?>
-        <form method="post" action="<?php echo $action; ?>">
+        <?php if ($viewerRoles !== [] || $viewerPermissionCount > 0) { ?>
+        <div class="alert alert-info small mb-3" role="status">
+            <div class="fw-semibold mb-1"><?php echo __('role_viewer_effective_rbac_title'); ?></div>
+            <div><?php echo __('role_viewer_effective_rbac_perms', ['count' => $viewerPermissionCount]); ?></div>
+            <?php if ($viewerRoles !== []) { ?>
+            <ul class="mb-1 mt-2 ps-3">
+                <?php foreach ($viewerRoles as $vr) {
+                    $vrLabel = function_exists('rateb_role_label') ? rateb_role_label($vr) : (string) ($vr['name'] ?? '');
+                    $vrCount = (int) ($vr['permission_count'] ?? 0);
+                    $vrId = (int) ($vr['id'] ?? 0);
+                    $editUrl = $vrId > 0 ? rateb_url($routePrefix . '/' . $vrId . '/edit') : '';
+                    ?>
+                <li>
+                    <?php if ($editUrl !== '') { ?>
+                    <a href="<?php echo Rateb\App\Core\View::escape($editUrl); ?>" data-rateb-full-nav="1">
+                        <?php echo Rateb\App\Core\View::escape($vrLabel); ?>
+                    </a>
+                    <?php } else {
+                        echo Rateb\App\Core\View::escape($vrLabel);
+                    } ?>
+                    — <?php echo (int) $vrCount; ?> <?php echo __('permissions'); ?>
+                </li>
+                <?php } ?>
+            </ul>
+            <?php } ?>
+            <?php if ($isEdit && !$editingOwnAssignedRole) { ?>
+            <div class="mt-1 text-warning"><?php echo __('role_viewer_editing_unassigned_role_note'); ?></div>
+            <?php } ?>
+        </div>
+        <?php } ?>
+        <form method="post" action="<?php echo $action; ?>" data-rateb-full-nav="1">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3 mb-4">
                 <div class="col-md-4">

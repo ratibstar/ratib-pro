@@ -1,1 +1,1 @@
-20260825-nav-rbac-module-gate
+20260825-rbac-assigned-role-hint

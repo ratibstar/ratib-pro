@@ -963,7 +963,7 @@ final class AuthorizationService
         }
     }
 
-    /** Ensure agency company admin has company-full-access role (idempotent). */
+    /** Ensure legacy agency bootstrap admin has company-full-access (never every company user). */
     public function ensureAgencyCompanyAdminRole(int $userId): void
     {
         if ($userId < 1 || !self::isAgencyPermissionMatrixContext()) {
@@ -977,17 +977,17 @@ final class AuthorizationService
         if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
             $companyId = rateb_resolve_ops_company_id();
         }
-        $eligible = $companyId > 0;
-        if (!$eligible) {
-            $email = strtolower(trim((string) ($user['email'] ?? '')));
-            $name = strtolower(trim((string) ($user['name'] ?? '')));
-            $eligible = $email === 'admin@local' || $name === 'admin' || str_starts_with($email, 'admin+');
-        }
-        if (!$eligible) {
-            return;
-        }
         if ($companyId > 0) {
             $this->ensureCompanyRoles($companyId);
+        }
+        // Auto-attach only for local/bootstrap admin accounts — not every tenant user.
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        $name = strtolower(trim((string) ($user['name'] ?? '')));
+        $isBootstrapAdmin = $email === 'admin@local'
+            || $name === 'admin'
+            || str_starts_with($email, 'admin+');
+        if (!$isBootstrapAdmin) {
+            return;
         }
         $role = $this->findRoleBySlug('company-full-access', $companyId > 0 ? $companyId : null);
         if (!$role) {
@@ -1001,6 +1001,41 @@ final class AuthorizationService
         if ($existing === null) {
             $this->assignRole($userId, $roleId);
         }
+    }
+
+    /**
+     * Roles assigned to a user (for RBAC test UI).
+     *
+     * @return list<array{id:int,name:string,slug:string,permission_count:int}>
+     */
+    public function listUserRolesWithPermissionCounts(int $userId): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $params = ['uid' => $userId];
+        $sql = 'SELECT r.id, r.name, r.slug,
+                       (SELECT COUNT(*) FROM rateb_role_permissions rp WHERE rp.role_id = r.id) AS permission_count
+                FROM rateb_roles r
+                INNER JOIN rateb_user_roles ur ON ur.role_id = r.id
+                WHERE ur.user_id = :uid';
+        $scope = $this->roleCompanyScopeSql($userId, $params);
+        if ($scope === '' && !$this->userIsSuperAdmin($userId)) {
+            return [];
+        }
+        $sql .= $scope . ' ORDER BY r.name';
+        $rows = (new Role())->query($sql, $params);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['name'] ?? ''),
+                'slug' => (string) ($row['slug'] ?? ''),
+                'permission_count' => (int) ($row['permission_count'] ?? 0),
+            ];
+        }
+
+        return $out;
     }
 
     private static function isAgencyPermissionMatrixContext(): bool

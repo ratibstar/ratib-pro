@@ -85,6 +85,9 @@
         if (!html || html.length < 20000) {
             return;
         }
+        if (isRbacSensitivePath(href)) {
+            return;
+        }
         var run = function () {
             try {
                 putHtmlLocally(href, html);
@@ -98,6 +101,25 @@
         } else {
             root.setTimeout(run, 1200);
         }
+    }
+
+    /** Roles / users / access-control HTML must never be reused after permission edits. */
+    function isRbacSensitivePath(href) {
+        try {
+            var p = new URL(href, root.location.href).pathname || '';
+            return /\/(roles|users|permissions|access-control)(\/|$)/i.test(p);
+        } catch (e) {
+            return /\/(roles|users|permissions|access-control)(\/|$)/i.test(String(href || ''));
+        }
+    }
+
+    function htmlLooksAccessDenied(html) {
+        var s = String(html || '');
+        if (!s) {
+            return false;
+        }
+        return /ليس لديك صلاحية|you do not have permission|access_denied/i.test(s)
+            && /alert-danger|alert alert-danger|role=["']alert["']/i.test(s);
     }
 
     /** Paths blocked until browser idle (PERF-P3). */
@@ -1571,6 +1593,9 @@
                     purgePoisonedOpsCaches();
                     return null;
                 }
+                if (isRbacSensitivePath(href) || htmlLooksAccessDenied(html)) {
+                    return null;
+                }
                 return { html: html, finalUrl: href, fromCache: true };
             });
         }).catch(function () {
@@ -1800,6 +1825,22 @@
             }
             cleanupSoftNavUiArtifacts();
             ensureAgentAppsCss(pack.finalUrl || href);
+            if (htmlLooksAccessDenied(pack.html)) {
+                try {
+                    purgePoisonedOpsCaches();
+                } catch (ePurge) { /* ignore */ }
+                var denyTarget = pack.finalUrl || href;
+                try {
+                    var uDeny = new URL(denyTarget, root.location.href);
+                    // Land on dashboard shell with a fresh sidebar, not a forbidden cached roles page.
+                    denyTarget = uDeny.origin + uDeny.pathname.replace(/\/admin\/ops\/.+$/i, '/admin') + (uDeny.search || '');
+                    if (!/\/admin\/?$/i.test(uDeny.pathname) && /\/admin\//i.test(uDeny.pathname)) {
+                        denyTarget = uDeny.origin + uDeny.pathname.split('/admin')[0] + '/admin';
+                    }
+                } catch (eDeny) { /* keep denyTarget */ }
+                hardNavigate(denyTarget);
+                return false;
+            }
             curMain.innerHTML = nextMain.innerHTML;
             // Keep sidebar RBAC in sync with the fetched page (permissions change must hide links).
             try {

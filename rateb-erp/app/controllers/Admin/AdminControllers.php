@@ -2761,9 +2761,16 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $return = trim((string) $this->input('return', ''));
         $origin = function_exists('rateb_site_origin') ? rateb_site_origin() : '';
         if ($return !== '' && $origin !== '' && str_starts_with($return, $origin . '/')) {
+            if (function_exists('rateb_url_set_query_param')) {
+                $return = rateb_url_set_query_param($return, 'rateb_live', '1');
+            }
             $this->redirect($return);
         }
-        $this->redirect($this->rolesListUrl());
+        $listUrl = $this->rolesListUrl();
+        if (function_exists('rateb_url_set_query_param')) {
+            $listUrl = rateb_url_set_query_param($listUrl, 'rateb_live', '1');
+        }
+        $this->redirect($listUrl);
     }
 
     public function create(): void
@@ -2806,6 +2813,17 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     {
         $authz = new \Rateb\App\Services\AuthorizationService();
         $roleId = $item ? (int) $item['id'] : 0;
+        $viewerId = (int) (\Rateb\App\Core\SessionManager::get('rateb_user_id', 0) ?? 0);
+        $viewerRoles = $viewerId > 0 ? $authz->listUserRolesWithPermissionCounts($viewerId) : [];
+        $viewerSlugs = $viewerId > 0 ? $authz->userPermissionSlugs($viewerId) : [];
+        $editingOwnAssignedRole = false;
+        foreach ($viewerRoles as $vr) {
+            if ((int) ($vr['id'] ?? 0) === $roleId) {
+                $editingOwnAssignedRole = true;
+                break;
+            }
+        }
+
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('roles'),
             'item' => $item,
@@ -2814,6 +2832,9 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             'csrf' => Csrf::token(),
             'permissionGroups' => $authz->allPermissionsGrouped(),
             'selectedPermissions' => $roleId > 0 ? $authz->getRolePermissionIds($roleId) : [],
+            'viewerRoles' => $viewerRoles,
+            'viewerPermissionCount' => count($viewerSlugs),
+            'editingOwnAssignedRole' => $editingOwnAssignedRole,
         ];
     }
 
@@ -2867,7 +2888,12 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect($this->rolesListUrl());
+        // Full document load so soft-nav / sidebar cache cannot keep revoked menu links.
+        $listUrl = $this->rolesListUrl();
+        if (function_exists('rateb_url_set_query_param')) {
+            $listUrl = rateb_url_set_query_param($listUrl, 'rateb_live', '1');
+        }
+        $this->redirect($listUrl);
     }
 
     private function rolesListUrl(): string
