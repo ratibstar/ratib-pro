@@ -1,6 +1,4 @@
-﻿<?php
-declare(strict_types=1);
-
+<?php
 use Rateb\App\Core\View;
 
 $item = $item ?? null;

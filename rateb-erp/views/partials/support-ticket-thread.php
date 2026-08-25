@@ -1,6 +1,4 @@
 <?php
-declare(strict_types=1);
-
 use Rateb\App\Core\View;
 
 /** @var array<string, mixed>|null $item */
