@@ -18,7 +18,9 @@ final class SupportTicketAlertsApiController
 
             return;
         }
-        if (!function_exists('rateb_nav_can') || !rateb_nav_can('settings.manage')) {
+        $canPoll = (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+            || (function_exists('rateb_nav_can') && rateb_nav_can('settings.manage'));
+        if (!$canPoll) {
             Response::json(['ok' => true, 'count' => 0, 'alert' => null]);
 
             return;

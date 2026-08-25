@@ -179,13 +179,15 @@ if (!rateb_is_super_admin()
     if (!function_exists('rateb_tenant_permission_catalog_locked') || !rateb_tenant_permission_catalog_locked()) {
         $accessNavLinks[] = ['permissions', 'permissions', 'fa-key', 'access_control', 'access.manage'];
     }
-    $accessNavLinks = array_merge($accessNavLinks, [
+    $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
+
+    $settingsNavLinks = [
         ['audit-logs', 'audit_logs', 'fa-clipboard-list', 'access_control', 'settings.manage'],
         ['support-tickets', 'support_tickets', 'fa-life-ring', 'access_control', 'settings.manage'],
         ['email-templates', 'email_templates', 'fa-envelope', 'access_control', 'settings.manage'],
         ['sms-templates', 'sms_templates', 'fa-sms', 'access_control', 'settings.manage'],
-    ]);
-    $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
+    ];
+    $opsSection(rateb_module_label('settings'), $settingsNavLinks, 'fa-gear');
 }
 $opsLink('notifications', 'notifications', 'fa-bell', 'notifications');
 $opsLink('profile', 'profile', 'fa-user-gear', 'profile');

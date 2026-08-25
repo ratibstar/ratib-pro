@@ -39,6 +39,8 @@ return [
     'evaluations.view' => ['View Supplier Evaluations', 'View supplier evaluation records'],
     'company_plans.manage' => ['Manage Company Plans', 'Adjust plan limits and modules per company'],
     'access.manage' => ['Manage Access Control', 'Users, roles, permissions matrix, and access control'],
+    'help.view' => ['View Help Center', 'Access in-app Help Center'],
+    'help.manage' => ['Manage Help Center', 'Manage Help Center content'],
     'accounting.view' => ['View Accounting', 'Read chart of accounts, journals, and reports'],
     'accounting.manage' => ['Manage Accounting', 'Draft journals/vouchers, COA edits, bank import'],
     'accounting.post' => ['Post Accounting Entries', 'Supplier payments, fiscal close, system posting'],

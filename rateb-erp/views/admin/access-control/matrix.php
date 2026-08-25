@@ -85,6 +85,7 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
                     <?php foreach ($perms as $perm) {
                         $permId = (int) $perm['id'];
                         $permLabel = rateb_permission_label($perm);
+                        $showPermSlug = !function_exists('rateb_locale') || rateb_locale() !== 'ar';
                         ?>
                     <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
                         <td class="rateb-matrix-sticky">
@@ -94,7 +95,9 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
                             if ($permDesc !== '') { ?>
                             <div class="rateb-matrix-perm-desc text-muted small"><?php echo Rateb\App\Core\View::escape($permDesc); ?></div>
                             <?php } ?>
+                            <?php if ($showPermSlug) { ?>
                             <code class="rateb-matrix-perm-slug"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></code>
+                            <?php } ?>
                         </td>
                         <?php foreach ($roles as $role) {
                             $roleId = (int) $role['id'];

@@ -6,7 +6,7 @@
     }
     window.__RATEB_SYSTEM_FLASH__ = 1;
 
-    var POLL_MS = 15000;
+    var POLL_MS = 5000;
     var pollTimer = null;
 
     function stackEl() {
@@ -152,6 +152,7 @@
         if (!stack || stack.getAttribute('data-rateb-system-flash-enabled') !== '1') {
             return;
         }
+        pollOnce();
         pollTimer = setInterval(pollOnce, POLL_MS);
     }
 

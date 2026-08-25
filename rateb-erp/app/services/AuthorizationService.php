@@ -685,6 +685,12 @@ final class AuthorizationService
                 // Seed full catalog only on first create — never wipe a saved custom matrix.
                 if ($created) {
                     $this->syncCompanyFullAccessPermissions($roleId);
+                    if (self::isAgencyPermissionMatrixContext()) {
+                        $extra = (array) (self::permissionsConfig()['dedicated_company_admin_slugs'] ?? []);
+                        if ($extra !== []) {
+                            $this->grantRolePermissionsBySlugs($roleId, $extra);
+                        }
+                    }
                 }
                 continue;
             }
@@ -816,11 +822,9 @@ final class AuthorizationService
     private function companyFullAccessPermissionIds(): array
     {
         $config = self::permissionsConfig();
+        // Keep access.manage / settings.manage / notifications.manage excluded from bulk grant
+        // so matrix unchecks stick (seeded only on first role create via dedicated_company_admin_slugs).
         $excluded = (array) ($config['company_role_excluded_slugs'] ?? []);
-        if (self::isAgencyPermissionMatrixContext()) {
-            $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
-            $excluded = array_values(array_diff($excluded, $extra));
-        }
         $rows = (new Permission())->query('SELECT id, slug FROM rateb_permissions');
         $ids = [];
         foreach ($rows as $row) {
@@ -857,13 +861,9 @@ final class AuthorizationService
             return;
         }
         $roleId = (int) $role['id'];
-        // Additive only — preserve admin matrix customizations for the company.
+        // Additive ops modules only — never re-force access/settings/notifications
+        // (those stay under the saved role matrix after first seed).
         $this->grantCompanyFullAccessPermissions($roleId);
-        $config = self::permissionsConfig();
-        $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
-        if ($extra !== []) {
-            $this->grantRolePermissionsBySlugs($roleId, $extra);
-        }
     }
 
     /**
@@ -908,6 +908,22 @@ final class AuthorizationService
                 'name_ar' => 'عرض لوحة التحكم',
                 'description' => 'Access the main dashboard',
                 'description_ar' => 'الوصول إلى لوحة التحكم',
+            ],
+            [
+                'slug' => 'help.view',
+                'module' => 'help',
+                'name' => 'View Help Center',
+                'name_ar' => 'عرض مركز المساعدة',
+                'description' => 'Access in-app Help Center',
+                'description_ar' => 'الوصول لمركز المساعدة داخل النظام',
+            ],
+            [
+                'slug' => 'help.manage',
+                'module' => 'help',
+                'name' => 'Manage Help Center',
+                'name_ar' => 'إدارة مركز المساعدة',
+                'description' => 'Manage Help Center content',
+                'description_ar' => 'إدارة محتوى مركز المساعدة',
             ],
         ];
         $model = new Permission();

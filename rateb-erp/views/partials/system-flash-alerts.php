@@ -7,8 +7,10 @@ use Rateb\App\Services\ErpSystemAlertService;
 $pollUrl = function_exists('rateb_url') ? rateb_url('admin/api/support-ticket-alerts') : '';
 $markSeenUrl = function_exists('rateb_url') ? rateb_url('admin/api/support-ticket-alerts/seen') : '';
 $canPoll = $pollUrl !== ''
-    && function_exists('rateb_nav_can')
-    && rateb_nav_can('settings.manage');
+    && (
+        (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+        || (function_exists('rateb_nav_can') && rateb_nav_can('settings.manage'))
+    );
 
 $alerts = [];
 if ($canPoll && class_exists(ErpSystemAlertService::class)) {

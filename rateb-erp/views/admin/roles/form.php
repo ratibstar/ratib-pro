@@ -45,7 +45,9 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     <p class="text-muted small mb-3"><?php echo __('access_settings_permissions_matrix_note'); ?></p>
                     <?php } ?>
                     <div class="row g-2">
-                        <?php foreach ($perms as $perm) {
+                        <?php
+                        $showPermSlug = !function_exists('rateb_locale') || rateb_locale() !== 'ar';
+                        foreach ($perms as $perm) {
                             $slug = (string) ($perm['slug'] ?? '');
                             $highlight = $slug === 'accounting.approve' ? ' border border-warning rounded p-2 bg-warning bg-opacity-10' : '';
                             ?>
@@ -55,7 +57,9 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                                     <?php echo in_array((int) $perm['id'], $selectedPermissions, true) ? ' checked' : ''; ?>>
                                 <label class="form-check-label rateb-ar-text" for="perm_<?php echo (int) $perm['id']; ?>">
                                     <strong><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></strong>
+                                    <?php if ($showPermSlug) { ?>
                                     <small class="text-muted d-block"><?php echo Rateb\App\Core\View::escape($slug); ?></small>
+                                    <?php } ?>
                                 </label>
                             </div>
                         </div>

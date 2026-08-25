@@ -3563,12 +3563,8 @@ if (!function_exists('rateb_nav_module_company_id')) {
 if (!function_exists('rateb_nav_can')) {
     function rateb_nav_can(string $permission = '', string $module = ''): bool
     {
-        if ($permission !== ''
-            && function_exists('rateb_is_agency_company_ops_admin')
-            && rateb_is_agency_company_ops_admin()
-            && in_array($permission, rateb_agency_access_nav_permissions(), true)) {
-            return true;
-        }
+        // Agency ops-admin must respect the role matrix (access.manage / settings.manage / …).
+        // Do not bypass — unchecked permissions must hide nav and block routes.
         if (rateb_is_super_admin()) {
             // Super Admin: full system open (nav + modules). Ops ?company_id= only scopes data.
             return true;

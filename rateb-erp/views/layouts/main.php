@@ -971,18 +971,26 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             if (rateb_is_platform_oversight_host()) {
                 $accessControlLinks[] = ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'];
             }
-            $accessControlLinks[] = ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'];
-            $accessControlLinks[] = [$supportTicketsRoute, 'support_tickets', 'fa-life-ring', 'settings.manage'];
-            $accessControlLinks[] = ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'];
-            if (function_exists('rateb_email_diagnostics_accessible') && rateb_email_diagnostics_accessible()) {
-                $accessControlLinks[] = ['admin/email-diagnostics', 'email_diagnostics', 'fa-stethoscope', 'settings.manage'];
-            }
-            $accessControlLinks[] = ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'];
-            $supportTicketLinkBadges = [$supportTicketsRoute => $supportTicketOpenBadge];
             $adminSection(
                 __('access_control'),
                 $accessControlLinks,
-                'fa-key',
+                'fa-key'
+            );
+
+            $settingsSupportLinks = [
+                ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'],
+                [$supportTicketsRoute, 'support_tickets', 'fa-life-ring', 'settings.manage'],
+                ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'],
+            ];
+            if (function_exists('rateb_email_diagnostics_accessible') && rateb_email_diagnostics_accessible()) {
+                $settingsSupportLinks[] = ['admin/email-diagnostics', 'email_diagnostics', 'fa-stethoscope', 'settings.manage'];
+            }
+            $settingsSupportLinks[] = ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'];
+            $supportTicketLinkBadges = [$supportTicketsRoute => $supportTicketOpenBadge];
+            $adminSection(
+                rateb_module_label('settings'),
+                $settingsSupportLinks,
+                'fa-gear',
                 0,
                 $supportTicketLinkBadges,
                 '',
