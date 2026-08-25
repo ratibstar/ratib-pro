@@ -41,6 +41,8 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     <p class="text-muted small mb-3"><?php echo __('accounting_permissions_role_note'); ?></p>
                     <?php } elseif ($module === 'branches') { ?>
                     <p class="text-muted small mb-3"><?php echo __('branches_permissions_matrix_note'); ?></p>
+                    <?php } elseif ($module === 'access' || $module === 'settings') { ?>
+                    <p class="text-muted small mb-3"><?php echo __('access_settings_permissions_matrix_note'); ?></p>
                     <?php } ?>
                     <div class="row g-2">
                         <?php foreach ($perms as $perm) {

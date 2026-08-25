@@ -272,20 +272,24 @@ final class AuthorizationService
         $cfg = self::permissionsConfig();
         $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
         $grouped = [];
+        $platformMods = is_array($cfg['platform_modules'] ?? null) ? $cfg['platform_modules'] : [];
+        $excluded = is_array($cfg['company_role_excluded_slugs'] ?? null) ? $cfg['company_role_excluded_slugs'] : [];
+        $dedicatedExtra = is_array($cfg['dedicated_company_admin_slugs'] ?? null) ? $cfg['dedicated_company_admin_slugs'] : [];
+        $agencyMatrix = self::isAgencyPermissionMatrixContext();
         foreach ($rows as $row) {
             $slug = (string) ($row['slug'] ?? '');
             if ($slug !== '' && in_array($slug, $hidden, true)) {
                 continue;
             }
             $mod = (string) ($row['module'] ?? 'general');
-            if (self::isAgencyPermissionMatrixContext()) {
-                $platformMods = is_array($cfg['platform_modules'] ?? null) ? $cfg['platform_modules'] : [];
-                if (in_array($mod, $platformMods, true)) {
+            if ($agencyMatrix) {
+                // Agency / dedicated tenants may assign access.manage + settings.manage
+                // (users/roles/tickets/templates) even though those modules are platform-tagged.
+                $allowTenantSelfService = $slug !== '' && in_array($slug, $dedicatedExtra, true);
+                if (in_array($mod, $platformMods, true) && !$allowTenantSelfService) {
                     continue;
                 }
-                $excluded = is_array($cfg['company_role_excluded_slugs'] ?? null) ? $cfg['company_role_excluded_slugs'] : [];
-                $dedicatedExtra = is_array($cfg['dedicated_company_admin_slugs'] ?? null) ? $cfg['dedicated_company_admin_slugs'] : [];
-                if (in_array($slug, $excluded, true) && !in_array($slug, $dedicatedExtra, true)) {
+                if (in_array($slug, $excluded, true) && !$allowTenantSelfService) {
                     continue;
                 }
             }
@@ -312,21 +316,23 @@ final class AuthorizationService
 
         $moduleOrder = [
             'dashboard' => 0,
-            'accounting' => 1,
-            'procurement' => 2,
-            'inventory' => 3,
-            'suppliers' => 4,
-            'assets' => 5,
-            'contracts' => 6,
-            'tenders' => 7,
-            'reports' => 8,
-            'medical_devices' => 9,
-            'hr' => 10,
-            'branches' => 11,
-            'documents' => 12,
-            'workflows' => 13,
-            'notifications' => 14,
-            'cms' => 15,
+            'access' => 1,
+            'settings' => 2,
+            'notifications' => 3,
+            'accounting' => 4,
+            'procurement' => 5,
+            'inventory' => 6,
+            'suppliers' => 7,
+            'assets' => 8,
+            'contracts' => 9,
+            'tenders' => 10,
+            'reports' => 11,
+            'medical_devices' => 12,
+            'hr' => 13,
+            'branches' => 14,
+            'documents' => 15,
+            'workflows' => 16,
+            'cms' => 17,
         ];
         uksort($grouped, static function (string $a, string $b) use ($moduleOrder): int {
             return ($moduleOrder[$a] ?? 99) <=> ($moduleOrder[$b] ?? 99);

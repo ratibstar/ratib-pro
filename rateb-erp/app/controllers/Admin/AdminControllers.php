@@ -4342,9 +4342,8 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         }
         $data['subject'] = $subject;
 
-        if (trim((string) ($data['message'] ?? '')) === '') {
-            unset($data['message']);
-        }
+        // Column is NOT NULL — never omit; empty string is valid until the user fills details.
+        $data['message'] = trim((string) ($data['message'] ?? ''));
 
         $sessionCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
         $isSuper = function_exists('rateb_is_super_admin') && rateb_is_super_admin();

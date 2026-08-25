@@ -531,10 +531,15 @@ return [
         'pos_manager',
     ],
 
-    /** Extra permission slugs granted to company-full-access on dedicated / agency ERP hosts only. */
+    /**
+     * Extra permission slugs granted to company-full-access on dedicated / agency ERP hosts,
+     * and shown in the tenant role matrix (bypass platform_modules hide).
+     * Covers: access control, users, roles, matrix, audit log, support tickets, email/SMS templates.
+     */
     'dedicated_company_admin_slugs' => [
         'access.manage',
         'settings.manage',
+        'notifications.manage',
         'dashboard.view',
     ],
 

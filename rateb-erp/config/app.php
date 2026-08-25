@@ -182,7 +182,7 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             return;
         }
-        $sessionKey = $agency ? 'rateb_agency_access_perms_synced' : 'rateb_saas_tenant_access_perms_synced';
+        $sessionKey = $agency ? 'rateb_agency_access_perms_synced_v2' : 'rateb_saas_tenant_access_perms_synced_v2';
         if (\Rateb\App\Core\SessionManager::get($sessionKey) === 1) {
             return;
         }
