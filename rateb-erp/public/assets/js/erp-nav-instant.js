@@ -103,13 +103,13 @@
         }
     }
 
-    /** Roles / users / access-control HTML must never be reused after permission edits. */
+    /** Roles / users / access-control / support-tickets must never reuse stale HTML. */
     function isRbacSensitivePath(href) {
         try {
             var p = new URL(href, root.location.href).pathname || '';
-            return /\/(roles|users|permissions|access-control)(\/|$)/i.test(p);
+            return /\/(roles|users|permissions|access-control|support-tickets)(\/|$)/i.test(p);
         } catch (e) {
-            return /\/(roles|users|permissions|access-control)(\/|$)/i.test(String(href || ''));
+            return /\/(roles|users|permissions|access-control|support-tickets)(\/|$)/i.test(String(href || ''));
         }
     }
 

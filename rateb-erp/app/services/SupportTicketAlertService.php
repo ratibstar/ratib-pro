@@ -175,7 +175,7 @@ final class SupportTicketAlertService
         $sql .= ' ORDER BY id DESC LIMIT ' . $limit;
 
         try {
-            $rows = (new SupportTicket())->query($sql, $params);
+            $rows = $this->runUnscopedSelect($sql, $params);
         } catch (\Throwable $e) {
             return [];
         }
@@ -227,14 +227,36 @@ final class SupportTicketAlertService
         $safeOffset = max(0, $offset);
         $sql .= ' ORDER BY id DESC LIMIT ' . $safeLimit . ' OFFSET ' . $safeOffset;
 
-        return (new SupportTicket())->query($sql, $params);
+        // Raw PDO: Super Admin global list must not inherit Model tenant/admin company filters.
+        return $this->runUnscopedSelect($sql, $params);
     }
 
     public function countAllScoped(string $search, ?int $companyId): int
     {
         [$sql, $params] = $this->baseListSql($search, $companyId, true);
+        $rows = $this->runUnscopedSelect($sql, $params);
 
-        return (int) ((new SupportTicket())->queryOne($sql, $params)['c'] ?? 0);
+        return (int) (($rows[0]['c'] ?? 0));
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return list<array<string, mixed>>
+     */
+    private function runUnscopedSelect(string $sql, array $params): array
+    {
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            error_log('SupportTicketAlertService unscoped select: ' . $e->getMessage());
+
+            return [];
+        }
     }
 
     /** @return array{0:string,1:array<string,mixed>} */
@@ -252,8 +274,11 @@ final class SupportTicketAlertService
         }
         $search = trim($search);
         if ($search !== '') {
-            $sql .= ' AND (ticket_no LIKE :q OR subject LIKE :q OR message LIKE :q)';
-            $params['q'] = '%' . $search . '%';
+            $sql .= ' AND (ticket_no LIKE :q1 OR subject LIKE :q2 OR message LIKE :q3)';
+            $like = '%' . $search . '%';
+            $params['q1'] = $like;
+            $params['q2'] = $like;
+            $params['q3'] = $like;
         }
 
         return [$sql, $params];
@@ -300,12 +325,12 @@ final class SupportTicketAlertService
             $params['company_id'] = $companyId;
         }
         try {
-            $row = (new SupportTicket())->queryOne($sql, $params);
+            $rows = $this->runUnscopedSelect($sql, $params);
         } catch (\Throwable $e) {
             return 0;
         }
 
-        return (int) ($row['c'] ?? 0);
+        return (int) (($rows[0]['c'] ?? 0));
     }
 
     private function countUnreadOpenScoped(?int $companyId): int
@@ -317,7 +342,7 @@ final class SupportTicketAlertService
             $params['company_id'] = $companyId;
         }
         try {
-            $rows = (new SupportTicket())->query($sql, $params);
+            $rows = $this->runUnscopedSelect($sql, $params);
         } catch (\Throwable $e) {
             return 0;
         }
@@ -681,12 +706,35 @@ final class SupportTicketAlertService
                 $row['company_name'] = $userSenderCompanies[$uid]['company_name'];
             } else {
                 $row['sender_company_id'] = $cid > 0 ? $cid : 0;
-                $row['company_name'] = $companyNames[$cid] ?? ($cid > 0 ? ('#' . $cid) : '—');
+                $name = $companyNames[$cid] ?? ($cid > 0 ? ('#' . $cid) : '');
+                if ($name === '' || $name === '—') {
+                    $fromMsg = $this->companyNameFromMirroredMessage((string) ($row['message'] ?? ''));
+                    if ($fromMsg !== '') {
+                        $name = $fromMsg;
+                    }
+                }
+                $row['company_name'] = $name !== '' ? $name : '—';
             }
         }
         unset($row);
 
         return $rows;
+    }
+
+    /** Pull "الشركة: …" from agency-mirrored ticket body when company_id is null. */
+    private function companyNameFromMirroredMessage(string $message): string
+    {
+        if ($message === '') {
+            return '';
+        }
+        if (preg_match('/الشركة:\s*([^\n\r—\-]+)/u', $message, $m)) {
+            return trim((string) ($m[1] ?? ''));
+        }
+        if (preg_match('/Company:\s*([^\n\r]+)/i', $message, $m)) {
+            return trim((string) ($m[1] ?? ''));
+        }
+
+        return '';
     }
 
     /** @param list<int> $ids @return array<int, string> */

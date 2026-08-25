@@ -6,8 +6,9 @@
     }
     window.__RATEB_SYSTEM_FLASH__ = 1;
 
-    var POLL_MS = 5000;
+    var POLL_MS = 2000;
     var pollTimer = null;
+    var lastAlertCount = -1;
 
     function stackEl() {
         return document.querySelector('[data-rateb-system-flash="1"]');
@@ -87,6 +88,50 @@
             + '</div>';
     }
 
+    function isOnSupportTicketsPage() {
+        try {
+            return /\/support-tickets(\/|$)/i.test(String(location.pathname || ''));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function supportTicketsTableLooksEmpty() {
+        var main = document.querySelector('#rateb-main-content, main.rateb-content');
+        if (!main) {
+            return false;
+        }
+        var emptyRow = main.querySelector('td.text-muted, .text-center.text-muted');
+        if (!emptyRow) {
+            return false;
+        }
+        var text = (emptyRow.textContent || '').replace(/\s+/g, ' ').trim();
+        return text.length > 0 && main.querySelectorAll('table tbody tr').length <= 1;
+    }
+
+    /** When flash sees a new ticket but the list is still empty (stale soft-nav), force a full reload. */
+    function refreshTicketsListIfStale(count) {
+        if (count < 1 || !isOnSupportTicketsPage() || !supportTicketsTableLooksEmpty()) {
+            return;
+        }
+        if (lastAlertCount >= 0 && count <= lastAlertCount) {
+            return;
+        }
+        try {
+            if (window.__RATEB_SUPPORT_TICKETS_RELOADING__) {
+                return;
+            }
+            window.__RATEB_SUPPORT_TICKETS_RELOADING__ = 1;
+            var url = String(location.href || '');
+            if (url.indexOf('company_id=') === -1) {
+                url += (url.indexOf('?') >= 0 ? '&' : '?') + 'company_id=0';
+            }
+            location.href = url;
+        } catch (eReload) {
+            try { location.reload(); } catch (e2) { /* ignore */ }
+        }
+    }
+
     function applyPayload(payload) {
         var stack = stackEl();
         if (!stack) {
@@ -98,6 +143,7 @@
         if (count < 1 || !alert) {
             stack.innerHTML = '';
             stack.classList.add('rateb-system-flash-stack--empty');
+            lastAlertCount = 0;
             document.dispatchEvent(new CustomEvent('rateb:support-ticket-alert', { detail: { count: 0 } }));
             return;
         }
@@ -110,6 +156,8 @@
         } else {
             stack.innerHTML = html;
         }
+        refreshTicketsListIfStale(count);
+        lastAlertCount = count;
         document.dispatchEvent(new CustomEvent('rateb:support-ticket-alert', { detail: { count: count } }));
     }
 

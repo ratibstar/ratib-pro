@@ -59,6 +59,7 @@ final class SupportTicketPlatformMirrorService
             return 0;
         }
 
+        // Once per HTTP request (index + alerts poll are separate requests).
         static $ran = false;
         if ($ran) {
             return 0;

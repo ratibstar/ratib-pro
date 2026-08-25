@@ -27,6 +27,22 @@ final class SupportTicketAlertsApiController
         }
 
         $svc = new SupportTicketAlertService();
+
+        // Platform SA: keep agency mirrors fresh so flash + list stay in sync without waiting for index visit.
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
+            && (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host())) {
+            $lastPull = (int) \Rateb\App\Core\SessionManager::get('rateb_support_ticket_agency_pull_at', 0);
+            if ($lastPull < 1 || (time() - $lastPull) >= 8) {
+                try {
+                    (new \Rateb\App\Services\SupportTicketPlatformMirrorService())->pullOpenTicketsFromAgencies(15);
+                    \Rateb\App\Core\SessionManager::set('rateb_support_ticket_agency_pull_at', time());
+                } catch (\Throwable $e) {
+                    error_log('support ticket alerts poll pull: ' . $e->getMessage());
+                }
+            }
+        }
+
         $count = $svc->unreadOpenCountForViewer();
         $tickets = $svc->listUnreadOpenTicketsForViewer(5);
         $alert = (new ErpSystemAlertService())->buildSupportTicketAlert($count, $tickets);

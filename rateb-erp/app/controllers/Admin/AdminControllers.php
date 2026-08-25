@@ -4098,6 +4098,11 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         }
         $this->backfillOpenTicketsToPlatform();
         $this->pullAgencyTicketsOntoPlatform();
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('X-Rateb-Uncached-Page: 1');
+        }
         parent::index();
     }
 
