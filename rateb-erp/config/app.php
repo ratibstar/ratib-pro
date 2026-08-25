@@ -3569,7 +3569,11 @@ if (!function_exists('rateb_nav_can')) {
             // Super Admin: full system open (nav + modules). Ops ?company_id= only scopes data.
             return true;
         }
-        if ($permission !== '' && !rateb_can($permission)) {
+        // Company module pack alone must NOT open nav — require an explicit permission slug.
+        if ($permission === '') {
+            return $module === '';
+        }
+        if (!rateb_can($permission)) {
             return false;
         }
         if ($module === '') {
@@ -3618,7 +3622,20 @@ if (!function_exists('rateb_entity_perms')) {
             }
         }
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
-        $row = $map[$resource] ?? null;
+        $candidates = [$resource];
+        if ($resource !== '' && str_contains($resource, '/')) {
+            $candidates[] = str_replace('/', '-', $resource);
+        }
+        if ($resource !== '' && str_contains($resource, '-')) {
+            $candidates[] = str_replace('-', '/', $resource);
+        }
+        $row = null;
+        foreach ($candidates as $key) {
+            if ($key !== '' && isset($map[$key]) && is_array($map[$key])) {
+                $row = $map[$key];
+                break;
+            }
+        }
         if (!is_array($row)) {
             return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export', 'post' => '', 'approve' => ''];
         }

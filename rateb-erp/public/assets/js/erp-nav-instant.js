@@ -1801,6 +1801,15 @@
             cleanupSoftNavUiArtifacts();
             ensureAgentAppsCss(pack.finalUrl || href);
             curMain.innerHTML = nextMain.innerHTML;
+            // Keep sidebar RBAC in sync with the fetched page (permissions change must hide links).
+            try {
+                var nextSide = doc.querySelector('#rateb-sidebar, aside.rateb-sidebar, .rateb-sidebar');
+                var curSide = document.querySelector('#rateb-sidebar, aside.rateb-sidebar, .rateb-sidebar');
+                if (nextSide && curSide && nextSide.innerHTML) {
+                    curSide.innerHTML = nextSide.innerHTML;
+                    bindPrefetch(curSide);
+                }
+            } catch (eSide) { /* ignore */ }
             // Inert scripts from innerHTML never run — strip from painted main only.
             // Keep scripts on `doc` so scheduleModuleScripts can inject them.
             stripInertScripts(curMain);
