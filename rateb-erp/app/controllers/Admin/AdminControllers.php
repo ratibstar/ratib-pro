@@ -4070,7 +4070,39 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
+        $this->backfillOpenTicketsToPlatform();
         parent::index();
+    }
+
+    /** One-shot mirror of open agency tickets so platform Super Admin sees them. */
+    private function backfillOpenTicketsToPlatform(): void
+    {
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return;
+        }
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+        try {
+            $rows = $this->model->query(
+                'SELECT * FROM rateb_support_tickets WHERE status = \'open\' ORDER BY id DESC LIMIT 20'
+            );
+            if ($rows === []) {
+                return;
+            }
+            $mirror = new \Rateb\App\Services\SupportTicketPlatformMirrorService();
+            $alert = new \Rateb\App\Services\SupportTicketAlertService();
+            foreach ($alert->enrichTicketRows($rows) as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $mirror->mirrorNewTicketFromAgency($id, $row);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('support ticket platform backfill: ' . $e->getMessage());
+        }
     }
 
     public function edit(array $params): void

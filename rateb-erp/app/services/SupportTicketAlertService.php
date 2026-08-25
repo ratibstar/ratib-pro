@@ -424,6 +424,17 @@ final class SupportTicketAlertService
                 $ticketId
             );
         }
+
+        // Agency / dedicated ERP → mirror into platform rateb.sa for Super Admin alerts.
+        try {
+            (new SupportTicketPlatformMirrorService())->mirrorNewTicketFromAgency($ticketId, array_merge($ticket, [
+                'company_name' => $companyName,
+                'ticket_no' => $ticketNo,
+                'subject' => $subject,
+            ]));
+        } catch (\Throwable $e) {
+            error_log('support ticket platform mirror: ' . $e->getMessage());
+        }
     }
 
     /** @param array<string, mixed> $ticket */

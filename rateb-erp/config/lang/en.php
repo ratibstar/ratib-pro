@@ -66,7 +66,7 @@ return [
     'ticket_no' => 'Ticket No',
     'auto_ticket_no_hint' => 'Generated automatically on save — no manual entry needed.',
     'support_ticket_routing_hint' => 'After submit, the ticket appears in Support Tickets for platform admins (Super Admin / settings.manage).',
-    'support_tickets_platform_hint' => 'As RATIB platform owner: open Support Tickets on admin.rateb.sa, then pick the company from «Select Company» above to view its tickets.',
+    'support_tickets_platform_hint' => 'Agency tickets are mirrored to the platform when created. To list all tickets pick Platform (no company) or company_id=0.',
     'support_tickets_pending_hint' => 'Support tickets awaiting response',
     'support_ticket_banner_title' => 'You have :count support ticket(s) awaiting response',
     'support_ticket_banner_platform_hint' => 'Tickets from all client companies — pick Platform (no company) or use company_id=0 in the URL.',

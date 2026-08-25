@@ -66,7 +66,7 @@ return [
     'ticket_no' => 'رقم التذكرة',
     'auto_ticket_no_hint' => 'يُولَّد تلقائياً عند الحفظ — لا حاجة لإدخاله يدوياً.',
     'support_ticket_routing_hint' => 'بعد الإرسال تُحفظ التذكرة في قائمة «تذاكر الدعم» لمديري المنصة (Super Admin / صلاحية إدارة الإعدادات).',
-    'support_tickets_platform_hint' => 'كمالك منصة رتب: افتح تذاكر الدعم من admin.rateb.sa ثم اختر الشركة من «اختر الشركة» أعلاه لعرض تذاكرها.',
+    'support_tickets_platform_hint' => 'تذاكر الوكلاء تُنسخ تلقائياً إلى المنصة عند إنشائها. لعرض كل التذاكر اختر «المنصة (بدون شركة)» أو company_id=0.',
     'support_tickets_pending_hint' => 'تذاكر دعم بانتظار الرد',
     'support_ticket_banner_title' => 'لديك :count تذكرة/تذاكر دعم بانتظار الرد',
     'support_ticket_banner_platform_hint' => 'تذاكر من جميع شركات العملاء — اختر «المنصة (بدون شركة)» أو افتح الرابط مع company_id=0.',
