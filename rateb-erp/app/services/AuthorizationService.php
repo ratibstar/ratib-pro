@@ -268,14 +268,21 @@ final class AuthorizationService
     /** @return array<int, array<string, mixed>> */
     public function allPermissionsGrouped(): array
     {
+        if (self::isAgencyPermissionMatrixContext()) {
+            $this->ensureTenantSelfServicePermissionRows();
+        }
         $rows = (new Permission())->query('SELECT * FROM rateb_permissions ORDER BY module, slug');
         $cfg = self::permissionsConfig();
         $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
+        $agencyMatrix = self::isAgencyPermissionMatrixContext();
+        if ($agencyMatrix) {
+            $agencyHidden = is_array($cfg['agency_matrix_hidden_slugs'] ?? null) ? $cfg['agency_matrix_hidden_slugs'] : [];
+            $hidden = array_values(array_unique(array_merge($hidden, $agencyHidden)));
+        }
         $grouped = [];
         $platformMods = is_array($cfg['platform_modules'] ?? null) ? $cfg['platform_modules'] : [];
         $excluded = is_array($cfg['company_role_excluded_slugs'] ?? null) ? $cfg['company_role_excluded_slugs'] : [];
         $dedicatedExtra = is_array($cfg['dedicated_company_admin_slugs'] ?? null) ? $cfg['dedicated_company_admin_slugs'] : [];
-        $agencyMatrix = self::isAgencyPermissionMatrixContext();
         foreach ($rows as $row) {
             $slug = (string) ($row['slug'] ?? '');
             if ($slug !== '' && in_array($slug, $hidden, true)) {
@@ -284,7 +291,7 @@ final class AuthorizationService
             $mod = (string) ($row['module'] ?? 'general');
             if ($agencyMatrix) {
                 // Agency / dedicated tenants may assign access.manage + settings.manage
-                // (users/roles/tickets/templates) even though those modules are platform-tagged.
+                // (users/roles/tickets/templates) even though some modules are platform-tagged.
                 $allowTenantSelfService = $slug !== '' && in_array($slug, $dedicatedExtra, true);
                 if (in_array($mod, $platformMods, true) && !$allowTenantSelfService) {
                     continue;
@@ -843,6 +850,7 @@ final class AuthorizationService
         if ($companyId < 1 || !self::isAgencyPermissionMatrixContext()) {
             return;
         }
+        $this->ensureTenantSelfServicePermissionRows();
         $this->ensureCompanyRoles($companyId);
         $role = $this->findRoleBySlug('company-full-access', $companyId);
         if (!$role) {
@@ -855,6 +863,74 @@ final class AuthorizationService
         $extra = (array) ($config['dedicated_company_admin_slugs'] ?? []);
         if ($extra !== []) {
             $this->grantRolePermissionsBySlugs($roleId, $extra);
+        }
+    }
+
+    /**
+     * Ensure access/settings/notifications permission rows exist (agency DBs may lack them).
+     */
+    public function ensureTenantSelfServicePermissionRows(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+        $defs = [
+            [
+                'slug' => 'access.manage',
+                'module' => 'access',
+                'name' => 'Manage Access Control',
+                'name_ar' => 'إدارة التحكم بالوصول',
+                'description' => 'Users, roles, permissions matrix, and access control',
+                'description_ar' => 'المستخدمون، الأدوار، مصفوفة الصلاحيات، والتحكم بالوصول',
+            ],
+            [
+                'slug' => 'settings.manage',
+                'module' => 'settings',
+                'name' => 'Manage Settings',
+                'name_ar' => 'إدارة الإعدادات',
+                'description' => 'Support tickets, audit log, email/SMS templates, and system settings',
+                'description_ar' => 'تذاكر الدعم، سجل التدقيق، قوالب البريد والرسائل، وإعدادات النظام',
+            ],
+            [
+                'slug' => 'notifications.manage',
+                'module' => 'notifications',
+                'name' => 'Manage Notifications',
+                'name_ar' => 'إدارة الإشعارات',
+                'description' => 'Notification center and preferences',
+                'description_ar' => 'مركز الإشعارات وتفضيلاتها',
+            ],
+            [
+                'slug' => 'dashboard.view',
+                'module' => 'dashboard',
+                'name' => 'View Dashboard',
+                'name_ar' => 'عرض لوحة التحكم',
+                'description' => 'Access the main dashboard',
+                'description_ar' => 'الوصول إلى لوحة التحكم',
+            ],
+        ];
+        $model = new Permission();
+        foreach ($defs as $def) {
+            $existing = $model->queryOne(
+                'SELECT id FROM rateb_permissions WHERE slug = :slug LIMIT 1',
+                ['slug' => $def['slug']]
+            );
+            if ($existing) {
+                continue;
+            }
+            try {
+                $model->create([
+                    'name' => $def['name'],
+                    'name_ar' => $def['name_ar'],
+                    'slug' => $def['slug'],
+                    'module' => $def['module'],
+                    'description' => $def['description'],
+                    'description_ar' => $def['description_ar'],
+                ]);
+            } catch (\Throwable $e) {
+                // best-effort — unique race or missing columns
+            }
         }
     }
 

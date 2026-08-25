@@ -7,7 +7,11 @@ declare(strict_types=1);
  * Runtime enforcement: entity-permissions.php + route middleware + controller guards.
  */
 return [
-    /** Modules reserved for platform super-admin (never on company-full-access). */
+    /**
+     * Modules reserved for platform super-admin matrix (never on company roles).
+     * Note: access + settings stay OUT — agency/tenant admins need them for
+     * users/roles/matrix and support tickets/templates/audit log.
+     */
     'platform_modules' => [
         'companies',
         'subscriptions',
@@ -15,8 +19,6 @@ return [
         'permissions',
         'roles',
         'users',
-        'settings',
-        'access',
     ],
 
     /** Plan modules enabled for tenant company operations. */
@@ -485,12 +487,19 @@ return [
         ],
     ],
 
-    /** Slugs omitted from matrix UI (still in DB; granted via permission_implies or legacy roles). */
+    /** Slugs omitted from matrix UI (still in DB; granted via permission_implies or parent access.manage). */
     'matrix_hidden_slugs' => [
+        'branch.financial.interbranch',
+    ],
+
+    /**
+     * On agency/tenant matrix only — hide granular children when access.manage is shown.
+     * (Keeps matrix short while access.manage remains the master switch.)
+     */
+    'agency_matrix_hidden_slugs' => [
         'users.manage',
         'roles.manage',
         'permissions.manage',
-        'branch.financial.interbranch',
     ],
 
     /** Branch / HQ permission slugs (company matrix module: branches + accounting reports). */

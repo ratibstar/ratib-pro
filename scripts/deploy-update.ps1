@@ -1,7 +1,8 @@
 # Deploy Update — commit all changes (or empty deploy) and push to origin.
-# Used by VS Code/Cursor task + Ctrl+Alt+U keybinding.
+# Used by VS Code/Cursor task + Ctrl+Shift+U keybinding.
+# Always pull --rebase first so push is not rejected when remote moved ahead.
 $ErrorActionPreference = 'Stop'
-$git = 'C:\Program Files\Git\cmd\git.exe'
+$git = 'C:\Program Files\Git\\cmd\\git.exe'
 if (-not (Test-Path $git)) {
     $git = (Get-Command git -ErrorAction SilentlyContinue).Source
 }
@@ -12,6 +13,19 @@ if (-not $git) {
 
 Set-Location $PSScriptRoot\..
 Write-Host ("Repo: " + (Get-Location))
+
+Write-Host 'Fetching / pulling latest main...'
+& $git fetch origin
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'git fetch failed.'
+    exit 1
+}
+& $git pull --rebase origin HEAD
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'git pull --rebase failed. Resolve conflicts, then retry Ctrl+Shift+U.'
+    exit 1
+}
+
 $pending = & $git status --porcelain
 if ([string]::IsNullOrWhiteSpace($pending)) {
     $msg = 'deploy-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
@@ -32,7 +46,7 @@ if ([string]::IsNullOrWhiteSpace($pending)) {
     }
 }
 
-& $git push
+& $git push origin HEAD
 if ($LASTEXITCODE -eq 0) {
     Write-Host 'Pushed — deploy will start on GitHub Actions (~1-2 min).'
     & $git log -1 --oneline
