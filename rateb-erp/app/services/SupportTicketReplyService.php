@@ -30,6 +30,18 @@ final class SupportTicketReplyService
         }
     }
 
+    /** Strip internal sync markers from reply body for display. */
+    public static function displayBody(string $body): string
+    {
+        $clean = preg_replace(
+            '/\n*\s*\[rateb_platform_reply:\d+:\d+\]\s*$/u',
+            '',
+            $body
+        );
+
+        return trim((string) ($clean ?? $body));
+    }
+
     /**
      * Platform/agency staff reply — notifies the submitting company.
      *
@@ -69,23 +81,62 @@ final class SupportTicketReplyService
 
         (new SupportTicketAlertService())->notifyOnReply($ticketId, $ticket, $body);
 
+        // Platform mirrored ticket → push reply into originating agency DB.
+        try {
+            $ticket['id'] = $ticketId;
+            if (!isset($ticket['message']) || trim((string) $ticket['message']) === '') {
+                $full = (new SupportTicket())->findByIdUnscoped($ticketId);
+                if (is_array($full)) {
+                    $ticket = array_merge($full, $ticket);
+                }
+            }
+            (new SupportTicketPlatformMirrorService())->pushStaffReplyToAgency(
+                $ticketId,
+                $ticket,
+                $body,
+                $replyId
+            );
+        } catch (\Throwable $e) {
+            error_log('support ticket push reply to agency: ' . $e->getMessage());
+        }
+
         return $replyId;
     }
 
     /** @return array{original: array<string, mixed>, replies: list<array<string, mixed>>} */
     public function conversation(int $ticketId, array $ticket): array
     {
+        $rawMessage = (string) ($ticket['message'] ?? '');
+        $displayMessage = trim((string) (preg_replace(
+            '/\n*\s*\[rateb_agency_ticket:\d+:\d+\]\s*$/u',
+            '',
+            $rawMessage
+        ) ?? $rawMessage));
+        // Drop agency header lines added during platform mirror (الوكالة: …).
+        if (str_contains($displayMessage, "\n\n")) {
+            $parts = explode("\n\n", $displayMessage, 2);
+            if (isset($parts[0]) && (str_starts_with($parts[0], 'الوكالة:') || str_starts_with($parts[0], 'Agency:'))) {
+                $displayMessage = trim((string) ($parts[1] ?? $displayMessage));
+            }
+        }
+
         $original = [
             'is_staff' => 0,
-            'body' => (string) ($ticket['message'] ?? ''),
+            'body' => $displayMessage,
             'user_id' => (int) ($ticket['user_id'] ?? 0),
             'created_at' => (string) ($ticket['created_at'] ?? ''),
             'user_name' => $this->resolveUserName((int) ($ticket['user_id'] ?? 0)),
         ];
 
+        $replies = [];
+        foreach ($this->listForTicket($ticketId) as $row) {
+            $row['body'] = self::displayBody((string) ($row['body'] ?? ''));
+            $replies[] = $row;
+        }
+
         return [
             'original' => $original,
-            'replies' => $this->listForTicket($ticketId),
+            'replies' => $replies,
         ];
     }
 

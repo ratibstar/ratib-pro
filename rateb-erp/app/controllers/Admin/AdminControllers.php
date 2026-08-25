@@ -4098,12 +4098,42 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         }
         $this->backfillOpenTicketsToPlatform();
         $this->pullAgencyTicketsOntoPlatform();
+        $this->pullPlatformRepliesOntoAgencyOpenTickets();
         if (!headers_sent()) {
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Pragma: no-cache');
             header('X-Rateb-Uncached-Page: 1');
         }
         parent::index();
+    }
+
+    /** Agency: sync Super Admin replies/status for open local tickets. */
+    private function pullPlatformRepliesOntoAgencyOpenTickets(): void
+    {
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return;
+        }
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+        try {
+            $rows = $this->model->query(
+                'SELECT id FROM rateb_support_tickets
+                 WHERE status IN (\'open\', \'in_progress\')
+                 ORDER BY id DESC LIMIT 30'
+            );
+            $mirror = new \Rateb\App\Services\SupportTicketPlatformMirrorService();
+            foreach ($rows as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $mirror->pullPlatformUpdatesIntoAgencyTicket($id);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('support ticket agency inbound sync: ' . $e->getMessage());
+        }
     }
 
     /** One-shot mirror of open agency tickets so platform Super Admin sees them. */
@@ -4168,6 +4198,12 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $ticketId = (int) ($params['id'] ?? 0);
         if ($ticketId > 0) {
             (new \Rateb\App\Services\SupportTicketAlertService())->markTicketSeen($ticketId);
+            try {
+                (new \Rateb\App\Services\SupportTicketPlatformMirrorService())
+                    ->pullPlatformUpdatesIntoAgencyTicket($ticketId);
+            } catch (\Throwable $e) {
+                error_log('support ticket agency pull platform updates: ' . $e->getMessage());
+            }
         }
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
@@ -4508,6 +4544,19 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     protected function afterSuccessfulUpdate(int $id, ?array $old, array $data): void
     {
         (new \Rateb\App\Services\SupportTicketAlertService())->handleStatusChange($id, $old, $data);
+        try {
+            $ticket = is_array($old) ? array_merge($old, $data) : $data;
+            $ticket['id'] = $id;
+            if (!isset($ticket['message']) || trim((string) ($ticket['message'] ?? '')) === '') {
+                $full = $this->model->findByIdUnscoped($id);
+                if (is_array($full)) {
+                    $ticket = array_merge($full, $ticket);
+                }
+            }
+            (new \Rateb\App\Services\SupportTicketPlatformMirrorService())->pushTicketFieldsToAgency($id, $ticket, $data);
+        } catch (\Throwable $e) {
+            error_log('support ticket push fields to agency: ' . $e->getMessage());
+        }
     }
 }
 
