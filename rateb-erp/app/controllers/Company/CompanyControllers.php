@@ -2288,11 +2288,17 @@ final class NotificationsController extends Controller
     {
         $userId = (int) SessionManager::get('rateb_user_id');
         $companyId = (int) SessionManager::get('rateb_company_id');
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
         $svc = new \Rateb\App\Services\NotificationService();
         $items = $svc->enrichRowsForDisplay($svc->listForUser($userId, $companyId));
         $this->view('company/notifications/index', [
             'title' => __('notifications'),
             'items' => $items,
+            'listHelp' => (function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                ? __('notifications_super_admin_agency_help')
+                : '',
             'fields' => [
                 ['name' => 'created_at', 'label' => 'created_at', 'type' => 'datetime'],
                 ['name' => 'title', 'label' => 'title', 'type' => 'clip'],

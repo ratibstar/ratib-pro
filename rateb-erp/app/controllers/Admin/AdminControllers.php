@@ -4097,6 +4097,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             rateb_bootstrap_ops_tenant();
         }
         $this->backfillOpenTicketsToPlatform();
+        $this->pullAgencyTicketsOntoPlatform();
         parent::index();
     }
 
@@ -4128,6 +4129,32 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             }
         } catch (\Throwable $e) {
             error_log('support ticket platform backfill: ' . $e->getMessage());
+        }
+    }
+
+    /** Platform SA: pull open tickets from all agency ERP databases. */
+    private function pullAgencyTicketsOntoPlatform(): void
+    {
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            return;
+        }
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return;
+        }
+        if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
+            return;
+        }
+        try {
+            $n = (new \Rateb\App\Services\SupportTicketPlatformMirrorService())->pullOpenTicketsFromAgencies(25);
+            if ($n > 0
+                && (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request())) {
+                \Rateb\App\Core\SessionManager::flash(
+                    'success',
+                    __('support_ticket_agency_pull_imported', ['count' => $n])
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('support ticket agency pull: ' . $e->getMessage());
         }
     }
 
@@ -4215,6 +4242,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
                 'createEnabled' => $this->createEnabled,
                 'actionsEnabled' => $this->actionsEnabled,
                 'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
+                'listHelp' => __('support_ticket_super_admin_agency_help'),
             ]);
         }
 

@@ -120,7 +120,20 @@ final class NotificationService
      */
     public function listForUser(int $userId, int $companyId): array
     {
-        if ($userId < 1 || $companyId < 1) {
+        if ($userId < 1) {
+            return [];
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return (new Notification())->query(
+                'SELECT id, company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at
+                 FROM rateb_notifications
+                 WHERE user_id = :uid
+                 ORDER BY id DESC LIMIT 100',
+                ['uid' => $userId]
+            );
+        }
+        if ($companyId < 1) {
             return [];
         }
 
@@ -186,10 +199,28 @@ final class NotificationService
 
     public function markRead(int $id, int $userId): bool
     {
+        if ($userId < 1 || $id < 1) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            $row = (new Notification())->queryOne(
+                'SELECT id FROM rateb_notifications WHERE id = :id AND user_id = :uid LIMIT 1',
+                ['id' => $id, 'uid' => $userId]
+            );
+            if (!$row) {
+                return false;
+            }
+            $db = \Rateb\App\Core\Database::connection();
+            $db->prepare('UPDATE rateb_notifications SET is_read = 1 WHERE id = :id AND user_id = :uid')
+                ->execute(['id' => $id, 'uid' => $userId]);
+
+            return true;
+        }
         $companyId = (int) (TenantContext::companyId()
             ?? \Rateb\App\Core\SessionManager::get('rateb_company_id')
             ?? 0);
-        if ($companyId < 1 || $userId < 1 || $id < 1) {
+        if ($companyId < 1) {
             return false;
         }
         $row = (new Notification())->queryOne(

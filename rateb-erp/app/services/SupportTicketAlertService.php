@@ -47,6 +47,13 @@ final class SupportTicketAlertService
     /** Super Admin on rateb.sa lists all tickets (matches global flash alerts). */
     public function shouldListAllTickets(): bool
     {
+        // Platform Super Admin always sees every ticket (including mirrored agency messages),
+        // even when an ops company is selected in the top bar.
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
         return $this->platformListAllTickets() || $this->alertsUseGlobalScope();
     }
 
