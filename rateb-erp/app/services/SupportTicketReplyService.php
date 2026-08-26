@@ -38,6 +38,11 @@ final class SupportTicketReplyService
             '',
             $body
         );
+        $clean = preg_replace(
+            '/\n*\s*\[rateb_agency_reply:\d+:\d+\]\s*$/u',
+            '',
+            (string) ($clean ?? $body)
+        );
 
         return trim((string) ($clean ?? $body));
     }
@@ -81,23 +86,44 @@ final class SupportTicketReplyService
 
         (new SupportTicketAlertService())->notifyOnReply($ticketId, $ticket, $body);
 
-        // Platform mirrored ticket → push reply into originating agency DB.
+        $ticket['id'] = $ticketId;
         try {
-            $ticket['id'] = $ticketId;
-            if (!isset($ticket['message']) || trim((string) $ticket['message']) === '') {
+            if (!isset($ticket['message']) || trim((string) $ticket['message']) === ''
+                || !isset($ticket['ticket_no']) || trim((string) ($ticket['ticket_no'] ?? '')) === '') {
                 $full = (new SupportTicket())->findByIdUnscoped($ticketId);
                 if (is_array($full)) {
                     $ticket = array_merge($full, $ticket);
                 }
             }
-            (new SupportTicketPlatformMirrorService())->pushStaffReplyToAgency(
-                $ticketId,
-                $ticket,
-                $body,
-                $replyId
-            );
         } catch (\Throwable $e) {
-            error_log('support ticket push reply to agency: ' . $e->getMessage());
+            // keep partial ticket
+        }
+
+        $mirror = new SupportTicketPlatformMirrorService();
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            // Agency staff reply → platform Super Admin thread
+            try {
+                $mirror->mirrorAgencyReplyToPlatform($ticketId, $replyId, $body, $ticket);
+            } catch (\Throwable $e) {
+                error_log('support ticket mirror agency reply: ' . $e->getMessage());
+            }
+        } else {
+            // Platform Super Admin reply → agency ticket thread
+            try {
+                $ok = $mirror->pushStaffReplyToAgency($ticketId, $ticket, $body, $replyId);
+                if (!$ok) {
+                    SessionManager::flash(
+                        'warning',
+                        __('support_ticket_agency_sync_failed')
+                    );
+                }
+            } catch (\Throwable $e) {
+                error_log('support ticket push reply to agency: ' . $e->getMessage());
+                SessionManager::flash(
+                    'warning',
+                    __('support_ticket_agency_sync_failed')
+                );
+            }
         }
 
         return $replyId;

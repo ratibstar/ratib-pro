@@ -53,3 +53,11 @@ if (!defined('RATEB_ERP_DB_NAME') || (string) RATEB_ERP_DB_NAME === '') {
         define('SITE_URL', 'https://' . $agencyHost);
     }
 }
+
+// Always pin agency id for admin.rateb.sa even when DB binding was resolved earlier.
+if (!defined('RATEB_ERP_AGENCY_ID')) {
+    define('RATEB_ERP_AGENCY_ID', 34);
+}
+if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {
+    define('RATEB_ERP_AGENCY_RESOLVED', true);
+}

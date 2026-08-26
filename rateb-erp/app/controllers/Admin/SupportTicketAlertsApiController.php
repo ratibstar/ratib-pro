@@ -43,6 +43,30 @@ final class SupportTicketAlertsApiController
             }
         }
 
+        // Agency: pull Super Admin replies/status into local open tickets (reverse sync backup).
+        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            $lastInbound = (int) \Rateb\App\Core\SessionManager::get('rateb_support_ticket_platform_pull_at', 0);
+            if ($lastInbound < 1 || (time() - $lastInbound) >= 8) {
+                try {
+                    $mirror = new \Rateb\App\Services\SupportTicketPlatformMirrorService();
+                    $rows = (new \Rateb\App\Models\SupportTicket())->query(
+                        'SELECT id FROM rateb_support_tickets
+                         WHERE status IN (\'open\', \'in_progress\')
+                         ORDER BY id DESC LIMIT 20'
+                    );
+                    foreach ($rows as $row) {
+                        $id = (int) ($row['id'] ?? 0);
+                        if ($id > 0) {
+                            $mirror->pullPlatformUpdatesIntoAgencyTicket($id);
+                        }
+                    }
+                    \Rateb\App\Core\SessionManager::set('rateb_support_ticket_platform_pull_at', time());
+                } catch (\Throwable $e) {
+                    error_log('support ticket alerts agency inbound: ' . $e->getMessage());
+                }
+            }
+        }
+
         $count = $svc->unreadOpenCountForViewer();
         $tickets = $svc->listUnreadOpenTicketsForViewer(5);
         $alert = (new ErpSystemAlertService())->buildSupportTicketAlert($count, $tickets);

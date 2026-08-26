@@ -89,6 +89,7 @@ return [
     'support_ticket_reply_notify_hint' => 'ستصل إشعار داخل النظام للشركة المرسلة فور إرسال الرد.',
     'support_ticket_reply_submit' => 'إرسال الرد',
     'support_ticket_reply_sent' => 'تم إرسال الرد وإشعار الشركة.',
+    'support_ticket_agency_sync_failed' => 'تم حفظ الرد هنا، لكن تعذر مزامنته مع قاعدة الوكيل. حدّث صفحة التذاكر في الوكيل أو أعد إرسال الرد.',
     'support_ticket_reply_required' => 'يرجى كتابة الرد قبل الإرسال.',
     'support_ticket_alert_new_title' => 'تذكرة دعم :ticket — :company',
     'support_ticket_alert_new_body' => ':ticket — :subject',

@@ -89,6 +89,7 @@ return [
     'support_ticket_reply_notify_hint' => 'The submitting company will receive an in-app notification when you send this reply.',
     'support_ticket_reply_submit' => 'Send reply',
     'support_ticket_reply_sent' => 'Reply sent and the company was notified.',
+    'support_ticket_agency_sync_failed' => 'Reply saved here, but syncing to the agency database failed. Refresh tickets on the agency host or resend the reply.',
     'support_ticket_reply_required' => 'Please enter a reply before sending.',
     'support_ticket_alert_new_title' => 'New support ticket :ticket — :company',
     'support_ticket_alert_new_body' => ':ticket — :subject',
