@@ -4444,18 +4444,55 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
                 'label' => 'subject',
                 'type' => 'hybrid',
                 'lookup' => 'support_ticket_subjects',
+                'options' => self::supportTicketSubjectOptionKeys(),
                 'required' => true,
                 'col' => 'col-md-6',
             ],
-            ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent'], 'col' => 'col-md-6'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['open', 'in_progress', 'resolved', 'closed'], 'col' => 'col-md-6'],
+            [
+                'name' => 'priority',
+                'label' => 'priority',
+                'type' => 'select',
+                'options' => ['low', 'medium', 'high', 'urgent'],
+                'required' => true,
+                'col' => 'col-md-6',
+            ],
+            [
+                'name' => 'status',
+                'label' => 'status',
+                'type' => 'select',
+                'options' => ['open', 'in_progress', 'resolved', 'closed'],
+                'required' => true,
+                'col' => 'col-md-6',
+            ],
             [
                 'name' => 'message',
                 'label' => 'message',
                 'type' => 'textarea',
+                'required' => true,
                 'col' => 'col-12',
                 'hint' => 'support_ticket_routing_hint',
             ],
+        ];
+    }
+
+    /** @return list<string> */
+    private static function supportTicketSubjectOptionKeys(): array
+    {
+        return [
+            'st_subject_login',
+            'st_subject_permissions',
+            'st_subject_billing',
+            'st_subject_bug',
+            'st_subject_feature',
+            'st_subject_training',
+            'st_subject_data',
+            'st_subject_performance',
+            'st_subject_integration',
+            'st_subject_pos',
+            'st_subject_hr',
+            'st_subject_inventory',
+            'st_subject_accounting',
+            'st_subject_other',
         ];
     }
 

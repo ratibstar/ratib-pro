@@ -48,8 +48,21 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         <option value="<?php echo $s; ?>"<?php echo (string) $value === (string) $s ? ' selected' : ''; ?>><?php echo $s; ?>/<?php echo $max; ?></option>
         <?php } ?>
     </select>
-    <?php } elseif ($isHybrid) {
+    <?php     } elseif ($isHybrid) {
         $options = $lookups[$lookup] ?? [];
+        if ($options === [] && !empty($field['options']) && is_array($field['options'])) {
+            foreach ($field['options'] as $opt) {
+                if (is_array($opt)) {
+                    $options[] = [
+                        'value' => (string) ($opt['value'] ?? ''),
+                        'label' => (string) ($opt['label'] ?? $opt['value'] ?? ''),
+                    ];
+                } else {
+                    $key = (string) $opt;
+                    $options[] = ['value' => $key, 'label' => __($key)];
+                }
+            }
+        }
         $selectedValue = (string) $value;
         $manualValue = '';
         $pickValue = '';
@@ -59,6 +72,16 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                 $found = true;
                 $pickValue = $selectedValue;
                 break;
+            }
+        }
+        if (!$found && $selectedValue !== '') {
+            // Match translated labels saved previously.
+            foreach ($options as $opt) {
+                if ((string) ($opt['label'] ?? '') === $selectedValue) {
+                    $found = true;
+                    $pickValue = (string) ($opt['value'] ?? '');
+                    break;
+                }
             }
         }
         if (!$found && $selectedValue !== '') {

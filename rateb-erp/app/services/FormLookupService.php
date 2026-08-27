@@ -1649,6 +1649,11 @@ final class FormLookupService
             'st_subject_data',
             'st_subject_performance',
             'st_subject_integration',
+            'st_subject_pos',
+            'st_subject_hr',
+            'st_subject_inventory',
+            'st_subject_accounting',
+            'st_subject_other',
         ], true);
     }
 
