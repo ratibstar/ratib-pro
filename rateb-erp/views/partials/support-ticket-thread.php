@@ -79,33 +79,46 @@ $startVisible = $hiddenCount;
             </button>
         </div>
         <?php } ?>
-        <?php foreach ($threadMessages as $idx => $msg) {
+        <?php
+        $prevStaff = null;
+        foreach ($threadMessages as $idx => $msg) {
             $isStaff = !empty($msg['is_staff']);
             $isOriginal = ($msg['kind'] ?? '') === 'original';
             $isOlder = $idx < $startVisible;
+            $isContinued = $prevStaff !== null && $prevStaff === $isStaff && !$isOriginal;
             $msgClass = 'support-ticket-thread__msg'
                 . ($isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client')
+                . ($isContinued ? ' support-ticket-thread__msg--continued' : '')
                 . ($isOlder ? ' support-ticket-thread__msg--older is-collapsed' : '');
             $title = $isOriginal
                 ? __('support_ticket_original_request')
                 : ($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client'));
+            $displayBody = (string) ($msg['body'] ?? '');
+            $displayBody = trim((string) preg_replace(
+                '/\n*\s*\[rateb_(?:agency|platform)_reply:\d+:\d+\]\s*$/u',
+                '',
+                $displayBody
+            ));
             ?>
         <div class="<?php echo View::escape($msgClass); ?>"
              data-thread-msg="1"
              data-msg-index="<?php echo (int) $idx; ?>"
+             data-is-staff="<?php echo $isStaff ? '1' : '0'; ?>"
              <?php if ((int) ($msg['reply_id'] ?? 0) > 0) { ?>data-reply-id="<?php echo View::escape((string) ((int) $msg['reply_id'])); ?>"<?php } ?>
              <?php if ($isOlder) { ?>hidden<?php } ?>>
             <div class="support-ticket-thread__meta">
                 <strong><?php echo View::escape($title); ?></strong>
                 <?php if (!empty($msg['user_name'])) { ?>
-                <span> — <?php echo View::escape((string) $msg['user_name']); ?></span>
+                <span><?php echo View::escape((string) $msg['user_name']); ?></span>
                 <?php } ?>
                 <?php if (!empty($msg['created_at'])) { ?>
-                <span class="text-muted small"><?php echo View::escape(View::formatDate((string) $msg['created_at'], 'datetime')); ?></span>
+                <span class="text-muted support-ticket-thread__time"><?php echo View::escape(View::formatDate((string) $msg['created_at'], 'datetime')); ?></span>
                 <?php } ?>
             </div>
-            <div class="support-ticket-thread__text"><?php echo nl2br(View::escape((string) ($msg['body'] ?? ''))); ?></div>
+            <div class="support-ticket-thread__text"><?php echo nl2br(View::escape($displayBody)); ?></div>
         </div>
-        <?php } ?>
+        <?php
+            $prevStaff = $isStaff;
+        } ?>
     </div>
 </div>

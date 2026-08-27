@@ -249,6 +249,31 @@
         });
     }
 
+    function stripReplyMarker(text) {
+        return String(text == null ? '' : text).replace(/\n*\s*\[rateb_(?:agency|platform)_reply:\d+:\d+\]\s*$/u, '').trim();
+    }
+
+    function renderThreadMsg(opts) {
+        var isStaff = !!opts.isStaff;
+        var continued = !!opts.continued;
+        var cls = 'support-ticket-thread__msg '
+            + (isStaff ? 'support-ticket-thread__msg--staff' : 'support-ticket-thread__msg--client')
+            + (continued ? ' support-ticket-thread__msg--continued' : '');
+        var html = '<div class="' + cls + '" data-thread-msg="1" data-is-staff="' + (isStaff ? '1' : '0') + '"';
+        if (opts.replyId) {
+            html += ' data-reply-id="' + escapeHtml(String(opts.replyId)) + '"';
+        }
+        html += '><div class="support-ticket-thread__meta"><strong>' + escapeHtml(opts.title || '') + '</strong>';
+        if (opts.userName) {
+            html += '<span>' + escapeHtml(opts.userName) + '</span>';
+        }
+        if (opts.createdAt) {
+            html += '<span class="text-muted support-ticket-thread__time">' + escapeHtml(opts.createdAt) + '</span>';
+        }
+        html += '</div><div class="support-ticket-thread__text">' + nl2br(stripReplyMarker(opts.body || '')) + '</div></div>';
+        return html;
+    }
+
     function renderThreadFromLive(ticket) {
         var root = document.querySelector('[data-rateb-ticket-live="1"]');
         var body = root ? root.querySelector('[data-rateb-ticket-thread-body="1"]') : null;
@@ -259,27 +284,29 @@
         var labels = ticket.labels || {};
         var html = '';
         var original = ticket.original || {};
-        html += '<div class="support-ticket-thread__msg support-ticket-thread__msg--client" data-thread-msg="1">'
-            + '<div class="support-ticket-thread__meta"><strong>' + escapeHtml(labels.original || 'Original') + '</strong>';
-        if (original.user_name) {
-            html += '<span> — ' + escapeHtml(original.user_name) + '</span>';
-        }
-        if (original.created_at) {
-            html += '<span class="text-muted small"> ' + escapeHtml(original.created_at) + '</span>';
-        }
-        html += '</div><div class="support-ticket-thread__text">' + nl2br(original.body || '') + '</div></div>';
+        var prevStaff = null;
+        html += renderThreadMsg({
+            isStaff: false,
+            continued: false,
+            title: labels.original || 'Original',
+            userName: original.user_name || '',
+            createdAt: original.created_at || '',
+            body: original.body || '',
+        });
+        prevStaff = false;
 
         (ticket.replies || []).forEach(function (reply) {
             var isStaff = !!reply.is_staff;
-            html += '<div class="support-ticket-thread__msg ' + (isStaff ? 'support-ticket-thread__msg--staff' : 'support-ticket-thread__msg--client') + '" data-thread-msg="1" data-reply-id="' + escapeHtml(String(reply.id || 0)) + '">'
-                + '<div class="support-ticket-thread__meta"><strong>' + escapeHtml(isStaff ? (labels.staff || 'Staff') : (labels.client || 'Client')) + '</strong>';
-            if (reply.user_name) {
-                html += '<span> — ' + escapeHtml(reply.user_name) + '</span>';
-            }
-            if (reply.created_at) {
-                html += '<span class="text-muted small"> ' + escapeHtml(reply.created_at) + '</span>';
-            }
-            html += '</div><div class="support-ticket-thread__text">' + nl2br(reply.body || '') + '</div></div>';
+            html += renderThreadMsg({
+                isStaff: isStaff,
+                continued: prevStaff !== null && prevStaff === isStaff,
+                title: isStaff ? (labels.staff || 'Staff') : (labels.client || 'Client'),
+                userName: reply.user_name || '',
+                createdAt: reply.created_at || '',
+                body: reply.body || '',
+                replyId: reply.id || 0,
+            });
+            prevStaff = isStaff;
         });
 
         body.innerHTML = html;

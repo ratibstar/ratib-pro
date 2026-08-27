@@ -87,6 +87,20 @@
             el.classList.toggle('support-ticket-thread__msg--older', idx < hiddenCount);
         });
 
+        // Re-group only among currently visible bubbles so the first visible keeps its meta.
+        var visiblePrevStaff = null;
+        msgs.forEach(function (el) {
+            if (el.hidden || el.classList.contains('is-collapsed')) {
+                el.classList.remove('support-ticket-thread__msg--continued');
+                return;
+            }
+            var isStaff = el.getAttribute('data-is-staff') === '1'
+                || el.classList.contains('support-ticket-thread__msg--staff');
+            var continued = visiblePrevStaff !== null && visiblePrevStaff === isStaff;
+            el.classList.toggle('support-ticket-thread__msg--continued', continued);
+            visiblePrevStaff = isStaff;
+        });
+
         root.setAttribute('data-thread-expanded', expanded ? '1' : '0');
     }
 
