@@ -109,7 +109,7 @@ final class ModulePageStatsService
         if (str_starts_with($route, 'admin/cms')) {
             return 'cms';
         }
-        if (preg_match('#^admin/(access-control|users|roles|permissions|plans|audit-logs|support-tickets|email-templates|sms-templates)(/|$)#', $route)) {
+        if (preg_match('#^admin/(access-control|users|roles|permissions|plans|audit-logs|email-templates|sms-templates)(/|$)#', $route)) {
             return 'access';
         }
         if (preg_match('#^admin/(companies|subscriptions|invoices|payments|settings)(/|$)#', $route)) {
@@ -121,7 +121,7 @@ final class ModulePageStatsService
 
         $path = $this->opsPath($route);
 
-        if (preg_match('#^(access-control|users|roles|permissions|plans|audit-logs|support-tickets|email-templates|sms-templates)(/|$)#', $path)) {
+        if (preg_match('#^(access-control|users|roles|permissions|plans|audit-logs|email-templates|sms-templates)(/|$)#', $path)) {
             return 'access';
         }
 

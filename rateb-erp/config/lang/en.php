@@ -2230,6 +2230,7 @@ return [
     'fiscal_period_close_confirm' => 'Close this fiscal period?',
     'open' => 'Open',
     'closed' => 'Closed',
+    'resolved' => 'Resolved',
     'select_company_ops' => 'Select a company to work on its data (procurement, inventory, assets, accounting…).',
     'ops_company_select_help' => 'As platform admin, pick a company from the list above, then continue. Your choice is remembered for this session.',
     'ops_company_platform_mode' => 'Platform (no company) — manage super admins',

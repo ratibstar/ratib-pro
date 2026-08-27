@@ -4069,7 +4069,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $this->indexFields = [
             ['name' => 'ticket_no', 'label' => 'ticket_no'],
             ['name' => 'subject', 'label' => 'subject', 'type' => 'clip'],
-            ['name' => 'priority', 'label' => 'priority'],
+            ['name' => 'priority', 'label' => 'priority', 'type' => 'status'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
             ['name' => 'created_at', 'label' => 'created_at', 'type' => 'datetime'],
         ];
@@ -4432,11 +4432,11 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
                 'required' => true,
                 'col' => 'col-md-6',
             ],
-            ['name' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent'], 'col' => 'col-md-6'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['open', 'in_progress', 'resolved', 'closed'], 'col' => 'col-md-6'],
+            ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent'], 'col' => 'col-md-6'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['open', 'in_progress', 'resolved', 'closed'], 'col' => 'col-md-6'],
             [
                 'name' => 'message',
-                'label' => 'Message',
+                'label' => 'message',
                 'type' => 'textarea',
                 'col' => 'col-12',
                 'hint' => 'support_ticket_routing_hint',
