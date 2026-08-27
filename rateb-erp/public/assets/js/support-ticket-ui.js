@@ -1,5 +1,6 @@
 /**
  * Support ticket UI: searchable canned replies + thread show-more (last 3).
+ * Selecting a ready reply always fills "Your reply" (editable afterward).
  */
 (function () {
     'use strict';
@@ -14,6 +15,31 @@
         }
     }
 
+    function loadTemplateBodies(box) {
+        if (box._replyBodyMap) {
+            return box._replyBodyMap;
+        }
+        var map = {};
+        var el = box.querySelector('[data-reply-templates-json="1"]');
+        if (el) {
+            try {
+                var list = JSON.parse(String(el.textContent || '[]'));
+                if (Array.isArray(list)) {
+                    list.forEach(function (tpl) {
+                        if (!tpl || tpl.id == null) {
+                            return;
+                        }
+                        map[String(tpl.id)] = String(tpl.body || '');
+                    });
+                }
+            } catch (eParse) {
+                map = {};
+            }
+        }
+        box._replyBodyMap = map;
+        return map;
+    }
+
     function applyThreadCollapse(root, expanded) {
         if (!root) {
             return;
@@ -25,7 +51,6 @@
         var limit = parseInt(root.getAttribute('data-thread-visible-limit') || String(VISIBLE_LIMIT), 10) || VISIBLE_LIMIT;
         var msgs = Array.prototype.slice.call(body.querySelectorAll('[data-thread-msg="1"]'));
         if (msgs.length === 0) {
-            // Live HTML may lack data-thread-msg — tag children that look like messages.
             Array.prototype.forEach.call(body.children, function (el) {
                 if (el.classList && el.classList.contains('support-ticket-thread__msg')) {
                     el.setAttribute('data-thread-msg', '1');
@@ -87,7 +112,6 @@
             el.classList.toggle('support-ticket-thread__msg--older', idx < hiddenCount);
         });
 
-        // Re-group only among currently visible bubbles so the first visible keeps its meta.
         var visiblePrevStaff = null;
         msgs.forEach(function (el) {
             if (el.hidden || el.classList.contains('is-collapsed')) {
@@ -123,7 +147,7 @@
         });
     }
 
-    function syncReplyPicker(box) {
+    function syncReplyPicker(box, forceFill) {
         var pick = box.querySelector('[data-reply-pick="1"]');
         var body = box.querySelector('[data-reply-body="1"]');
         var wrap = box.querySelector('[data-reply-body-wrap="1"]');
@@ -142,23 +166,27 @@
             return;
         }
         var val = String(pick.value || '');
-        var opt = pick.options[pick.selectedIndex];
-        var templateBody = opt ? String(opt.getAttribute('data-body') || '') : '';
+        var bodies = loadTemplateBodies(box);
+        var templateBody = Object.prototype.hasOwnProperty.call(bodies, val) ? String(bodies[val] || '') : '';
+
         if (val === '') {
-            // Keep whatever the user typed; only clear when switching templates.
-            if (submit) {
-                submit.disabled = String(body.value || '').trim() === '';
-            }
-            return;
-        }
-        if (val === '__manual__') {
-            if (!body.dataset.manualTouched) {
+            if (forceFill) {
                 body.value = '';
+                delete body.dataset.manualTouched;
+            }
+        } else if (val === '__manual__') {
+            if (forceFill || !body.dataset.manualTouched) {
+                // Keep typed text if user already started manual entry; clear only on fresh pick.
+                if (forceFill && !body.dataset.manualTouched) {
+                    body.value = '';
+                }
             }
             try { body.focus(); } catch (eFocus) { /* ignore */ }
-        } else if (!body.dataset.manualTouched) {
+        } else if (forceFill || !body.dataset.manualTouched) {
             body.value = templateBody;
+            delete body.dataset.manualTouched;
         }
+
         if (submit) {
             submit.disabled = String(body.value || '').trim() === '';
         }
@@ -182,11 +210,10 @@
             var hay = normalize(opt.getAttribute('data-search') || opt.textContent || '');
             opt.hidden = hay.indexOf(q) === -1;
         });
-        // If current selection is hidden by filter, clear it.
         var cur = pick.options[pick.selectedIndex];
         if (cur && cur.hidden && pick.value !== '') {
             pick.value = '';
-            syncReplyPicker(box);
+            syncReplyPicker(box, true);
         }
     }
 
@@ -195,6 +222,7 @@
             return;
         }
         box.dataset.replyBound = '1';
+        box._replyBodyMap = null;
         var search = box.querySelector('[data-reply-search="1"]');
         var pick = box.querySelector('[data-reply-pick="1"]');
         var body = box.querySelector('[data-reply-body="1"]');
@@ -210,12 +238,16 @@
                 if (body) {
                     delete body.dataset.manualTouched;
                 }
-                syncReplyPicker(box);
+                // Always inject the chosen template into "Your reply"; user may edit after.
+                syncReplyPicker(box, true);
             });
         }
         if (body) {
             body.addEventListener('input', function () {
                 body.dataset.manualTouched = '1';
+                if (pick && pick.value && pick.value !== '__manual__') {
+                    // Edited a template → treat as custom from now until another pick.
+                }
                 var submit = box.querySelector('[data-reply-submit="1"]');
                 if (submit) {
                     submit.disabled = String(body.value || '').trim() === '';
@@ -224,11 +256,10 @@
         }
         if (form) {
             form.addEventListener('submit', function (e) {
-                // Ensure pick templates are applied once more before post.
                 if (pick && pick.value && pick.value !== '__manual__' && body && !body.dataset.manualTouched) {
-                    syncReplyPicker(box);
+                    syncReplyPicker(box, true);
                 }
-                if (String(body && body.value || '').trim() === '') {
+                if (String((body && body.value) || '').trim() === '') {
                     e.preventDefault();
                     if (body) {
                         body.focus();
@@ -238,7 +269,7 @@
                 }
             });
         }
-        syncReplyPicker(box);
+        syncReplyPicker(box, false);
     }
 
     function boot() {
@@ -246,6 +277,10 @@
             initThread(root);
         });
         document.querySelectorAll('[data-support-reply-picker="1"]').forEach(function (box) {
+            // Soft-nav may re-inject the form; allow re-bind on a fresh node.
+            if (box.dataset.replyBound === '1' && !box.querySelector('[data-reply-pick="1"]')) {
+                delete box.dataset.replyBound;
+            }
             initReplyPicker(box);
         });
     }
@@ -267,7 +302,13 @@
     };
 
     document.addEventListener('DOMContentLoaded', boot);
-    document.addEventListener('rateb:soft-nav:afterEnter', boot);
+    document.addEventListener('rateb:soft-nav:afterEnter', function () {
+        document.querySelectorAll('[data-support-reply-picker="1"]').forEach(function (box) {
+            delete box.dataset.replyBound;
+            box._replyBodyMap = null;
+        });
+        boot();
+    });
     if (document.readyState !== 'loading') {
         boot();
     }
