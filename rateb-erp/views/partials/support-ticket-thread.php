@@ -10,15 +10,29 @@ if ($ticketId < 1 || empty($conversation) || !is_array($conversation)) {
 }
 $original = is_array($conversation['original'] ?? null) ? $conversation['original'] : [];
 $replies = is_array($conversation['replies'] ?? null) ? $conversation['replies'] : [];
+$status = is_array($item) ? (string) ($item['status'] ?? '') : '';
+$priority = is_array($item) ? (string) ($item['priority'] ?? '') : '';
+$replyCount = count($replies);
+$activityToken = $ticketId . ':' . $replyCount . ':' . $status . ':' . $priority;
 ?>
-<div class="rateb-card mb-3 support-ticket-thread">
+<div class="rateb-card mb-3 support-ticket-thread"
+     data-rateb-ticket-live="1"
+     data-ticket-id="<?php echo View::escape((string) $ticketId); ?>"
+     data-activity-token="<?php echo View::escape($activityToken); ?>"
+     data-status="<?php echo View::escape($status); ?>"
+     data-priority="<?php echo View::escape($priority); ?>">
     <div class="rateb-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span><?php echo View::escape(__('support_ticket_conversation')); ?></span>
-        <?php if (!empty($companyLabel)) { ?>
-        <span class="badge text-bg-secondary"><?php echo View::escape(__('companies')); ?>: <?php echo View::escape($companyLabel); ?></span>
-        <?php } ?>
+        <span class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-success support-ticket-live-badge d-none" data-rateb-live-badge="1">
+                <?php echo View::escape(__('support_ticket_live_updated')); ?>
+            </span>
+            <?php if (!empty($companyLabel)) { ?>
+            <span class="badge text-bg-secondary"><?php echo View::escape(__('companies')); ?>: <?php echo View::escape($companyLabel); ?></span>
+            <?php } ?>
+        </span>
     </div>
-    <div class="rateb-card-body support-ticket-thread__body">
+    <div class="rateb-card-body support-ticket-thread__body" data-rateb-ticket-thread-body="1">
         <div class="support-ticket-thread__msg support-ticket-thread__msg--client">
             <div class="support-ticket-thread__meta">
                 <strong><?php echo View::escape(__('support_ticket_original_request')); ?></strong>
@@ -34,7 +48,7 @@ $replies = is_array($conversation['replies'] ?? null) ? $conversation['replies']
         <?php foreach ($replies as $reply) {
             $isStaff = !empty($reply['is_staff']);
             ?>
-        <div class="support-ticket-thread__msg<?php echo $isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client'; ?>">
+        <div class="support-ticket-thread__msg<?php echo $isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client'; ?>" data-reply-id="<?php echo View::escape((string) ((int) ($reply['id'] ?? 0))); ?>">
             <div class="support-ticket-thread__meta">
                 <strong><?php echo View::escape($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client')); ?></strong>
                 <?php if (!empty($reply['user_name'])) { ?>

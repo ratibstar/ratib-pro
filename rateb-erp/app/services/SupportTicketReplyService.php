@@ -166,6 +166,67 @@ final class SupportTicketReplyService
         ];
     }
 
+    /**
+     * JSON snapshot for live polling (no page refresh).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function liveSnapshot(int $ticketId): ?array
+    {
+        if ($ticketId < 1) {
+            return null;
+        }
+        try {
+            $ticket = (new SupportTicket())->findByIdUnscoped($ticketId);
+        } catch (\Throwable $e) {
+            $ticket = null;
+        }
+        if (!is_array($ticket)) {
+            return null;
+        }
+        $conversation = $this->conversation($ticketId, $ticket);
+        $replies = $conversation['replies'] ?? [];
+        $maxReplyId = 0;
+        $outReplies = [];
+        foreach ($replies as $row) {
+            $rid = (int) ($row['id'] ?? 0);
+            if ($rid > $maxReplyId) {
+                $maxReplyId = $rid;
+            }
+            $outReplies[] = [
+                'id' => $rid,
+                'is_staff' => !empty($row['is_staff']) ? 1 : 0,
+                'body' => (string) ($row['body'] ?? ''),
+                'user_name' => (string) ($row['user_name'] ?? ''),
+                'created_at' => (string) ($row['created_at'] ?? ''),
+            ];
+        }
+        $status = (string) ($ticket['status'] ?? '');
+        $priority = (string) ($ticket['priority'] ?? '');
+        $token = $ticketId . ':' . $maxReplyId . ':' . $status . ':' . $priority . ':' . count($outReplies);
+
+        return [
+            'id' => $ticketId,
+            'ticket_no' => (string) ($ticket['ticket_no'] ?? ''),
+            'status' => $status,
+            'priority' => $priority,
+            'subject' => (string) ($ticket['subject'] ?? ''),
+            'reply_count' => count($outReplies),
+            'activity_token' => $token,
+            'original' => [
+                'body' => (string) (($conversation['original'] ?? [])['body'] ?? ''),
+                'user_name' => (string) (($conversation['original'] ?? [])['user_name'] ?? ''),
+                'created_at' => (string) (($conversation['original'] ?? [])['created_at'] ?? ''),
+            ],
+            'replies' => $outReplies,
+            'labels' => [
+                'original' => (string) __('support_ticket_original_request'),
+                'staff' => (string) __('support_ticket_reply_staff'),
+                'client' => (string) __('support_ticket_reply_client'),
+            ],
+        ];
+    }
+
     private function resolveUserName(int $userId): string
     {
         if ($userId < 1) {

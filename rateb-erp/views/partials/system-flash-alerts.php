@@ -24,7 +24,7 @@ if ($canPoll && class_exists(ErpSystemAlertService::class)) {
      data-rateb-system-flash-enabled="<?php echo $canPoll ? '1' : '0'; ?>"
      role="region"
      aria-label="<?php echo View::escape(__('system_flash_alerts_region')); ?>">
-<script>window.__RATEB_FLASH_COL_TICKET__=<?php echo json_encode(__('ticket_no'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_COMPANY__=<?php echo json_encode(__('companies'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_SUBJECT__=<?php echo json_encode(__('subject'), JSON_UNESCAPED_UNICODE); ?>;</script>
+<script>window.__RATEB_FLASH_COL_TICKET__=<?php echo json_encode(__('ticket_no'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_COMPANY__=<?php echo json_encode(__('companies'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_FLASH_COL_SUBJECT__=<?php echo json_encode(__('subject'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_LIVE_TOAST_TITLE__=<?php echo json_encode(__('support_ticket_live_toast_title'), JSON_UNESCAPED_UNICODE); ?>;window.__RATEB_LIVE_UPDATED__=<?php echo json_encode(__('support_ticket_live_updated'), JSON_UNESCAPED_UNICODE); ?>;</script>
     <?php foreach ($alerts as $alert) {
         $severity = (string) ($alert['severity'] ?? 'info');
         $pulse = !empty($alert['pulse']);
@@ -58,3 +58,13 @@ if ($canPoll && class_exists(ErpSystemAlertService::class)) {
     </div>
     <?php } ?>
 </div>
+<div id="rateb-live-toast-stack" class="rateb-live-toast-stack" aria-live="polite" aria-atomic="true"></div>
+<style>
+.rateb-live-toast-stack{position:fixed;z-index:1080;inset-inline-end:1rem;bottom:1rem;display:flex;flex-direction:column;gap:.5rem;max-width:min(360px,92vw);pointer-events:none}
+.rateb-live-toast{pointer-events:auto;background:#1e293b;color:#f8fafc;border:1px solid rgba(148,163,184,.35);border-radius:.65rem;padding:.75rem .9rem;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:ratebLiveToastIn .25s ease}
+.rateb-live-toast__title{font-weight:700;font-size:.92rem;margin-bottom:.2rem}
+.rateb-live-toast__msg{font-size:.82rem;opacity:.92;white-space:pre-wrap}
+@keyframes ratebLiveToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.support-ticket-live-badge{animation:ratebLivePulse 1.2s ease 2}
+@keyframes ratebLivePulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
