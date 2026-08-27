@@ -264,13 +264,26 @@
         return String(text == null ? '' : text).replace(/\n*\s*\[rateb_(?:agency|platform)_reply:\d+:\d+\]\s*$/u, '').trim();
     }
 
+    function messageIsArabic(text) {
+        try {
+            return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(String(text || ''));
+        } catch (e) {
+            return false;
+        }
+    }
+
     function renderThreadMsg(opts) {
         var isStaff = !!opts.isStaff;
         var continued = !!opts.continued;
+        var bodyText = stripReplyMarker(opts.body || '');
+        var isArabic = messageIsArabic(bodyText);
         var cls = 'support-ticket-thread__msg '
             + (isStaff ? 'support-ticket-thread__msg--staff' : 'support-ticket-thread__msg--client')
-            + (continued ? ' support-ticket-thread__msg--continued' : '');
-        var html = '<div class="' + cls + '" data-thread-msg="1" data-is-staff="' + (isStaff ? '1' : '0') + '"';
+            + (continued ? ' support-ticket-thread__msg--continued' : '')
+            + (isArabic ? ' support-ticket-thread__msg--lang-ar' : ' support-ticket-thread__msg--lang-en');
+        var html = '<div class="' + cls + '" data-thread-msg="1" data-is-staff="' + (isStaff ? '1' : '0') + '"'
+            + ' data-msg-lang="' + (isArabic ? 'ar' : 'en') + '"'
+            + ' dir="' + (isArabic ? 'rtl' : 'ltr') + '"';
         if (opts.replyId) {
             html += ' data-reply-id="' + escapeHtml(String(opts.replyId)) + '"';
         }
@@ -281,7 +294,7 @@
         if (opts.createdAt) {
             html += '<span class="text-muted support-ticket-thread__time">' + escapeHtml(opts.createdAt) + '</span>';
         }
-        html += '</div><div class="support-ticket-thread__text">' + nl2br(stripReplyMarker(opts.body || '')) + '</div></div>';
+        html += '</div><div class="support-ticket-thread__text">' + nl2br(bodyText) + '</div></div>';
         return html;
     }
 

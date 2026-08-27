@@ -86,24 +86,29 @@ $startVisible = $hiddenCount;
             $isOriginal = ($msg['kind'] ?? '') === 'original';
             $isOlder = $idx < $startVisible;
             $isContinued = $prevStaff !== null && $prevStaff === $isStaff && !$isOriginal;
-            $msgClass = 'support-ticket-thread__msg'
-                . ($isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client')
-                . ($isContinued ? ' support-ticket-thread__msg--continued' : '')
-                . ($isOlder ? ' support-ticket-thread__msg--older is-collapsed' : '');
-            $title = $isOriginal
-                ? __('support_ticket_original_request')
-                : ($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client'));
             $displayBody = (string) ($msg['body'] ?? '');
             $displayBody = trim((string) preg_replace(
                 '/\n*\s*\[rateb_(?:agency|platform)_reply:\d+:\d+\]\s*$/u',
                 '',
                 $displayBody
             ));
+            $isArabic = (bool) preg_match('/\p{Arabic}/u', $displayBody);
+            $langClass = $isArabic ? ' support-ticket-thread__msg--lang-ar' : ' support-ticket-thread__msg--lang-en';
+            $msgClass = 'support-ticket-thread__msg'
+                . ($isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client')
+                . ($isContinued ? ' support-ticket-thread__msg--continued' : '')
+                . ($isOlder ? ' support-ticket-thread__msg--older is-collapsed' : '')
+                . $langClass;
+            $title = $isOriginal
+                ? __('support_ticket_original_request')
+                : ($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client'));
             ?>
         <div class="<?php echo View::escape($msgClass); ?>"
              data-thread-msg="1"
              data-msg-index="<?php echo (int) $idx; ?>"
              data-is-staff="<?php echo $isStaff ? '1' : '0'; ?>"
+             data-msg-lang="<?php echo $isArabic ? 'ar' : 'en'; ?>"
+             dir="<?php echo $isArabic ? 'rtl' : 'ltr'; ?>"
              <?php if ((int) ($msg['reply_id'] ?? 0) > 0) { ?>data-reply-id="<?php echo View::escape((string) ((int) $msg['reply_id'])); ?>"<?php } ?>
              <?php if ($isOlder) { ?>hidden<?php } ?>>
             <div class="support-ticket-thread__meta">

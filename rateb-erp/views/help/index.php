@@ -10,7 +10,12 @@ declare(strict_types=1);
 use Rateb\App\Core\View;
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/help-center.css'); ?>">
-<div class="hc-page" id="rateb-help-center" data-hc-home="<?php echo View::escape($helpHomeUrl); ?>">
+<?php
+$hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 'rtl';
+$hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
+?>
+<div class="hc-page" id="rateb-help-center" data-hc-home="<?php echo View::escape($helpHomeUrl); ?>"
+     data-hc-lang="<?php echo View::escape($hcLang); ?>" dir="<?php echo View::escape($hcDir); ?>">
     <section class="hc-hero" aria-labelledby="hc-hero-title">
         <p class="hc-hero__eyebrow"><?php echo View::escape(__('help_center')); ?></p>
         <h2 id="hc-hero-title" class="hc-hero__title"><?php echo View::escape(__('help_hero_title')); ?></h2>

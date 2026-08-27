@@ -11,7 +11,11 @@ use Rateb\App\Core\View;
 $accent = preg_replace('/[^a-z]/', '', (string) ($module['accent'] ?? 'sky')) ?: 'sky';
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/help-center.css'); ?>">
-<div class="hc-page hc-module-page hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>">
+<?php
+$hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 'rtl';
+?>
+<div class="hc-page hc-module-page hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>"
+     dir="<?php echo htmlspecialchars($hcDir, ENT_QUOTES, 'UTF-8'); ?>">
     <?php View::partial('help/breadcrumb', [
         'crumbs' => [
             ['label' => __('help_center'), 'url' => $helpHomeUrl],
