@@ -102,7 +102,11 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <div class="rateb-hybrid-field"<?php echo $detailsOnPick ? ' data-details-on-pick="1"' : ''; ?>>
         <select class="form-select rateb-form-control rateb-hybrid-select" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 name="<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
-                <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
+                <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?><?php
+                if ($detailsOnPick) {
+                    echo ' onchange="var w=this.closest(\'.rateb-hybrid-field\');var m=w&&w.querySelector(\'.rateb-hybrid-manual\');var h=w&&w.querySelector(\'.rateb-hybrid-value\');if(!m||!h)return;if(!this.value){m.style.display=\'none\';m.disabled=true;m.value=\'\';h.value=\'\';return;}var o=this.options[this.selectedIndex];var lab=(o&&o.getAttribute(\'data-label\'))||(o&&o.text)||\'\';m.style.display=\'\';m.disabled=false;m.required=true;if(this.value===\'__manual__\'){m.value=\'\';m.focus();}else{m.value=lab;}h.value=m.value;"';
+                }
+                ?>>
             <option value=""><?php echo __('select'); ?></option>
             <?php foreach ($options as $opt) { ?>
             <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo $pickValue === (string) $opt['value'] ? ' selected' : ''; ?>

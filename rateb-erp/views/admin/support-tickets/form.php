@@ -29,7 +29,8 @@ if ($isEdit && !empty($canReply) && !empty($replyAction)) { ?>
                                autocomplete="off"
                                placeholder="<?php echo View::escape(__('support_ticket_reply_search_placeholder')); ?>">
                     </div>
-                    <select class="form-select rateb-form-control mt-2" id="support_ticket_reply_pick" data-reply-pick="1" required>
+                    <select class="form-select rateb-form-control mt-2" id="support_ticket_reply_pick" data-reply-pick="1" required
+                            onchange="if (window.ratebFillSupportReplyFromPick) { window.ratebFillSupportReplyFromPick(this, true); }">
                         <option value=""><?php echo View::escape(__('select')); ?></option>
                         <?php foreach ($replyTemplates as $tpl) {
                             $tplId = (string) ($tpl['id'] ?? '');
