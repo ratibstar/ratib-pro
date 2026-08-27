@@ -381,6 +381,13 @@ final class SupportTicketPlatformMirrorService
                     'ca' => $createdAt,
                 ]);
                 $imported++;
+                $this->notifyAgencyTicketWatchers(
+                    $localPdo,
+                    $local,
+                    (string) ($local['ticket_no'] ?? ('#' . $localTicketId)),
+                    $cleanBody,
+                    $localTicketId
+                );
             }
 
             return $imported;
@@ -608,6 +615,16 @@ final class SupportTicketPlatformMirrorService
                 ]));
             }
 
+            // Persistent unread alerts for platform Super Admins until they open the ticket.
+            $this->notifyPlatformSuperAdminsOfReply(
+                $platformPdo,
+                $platformTicketId,
+                (string) ($platformTicket['ticket_no'] ?? ('#' . $platformTicketId)),
+                $companyId,
+                (string) ($platformTicket['company_name'] ?? ''),
+                $body
+            );
+
             return true;
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService mirror agency reply: ' . $e->getMessage());
@@ -807,6 +824,17 @@ final class SupportTicketPlatformMirrorService
                     'body' => $cleanBody . "\n\n" . $marker,
                     'ca' => $createdAt,
                 ]);
+                // Agency-side client replies pulled by platform poll → persistent Super Admin alerts.
+                if ($isStaff === 0) {
+                    $this->notifyPlatformSuperAdminsOfReply(
+                        $platformPdo,
+                        $platformTicketId,
+                        (string) ($platformTicket['ticket_no'] ?? ('#' . $platformTicketId)),
+                        $companyId,
+                        (string) ($platformTicket['company_name'] ?? ''),
+                        $cleanBody
+                    );
+                }
             }
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService pull agency replies: ' . $e->getMessage());
@@ -1623,7 +1651,55 @@ final class SupportTicketPlatformMirrorService
             'company' => $companyName !== '' ? $companyName : '—',
             'subject' => $subject,
         ]);
+        $this->insertPlatformSuperAdminNotifications(
+            $pdo,
+            $platformTicketId,
+            $companyId,
+            $title,
+            $message,
+            'warning',
+            SupportTicketAlertService::TRIGGER_OPEN
+        );
+    }
 
+    /**
+     * Agency reply mirrored onto platform → persistent Super Admin alerts until read.
+     */
+    private function notifyPlatformSuperAdminsOfReply(
+        \PDO $pdo,
+        int $platformTicketId,
+        string $ticketNo,
+        int $companyId,
+        string $companyName,
+        string $replyBody
+    ): void {
+        $preview = mb_strlen($replyBody) > 120 ? (mb_substr($replyBody, 0, 117) . '…') : $replyBody;
+        $title = __('support_ticket_alert_reply_title', ['ticket' => $ticketNo]);
+        $message = __('support_ticket_alert_reply_body', [
+            'ticket' => $ticketNo,
+            'company' => $companyName !== '' ? $companyName : '—',
+            'preview' => $preview,
+        ]);
+        $this->insertPlatformSuperAdminNotifications(
+            $pdo,
+            $platformTicketId,
+            $companyId,
+            $title,
+            $message,
+            'info',
+            SupportTicketAlertService::TRIGGER_REPLY
+        );
+    }
+
+    private function insertPlatformSuperAdminNotifications(
+        \PDO $pdo,
+        int $platformTicketId,
+        int $companyId,
+        string $title,
+        string $message,
+        string $type,
+        string $triggerType
+    ): void {
         try {
             $admins = $pdo->query(
                 "SELECT id FROM rateb_users WHERE is_super_admin = 1 AND status = 'active' ORDER BY id ASC LIMIT 50"
@@ -1648,8 +1724,8 @@ final class SupportTicketPlatformMirrorService
                     'uid' => $uid,
                     'title' => $title,
                     'msg' => $message,
-                    'type' => 'warning',
-                    'tt' => SupportTicketAlertService::TRIGGER_OPEN,
+                    'type' => $type,
+                    'tt' => $triggerType,
                     'et' => SupportTicketAlertService::ENTITY,
                     'eid' => $platformTicketId,
                 ];

@@ -80,6 +80,8 @@
         var icon = alert.icon || 'fa-bell';
         var url = alert.url || '#';
         var count = parseInt(alert.count, 10) || 0;
+        var ticketIds = Array.isArray(alert.ticket_ids) ? alert.ticket_ids : [];
+        var primaryTicketId = ticketIds.length ? (parseInt(ticketIds[0], 10) || 0) : 0;
         var badge = count > 0
             ? '<span class="rateb-system-flash-alert__badge">' + escapeHtml(String(count)) + '</span>'
             : '';
@@ -88,11 +90,18 @@
                 + escapeHtml(alert.action_label || 'View') + '</a>'
             : '';
         var preview = renderPreviewItems(alert);
+        var ticketAttr = primaryTicketId > 0
+            ? ' data-ticket-id="' + escapeHtml(String(primaryTicketId)) + '"'
+            : '';
+        var idsAttr = ticketIds.length
+            ? ' data-ticket-ids="' + escapeHtml(ticketIds.map(function (id) { return String(id); }).join(',')) + '"'
+            : '';
 
         return ''
             + '<div class="rateb-system-flash-alert rateb-system-flash-alert--' + escapeHtml(severity) + pulse + '"'
             + ' data-alert-key="' + escapeHtml(alert.key) + '"'
             + ' data-alert-count="' + escapeHtml(String(count)) + '"'
+            + ticketAttr + idsAttr
             + ' role="alert">'
             + '<div class="rateb-system-flash-alert__icon" aria-hidden="true">'
             + '<i class="fas ' + escapeHtml(icon) + '"></i>' + badge
@@ -167,10 +176,77 @@
             if (id < 1 || seenNotifIds[String(id)]) {
                 return;
             }
+            var trigger = String(item.trigger_type || '');
+            // Reply/open ticket notices are rendered as persistent flash cards — never toast+forget.
+            if (trigger === 'support_ticket_reply' || trigger === 'support_ticket_open') {
+                return;
+            }
             seenNotifIds[String(id)] = 1;
             showToast(item.title || (window.__RATEB_LIVE_TOAST_TITLE__ || 'Notice'), item.message || '');
         });
         persistSeenNotifs();
+    }
+
+    function normalizeAlerts(payload) {
+        if (payload && Array.isArray(payload.alerts)) {
+            return payload.alerts.filter(function (a) { return a && a.key; });
+        }
+        if (payload && payload.alert && payload.alert.key) {
+            return [payload.alert];
+        }
+        return [];
+    }
+
+    function applyAlertsStack(alerts) {
+        var stack = stackEl();
+        if (!stack) {
+            return;
+        }
+        if (!alerts.length) {
+            stack.innerHTML = '';
+            stack.classList.add('rateb-system-flash-stack--empty');
+            return;
+        }
+        stack.classList.remove('rateb-system-flash-stack--empty');
+        var html = '';
+        var keys = {};
+        alerts.forEach(function (alert) {
+            keys[String(alert.key)] = 1;
+            html += renderAlert(alert);
+        });
+        stack.innerHTML = html;
+    }
+
+    function markTicketIdsSeen(ticketIds) {
+        var stack = stackEl();
+        var url = stack ? (stack.getAttribute('data-rateb-system-flash-mark-seen') || '') : '';
+        if (!url || !ticketIds || !ticketIds.length) {
+            return;
+        }
+        ticketIds.forEach(function (tid) {
+            var id = parseInt(tid, 10) || 0;
+            if (id < 1) {
+                return;
+            }
+            var body = new URLSearchParams();
+            body.set('ticket_id', String(id));
+            fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: body.toString(),
+            }).then(function (res) {
+                return res.ok ? res.json() : null;
+            }).then(function (data) {
+                if (data && data.ok) {
+                    applyPayload(data);
+                }
+            }).catch(function () { /* ignore */ });
+        });
     }
 
     function renderThreadFromLive(ticket) {
@@ -481,24 +557,13 @@
             return;
         }
         var count = payload && typeof payload.count === 'number' ? payload.count : 0;
-        var alert = payload ? payload.alert : null;
+        var alerts = normalizeAlerts(payload);
 
-        if (count < 1 || !alert) {
-            stack.innerHTML = '';
-            stack.classList.add('rateb-system-flash-stack--empty');
-            lastAlertCount = 0;
-        } else {
-            stack.classList.remove('rateb-system-flash-stack--empty');
-            var existing = stack.querySelector('[data-alert-key="' + alert.key + '"]');
-            var html = renderAlert(alert);
-            if (existing) {
-                existing.outerHTML = html;
-            } else {
-                stack.innerHTML = html;
-            }
+        applyAlertsStack(alerts);
+        if (count > 0) {
             refreshTicketsListIfStale(count);
-            lastAlertCount = count;
         }
+        lastAlertCount = count;
 
         applyNotifications(payload);
 
@@ -532,6 +597,7 @@
                 activity_token: payload ? payload.activity_token : '',
                 ticket: payload ? payload.ticket : null,
                 tickets_table: rows,
+                alerts: alerts,
             },
         }));
     }
@@ -593,13 +659,37 @@
     }
 
     document.addEventListener('click', function (e) {
+        var action = e.target && e.target.closest ? e.target.closest('.rateb-system-flash-alert__action') : null;
+        if (action) {
+            var box = action.closest('.rateb-system-flash-alert');
+            if (box) {
+                var key = String(box.getAttribute('data-alert-key') || '');
+                // Only mark read when opening a specific reply alert (edit URL).
+                // Aggregate open-tickets banner should stay until each ticket is opened.
+                if (key.indexOf('support_ticket_reply_') === 0) {
+                    var idsAttr = box.getAttribute('data-ticket-ids') || box.getAttribute('data-ticket-id') || '';
+                    var ids = String(idsAttr).split(',').map(function (s) { return parseInt(s, 10) || 0; }).filter(Boolean);
+                    if (ids.length) {
+                        markTicketIdsSeen(ids);
+                    }
+                }
+            }
+            return;
+        }
         var btn = e.target && e.target.closest ? e.target.closest('.rateb-system-flash-alert__close') : null;
         if (!btn) {
             return;
         }
-        var box = btn.closest('.rateb-system-flash-alert');
-        if (box) {
-            box.remove();
+        var closeBox = btn.closest('.rateb-system-flash-alert');
+        if (!closeBox) {
+            return;
+        }
+        var closeKey = String(closeBox.getAttribute('data-alert-key') || '');
+        var closeIdsAttr = closeBox.getAttribute('data-ticket-ids') || closeBox.getAttribute('data-ticket-id') || '';
+        var closeIds = String(closeIdsAttr).split(',').map(function (s) { return parseInt(s, 10) || 0; }).filter(Boolean);
+        closeBox.remove();
+        if (closeKey.indexOf('support_ticket_reply_') === 0 && closeIds.length) {
+            markTicketIdsSeen(closeIds);
         }
     });
 

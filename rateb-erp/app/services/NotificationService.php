@@ -238,6 +238,38 @@ final class NotificationService
     }
 
     /**
+     * Unread notifications matching specific trigger types (persistent flash).
+     *
+     * @param list<string> $triggers
+     * @return list<array<string, mixed>>
+     */
+    public function listUnreadByTriggers(int $userId, array $triggers, int $limit = 8): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $triggers = array_values(array_filter(array_map('strval', $triggers)));
+        if ($triggers === []) {
+            return [];
+        }
+        $safeLimit = max(1, min(20, $limit));
+        $params = ['uid' => $userId];
+        $parts = [];
+        foreach ($triggers as $i => $trigger) {
+            $key = 'tr' . $i;
+            $parts[] = ':' . $key;
+            $params[$key] = $trigger;
+        }
+        $sql = 'SELECT id, company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at
+                FROM rateb_notifications
+                WHERE user_id = :uid AND (is_read = 0 OR is_read IS NULL)
+                  AND trigger_type IN (' . implode(',', $parts) . ')
+                ORDER BY id DESC LIMIT ' . $safeLimit;
+
+        return (new Notification())->query($sql, $params);
+    }
+
+    /**
      * Unread in-app notifications for global flash alerts (user-targeted only).
      *
      * @param list<string> $excludeTriggers

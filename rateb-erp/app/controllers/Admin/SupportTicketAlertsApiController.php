@@ -49,14 +49,22 @@ final class SupportTicketAlertsApiController
             }
         }
 
+        // Viewing a ticket counts as reading — clear persistent reply flashes for it.
+        if ($ticketId > 0) {
+            $svc->markTicketSeen($ticketId);
+        }
+
         $count = $svc->unreadOpenCountForViewer();
         $tickets = $svc->listUnreadOpenTicketsForViewer(5);
-        $alert = (new ErpSystemAlertService())->buildSupportTicketAlert($count, $tickets);
+        $flashSvc = new ErpSystemAlertService();
+        $alert = $flashSvc->buildSupportTicketAlert($count, $tickets);
+        $alerts = $flashSvc->alertsForLayout();
 
         $payload = [
             'ok' => true,
             'count' => $count,
             'alert' => $alert,
+            'alerts' => $alerts,
             'activity_token' => $this->globalActivityToken($count),
             'notifications' => $this->notificationsPayload(),
             'tickets_table' => $this->ticketsTablePayload(),
@@ -91,17 +99,19 @@ final class SupportTicketAlertsApiController
             return;
         }
 
-        (new SupportTicketAlertService())->markTicketSeen($ticketId);
         $svc = new SupportTicketAlertService();
+        $svc->markTicketSeen($ticketId);
         $count = $svc->unreadOpenCountForViewer();
+        $flashSvc = new ErpSystemAlertService();
 
         Response::json([
             'ok' => true,
             'count' => $count,
-            'alert' => (new ErpSystemAlertService())->buildSupportTicketAlert(
+            'alert' => $flashSvc->buildSupportTicketAlert(
                 $count,
                 $svc->listUnreadOpenTicketsForViewer(5)
             ),
+            'alerts' => $flashSvc->alertsForLayout(),
             'activity_token' => $this->globalActivityToken($count),
             'notifications' => $this->notificationsPayload(),
             'tickets_table' => $this->ticketsTablePayload(),
@@ -289,7 +299,11 @@ final class SupportTicketAlertsApiController
         $notifier = new NotificationService();
         $items = [];
         try {
-            $rows = $notifier->listUnreadFlashForUser($userId, 5);
+            // Open/reply ticket notices stay in persistent flash stack until read — not toasts.
+            $rows = $notifier->listUnreadFlashForUser($userId, 5, [
+                SupportTicketAlertService::TRIGGER_OPEN,
+                SupportTicketAlertService::TRIGGER_REPLY,
+            ]);
             foreach ($rows as $row) {
                 $items[] = [
                     'id' => (int) ($row['id'] ?? 0),

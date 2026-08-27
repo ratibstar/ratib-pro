@@ -78,7 +78,7 @@ return [
     'support_ticket_flash_line' => ':ticket — :company — :subject',
     'support_ticket_flash_more' => '+ :count more ticket(s)',
     'support_ticket_alert_reply_title' => 'Reply on ticket :ticket',
-    'support_ticket_alert_reply_body' => ':ticket — :preview',
+    'support_ticket_alert_reply_body' => ':ticket — :company — :preview',
     'support_ticket_conversation' => 'Ticket conversation',
     'support_ticket_original_request' => 'Original request',
     'support_ticket_reply_staff' => 'Support team',

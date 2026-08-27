@@ -36,6 +36,14 @@ if ($canPoll && class_exists(ErpSystemAlertService::class)) {
     <div class="rateb-system-flash-alert rateb-system-flash-alert--<?php echo View::escape($severity); ?><?php echo $pulse ? ' rateb-system-flash-alert--pulse' : ''; ?>"
          data-alert-key="<?php echo View::escape((string) ($alert['key'] ?? '')); ?>"
          data-alert-count="<?php echo View::escape((string) $count); ?>"
+         <?php
+            $ticketIds = is_array($alert['ticket_ids'] ?? null) ? $alert['ticket_ids'] : [];
+            $ticketIds = array_values(array_filter(array_map('intval', $ticketIds)));
+            if ($ticketIds !== []) {
+                echo ' data-ticket-id="' . View::escape((string) $ticketIds[0]) . '"';
+                echo ' data-ticket-ids="' . View::escape(implode(',', $ticketIds)) . '"';
+            }
+         ?>
          role="alert">
         <div class="rateb-system-flash-alert__icon" aria-hidden="true">
             <i class="fas <?php echo View::escape($icon); ?>"></i>

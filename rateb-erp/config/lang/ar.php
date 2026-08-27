@@ -78,7 +78,7 @@ return [
     'support_ticket_flash_line' => ':ticket — :company — :subject',
     'support_ticket_flash_more' => '+ :count تذكرة/تذاكر أخرى',
     'support_ticket_alert_reply_title' => 'رد على تذكرة :ticket',
-    'support_ticket_alert_reply_body' => ':ticket — :preview',
+    'support_ticket_alert_reply_body' => ':ticket — :company — :preview',
     'support_ticket_conversation' => 'محادثة التذكرة',
     'support_ticket_original_request' => 'الطلب الأصلي',
     'support_ticket_reply_staff' => 'فريق الدعم',

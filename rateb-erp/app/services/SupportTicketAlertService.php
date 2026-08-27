@@ -127,6 +127,8 @@ final class SupportTicketAlertService
         }
         $seen[$ticketId] = $ticketId;
         SessionManager::set(self::SEEN_SESSION_KEY, $seen);
+        // Opening a ticket clears persistent reply/open notifications for that ticket.
+        $this->markEntityNotificationsRead($ticketId);
     }
 
     /** Flash alerts for platform super-admin always span all companies. */
@@ -195,6 +197,18 @@ final class SupportTicketAlertService
         }
 
         return $base;
+    }
+
+    public function ticketEditUrl(int $ticketId): string
+    {
+        $ticketId = max(0, $ticketId);
+        $path = 'support-tickets/' . $ticketId . '/edit';
+        if (function_exists('rateb_app_url')) {
+            return rateb_app_url($path);
+        }
+        $prefix = function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets';
+
+        return rateb_url(rtrim($prefix, '/') . '/' . $ticketId . '/edit');
     }
 
     /** @return list<array<string, mixed>> */
