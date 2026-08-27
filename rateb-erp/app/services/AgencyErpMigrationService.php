@@ -796,7 +796,7 @@ final class AgencyErpMigrationService
     }
 
     /**
-     * Platform ERP credentials (rateb.sa context) — not per-agency DB user.
+     * Platform ERP credentials (rateb.sa admin_rateb-erp) — never agency-bound credentials.
      *
      * @return array{host:string,port:int,user:string,pass:string,db:string}
      */
@@ -808,17 +808,32 @@ final class AgencyErpMigrationService
         if ($dbName === '') {
             $dbName = 'admin_rateb-erp';
         }
-        $host = defined('RATEB_DB_HOST') ? (string) RATEB_DB_HOST : 'localhost';
-        $port = defined('RATEB_DB_PORT') ? (int) RATEB_DB_PORT : 3306;
-        if (function_exists('rateb_erp_db_credentials')) {
+
+        $host = getenv('RATEB_PLATFORM_ERP_DB_HOST');
+        if ($host === false || $host === '') {
+            $host = getenv('CONTROL_DB_HOST');
+        }
+        if ($host === false || $host === '') {
+            $host = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+        }
+        $portRaw = getenv('RATEB_PLATFORM_ERP_DB_PORT');
+        if ($portRaw === false || $portRaw === '') {
+            $portRaw = getenv('CONTROL_DB_PORT');
+        }
+        $port = (int) (($portRaw !== false && $portRaw !== '') ? $portRaw : (defined('DB_PORT') ? (int) DB_PORT : 3306));
+
+        if (function_exists('rateb_platform_erp_db_credentials')) {
+            [$user, $pass] = rateb_platform_erp_db_credentials();
+        } elseif (function_exists('rateb_erp_db_credentials')) {
+            // Last resort — may be agency-scoped; prefer CONTROL/DB env via platform helper above.
             [$user, $pass] = rateb_erp_db_credentials();
         } else {
-            $user = defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : 'root';
-            $pass = defined('RATEB_DB_PASS') ? (string) RATEB_DB_PASS : '';
+            $user = defined('DB_USER') ? (string) DB_USER : 'root';
+            $pass = defined('DB_PASS') ? (string) DB_PASS : '';
         }
 
         return [
-            'host' => $host !== '' ? $host : 'localhost',
+            'host' => $host !== '' ? (string) $host : 'localhost',
             'port' => $port > 0 ? $port : 3306,
             'user' => $user,
             'pass' => $pass,

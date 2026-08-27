@@ -180,23 +180,74 @@ if (!defined('RATEB_ERP_DB_NAME')) {
 }
 
 if (!function_exists('rateb_platform_erp_database_name')) {
+    /**
+     * Main SaaS ERP database on rateb.sa (admin_rateb-erp).
+     * NEVER use agency RATEB_ERP_DB_NAME — that is the local agency DB and breaks cross-DB sync.
+     */
     function rateb_platform_erp_database_name(): string
     {
         $directadmin = dirname(__DIR__, 2) . '/config/env/directadmin_db.php';
         if (is_file($directadmin)) {
             require_once $directadmin;
         }
-        $fromEnv = getenv('RATEB_ERP_DB_NAME');
-        if ($fromEnv !== false && $fromEnv !== '') {
-            $name = (string) $fromEnv;
-        } else {
+        $explicit = getenv('RATEB_PLATFORM_ERP_DB_NAME');
+        if ($explicit !== false && $explicit !== '') {
+            $name = (string) $explicit;
+        } elseif (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            // Agency host: ignore RATEB_ERP_DB_NAME (local agency DB).
             $name = function_exists('rateb_db_prefix') ? rateb_db_prefix() . '_rateb-erp' : 'admin_rateb-erp';
+        } else {
+            $fromEnv = getenv('RATEB_ERP_DB_NAME');
+            if ($fromEnv !== false && $fromEnv !== '') {
+                $name = (string) $fromEnv;
+            } else {
+                $name = function_exists('rateb_db_prefix') ? rateb_db_prefix() . '_rateb-erp' : 'admin_rateb-erp';
+            }
         }
         if ($name === 'admin-rateb-erp') {
             $name = 'admin_rateb-erp';
         }
 
         return $name;
+    }
+}
+
+if (!function_exists('rateb_platform_erp_db_credentials')) {
+    /**
+     * Credentials that can reach the platform ERP DB from an agency host.
+     * Never use the per-agency MySQL binding (often locked to the agency schema only).
+     *
+     * @return array{0:string,1:string}
+     */
+    function rateb_platform_erp_db_credentials(): array
+    {
+        $user = '';
+        $pass = '';
+        foreach (['RATEB_PLATFORM_ERP_DB_USER', 'CONTROL_DB_USER', 'DB_USER'] as $key) {
+            $v = getenv($key);
+            if ($v !== false && $v !== '') {
+                $user = (string) $v;
+                break;
+            }
+        }
+        foreach (['RATEB_PLATFORM_ERP_DB_PASS', 'CONTROL_DB_PASS', 'DB_PASS'] as $key) {
+            $v = getenv($key);
+            if ($v !== false) {
+                $pass = (string) $v;
+                break;
+            }
+        }
+        if ($user === '' && defined('DB_USER')) {
+            $user = (string) DB_USER;
+        }
+        if ($pass === '' && defined('DB_PASS')) {
+            $pass = (string) DB_PASS;
+        }
+        if ($user === '') {
+            $user = function_exists('rateb_default_mysql_user') ? rateb_default_mysql_user() : 'admin_rateb';
+        }
+
+        return [$user, $pass];
     }
 }
 

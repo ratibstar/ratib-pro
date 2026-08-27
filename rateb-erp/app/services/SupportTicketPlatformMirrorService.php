@@ -35,6 +35,9 @@ final class SupportTicketPlatformMirrorService
             $platformDb = trim((string) ($platformCfg['db'] ?? ''));
             $localDb = defined('RATEB_DB_NAME') ? trim((string) RATEB_DB_NAME) : '';
             if ($platformDb === '' || ($localDb !== '' && strcasecmp($platformDb, $localDb) === 0)) {
+                error_log('SupportTicketPlatformMirrorService: skip mirror — platform DB unresolved or same as agency ('
+                    . $platformDb . ' / ' . $localDb . ')');
+
                 return;
             }
 
@@ -193,6 +196,9 @@ final class SupportTicketPlatformMirrorService
             $platformDb = trim((string) ($platformCfg['db'] ?? ''));
             $localDb = defined('RATEB_DB_NAME') ? trim((string) RATEB_DB_NAME) : '';
             if ($platformDb === '' || ($localDb !== '' && strcasecmp($platformDb, $localDb) === 0)) {
+                error_log('SupportTicketPlatformMirrorService: skip agency inbound pull — platform DB unresolved or same as agency ('
+                    . $platformDb . ' / ' . $localDb . ')');
+
                 return 0;
             }
 
@@ -321,6 +327,9 @@ final class SupportTicketPlatformMirrorService
             $platformDb = trim((string) ($platformCfg['db'] ?? ''));
             $localDb = defined('RATEB_DB_NAME') ? trim((string) RATEB_DB_NAME) : '';
             if ($platformDb === '' || ($localDb !== '' && strcasecmp($platformDb, $localDb) === 0)) {
+                error_log('SupportTicketPlatformMirrorService: skip agency→platform reply — platform DB unresolved or same as agency ('
+                    . $platformDb . ' / ' . $localDb . ')');
+
                 return false;
             }
 
@@ -450,6 +459,12 @@ final class SupportTicketPlatformMirrorService
                             // Keep existing mirror status/priority in sync with agency.
                             $this->refreshMirroredTicketFields($platformPdo, $agencyId, $row);
                         }
+                        $this->pullAgencyRepliesIntoPlatform(
+                            $agencyPdo,
+                            $platformPdo,
+                            $agencyId,
+                            $row
+                        );
                     }
                 } catch (\Throwable $eAgency) {
                     error_log('support ticket agency pull #' . $agencyId . ': ' . $eAgency->getMessage());
@@ -460,6 +475,99 @@ final class SupportTicketPlatformMirrorService
         }
 
         return $imported;
+    }
+
+    /**
+     * Copy missing agency replies onto the platform mirror ticket.
+     *
+     * @param array<string, mixed> $agencyTicket
+     */
+    private function pullAgencyRepliesIntoPlatform(
+        \PDO $agencyPdo,
+        \PDO $platformPdo,
+        int $agencyId,
+        array $agencyTicket
+    ): void {
+        $localTicketId = (int) ($agencyTicket['id'] ?? 0);
+        if ($localTicketId < 1 || $agencyId < 1) {
+            return;
+        }
+        $platformTicket = $this->findPlatformMirrorForLocalTicket(
+            $platformPdo,
+            $agencyId,
+            $localTicketId,
+            $agencyTicket
+        );
+        if (!is_array($platformTicket)) {
+            return;
+        }
+        $platformTicketId = (int) ($platformTicket['id'] ?? 0);
+        $companyId = (int) ($platformTicket['company_id'] ?? 0);
+        if ($platformTicketId < 1) {
+            return;
+        }
+        try {
+            $replies = $agencyPdo->prepare(
+                'SELECT id, body, is_staff, created_at FROM rateb_support_ticket_replies
+                 WHERE ticket_id = :tid ORDER BY id ASC'
+            );
+            $replies->execute(['tid' => $localTicketId]);
+            while ($reply = $replies->fetch(\PDO::FETCH_ASSOC)) {
+                if (!is_array($reply)) {
+                    continue;
+                }
+                $localReplyId = (int) ($reply['id'] ?? 0);
+                $body = trim((string) ($reply['body'] ?? ''));
+                if ($localReplyId < 1 || $body === '') {
+                    continue;
+                }
+                $cleanBody = trim((string) (preg_replace(
+                    '/\n*\s*\[rateb_platform_reply:\d+:\d+\]\s*$/u',
+                    '',
+                    $body
+                ) ?? $body));
+                $cleanBody = trim((string) (preg_replace(
+                    '/\n*\s*\[rateb_agency_reply:\d+:\d+\]\s*$/u',
+                    '',
+                    $cleanBody
+                ) ?? $cleanBody));
+                if ($cleanBody === '') {
+                    continue;
+                }
+                $marker = '[rateb_agency_reply:' . $agencyId . ':' . $localReplyId . ']';
+                $dup = $platformPdo->prepare(
+                    'SELECT id FROM rateb_support_ticket_replies
+                     WHERE ticket_id = :tid AND body LIKE :m LIMIT 1'
+                );
+                $dup->execute(['tid' => $platformTicketId, 'm' => '%' . $marker . '%']);
+                if ($dup->fetch(\PDO::FETCH_ASSOC)) {
+                    continue;
+                }
+                $isStaff = !empty($reply['is_staff']) ? 1 : 0;
+                // Platform-originated staff replies already have platform markers — skip re-import as client.
+                if ($isStaff === 1 && str_contains($body, self::REPLY_MARKER_PREFIX)) {
+                    continue;
+                }
+                $createdAt = trim((string) ($reply['created_at'] ?? ''));
+                if ($createdAt === '' || !preg_match('/^\d{4}-\d{2}-\d{2}/', $createdAt)) {
+                    $createdAt = date('Y-m-d H:i:s');
+                }
+                $platformPdo->prepare(
+                    'INSERT INTO rateb_support_ticket_replies
+                        (ticket_id, company_id, user_id, is_staff, body, created_at)
+                     VALUES
+                        (:tid, :cid, NULL, :staff, :body, :ca)'
+                )->execute([
+                    'tid' => $platformTicketId,
+                    'cid' => $companyId > 0 ? $companyId : null,
+                    'staff' => $isStaff,
+                    'body' => $cleanBody . "\n\n" . $marker,
+                    'ca' => $createdAt,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            error_log('SupportTicketPlatformMirrorService pull agency replies: ' . $e->getMessage());
+        }
     }
 
     private function isPlatformPushContext(): bool
@@ -484,10 +592,12 @@ final class SupportTicketPlatformMirrorService
         $platformTicketId = (int) ($platformTicket['id'] ?? 0);
         $message = (string) ($platformTicket['message'] ?? '');
         $ticketNo = trim((string) ($platformTicket['ticket_no'] ?? ''));
-        if (($message === '' || $ticketNo === '') && $platformTicketId > 0) {
+        $sourceAgencyId = (int) ($platformTicket['source_agency_id'] ?? 0);
+        $sourceTicketId = (int) ($platformTicket['source_ticket_id'] ?? 0);
+        if (($message === '' || $ticketNo === '' || $sourceAgencyId < 1 || $sourceTicketId < 1) && $platformTicketId > 0) {
             try {
                 $stmt = \Rateb\App\Core\Database::connection()->prepare(
-                    'SELECT message, ticket_no, status, priority, subject
+                    'SELECT message, ticket_no, status, priority, subject, source_agency_id, source_ticket_id
                      FROM rateb_support_tickets WHERE id = :id LIMIT 1'
                 );
                 $stmt->execute(['id' => $platformTicketId]);
@@ -499,18 +609,45 @@ final class SupportTicketPlatformMirrorService
                     if ($ticketNo === '') {
                         $ticketNo = trim((string) ($fetched['ticket_no'] ?? ''));
                     }
+                    if ($sourceAgencyId < 1) {
+                        $sourceAgencyId = (int) ($fetched['source_agency_id'] ?? 0);
+                    }
+                    if ($sourceTicketId < 1) {
+                        $sourceTicketId = (int) ($fetched['source_ticket_id'] ?? 0);
+                    }
                     $platformTicket = array_merge($fetched, $platformTicket);
                 }
             } catch (\Throwable $e) {
-                // continue with what we have
+                // continue — columns may not exist yet
+                try {
+                    $stmt = \Rateb\App\Core\Database::connection()->prepare(
+                        'SELECT message, ticket_no, status, priority, subject
+                         FROM rateb_support_tickets WHERE id = :id LIMIT 1'
+                    );
+                    $stmt->execute(['id' => $platformTicketId]);
+                    $fetched = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    if (is_array($fetched)) {
+                        if ($message === '') {
+                            $message = (string) ($fetched['message'] ?? '');
+                        }
+                        if ($ticketNo === '') {
+                            $ticketNo = trim((string) ($fetched['ticket_no'] ?? ''));
+                        }
+                        $platformTicket = array_merge($fetched, $platformTicket);
+                    }
+                } catch (\Throwable $e2) {
+                    // ignore
+                }
             }
         }
 
-        $agencyId = 0;
-        $localTicketId = 0;
-        if (preg_match('/' . preg_quote(self::MARKER_PREFIX, '/') . '(\d+):(\d+)\]/', $message, $m)) {
-            $agencyId = (int) ($m[1] ?? 0);
-            $localTicketId = (int) ($m[2] ?? 0);
+        $agencyId = $sourceAgencyId;
+        $localTicketId = $sourceTicketId;
+        if ($agencyId < 1 || $localTicketId < 1) {
+            if (preg_match('/' . preg_quote(self::MARKER_PREFIX, '/') . '(\d+):(\d+)\]/', $message, $m)) {
+                $agencyId = (int) ($m[1] ?? 0);
+                $localTicketId = (int) ($m[2] ?? 0);
+            }
         }
 
         // Fallback: platform ticket_no like A34-ST-0001
@@ -622,6 +759,23 @@ final class SupportTicketPlatformMirrorService
         int $localTicketId,
         ?array $localTicket = null
     ): ?array {
+        if ($agencyId > 0 && $localTicketId > 0 && $this->pdoHasSourceColumns($platformPdo)) {
+            try {
+                $stmt = $platformPdo->prepare(
+                    'SELECT * FROM rateb_support_tickets
+                     WHERE source_agency_id = :aid AND source_ticket_id = :tid
+                     ORDER BY id DESC LIMIT 1'
+                );
+                $stmt->execute(['aid' => $agencyId, 'tid' => $localTicketId]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if (is_array($row)) {
+                    return $row;
+                }
+            } catch (\Throwable $e) {
+                // fall through to marker / ticket_no
+            }
+        }
+
         if ($agencyId > 0 && $localTicketId > 0) {
             $marker = self::MARKER_PREFIX . $agencyId . ':' . $localTicketId . ']';
             $stmt = $platformPdo->prepare(
@@ -630,6 +784,8 @@ final class SupportTicketPlatformMirrorService
             $stmt->execute(['m' => '%' . $marker . '%']);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (is_array($row)) {
+                $this->backfillSourceColumns($platformPdo, (int) ($row['id'] ?? 0), $agencyId, $localTicketId);
+
                 return $row;
             }
         }
@@ -656,11 +812,51 @@ final class SupportTicketPlatformMirrorService
             $stmt->execute(['no' => $platformNo]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (is_array($row)) {
+                $this->backfillSourceColumns($platformPdo, (int) ($row['id'] ?? 0), $agencyId, $localTicketId);
+
                 return $row;
             }
         }
 
         return null;
+    }
+
+    private function pdoHasSourceColumns(\PDO $pdo): bool
+    {
+        static $cache = [];
+        $key = spl_object_id($pdo);
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $pdo->query('SELECT source_agency_id, source_ticket_id FROM rateb_support_tickets LIMIT 0');
+            $cache[$key] = true;
+        } catch (\Throwable $e) {
+            $cache[$key] = false;
+        }
+
+        return $cache[$key];
+    }
+
+    private function backfillSourceColumns(\PDO $pdo, int $platformTicketId, int $agencyId, int $localTicketId): void
+    {
+        if ($platformTicketId < 1 || $agencyId < 1 || $localTicketId < 1 || !$this->pdoHasSourceColumns($pdo)) {
+            return;
+        }
+        try {
+            $pdo->prepare(
+                'UPDATE rateb_support_tickets
+                 SET source_agency_id = :aid, source_ticket_id = :tid
+                 WHERE id = :id
+                   AND (source_agency_id IS NULL OR source_ticket_id IS NULL)'
+            )->execute([
+                'aid' => $agencyId,
+                'tid' => $localTicketId,
+                'id' => $platformTicketId,
+            ]);
+        } catch (\Throwable $e) {
+            // ignore
+        }
     }
 
     /** @return array<string, mixed>|null */
@@ -879,11 +1075,38 @@ final class SupportTicketPlatformMirrorService
         }
         $marker = self::MARKER_PREFIX . $agencyId . ':' . $localTicketId . ']';
 
+        if ($agencyId > 0 && $this->pdoHasSourceColumns($pdo)) {
+            try {
+                $bySource = $pdo->prepare(
+                    'SELECT id FROM rateb_support_tickets
+                     WHERE source_agency_id = :aid AND source_ticket_id = :tid LIMIT 1'
+                );
+                $bySource->execute(['aid' => $agencyId, 'tid' => $localTicketId]);
+                $existing = $bySource->fetch(\PDO::FETCH_ASSOC);
+                if (is_array($existing)) {
+                    $this->refreshMirroredTicketFields($pdo, $agencyId, $ticket);
+
+                    return 0;
+                }
+            } catch (\Throwable $e) {
+                // fall through
+            }
+        }
+
         $exists = $pdo->prepare(
             'SELECT id FROM rateb_support_tickets WHERE message LIKE :m LIMIT 1'
         );
         $exists->execute(['m' => '%' . $marker . '%']);
-        if ($exists->fetch(\PDO::FETCH_ASSOC)) {
+        $existingByMarker = $exists->fetch(\PDO::FETCH_ASSOC);
+        if (is_array($existingByMarker)) {
+            $this->backfillSourceColumns(
+                $pdo,
+                (int) ($existingByMarker['id'] ?? 0),
+                $agencyId,
+                $localTicketId
+            );
+            $this->refreshMirroredTicketFields($pdo, $agencyId, $ticket);
+
             return 0;
         }
 
@@ -928,13 +1151,12 @@ final class SupportTicketPlatformMirrorService
             $createdAt = date('Y-m-d H:i:s');
         }
 
-        $ins = $pdo->prepare(
-            'INSERT INTO rateb_support_tickets
-                (company_id, user_id, ticket_no, subject, priority, status, message, created_at)
+        $insSqlWithSource = 'INSERT INTO rateb_support_tickets
+                (company_id, user_id, ticket_no, subject, priority, status, message, created_at,
+                 source_agency_id, source_ticket_id)
              VALUES
-                (:cid, NULL, :tno, :subj, :pri, :st, :msg, :ca)'
-        );
-        $ins->execute([
+                (:cid, NULL, :tno, :subj, :pri, :st, :msg, :ca, :said, :stid)';
+        $insParams = [
             'cid' => $companyId > 0 ? $companyId : null,
             'tno' => $ticketNo,
             'subj' => mb_substr($subject, 0, 255),
@@ -942,8 +1164,30 @@ final class SupportTicketPlatformMirrorService
             'st' => $status,
             'msg' => $message,
             'ca' => $createdAt,
-        ]);
-        $platformTicketId = (int) $pdo->lastInsertId();
+        ];
+        $platformTicketId = 0;
+        if ($this->pdoHasSourceColumns($pdo)) {
+            try {
+                $ins = $pdo->prepare($insSqlWithSource);
+                $ins->execute($insParams + [
+                    'said' => $agencyId > 0 ? $agencyId : null,
+                    'stid' => $localTicketId,
+                ]);
+                $platformTicketId = (int) $pdo->lastInsertId();
+            } catch (\Throwable $e) {
+                $platformTicketId = 0;
+            }
+        }
+        if ($platformTicketId < 1) {
+            $ins = $pdo->prepare(
+                'INSERT INTO rateb_support_tickets
+                    (company_id, user_id, ticket_no, subject, priority, status, message, created_at)
+                 VALUES
+                    (:cid, NULL, :tno, :subj, :pri, :st, :msg, :ca)'
+            );
+            $ins->execute($insParams);
+            $platformTicketId = (int) $pdo->lastInsertId();
+        }
         if ($platformTicketId < 1) {
             return 0;
         }
