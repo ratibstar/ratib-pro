@@ -101,10 +101,16 @@ final class SupportTicketAlertService
     {
         $open = $this->listOpenTicketsForViewer(max($limit, 5) * 3);
         $seen = $this->seenTicketIds();
+        $viewerId = (int) SessionManager::get('rateb_user_id', 0);
         $unread = [];
         foreach ($open as $row) {
             $id = (int) ($row['id'] ?? 0);
             if ($id < 1 || isset($seen[$id])) {
+                continue;
+            }
+            // Never flash the sender about their own newly created ticket.
+            $ownerId = (int) ($row['user_id'] ?? 0);
+            if ($viewerId > 0 && $ownerId > 0 && $ownerId === $viewerId) {
                 continue;
             }
             $unread[] = $row;
@@ -350,7 +356,7 @@ final class SupportTicketAlertService
     private function countUnreadOpenScoped(?int $companyId): int
     {
         $params = [];
-        $sql = 'SELECT id FROM rateb_support_tickets WHERE status IN (\'open\')';
+        $sql = 'SELECT id, user_id FROM rateb_support_tickets WHERE status IN (\'open\')';
         if ($companyId !== null && $companyId > 0) {
             $sql .= ' AND company_id = :company_id';
             $params['company_id'] = $companyId;
@@ -361,12 +367,18 @@ final class SupportTicketAlertService
             return 0;
         }
         $seen = $this->seenTicketIds();
+        $viewerId = (int) SessionManager::get('rateb_user_id', 0);
         $count = 0;
         foreach ($rows as $row) {
             $id = (int) ($row['id'] ?? 0);
-            if ($id > 0 && !isset($seen[$id])) {
-                ++$count;
+            if ($id < 1 || isset($seen[$id])) {
+                continue;
             }
+            $ownerId = (int) ($row['user_id'] ?? 0);
+            if ($viewerId > 0 && $ownerId > 0 && $ownerId === $viewerId) {
+                continue;
+            }
+            ++$count;
         }
 
         return $count;
@@ -434,6 +446,9 @@ final class SupportTicketAlertService
         $isAgency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
         $isPlatform = function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
         $mirror = new SupportTicketPlatformMirrorService();
+
+        // Sender never gets a "awaiting your response" flash for their own ticket.
+        $this->markTicketSeen($ticketId);
 
         // Platform Super Admin creates → push to linked agency + notify agency only (never the sender).
         if ($isPlatform && !$isAgency) {

@@ -355,13 +355,16 @@
     }
 
     function softRefreshMainIfNeeded(activityToken) {
-        // Do NOT swap list HTML on the tickets index — cached/soft HTML often lags the DB
-        // (edit form is fresh, table looks stale). Badge sync uses tickets_table JSON instead.
+        // Index: badge patch only, unless poll reveals tickets missing from the DOM → hard reload.
         if (isOnSupportTicketsIndex()) {
             if (activityToken) {
                 lastActivityToken = activityToken;
             }
             if (lastTicketsTable && lastTicketsTable.length) {
+                if (indexMissingNewestTicket(lastTicketsTable)) {
+                    reloadTicketsIndexOnce();
+                    return;
+                }
                 applyTicketsTable(lastTicketsTable);
             }
             return;
@@ -380,6 +383,47 @@
         lastListRefreshAt = now;
         lastActivityToken = activityToken;
         doSoftRefreshList();
+    }
+
+    function maxDomTicketId() {
+        var max = 0;
+        document.querySelectorAll('tr[data-rateb-row-id]').forEach(function (tr) {
+            var id = parseInt(tr.getAttribute('data-rateb-row-id'), 10) || 0;
+            if (id > max) {
+                max = id;
+            }
+        });
+        return max;
+    }
+
+    function indexMissingNewestTicket(rows) {
+        if (!Array.isArray(rows) || !rows.length) {
+            return false;
+        }
+        var newest = rows[0];
+        if (!newest || findTicketRow(newest)) {
+            return false;
+        }
+        var newestId = parseInt(newest.id, 10) || 0;
+        var maxDom = maxDomTicketId();
+        if (newestId > 0 && maxDom > 0 && newestId > maxDom) {
+            return true;
+        }
+        return !findTicketRow(newest);
+    }
+
+    function reloadTicketsIndexOnce() {
+        if (window.__RATEB_SUPPORT_TICKETS_RELOADING__) {
+            return;
+        }
+        window.__RATEB_SUPPORT_TICKETS_RELOADING__ = 1;
+        try {
+            var url = String(location.href || '');
+            var join = url.indexOf('?') >= 0 ? '&' : '?';
+            location.replace(url.replace(/([?&])_live=\d+/g, '').replace(/[?&]$/, '') + join + '_live=' + String(Date.now()));
+        } catch (e) {
+            try { location.reload(); } catch (e2) { /* ignore */ }
+        }
     }
 
     function bustUrl(url) {

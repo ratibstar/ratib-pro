@@ -14,6 +14,7 @@
     var timer = null;
     var inFlight = false;
     var lastFp = '';
+    var lastReloadAt = 0;
 
     function onIndex() {
         if (window.__RATEB_SUPPORT_TICKETS_INDEX__ === 1) {
@@ -42,6 +43,17 @@
         }).join('|');
     }
 
+    function maxDomTicketId() {
+        var max = 0;
+        document.querySelectorAll('tr[data-rateb-row-id]').forEach(function (tr) {
+            var id = parseInt(tr.getAttribute('data-rateb-row-id'), 10) || 0;
+            if (id > max) {
+                max = id;
+            }
+        });
+        return max;
+    }
+
     function findRow(row) {
         var id = parseInt(row && row.id, 10) || 0;
         if (id > 0) {
@@ -65,6 +77,43 @@
             }
         }
         return null;
+    }
+
+    /** New tickets arrived in DB but not yet painted in the list HTML. */
+    function needsFullReload(rows) {
+        if (!Array.isArray(rows) || !rows.length) {
+            return false;
+        }
+        var newest = rows[0];
+        if (!newest) {
+            return false;
+        }
+        if (findRow(newest)) {
+            return false;
+        }
+        var newestId = parseInt(newest.id, 10) || 0;
+        var maxDom = maxDomTicketId();
+        if (newestId > 0 && maxDom > 0 && newestId > maxDom) {
+            return true;
+        }
+        // No row ids in DOM — still reload if newest ticket_no is absent.
+        return !findRow(newest);
+    }
+
+    function reloadIndexOnce() {
+        var now = Date.now();
+        if (window.__RATEB_SUPPORT_TICKETS_RELOADING__ || (now - lastReloadAt < 8000)) {
+            return;
+        }
+        window.__RATEB_SUPPORT_TICKETS_RELOADING__ = 1;
+        lastReloadAt = now;
+        try {
+            var url = String(location.href || '');
+            var join = url.indexOf('?') >= 0 ? '&' : '?';
+            location.replace(url.replace(/([?&])_live=\d+/g, '').replace(/[?&]$/, '') + join + '_live=' + String(now));
+        } catch (e) {
+            try { location.reload(); } catch (e2) { /* ignore */ }
+        }
     }
 
     function colIndex(name) {
@@ -160,6 +209,10 @@
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
                 if (!data || !data.ok || !Array.isArray(data.tickets_table)) {
+                    return;
+                }
+                if (needsFullReload(data.tickets_table)) {
+                    reloadIndexOnce();
                     return;
                 }
                 var fp = fingerprint(data.tickets_table);
