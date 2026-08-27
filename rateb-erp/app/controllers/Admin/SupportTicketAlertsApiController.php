@@ -193,7 +193,20 @@ final class SupportTicketAlertsApiController
             $lastPull = (int) SessionManager::get('rateb_support_ticket_agency_pull_at', 0);
             if ($lastPull < 1 || (time() - $lastPull) >= 1) {
                 try {
-                    (new SupportTicketPlatformMirrorService())->pullOpenTicketsFromAgencies(15);
+                    $mirror = new SupportTicketPlatformMirrorService();
+                    $mirror->pullOpenTicketsFromAgencies(15);
+                    // Also reconcile recently touched mirrors so status/priority land in the list ASAP.
+                    $recent = (new SupportTicket())->query(
+                        'SELECT id FROM rateb_support_tickets
+                         ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+                         LIMIT 25'
+                    );
+                    foreach ($recent as $row) {
+                        $id = (int) ($row['id'] ?? 0);
+                        if ($id > 0) {
+                            $mirror->pullSingleMirroredTicketFromAgency($id);
+                        }
+                    }
                     SessionManager::set('rateb_support_ticket_agency_pull_at', time());
                 } catch (\Throwable $e) {
                     error_log('support ticket alerts poll pull: ' . $e->getMessage());

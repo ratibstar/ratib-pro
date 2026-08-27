@@ -114,6 +114,12 @@
     }
 
     function isOnSupportTicketsIndex() {
+        if (window.__RATEB_SUPPORT_TICKETS_INDEX__ === 1) {
+            return true;
+        }
+        if (document.querySelector('[data-support-tickets-index="1"]')) {
+            return true;
+        }
         try {
             var p = String(location.pathname || '').replace(/\/+$/, '');
             return /\/support-tickets$/i.test(p);
@@ -246,7 +252,18 @@
     }
 
     function softRefreshMainIfNeeded(activityToken) {
-        if (!isOnSupportTicketsIndex() || !activityToken) {
+        // Do NOT swap list HTML on the tickets index — cached/soft HTML often lags the DB
+        // (edit form is fresh, table looks stale). Badge sync uses tickets_table JSON instead.
+        if (isOnSupportTicketsIndex()) {
+            if (activityToken) {
+                lastActivityToken = activityToken;
+            }
+            if (lastTicketsTable && lastTicketsTable.length) {
+                applyTicketsTable(lastTicketsTable);
+            }
+            return;
+        }
+        if (!activityToken) {
             return;
         }
         var firstPoll = !lastActivityToken;
@@ -259,8 +276,6 @@
         }
         lastListRefreshAt = now;
         lastActivityToken = activityToken;
-        // Prefer badge patch from tickets_table; soft HTML refresh is only a backup and
-        // must re-apply tickets_table after swap (cached HTML often lags the DB).
         doSoftRefreshList();
     }
 
