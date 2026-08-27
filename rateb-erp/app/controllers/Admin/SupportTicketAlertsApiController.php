@@ -59,12 +59,18 @@ final class SupportTicketAlertsApiController
             'alert' => $alert,
             'activity_token' => $this->globalActivityToken($count),
             'notifications' => $this->notificationsPayload(),
+            'tickets_table' => $this->ticketsTablePayload(),
             'ticket' => null,
             'server_time' => date('c'),
         ];
 
         if ($ticketId > 0) {
             $payload['ticket'] = (new SupportTicketReplyService())->liveSnapshot($ticketId);
+        }
+
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
         }
 
         Response::json($payload);
@@ -98,7 +104,84 @@ final class SupportTicketAlertsApiController
             ),
             'activity_token' => $this->globalActivityToken($count),
             'notifications' => $this->notificationsPayload(),
+            'tickets_table' => $this->ticketsTablePayload(),
         ]);
+    }
+
+    /**
+     * Live table rows for in-place status/priority badge updates on the index.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function ticketsTablePayload(): array
+    {
+        try {
+            $rows = (new SupportTicket())->query(
+                'SELECT id, ticket_no, status, priority
+                 FROM rateb_support_tickets
+                 ORDER BY id DESC
+                 LIMIT 80'
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $status = (string) ($row['status'] ?? '');
+            $priority = (string) ($row['priority'] ?? '');
+            $out[] = [
+                'id' => $id,
+                'ticket_no' => (string) ($row['ticket_no'] ?? ''),
+                'status' => $status,
+                'priority' => $priority,
+                'status_label' => $this->translateTicketEnum($status),
+                'priority_label' => $this->translateTicketEnum($priority),
+                'status_badge' => $this->statusBadgeTone($status),
+                'priority_badge' => $this->priorityBadgeTone($priority),
+            ];
+        }
+
+        return $out;
+    }
+
+    private function translateTicketEnum(string $key): string
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return '';
+        }
+        $label = __($key);
+
+        return $label !== $key ? (string) $label : $key;
+    }
+
+    private function statusBadgeTone(string $status): string
+    {
+        return match ($status) {
+            'open', 'pending' => 'primary',
+            'in_progress' => 'warning',
+            'resolved' => 'success',
+            'closed' => 'secondary',
+            default => 'info',
+        };
+    }
+
+    private function priorityBadgeTone(string $priority): string
+    {
+        return match ($priority) {
+            'low' => 'success',
+            'medium' => 'info',
+            'high' => 'warning',
+            'urgent' => 'danger',
+            default => 'secondary',
+        };
     }
 
     private function runBackgroundSync(): void

@@ -11,8 +11,15 @@ if (($meta['mode'] ?? '') === 'badge') {
     if ($badge === '') {
         $badge = 'secondary';
     }
+    $colNameAttr = (string) ($col['name'] ?? '');
+    $rawVal = (string) ($value ?? '');
     ?>
-<td<?php echo $titleAttr; ?>><span class="badge bg-<?php echo Rateb\App\Core\View::escape($badge); ?>"><?php echo Rateb\App\Core\View::escape((string) ($meta['display'] ?? '')); ?></span></td>
+<td<?php echo $titleAttr; ?><?php
+    if ($colNameAttr !== '') {
+        echo ' data-col-name="' . Rateb\App\Core\View::escape($colNameAttr) . '"';
+        echo ' data-cell-value="' . Rateb\App\Core\View::escape($rawVal) . '"';
+    }
+?>><span class="badge bg-<?php echo Rateb\App\Core\View::escape($badge); ?>" data-rateb-live-badge-text="1"><?php echo Rateb\App\Core\View::escape((string) ($meta['display'] ?? '')); ?></span></td>
     <?php
     return;
 }

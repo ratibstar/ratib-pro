@@ -170,7 +170,11 @@ $ratebRowRecordLabel = static function (array $row): string {
                 <?php } else { foreach ($items as $row) {
                     $companyRowId = $isCompanies ? (int) ($row['id'] ?? 0) : 0;
                     ?>
-                <tr<?php echo $companyRowId > 0 ? ' data-company-id="' . $companyRowId . '"' : ''; ?>>
+                <tr<?php
+                    $rowId = (int) ($row['id'] ?? 0);
+                    echo $rowId > 0 ? ' data-rateb-row-id="' . $rowId . '"' : '';
+                    echo $companyRowId > 0 ? ' data-company-id="' . $companyRowId . '"' : '';
+                ?>>
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');

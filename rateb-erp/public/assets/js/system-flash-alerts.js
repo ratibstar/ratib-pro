@@ -257,6 +257,10 @@
         }
         lastListRefreshAt = now;
         lastActivityToken = activityToken;
+        doSoftRefreshList();
+    }
+
+    function doSoftRefreshList() {
         fetch(String(location.href), {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -315,6 +319,77 @@
         }
     }
 
+    function applyTicketsTable(rows) {
+        if (!isOnSupportTicketsIndex() || !Array.isArray(rows) || !rows.length) {
+            return false;
+        }
+        var changed = false;
+        var matched = 0;
+        rows.forEach(function (row) {
+            var id = parseInt(row.id, 10) || 0;
+            var tr = id > 0
+                ? document.querySelector('tr[data-rateb-row-id="' + String(id) + '"]')
+                : null;
+            if (!tr && row.ticket_no) {
+                var cells = document.querySelectorAll('table tbody tr td');
+                for (var i = 0; i < cells.length; i++) {
+                    var t = (cells[i].textContent || '').replace(/\s+/g, ' ').trim();
+                    if (t === String(row.ticket_no)) {
+                        tr = cells[i].closest('tr');
+                        break;
+                    }
+                }
+            }
+            if (!tr) {
+                return;
+            }
+            matched++;
+            if (patchBadgeCell(tr, 'status', row.status, row.status_label, row.status_badge)) {
+                changed = true;
+            }
+            if (patchBadgeCell(tr, 'priority', row.priority, row.priority_label, row.priority_badge)) {
+                changed = true;
+            }
+        });
+        if (matched === 0 && rows.length > 0) {
+            var now = Date.now();
+            if (now - lastListRefreshAt >= LIST_SOFT_REFRESH_MS) {
+                lastListRefreshAt = now;
+                doSoftRefreshList();
+            }
+        }
+        return changed;
+    }
+
+    function patchBadgeCell(tr, colName, value, label, badgeTone) {
+        if (!tr || !colName || value == null || value === '') {
+            return false;
+        }
+        var td = tr.querySelector('td[data-col-name="' + colName + '"]');
+        if (!td) {
+            // Fallback: scan badges if attributes missing (old HTML cache).
+            return false;
+        }
+        var prev = td.getAttribute('data-cell-value') || '';
+        if (String(prev) === String(value)) {
+            return false;
+        }
+        td.setAttribute('data-cell-value', String(value));
+        var tone = badgeTone || 'secondary';
+        var text = label || value;
+        var span = td.querySelector('[data-rateb-live-badge-text="1"], .badge');
+        if (!span) {
+            span = document.createElement('span');
+            span.setAttribute('data-rateb-live-badge-text', '1');
+            td.textContent = '';
+            td.appendChild(span);
+        }
+        span.className = 'badge bg-' + String(tone).replace(/[^a-z0-9_-]/gi, '');
+        span.textContent = String(text);
+        td.setAttribute('title', String(text));
+        return true;
+    }
+
     function applyPayload(payload) {
         var stack = stackEl();
         if (!stack) {
@@ -342,6 +417,9 @@
 
         applyNotifications(payload);
 
+        // Instant in-place status/priority updates on the tickets index table.
+        applyTicketsTable(payload && payload.tickets_table ? payload.tickets_table : []);
+
         if (payload && payload.ticket && payload.ticket.activity_token) {
             var liveRoot = document.querySelector('[data-rateb-ticket-live="1"]');
             var domToken = liveRoot ? (liveRoot.getAttribute('data-activity-token') || '') : '';
@@ -361,6 +439,7 @@
                 count: count,
                 activity_token: payload ? payload.activity_token : '',
                 ticket: payload ? payload.ticket : null,
+                tickets_table: payload ? payload.tickets_table : [],
             },
         }));
     }
