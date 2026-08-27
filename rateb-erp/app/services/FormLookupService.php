@@ -207,6 +207,9 @@ final class FormLookupService
             case 'support_ticket_subjects':
                 $options = $this->supportTicketSubjectOptions();
                 break;
+            case 'support_ticket_messages':
+                $options = $this->supportTicketMessageOptions();
+                break;
             case 'permission_modules':
                 $options = $this->moduleOptions();
                 break;
@@ -1654,6 +1657,25 @@ final class FormLookupService
             'st_subject_inventory',
             'st_subject_accounting',
             'st_subject_other',
+        ], true);
+    }
+
+    private function supportTicketMessageOptions(): array
+    {
+        return $this->staticOptions([
+            'st_message_login',
+            'st_message_permissions',
+            'st_message_billing',
+            'st_message_bug',
+            'st_message_feature',
+            'st_message_training',
+            'st_message_data',
+            'st_message_performance',
+            'st_message_integration',
+            'st_message_pos',
+            'st_message_hr',
+            'st_message_inventory',
+            'st_message_accounting',
         ], true);
     }
 

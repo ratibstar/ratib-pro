@@ -4467,7 +4467,11 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             [
                 'name' => 'message',
                 'label' => 'message',
-                'type' => 'textarea',
+                'type' => 'hybrid',
+                'lookup' => 'support_ticket_messages',
+                'options' => self::supportTicketMessageOptionKeys(),
+                'manual_type' => 'textarea',
+                'rows' => 4,
                 'required' => true,
                 'col' => 'col-12',
                 'hint' => 'support_ticket_routing_hint',
@@ -4493,6 +4497,26 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             'st_subject_inventory',
             'st_subject_accounting',
             'st_subject_other',
+        ];
+    }
+
+    /** @return list<string> */
+    private static function supportTicketMessageOptionKeys(): array
+    {
+        return [
+            'st_message_login',
+            'st_message_permissions',
+            'st_message_billing',
+            'st_message_bug',
+            'st_message_feature',
+            'st_message_training',
+            'st_message_data',
+            'st_message_performance',
+            'st_message_integration',
+            'st_message_pos',
+            'st_message_hr',
+            'st_message_inventory',
+            'st_message_accounting',
         ];
     }
 
@@ -4522,7 +4546,14 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         $data['subject'] = $subject;
 
         // Column is NOT NULL — never omit; empty string is valid until the user fills details.
-        $data['message'] = trim((string) ($data['message'] ?? ''));
+        $message = trim((string) ($data['message'] ?? ''));
+        if ($message === '') {
+            $message = $this->resolveHybridInput('message');
+        }
+        if ($message !== '' && str_starts_with($message, 'st_message_')) {
+            $message = __($message);
+        }
+        $data['message'] = $message;
 
         $sessionCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
         $isSuper = function_exists('rateb_is_super_admin') && rateb_is_super_admin();

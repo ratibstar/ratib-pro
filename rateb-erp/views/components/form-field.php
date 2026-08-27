@@ -101,6 +101,15 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
             <?php } ?>
             <option value="__manual__"<?php echo $pickValue === '__manual__' ? ' selected' : ''; ?>><?php echo __('manual_entry'); ?></option>
         </select>
+        <?php if (($field['manual_type'] ?? 'text') === 'textarea') { ?>
+        <textarea class="form-control rateb-form-control rateb-hybrid-manual mt-1"
+                  id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
+                  name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
+                  rows="<?php echo (int) ($field['rows'] ?? 4); ?>"
+                  placeholder="<?php echo __('type_manually'); ?>"
+                  <?php echo $pickValue === '__manual__' ? '' : 'disabled'; ?>
+                  style="<?php echo $pickValue === '__manual__' ? '' : 'display:none'; ?>"><?php echo Rateb\App\Core\View::escape($manualValue); ?></textarea>
+        <?php } else { ?>
         <input type="text" class="form-control rateb-form-control rateb-hybrid-manual mt-1"
                id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
@@ -108,6 +117,7 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                value="<?php echo Rateb\App\Core\View::escape($manualValue); ?>"
                <?php echo $pickValue === '__manual__' ? '' : 'disabled'; ?>
                style="<?php echo $pickValue === '__manual__' ? '' : 'display:none'; ?>">
+        <?php } ?>
         <input type="hidden" class="rateb-hybrid-value" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
                value="<?php echo Rateb\App\Core\View::escape($selectedValue); ?>">
     </div>
