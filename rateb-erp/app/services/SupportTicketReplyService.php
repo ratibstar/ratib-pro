@@ -84,7 +84,12 @@ final class SupportTicketReplyService
             $ticket['status'] = 'in_progress';
         }
 
-        (new SupportTicketAlertService())->notifyOnReply($ticketId, $ticket, $body);
+        (new SupportTicketAlertService())->notifyOnReply(
+            $ticketId,
+            $ticket,
+            $body,
+            $staffUserId > 0 ? $staffUserId : (int) SessionManager::get('rateb_user_id', 0)
+        );
 
         $ticket['id'] = $ticketId;
         try {

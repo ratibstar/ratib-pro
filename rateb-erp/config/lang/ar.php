@@ -96,6 +96,7 @@ return [
     'support_ticket_reply_submit' => 'إرسال الرد',
     'support_ticket_reply_sent' => 'تم إرسال الرد وإشعار الشركة.',
     'support_ticket_agency_sync_failed' => 'تم حفظ الرد هنا، لكن تعذر مزامنته مع قاعدة الوكيل. حدّث صفحة التذاكر في الوكيل أو أعد إرسال الرد.',
+    'support_ticket_agency_push_failed' => 'تم حفظ التذكرة هنا، لكن تعذر إرسالها لقاعدة الوكيل. تأكد أن الشركة النشطة مربوطة بوكالة.',
     'support_ticket_live_updated' => 'تحديث مباشر',
     'support_ticket_live_toast_title' => 'إشعار تذكرة دعم',
     'support_ticket_reply_required' => 'يرجى اختيار أو كتابة الرد قبل الإرسال.',

@@ -96,6 +96,7 @@ return [
     'support_ticket_reply_submit' => 'Send reply',
     'support_ticket_reply_sent' => 'Reply sent and the company was notified.',
     'support_ticket_agency_sync_failed' => 'Reply saved here, but syncing to the agency database failed. Refresh tickets on the agency host or resend the reply.',
+    'support_ticket_agency_push_failed' => 'Ticket saved here, but it could not be sent to the agency database. Make sure the active company is linked to an agency.',
     'support_ticket_live_updated' => 'Live update',
     'support_ticket_live_toast_title' => 'Support ticket notice',
     'support_ticket_reply_required' => 'Please choose or enter a reply before sending.',

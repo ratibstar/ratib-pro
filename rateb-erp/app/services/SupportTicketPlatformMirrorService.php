@@ -7,11 +7,12 @@ namespace Rateb\App\Services;
  * Bidirectional support-ticket sync between agency ERP DBs and platform rateb.sa.
  *
  * Agency → platform: mirrorNewTicketFromAgency / pullOpenTicketsFromAgencies
- * Platform → agency: pushStaffReplyToAgency / pushTicketFieldsToAgency
+ * Platform → agency: pushNewTicketToAgency / pushStaffReplyToAgency / pushTicketFieldsToAgency
  */
 final class SupportTicketPlatformMirrorService
 {
     public const MARKER_PREFIX = '[rateb_agency_ticket:';
+    public const PLATFORM_TICKET_MARKER_PREFIX = '[rateb_platform_ticket:';
     public const REPLY_MARKER_PREFIX = '[rateb_platform_reply:';
 
     /**
@@ -26,6 +27,11 @@ final class SupportTicketPlatformMirrorService
             return;
         }
         if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return;
+        }
+        // Tickets that originated on the platform must not be re-mirrored back.
+        $msg = (string) ($ticket['message'] ?? '');
+        if (str_contains($msg, self::PLATFORM_TICKET_MARKER_PREFIX)) {
             return;
         }
 
@@ -47,6 +53,144 @@ final class SupportTicketPlatformMirrorService
             $this->upsertMirroredTicketInto($pdo, $agencyId, $this->agencyLabel($agencyId), $ticket, true);
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Platform Super Admin creates a ticket → insert into the linked agency ERP DB
+     * and notify agency watchers (not the platform sender).
+     *
+     * @param array<string, mixed> $ticket
+     */
+    public function pushNewTicketToAgency(int $platformTicketId, array $ticket): bool
+    {
+        if ($platformTicketId < 1 || !$this->isPlatformPushContext()) {
+            return false;
+        }
+
+        try {
+            $full = $ticket;
+            try {
+                $row = \Rateb\App\Core\Database::connection()->prepare(
+                    'SELECT * FROM rateb_support_tickets WHERE id = :id LIMIT 1'
+                );
+                $row->execute(['id' => $platformTicketId]);
+                $fetched = $row->fetch(\PDO::FETCH_ASSOC);
+                if (is_array($fetched)) {
+                    $full = array_merge($fetched, $ticket);
+                }
+            } catch (\Throwable $e) {
+                // keep partial
+            }
+
+            $existingAgencyId = (int) ($full['source_agency_id'] ?? 0);
+            $existingLocalId = (int) ($full['source_ticket_id'] ?? 0);
+            if ($existingAgencyId > 0 && $existingLocalId > 0) {
+                return true;
+            }
+
+            $companyId = (int) ($full['company_id'] ?? 0);
+            $agencySvc = new AgencyErpMigrationService();
+            $agencyId = $agencySvc->suggestedAgencyIdForCompany($companyId);
+            if ($agencyId < 1) {
+                $agencyId = (int) ($full['source_agency_id'] ?? 0);
+            }
+            if ($agencyId < 1) {
+                error_log('SupportTicketPlatformMirrorService pushNewTicket: no agency for company #' . $companyId);
+
+                return false;
+            }
+
+            $agency = $this->findAgencyRow($agencySvc, $agencyId);
+            if ($agency === null) {
+                return false;
+            }
+            $cfg = $agencySvc->agencyDatabaseConfig($agency);
+            if (trim((string) ($cfg['db'] ?? '')) === '') {
+                return false;
+            }
+            $agencyPdo = $agencySvc->pdoFromConfig($cfg);
+
+            $marker = self::PLATFORM_TICKET_MARKER_PREFIX . $platformTicketId . ']';
+            $dup = $agencyPdo->prepare(
+                'SELECT id FROM rateb_support_tickets WHERE message LIKE :m ORDER BY id DESC LIMIT 1'
+            );
+            $dup->execute(['m' => '%' . $marker . '%']);
+            $existing = $dup->fetch(\PDO::FETCH_ASSOC);
+            if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+                $localId = (int) $existing['id'];
+                $this->linkPlatformTicketToAgency($platformTicketId, $agencyId, $localId);
+
+                return true;
+            }
+
+            $localCompanyId = $this->resolveAgencyLocalCompanyId($agencyPdo, $agency, $companyId);
+            $ticketNo = $this->allocateAgencyTicketNo(
+                $agencyPdo,
+                (string) ($full['ticket_no'] ?? '')
+            );
+            $subject = trim((string) ($full['subject'] ?? ''));
+            if ($subject === '') {
+                $subject = 'Support ticket';
+            }
+            $body = trim((string) ($full['message'] ?? ''));
+            $body = trim((string) preg_replace(
+                '/\n*\s*' . preg_quote(self::MARKER_PREFIX, '/') . '\d+:\d+\]\s*$/u',
+                '',
+                $body
+            ));
+            $message = ($body !== '' ? $body : '—') . "\n\n" . $marker;
+            $priority = (string) ($full['priority'] ?? 'medium');
+            if (!in_array($priority, ['low', 'medium', 'high', 'urgent'], true)) {
+                $priority = 'medium';
+            }
+            $status = (string) ($full['status'] ?? 'open');
+            if (!in_array($status, ['open', 'in_progress', 'resolved', 'closed'], true)) {
+                $status = 'open';
+            }
+
+            $ins = $agencyPdo->prepare(
+                'INSERT INTO rateb_support_tickets
+                    (company_id, user_id, ticket_no, subject, priority, status, message, created_at)
+                 VALUES
+                    (:cid, NULL, :tno, :subj, :pri, :st, :msg, NOW())'
+            );
+            $ins->execute([
+                'cid' => $localCompanyId > 0 ? $localCompanyId : null,
+                'tno' => $ticketNo,
+                'subj' => mb_substr($subject, 0, 255),
+                'pri' => $priority,
+                'st' => $status,
+                'msg' => $message,
+            ]);
+            $localTicketId = (int) $agencyPdo->lastInsertId();
+            if ($localTicketId < 1) {
+                return false;
+            }
+
+            $this->linkPlatformTicketToAgency($platformTicketId, $agencyId, $localTicketId);
+
+            $localTicket = [
+                'id' => $localTicketId,
+                'company_id' => $localCompanyId,
+                'user_id' => 0,
+                'ticket_no' => $ticketNo,
+                'subject' => $subject,
+                'message' => $message,
+            ];
+            $this->notifyAgencyNewTicket(
+                $agencyPdo,
+                $localTicket,
+                $ticketNo,
+                $subject,
+                $localTicketId
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SupportTicketPlatformMirrorService pushNewTicket: ' . $e->getMessage());
+
+            return false;
         }
     }
 
@@ -1217,6 +1361,36 @@ final class SupportTicketPlatformMirrorService
     /**
      * @param array<string, mixed> $localTicket
      */
+    private function notifyAgencyNewTicket(
+        \PDO $pdo,
+        array $localTicket,
+        string $ticketNo,
+        string $subject,
+        int $localTicketId
+    ): void {
+        $title = __('support_ticket_alert_new_title', [
+            'ticket' => $ticketNo,
+            'company' => '—',
+        ]);
+        $message = __('support_ticket_alert_new_body', [
+            'ticket' => $ticketNo,
+            'company' => '—',
+            'subject' => $subject !== '' ? $subject : '—',
+        ]);
+        $this->insertAgencyUserNotifications(
+            $pdo,
+            $localTicket,
+            $localTicketId,
+            $title,
+            $message,
+            'warning',
+            SupportTicketAlertService::TRIGGER_OPEN
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $localTicket
+     */
     private function notifyAgencyTicketWatchers(
         \PDO $pdo,
         array $localTicket,
@@ -1231,6 +1405,29 @@ final class SupportTicketPlatformMirrorService
             'company' => '',
             'preview' => $preview,
         ]);
+        $this->insertAgencyUserNotifications(
+            $pdo,
+            $localTicket,
+            $localTicketId,
+            $title,
+            $message,
+            'info',
+            SupportTicketAlertService::TRIGGER_REPLY
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $localTicket
+     */
+    private function insertAgencyUserNotifications(
+        \PDO $pdo,
+        array $localTicket,
+        int $localTicketId,
+        string $title,
+        string $message,
+        string $type,
+        string $triggerType
+    ): void {
         $companyId = (int) ($localTicket['company_id'] ?? 0);
         $creatorId = (int) ($localTicket['user_id'] ?? 0);
 
@@ -1286,8 +1483,8 @@ final class SupportTicketPlatformMirrorService
                 'uid' => $uid,
                 'title' => $title,
                 'msg' => $message,
-                'type' => 'info',
-                'tt' => SupportTicketAlertService::TRIGGER_REPLY,
+                'type' => $type,
+                'tt' => $triggerType,
                 'et' => SupportTicketAlertService::ENTITY,
                 'eid' => $localTicketId,
             ];
@@ -1302,7 +1499,7 @@ final class SupportTicketPlatformMirrorService
                 }
                 $findUnread->execute([
                     'uid' => $uid,
-                    'tt' => SupportTicketAlertService::TRIGGER_REPLY,
+                    'tt' => $triggerType,
                     'et' => SupportTicketAlertService::ENTITY,
                     'eid' => $localTicketId,
                 ]);
@@ -1318,7 +1515,7 @@ final class SupportTicketPlatformMirrorService
                     $updUnread->execute([
                         'title' => $title,
                         'msg' => $message,
-                        'type' => 'info',
+                        'type' => $type,
                         'id' => (int) $existing['id'],
                     ]);
                     continue;
@@ -1353,6 +1550,136 @@ final class SupportTicketPlatformMirrorService
                     // ignore
                 }
             }
+        }
+    }
+
+    private function linkPlatformTicketToAgency(int $platformTicketId, int $agencyId, int $localTicketId): void
+    {
+        if ($platformTicketId < 1 || $agencyId < 1 || $localTicketId < 1) {
+            return;
+        }
+        try {
+            $pdo = \Rateb\App\Core\Database::connection();
+            if ($this->pdoHasSourceColumns($pdo)) {
+                $pdo->prepare(
+                    'UPDATE rateb_support_tickets
+                     SET source_agency_id = :aid, source_ticket_id = :tid, updated_at = NOW()
+                     WHERE id = :id'
+                )->execute([
+                    'aid' => $agencyId,
+                    'tid' => $localTicketId,
+                    'id' => $platformTicketId,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            try {
+                \Rateb\App\Core\Database::connection()->prepare(
+                    'UPDATE rateb_support_tickets
+                     SET source_agency_id = :aid, source_ticket_id = :tid
+                     WHERE id = :id'
+                )->execute([
+                    'aid' => $agencyId,
+                    'tid' => $localTicketId,
+                    'id' => $platformTicketId,
+                ]);
+            } catch (\Throwable $e2) {
+                error_log('SupportTicketPlatformMirrorService link platform→agency: ' . $e2->getMessage());
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $agency
+     */
+    private function resolveAgencyLocalCompanyId(\PDO $agencyPdo, array $agency, int $platformCompanyId): int
+    {
+        if ($platformCompanyId > 0) {
+            try {
+                $stmt = $agencyPdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
+                $stmt->execute(['id' => $platformCompanyId]);
+                if ($stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    return $platformCompanyId;
+                }
+            } catch (\Throwable $e) {
+                // fall through
+            }
+        }
+        $linked = (int) ($agency['erp_company_id'] ?? 0);
+        if ($linked > 0) {
+            try {
+                $stmt = $agencyPdo->prepare('SELECT id FROM rateb_companies WHERE id = :id LIMIT 1');
+                $stmt->execute(['id' => $linked]);
+                if ($stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    return $linked;
+                }
+            } catch (\Throwable $e) {
+                // fall through
+            }
+        }
+        try {
+            $row = $agencyPdo->query(
+                "SELECT id FROM rateb_companies WHERE status = 'active' OR status IS NULL OR status = '' ORDER BY id ASC LIMIT 1"
+            );
+            if ($row !== false) {
+                $first = $row->fetch(\PDO::FETCH_ASSOC);
+                $id = (int) ($first['id'] ?? 0);
+                if ($id > 0) {
+                    return $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            try {
+                $row = $agencyPdo->query('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+                if ($row !== false) {
+                    $first = $row->fetch(\PDO::FETCH_ASSOC);
+
+                    return (int) ($first['id'] ?? 0);
+                }
+            } catch (\Throwable $e2) {
+                return 0;
+            }
+        }
+
+        return 0;
+    }
+
+    private function allocateAgencyTicketNo(\PDO $agencyPdo, string $preferred): string
+    {
+        $preferred = trim($preferred);
+        // Strip platform agency prefix A34- if present.
+        $preferred = (string) preg_replace('/^A\d+-/i', '', $preferred);
+        if ($preferred !== '' && preg_match('/^ST-\d+$/i', $preferred)) {
+            try {
+                $chk = $agencyPdo->prepare('SELECT id FROM rateb_support_tickets WHERE ticket_no = :no LIMIT 1');
+                $chk->execute(['no' => $preferred]);
+                if (!$chk->fetch(\PDO::FETCH_ASSOC)) {
+                    return strtoupper($preferred);
+                }
+            } catch (\Throwable $e) {
+                // generate below
+            }
+        }
+        try {
+            $row = $agencyPdo->query(
+                "SELECT ticket_no FROM rateb_support_tickets
+                 WHERE ticket_no LIKE 'ST-%'
+                 ORDER BY id DESC LIMIT 50"
+            );
+            $last = 0;
+            if ($row !== false) {
+                while ($r = $row->fetch(\PDO::FETCH_ASSOC)) {
+                    if (preg_match('/^ST-(\d+)$/i', (string) ($r['ticket_no'] ?? ''), $m)) {
+                        $n = (int) $m[1];
+                        if ($n > $last) {
+                            $last = $n;
+                        }
+                    }
+                }
+            }
+
+            return 'ST-' . str_pad((string) ($last + 1), 4, '0', STR_PAD_LEFT);
+        } catch (\Throwable $e) {
+            return 'ST-' . str_pad((string) random_int(1, 9999), 4, '0', STR_PAD_LEFT);
         }
     }
 

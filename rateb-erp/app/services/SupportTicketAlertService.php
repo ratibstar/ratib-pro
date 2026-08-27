@@ -430,6 +430,49 @@ final class SupportTicketAlertService
         $companyName = (string) ($ticket['company_name'] ?? $this->resolveCompanyName($companyId));
         $ticketNo = (string) ($ticket['ticket_no'] ?? ('#' . $ticketId));
         $subject = (string) ($ticket['subject'] ?? '');
+        $actorId = (int) SessionManager::get('rateb_user_id', 0);
+        $isAgency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        $isPlatform = function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+        $mirror = new SupportTicketPlatformMirrorService();
+
+        // Platform Super Admin creates → push to linked agency + notify agency only (never the sender).
+        if ($isPlatform && !$isAgency) {
+            try {
+                $ok = $mirror->pushNewTicketToAgency($ticketId, array_merge($ticket, [
+                    'id' => $ticketId,
+                    'company_name' => $companyName,
+                    'ticket_no' => $ticketNo,
+                    'subject' => $subject,
+                    'company_id' => $companyId,
+                ]));
+                if (!$ok) {
+                    SessionManager::flash('warning', __('support_ticket_agency_push_failed'));
+                }
+            } catch (\Throwable $e) {
+                error_log('support ticket push to agency: ' . $e->getMessage());
+                SessionManager::flash('warning', __('support_ticket_agency_push_failed'));
+            }
+
+            return;
+        }
+
+        // Agency creates → mirror to platform Super Admins only (other party), not local sender.
+        if ($isAgency && !$isPlatform) {
+            try {
+                $mirror->mirrorNewTicketFromAgency($ticketId, array_merge($ticket, [
+                    'company_name' => $companyName,
+                    'ticket_no' => $ticketNo,
+                    'subject' => $subject,
+                ]));
+            } catch (\Throwable $e) {
+                error_log('support ticket platform mirror: ' . $e->getMessage());
+            }
+
+            return;
+        }
+
+        // Same-host fallback: notify local Super Admins except the sender.
+        $notifier = new NotificationService();
         $title = __('support_ticket_alert_new_title', [
             'ticket' => $ticketNo,
             'company' => $companyName,
@@ -439,10 +482,8 @@ final class SupportTicketAlertService
             'company' => $companyName,
             'subject' => $subject,
         ]);
-        $notifier = new NotificationService();
-
         foreach ($this->superAdminUserIds() as $adminId) {
-            if ($this->hasOpenNotification($adminId, $ticketId)) {
+            if ($adminId === $actorId || $this->hasOpenNotification($adminId, $ticketId)) {
                 continue;
             }
             $notifier->notifyUser(
@@ -456,39 +497,23 @@ final class SupportTicketAlertService
                 $ticketId
             );
         }
-
-        $creatorId = (int) ($ticket['user_id'] ?? 0);
-        if ($creatorId > 0 && !$this->hasOpenNotification($creatorId, $ticketId)) {
-            $notifier->notifyUser(
-                $creatorId,
-                $companyId > 0 ? $companyId : null,
-                $title,
-                __('support_ticket_alert_created_body', ['ticket' => $ticketNo]),
-                'info',
-                self::TRIGGER_OPEN,
-                self::ENTITY,
-                $ticketId
-            );
-        }
-
-        // Agency / dedicated ERP → mirror into platform rateb.sa for Super Admin alerts.
-        try {
-            (new SupportTicketPlatformMirrorService())->mirrorNewTicketFromAgency($ticketId, array_merge($ticket, [
-                'company_name' => $companyName,
-                'ticket_no' => $ticketNo,
-                'subject' => $subject,
-            ]));
-        } catch (\Throwable $e) {
-            error_log('support ticket platform mirror: ' . $e->getMessage());
-        }
     }
 
     /** @param array<string, mixed> $ticket */
-    public function notifyOnReply(int $ticketId, array $ticket, string $replyBody): void
+    public function notifyOnReply(int $ticketId, array $ticket, string $replyBody, ?int $actorUserId = null): void
     {
         if ($ticketId < 1) {
             return;
         }
+        $actorUserId = $actorUserId ?? (int) SessionManager::get('rateb_user_id', 0);
+        $isAgency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        $isPlatform = function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+
+        // Cross-host replies: the other party is notified by mirror/push — never notify the sender locally.
+        if (($isAgency && !$isPlatform) || ($isPlatform && !$isAgency)) {
+            return;
+        }
+
         $companyId = (int) ($ticket['company_id'] ?? 0);
         $senderCompanyId = $this->resolveSenderCompanyId($ticket);
         if ($senderCompanyId > 0) {
@@ -506,7 +531,7 @@ final class SupportTicketAlertService
         $notifier = new NotificationService();
 
         $creatorId = (int) ($ticket['user_id'] ?? 0);
-        if ($creatorId > 0) {
+        if ($creatorId > 0 && $creatorId !== $actorUserId) {
             $notifier->notifyUserGrouped(
                 $creatorId,
                 $companyId > 0 ? $companyId : null,
@@ -520,7 +545,6 @@ final class SupportTicketAlertService
         }
 
         if ($companyId > 0) {
-            // Prefer per-user grouped alerts for company staff instead of stacking company broadcasts.
             try {
                 $users = (new SupportTicket())->query(
                     "SELECT id FROM rateb_users
@@ -530,7 +554,7 @@ final class SupportTicketAlertService
                 );
                 foreach ($users as $u) {
                     $uid = (int) ($u['id'] ?? 0);
-                    if ($uid < 1 || $uid === $creatorId) {
+                    if ($uid < 1 || $uid === $creatorId || $uid === $actorUserId) {
                         continue;
                     }
                     $notifier->notifyUserGrouped(
@@ -545,15 +569,7 @@ final class SupportTicketAlertService
                     );
                 }
             } catch (\Throwable $e) {
-                $notifier->notifyCompany(
-                    $companyId,
-                    $title,
-                    $message,
-                    'info',
-                    self::TRIGGER_REPLY,
-                    self::ENTITY,
-                    $ticketId
-                );
+                // best-effort
             }
         }
     }
