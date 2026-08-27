@@ -35,11 +35,17 @@ final class SupportTicketAlertsApiController
         $this->runBackgroundSync();
 
         $ticketId = (int) ($_GET['ticket_id'] ?? 0);
-        if ($ticketId > 0 && function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+        if ($ticketId > 0) {
             try {
-                (new SupportTicketPlatformMirrorService())->pullPlatformUpdatesIntoAgencyTicket($ticketId);
+                $mirror = new SupportTicketPlatformMirrorService();
+                if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+                    $mirror->pullPlatformUpdatesIntoAgencyTicket($ticketId);
+                } elseif (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+                    // Platform edit page: pull latest agency replies/status into this mirror now.
+                    $mirror->pullSingleMirroredTicketFromAgency($ticketId);
+                }
             } catch (\Throwable $e) {
-                // best-effort
+                error_log('support ticket live ticket sync: ' . $e->getMessage());
             }
         }
 
@@ -102,7 +108,7 @@ final class SupportTicketAlertsApiController
             && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
             && (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host())) {
             $lastPull = (int) SessionManager::get('rateb_support_ticket_agency_pull_at', 0);
-            if ($lastPull < 1 || (time() - $lastPull) >= 3) {
+            if ($lastPull < 1 || (time() - $lastPull) >= 1) {
                 try {
                     (new SupportTicketPlatformMirrorService())->pullOpenTicketsFromAgencies(15);
                     SessionManager::set('rateb_support_ticket_agency_pull_at', time());
@@ -115,7 +121,7 @@ final class SupportTicketAlertsApiController
         // Agency: pull Super Admin replies/status into local open tickets.
         if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             $lastInbound = (int) SessionManager::get('rateb_support_ticket_platform_pull_at', 0);
-            if ($lastInbound < 1 || (time() - $lastInbound) >= 3) {
+            if ($lastInbound < 1 || (time() - $lastInbound) >= 1) {
                 try {
                     $mirror = new SupportTicketPlatformMirrorService();
                     $rows = (new SupportTicket())->query(
@@ -141,13 +147,28 @@ final class SupportTicketAlertsApiController
     {
         $maxTicketId = 0;
         $maxReplyId = 0;
+        $statusFp = '0';
         try {
             $t = (new SupportTicket())->queryOne(
-                'SELECT MAX(id) AS m FROM rateb_support_tickets'
+                'SELECT MAX(id) AS m,
+                        SUM(CASE WHEN status = \'open\' THEN 1 ELSE 0 END) AS c_open,
+                        SUM(CASE WHEN status = \'in_progress\' THEN 1 ELSE 0 END) AS c_ip,
+                        SUM(CASE WHEN status = \'resolved\' THEN 1 ELSE 0 END) AS c_res,
+                        SUM(CASE WHEN status = \'closed\' THEN 1 ELSE 0 END) AS c_cl,
+                        SUM(CASE WHEN priority = \'urgent\' THEN 1 ELSE 0 END) AS c_urg,
+                        SUM(CASE WHEN priority = \'high\' THEN 1 ELSE 0 END) AS c_hi
+                 FROM rateb_support_tickets'
             );
             $maxTicketId = (int) ($t['m'] ?? 0);
+            $statusFp = ((int) ($t['c_open'] ?? 0))
+                . '-' . ((int) ($t['c_ip'] ?? 0))
+                . '-' . ((int) ($t['c_res'] ?? 0))
+                . '-' . ((int) ($t['c_cl'] ?? 0))
+                . '-' . ((int) ($t['c_urg'] ?? 0))
+                . '-' . ((int) ($t['c_hi'] ?? 0));
         } catch (\Throwable $e) {
             $maxTicketId = 0;
+            $statusFp = '0';
         }
         try {
             $r = (new SupportTicket())->queryOne(
@@ -158,7 +179,8 @@ final class SupportTicketAlertsApiController
             $maxReplyId = 0;
         }
 
-        return $openCount . ':' . $maxTicketId . ':' . $maxReplyId;
+        // Include status/priority fingerprint so list soft-refresh fires on status-only edits.
+        return $openCount . ':' . $maxTicketId . ':' . $maxReplyId . ':' . $statusFp;
     }
 
     /** @return array{unread:int,items:list<array<string,mixed>>} */

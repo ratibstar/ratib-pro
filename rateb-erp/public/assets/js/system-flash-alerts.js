@@ -6,8 +6,8 @@
     }
     window.__RATEB_SYSTEM_FLASH__ = 1;
 
-    var POLL_MS = 1500;
-    var LIST_SOFT_REFRESH_MS = 4000;
+    var POLL_MS = 1000;
+    var LIST_SOFT_REFRESH_MS = 1200;
     var pollTimer = null;
     var lastAlertCount = -1;
     var lastActivityToken = '';
@@ -202,14 +202,21 @@
         root.setAttribute('data-status', ticket.status || '');
         root.setAttribute('data-priority', ticket.priority || '');
 
-        var statusField = document.querySelector('select[name="status"], #status');
-        if (statusField && ticket.status) {
+        var statusField = document.querySelector('#f_status, select[name="status"]');
+        if (statusField && ticket.status && String(statusField.value) !== String(ticket.status)) {
             statusField.value = ticket.status;
+            try { statusField.dispatchEvent(new Event('change', { bubbles: true })); } catch (eSt) { /* ignore */ }
         }
-        var priorityField = document.querySelector('select[name="priority"], #priority');
-        if (priorityField && ticket.priority) {
+        var priorityField = document.querySelector('#f_priority, select[name="priority"]');
+        if (priorityField && ticket.priority && String(priorityField.value) !== String(ticket.priority)) {
             priorityField.value = ticket.priority;
+            try { priorityField.dispatchEvent(new Event('change', { bubbles: true })); } catch (ePr) { /* ignore */ }
         }
+
+        // Status pills in index/table if present on this page.
+        document.querySelectorAll('[data-ticket-status-id="' + String(ticket.id || '') + '"]').forEach(function (el) {
+            el.textContent = ticket.status || el.textContent;
+        });
 
         var badge = root.querySelector('[data-rateb-live-badge="1"]');
         if (badge) {
@@ -328,17 +335,13 @@
         applyNotifications(payload);
 
         if (payload && payload.ticket && payload.ticket.activity_token) {
-            if (lastTicketToken && lastTicketToken !== payload.ticket.activity_token) {
+            var liveRoot = document.querySelector('[data-rateb-ticket-live="1"]');
+            var domToken = liveRoot ? (liveRoot.getAttribute('data-activity-token') || '') : '';
+            var nextToken = String(payload.ticket.activity_token || '');
+            if (nextToken && (nextToken !== lastTicketToken || (domToken && domToken !== nextToken))) {
                 renderThreadFromLive(payload.ticket);
-            } else if (!lastTicketToken) {
-                lastTicketToken = payload.ticket.activity_token;
-                var liveRoot = document.querySelector('[data-rateb-ticket-live="1"]');
-                var current = liveRoot ? (liveRoot.getAttribute('data-activity-token') || '') : '';
-                if (current && current !== payload.ticket.activity_token) {
-                    renderThreadFromLive(payload.ticket);
-                }
             }
-            lastTicketToken = payload.ticket.activity_token;
+            lastTicketToken = nextToken;
         }
 
         if (payload && payload.activity_token) {

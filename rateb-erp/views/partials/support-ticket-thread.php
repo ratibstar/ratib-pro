@@ -13,7 +13,15 @@ $replies = is_array($conversation['replies'] ?? null) ? $conversation['replies']
 $status = is_array($item) ? (string) ($item['status'] ?? '') : '';
 $priority = is_array($item) ? (string) ($item['priority'] ?? '') : '';
 $replyCount = count($replies);
-$activityToken = $ticketId . ':' . $replyCount . ':' . $status . ':' . $priority;
+$maxReplyId = 0;
+foreach ($replies as $replyRow) {
+    $rid = (int) ($replyRow['id'] ?? 0);
+    if ($rid > $maxReplyId) {
+        $maxReplyId = $rid;
+    }
+}
+// Must match SupportTicketReplyService::liveSnapshot activity_token format.
+$activityToken = $ticketId . ':' . $maxReplyId . ':' . $status . ':' . $priority . ':' . $replyCount;
 ?>
 <div class="rateb-card mb-3 support-ticket-thread"
      data-rateb-ticket-live="1"

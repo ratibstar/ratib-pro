@@ -173,6 +173,86 @@ final class SupportTicketPlatformMirrorService
     }
 
     /**
+     * Agency edits (status/priority/subject) → platform mirror ticket (instant push, not wait for SA poll).
+     *
+     * @param array<string, mixed> $localTicket
+     * @param array<string, mixed> $fields
+     */
+    public function pushAgencyTicketFieldsToPlatform(int $localTicketId, array $localTicket, array $fields = []): bool
+    {
+        if ($localTicketId < 1) {
+            return false;
+        }
+        if (!function_exists('rateb_is_agency_erp_host') || !rateb_is_agency_erp_host()) {
+            return false;
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return false;
+        }
+
+        $agencyId = $this->resolveLocalAgencyId();
+        if ($agencyId < 1) {
+            return false;
+        }
+
+        try {
+            $agencySvc = new AgencyErpMigrationService();
+            $platformCfg = $agencySvc->platformErpDatabaseConfig();
+            $platformDb = trim((string) ($platformCfg['db'] ?? ''));
+            $localDb = defined('RATEB_DB_NAME') ? trim((string) RATEB_DB_NAME) : '';
+            if ($platformDb === '' || ($localDb !== '' && strcasecmp($platformDb, $localDb) === 0)) {
+                return false;
+            }
+
+            $platformPdo = $agencySvc->pdoFromConfig($platformCfg);
+            $ticket = array_merge($localTicket, $fields);
+            $ticket['id'] = $localTicketId;
+            $this->refreshMirroredTicketFields($platformPdo, $agencyId, $ticket);
+
+            // Also by durable source link when columns exist.
+            $platformTicket = $this->findPlatformMirrorForLocalTicket(
+                $platformPdo,
+                $agencyId,
+                $localTicketId,
+                $ticket
+            );
+            if (is_array($platformTicket)) {
+                $pid = (int) ($platformTicket['id'] ?? 0);
+                if ($pid > 0) {
+                    $sets = [];
+                    $params = ['id' => $pid];
+                    $status = trim((string) ($fields['status'] ?? $ticket['status'] ?? ''));
+                    if ($status !== '' && in_array($status, ['open', 'in_progress', 'resolved', 'closed'], true)) {
+                        $sets[] = 'status = :status';
+                        $params['status'] = $status;
+                    }
+                    $priority = trim((string) ($fields['priority'] ?? $ticket['priority'] ?? ''));
+                    if ($priority !== '' && in_array($priority, ['low', 'medium', 'high', 'urgent'], true)) {
+                        $sets[] = 'priority = :priority';
+                        $params['priority'] = $priority;
+                    }
+                    $subject = trim((string) ($fields['subject'] ?? $ticket['subject'] ?? ''));
+                    if ($subject !== '') {
+                        $sets[] = 'subject = :subject';
+                        $params['subject'] = mb_substr($subject, 0, 255);
+                    }
+                    if ($sets !== []) {
+                        $platformPdo->prepare(
+                            'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
+                        )->execute($params);
+                    }
+                }
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SupportTicketPlatformMirrorService push agency fields: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
      * Agency host: pull Super Admin replies/status from the platform mirror into this local ticket.
      * Heals tickets that were answered on rateb.sa before push-back existed.
      */
@@ -294,6 +374,99 @@ final class SupportTicketPlatformMirrorService
             error_log('SupportTicketPlatformMirrorService pull into agency: ' . $e->getMessage());
 
             return 0;
+        }
+    }
+
+    /**
+     * Platform live poll: refresh one mirrored ticket from its originating agency DB.
+     */
+    public function pullSingleMirroredTicketFromAgency(int $platformTicketId): bool
+    {
+        if ($platformTicketId < 1 || !$this->isPlatformPushContext()) {
+            return false;
+        }
+
+        try {
+            $stmt = \Rateb\App\Core\Database::connection()->prepare(
+                'SELECT * FROM rateb_support_tickets WHERE id = :id LIMIT 1'
+            );
+            $stmt->execute(['id' => $platformTicketId]);
+            $platformTicket = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($platformTicket)) {
+                return false;
+            }
+
+            $link = $this->resolveAgencyLinkFromTicket($platformTicket);
+            if ($link === null) {
+                return false;
+            }
+
+            $agencyTicket = $this->fetchAgencyTicket($link['pdo'], $link['local_ticket_id']);
+            if ($agencyTicket === null) {
+                return false;
+            }
+
+            $this->refreshMirroredTicketFields(
+                \Rateb\App\Core\Database::connection(),
+                $link['agency_id'],
+                $agencyTicket
+            );
+            $this->pullAgencyRepliesIntoPlatform(
+                $link['pdo'],
+                \Rateb\App\Core\Database::connection(),
+                $link['agency_id'],
+                $agencyTicket
+            );
+
+            // Also apply agency status onto the platform row by id (not only by marker).
+            $this->syncPlatformTicketFieldsById($platformTicketId, [
+                'status' => (string) ($agencyTicket['status'] ?? ''),
+                'priority' => (string) ($agencyTicket['priority'] ?? ''),
+                'subject' => (string) ($agencyTicket['subject'] ?? ''),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SupportTicketPlatformMirrorService pull single: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     */
+    private function syncPlatformTicketFieldsById(int $platformTicketId, array $fields): void
+    {
+        if ($platformTicketId < 1) {
+            return;
+        }
+        $sets = [];
+        $params = ['id' => $platformTicketId];
+        $status = trim((string) ($fields['status'] ?? ''));
+        if ($status !== '' && in_array($status, ['open', 'in_progress', 'resolved', 'closed'], true)) {
+            $sets[] = 'status = :status';
+            $params['status'] = $status;
+        }
+        $priority = trim((string) ($fields['priority'] ?? ''));
+        if ($priority !== '' && in_array($priority, ['low', 'medium', 'high', 'urgent'], true)) {
+            $sets[] = 'priority = :priority';
+            $params['priority'] = $priority;
+        }
+        $subject = trim((string) ($fields['subject'] ?? ''));
+        if ($subject !== '') {
+            $sets[] = 'subject = :subject';
+            $params['subject'] = mb_substr($subject, 0, 255);
+        }
+        if ($sets === []) {
+            return;
+        }
+        try {
+            \Rateb\App\Core\Database::connection()->prepare(
+                'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
+            )->execute($params);
+        } catch (\Throwable $e) {
+            // ignore
         }
     }
 

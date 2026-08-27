@@ -4553,9 +4553,13 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
                     $ticket = array_merge($full, $ticket);
                 }
             }
-            (new \Rateb\App\Services\SupportTicketPlatformMirrorService())->pushTicketFieldsToAgency($id, $ticket, $data);
+            $mirror = new \Rateb\App\Services\SupportTicketPlatformMirrorService();
+            // Platform → agency (when SA edits on rateb.sa)
+            $mirror->pushTicketFieldsToAgency($id, $ticket, $data);
+            // Agency → platform (when agency edits status locally)
+            $mirror->pushAgencyTicketFieldsToPlatform($id, $ticket, $data);
         } catch (\Throwable $e) {
-            error_log('support ticket push fields to agency: ' . $e->getMessage());
+            error_log('support ticket push fields sync: ' . $e->getMessage());
         }
     }
 }
