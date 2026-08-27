@@ -56,11 +56,28 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                     $options[] = [
                         'value' => (string) ($opt['value'] ?? ''),
                         'label' => (string) ($opt['label'] ?? $opt['value'] ?? ''),
+                        'body' => (string) ($opt['body'] ?? $opt['label'] ?? ''),
                     ];
                 } else {
                     $key = (string) $opt;
-                    $options[] = ['value' => $key, 'label' => __($key)];
+                    $labelKey = $key . '_label';
+                    $bodyKey = $key . '_body';
+                    $label = __($labelKey);
+                    if ($label === $labelKey) {
+                        $label = __($key);
+                    }
+                    $body = __($bodyKey);
+                    if ($body === $bodyKey) {
+                        $body = __($key);
+                    }
+                    $options[] = ['value' => $key, 'label' => $label, 'body' => $body];
                 }
+            }
+        }
+        // Ensure lookup options also expose body when present.
+        foreach ($options as $i => $opt) {
+            if (!isset($opt['body']) || (string) $opt['body'] === '') {
+                $options[$i]['body'] = (string) ($opt['label'] ?? '');
             }
         }
         $selectedValue = (string) $value;
@@ -75,9 +92,11 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
             }
         }
         if (!$found && $selectedValue !== '') {
-            // Match translated labels saved previously.
+            // Match translated labels or bodies saved previously.
             foreach ($options as $opt) {
-                if ((string) ($opt['label'] ?? '') === $selectedValue) {
+                $label = (string) ($opt['label'] ?? '');
+                $body = (string) ($opt['body'] ?? '');
+                if ($label === $selectedValue || $body === $selectedValue) {
                     $found = true;
                     $pickValue = (string) ($opt['value'] ?? '');
                     break;
@@ -92,47 +111,55 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
         if ($detailsOnPick && $found && $pickValue !== '' && $pickValue !== '__manual__' && $manualValue === '') {
             foreach ($options as $opt) {
                 if ((string) ($opt['value'] ?? '') === $pickValue) {
-                    $manualValue = (string) ($opt['label'] ?? '');
+                    $manualValue = (string) (($opt['body'] ?? '') !== '' ? $opt['body'] : ($opt['label'] ?? ''));
                     break;
                 }
             }
         }
         $showManual = ($pickValue === '__manual__') || ($detailsOnPick && $pickValue !== '');
+        $detailsLabel = trim((string) ($field['details_label'] ?? ''));
         ?>
     <div class="rateb-hybrid-field"<?php echo $detailsOnPick ? ' data-details-on-pick="1"' : ''; ?>>
         <select class="form-select rateb-form-control rateb-hybrid-select" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 name="<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?><?php
                 if ($detailsOnPick) {
-                    echo ' onchange="var w=this.closest(\'.rateb-hybrid-field\');var m=w&&w.querySelector(\'.rateb-hybrid-manual\');var h=w&&w.querySelector(\'.rateb-hybrid-value\');if(!m||!h)return;if(!this.value){m.style.display=\'none\';m.disabled=true;m.value=\'\';h.value=\'\';return;}var o=this.options[this.selectedIndex];var lab=(o&&o.getAttribute(\'data-label\'))||(o&&o.text)||\'\';m.style.display=\'\';m.disabled=false;m.required=true;if(this.value===\'__manual__\'){m.value=\'\';m.focus();}else{m.value=lab;}h.value=m.value;"';
+                    echo ' onchange="(function(sel){var w=sel.closest(\'.rateb-hybrid-field\');var m=w&&w.querySelector(\'.rateb-hybrid-manual\');var h=w&&w.querySelector(\'.rateb-hybrid-value\');var dl=w&&w.querySelector(\'[data-hybrid-details-wrap=\\\'1\\\']\');if(!m||!h)return;if(!sel.value){m.style.display=\'none\';m.disabled=true;m.value=\'\';h.value=\'\';if(dl)dl.style.display=\'none\';return;}var o=sel.options[sel.selectedIndex];var b64=o&&o.getAttribute(\'data-body-b64\');var txt=\'\';if(b64){try{var bin=atob(b64);if(window.TextDecoder){var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);txt=new TextDecoder(\'utf-8\').decode(bytes);}else{txt=decodeURIComponent(escape(bin));}}catch(e){txt=\'\';}}if(!txt){txt=(o&&o.getAttribute(\'data-label\'))||(o&&o.text)||\'\';}m.style.display=\'\';m.disabled=false;m.required=true;if(dl)dl.style.display=\'\';if(sel.value===\'__manual__\'){m.value=\'\';m.focus();}else{m.value=txt;}h.value=m.value;})(this)"';
                 }
                 ?>>
             <option value=""><?php echo __('select'); ?></option>
-            <?php foreach ($options as $opt) { ?>
+            <?php foreach ($options as $opt) {
+                $optBody = (string) ($opt['body'] ?? $opt['label'] ?? '');
+                $optLabel = (string) ($opt['label'] ?? '');
+                ?>
             <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo $pickValue === (string) $opt['value'] ? ' selected' : ''; ?>
-                    data-label="<?php echo Rateb\App\Core\View::escape((string) ($opt['label'] ?? '')); ?>">
-                <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
+                    data-label="<?php echo Rateb\App\Core\View::escape($optLabel); ?>"
+                    data-body-b64="<?php echo Rateb\App\Core\View::escape(base64_encode($optBody)); ?>">
+                <?php echo Rateb\App\Core\View::escape($optLabel); ?>
             </option>
             <?php } ?>
             <option value="__manual__"<?php echo $pickValue === '__manual__' ? ' selected' : ''; ?>><?php echo __('manual_entry'); ?></option>
         </select>
+        <div class="mt-2" data-hybrid-details-wrap="1" style="<?php echo $showManual ? '' : 'display:none'; ?>">
+        <?php if ($detailsLabel !== '') { ?>
+        <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"><?php echo Rateb\App\Core\View::escape(__($detailsLabel)); ?></label>
+        <?php } ?>
         <?php if (($field['manual_type'] ?? 'text') === 'textarea') { ?>
-        <textarea class="form-control rateb-form-control rateb-hybrid-manual mt-1"
+        <textarea class="form-control rateb-form-control rateb-hybrid-manual"
                   id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                   name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                   rows="<?php echo (int) ($field['rows'] ?? 4); ?>"
                   placeholder="<?php echo __('type_manually'); ?>"
-                  <?php echo $showManual ? '' : 'disabled'; ?>
-                  style="<?php echo $showManual ? '' : 'display:none'; ?>"><?php echo Rateb\App\Core\View::escape($manualValue); ?></textarea>
+                  <?php echo $showManual ? '' : 'disabled'; ?>><?php echo Rateb\App\Core\View::escape($manualValue); ?></textarea>
         <?php } else { ?>
-        <input type="text" class="form-control rateb-form-control rateb-hybrid-manual mt-1"
+        <input type="text" class="form-control rateb-form-control rateb-hybrid-manual"
                id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                placeholder="<?php echo __('type_manually'); ?>"
                value="<?php echo Rateb\App\Core\View::escape($manualValue); ?>"
-               <?php echo $showManual ? '' : 'disabled'; ?>
-               style="<?php echo $showManual ? '' : 'display:none'; ?>">
+               <?php echo $showManual ? '' : 'disabled'; ?>>
         <?php } ?>
+        </div>
         <input type="hidden" class="rateb-hybrid-value" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
                value="<?php echo Rateb\App\Core\View::escape($detailsOnPick && $showManual ? $manualValue : $selectedValue); ?>">
     </div>

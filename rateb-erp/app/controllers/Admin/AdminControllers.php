@@ -4466,16 +4466,17 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             ],
             [
                 'name' => 'message',
-                'label' => 'message',
+                'label' => 'support_ticket_message_pick',
                 'type' => 'hybrid',
                 'lookup' => 'support_ticket_messages',
-                'options' => self::supportTicketMessageOptionKeys(),
+                'options' => self::supportTicketMessageOptions(),
                 'manual_type' => 'textarea',
                 'details_on_pick' => true,
-                'rows' => 4,
+                'details_label' => 'support_ticket_message_details',
+                'rows' => 5,
                 'required' => true,
                 'col' => 'col-12',
-                'hint' => 'support_ticket_routing_hint',
+                'hint' => 'support_ticket_message_pick_hint',
             ],
         ];
     }
@@ -4501,24 +4502,38 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
         ];
     }
 
-    /** @return list<string> */
-    private static function supportTicketMessageOptionKeys(): array
+    /**
+     * Same category set on platform + agency: short label in pick, full body in details box.
+     *
+     * @return list<array{value: string, label: string, body: string}>
+     */
+    private static function supportTicketMessageOptions(): array
     {
-        return [
-            'st_message_login',
-            'st_message_permissions',
-            'st_message_billing',
-            'st_message_bug',
-            'st_message_feature',
-            'st_message_training',
-            'st_message_data',
-            'st_message_performance',
-            'st_message_integration',
-            'st_message_pos',
-            'st_message_hr',
-            'st_message_inventory',
-            'st_message_accounting',
+        $keys = [
+            'login',
+            'permissions',
+            'billing',
+            'bug',
+            'feature',
+            'training',
+            'data',
+            'performance',
+            'integration',
+            'pos',
+            'hr',
+            'inventory',
+            'accounting',
         ];
+        $out = [];
+        foreach ($keys as $key) {
+            $out[] = [
+                'value' => 'st_message_' . $key,
+                'label' => (string) __('st_message_' . $key . '_label'),
+                'body' => (string) __('st_message_' . $key . '_body'),
+            ];
+        }
+
+        return $out;
     }
 
     /** @return array<string, mixed> */
@@ -4552,7 +4567,9 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             $message = $this->resolveHybridInput('message');
         }
         if ($message !== '' && str_starts_with($message, 'st_message_')) {
-            $message = __($message);
+            $bodyKey = $message . '_body';
+            $translatedBody = __($bodyKey);
+            $message = ($translatedBody !== $bodyKey) ? $translatedBody : __($message);
         }
         $data['message'] = $message;
 

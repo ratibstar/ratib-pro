@@ -1662,21 +1662,31 @@ final class FormLookupService
 
     private function supportTicketMessageOptions(): array
     {
-        return $this->staticOptions([
-            'st_message_login',
-            'st_message_permissions',
-            'st_message_billing',
-            'st_message_bug',
-            'st_message_feature',
-            'st_message_training',
-            'st_message_data',
-            'st_message_performance',
-            'st_message_integration',
-            'st_message_pos',
-            'st_message_hr',
-            'st_message_inventory',
-            'st_message_accounting',
-        ], true);
+        $keys = [
+            'login',
+            'permissions',
+            'billing',
+            'bug',
+            'feature',
+            'training',
+            'data',
+            'performance',
+            'integration',
+            'pos',
+            'hr',
+            'inventory',
+            'accounting',
+        ];
+        $out = [];
+        foreach ($keys as $key) {
+            $out[] = [
+                'value' => 'st_message_' . $key,
+                'label' => (string) __('st_message_' . $key . '_label'),
+                'body' => (string) __('st_message_' . $key . '_body'),
+            ];
+        }
+
+        return $out;
     }
 
     /**

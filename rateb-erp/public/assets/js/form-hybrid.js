@@ -22,10 +22,17 @@
         }
     }
 
-    function selectedOptionLabel(sel) {
+    function selectedOptionBody(sel) {
         var opt = sel.options[sel.selectedIndex];
         if (!opt) {
             return '';
+        }
+        var b64 = opt.getAttribute('data-body-b64');
+        if (b64) {
+            var decoded = b64DecodeUtf8(b64);
+            if (decoded) {
+                return decoded;
+            }
         }
         var fromData = opt.getAttribute('data-label');
         if (fromData != null && String(fromData) !== '') {
@@ -38,12 +45,16 @@
         var sel = wrap.querySelector('.rateb-hybrid-select');
         var manual = wrap.querySelector('.rateb-hybrid-manual');
         var hidden = wrap.querySelector('.rateb-hybrid-value');
+        var detailsWrap = wrap.querySelector('[data-hybrid-details-wrap="1"]');
         if (!sel || !manual || !hidden) {
             return;
         }
         var detailsOnPick = wrap.getAttribute('data-details-on-pick') === '1';
 
         if (sel.value === MANUAL) {
+            if (detailsWrap) {
+                detailsWrap.style.display = '';
+            }
             manual.style.display = '';
             manual.disabled = false;
             manual.required = true;
@@ -56,6 +67,9 @@
 
         if (detailsOnPick) {
             if (!sel.value) {
+                if (detailsWrap) {
+                    detailsWrap.style.display = 'none';
+                }
                 manual.style.display = 'none';
                 manual.disabled = true;
                 manual.required = false;
@@ -66,12 +80,14 @@
                 hidden.value = '';
                 return;
             }
-            // Always show details box under the message options.
+            if (detailsWrap) {
+                detailsWrap.style.display = '';
+            }
             manual.style.display = '';
             manual.disabled = false;
             manual.required = true;
             if (forceFill || !manual.dataset.touched) {
-                manual.value = selectedOptionLabel(sel);
+                manual.value = selectedOptionBody(sel);
                 delete manual.dataset.touched;
             }
             hidden.value = manual.value;
@@ -79,6 +95,9 @@
             return;
         }
 
+        if (detailsWrap) {
+            detailsWrap.style.display = 'none';
+        }
         manual.style.display = 'none';
         manual.disabled = true;
         manual.required = false;
