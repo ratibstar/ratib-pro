@@ -47,6 +47,73 @@ final class NotificationService
         return $id;
     }
 
+    /**
+     * One unread notification per user + trigger + entity (refresh content instead of stacking).
+     */
+    public function notifyUserGrouped(
+        int $userId,
+        ?int $companyId,
+        string $title,
+        string $message,
+        string $type,
+        string $triggerType,
+        string $entityType,
+        int $entityId
+    ): int {
+        if ($userId < 1 || $entityId < 1 || $triggerType === '' || $entityType === '') {
+            return $this->notifyUser($userId, $companyId, $title, $message, $type, $triggerType, $entityType, $entityId);
+        }
+        try {
+            $existing = (new Notification())->queryOne(
+                'SELECT id FROM rateb_notifications
+                 WHERE user_id = :uid AND trigger_type = :tt AND entity_type = :et AND entity_id = :eid
+                   AND (is_read = 0 OR is_read IS NULL)
+                 ORDER BY id DESC LIMIT 1',
+                [
+                    'uid' => $userId,
+                    'tt' => $triggerType,
+                    'et' => $entityType,
+                    'eid' => $entityId,
+                ]
+            );
+            $existingId = (int) ($existing['id'] ?? 0);
+            if ($existingId > 0) {
+                $db = \Rateb\App\Core\Database::connection();
+                $db->prepare(
+                    'UPDATE rateb_notifications
+                     SET title = :title, message = :msg, type = :type, company_id = :cid, created_at = NOW(), is_read = 0
+                     WHERE id = :id'
+                )->execute([
+                    'title' => $title,
+                    'msg' => $message,
+                    'type' => $type,
+                    'cid' => $companyId,
+                    'id' => $existingId,
+                ]);
+                $this->enqueueMobilePush(
+                    $existingId,
+                    (int) ($companyId ?? 0),
+                    $userId,
+                    $title,
+                    $message,
+                    [
+                        'type' => $type,
+                        'trigger_type' => $triggerType,
+                        'entity_type' => $entityType,
+                        'entity_id' => $entityId,
+                        'grouped' => true,
+                    ]
+                );
+
+                return $existingId;
+            }
+        } catch (\Throwable $e) {
+            // fall through to create
+        }
+
+        return $this->notifyUser($userId, $companyId, $title, $message, $type, $triggerType, $entityType, $entityId);
+    }
+
     public function notifyCompany(?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null, ?string $entityType = null, ?int $entityId = null): int
     {
         $cid = (int) ($companyId ?? TenantContext::companyId() ?? 0);

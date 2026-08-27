@@ -507,7 +507,7 @@ final class SupportTicketAlertService
 
         $creatorId = (int) ($ticket['user_id'] ?? 0);
         if ($creatorId > 0) {
-            $notifier->notifyUser(
+            $notifier->notifyUserGrouped(
                 $creatorId,
                 $companyId > 0 ? $companyId : null,
                 $title,
@@ -520,15 +520,41 @@ final class SupportTicketAlertService
         }
 
         if ($companyId > 0) {
-            $notifier->notifyCompany(
-                $companyId,
-                $title,
-                $message,
-                'info',
-                self::TRIGGER_REPLY,
-                self::ENTITY,
-                $ticketId
-            );
+            // Prefer per-user grouped alerts for company staff instead of stacking company broadcasts.
+            try {
+                $users = (new SupportTicket())->query(
+                    "SELECT id FROM rateb_users
+                     WHERE company_id = :cid AND status = 'active'
+                     ORDER BY id ASC LIMIT 40",
+                    ['cid' => $companyId]
+                );
+                foreach ($users as $u) {
+                    $uid = (int) ($u['id'] ?? 0);
+                    if ($uid < 1 || $uid === $creatorId) {
+                        continue;
+                    }
+                    $notifier->notifyUserGrouped(
+                        $uid,
+                        $companyId,
+                        $title,
+                        $message,
+                        'info',
+                        self::TRIGGER_REPLY,
+                        self::ENTITY,
+                        $ticketId
+                    );
+                }
+            } catch (\Throwable $e) {
+                $notifier->notifyCompany(
+                    $companyId,
+                    $title,
+                    $message,
+                    'info',
+                    self::TRIGGER_REPLY,
+                    self::ENTITY,
+                    $ticketId
+                );
+            }
         }
     }
 

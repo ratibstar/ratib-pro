@@ -824,17 +824,17 @@ final class SupportTicketPlatformMirrorService
                     'body' => $cleanBody . "\n\n" . $marker,
                     'ca' => $createdAt,
                 ]);
-                // Agency-side client replies pulled by platform poll → persistent Super Admin alerts.
-                if ($isStaff === 0) {
-                    $this->notifyPlatformSuperAdminsOfReply(
-                        $platformPdo,
-                        $platformTicketId,
-                        (string) ($platformTicket['ticket_no'] ?? ('#' . $platformTicketId)),
-                        $companyId,
-                        (string) ($platformTicket['company_name'] ?? ''),
-                        $cleanBody
-                    );
-                }
+                // Any newly imported agency reply (staff or client) → Super Admin alert.
+                // Previously only is_staff=0 notified, so agency staff replies pulled by poll
+                // never alerted platform SA (and later mirror hit duplicate and skipped notify).
+                $this->notifyPlatformSuperAdminsOfReply(
+                    $platformPdo,
+                    $platformTicketId,
+                    (string) ($platformTicket['ticket_no'] ?? ('#' . $platformTicketId)),
+                    $companyId,
+                    (string) ($platformTicket['company_name'] ?? ''),
+                    $cleanBody
+                );
             }
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService pull agency replies: ' . $e->getMessage());
@@ -1278,6 +1278,8 @@ final class SupportTicketPlatformMirrorService
 
         $ins = null;
         $insSimple = null;
+        $findUnread = null;
+        $updUnread = null;
         foreach ($userIds as $uid) {
             $params = [
                 'cid' => $companyId > 0 ? $companyId : null,
@@ -1290,6 +1292,37 @@ final class SupportTicketPlatformMirrorService
                 'eid' => $localTicketId,
             ];
             try {
+                if ($findUnread === null) {
+                    $findUnread = $pdo->prepare(
+                        'SELECT id FROM rateb_notifications
+                         WHERE user_id = :uid AND trigger_type = :tt AND entity_type = :et AND entity_id = :eid
+                           AND (is_read = 0 OR is_read IS NULL)
+                         ORDER BY id DESC LIMIT 1'
+                    );
+                }
+                $findUnread->execute([
+                    'uid' => $uid,
+                    'tt' => SupportTicketAlertService::TRIGGER_REPLY,
+                    'et' => SupportTicketAlertService::ENTITY,
+                    'eid' => $localTicketId,
+                ]);
+                $existing = $findUnread->fetch(\PDO::FETCH_ASSOC);
+                if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+                    if ($updUnread === null) {
+                        $updUnread = $pdo->prepare(
+                            'UPDATE rateb_notifications
+                             SET title = :title, message = :msg, type = :type, created_at = NOW(), is_read = 0
+                             WHERE id = :id'
+                        );
+                    }
+                    $updUnread->execute([
+                        'title' => $title,
+                        'msg' => $message,
+                        'type' => 'info',
+                        'id' => (int) $existing['id'],
+                    ]);
+                    continue;
+                }
                 if ($ins === null) {
                     $ins = $pdo->prepare(
                         'INSERT INTO rateb_notifications
@@ -1707,6 +1740,8 @@ final class SupportTicketPlatformMirrorService
             if ($admins === false) {
                 return;
             }
+            $findUnread = null;
+            $updUnread = null;
             $ins = $pdo->prepare(
                 'INSERT INTO rateb_notifications
                     (company_id, user_id, title, message, type, trigger_type, entity_type, entity_id, is_read, created_at)
@@ -1729,6 +1764,45 @@ final class SupportTicketPlatformMirrorService
                     'et' => SupportTicketAlertService::ENTITY,
                     'eid' => $platformTicketId,
                 ];
+                // Keep one unread card per Super Admin + ticket + trigger (group replies).
+                if ($triggerType === SupportTicketAlertService::TRIGGER_REPLY
+                    || $triggerType === SupportTicketAlertService::TRIGGER_OPEN) {
+                    try {
+                        if ($findUnread === null) {
+                            $findUnread = $pdo->prepare(
+                                'SELECT id FROM rateb_notifications
+                                 WHERE user_id = :uid AND entity_type = :et AND entity_id = :eid
+                                   AND trigger_type = :tt AND (is_read = 0 OR is_read IS NULL)
+                                 ORDER BY id DESC LIMIT 1'
+                            );
+                        }
+                        $findUnread->execute([
+                            'uid' => $uid,
+                            'et' => SupportTicketAlertService::ENTITY,
+                            'eid' => $platformTicketId,
+                            'tt' => $triggerType,
+                        ]);
+                        $existing = $findUnread->fetch(\PDO::FETCH_ASSOC);
+                        if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+                            if ($updUnread === null) {
+                                $updUnread = $pdo->prepare(
+                                    'UPDATE rateb_notifications
+                                     SET title = :title, message = :msg, type = :type, created_at = NOW(), is_read = 0
+                                     WHERE id = :id'
+                                );
+                            }
+                            $updUnread->execute([
+                                'title' => $title,
+                                'msg' => $message,
+                                'type' => $type,
+                                'id' => (int) $existing['id'],
+                            ]);
+                            continue;
+                        }
+                    } catch (\Throwable $e) {
+                        // fall through to insert
+                    }
+                }
                 try {
                     $ins->execute($params);
                 } catch (\Throwable $e) {

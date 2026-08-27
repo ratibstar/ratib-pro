@@ -44,7 +44,7 @@ final class ErpSystemAlertService
     }
 
     /**
-     * Persistent reply flashes (platform ↔ agency) until the ticket is opened / marked read.
+     * Persistent reply flashes — one compact card per ticket (grouped), until opened/read.
      *
      * @return list<ErpFlashAlert>
      */
@@ -57,17 +57,19 @@ final class ErpSystemAlertService
 
         $rows = [];
         try {
+            // Fetch enough rows then collapse by ticket so old stacked notifs become one card.
             $rows = (new NotificationService())->listUnreadByTriggers(
                 $userId,
                 [SupportTicketAlertService::TRIGGER_REPLY],
-                max(1, min(10, $limit))
+                40
             );
         } catch (\Throwable $e) {
             return [];
         }
 
         $supportSvc = new SupportTicketAlertService();
-        $out = [];
+        /** @var array<int, array{ticket_id:int,notif_ids:list<int>,count:int,title:string,message:string,ticket_no:string}> $byTicket */
+        $byTicket = [];
         foreach ($rows as $row) {
             $trigger = (string) ($row['trigger_type'] ?? '');
             $entity = (string) ($row['entity_type'] ?? '');
@@ -82,19 +84,56 @@ final class ErpSystemAlertService
             if ($ticketId < 1 || $notifId < 1) {
                 continue;
             }
+            if (!isset($byTicket[$ticketId])) {
+                $msg = (string) ($row['message'] ?? '');
+                $ticketNo = '';
+                if (preg_match('/^(ST-[\w-]+|A\d+-ST-[\w-]+|#[0-9]+)/u', $msg, $m)) {
+                    $ticketNo = (string) $m[1];
+                }
+                $byTicket[$ticketId] = [
+                    'ticket_id' => $ticketId,
+                    'notif_ids' => [$notifId],
+                    'count' => 1,
+                    'title' => (string) ($row['title'] ?? ''),
+                    'message' => $msg,
+                    'ticket_no' => $ticketNo !== '' ? $ticketNo : ('#' . $ticketId),
+                ];
+            } else {
+                $byTicket[$ticketId]['notif_ids'][] = $notifId;
+                $byTicket[$ticketId]['count']++;
+                // Keep newest message/title (rows are DESC by id).
+            }
+        }
+
+        $out = [];
+        $i = 0;
+        foreach ($byTicket as $group) {
+            if ($i >= $limit) {
+                break;
+            }
+            $i++;
+            $ticketId = (int) $group['ticket_id'];
+            $count = max(1, (int) $group['count']);
+            $ticketNo = (string) $group['ticket_no'];
+            $title = $count > 1
+                ? (string) __('support_ticket_flash_replies_title', [
+                    'count' => (string) $count,
+                    'ticket' => $ticketNo,
+                ])
+                : (string) __('support_ticket_flash_reply_single', ['ticket' => $ticketNo]);
             $out[] = [
-                'key' => 'support_ticket_reply_' . $notifId,
+                'key' => 'support_ticket_reply_ticket_' . $ticketId,
                 'severity' => 'info',
-                'title' => (string) ($row['title'] ?? __('support_ticket_alert_reply_title', ['ticket' => '#' . $ticketId])),
-                'message' => (string) ($row['message'] ?? ''),
+                'title' => $title,
+                'message' => (string) $group['message'],
                 'url' => $supportSvc->ticketEditUrl($ticketId),
-                'action_label' => (string) __('support_ticket_banner_action'),
+                'action_label' => (string) __('support_ticket_banner_open_ticket'),
                 'persistent' => true,
                 'pulse' => true,
                 'icon' => 'fa-comments',
-                'count' => 1,
+                'count' => $count,
                 'ticket_ids' => [$ticketId],
-                'notification_id' => $notifId,
+                'notification_id' => (int) ($group['notif_ids'][0] ?? 0),
             ];
         }
 
