@@ -2131,6 +2131,26 @@ if (!function_exists('rateb_table_cell_meta')) {
                     'follow_up' => 'warning',
                     default => 'info',
                 };
+            } elseif (in_array($statusKey, ['low', 'medium', 'high', 'urgent'], true)
+                || ($name === 'priority' && $statusKey !== '')) {
+                // Priority scale: low → urgent
+                $badge = match ($statusKey) {
+                    'low' => 'success',
+                    'medium' => 'info',
+                    'high' => 'warning',
+                    'urgent' => 'danger',
+                    default => 'secondary',
+                };
+            } elseif (in_array($statusKey, ['open', 'in_progress', 'resolved', 'closed'], true)
+                || ($name === 'status' && in_array($statusKey, ['open', 'in_progress', 'resolved', 'closed', 'pending'], true))) {
+                // Ticket / workflow status scale
+                $badge = match ($statusKey) {
+                    'open', 'pending' => 'primary',
+                    'in_progress' => 'warning',
+                    'resolved' => 'success',
+                    'closed' => 'secondary',
+                    default => 'info',
+                };
             } else {
                 $badge = in_array($statusKey, ['draft', 'pending', 'cancelled', 'inactive'], true) ? 'info' : 'success';
                 if (in_array($statusKey, ['failed', 'rejected', 'overdue'], true)) {
