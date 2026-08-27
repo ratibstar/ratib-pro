@@ -247,15 +247,12 @@
         if (!isOnSupportTicketsIndex() || !activityToken) {
             return;
         }
-        if (!lastActivityToken) {
-            lastActivityToken = activityToken;
-            return;
-        }
-        if (lastActivityToken === activityToken) {
+        var firstPoll = !lastActivityToken;
+        if (!firstPoll && lastActivityToken === activityToken) {
             return;
         }
         var now = Date.now();
-        if (now - lastListRefreshAt < LIST_SOFT_REFRESH_MS) {
+        if (!firstPoll && (now - lastListRefreshAt < LIST_SOFT_REFRESH_MS)) {
             return;
         }
         lastListRefreshAt = now;

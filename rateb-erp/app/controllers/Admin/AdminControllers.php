@@ -4546,6 +4546,15 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     {
         (new \Rateb\App\Services\SupportTicketAlertService())->handleStatusChange($id, $old, $data);
         try {
+            // Touch updated_at so cross-host newer-wins sync can prefer this save.
+            try {
+                $this->model->query(
+                    'UPDATE rateb_support_tickets SET updated_at = NOW() WHERE id = :id',
+                    ['id' => $id]
+                );
+            } catch (\Throwable $eTouch) {
+                // column may be missing on old schemas
+            }
             $ticket = is_array($old) ? array_merge($old, $data) : $data;
             $ticket['id'] = $id;
             if (!isset($ticket['message']) || trim((string) ($ticket['message'] ?? '')) === '') {
@@ -4556,9 +4565,18 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             }
             $mirror = new \Rateb\App\Services\SupportTicketPlatformMirrorService();
             // Platform → agency (when SA edits on rateb.sa)
-            $mirror->pushTicketFieldsToAgency($id, $ticket, $data);
+            $pushedAgency = $mirror->pushTicketFieldsToAgency($id, $ticket, $data);
             // Agency → platform (when agency edits status locally)
             $mirror->pushAgencyTicketFieldsToPlatform($id, $ticket, $data);
+            $isAgency = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+            $isPlatform = function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+            $looksMirrored = (int) ($ticket['source_agency_id'] ?? 0) > 0
+                || (int) ($ticket['source_ticket_id'] ?? 0) > 0
+                || (bool) preg_match('/^A\d+-/i', (string) ($ticket['ticket_no'] ?? ''))
+                || str_contains((string) ($ticket['message'] ?? ''), '[rateb_agency_ticket:');
+            if ($isPlatform && !$isAgency && $looksMirrored && !$pushedAgency) {
+                \Rateb\App\Core\SessionManager::flash('warning', __('support_ticket_agency_sync_failed'));
+            }
         } catch (\Throwable $e) {
             error_log('support ticket push fields sync: ' . $e->getMessage());
         }

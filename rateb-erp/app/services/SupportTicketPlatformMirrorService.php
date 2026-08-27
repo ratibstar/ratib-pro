@@ -164,7 +164,8 @@ final class SupportTicketPlatformMirrorService
         ];
 
         try {
-            return $this->syncAgencyTicketFields($link['pdo'], $link['local_ticket_id'], $payload);
+            // Force after explicit SA save — local agency row must follow immediately.
+            return $this->syncAgencyTicketFields($link['pdo'], $link['local_ticket_id'], $payload, true);
         } catch (\Throwable $e) {
             error_log('SupportTicketPlatformMirrorService push fields: ' . $e->getMessage());
 
@@ -237,9 +238,16 @@ final class SupportTicketPlatformMirrorService
                         $params['subject'] = mb_substr($subject, 0, 255);
                     }
                     if ($sets !== []) {
-                        $platformPdo->prepare(
-                            'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
-                        )->execute($params);
+                        try {
+                            $platformPdo->prepare(
+                                'UPDATE rateb_support_tickets SET ' . implode(', ', $sets)
+                                . ', updated_at = NOW() WHERE id = :id'
+                            )->execute($params);
+                        } catch (\Throwable $eUp) {
+                            $platformPdo->prepare(
+                                'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
+                            )->execute($params);
+                        }
                     }
                 }
             }
@@ -301,11 +309,17 @@ final class SupportTicketPlatformMirrorService
 
             $platformTicketId = (int) ($platformTicket['id'] ?? 0);
             $imported = 0;
-            $this->syncAgencyTicketFields($localPdo, $localTicketId, [
-                'status' => (string) ($platformTicket['status'] ?? ''),
-                'priority' => (string) ($platformTicket['priority'] ?? ''),
-                'subject' => (string) ($platformTicket['subject'] ?? ''),
-            ]);
+            $this->syncAgencyTicketFields(
+                $localPdo,
+                $localTicketId,
+                [
+                    'status' => (string) ($platformTicket['status'] ?? ''),
+                    'priority' => (string) ($platformTicket['priority'] ?? ''),
+                    'subject' => (string) ($platformTicket['subject'] ?? ''),
+                ],
+                false,
+                (string) ($platformTicket['updated_at'] ?? '')
+            );
 
             $replies = $platformPdo->prepare(
                 'SELECT id, body, created_at FROM rateb_support_ticket_replies
@@ -406,24 +420,33 @@ final class SupportTicketPlatformMirrorService
                 return false;
             }
 
-            $this->refreshMirroredTicketFields(
-                \Rateb\App\Core\Database::connection(),
-                $link['agency_id'],
-                $agencyTicket
-            );
+            $platformUpdated = (string) ($platformTicket['updated_at'] ?? '');
+            $agencyUpdated = (string) ($agencyTicket['updated_at'] ?? '');
+            if ($this->isSourceNewer($platformUpdated, $agencyUpdated)) {
+                // Platform is ahead — push SA status/priority down to agency (heal failed save-push).
+                $this->syncAgencyTicketFields($link['pdo'], $link['local_ticket_id'], [
+                    'status' => (string) ($platformTicket['status'] ?? ''),
+                    'priority' => (string) ($platformTicket['priority'] ?? ''),
+                    'subject' => (string) ($platformTicket['subject'] ?? ''),
+                ], true);
+            } else {
+                $this->refreshMirroredTicketFields(
+                    \Rateb\App\Core\Database::connection(),
+                    $link['agency_id'],
+                    $agencyTicket
+                );
+                $this->syncPlatformTicketFieldsById($platformTicketId, [
+                    'status' => (string) ($agencyTicket['status'] ?? ''),
+                    'priority' => (string) ($agencyTicket['priority'] ?? ''),
+                    'subject' => (string) ($agencyTicket['subject'] ?? ''),
+                ], false, $agencyUpdated);
+            }
             $this->pullAgencyRepliesIntoPlatform(
                 $link['pdo'],
                 \Rateb\App\Core\Database::connection(),
                 $link['agency_id'],
                 $agencyTicket
             );
-
-            // Also apply agency status onto the platform row by id (not only by marker).
-            $this->syncPlatformTicketFieldsById($platformTicketId, [
-                'status' => (string) ($agencyTicket['status'] ?? ''),
-                'priority' => (string) ($agencyTicket['priority'] ?? ''),
-                'subject' => (string) ($agencyTicket['subject'] ?? ''),
-            ]);
 
             return true;
         } catch (\Throwable $e) {
@@ -436,10 +459,29 @@ final class SupportTicketPlatformMirrorService
     /**
      * @param array<string, mixed> $fields
      */
-    private function syncPlatformTicketFieldsById(int $platformTicketId, array $fields): void
-    {
+    private function syncPlatformTicketFieldsById(
+        int $platformTicketId,
+        array $fields,
+        bool $force = false,
+        string $sourceUpdatedAt = ''
+    ): void {
         if ($platformTicketId < 1) {
             return;
+        }
+        if (!$force && $sourceUpdatedAt !== '') {
+            try {
+                $stmt = \Rateb\App\Core\Database::connection()->prepare(
+                    'SELECT updated_at FROM rateb_support_tickets WHERE id = :id LIMIT 1'
+                );
+                $stmt->execute(['id' => $platformTicketId]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $destUpdated = is_array($row) ? (string) ($row['updated_at'] ?? '') : '';
+                if (!$this->isSourceNewer($sourceUpdatedAt, $destUpdated)) {
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // continue without gate if column missing
+            }
         }
         $sets = [];
         $params = ['id' => $platformTicketId];
@@ -463,10 +505,16 @@ final class SupportTicketPlatformMirrorService
         }
         try {
             \Rateb\App\Core\Database::connection()->prepare(
-                'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
+                'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ', updated_at = NOW() WHERE id = :id'
             )->execute($params);
         } catch (\Throwable $e) {
-            // ignore
+            try {
+                \Rateb\App\Core\Database::connection()->prepare(
+                    'UPDATE rateb_support_tickets SET ' . implode(', ', $sets) . ' WHERE id = :id'
+                )->execute($params);
+            } catch (\Throwable $e2) {
+                // ignore
+            }
         }
     }
 
@@ -629,8 +677,30 @@ final class SupportTicketPlatformMirrorService
                         if ($newId > 0) {
                             $imported++;
                         } else {
-                            // Keep existing mirror status/priority in sync with agency.
-                            $this->refreshMirroredTicketFields($platformPdo, $agencyId, $row);
+                            $platformMirror = $this->findPlatformMirrorForLocalTicket(
+                                $platformPdo,
+                                $agencyId,
+                                (int) ($row['id'] ?? 0),
+                                $row
+                            );
+                            $platformUpdated = is_array($platformMirror)
+                                ? (string) ($platformMirror['updated_at'] ?? '')
+                                : '';
+                            $agencyUpdated = (string) ($row['updated_at'] ?? '');
+                            if (is_array($platformMirror) && $this->isSourceNewer($platformUpdated, $agencyUpdated)) {
+                                // SA already changed status on platform — push down, do not clobber.
+                                $localId = (int) ($row['id'] ?? 0);
+                                if ($localId > 0) {
+                                    $this->syncAgencyTicketFields($agencyPdo, $localId, [
+                                        'status' => (string) ($platformMirror['status'] ?? ''),
+                                        'priority' => (string) ($platformMirror['priority'] ?? ''),
+                                        'subject' => (string) ($platformMirror['subject'] ?? ''),
+                                    ], false, $platformUpdated);
+                                }
+                            } else {
+                                // Keep existing mirror status/priority in sync with agency (agency ahead).
+                                $this->refreshMirroredTicketFields($platformPdo, $agencyId, $row);
+                            }
                         }
                         $this->pullAgencyRepliesIntoPlatform(
                             $agencyPdo,
@@ -1045,10 +1115,22 @@ final class SupportTicketPlatformMirrorService
     /**
      * @param array<string, mixed> $fields
      */
-    private function syncAgencyTicketFields(\PDO $pdo, int $localTicketId, array $fields): bool
-    {
+    private function syncAgencyTicketFields(
+        \PDO $pdo,
+        int $localTicketId,
+        array $fields,
+        bool $force = false,
+        string $sourceUpdatedAt = ''
+    ): bool {
         if ($localTicketId < 1) {
             return false;
+        }
+        if (!$force && $sourceUpdatedAt !== '') {
+            $local = $this->fetchAgencyTicket($pdo, $localTicketId);
+            $destUpdated = is_array($local) ? (string) ($local['updated_at'] ?? '') : '';
+            if (!$this->isSourceNewer($sourceUpdatedAt, $destUpdated)) {
+                return false;
+            }
         }
         $sets = [];
         $params = ['id' => $localTicketId];
@@ -1079,6 +1161,29 @@ final class SupportTicketPlatformMirrorService
         }
 
         return true;
+    }
+
+    /** True when source timestamp is same-or-newer than dest (missing times treat source as newer). */
+    private function isSourceNewer(string $sourceUpdatedAt, string $destUpdatedAt): bool
+    {
+        $s = trim($sourceUpdatedAt);
+        $d = trim($destUpdatedAt);
+        if ($s === '') {
+            return true;
+        }
+        if ($d === '') {
+            return true;
+        }
+        $st = strtotime($s);
+        $dt = strtotime($d);
+        if ($st === false) {
+            return true;
+        }
+        if ($dt === false) {
+            return true;
+        }
+
+        return $st >= $dt;
     }
 
     /**
@@ -1223,10 +1328,17 @@ final class SupportTicketPlatformMirrorService
         try {
             $platformPdo->prepare(
                 'UPDATE rateb_support_tickets SET ' . implode(', ', $sets)
-                . ' WHERE message LIKE :m LIMIT 1'
+                . ', updated_at = NOW() WHERE message LIKE :m LIMIT 1'
             )->execute($params);
         } catch (\Throwable $e) {
-            // best-effort
+            try {
+                $platformPdo->prepare(
+                    'UPDATE rateb_support_tickets SET ' . implode(', ', $sets)
+                    . ' WHERE message LIKE :m LIMIT 1'
+                )->execute($params);
+            } catch (\Throwable $e2) {
+                // best-effort
+            }
         }
     }
 
