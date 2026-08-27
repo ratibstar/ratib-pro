@@ -171,10 +171,11 @@
         if (!root || !body || !ticket) {
             return;
         }
+        var wasExpanded = root.getAttribute('data-thread-expanded') === '1';
         var labels = ticket.labels || {};
         var html = '';
         var original = ticket.original || {};
-        html += '<div class="support-ticket-thread__msg support-ticket-thread__msg--client">'
+        html += '<div class="support-ticket-thread__msg support-ticket-thread__msg--client" data-thread-msg="1">'
             + '<div class="support-ticket-thread__meta"><strong>' + escapeHtml(labels.original || 'Original') + '</strong>';
         if (original.user_name) {
             html += '<span> — ' + escapeHtml(original.user_name) + '</span>';
@@ -186,7 +187,7 @@
 
         (ticket.replies || []).forEach(function (reply) {
             var isStaff = !!reply.is_staff;
-            html += '<div class="support-ticket-thread__msg ' + (isStaff ? 'support-ticket-thread__msg--staff' : 'support-ticket-thread__msg--client') + '" data-reply-id="' + escapeHtml(String(reply.id || 0)) + '">'
+            html += '<div class="support-ticket-thread__msg ' + (isStaff ? 'support-ticket-thread__msg--staff' : 'support-ticket-thread__msg--client') + '" data-thread-msg="1" data-reply-id="' + escapeHtml(String(reply.id || 0)) + '">'
                 + '<div class="support-ticket-thread__meta"><strong>' + escapeHtml(isStaff ? (labels.staff || 'Staff') : (labels.client || 'Client')) + '</strong>';
             if (reply.user_name) {
                 html += '<span> — ' + escapeHtml(reply.user_name) + '</span>';
@@ -201,6 +202,16 @@
         root.setAttribute('data-activity-token', ticket.activity_token || '');
         root.setAttribute('data-status', ticket.status || '');
         root.setAttribute('data-priority', ticket.priority || '');
+        if (!root.getAttribute('data-thread-visible-limit')) {
+            root.setAttribute('data-thread-visible-limit', '3');
+        }
+        root.setAttribute('data-thread-expanded', wasExpanded ? '1' : '0');
+        root.dataset.threadBound = '0';
+        if (window.RatebSupportTicketUi && typeof window.RatebSupportTicketUi.refreshThread === 'function') {
+            window.RatebSupportTicketUi.refreshThread(root);
+        } else if (window.RatebSupportTicketUi && typeof window.RatebSupportTicketUi.applyThreadCollapse === 'function') {
+            window.RatebSupportTicketUi.applyThreadCollapse(root, wasExpanded);
+        }
 
         var statusField = document.querySelector('#f_status, select[name="status"]');
         if (statusField && ticket.status && String(statusField.value) !== String(ticket.status)) {

@@ -227,6 +227,38 @@ final class SupportTicketReplyService
         ];
     }
 
+    /**
+     * Canned staff reply templates (label + body) for searchable picker.
+     *
+     * @return list<array{id: string, label: string, body: string}>
+     */
+    public static function cannedReplies(): array
+    {
+        $ids = [
+            'ack',
+            'need_info',
+            'in_progress',
+            'resolved',
+            'workaround',
+            'permissions',
+            'billing',
+            'feature',
+            'training',
+            'escalated',
+            'closed',
+        ];
+        $out = [];
+        foreach ($ids as $id) {
+            $out[] = [
+                'id' => $id,
+                'label' => (string) __('st_reply_' . $id . '_label'),
+                'body' => (string) __('st_reply_' . $id . '_body'),
+            ];
+        }
+
+        return $out;
+    }
+
     private function resolveUserName(int $userId): string
     {
         if ($userId < 1) {

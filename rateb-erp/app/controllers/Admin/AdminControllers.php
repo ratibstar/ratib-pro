@@ -4515,6 +4515,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             $data['conversation'] = $replySvc->conversation($ticketId, $item);
             $data['canReply'] = function_exists('rateb_can') && rateb_can('settings.manage');
             $data['replyAction'] = rateb_url($this->routePrefix . '/' . $ticketId . '/reply');
+            $data['replyTemplates'] = \Rateb\App\Services\SupportTicketReplyService::cannedReplies();
             $enriched = (new \Rateb\App\Services\SupportTicketAlertService())->enrichTicketRows([$item]);
             $data['companyLabel'] = (string) ($enriched[0]['company_name'] ?? '');
             if ($data['companyLabel'] === '') {

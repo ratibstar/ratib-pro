@@ -22,13 +22,41 @@ foreach ($replies as $replyRow) {
 }
 // Must match SupportTicketReplyService::liveSnapshot activity_token format.
 $activityToken = $ticketId . ':' . $maxReplyId . ':' . $status . ':' . $priority . ':' . $replyCount;
+
+/** @var list<array<string, mixed>> $threadMessages */
+$threadMessages = [];
+$threadMessages[] = [
+    'kind' => 'original',
+    'is_staff' => false,
+    'body' => (string) ($original['body'] ?? ''),
+    'user_name' => (string) ($original['user_name'] ?? ''),
+    'created_at' => (string) ($original['created_at'] ?? ''),
+    'reply_id' => 0,
+];
+foreach ($replies as $reply) {
+    $threadMessages[] = [
+        'kind' => 'reply',
+        'is_staff' => !empty($reply['is_staff']),
+        'body' => (string) ($reply['body'] ?? ''),
+        'user_name' => (string) ($reply['user_name'] ?? ''),
+        'created_at' => (string) ($reply['created_at'] ?? ''),
+        'reply_id' => (int) ($reply['id'] ?? 0),
+    ];
+}
+$visibleLimit = 3;
+$totalMessages = count($threadMessages);
+$hiddenCount = max(0, $totalMessages - $visibleLimit);
+$startVisible = $hiddenCount;
 ?>
 <div class="rateb-card mb-3 support-ticket-thread"
      data-rateb-ticket-live="1"
      data-ticket-id="<?php echo View::escape((string) $ticketId); ?>"
      data-activity-token="<?php echo View::escape($activityToken); ?>"
      data-status="<?php echo View::escape($status); ?>"
-     data-priority="<?php echo View::escape($priority); ?>">
+     data-priority="<?php echo View::escape($priority); ?>"
+     data-thread-visible-limit="<?php echo (int) $visibleLimit; ?>"
+     data-label-more-tpl="<?php echo View::escape(__('support_ticket_thread_show_more', ['count' => ':count'])); ?>"
+     data-label-less="<?php echo View::escape(__('support_ticket_thread_show_less')); ?>">
     <div class="rateb-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span><?php echo View::escape(__('support_ticket_conversation')); ?></span>
         <span class="d-flex align-items-center gap-2">
@@ -41,32 +69,42 @@ $activityToken = $ticketId . ':' . $maxReplyId . ':' . $status . ':' . $priority
         </span>
     </div>
     <div class="rateb-card-body support-ticket-thread__body" data-rateb-ticket-thread-body="1">
-        <div class="support-ticket-thread__msg support-ticket-thread__msg--client">
-            <div class="support-ticket-thread__meta">
-                <strong><?php echo View::escape(__('support_ticket_original_request')); ?></strong>
-                <?php if (!empty($original['user_name'])) { ?>
-                <span> — <?php echo View::escape((string) $original['user_name']); ?></span>
-                <?php } ?>
-                <?php if (!empty($original['created_at'])) { ?>
-                <span class="text-muted small"><?php echo View::escape(View::formatDate($original['created_at'], 'datetime')); ?></span>
-                <?php } ?>
-            </div>
-            <div class="support-ticket-thread__text"><?php echo nl2br(View::escape((string) ($original['body'] ?? ''))); ?></div>
+        <?php if ($hiddenCount > 0) { ?>
+        <div class="support-ticket-thread__more-wrap" data-thread-more-wrap="1">
+            <button type="button" class="btn btn-sm btn-outline-secondary support-ticket-thread__more-btn" data-thread-more-btn="1"
+                    data-label-more="<?php echo View::escape(__('support_ticket_thread_show_more', ['count' => $hiddenCount])); ?>"
+                    data-label-less="<?php echo View::escape(__('support_ticket_thread_show_less')); ?>">
+                <i class="fas fa-chevron-up ms-1"></i>
+                <span data-thread-more-label="1"><?php echo View::escape(__('support_ticket_thread_show_more', ['count' => $hiddenCount])); ?></span>
+            </button>
         </div>
-        <?php foreach ($replies as $reply) {
-            $isStaff = !empty($reply['is_staff']);
+        <?php } ?>
+        <?php foreach ($threadMessages as $idx => $msg) {
+            $isStaff = !empty($msg['is_staff']);
+            $isOriginal = ($msg['kind'] ?? '') === 'original';
+            $isOlder = $idx < $startVisible;
+            $msgClass = 'support-ticket-thread__msg'
+                . ($isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client')
+                . ($isOlder ? ' support-ticket-thread__msg--older is-collapsed' : '');
+            $title = $isOriginal
+                ? __('support_ticket_original_request')
+                : ($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client'));
             ?>
-        <div class="support-ticket-thread__msg<?php echo $isStaff ? ' support-ticket-thread__msg--staff' : ' support-ticket-thread__msg--client'; ?>" data-reply-id="<?php echo View::escape((string) ((int) ($reply['id'] ?? 0))); ?>">
+        <div class="<?php echo View::escape($msgClass); ?>"
+             data-thread-msg="1"
+             data-msg-index="<?php echo (int) $idx; ?>"
+             <?php if ((int) ($msg['reply_id'] ?? 0) > 0) { ?>data-reply-id="<?php echo View::escape((string) ((int) $msg['reply_id'])); ?>"<?php } ?>
+             <?php if ($isOlder) { ?>hidden<?php } ?>>
             <div class="support-ticket-thread__meta">
-                <strong><?php echo View::escape($isStaff ? __('support_ticket_reply_staff') : __('support_ticket_reply_client')); ?></strong>
-                <?php if (!empty($reply['user_name'])) { ?>
-                <span> — <?php echo View::escape((string) $reply['user_name']); ?></span>
+                <strong><?php echo View::escape($title); ?></strong>
+                <?php if (!empty($msg['user_name'])) { ?>
+                <span> — <?php echo View::escape((string) $msg['user_name']); ?></span>
                 <?php } ?>
-                <?php if (!empty($reply['created_at'])) { ?>
-                <span class="text-muted small"><?php echo View::escape(View::formatDate((string) $reply['created_at'], 'datetime')); ?></span>
+                <?php if (!empty($msg['created_at'])) { ?>
+                <span class="text-muted small"><?php echo View::escape(View::formatDate((string) $msg['created_at'], 'datetime')); ?></span>
                 <?php } ?>
             </div>
-            <div class="support-ticket-thread__text"><?php echo nl2br(View::escape((string) ($reply['body'] ?? ''))); ?></div>
+            <div class="support-ticket-thread__text"><?php echo nl2br(View::escape((string) ($msg['body'] ?? ''))); ?></div>
         </div>
         <?php } ?>
     </div>
