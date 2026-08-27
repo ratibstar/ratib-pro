@@ -36,22 +36,18 @@ if ($isEdit && !empty($canReply) && !empty($replyAction)) { ?>
                             $tplLabel = (string) ($tpl['label'] ?? '');
                             $tplBody = (string) ($tpl['body'] ?? '');
                             $searchHay = mb_strtolower($tplLabel . ' ' . $tplBody, 'UTF-8');
+                            $bodyB64 = base64_encode($tplBody);
                             ?>
                         <option value="<?php echo View::escape($tplId); ?>"
+                                data-body-b64="<?php echo View::escape($bodyB64); ?>"
                                 data-search="<?php echo View::escape($searchHay); ?>">
                             <?php echo View::escape($tplLabel); ?>
                         </option>
                         <?php } ?>
-                        <option value="__manual__" data-search="<?php echo View::escape(mb_strtolower(__('manual_entry'), 'UTF-8')); ?>">
+                        <option value="__manual__" data-body-b64="" data-search="<?php echo View::escape(mb_strtolower(__('manual_entry'), 'UTF-8')); ?>">
                             <?php echo View::escape(__('manual_entry')); ?>
                         </option>
                     </select>
-                    <script type="application/json" data-reply-templates-json="1"><?php
-                        echo json_encode(
-                            array_values($replyTemplates),
-                            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS
-                        );
-                    ?></script>
                     <div class="form-text"><?php echo View::escape(__('support_ticket_reply_pick_hint')); ?></div>
                 </div>
             </div>

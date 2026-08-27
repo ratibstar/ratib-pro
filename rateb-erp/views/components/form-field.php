@@ -88,14 +88,25 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
             $pickValue = '__manual__';
             $manualValue = $selectedValue;
         }
+        $detailsOnPick = !empty($field['details_on_pick']);
+        if ($detailsOnPick && $found && $pickValue !== '' && $pickValue !== '__manual__' && $manualValue === '') {
+            foreach ($options as $opt) {
+                if ((string) ($opt['value'] ?? '') === $pickValue) {
+                    $manualValue = (string) ($opt['label'] ?? '');
+                    break;
+                }
+            }
+        }
+        $showManual = ($pickValue === '__manual__') || ($detailsOnPick && $pickValue !== '');
         ?>
-    <div class="rateb-hybrid-field">
+    <div class="rateb-hybrid-field"<?php echo $detailsOnPick ? ' data-details-on-pick="1"' : ''; ?>>
         <select class="form-select rateb-form-control rateb-hybrid-select" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 name="<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
                 <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
             <option value=""><?php echo __('select'); ?></option>
             <?php foreach ($options as $opt) { ?>
-            <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo $pickValue === (string) $opt['value'] ? ' selected' : ''; ?>>
+            <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo $pickValue === (string) $opt['value'] ? ' selected' : ''; ?>
+                    data-label="<?php echo Rateb\App\Core\View::escape((string) ($opt['label'] ?? '')); ?>">
                 <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
             </option>
             <?php } ?>
@@ -107,19 +118,19 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
                   name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                   rows="<?php echo (int) ($field['rows'] ?? 4); ?>"
                   placeholder="<?php echo __('type_manually'); ?>"
-                  <?php echo $pickValue === '__manual__' ? '' : 'disabled'; ?>
-                  style="<?php echo $pickValue === '__manual__' ? '' : 'display:none'; ?>"><?php echo Rateb\App\Core\View::escape($manualValue); ?></textarea>
+                  <?php echo $showManual ? '' : 'disabled'; ?>
+                  style="<?php echo $showManual ? '' : 'display:none'; ?>"><?php echo Rateb\App\Core\View::escape($manualValue); ?></textarea>
         <?php } else { ?>
         <input type="text" class="form-control rateb-form-control rateb-hybrid-manual mt-1"
                id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                name="<?php echo Rateb\App\Core\View::escape($name); ?>_manual"
                placeholder="<?php echo __('type_manually'); ?>"
                value="<?php echo Rateb\App\Core\View::escape($manualValue); ?>"
-               <?php echo $pickValue === '__manual__' ? '' : 'disabled'; ?>
-               style="<?php echo $pickValue === '__manual__' ? '' : 'display:none'; ?>">
+               <?php echo $showManual ? '' : 'disabled'; ?>
+               style="<?php echo $showManual ? '' : 'display:none'; ?>">
         <?php } ?>
         <input type="hidden" class="rateb-hybrid-value" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-               value="<?php echo Rateb\App\Core\View::escape($selectedValue); ?>">
+               value="<?php echo Rateb\App\Core\View::escape($detailsOnPick && $showManual ? $manualValue : $selectedValue); ?>">
     </div>
     <?php } elseif ($type === 'datalist' && $lookup !== '') {
         $options = $lookups[$lookup] ?? [];

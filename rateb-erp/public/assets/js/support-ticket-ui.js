@@ -1,6 +1,7 @@
 /**
  * Support ticket UI: searchable canned replies + thread show-more (last 3).
- * Selecting a ready reply always fills "Your reply" (editable afterward).
+ * Ready-reply pick always fills "Your reply" (editable). Bodies live in data-body-b64
+ * so soft-nav (which strips <script>) cannot wipe templates.
  */
 (function () {
     'use strict';
@@ -15,29 +16,35 @@
         }
     }
 
-    function loadTemplateBodies(box) {
-        if (box._replyBodyMap) {
-            return box._replyBodyMap;
+    function b64DecodeUtf8(b64) {
+        if (!b64) {
+            return '';
         }
-        var map = {};
-        var el = box.querySelector('[data-reply-templates-json="1"]');
-        if (el) {
-            try {
-                var list = JSON.parse(String(el.textContent || '[]'));
-                if (Array.isArray(list)) {
-                    list.forEach(function (tpl) {
-                        if (!tpl || tpl.id == null) {
-                            return;
-                        }
-                        map[String(tpl.id)] = String(tpl.body || '');
-                    });
+        try {
+            var bin = atob(String(b64));
+            if (typeof TextDecoder !== 'undefined') {
+                var bytes = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) {
+                    bytes[i] = bin.charCodeAt(i);
                 }
-            } catch (eParse) {
-                map = {};
+                return new TextDecoder('utf-8').decode(bytes);
             }
+            // Fallback for older engines
+            return decodeURIComponent(escape(bin));
+        } catch (eDec) {
+            return '';
         }
-        box._replyBodyMap = map;
-        return map;
+    }
+
+    function templateBodyFromOption(opt) {
+        if (!opt) {
+            return '';
+        }
+        var b64 = opt.getAttribute('data-body-b64');
+        if (b64) {
+            return b64DecodeUtf8(b64);
+        }
+        return String(opt.getAttribute('data-body') || '');
     }
 
     function applyThreadCollapse(root, expanded) {
@@ -166,8 +173,8 @@
             return;
         }
         var val = String(pick.value || '');
-        var bodies = loadTemplateBodies(box);
-        var templateBody = Object.prototype.hasOwnProperty.call(bodies, val) ? String(bodies[val] || '') : '';
+        var opt = pick.options[pick.selectedIndex];
+        var templateBody = templateBodyFromOption(opt);
 
         if (val === '') {
             if (forceFill) {
@@ -175,11 +182,8 @@
                 delete body.dataset.manualTouched;
             }
         } else if (val === '__manual__') {
-            if (forceFill || !body.dataset.manualTouched) {
-                // Keep typed text if user already started manual entry; clear only on fresh pick.
-                if (forceFill && !body.dataset.manualTouched) {
-                    body.value = '';
-                }
+            if (forceFill && !body.dataset.manualTouched) {
+                body.value = '';
             }
             try { body.focus(); } catch (eFocus) { /* ignore */ }
         } else if (forceFill || !body.dataset.manualTouched) {
@@ -222,7 +226,6 @@
             return;
         }
         box.dataset.replyBound = '1';
-        box._replyBodyMap = null;
         var search = box.querySelector('[data-reply-search="1"]');
         var pick = box.querySelector('[data-reply-pick="1"]');
         var body = box.querySelector('[data-reply-body="1"]');
@@ -238,16 +241,12 @@
                 if (body) {
                     delete body.dataset.manualTouched;
                 }
-                // Always inject the chosen template into "Your reply"; user may edit after.
                 syncReplyPicker(box, true);
             });
         }
         if (body) {
             body.addEventListener('input', function () {
                 body.dataset.manualTouched = '1';
-                if (pick && pick.value && pick.value !== '__manual__') {
-                    // Edited a template → treat as custom from now until another pick.
-                }
                 var submit = box.querySelector('[data-reply-submit="1"]');
                 if (submit) {
                     submit.disabled = String(body.value || '').trim() === '';
@@ -269,20 +268,34 @@
                 }
             });
         }
-        syncReplyPicker(box, false);
+        // If a template is already selected (browser restore), fill details now.
+        if (pick && pick.value && pick.value !== '__manual__') {
+            syncReplyPicker(box, true);
+        } else {
+            syncReplyPicker(box, false);
+        }
     }
 
     function boot() {
         document.querySelectorAll('[data-rateb-ticket-live="1"]').forEach(function (root) {
+            if (root.dataset.threadBound === '1' && !root.querySelector('[data-thread-msg="1"]')) {
+                delete root.dataset.threadBound;
+            }
             initThread(root);
         });
         document.querySelectorAll('[data-support-reply-picker="1"]').forEach(function (box) {
-            // Soft-nav may re-inject the form; allow re-bind on a fresh node.
-            if (box.dataset.replyBound === '1' && !box.querySelector('[data-reply-pick="1"]')) {
-                delete box.dataset.replyBound;
-            }
             initReplyPicker(box);
         });
+    }
+
+    function bootAfterNav() {
+        document.querySelectorAll('[data-support-reply-picker="1"]').forEach(function (box) {
+            delete box.dataset.replyBound;
+        });
+        document.querySelectorAll('[data-rateb-ticket-live="1"]').forEach(function (root) {
+            delete root.dataset.threadBound;
+        });
+        boot();
     }
 
     window.RatebSupportTicketUi = {
@@ -302,13 +315,9 @@
     };
 
     document.addEventListener('DOMContentLoaded', boot);
-    document.addEventListener('rateb:soft-nav:afterEnter', function () {
-        document.querySelectorAll('[data-support-reply-picker="1"]').forEach(function (box) {
-            delete box.dataset.replyBound;
-            box._replyBodyMap = null;
-        });
-        boot();
-    });
+    // Soft-nav fires rateb:nav:afterEnter (not soft-nav:afterEnter).
+    document.addEventListener('rateb:nav:afterEnter', bootAfterNav);
+    document.addEventListener('rateb:soft-nav:afterEnter', bootAfterNav);
     if (document.readyState !== 'loading') {
         boot();
     }

@@ -4471,6 +4471,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
                 'lookup' => 'support_ticket_messages',
                 'options' => self::supportTicketMessageOptionKeys(),
                 'manual_type' => 'textarea',
+                'details_on_pick' => true,
                 'rows' => 4,
                 'required' => true,
                 'col' => 'col-12',
