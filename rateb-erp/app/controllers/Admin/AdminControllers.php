@@ -4215,6 +4215,7 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
     {
         $this->guardManage();
         if (!$this->validateCsrf()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('invalid_request'));
             \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix));
         }
         $ticketId = (int) ($params['id'] ?? 0);
@@ -4223,15 +4224,29 @@ final class SupportTicketsController extends \Rateb\App\Controllers\CrudControll
             \Rateb\App\Core\SessionManager::flash('error', __('support_ticket_reply_required'));
             \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix . '/' . $ticketId . '/edit'));
         }
-        if (function_exists('rateb_bootstrap_ops_tenant')) {
-            rateb_bootstrap_ops_tenant();
+        $this->ensureTicketWriteContext();
+        $record = null;
+        try {
+            $record = $this->model->findByIdUnscoped($ticketId);
+        } catch (\Throwable $e) {
+            $record = $this->resolveRecordForWrite($ticketId);
         }
-        $record = $this->resolveRecordForWrite($ticketId);
         if (!$record) {
-            http_response_code(404);
-            $this->view('errors/404', ['title' => '404']);
+            $record = $this->resolveRecordForWrite($ticketId);
+        }
+        if (!$record) {
+            \Rateb\App\Core\SessionManager::flash('error', __('record_not_found'));
+            \Rateb\App\Core\Response::redirect(rateb_url($this->routePrefix));
 
             return;
+        }
+        if (function_exists('rateb_adopt_ops_company_from_record')) {
+            rateb_adopt_ops_company_from_record($record);
+        } elseif (function_exists('rateb_adopt_ops_company_id')) {
+            $cidAdopt = (int) ($record['company_id'] ?? 0);
+            if ($cidAdopt > 0) {
+                rateb_adopt_ops_company_id($cidAdopt);
+            }
         }
         $companyName = '';
         $cid = (int) ($record['company_id'] ?? 0);

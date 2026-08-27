@@ -17,7 +17,7 @@ if ($isEdit && !empty($canReply) && !empty($replyAction)) { ?>
 <div class="rateb-card mt-3 support-ticket-reply-box" data-support-reply-picker="1">
     <div class="rateb-card-header"><?php echo View::escape(__('support_ticket_reply_heading')); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo View::escape((string) $replyAction); ?>">
+        <form method="post" action="<?php echo View::escape((string) $replyAction); ?>" data-rateb-full-nav="1">
             <input type="hidden" name="_csrf" value="<?php echo View::escape($csrf ?? ''); ?>">
             <div class="mb-3">
                 <label class="form-label rateb-form-label" for="support_ticket_reply_search"><?php echo View::escape(__('support_ticket_reply_pick_label')); ?></label>
@@ -29,7 +29,7 @@ if ($isEdit && !empty($canReply) && !empty($replyAction)) { ?>
                                autocomplete="off"
                                placeholder="<?php echo View::escape(__('support_ticket_reply_search_placeholder')); ?>">
                     </div>
-                    <select class="form-select rateb-form-control mt-2" id="support_ticket_reply_pick" data-reply-pick="1" required>
+                    <select class="form-select rateb-form-control mt-2" id="support_ticket_reply_pick" data-reply-pick="1">
                         <option value=""><?php echo View::escape(__('select')); ?></option>
                         <?php foreach ($replyTemplates as $tpl) { ?>
                         <option value="<?php echo View::escape((string) ($tpl['id'] ?? '')); ?>"
@@ -45,14 +45,15 @@ if ($isEdit && !empty($canReply) && !empty($replyAction)) { ?>
                     <div class="form-text"><?php echo View::escape(__('support_ticket_reply_pick_hint')); ?></div>
                 </div>
             </div>
-            <div class="mb-3" data-reply-body-wrap="1" hidden>
+            <div class="mb-3" data-reply-body-wrap="1">
                 <label class="form-label rateb-form-label" for="support_ticket_reply_body"><?php echo View::escape(__('support_ticket_reply_label')); ?></label>
-                <textarea class="form-control rateb-form-control" id="support_ticket_reply_body" name="reply_body" rows="4"
+                <textarea class="form-control rateb-form-control" id="support_ticket_reply_body" name="reply_body" rows="5"
                           data-reply-body="1"
+                          required
                           placeholder="<?php echo View::escape(__('support_ticket_reply_placeholder')); ?>"></textarea>
                 <div class="form-text"><?php echo View::escape(__('support_ticket_reply_notify_hint')); ?></div>
             </div>
-            <button type="submit" class="btn btn-primary" data-reply-submit="1" disabled>
+            <button type="submit" class="btn btn-primary" data-reply-submit="1">
                 <i class="fas fa-paper-plane ms-1"></i>
                 <?php echo View::escape(__('support_ticket_reply_submit')); ?>
             </button>

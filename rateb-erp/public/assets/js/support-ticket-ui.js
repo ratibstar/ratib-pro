@@ -128,35 +128,36 @@
         var body = box.querySelector('[data-reply-body="1"]');
         var wrap = box.querySelector('[data-reply-body-wrap="1"]');
         var submit = box.querySelector('[data-reply-submit="1"]');
-        if (!pick || !body) {
-            return;
-        }
-        var val = String(pick.value || '');
-        var opt = pick.options[pick.selectedIndex];
-        var templateBody = opt ? String(opt.getAttribute('data-body') || '') : '';
-        if (val === '') {
-            if (wrap) {
-                wrap.hidden = true;
-            }
-            body.value = '';
-            body.removeAttribute('required');
-            if (submit) {
-                submit.disabled = true;
-            }
+        if (!body) {
             return;
         }
         if (wrap) {
             wrap.hidden = false;
         }
         body.setAttribute('required', 'required');
+        if (!pick) {
+            if (submit) {
+                submit.disabled = String(body.value || '').trim() === '';
+            }
+            return;
+        }
+        var val = String(pick.value || '');
+        var opt = pick.options[pick.selectedIndex];
+        var templateBody = opt ? String(opt.getAttribute('data-body') || '') : '';
+        if (val === '') {
+            // Keep whatever the user typed; only clear when switching templates.
+            if (submit) {
+                submit.disabled = String(body.value || '').trim() === '';
+            }
+            return;
+        }
         if (val === '__manual__') {
             if (!body.dataset.manualTouched) {
                 body.value = '';
             }
-            body.focus();
-        } else {
+            try { body.focus(); } catch (eFocus) { /* ignore */ }
+        } else if (!body.dataset.manualTouched) {
             body.value = templateBody;
-            delete body.dataset.manualTouched;
         }
         if (submit) {
             submit.disabled = String(body.value || '').trim() === '';
@@ -223,10 +224,15 @@
         }
         if (form) {
             form.addEventListener('submit', function (e) {
-                syncReplyPicker(box);
+                // Ensure pick templates are applied once more before post.
+                if (pick && pick.value && pick.value !== '__manual__' && body && !body.dataset.manualTouched) {
+                    syncReplyPicker(box);
+                }
                 if (String(body && body.value || '').trim() === '') {
                     e.preventDefault();
-                    if (pick) {
+                    if (body) {
+                        body.focus();
+                    } else if (pick) {
                         pick.focus();
                     }
                 }
@@ -260,9 +266,9 @@
         boot: boot
     };
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
-    } else {
+    document.addEventListener('DOMContentLoaded', boot);
+    document.addEventListener('rateb:soft-nav:afterEnter', boot);
+    if (document.readyState !== 'loading') {
         boot();
     }
 })();

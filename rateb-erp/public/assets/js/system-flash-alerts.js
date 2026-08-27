@@ -76,7 +76,7 @@
             return '';
         }
         var severity = alert.severity || 'info';
-        var pulse = alert.pulse ? ' rateb-system-flash-alert--pulse' : '';
+        var pulse = '';
         var icon = alert.icon || 'fa-bell';
         var url = alert.url || '#';
         var count = parseInt(alert.count, 10) || 0;
@@ -197,21 +197,32 @@
         return [];
     }
 
+    var lastAlertsFp = '';
+
     function applyAlertsStack(alerts) {
         var stack = stackEl();
         if (!stack) {
             return;
         }
         if (!alerts.length) {
-            stack.innerHTML = '';
-            stack.classList.add('rateb-system-flash-stack--empty');
+            if (lastAlertsFp !== '') {
+                stack.innerHTML = '';
+                stack.classList.add('rateb-system-flash-stack--empty');
+                lastAlertsFp = '';
+            }
             return;
         }
+        var fp = alerts.map(function (a) {
+            return String(a.key || '') + ':' + String(a.count || 0) + ':' + String(a.title || '') + ':' + String(a.message || '');
+        }).join('|');
+        // Keep the card stable until content actually changes — no flashing rebuild every poll.
+        if (fp === lastAlertsFp && stack.querySelector('.rateb-system-flash-alert')) {
+            return;
+        }
+        lastAlertsFp = fp;
         stack.classList.remove('rateb-system-flash-stack--empty');
         var html = '';
-        var keys = {};
         alerts.forEach(function (alert) {
-            keys[String(alert.key)] = 1;
             html += renderAlert(alert);
         });
         stack.innerHTML = html;
@@ -769,6 +780,7 @@
         lastTicketToken = '';
         lastActivityToken = '';
         lastTicketsTableFp = '';
+        lastAlertsFp = '';
         schedulePoll();
         pollOnce();
     });
