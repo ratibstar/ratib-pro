@@ -143,7 +143,7 @@ final class MailService
     }
 
     /**
-     * Supplier communication email — full labeled message, unique subject (avoids Gmail trim).
+     * Supplier communication email — plain full subject + body (Gmail-safe).
      *
      * @param array<string, mixed> $fields
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
@@ -153,15 +153,15 @@ final class MailService
         $subject = trim($subject);
         $plainBody = trim($plainBody);
         $details = $details !== null ? trim($details) : '';
-        $stamp = date('Y-m-d H:i:s');
-        $uniqueSubject = $subject !== '' ? $subject : (string) __('supplier_comms');
+        $stamp = date('Y-m-d H:i');
+        $mailSubject = $subject !== '' ? $subject : (string) __('supplier_comms');
         if ($commId > 0) {
-            $uniqueSubject .= ' #' . $commId;
+            $mailSubject .= ' #' . $commId;
         }
-        $uniqueSubject .= ' · ' . $stamp;
+        $mailSubject .= ' · ' . $stamp;
 
         $html = $this->buildSupplierCommHtml($subject, $plainBody, $details, $fields, $footerUrl, $stamp, $commId);
-        $result = $this->sendDetailed($to, $uniqueSubject, $html, null, $cc, null, false);
+        $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
@@ -177,8 +177,8 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = (string) __('mail_test_body');
         }
-        return '<!DOCTYPE html><html><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.7;font-size:15px;margin:0;padding:16px">'
-            . '<div>' . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'), false) . '</div>'
+        return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.8;font-size:16px;margin:0;padding:20px">'
+            . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'), false)
             . '</body></html>';
     }
 
@@ -205,45 +205,31 @@ final class MailService
             $body = $subject !== '' ? $subject : (string) __('mail_test_body');
         }
         $esc = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8');
-        $nl = static fn (string $t): string => nl2br($esc($t), false);
-        $row = static function (string $label, string $value) use ($esc, $nl): string {
-            if (trim($value) === '') {
+        $block = static function (string $label, string $value) use ($esc): string {
+            $value = trim($value);
+            if ($value === '') {
                 return '';
             }
-            return '<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f8fafc;width:140px;font-weight:700;vertical-align:top">'
-                . $esc($label) . '</td><td style="padding:8px 12px;border:1px solid #e5e7eb;vertical-align:top">'
-                . $nl($value) . '</td></tr>';
+            return '<p style="margin:0 0 6px;font-size:13px;color:#64748b;font-weight:700">' . $esc($label) . '</p>'
+                . '<div style="margin:0 0 20px;font-size:16px;line-height:1.85;color:#0f172a;white-space:pre-wrap;word-wrap:break-word;overflow:visible">'
+                . nl2br($esc($value), false) . '</div>';
         };
 
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
-            . '<body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111;margin:0;padding:20px;background:#fff">';
-        $html .= '<p style="margin:0 0 8px;color:#64748b;font-size:12px">' . $esc(__('supplier_comms'));
-        if ($commId > 0) {
-            $html .= ' #' . $commId;
+            . '<body dir="auto" style="font-family:Tajawal,Arial,sans-serif;margin:0;padding:24px;background:#ffffff;color:#0f172a">';
+        $html .= $block(__('subject'), $subject);
+        $html .= $block(__('comm_message'), $body);
+        if ($details !== '' && $details !== $body && $details !== $subject) {
+            $html .= $block(__('comm_details'), $details);
         }
-        if ($stamp !== '') {
-            $html .= ' — ' . $esc($stamp);
+        $extra = trim((string) ($fields['supplier_name'] ?? ''));
+        if ($extra !== '') {
+            $html .= $block(__('suppliers'), $extra);
         }
-        $html .= '</p>';
-        $html .= '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;border-collapse:collapse;margin:0 0 16px">';
-        $html .= $row(__('subject'), $subject);
-        $html .= $row(__('comm_message'), $body);
-        if ($details !== '' && $details !== $body) {
-            $html .= $row(__('comm_details'), $details);
-        }
-        $html .= $row(__('suppliers'), (string) ($fields['supplier_name'] ?? ''));
-        $html .= $row(__('comm_channel'), (string) ($fields['channel_label'] ?? $fields['channel'] ?? ''));
-        $html .= $row(__('comm_supplier_contact'), (string) ($fields['supplier_contact'] ?? ''));
-        $html .= $row(__('comm_supplier_phone'), (string) ($fields['supplier_phone'] ?? ''));
-        $html .= $row(__('comm_supplier_email'), (string) ($fields['supplier_email'] ?? ''));
-        $html .= $row(__('comm_responsible'), (string) ($fields['responsible_name'] ?? ''));
-        $html .= $row(__('comm_date'), (string) ($fields['comm_date'] ?? ''));
-        $html .= '</table>';
         if ($footerUrl !== '') {
             $safe = $esc($footerUrl);
-            $html .= '<p style="margin:16px 0 0;font-size:13px"><a href="' . $safe . '">' . $safe . '</a></p>';
+            $html .= '<p style="margin:28px 0 0;font-size:13px;color:#64748b"><a href="' . $safe . '" style="color:#2563eb">' . $safe . '</a></p>';
         }
-        $html .= '<p style="margin:20px 0 0;font-size:11px;color:#94a3b8">ID:' . $esc((string) ($commId > 0 ? $commId : time())) . '-' . $esc(bin2hex(random_bytes(3))) . '</p>';
         $html .= '</body></html>';
         return $html;
     }

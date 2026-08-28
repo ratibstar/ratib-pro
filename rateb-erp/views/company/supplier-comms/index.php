@@ -102,8 +102,7 @@ $channelIcon = static function (string $ch): string {
                         ]); ?>
                         <div class="rateb-sc-form-actions">
                             <p class="text-muted small w-100 mb-2"><?php echo __('comm_save_send_hint'); ?></p>
-                            <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
-                            <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
+                            <button type="submit" name="form_action" value="save_send" class="btn btn-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
                             <button type="reset" class="btn btn-outline-secondary"><?php echo __('reset'); ?></button>
                         </div>
                     </form>

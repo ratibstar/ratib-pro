@@ -1763,7 +1763,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix));
         }
-        $formAction = trim((string) $this->input('form_action', 'save'));
+        $formAction = trim((string) $this->input('form_action', 'save_send'));
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
@@ -1821,16 +1821,16 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             SessionManager::flash('error', $e->getMessage());
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
-        $formAction = trim((string) $this->input('form_action', 'save'));
+        $formAction = trim((string) $this->input('form_action', 'save_send'));
         $companyId = (int) ($data['company_id'] ?? rateb_resolve_ops_company_id());
         $svc = new \Rateb\App\Services\SupplierCommService();
         try {
-            if ($formAction === 'save_send') {
-                $this->handleSendAction($id, $data, $svc);
-            }
             $this->model->update($id, $data);
             $this->persistAttachments($id, $companyId);
             $svc->logTimeline($id, $companyId, 'updated', __('comm_timeline_updated'), (string) ($data['subject'] ?? ''));
+            if ($formAction === 'save_send') {
+                $this->handleSendAction($id, $data, $svc);
+            }
             (new AuditService())->log('update', $this->entityName, $id, $data);
             SessionManager::flash('success', __('comm_saved'));
         } catch (\Throwable $e) {
