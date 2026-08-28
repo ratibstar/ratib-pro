@@ -3835,6 +3835,7 @@ final class SettingsController extends Controller
         $mailDomain = $fromDomain !== '' ? $fromDomain : 'rateb.sa';
         $user = \Rateb\App\Core\Auth::user();
         $hrFlagRaw = $model->get('hr_mobile_console_enabled', '0');
+        $mailDnsUrl = rateb_url('admin/api/mail-dns-check') . '?domain=' . rawurlencode($mailDomain);
         $this->view('admin/settings/index', [
             'title' => __('settings'),
             'items' => $model->all(100, 0),
@@ -3844,9 +3845,10 @@ final class SettingsController extends Controller
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailRelay' => $mailSvc->isSmtpRelayHost((string) ($mailCfg['host'] ?? '')),
-            'mailDnsAsync' => true,
+            'mailDns' => (new \Rateb\App\Services\MailDnsCheckService())->checkCached($mailDomain),
+            'mailDnsAsync' => false,
             'mailDnsDomain' => $mailDomain,
-            'mailDnsUrl' => rateb_url('admin/api/mail-dns-check') . '?domain=' . rawurlencode($mailDomain),
+            'mailDnsUrl' => $mailDnsUrl,
             'testEmailDefault' => trim((string) ($user['email'] ?? 'info@rateb.sa')) ?: 'info@rateb.sa',
             'hrMobileConsoleEnabled' => in_array(strtolower(trim((string) ($hrFlagRaw ?? '0'))), ['1', 'true', 'yes', 'on'], true),
         ], 'main');
@@ -3861,8 +3863,12 @@ final class SettingsController extends Controller
         $domain = trim((string) ($_GET['domain'] ?? 'rateb.sa'));
         $refresh = isset($_GET['refresh']) && (string) $_GET['refresh'] !== '0';
         $mailDns = (new \Rateb\App\Services\MailDnsCheckService())->checkCached($domain, $refresh);
+        $mailDnsUrl = rateb_url('admin/api/mail-dns-check') . '?domain=' . rawurlencode($domain);
         ob_start();
-        \Rateb\App\Core\View::partial('admin/mail-dns-panel', ['mailDns' => $mailDns]);
+        \Rateb\App\Core\View::partial('admin/mail-dns-panel', [
+            'mailDns' => $mailDns,
+            'mailDnsUrl' => $mailDnsUrl,
+        ]);
         $html = (string) ob_get_clean();
         \Rateb\App\Core\Response::json(['ok' => true, 'html' => $html]);
     }

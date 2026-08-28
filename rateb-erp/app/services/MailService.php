@@ -42,6 +42,7 @@ final class MailService
         }
 
         $profiles = $this->smtpProfiles($cfg, $to);
+        $subject = $this->normalizeTransactionalSubject($subject);
         $primaryError = null;
         $sent = false;
 
@@ -351,6 +352,9 @@ final class MailService
         $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
         $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . $msgDomain . '>' . "\r\n";
+        $headers .= 'Precedence: auto' . "\r\n";
+        $headers .= 'X-Auto-Response-Suppress: All' . "\r\n";
+        $headers .= 'X-Mailer: Rateb ERP' . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= $this->mimeBodyHeaders($body);
@@ -450,5 +454,18 @@ final class MailService
             $stuffed[] = $line;
         }
         return implode("\r\n", $stuffed);
+    }
+
+    /** Align outbound subjects with mail-test branding for Gmail recognition. */
+    private function normalizeTransactionalSubject(string $subject): string
+    {
+        $subject = trim(preg_replace('/\s+/u', ' ', $subject) ?? $subject);
+        if ($subject === '') {
+            return 'Rateb ERP';
+        }
+        if (preg_match('/^(Rateb ERP|رتب)\b/iu', $subject)) {
+            return mb_substr($subject, 0, 240);
+        }
+        return mb_substr('Rateb ERP — ' . $subject, 0, 240);
     }
 }

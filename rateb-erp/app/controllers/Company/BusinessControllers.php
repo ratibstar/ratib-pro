@@ -1964,7 +1964,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $userEmail = trim((string) ($user['email'] ?? ''));
 
         if ($hasEmail) {
-            $result = $svc->sendViaChannel($data, $userEmail, $userEmail);
+            $result = $svc->sendViaChannel($data, $userEmail, null);
             $status = (string) ($result['status'] ?? 'failed');
             $this->model->update($commId, [
                 'send_status' => $status,

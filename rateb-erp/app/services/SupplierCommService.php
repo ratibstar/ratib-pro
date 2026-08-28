@@ -205,10 +205,11 @@ final class SupplierCommService
     /** @param array<string, mixed> $data */
     public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
     {
-        $email = trim((string) ($data['supplier_email'] ?? ''));
+        $email = $this->normalizeRecipientEmail((string) ($data['supplier_email'] ?? ''));
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
+        $data['supplier_email'] = $email;
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
             return [
@@ -229,11 +230,16 @@ final class SupplierCommService
         $isExternal = $this->isExternalEmail($email);
         $cc = null;
         if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
-            $cc = $ccEmail;
+            $cc = $this->normalizeRecipientEmail($ccEmail);
         }
-        $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo))
-            ? $replyTo
-            : ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail) ? $fromEmail : null);
+        $reply = null;
+        if ($isExternal) {
+            $reply = ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)) ? $fromEmail : null;
+        } elseif ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) {
+            $reply = $this->normalizeRecipientEmail($replyTo);
+        } elseif ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)) {
+            $reply = $fromEmail;
+        }
 
         $sendResult = $mail->sendDetailed(
             $email,
@@ -282,6 +288,13 @@ final class SupplierCommService
     {
         $domain = \Rateb\App\Helpers\Str::emailDomain($email);
         return $domain !== '' && $domain !== 'rateb.sa';
+    }
+
+    private function normalizeRecipientEmail(string $email): string
+    {
+        $email = strtolower(trim($email));
+        $email = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $email) ?? $email;
+        return trim($email);
     }
 
     /** Follow-up reminders + no-response alerts (cron). */

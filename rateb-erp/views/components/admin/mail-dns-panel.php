@@ -25,6 +25,44 @@ if ($mailDnsAsync && !is_array($mailDns)) {
     </div>
     <p class="text-muted mb-0 mt-2"><i class="fas fa-spinner fa-spin"></i> <?php echo __('mail_dns_checking'); ?></p>
 </div>
+<script>
+(function () {
+    var host = document.currentScript && document.currentScript.previousElementSibling;
+    if (!host || host.getAttribute('data-mail-dns-async') !== '1') {
+        return;
+    }
+    var url = host.getAttribute('data-mail-dns-url') || '';
+    if (!url || host.getAttribute('data-mail-dns-booted') === '1') {
+        return;
+    }
+    host.setAttribute('data-mail-dns-booted', '1');
+    var fail = host.getAttribute('data-mail-dns-fail') || 'DNS check failed';
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = setTimeout(function () {
+        if (ctrl) {
+            try { ctrl.abort(); } catch (e) { /* ignore */ }
+        }
+    }, 10000);
+    fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data && data.ok && data.html) {
+                host.outerHTML = data.html;
+                if (typeof window.ratebMailDnsBoot === 'function') {
+                    window.ratebMailDnsBoot({ immediate: true });
+                }
+                return;
+            }
+            host.innerHTML = '<p class="text-warning small mb-0">' + fail + '</p>';
+        })
+        .catch(function () {
+            host.innerHTML = '<p class="text-warning small mb-0">' + fail + '</p>';
+        })
+        .finally(function () {
+            clearTimeout(timer);
+        });
+})();
+</script>
     <?php
     return;
 }
@@ -36,8 +74,13 @@ $dnsBadge = static function (bool $ok): string {
     return $ok ? 'bg-success' : 'bg-danger';
 };
 $recs = is_array($mailDns['recommendations'] ?? null) ? $mailDns['recommendations'] : [];
+$panelDnsUrl = $mailDnsUrl !== '' ? $mailDnsUrl : '';
 ?>
-<div class="border rounded p-2 mb-3 small rateb-mail-dns-panel">
+<div class="border rounded p-2 mb-3 small rateb-mail-dns-panel"
+     <?php if ($panelDnsUrl !== '') { ?>
+     data-mail-dns-url="<?php echo Rateb\App\Core\View::escape($panelDnsUrl); ?>"
+     data-mail-dns-fail="<?php echo Rateb\App\Core\View::escape(__('mail_dns_check_failed')); ?>"
+     <?php } ?>>
     <div class="fw-semibold mb-2 d-flex justify-content-between align-items-center">
         <span><i class="fas fa-globe"></i> <?php echo __('mail_dns_check_title'); ?> — <?php echo Rateb\App\Core\View::escape((string) ($mailDns['domain'] ?? 'rateb.sa')); ?></span>
         <button type="button" class="btn btn-sm btn-outline-secondary" data-mail-dns-refresh="1"><?php echo __('refresh'); ?></button>

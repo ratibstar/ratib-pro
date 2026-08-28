@@ -67,7 +67,7 @@ final class MailDnsCheckService
         $dmarc = $this->checkDmarc($domain);
         $mx = $this->checkMx($domain);
         $ptr = ['ok' => true, 'detail' => 'skipped (fast check)'];
-        $port25 = array_merge($this->checkPort25Outbound(), ['skipped' => false]);
+        $port25 = array_merge($this->checkPort25OutboundFast(), ['skipped' => false]);
 
         $warnings = [];
         if (($spf['count'] ?? 0) > 1) {
@@ -228,6 +228,55 @@ final class MailDnsCheckService
             return ['ok' => true, 'detail' => $ptrHost];
         }
         return ['ok' => false, 'detail' => $ptrHost . ' → ' . __('mail_dns_ptr_expected', ['host' => $mailHost])];
+    }
+
+    /** @return array{ok:bool,detail:string,local_ok:bool,outbound_ok:bool} */
+    private function checkPort25OutboundFast(): array
+    {
+        $localHost = '';
+        foreach (['127.0.0.1', 'localhost', 'mail.rateb.sa'] as $host) {
+            $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 1);
+            if (is_resource($fp)) {
+                fclose($fp);
+                $localHost = $host . ':25';
+                break;
+            }
+        }
+        $localOk = $localHost !== '';
+
+        $outboundHost = '';
+        foreach (['gmail-smtp-in.l.google.com', 'alt1.gmail-smtp-in.l.google.com'] as $host) {
+            $fp = @stream_socket_client('tcp://' . $host . ':25', $errno, $errstr, 2);
+            if (is_resource($fp)) {
+                fclose($fp);
+                $outboundHost = $host . ':25';
+                break;
+            }
+        }
+        $outboundOk = $outboundHost !== '';
+
+        if ($outboundOk) {
+            return [
+                'ok' => true,
+                'detail' => __('mail_port25_active', ['host' => $outboundHost]),
+                'local_ok' => $localOk,
+                'outbound_ok' => true,
+            ];
+        }
+        if ($localOk) {
+            return [
+                'ok' => false,
+                'detail' => __('mail_port25_local_only', ['host' => $localHost]),
+                'local_ok' => true,
+                'outbound_ok' => false,
+            ];
+        }
+        return [
+            'ok' => false,
+            'detail' => __('mail_port25_blocked_detail'),
+            'local_ok' => false,
+            'outbound_ok' => false,
+        ];
     }
 
     /** @return array{ok:bool,detail:string,local_ok:bool,outbound_ok:bool} */
