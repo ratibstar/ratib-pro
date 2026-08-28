@@ -237,8 +237,10 @@ final class SupplierCommService
         $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) ? $replyTo : null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
+        $resolvedHost = trim((string) ($cfg['host'] ?? ''));
         $bcc = null;
-        if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
+        // External: no BCC to info@ — local copy misleads (Gmail may still fail while inbox copy arrives).
+        if (!$isExternal && $fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
             && strcasecmp($fromEmail, $email) !== 0
             && strcasecmp($fromEmail, (string) $cc) !== 0) {
             $bcc = $fromEmail;
@@ -271,6 +273,9 @@ final class SupplierCommService
             $msg .= ' — ' . __('mail_test_external_bounce_hint');
             if ($port25OutboundBlocked) {
                 $msg .= ' — ' . __('mail_port25_blocked_hint') . ' — ' . __('mail_hetzner_unblock_steps');
+            }
+            if ($resolvedHost !== '' && (new MailConfigService())->isLocalRelayHost($resolvedHost)) {
+                $msg .= ' — ' . __('mail_test_localhost_failed');
             }
             if ($smtpHost !== '') {
                 $msg .= ' — SMTP: ' . $smtpHost;

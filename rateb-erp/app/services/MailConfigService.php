@@ -35,6 +35,7 @@ final class MailConfigService
         $settings = new SystemSetting();
         if (self::$repairEnabled) {
             $this->repairSwappedSmtpInDb($settings);
+            $this->repairMailHostFromEnv($settings);
         }
         return $this->buildConfig($settings);
     }
@@ -172,6 +173,10 @@ final class MailConfigService
         if ($env !== false && trim((string) $env) !== '') {
             return trim((string) $env);
         }
+        $dotenv = $this->readDotenvValue($envKey);
+        if ($dotenv !== '') {
+            return $dotenv;
+        }
         $legacy = getenv('SMTP_' . strtoupper(substr($settingKey, 5)));
         if ($legacy !== false && trim((string) $legacy) !== '' && str_starts_with($settingKey, 'smtp_')) {
             return trim((string) $legacy);
@@ -181,6 +186,31 @@ final class MailConfigService
             return trim((string) $val);
         }
         return $default;
+    }
+
+    private function readDotenvValue(string $key): string
+    {
+        foreach ($this->dotenvPaths() as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
+            $lines = @file($path, FILE_IGNORE_NEW_LINES);
+            if (!is_array($lines)) {
+                continue;
+            }
+            foreach ($lines as $line) {
+                $line = trim((string) $line);
+                if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
+                    continue;
+                }
+                [$k, $val] = explode('=', $line, 2);
+                if (trim($k) !== $key) {
+                    continue;
+                }
+                return trim($val, " \t\"'");
+            }
+        }
+        return '';
     }
 
     private function sourceOf(string $envKey, string $settingKey, SystemSetting $settings, string $default = ''): string
@@ -273,9 +303,17 @@ final class MailConfigService
         if ($fromEnv !== false && trim((string) $fromEnv) !== '') {
             return trim((string) $fromEnv);
         }
+        $fromDotenv = $this->readDotenvValue('RATEB_ERP_SMTP_PASS');
+        if ($fromDotenv !== '') {
+            return $fromDotenv;
+        }
         $legacy = getenv('SMTP_PASS');
         if ($legacy !== false && trim((string) $legacy) !== '') {
             return trim((string) $legacy);
+        }
+        $legacyDotenv = $this->readDotenvValue('SMTP_PASS');
+        if ($legacyDotenv !== '') {
+            return $legacyDotenv;
         }
         $db = (string) ($settings->get('smtp_pass', '') ?? '');
         if (trim($db) !== '') {
@@ -295,6 +333,35 @@ final class MailConfigService
             }
         }
         return '';
+    }
+
+    private function repairMailHostFromEnv(SystemSetting $settings): void
+    {
+        $envHost = trim((string) (getenv('RATEB_ERP_SMTP_HOST') ?: $this->readDotenvValue('RATEB_ERP_SMTP_HOST')));
+        if ($envHost === '' || $this->isLocalRelayHost($envHost)) {
+            return;
+        }
+        $dbHost = trim((string) ($settings->get('smtp_host', '') ?? ''));
+        if ($dbHost !== '' && !$this->isLocalRelayHost($dbHost)) {
+            return;
+        }
+        if ($dbHost === '' || $this->isLocalRelayHost($dbHost)) {
+            $this->upsertSetting($settings, 'smtp_host', $envHost);
+        }
+        $envPort = trim((string) (getenv('RATEB_ERP_SMTP_PORT') ?: $this->readDotenvValue('RATEB_ERP_SMTP_PORT')));
+        if ($envPort !== '' && ctype_digit($envPort)) {
+            $dbPort = trim((string) ($settings->get('smtp_port', '') ?? ''));
+            if ($dbPort === '' || ($dbPort === '465' && $envPort === '587')) {
+                $this->upsertSetting($settings, 'smtp_port', $envPort);
+            }
+        }
+        $envEnc = strtolower(trim((string) (getenv('RATEB_ERP_SMTP_ENCRYPTION') ?: $this->readDotenvValue('RATEB_ERP_SMTP_ENCRYPTION'))));
+        if ($envEnc !== '' && in_array($envEnc, ['tls', 'ssl', 'none'], true)) {
+            $dbEnc = strtolower(trim((string) ($settings->get('smtp_encryption', '') ?? '')));
+            if ($dbEnc === '' || !in_array($dbEnc, ['tls', 'ssl', 'none'], true)) {
+                $this->upsertSetting($settings, 'smtp_encryption', $envEnc);
+            }
+        }
     }
 
     private function repairSwappedSmtpInDb(SystemSetting $settings): void
