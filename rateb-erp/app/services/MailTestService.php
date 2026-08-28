@@ -42,20 +42,40 @@ final class MailTestService
         }
 
         $mail = new MailService();
-        $bcc = null;
-        if ($isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
-            $bcc = $from;
-        } elseif (!$isExternal && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
-            $bcc = $from;
+        $result = null;
+        if ($isExternal) {
+            $result = $mail->sendDetailed(
+                $to,
+                __('mail_test_subject'),
+                '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
+                null,
+                null,
+                null
+            );
+            if (($result['success'] ?? false) && $from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
+                $mail->sendDetailed(
+                    $from,
+                    '[ERP test] ' . __('mail_test_subject'),
+                    '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
+                    null,
+                    null,
+                    null
+                );
+            }
+        } else {
+            $bcc = null;
+            if ($from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
+                $bcc = $from;
+            }
+            $result = $mail->sendDetailed(
+                $to,
+                __('mail_test_subject'),
+                '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
+                null,
+                null,
+                $bcc
+            );
         }
-        $result = $mail->sendDetailed(
-            $to,
-            __('mail_test_subject'),
-            '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
-            null,
-            null,
-            $bcc
-        );
 
         $sent = (bool) ($result['success'] ?? false);
         $host = (string) ($result['smtp_host'] ?? $mail->lastSmtpHost() ?? ($cfg['host'] ?? ''));
@@ -91,8 +111,8 @@ final class MailTestService
         if ($isExternal) {
             $dns = (new MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
             $base = __('mail_test_ok', ['email' => $to, 'host' => $host]);
-            if ($bcc !== null) {
-                $base .= ' — ' . __('mail_test_inbox_copy', ['email' => $bcc]);
+            if ($from !== '' && Str::isValidEmail($from) && strcasecmp($from, $to) !== 0) {
+                $base .= ' — ' . __('mail_test_inbox_copy', ['email' => $from]);
             }
             if ($port25Warn !== null) {
                 $base .= ' — ' . $port25Warn;

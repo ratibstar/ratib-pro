@@ -1608,6 +1608,7 @@ return [
     'comm_save_send_no_email' => 'حفظ وإرسال يتطلب بريد المورد، أو اختر قناة واتساب/رسائل مع رقم جوال',
     'comm_save_send_hint' => 'يُرسل إلى بريد المورد. سجل الإرسال في «سجل التواصل» داخل ERP — وليس في مجلد «المرسلة» في Roundcube.',
     'comm_email_bcc_inbox' => 'نسخة في وارد :email فقط — وصولها لا يعني أن المستلم الخارجي استلم الرسالة',
+    'comm_email_inbox_copy_sent' => 'نسخة داخلية في :email (إرسال منفصل)',
     'comm_email_external_dns_hint' => 'للبريد الخارجي (Gmail/Outlook/أي مزود): فعّل SPF وDKIM لـ rateb.sa من DirectAdmin → E-mail Manager → DNS',
     'comm_email_localhost_relay_hint' => 'أُرسل عبر localhost — إن لم يصل للمستلم الخارجي فالمشكلة غالباً SPF/DKIM وليس ERP',
     'mail_external_dns_hint' => 'وصل لـ info@rateb.sa ولم يصل للمستلم الخارجي؟ فعّل SPF وDKIM في DirectAdmin → E-mail Manager → rateb.sa → DNS.',

@@ -237,7 +237,31 @@ final class SupplierCommService
             && strcasecmp($fromEmail, (string) $cc) !== 0) {
             $bcc = $fromEmail;
         }
-        $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
+
+        $isExternal = $this->isExternalEmail($email);
+        // One SMTP transaction per destination class — mixed local BCC/CC + Gmail TO breaks Exim delivery.
+        if ($isExternal) {
+            $sendResult = $mail->sendDetailed(
+                $email,
+                $subject !== '' ? $subject : __('supplier_comms'),
+                $html,
+                $reply,
+                null,
+                null
+            );
+            if ($sendResult['success'] ?? false) {
+                $copySubject = '[ERP] ' . ($subject !== '' ? $subject : __('supplier_comms'));
+                if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
+                    && strcasecmp($fromEmail, $email) !== 0) {
+                    $mail->sendDetailed($fromEmail, $copySubject, $html, $reply, null, null);
+                }
+                if ($cc !== null && \Rateb\App\Helpers\Str::isValidEmail($cc) && strcasecmp($cc, $email) !== 0) {
+                    $mail->sendDetailed($cc, $copySubject, $html, $reply, null, null);
+                }
+            }
+        } else {
+            $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
+        }
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? $mail->lastSmtpHost() ?? '');
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
@@ -262,11 +286,14 @@ final class SupplierCommService
         if (!$sent && $this->isExternalEmail($email) && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
         }
-        if ($sent && $cc !== null) {
+        if ($sent && $cc !== null && !$isExternal) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }
-        if ($sent && $bcc !== null) {
+        if ($sent && $bcc !== null && !$isExternal) {
             $msg .= ' — ' . __('comm_email_bcc_inbox', ['email' => $bcc]);
+        }
+        if ($sent && $isExternal && $fromEmail !== '') {
+            $msg .= ' — ' . __('comm_email_inbox_copy_sent', ['email' => $fromEmail]);
         }
         return [
             'success' => $sent,
