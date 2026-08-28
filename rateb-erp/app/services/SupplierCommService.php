@@ -212,22 +212,18 @@ final class SupplierCommService
 
         $subjectOriginal = trim((string) ($data['subject'] ?? ''));
         $bodyText = trim((string) ($data['body'] ?? ''));
+        $details = trim((string) ($data['details'] ?? ''));
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
         $plainBody = $bodyText;
-
-        if ($isExternal) {
-            $mailSubject = (string) __('mail_test_subject');
-            $plainBody = (string) __('mail_test_body');
-            if ($subjectOriginal !== '' || $bodyText !== '') {
-                $plainBody .= "\n\n" . __('comm_email_ref_line', [
-                    'subject' => $subjectOriginal !== '' ? mb_substr($subjectOriginal, 0, 120) : '—',
-                    'preview' => $bodyText !== '' ? mb_substr($bodyText, 0, 350) : '—',
-                ]);
-            }
-            if ($commId > 0) {
-                $plainBody .= "\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
-            }
+        if ($details !== '' && !str_contains($plainBody, $details)) {
+            $plainBody = trim($plainBody . "\n\n" . $details);
+        }
+        if ($plainBody === '') {
+            $plainBody = $mailSubject;
+        }
+        if ($commId > 0) {
+            $plainBody = rtrim($plainBody) . "\n\n—\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
         }
 
         $cc = null;
