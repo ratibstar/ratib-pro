@@ -12,7 +12,8 @@ $topSuppliers = $topSuppliers ?? [];
 $supplierHistory = $supplierHistory ?? [];
 $commSvc = $commSvc ?? new \Rateb\App\Services\SupplierCommService();
 $lookups = $lookups ?? [];
-$formFields = $formFields ?? [];
+$fields = $fields ?? [];
+$hasSuppliers = !empty($supplierOptions);
 
 $channelLabel = static function (string $ch): string {
     $key = 'comm_channel_' . $ch;
@@ -48,7 +49,7 @@ $channelIcon = static function (string $ch): string {
             <h2 class="h4 mb-0"><?php echo __('supplier_comms'); ?></h2>
         </div>
         <?php if ($canManage) { ?>
-        <a href="<?php echo rateb_app_url('supplier-comms/create'); ?>" class="btn btn-primary">
+        <a href="#rateb-sc-form" class="btn btn-primary">
             <i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?>
         </a>
         <?php } ?>
@@ -74,6 +75,42 @@ $channelIcon = static function (string $ch): string {
 
     <div class="row g-3">
         <div class="col-lg-8">
+
+            <?php if ($canManage) { ?>
+            <div class="rateb-sc-card rateb-sc-form-card mb-3" id="rateb-sc-form">
+                <div class="rateb-sc-card-header">
+                    <span><i class="fas fa-comments text-primary"></i> <?php echo __('supplier_comms_create'); ?></span>
+                </div>
+                <div class="rateb-sc-card-body">
+                    <?php if (!$hasSuppliers) { ?>
+                    <div class="alert alert-warning mb-0"><?php echo __('supplier_comms_need_supplier'); ?></div>
+                    <?php } else { ?>
+                    <form method="post" action="<?php echo rateb_app_url('supplier-comms'); ?>" enctype="multipart/form-data"
+                        data-supplier-comm-form="1"
+                        data-history-url="<?php echo Rateb\App\Core\View::escape($historyUrl ?? ''); ?>"
+                        data-supplier-profile-url="<?php echo Rateb\App\Core\View::escape($supplierProfileUrl ?? ''); ?>"
+                        data-comm-id="0">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <?php Rateb\App\Core\View::partial('supplier-comm-form-fields', [
+                            'item' => [],
+                            'fields' => $fields,
+                            'lookups' => $lookups,
+                            'responsibleDefault' => $responsibleDefault ?? '',
+                            'showAttachments' => true,
+                            'existingDocuments' => [],
+                            'commSvc' => $commSvc,
+                        ]); ?>
+                        <div class="rateb-sc-form-actions">
+                            <p class="text-muted small w-100 mb-2"><?php echo __('comm_save_send_hint'); ?></p>
+                            <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
+                            <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
+                            <button type="reset" class="btn btn-outline-secondary"><?php echo __('reset'); ?></button>
+                        </div>
+                    </form>
+                    <?php } ?>
+                </div>
+            </div>
+            <?php } ?>
 
             <div class="rateb-sc-card rateb-sc-filter-card">
                 <div class="rateb-sc-card-header rateb-sc-filter-toggle" data-bs-toggle="collapse" data-bs-target="#rateb-sc-filter-body" aria-expanded="true">
@@ -139,7 +176,7 @@ $channelIcon = static function (string $ch): string {
                 <div class="rateb-sc-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span><i class="fas fa-list text-primary"></i> <?php echo __('supplier_comms_log'); ?></span>
                     <?php if ($canManage) { ?>
-                    <a href="<?php echo rateb_app_url('supplier-comms/create'); ?>" class="btn btn-sm btn-primary">
+                    <a href="#rateb-sc-form" class="btn btn-sm btn-primary">
                         <i class="fas fa-plus"></i> <?php echo __('supplier_comms_create'); ?>
                     </a>
                     <?php } ?>
@@ -203,14 +240,15 @@ $channelIcon = static function (string $ch): string {
         </div>
 
         <div class="col-lg-4">
-            <div class="rateb-sc-card mb-3">
+            <div class="rateb-sc-card mb-3" id="sc_supplier_history"
+                data-empty="<?php echo Rateb\App\Core\View::escape(__('no_records')); ?>"
+                data-hint="<?php echo Rateb\App\Core\View::escape(__('comm_history_hint')); ?>"
+                data-col-date="<?php echo Rateb\App\Core\View::escape(__('comm_date')); ?>"
+                data-col-subject="<?php echo Rateb\App\Core\View::escape(__('subject')); ?>"
+                data-col-status="<?php echo Rateb\App\Core\View::escape(__('comm_status')); ?>"
+                data-initial-supplier="<?php echo (int) ($filters['supplier_id'] ?? 0); ?>">
                 <div class="rateb-sc-card-header"><?php echo __('comm_supplier_history'); ?></div>
-                <div class="rateb-sc-card-body p-0" id="sc_supplier_history"
-                    data-empty="<?php echo Rateb\App\Core\View::escape(__('no_records')); ?>"
-                    data-col-date="<?php echo Rateb\App\Core\View::escape(__('comm_date')); ?>"
-                    data-col-subject="<?php echo Rateb\App\Core\View::escape(__('subject')); ?>"
-                    data-col-status="<?php echo Rateb\App\Core\View::escape(__('comm_status')); ?>"
-                    data-initial-supplier="<?php echo (int) ($filters['supplier_id'] ?? 0); ?>">
+                <div class="rateb-sc-card-body p-0" id="sc_supplier_history_body">
                     <?php if (empty($supplierHistory)) { ?>
                     <p class="text-muted small p-3 mb-0"><?php echo __('comm_history_hint'); ?></p>
                     <?php } else { ?>
@@ -263,6 +301,9 @@ if (is_string($mailto) && $mailto !== '') {
     \Rateb\App\Core\SessionManager::set('rateb_comm_mailto', null);
 }
 ?>
+<?php if (!empty($moduleJs)) { ?>
+<script src="<?php echo Rateb\App\Core\View::escape($moduleJs); ?>"></script>
+<?php } ?>
 <?php if (!empty($mailto)) { ?>
 <script>window.addEventListener('load', function () { window.location.href = <?php echo json_encode($mailto, JSON_UNESCAPED_UNICODE); ?>; });</script>
 <?php } ?>

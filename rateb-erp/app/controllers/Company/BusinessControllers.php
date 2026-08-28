@@ -1612,6 +1612,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         unset($row);
 
         $supplierFilterId = (int) $filters['supplier_id'];
+        $extraLookups = (new \Rateb\App\Services\FormLookupService())->forFields([
+            ['lookup' => 'comm_attachment_types'],
+        ]);
+        $lookups = array_merge($lookups, $extraLookups);
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('supplier_comms'),
             'items' => $items,
@@ -1624,6 +1628,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'channelOptions' => $channelOptions,
             'statusOptions' => $statusOptions,
             'lookups' => $lookups,
+            'fields' => $this->fields,
             'columns' => $this->indexFields,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
@@ -1631,6 +1636,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
             'moduleCss' => rateb_asset('css/supplier-comms.css'),
+            'moduleJs' => rateb_asset('js/supplier-comm-form.js'),
+            'historyUrl' => rateb_app_url('supplier-comms/history'),
+            'supplierProfileUrl' => rateb_app_url('supplier-comms/supplier-profile'),
+            'responsibleDefault' => (string) (\Rateb\App\Core\Auth::user()['name'] ?? ''),
             'stats' => $svc->companyStats($companyId, $supplierFilterId),
             'upcomingFollowUps' => $svc->upcomingFollowUps($companyId),
             'topSuppliers' => $svc->topSuppliersByComms($companyId),
@@ -1752,14 +1761,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $data = $this->collectData();
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
+            $this->redirect(rateb_url($this->routePrefix));
         }
         $formAction = trim((string) $this->input('form_action', 'save'));
         try {
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
             SessionManager::flash('error', $e->getMessage());
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
+            $this->redirect(rateb_url($this->routePrefix));
         }
         $this->ensureTenantCompanyForWrite($data);
         try {
@@ -1775,7 +1784,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             SessionManager::flash('success', __('comm_saved'));
         } catch (\Throwable $e) {
             SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
-            $this->redirect(rateb_url($this->routePrefix . '/create'));
+            $this->redirect(rateb_url($this->routePrefix));
         }
         $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
