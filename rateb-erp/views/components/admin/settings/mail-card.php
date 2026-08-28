@@ -65,7 +65,7 @@ $mailRelay = !empty($mailRelay);
         <p class="text-success small mb-2"><?php echo __('mail_relay_active', ['host' => Rateb\App\Core\View::escape((string) ($mailCfg['host'] ?? ''))]); ?></p>
         <?php } elseif ($mailLocalhost) { ?>
         <p class="text-muted small mb-2"><?php echo __('mail_localhost_warning'); ?></p>
-        <div class="alert alert-warning small py-2 mb-2"><?php echo __('mail_relay_steps'); ?></div>
+        <div class="alert alert-info small py-2 mb-2"><?php echo __('mail_use_mail_rateb_hint'); ?></div>
         <?php } ?>
         <?php Rateb\App\Core\View::partial('admin/mail-dns-panel', [
             'mailDns' => $mailDns ?? null,

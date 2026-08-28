@@ -33,15 +33,11 @@ final class MailTestService
         $fromDomain = Str::emailDomain($from);
         $toDomain = Str::emailDomain($to);
         $isExternal = $toDomain !== '' && $fromDomain !== '' && strcasecmp($toDomain, $fromDomain) !== 0;
-
+        $port25Warn = null;
         if ($isExternal) {
-            $dns = (new MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
-            if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
-                return [
-                    'level' => 'error',
-                    'message' => __('mail_port25_blocked_hint') . ' ' . __('mail_hetzner_unblock_steps'),
-                    'detail' => ['dns' => $dns, 'port25_blocked' => true],
-                ];
+            $dnsPre = (new MailDnsCheckService())->checkFast($fromDomain !== '' ? $fromDomain : 'rateb.sa');
+            if (empty($dnsPre['port25']['ok']) && empty($dnsPre['smtp_relay'])) {
+                $port25Warn = __('mail_port25_blocked_hint');
             }
         }
 
@@ -72,6 +68,9 @@ final class MailTestService
             'error_code' => $result['error_code'] ?? null,
             'error' => $result['error'] ?? $mail->lastError(),
         ];
+        if ($port25Warn !== null) {
+            $detail['port25_warn'] = $port25Warn;
+        }
 
         if (!$sent) {
             return [
@@ -94,6 +93,9 @@ final class MailTestService
             $base = __('mail_test_ok', ['email' => $to, 'host' => $host]);
             if ($bcc !== null) {
                 $base .= ' — ' . __('mail_test_inbox_copy', ['email' => $bcc]);
+            }
+            if ($port25Warn !== null) {
+                $base .= ' — ' . $port25Warn;
             }
             if (!$dns['ready_for_external']) {
                 return [

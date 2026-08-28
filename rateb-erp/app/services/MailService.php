@@ -145,14 +145,14 @@ final class MailService
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
             if ($this->isExternalSmtpRelay($primary['host'])) {
-                // Brevo/SendGrid/etc. — port 587 only; never fall back to localhost (false success).
+                // Third-party relay — never fall back to localhost (false success).
                 $candidates = [$primary];
-            } elseif ($this->isLoopbackHost($primary['host'])) {
-                // Prefer domain SMTP before localhost — loopback often accepts but won't deliver externally.
-                $candidates = [$mailTls, $mailSsl, $primary, $localhost, $loopback];
             } else {
-                // mail.rateb.sa / domain SMTP — never fall back to localhost (false external delivery).
-                $candidates = [$primary, $mailTls, $mailSsl];
+                // Own mail server only — mail.rateb.sa:587/465; never localhost for external Gmail/Outlook.
+                $candidates = [$mailTls, $mailSsl];
+                if (!$this->isLoopbackHost($primary['host'])) {
+                    $candidates = array_merge([$primary], $candidates);
+                }
             }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailTls];
