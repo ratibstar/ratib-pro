@@ -215,30 +215,29 @@ final class SupplierCommService
         $details = trim((string) ($data['details'] ?? ''));
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
-        $plainBody = $bodyText;
-        if ($details !== '' && !str_contains($plainBody, $details)) {
-            $plainBody = trim($plainBody . "\n\n" . $details);
-        }
-        if ($plainBody === '') {
-            $plainBody = $mailSubject;
-        }
-        if ($commId > 0) {
-            $plainBody = rtrim($plainBody) . "\n\n—\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
-        }
 
         $cc = null;
         if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
             $cc = $this->normalizeRecipientEmail($ccEmail);
         }
 
-        $sendResult = (new MailTestService())->sendTransactionalMail(
-            $email,
-            $mailSubject,
-            $plainBody,
-            null,
-            $cc,
-            null
-        );
+        $mail = new MailService();
+        if (!$mail->isSmtpConfigured()) {
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'message' => __('comm_email_smtp_required'),
+                'recipient' => $email,
+                'smtp_config_required' => true,
+            ];
+        }
+
+        $footer = '';
+        if ($commId > 0) {
+            $footer = "\n\n—\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
+        }
+        $bodyForMail = $bodyText . $footer;
+        $sendResult = $mail->sendSupplierMessage($email, $mailSubject, $bodyForMail, $details !== '' ? $details : null, $cc);
 
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? '');

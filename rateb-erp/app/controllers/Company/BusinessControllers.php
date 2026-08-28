@@ -1858,7 +1858,12 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $row;
-        $data['supplier_email'] = trim((string) $this->input('supplier_email', (string) ($row['supplier_email'] ?? '')));
+        foreach (['subject', 'body', 'details', 'supplier_email', 'supplier_contact', 'supplier_phone', 'channel'] as $key) {
+            if (!array_key_exists($key, $_POST)) {
+                continue;
+            }
+            $data[$key] = trim((string) $this->input($key, (string) ($row[$key] ?? '')));
+        }
         $svc = new \Rateb\App\Services\SupplierCommService();
         $this->handleSendAction($id, $data, $svc);
         $this->redirect($failUrl);

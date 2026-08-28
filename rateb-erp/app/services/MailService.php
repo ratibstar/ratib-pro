@@ -27,7 +27,7 @@ final class MailService
     }
 
     /** @return array{success:bool,error_code:?string,error:?string,smtp_host:?string} */
-    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): array
+    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true): array
     {
         $this->lastError = null;
         $this->lastErrorCode = null;
@@ -42,7 +42,15 @@ final class MailService
         }
 
         $profiles = $this->smtpProfiles($cfg, $to);
-        $subject = $this->normalizeTransactionalSubject($subject);
+        if ($brandSubject) {
+            $subject = $this->normalizeTransactionalSubject($subject);
+        } else {
+            $subject = trim(preg_replace('/\s+/u', ' ', $subject) ?? $subject);
+            if ($subject === '') {
+                $subject = 'Rateb ERP';
+            }
+            $subject = mb_substr($subject, 0, 240);
+        }
         $primaryError = null;
         $sent = false;
 
@@ -114,7 +122,7 @@ final class MailService
      *
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
      */
-    public function sendTransactional(string $to, string $subject, string $plainBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): array
+    public function sendTransactional(string $to, string $subject, string $plainBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true): array
     {
         $result = $this->sendDetailed(
             $to,
@@ -122,8 +130,30 @@ final class MailService
             $this->buildTransactionalHtml($plainBody),
             $replyTo,
             $cc,
-            $bcc
+            $bcc,
+            $brandSubject
         );
+        return [
+            'success' => (bool) ($result['success'] ?? false),
+            'error_code' => $result['error_code'] ?? null,
+            'error' => $result['error'] ?? null,
+            'smtp_host' => $result['smtp_host'] ?? null,
+            'via_localhost' => !empty($result['via_localhost']),
+        ];
+    }
+
+    /**
+     * Supplier communication: subject + full body preserved (no truncation / branding rewrite).
+     *
+     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
+     */
+    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null): array
+    {
+        $subject = trim($subject);
+        $plainBody = trim($plainBody);
+        $details = $details !== null ? trim($details) : '';
+        $html = $this->buildSupplierCommHtml($subject, $plainBody, $details);
+        $result = $this->sendDetailed($to, $subject !== '' ? $subject : __('supplier_comms'), $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
@@ -139,9 +169,36 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = (string) __('mail_test_body');
         }
-        return '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>'
-            . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'))
-            . '</p></div>';
+        return '<div dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.7;font-size:15px">'
+            . '<div style="white-space:pre-wrap">' . htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8') . '</div>'
+            . '</div>';
+    }
+
+    public function buildSupplierCommHtml(string $subject, string $body, string $details = ''): string
+    {
+        $subject = trim($subject);
+        $body = trim($body);
+        $details = trim($details);
+        if ($body === '' && $details !== '') {
+            $body = $details;
+            $details = '';
+        }
+        if ($body === '') {
+            $body = $subject !== '' ? $subject : (string) __('mail_test_body');
+        }
+        $html = '<div dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111">';
+        if ($subject !== '') {
+            $html .= '<div style="font-size:18px;font-weight:700;margin:0 0 12px">'
+                . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</div>';
+        }
+        $html .= '<div style="white-space:pre-wrap;margin:0 0 12px">'
+            . htmlspecialchars($body, ENT_QUOTES, 'UTF-8') . '</div>';
+        if ($details !== '' && $details !== $body) {
+            $html .= '<div style="white-space:pre-wrap;margin:0 0 12px;color:#333">'
+                . htmlspecialchars($details, ENT_QUOTES, 'UTF-8') . '</div>';
+        }
+        $html .= '</div>';
+        return $html;
     }
 
     public function isSmtpConfigured(): bool
