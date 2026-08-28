@@ -309,18 +309,20 @@
     color: var(--rateb-text-muted, #94a3b8);
     font-size: 0.875rem;
     line-height: 1.2;
-    direction: ltr;
-    unicode-bidi: isolate;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    text-align: left !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     z-index: 1;
 }
 
+/* Hint is always LTR (DD/MM/YYYY or يوم/شهر/سنة) — never flip in RTL page dir. */
 html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
-    direction: rtl;
-    unicode-bidi: plaintext;
-    text-align: right;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    text-align: left !important;
 }
 
 .rateb-date-wrap[data-empty="1"] .rateb-date-input {
@@ -356,6 +358,17 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     unicode-bidi: plaintext !important;
     text-transform: none !important;
     letter-spacing: normal !important;
+}
+
+/* Bare date inputs (before/without JS wrap) — keep LTR so Arabic UI does not mirror segments. */
+.rateb-app input[type="date"]:not(.rateb-date-input),
+.rateb-app input[type="datetime-local"]:not(.rateb-date-input),
+.rateb-app input[type="time"]:not(.rateb-date-input),
+.rateb-app input[type="month"]:not(.rateb-date-input),
+.rateb-app input[type="week"]:not(.rateb-date-input) {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: isolate;
 }
 
 .rateb-readonly-display {

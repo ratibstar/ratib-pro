@@ -125,12 +125,16 @@
 
     window.ratebInitDateInputs = initRatebDateInputs;
 
-    document.addEventListener('DOMContentLoaded', function () {
+    function boot() {
         var observeRoot = document.getElementById('rateb-main-content') || document.body;
         initRatebDateInputs(observeRoot || document);
         if (typeof MutationObserver === 'undefined' || !observeRoot) {
             return;
         }
+        if (observeRoot.getAttribute('data-rateb-date-observe') === '1') {
+            return;
+        }
+        observeRoot.setAttribute('data-rateb-date-observe', '1');
         var timer = null;
         var observer = new MutationObserver(function () {
             if (timer) {
@@ -141,11 +145,18 @@
             }, 80);
         });
         observer.observe(observeRoot, { childList: true, subtree: true });
-        document.addEventListener('rateb:nav:afterEnter', function () {
-            var main = document.getElementById('rateb-main-content') || document.body;
-            if (main) {
-                initRatebDateInputs(main);
-            }
-        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+
+    document.addEventListener('rateb:nav:afterEnter', function () {
+        var main = document.getElementById('rateb-main-content') || document.body;
+        if (main) {
+            initRatebDateInputs(main);
+        }
     });
 })();

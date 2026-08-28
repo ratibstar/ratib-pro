@@ -1362,6 +1362,7 @@ $ratebCriticalScripts = [
     // PERF-P4: metrics listener must be present before soft-nav afterEnter (not idle).
     rateb_asset('js/module-page-stats.js'),
     rateb_asset('js/system-flash-alerts.js'),
+    rateb_asset('js/rateb-date-inputs.js'),
     // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
     rateb_asset('js/approvals-oversight.js'),
 ];
@@ -1379,9 +1380,6 @@ if (!empty($layoutAssets['bulkDelete'])) {
 }
 if (!empty($layoutAssets['tableTools'])) {
     $ratebIdleScripts[] = rateb_asset('js/table-tools.js');
-}
-if (!empty($layoutAssets['dateInputs'])) {
-    $ratebIdleScripts[] = rateb_asset('js/rateb-date-inputs.js');
 }
 if (!empty($layoutAssets['fiscalYear'])) {
     $ratebIdleScripts[] = rateb_asset('js/form-fiscal-year.js');

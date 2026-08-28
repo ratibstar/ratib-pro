@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260827-msg-lang-align-v1');
+define('RATEB_ASSET_BUILD', '20260828-locale-dates-system-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1959,13 +1959,18 @@ if (!function_exists('rateb_format_date_value')) {
             return $raw;
         }
 
-        return match ($kind) {
+        $formatted = match ($kind) {
             'datetime' => $dt->format('d / m / Y H:i'),
             'time' => $dt->format('H:i'),
             'month' => $dt->format('m / Y'),
             'week' => $raw,
             default => $dt->format('d / m / Y'),
         };
+        if (function_exists('rateb_western_digits')) {
+            $formatted = rateb_western_digits($formatted);
+        }
+
+        return $formatted;
     }
 }
 
