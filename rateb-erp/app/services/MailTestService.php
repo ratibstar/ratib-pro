@@ -42,9 +42,10 @@ final class MailTestService
         }
 
         $mail = new MailService();
-        $result = $mail->sendTransactional(
+        $result = $this->dispatchTransactional(
+            $mail,
             $to,
-            __('mail_test_subject'),
+            (string) __('mail_test_subject'),
             (string) __('mail_test_body'),
             null,
             null,
@@ -98,6 +99,72 @@ final class MailTestService
             'level' => 'success',
             'message' => __('mail_test_ok', ['email' => $to, 'host' => $host]),
             'detail' => $detail,
+        ];
+    }
+
+    /**
+     * Supplier comms + modules: identical SMTP stack as sendTest().
+     *
+     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
+     */
+    public function sendTransactionalMail(
+        string $to,
+        string $subject,
+        string $plainBody,
+        ?string $replyTo = null,
+        ?string $cc = null,
+        ?string $bcc = null
+    ): array {
+        $to = trim($to);
+        if ($to === '' || !Str::isValidEmail($to)) {
+            return [
+                'success' => false,
+                'error_code' => 'invalid_email',
+                'error' => __('mail_test_invalid'),
+                'smtp_host' => null,
+                'via_localhost' => false,
+            ];
+        }
+        $mailSvc = new MailConfigService();
+        if (!$mailSvc->isReady()) {
+            return [
+                'success' => false,
+                'error_code' => 'smtp_not_configured',
+                'error' => __('mail_password_env_hint'),
+                'smtp_host' => null,
+                'via_localhost' => false,
+            ];
+        }
+        return $this->dispatchTransactional(
+            new MailService(),
+            $to,
+            $subject,
+            $plainBody,
+            $replyTo,
+            $cc,
+            $bcc
+        );
+    }
+
+    /**
+     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
+     */
+    private function dispatchTransactional(
+        MailService $mail,
+        string $to,
+        string $subject,
+        string $plainBody,
+        ?string $replyTo,
+        ?string $cc,
+        ?string $bcc
+    ): array {
+        $result = $mail->sendTransactional($to, $subject, $plainBody, $replyTo, $cc, $bcc);
+        return [
+            'success' => (bool) ($result['success'] ?? false),
+            'error_code' => $result['error_code'] ?? null,
+            'error' => $result['error'] ?? $mail->lastError(),
+            'smtp_host' => $result['smtp_host'] ?? $mail->lastSmtpHost(),
+            'via_localhost' => !empty($result['via_localhost']),
         ];
     }
 

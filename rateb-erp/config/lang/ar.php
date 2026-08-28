@@ -1608,6 +1608,8 @@ return [
     'comm_save_send_no_email' => 'حفظ وإرسال يتطلب بريد المورد، أو اختر قناة واتساب/رسائل مع رقم جوال',
     'comm_save_send_hint' => 'يُرسل إلى بريد المورد. سجل الإرسال في «سجل التواصل» داخل ERP — وليس في مجلد «المرسلة» في Roundcube.',
     'comm_email_truncated_note' => 'النص الكامل في ERP:',
+    'comm_email_ref_line' => 'الموضوع: :subject — :preview',
+    'comm_send_email_only' => 'إرسال بريد فقط (مسار الاختبار)',
     'comm_email_bcc_inbox' => 'نسخة في وارد :email فقط — وصولها لا يعني أن المستلم الخارجي استلم الرسالة',
     'comm_email_inbox_copy_sent' => 'نسخة داخلية في :email (إرسال منفصل)',
     'comm_email_external_dns_hint' => 'للبريد الخارجي (Gmail/Outlook/أي مزود): فعّل SPF وDKIM لـ rateb.sa من DirectAdmin → E-mail Manager → DNS',

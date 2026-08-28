@@ -76,7 +76,14 @@ final class MailService
             $this->lastError = $primaryError;
         }
 
-        (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+        try {
+            (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+        } catch (\Throwable $e) {
+            Logger::warning('Email queue log failed after SMTP', [
+                'to' => $to,
+                'error' => $e->getMessage(),
+            ]);
+        }
         if ($sent) {
             Logger::info('Email sent', ['to' => $to, 'subject' => $subject, 'smtp_host' => $this->lastSmtpHost]);
         } elseif (!$sent) {
@@ -393,7 +400,8 @@ final class MailService
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= $this->mimeBodyHeaders($body);
-        $this->smtpWriteData($fp, $headers . $body);
+        $payload = $this->dotStuff($headers . $body);
+        fwrite($fp, $payload . "\r\n.\r\n");
         $result = $read();
         $write('QUIT');
         fclose($fp);
@@ -490,22 +498,13 @@ final class MailService
         return implode("\r\n", $stuffed);
     }
 
-    private function smtpWriteData($fp, string $message): void
-    {
-        $message = $this->dotStuff($message);
-        $lines = explode("\r\n", $message);
-        foreach ($lines as $line) {
-            fwrite($fp, $line . "\r\n");
-        }
-        fwrite($fp, '.' . "\r\n");
-    }
-
     /** Align outbound subjects with mail-test branding for Gmail recognition. */
     private function normalizeTransactionalSubject(string $subject): string
     {
         $subject = trim(preg_replace('/\s+/u', ' ', $subject) ?? $subject);
-        if ($subject === '') {
-            return 'Rateb ERP';
+        $testSubject = (string) __('mail_test_subject');
+        if ($subject === '' || $subject === $testSubject) {
+            return $subject !== '' ? mb_substr($subject, 0, 240) : 'Rateb ERP';
         }
         if (preg_match('/^(Rateb ERP|رتب)\b/iu', $subject)) {
             return mb_substr($subject, 0, 240);

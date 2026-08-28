@@ -8,7 +8,8 @@ $commSvc = $commSvc ?? new \Rateb\App\Services\SupplierCommService();
 $supplierHistory = $supplierHistory ?? [];
 $commTimeline = $commTimeline ?? [];
 $archived = $isEdit && (int) ($item['is_archived'] ?? 0) === 1;
-$formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url('supplier-comms');
+$formAction = $isEdit ? rateb_app_url('supplier-comms/' . $commId) : rateb_app_url('supplier-comms');
+$sendEmailUrl = $isEdit ? rateb_app_url('supplier-comms/' . $commId . '/send-email') : '';
 ?>
 <?php if (!empty($moduleCss)) { ?>
 <link href="<?php echo Rateb\App\Core\View::escape($moduleCss); ?>" rel="stylesheet">
@@ -70,6 +71,9 @@ $formAction = $isEdit ? rateb_url($routePrefix . '/' . $commId) : rateb_app_url(
                             <p class="text-muted small w-100 mb-2"><?php echo __('comm_save_send_hint'); ?></p>
                             <button type="submit" name="form_action" value="save" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
                             <button type="submit" name="form_action" value="save_send" class="btn btn-outline-primary"><i class="fas fa-paper-plane"></i> <?php echo __('save_and_send'); ?></button>
+                            <?php if ($isEdit && $sendEmailUrl !== '') { ?>
+                            <button type="submit" formmethod="post" formaction="<?php echo Rateb\App\Core\View::escape($sendEmailUrl); ?>" class="btn btn-outline-success"><i class="fas fa-envelope"></i> <?php echo __('comm_send_email_only'); ?></button>
+                            <?php } ?>
                             <a href="<?php echo rateb_app_url('supplier-comms'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
                         </div>
                     </form>

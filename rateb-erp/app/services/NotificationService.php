@@ -460,6 +460,8 @@ final class NotificationService
 
     public function queueEmail(string $recipient, string $subject, string $body, string $status = 'pending'): void
     {
+        $subject = mb_substr(trim($subject), 0, 255);
+        $body = mb_substr((string) $body, 0, 60000);
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
             'INSERT INTO rateb_notification_queue (company_id, channel, recipient, subject, body, status, sent_at, next_retry_at)

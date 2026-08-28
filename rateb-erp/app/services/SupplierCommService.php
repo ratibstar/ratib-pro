@@ -209,36 +209,43 @@ final class SupplierCommService
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
-        $data['supplier_email'] = $email;
-        $mail = new MailService();
-        if (!$mail->isSmtpConfigured()) {
-            return [
-                'success' => false,
-                'status' => 'failed',
-                'message' => __('comm_email_smtp_required'),
-                'recipient' => $email,
-                'smtp_config_required' => true,
-            ];
-        }
-        $subject = trim((string) ($data['subject'] ?? ''));
+
+        $subjectOriginal = trim((string) ($data['subject'] ?? ''));
         $bodyText = trim((string) ($data['body'] ?? ''));
         $isExternal = $this->isExternalEmail($email);
-        $plainBody = $this->prepareOutboundPlainText($bodyText, $isExternal, $commId);
+        $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
+        $plainBody = $bodyText;
+
+        if ($isExternal) {
+            $mailSubject = (string) __('mail_test_subject');
+            $plainBody = (string) __('mail_test_body');
+            if ($subjectOriginal !== '' || $bodyText !== '') {
+                $plainBody .= "\n\n" . __('comm_email_ref_line', [
+                    'subject' => $subjectOriginal !== '' ? mb_substr($subjectOriginal, 0, 120) : '—',
+                    'preview' => $bodyText !== '' ? mb_substr($bodyText, 0, 350) : '—',
+                ]);
+            }
+            if ($commId > 0) {
+                $plainBody .= "\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
+            }
+        }
+
         $cc = null;
         if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
             $cc = $this->normalizeRecipientEmail($ccEmail);
         }
 
-        $sendResult = $mail->sendTransactional(
+        $sendResult = (new MailTestService())->sendTransactionalMail(
             $email,
-            $subject !== '' ? $subject : __('supplier_comms'),
+            $mailSubject,
             $plainBody,
             null,
             $cc,
             null
         );
+
         $sent = (bool) ($sendResult['success'] ?? false);
-        $smtpHost = (string) ($sendResult['smtp_host'] ?? $mail->lastSmtpHost() ?? '');
+        $smtpHost = (string) ($sendResult['smtp_host'] ?? '');
 
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -256,12 +263,21 @@ final class SupplierCommService
         if ($sent && $isExternal && $smtpHost !== '') {
             $msg .= ' — SMTP: ' . $smtpHost;
         }
-        if (!$sent && $isExternal && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
+        if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
         }
         if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }
+
+        Logger::info('Supplier comm email dispatch', [
+            'to' => $email,
+            'external' => $isExternal,
+            'comm_id' => $commId,
+            'success' => $sent,
+            'smtp_host' => $smtpHost,
+            'error_code' => $sendResult['error_code'] ?? null,
+        ]);
 
         return [
             'success' => $sent,
@@ -283,23 +299,6 @@ final class SupplierCommService
         $email = strtolower(trim($email));
         $email = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $email) ?? $email;
         return trim($email);
-    }
-
-    private function prepareOutboundPlainText(string $text, bool $isExternal, int $commId = 0): string
-    {
-        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
-        $text = preg_replace('/(.{12,}?)(\s*\1){2,}/u', '$1', $text) ?? $text;
-        if (!$isExternal) {
-            return $text;
-        }
-        $max = 1200;
-        if (mb_strlen($text) > $max) {
-            $text = mb_substr($text, 0, $max) . "\n\n" . __('comm_email_truncated_note');
-            if ($commId > 0) {
-                $text .= ' ' . rateb_app_url('supplier-comms/' . $commId . '/edit');
-            }
-        }
-        return $text;
     }
 
     /** Follow-up reminders + no-response alerts (cron). */

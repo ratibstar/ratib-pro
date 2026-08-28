@@ -1223,6 +1223,7 @@ $router->get($app('supplier-comms/history'), [\Rateb\App\Controllers\Company\Sup
 $router->get($app('supplier-comms/supplier-profile'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'supplierProfile'], $scMw);
 $router->get($app('supplier-comms/{id}/print'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'print'], $scMw);
 $router->get($app('supplier-comms/export'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-comms'));
+$router->post($app('supplier-comms/{id}/send-email'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'sendEmailNow'], $scMw);
 $router->post($app('supplier-comms/{id}/archive'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'archive'], $scMw);
 
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');

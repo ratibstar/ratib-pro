@@ -1608,6 +1608,8 @@ return [
     'comm_save_send_no_email' => 'Save and send requires a supplier email, or choose WhatsApp/SMS with a mobile number',
     'comm_save_send_hint' => 'Sends to the supplier email. Send log is in ERP timeline — not in Roundcube Sent folder.',
     'comm_email_truncated_note' => 'Full message in ERP:',
+    'comm_email_ref_line' => 'Subject: :subject — :preview',
+    'comm_send_email_only' => 'Send email only (test path)',
     'comm_email_bcc_inbox' => 'Copy in inbox :email only — that does not mean the external recipient received it',
     'comm_email_inbox_copy_sent' => 'Internal copy at :email (separate send)',
     'comm_email_external_dns_hint' => 'For external mail (Gmail/Outlook/any provider): enable SPF and DKIM for rateb.sa in DirectAdmin → E-mail Manager → DNS',
