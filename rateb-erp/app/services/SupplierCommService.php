@@ -209,12 +209,6 @@ final class SupplierCommService
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
-        $isExternal = $this->isExternalEmail($email);
-        $port25OutboundBlocked = false;
-        if ($isExternal) {
-            $dnsPre = (new MailDnsCheckService())->checkFast('rateb.sa');
-            $port25OutboundBlocked = empty($dnsPre['port25']['ok']) && empty($dnsPre['smtp_relay']);
-        }
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
             return [
@@ -237,10 +231,8 @@ final class SupplierCommService
         $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) ? $replyTo : null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
-        $resolvedHost = trim((string) ($cfg['host'] ?? ''));
         $bcc = null;
-        // External: no BCC to info@ — local copy misleads (Gmail may still fail while inbox copy arrives).
-        if (!$isExternal && $fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
+        if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
             && strcasecmp($fromEmail, $email) !== 0
             && strcasecmp($fromEmail, (string) $cc) !== 0) {
             $bcc = $fromEmail;
@@ -248,16 +240,6 @@ final class SupplierCommService
         $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? $mail->lastSmtpHost() ?? '');
-        if ($sent && $isExternal && !empty($sendResult['via_localhost'])) {
-            $sent = false;
-            return [
-                'success' => false,
-                'status' => 'failed',
-                'message' => __('mail_test_localhost_failed') . ' — ' . __('mail_test_external_bounce_hint'),
-                'recipient' => $email,
-                'smtp_host' => $smtpHost,
-            ];
-        }
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
                 'success' => false,
@@ -268,29 +250,16 @@ final class SupplierCommService
             ];
         }
         $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
-        if ($sent && $isExternal) {
+        if ($sent && $this->isExternalEmail($email)) {
             $msg .= ' — ' . __('comm_email_external_dns_hint');
-            $msg .= ' — ' . __('mail_test_external_bounce_hint');
-            if ($port25OutboundBlocked) {
-                $msg .= ' — ' . __('mail_port25_blocked_hint') . ' — ' . __('mail_hetzner_unblock_steps');
-            }
-            if ($resolvedHost !== '' && (new MailConfigService())->isLocalRelayHost($resolvedHost)) {
-                $msg .= ' — ' . __('mail_test_localhost_failed');
+            if (!empty($sendResult['via_localhost'])) {
+                $msg .= ' — ' . __('comm_email_localhost_relay_hint');
             }
             if ($smtpHost !== '') {
                 $msg .= ' — SMTP: ' . $smtpHost;
             }
-            $dns = (new MailDnsCheckService())->checkFast('rateb.sa');
-            if (!$dns['ready_for_external']) {
-                if (!$dns['spf']['ok']) {
-                    $msg .= ' — SPF: ' . ($dns['spf']['detail'] ?? __('mail_dns_spf_missing'));
-                }
-                if (!$dns['dkim']['ok']) {
-                    $msg .= ' — DKIM: ' . ($dns['dkim']['detail'] ?? __('mail_dns_dkim_missing'));
-                }
-            }
         }
-        if (!$sent && $isExternal && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
+        if (!$sent && $this->isExternalEmail($email) && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
         }
         if ($sent && $cc !== null) {

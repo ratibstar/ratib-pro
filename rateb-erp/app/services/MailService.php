@@ -145,14 +145,11 @@ final class MailService
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
             if ($this->isExternalSmtpRelay($primary['host'])) {
-                // Third-party relay — never fall back to localhost (false success).
                 $candidates = [$primary];
+            } elseif ($this->isLoopbackHost($primary['host'])) {
+                $candidates = [$mailTls, $mailSsl, $primary, $localhost, $loopback];
             } else {
-                // Own mail server only — mail.rateb.sa:587/465; never localhost for external Gmail/Outlook.
-                $candidates = [$mailTls, $mailSsl];
-                if (!$this->isLoopbackHost($primary['host'])) {
-                    $candidates = array_merge([$primary], $candidates);
-                }
+                $candidates = [$primary, $mailTls, $mailSsl];
             }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailTls];
