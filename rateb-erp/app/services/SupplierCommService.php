@@ -209,6 +209,18 @@ final class SupplierCommService
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
+        $isExternal = $this->isExternalEmail($email);
+        if ($isExternal) {
+            $dns = (new MailDnsCheckService())->checkFast('rateb.sa');
+            if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
+                return [
+                    'success' => false,
+                    'status' => 'failed',
+                    'message' => __('mail_port25_blocked_hint') . ' — ' . __('mail_test_external_bounce_hint'),
+                    'recipient' => $email,
+                ];
+            }
+        }
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
             return [
@@ -239,6 +251,17 @@ final class SupplierCommService
         }
         $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
         $sent = (bool) ($sendResult['success'] ?? false);
+        $smtpHost = (string) ($sendResult['smtp_host'] ?? $mail->lastSmtpHost() ?? '');
+        if ($sent && $isExternal && !empty($sendResult['via_localhost'])) {
+            $sent = false;
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'message' => __('mail_test_localhost_failed') . ' — ' . __('mail_test_external_bounce_hint'),
+                'recipient' => $email,
+                'smtp_host' => $smtpHost,
+            ];
+        }
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
                 'success' => false,
@@ -249,13 +272,23 @@ final class SupplierCommService
             ];
         }
         $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
-        if ($sent && $this->isExternalEmail($email)) {
+        if ($sent && $isExternal) {
             $msg .= ' — ' . __('comm_email_external_dns_hint');
-            if (!empty($sendResult['via_localhost'])) {
-                $msg .= ' — ' . __('comm_email_localhost_relay_hint');
+            $msg .= ' — ' . __('mail_test_external_bounce_hint');
+            if ($smtpHost !== '') {
+                $msg .= ' — SMTP: ' . $smtpHost;
+            }
+            $dns = (new MailDnsCheckService())->checkFast('rateb.sa');
+            if (!$dns['ready_for_external']) {
+                if (!$dns['spf']['ok']) {
+                    $msg .= ' — SPF: ' . ($dns['spf']['detail'] ?? __('mail_dns_spf_missing'));
+                }
+                if (!$dns['dkim']['ok']) {
+                    $msg .= ' — DKIM: ' . ($dns['dkim']['detail'] ?? __('mail_dns_dkim_missing'));
+                }
             }
         }
-        if (!$sent && $this->isExternalEmail($email) && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
+        if (!$sent && $isExternal && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
         }
         if ($sent && $cc !== null) {
@@ -269,6 +302,7 @@ final class SupplierCommService
             'status' => $sent ? 'sent' : 'failed',
             'message' => $msg,
             'recipient' => $email,
+            'smtp_host' => $smtpHost,
         ];
     }
 

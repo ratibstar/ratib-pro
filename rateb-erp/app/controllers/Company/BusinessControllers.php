@@ -1972,7 +1972,12 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             ]);
             $msg = (string) ($result['message'] ?? '');
             $recipient = (string) ($result['recipient'] ?? $supplierEmail);
-            $svc->logTimeline($commId, $companyId, 'email_send', $msg, $recipient);
+            $timelineDetails = $recipient;
+            $smtpHost = trim((string) ($result['smtp_host'] ?? ''));
+            if ($smtpHost !== '') {
+                $timelineDetails .= ' | SMTP: ' . $smtpHost;
+            }
+            $svc->logTimeline($commId, $companyId, 'email_send', $msg, $timelineDetails);
             if ($result['success'] ?? false) {
                 SessionManager::flash('info', $msg);
             } elseif (!empty($result['smtp_config_required'])) {

@@ -313,11 +313,21 @@ final class MailService
         }
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $write('RCPT TO:<' . $cc . '>');
-            $read();
+            $ccResp = $read();
+            if (strpos($ccResp, '250') === false && strpos($ccResp, '251') === false) {
+                fclose($fp);
+                $this->setError('smtp_rcpt', __('mail_error_rcpt', ['email' => $cc]));
+                return false;
+            }
         }
         if ($bcc !== null && $bcc !== '' && \Rateb\App\Helpers\Str::isValidEmail($bcc) && strcasecmp($bcc, $to) !== 0 && strcasecmp($bcc, (string) $cc) !== 0) {
             $write('RCPT TO:<' . $bcc . '>');
-            $read();
+            $bccResp = $read();
+            if (strpos($bccResp, '250') === false && strpos($bccResp, '251') === false) {
+                fclose($fp);
+                $this->setError('smtp_rcpt', __('mail_error_rcpt', ['email' => $bcc]));
+                return false;
+            }
         }
         $write('DATA');
         $read();
