@@ -205,14 +205,16 @@ final class SupplierCommService
     /** @param array<string, mixed> $data */
     public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null, int $commId = 0): array
     {
-        $email = $this->normalizeRecipientEmail((string) ($data['supplier_email'] ?? ''));
+        // Prefer raw POST so nothing in the service layer can alter what the user typed.
+        $email = $this->normalizeRecipientEmail((string) (
+            $_POST['supplier_email'] ?? $data['supplier_email'] ?? ''
+        ));
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
 
-        $subjectOriginal = trim((string) ($data['subject'] ?? ''));
-        $bodyText = trim((string) ($data['body'] ?? ''));
-        $details = trim((string) ($data['details'] ?? ''));
+        $subjectOriginal = trim((string) ($_POST['subject'] ?? $data['subject'] ?? ''));
+        $bodyText = trim((string) ($_POST['body'] ?? $data['body'] ?? ''));
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
 
@@ -232,43 +234,20 @@ final class SupplierCommService
             ];
         }
 
-        $footerUrl = '';
-        if ($commId > 0) {
-            $footerUrl = rateb_app_url('supplier-comms/' . $commId . '/edit');
-        }
-        $channel = trim((string) ($data['channel'] ?? ''));
-        $channelKey = 'comm_channel_' . $channel;
-        $channelLabel = $channel !== '' ? (string) __($channelKey) : '';
-        if ($channelLabel === $channelKey) {
-            $channelLabel = $channel;
-        }
-        $supplierName = trim((string) ($data['supplier_name'] ?? ''));
-        if ($supplierName === '' && (int) ($data['supplier_id'] ?? 0) > 0 && (int) ($data['company_id'] ?? 0) > 0) {
-            $profile = $this->supplierContactProfile((int) $data['company_id'], (int) $data['supplier_id']);
-            $supplierName = trim((string) ($profile['name'] ?? ''));
-        }
         $sendResult = $mail->sendSupplierMessage(
             $email,
             $mailSubject,
             $bodyText,
-            $details !== '' ? $details : null,
+            null,
             $cc,
-            $footerUrl,
-            [
-                'supplier_name' => $supplierName,
-                'channel' => $channel,
-                'channel_label' => $channelLabel,
-                'supplier_contact' => (string) ($data['supplier_contact'] ?? ''),
-                'supplier_phone' => (string) ($data['supplier_phone'] ?? ''),
-                'supplier_email' => $email,
-                'responsible_name' => (string) ($data['responsible_name'] ?? ''),
-                'comm_date' => (string) ($data['comm_date'] ?? date('Y-m-d')),
-            ],
+            '',
+            [],
             $commId
         );
 
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? '');
+        $bodyLen = (int) ($sendResult['body_len'] ?? mb_strlen($bodyText));
 
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -281,16 +260,18 @@ final class SupplierCommService
         }
 
         $msg = $sent
-            ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam')
+            ? __('comm_email_sent_to', ['email' => $email])
+                . ' — ' . __('comm_email_sent_spam')
+                . ' — ' . __('comm_email_sent_meta', [
+                    'subject' => mb_substr($mailSubject, 0, 60),
+                    'chars' => (string) $bodyLen,
+                ])
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $isExternal && $smtpHost !== '') {
             $msg .= ' — SMTP: ' . $smtpHost;
         }
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
-        }
-        if ($sent && $cc !== null) {
-            $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }
 
         Logger::info('Supplier comm email dispatch', [
@@ -299,6 +280,8 @@ final class SupplierCommService
             'comm_id' => $commId,
             'success' => $sent,
             'smtp_host' => $smtpHost,
+            'subject_len' => mb_strlen($mailSubject),
+            'body_len' => $bodyLen,
             'error_code' => $sendResult['error_code'] ?? null,
         ]);
 
@@ -308,6 +291,7 @@ final class SupplierCommService
             'message' => $msg,
             'recipient' => $email,
             'smtp_host' => $smtpHost,
+            'body_len' => $bodyLen,
         ];
     }
 

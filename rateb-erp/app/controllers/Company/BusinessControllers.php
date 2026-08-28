@@ -1504,7 +1504,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             ['name' => 'supplier_contact', 'label' => 'comm_supplier_contact', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_phone', 'label' => 'comm_supplier_phone', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_email', 'label' => 'comm_supplier_email', 'type' => 'text', 'col' => 'col-xl-3 col-md-6', 'attrs' => ['placeholder' => 'supplier@company.com', 'inputmode' => 'email', 'autocomplete' => 'email']],
-            ['name' => 'body', 'label' => 'comm_message', 'type' => 'textarea', 'required' => true, 'col' => 'col-12', 'rows' => 3],
+            ['name' => 'body', 'label' => 'comm_message', 'type' => 'textarea', 'required' => true, 'col' => 'col-12', 'rows' => 8],
             ['name' => 'follow_up_date', 'label' => 'follow_up_date', 'type' => 'date', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'follow_up_priority', 'label' => 'follow_up_priority', 'type' => 'select', 'lookup' => 'follow_up_priorities', 'default' => 'medium', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'purchase_order_id', 'label' => 'link_purchase_order', 'type' => 'fk', 'lookup' => 'purchase_orders', 'col' => 'col-xl-3 col-md-6'],

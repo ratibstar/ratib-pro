@@ -143,24 +143,29 @@ final class MailService
     }
 
     /**
-     * Supplier communication email — plain full subject + body (Gmail-safe).
+     * Supplier email = exact form subject + exact form body (same SMTP shape as mail test).
      *
-     * @param array<string, mixed> $fields
-     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
+     * @param array<string, mixed> $fields unused (kept for call-site compatibility)
+     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool,subject:string,body_len:int}
      */
     public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0): array
     {
-        $subject = trim($subject);
-        $plainBody = trim($plainBody);
-        $details = $details !== null ? trim($details) : '';
-        $stamp = date('Y-m-d H:i');
-        $mailSubject = $subject !== '' ? $subject : (string) __('supplier_comms');
+        $subject = trim(preg_replace("/[\r\n]+/", ' ', $subject) ?? $subject);
+        $plainBody = str_replace(["\r\n", "\r"], "\n", trim($plainBody));
+        if ($subject === '') {
+            $subject = (string) __('supplier_comms');
+        }
+        if ($plainBody === '') {
+            $plainBody = $subject;
+        }
+        // Unique subject prevents Gmail conversation-trim of repeated sends.
+        $mailSubject = $subject;
         if ($commId > 0) {
             $mailSubject .= ' #' . $commId;
         }
-        $mailSubject .= ' · ' . $stamp;
+        $mailSubject .= ' · ' . date('H:i');
 
-        $html = $this->buildSupplierCommHtml($subject, $plainBody, $details, $fields, $footerUrl, $stamp, $commId);
+        $html = $this->buildSupplierCommHtml($subject, $plainBody, '', [], $footerUrl, '', $commId);
         $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
@@ -168,6 +173,8 @@ final class MailService
             'error' => $result['error'] ?? null,
             'smtp_host' => $result['smtp_host'] ?? null,
             'via_localhost' => !empty($result['via_localhost']),
+            'subject' => $mailSubject,
+            'body_len' => mb_strlen($plainBody),
         ];
     }
 
@@ -177,12 +184,15 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = (string) __('mail_test_body');
         }
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.8;font-size:16px;margin:0;padding:20px">'
+        return '<!DOCTYPE html><html lang="ar"><head><meta charset="UTF-8"></head>'
+            . '<body dir="rtl" style="font-family:Tajawal,Arial,sans-serif;font-size:16px;line-height:1.8;margin:0;padding:20px">'
             . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'), false)
             . '</body></html>';
     }
 
     /**
+     * Body of the email is ONLY the message text (plus optional link). No extra labels.
+     *
      * @param array<string, mixed> $fields
      */
     public function buildSupplierCommHtml(
@@ -194,41 +204,17 @@ final class MailService
         string $stamp = '',
         int $commId = 0
     ): string {
-        $subject = trim($subject);
-        $body = trim($body);
-        $details = trim($details);
-        if ($body === '' && $details !== '') {
-            $body = $details;
-            $details = '';
-        }
+        $body = trim(str_replace(["\r\n", "\r"], "\n", $body));
         if ($body === '') {
-            $body = $subject !== '' ? $subject : (string) __('mail_test_body');
+            $body = trim($subject) !== '' ? trim($subject) : (string) __('mail_test_body');
         }
-        $esc = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8');
-        $block = static function (string $label, string $value) use ($esc): string {
-            $value = trim($value);
-            if ($value === '') {
-                return '';
-            }
-            return '<p style="margin:0 0 6px;font-size:13px;color:#64748b;font-weight:700">' . $esc($label) . '</p>'
-                . '<div style="margin:0 0 20px;font-size:16px;line-height:1.85;color:#0f172a;white-space:pre-wrap;word-wrap:break-word;overflow:visible">'
-                . nl2br($esc($value), false) . '</div>';
-        };
-
-        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
-            . '<body dir="auto" style="font-family:Tajawal,Arial,sans-serif;margin:0;padding:24px;background:#ffffff;color:#0f172a">';
-        $html .= $block(__('subject'), $subject);
-        $html .= $block(__('comm_message'), $body);
-        if ($details !== '' && $details !== $body && $details !== $subject) {
-            $html .= $block(__('comm_details'), $details);
-        }
-        $extra = trim((string) ($fields['supplier_name'] ?? ''));
-        if ($extra !== '') {
-            $html .= $block(__('suppliers'), $extra);
-        }
+        $html = '<!DOCTYPE html><html lang="ar" translate="no"><head><meta charset="UTF-8">'
+            . '<meta name="google" content="notranslate">'
+            . '</head><body dir="rtl" style="font-family:Tajawal,Arial,sans-serif;font-size:16px;line-height:1.85;margin:0;padding:24px;color:#111">'
+            . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8'), false);
         if ($footerUrl !== '') {
-            $safe = $esc($footerUrl);
-            $html .= '<p style="margin:28px 0 0;font-size:13px;color:#64748b"><a href="' . $safe . '" style="color:#2563eb">' . $safe . '</a></p>';
+            $safe = htmlspecialchars($footerUrl, ENT_QUOTES, 'UTF-8');
+            $html .= '<p style="margin-top:28px;font-size:12px;color:#666"><a href="' . $safe . '">' . $safe . '</a></p>';
         }
         $html .= '</body></html>';
         return $html;
@@ -485,6 +471,7 @@ final class MailService
         $headers .= 'Date: ' . date('r') . "\r\n";
         $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '.' . time() . '@' . $msgDomain . '>' . "\r\n";
         $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
+        $headers .= 'Content-Language: ar' . "\r\n";
         $headers .= 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
         $headers .= 'Content-Transfer-Encoding: base64' . "\r\n";
