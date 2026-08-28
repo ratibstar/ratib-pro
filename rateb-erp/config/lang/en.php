@@ -1635,6 +1635,7 @@ return [
     'copy' => 'Copy',
     'mail_port25_blocked_hint' => 'Port 25 is blocked — mail.rateb.sa accepts mail but cannot deliver to Gmail',
     'mail_port25_blocked_detail' => 'blocked — no connection to Gmail:25',
+    'mail_port25_local_only' => 'Local SMTP works (:host) but outbound port 25 to Gmail is blocked — request Hetzner unblock',
     'mail_port25_active' => 'Port 25 active (:host) — direct delivery ready',
     'mail_hetzner_unblock_steps' => 'Fix without a third party: ask Hetzner to unblock outbound port 25 (after 1 month + paid invoice).',
     'mail_hetzner_ticket' => 'Hetzner ticket text (copy)',

@@ -1635,6 +1635,7 @@ return [
     'copy' => 'نسخ',
     'mail_port25_blocked_hint' => 'المنفذ 25 محجوب — mail.rateb.sa يستقبل الرسالة لكن لا يسلّمها إلى Gmail',
     'mail_port25_blocked_detail' => 'محجوب — لا اتصال بـ Gmail:25',
+    'mail_port25_local_only' => 'SMTP محلي يعمل (:host) لكن المنفذ 25 الصادر إلى Gmail محجوب — اطلب فتحه من Hetzner',
     'mail_port25_active' => 'المنفذ 25 مفعّل (:host) — جاهز للإرسال المباشر',
     'mail_hetzner_unblock_steps' => 'الحل بدون طرف ثالث: اطلب من Hetzner فتح المنفذ 25 الصادر لسيرفرك (بعد شهر من التسجيل + فاتورة مدفوعة).',
     'mail_hetzner_ticket' => 'نص تذكرة Hetzner (انسخه)',

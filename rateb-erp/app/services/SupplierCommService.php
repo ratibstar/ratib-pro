@@ -210,16 +210,10 @@ final class SupplierCommService
             return ['success' => false, 'status' => 'failed', 'message' => __('comm_email_missing')];
         }
         $isExternal = $this->isExternalEmail($email);
+        $port25OutboundBlocked = false;
         if ($isExternal) {
-            $dns = (new MailDnsCheckService())->checkFast('rateb.sa');
-            if (empty($dns['port25']['ok']) && empty($dns['smtp_relay'])) {
-                return [
-                    'success' => false,
-                    'status' => 'failed',
-                    'message' => __('mail_port25_blocked_hint') . ' — ' . __('mail_test_external_bounce_hint'),
-                    'recipient' => $email,
-                ];
-            }
+            $dnsPre = (new MailDnsCheckService())->checkFast('rateb.sa');
+            $port25OutboundBlocked = empty($dnsPre['port25']['ok']) && empty($dnsPre['smtp_relay']);
         }
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
@@ -275,6 +269,9 @@ final class SupplierCommService
         if ($sent && $isExternal) {
             $msg .= ' — ' . __('comm_email_external_dns_hint');
             $msg .= ' — ' . __('mail_test_external_bounce_hint');
+            if ($port25OutboundBlocked) {
+                $msg .= ' — ' . __('mail_port25_blocked_hint') . ' — ' . __('mail_hetzner_unblock_steps');
+            }
             if ($smtpHost !== '') {
                 $msg .= ' — SMTP: ' . $smtpHost;
             }
