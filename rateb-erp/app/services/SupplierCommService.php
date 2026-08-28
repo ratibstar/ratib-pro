@@ -190,11 +190,11 @@ final class SupplierCommService
     }
 
     /** @param array<string, mixed> $data */
-    public function sendViaChannel(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
+    public function sendViaChannel(array $data, ?string $ccEmail = null, ?string $replyTo = null, int $commId = 0): array
     {
         $channel = (string) ($data['channel'] ?? '');
         if ($channel === 'email' || trim((string) ($data['supplier_email'] ?? '')) !== '') {
-            return $this->sendEmail($data, $ccEmail, $replyTo);
+            return $this->sendEmail($data, $ccEmail, $replyTo, $commId);
         }
         if ($channel === 'sms' && trim((string) ($data['supplier_phone'] ?? '')) !== '') {
             return ['success' => true, 'status' => 'mailto', 'message' => __('comm_sms_queued')];
@@ -203,7 +203,7 @@ final class SupplierCommService
     }
 
     /** @param array<string, mixed> $data */
-    public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null): array
+    public function sendEmail(array $data, ?string $ccEmail = null, ?string $replyTo = null, int $commId = 0): array
     {
         $email = $this->normalizeRecipientEmail((string) ($data['supplier_email'] ?? ''));
         if ($email === '' || !\Rateb\App\Helpers\Str::isValidEmail($email)) {
@@ -222,30 +222,18 @@ final class SupplierCommService
         }
         $subject = trim((string) ($data['subject'] ?? ''));
         $bodyText = trim((string) ($data['body'] ?? ''));
-        $html = '<div dir="auto" style="font-family:Tajawal,sans-serif;line-height:1.6">'
-            . nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'))
-            . '</div>';
-        $cfg = (new MailConfigService())->resolve();
-        $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
         $isExternal = $this->isExternalEmail($email);
+        $plainBody = $this->prepareOutboundPlainText($bodyText, $isExternal, $commId);
         $cc = null;
         if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
             $cc = $this->normalizeRecipientEmail($ccEmail);
         }
-        $reply = null;
-        if ($isExternal) {
-            $reply = ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)) ? $fromEmail : null;
-        } elseif ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) {
-            $reply = $this->normalizeRecipientEmail($replyTo);
-        } elseif ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)) {
-            $reply = $fromEmail;
-        }
 
-        $sendResult = $mail->sendDetailed(
+        $sendResult = $mail->sendTransactional(
             $email,
             $subject !== '' ? $subject : __('supplier_comms'),
-            $html,
-            $reply,
+            $plainBody,
+            null,
             $cc,
             null
         );
@@ -295,6 +283,23 @@ final class SupplierCommService
         $email = strtolower(trim($email));
         $email = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $email) ?? $email;
         return trim($email);
+    }
+
+    private function prepareOutboundPlainText(string $text, bool $isExternal, int $commId = 0): string
+    {
+        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+        $text = preg_replace('/(.{12,}?)(\s*\1){2,}/u', '$1', $text) ?? $text;
+        if (!$isExternal) {
+            return $text;
+        }
+        $max = 1200;
+        if (mb_strlen($text) > $max) {
+            $text = mb_substr($text, 0, $max) . "\n\n" . __('comm_email_truncated_note');
+            if ($commId > 0) {
+                $text .= ' ' . rateb_app_url('supplier-comms/' . $commId . '/edit');
+            }
+        }
+        return $text;
     }
 
     /** Follow-up reminders + no-response alerts (cron). */

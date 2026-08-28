@@ -49,7 +49,7 @@ $renderFields = static function (array $names) use ($fields, $item, $defaults, $
     <div class="rateb-sc-form-section">
         <div class="rateb-sc-section-title"><?php echo __('comm_section_basic'); ?></div>
         <div class="row g-2 g-md-3">
-            <?php $renderFields(['supplier_id', 'channel', 'comm_date', 'comm_time', 'comm_status', 'subject', 'details', 'body']); ?>
+            <?php $renderFields(['supplier_id', 'channel', 'comm_date', 'comm_time', 'comm_status', 'subject', 'details']); ?>
         </div>
     </div>
     <div class="rateb-sc-form-section">
@@ -62,6 +62,12 @@ $renderFields = static function (array $names) use ($fields, $item, $defaults, $
             <a href="#" class="btn btn-outline-primary btn-sm" id="sc_act_email" target="_blank" rel="noopener"><i class="fas fa-envelope"></i> <?php echo __('comm_channel_email'); ?></a>
             <a href="#" class="btn btn-outline-success btn-sm" id="sc_act_whatsapp" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> <?php echo __('comm_channel_whatsapp'); ?></a>
             <a href="#" class="btn btn-outline-secondary btn-sm" id="sc_act_phone"><i class="fas fa-phone"></i> <?php echo __('comm_call_supplier'); ?></a>
+        </div>
+    </div>
+    <div class="rateb-sc-form-section">
+        <div class="rateb-sc-section-title"><?php echo __('comm_message'); ?></div>
+        <div class="row g-2 g-md-3">
+            <?php $renderFields(['body']); ?>
         </div>
     </div>
     <div class="rateb-sc-form-section">

@@ -1500,11 +1500,11 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             ['name' => 'comm_status', 'label' => 'comm_status', 'type' => 'select', 'lookup' => 'comm_statuses', 'default' => 'new', 'col' => 'col-xl-2 col-md-4'],
             ['name' => 'subject', 'label' => 'subject', 'type' => 'text', 'required' => true, 'col' => 'col-xl-6 col-md-8'],
             ['name' => 'details', 'label' => 'comm_details', 'type' => 'text', 'col' => 'col-xl-6 col-md-4'],
-            ['name' => 'body', 'label' => 'comm_message', 'type' => 'textarea', 'required' => true, 'col' => 'col-12', 'rows' => 3],
             ['name' => 'responsible_name', 'label' => 'comm_responsible', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_contact', 'label' => 'comm_supplier_contact', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_phone', 'label' => 'comm_supplier_phone', 'type' => 'text', 'col' => 'col-xl-3 col-md-6'],
             ['name' => 'supplier_email', 'label' => 'comm_supplier_email', 'type' => 'text', 'col' => 'col-xl-3 col-md-6', 'attrs' => ['placeholder' => 'supplier@company.com', 'inputmode' => 'email', 'autocomplete' => 'email']],
+            ['name' => 'body', 'label' => 'comm_message', 'type' => 'textarea', 'required' => true, 'col' => 'col-12', 'rows' => 3],
             ['name' => 'follow_up_date', 'label' => 'follow_up_date', 'type' => 'date', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'follow_up_priority', 'label' => 'follow_up_priority', 'type' => 'select', 'lookup' => 'follow_up_priorities', 'default' => 'medium', 'col' => 'col-xl-3 col-md-4'],
             ['name' => 'purchase_order_id', 'label' => 'link_purchase_order', 'type' => 'fk', 'lookup' => 'purchase_orders', 'col' => 'col-xl-3 col-md-6'],
@@ -1958,13 +1958,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     {
         $companyId = (int) ($data['company_id'] ?? rateb_resolve_ops_company_id());
         $channel = (string) ($data['channel'] ?? '');
-        $supplierEmail = trim((string) ($data['supplier_email'] ?? ''));
+        $supplierEmail = $this->normalizeRecipientEmailForSend($commId, $data, $companyId, $svc);
         $hasEmail = $supplierEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($supplierEmail);
         $user = \Rateb\App\Core\Auth::user();
         $userEmail = trim((string) ($user['email'] ?? ''));
 
         if ($hasEmail) {
-            $result = $svc->sendViaChannel($data, $userEmail, null);
+            $data['supplier_email'] = $supplierEmail;
+            $result = $svc->sendViaChannel($data, $userEmail, null, $commId);
             $status = (string) ($result['status'] ?? 'failed');
             $this->model->update($commId, [
                 'send_status' => $status,
@@ -2012,6 +2013,33 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             return;
         }
         SessionManager::flash('warning', __('comm_save_send_no_email'));
+    }
+
+    /** @param array<string, mixed> $data */
+    private function normalizeRecipientEmailForSend(int $commId, array $data, int $companyId, \Rateb\App\Services\SupplierCommService $svc): string
+    {
+        $email = strtolower(trim((string) ($data['supplier_email'] ?? '')));
+        $email = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $email) ?? $email;
+        $email = trim($email);
+        if ($email !== '' && \Rateb\App\Helpers\Str::isValidEmail($email)) {
+            return $email;
+        }
+        if ($commId > 0) {
+            $row = $this->model->find($commId);
+            $stored = strtolower(trim((string) ($row['supplier_email'] ?? '')));
+            if ($stored !== '' && \Rateb\App\Helpers\Str::isValidEmail($stored)) {
+                return $stored;
+            }
+        }
+        $supplierId = (int) ($data['supplier_id'] ?? 0);
+        if ($supplierId > 0 && $companyId > 0) {
+            $profile = $svc->supplierContactProfile($companyId, $supplierId);
+            $profileEmail = strtolower(trim((string) ($profile['email'] ?? '')));
+            if ($profileEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($profileEmail)) {
+                return $profileEmail;
+            }
+        }
+        return '';
     }
 
     /** @param array<string, mixed> $data */

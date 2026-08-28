@@ -42,10 +42,10 @@ final class MailTestService
         }
 
         $mail = new MailService();
-        $result = $mail->sendDetailed(
+        $result = $mail->sendTransactional(
             $to,
             __('mail_test_subject'),
-            '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>' . htmlspecialchars(__('mail_test_body'), ENT_QUOTES, 'UTF-8') . '</p></div>',
+            (string) __('mail_test_body'),
             null,
             null,
             null

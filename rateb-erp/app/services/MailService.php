@@ -102,6 +102,41 @@ final class MailService
         return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc, $bcc)['success'];
     }
 
+    /**
+     * Same HTML envelope as mail-test (proven Gmail path).
+     *
+     * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
+     */
+    public function sendTransactional(string $to, string $subject, string $plainBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): array
+    {
+        $result = $this->sendDetailed(
+            $to,
+            $subject,
+            $this->buildTransactionalHtml($plainBody),
+            $replyTo,
+            $cc,
+            $bcc
+        );
+        return [
+            'success' => (bool) ($result['success'] ?? false),
+            'error_code' => $result['error_code'] ?? null,
+            'error' => $result['error'] ?? null,
+            'smtp_host' => $result['smtp_host'] ?? null,
+            'via_localhost' => !empty($result['via_localhost']),
+        ];
+    }
+
+    public function buildTransactionalHtml(string $plainBody): string
+    {
+        $plainBody = trim($plainBody);
+        if ($plainBody === '') {
+            $plainBody = (string) __('mail_test_body');
+        }
+        return '<div dir="auto" style="font-family:Tajawal,sans-serif"><p>'
+            . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'))
+            . '</p></div>';
+    }
+
     public function isSmtpConfigured(): bool
     {
         return (new MailConfigService())->isReady();
@@ -358,8 +393,7 @@ final class MailService
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
         $headers .= $this->mimeBodyHeaders($body);
-        $message = $this->dotStuff($headers . $body);
-        $write($message . "\r\n.");
+        $this->smtpWriteData($fp, $headers . $body);
         $result = $read();
         $write('QUIT');
         fclose($fp);
@@ -454,6 +488,16 @@ final class MailService
             $stuffed[] = $line;
         }
         return implode("\r\n", $stuffed);
+    }
+
+    private function smtpWriteData($fp, string $message): void
+    {
+        $message = $this->dotStuff($message);
+        $lines = explode("\r\n", $message);
+        foreach ($lines as $line) {
+            fwrite($fp, $line . "\r\n");
+        }
+        fwrite($fp, '.' . "\r\n");
     }
 
     /** Align outbound subjects with mail-test branding for Gmail recognition. */
