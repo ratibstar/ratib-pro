@@ -143,25 +143,25 @@ final class MailService
     }
 
     /**
-     * Supplier communication: subject + full body preserved (no truncation / branding rewrite).
+     * Supplier communication email — full labeled message, unique subject (avoids Gmail trim).
      *
+     * @param array<string, mixed> $fields
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
      */
-    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = ''): array
+    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0): array
     {
         $subject = trim($subject);
         $plainBody = trim($plainBody);
         $details = $details !== null ? trim($details) : '';
-        $html = $this->buildSupplierCommHtml($subject, $plainBody, $details);
-        if ($footerUrl !== '') {
-            $safe = htmlspecialchars($footerUrl, ENT_QUOTES, 'UTF-8');
-            $html = str_replace(
-                '</body></html>',
-                '<p style="margin:24px 0 0;font-size:13px"><a href="' . $safe . '">' . $safe . '</a></p></body></html>',
-                $html
-            );
+        $stamp = date('Y-m-d H:i:s');
+        $uniqueSubject = $subject !== '' ? $subject : (string) __('supplier_comms');
+        if ($commId > 0) {
+            $uniqueSubject .= ' #' . $commId;
         }
-        $result = $this->sendDetailed($to, $subject !== '' ? $subject : __('supplier_comms'), $html, null, $cc, null, false);
+        $uniqueSubject .= ' · ' . $stamp;
+
+        $html = $this->buildSupplierCommHtml($subject, $plainBody, $details, $fields, $footerUrl, $stamp, $commId);
+        $result = $this->sendDetailed($to, $uniqueSubject, $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
@@ -182,8 +182,18 @@ final class MailService
             . '</body></html>';
     }
 
-    public function buildSupplierCommHtml(string $subject, string $body, string $details = ''): string
-    {
+    /**
+     * @param array<string, mixed> $fields
+     */
+    public function buildSupplierCommHtml(
+        string $subject,
+        string $body,
+        string $details = '',
+        array $fields = [],
+        string $footerUrl = '',
+        string $stamp = '',
+        int $commId = 0
+    ): string {
         $subject = trim($subject);
         $body = trim($body);
         $details = trim($details);
@@ -195,15 +205,45 @@ final class MailService
             $body = $subject !== '' ? $subject : (string) __('mail_test_body');
         }
         $esc = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8');
-        $nl2br = static fn (string $t): string => nl2br($esc($t), false);
-        $html = '<!DOCTYPE html><html><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111;margin:0;padding:16px">';
-        if ($subject !== '') {
-            $html .= '<h2 style="font-size:18px;font-weight:700;margin:0 0 16px">' . $esc($subject) . '</h2>';
+        $nl = static fn (string $t): string => nl2br($esc($t), false);
+        $row = static function (string $label, string $value) use ($esc, $nl): string {
+            if (trim($value) === '') {
+                return '';
+            }
+            return '<tr><td style="padding:8px 12px;border:1px solid #e5e7eb;background:#f8fafc;width:140px;font-weight:700;vertical-align:top">'
+                . $esc($label) . '</td><td style="padding:8px 12px;border:1px solid #e5e7eb;vertical-align:top">'
+                . $nl($value) . '</td></tr>';
+        };
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>'
+            . '<body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111;margin:0;padding:20px;background:#fff">';
+        $html .= '<p style="margin:0 0 8px;color:#64748b;font-size:12px">' . $esc(__('supplier_comms'));
+        if ($commId > 0) {
+            $html .= ' #' . $commId;
         }
-        $html .= '<div style="margin:0 0 16px">' . $nl2br($body) . '</div>';
+        if ($stamp !== '') {
+            $html .= ' — ' . $esc($stamp);
+        }
+        $html .= '</p>';
+        $html .= '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;border-collapse:collapse;margin:0 0 16px">';
+        $html .= $row(__('subject'), $subject);
+        $html .= $row(__('comm_message'), $body);
         if ($details !== '' && $details !== $body) {
-            $html .= '<div style="margin:0 0 16px;color:#333">' . $nl2br($details) . '</div>';
+            $html .= $row(__('comm_details'), $details);
         }
+        $html .= $row(__('suppliers'), (string) ($fields['supplier_name'] ?? ''));
+        $html .= $row(__('comm_channel'), (string) ($fields['channel_label'] ?? $fields['channel'] ?? ''));
+        $html .= $row(__('comm_supplier_contact'), (string) ($fields['supplier_contact'] ?? ''));
+        $html .= $row(__('comm_supplier_phone'), (string) ($fields['supplier_phone'] ?? ''));
+        $html .= $row(__('comm_supplier_email'), (string) ($fields['supplier_email'] ?? ''));
+        $html .= $row(__('comm_responsible'), (string) ($fields['responsible_name'] ?? ''));
+        $html .= $row(__('comm_date'), (string) ($fields['comm_date'] ?? ''));
+        $html .= '</table>';
+        if ($footerUrl !== '') {
+            $safe = $esc($footerUrl);
+            $html .= '<p style="margin:16px 0 0;font-size:13px"><a href="' . $safe . '">' . $safe . '</a></p>';
+        }
+        $html .= '<p style="margin:20px 0 0;font-size:11px;color:#94a3b8">ID:' . $esc((string) ($commId > 0 ? $commId : time())) . '-' . $esc(bin2hex(random_bytes(3))) . '</p>';
         $html .= '</body></html>';
         return $html;
     }
@@ -457,12 +497,12 @@ final class MailService
         }
         $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
-        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . $msgDomain . '>' . "\r\n";
+        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '.' . time() . '@' . $msgDomain . '>' . "\r\n";
+        $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
         $headers .= 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
         $headers .= 'Content-Transfer-Encoding: base64' . "\r\n";
-        $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
-        // Blank line ends headers; body is base64 HTML only (same path as working mail tests).
+        // Blank line ends headers; body is base64 HTML only.
         $payload = $this->dotStuff($headers . "\r\n" . chunk_split(base64_encode($body)));
         fwrite($fp, $payload);
         if (!str_ends_with($payload, "\r\n")) {

@@ -236,13 +236,35 @@ final class SupplierCommService
         if ($commId > 0) {
             $footerUrl = rateb_app_url('supplier-comms/' . $commId . '/edit');
         }
+        $channel = trim((string) ($data['channel'] ?? ''));
+        $channelKey = 'comm_channel_' . $channel;
+        $channelLabel = $channel !== '' ? (string) __($channelKey) : '';
+        if ($channelLabel === $channelKey) {
+            $channelLabel = $channel;
+        }
+        $supplierName = trim((string) ($data['supplier_name'] ?? ''));
+        if ($supplierName === '' && (int) ($data['supplier_id'] ?? 0) > 0 && (int) ($data['company_id'] ?? 0) > 0) {
+            $profile = $this->supplierContactProfile((int) $data['company_id'], (int) $data['supplier_id']);
+            $supplierName = trim((string) ($profile['name'] ?? ''));
+        }
         $sendResult = $mail->sendSupplierMessage(
             $email,
             $mailSubject,
             $bodyText,
             $details !== '' ? $details : null,
             $cc,
-            $footerUrl
+            $footerUrl,
+            [
+                'supplier_name' => $supplierName,
+                'channel' => $channel,
+                'channel_label' => $channelLabel,
+                'supplier_contact' => (string) ($data['supplier_contact'] ?? ''),
+                'supplier_phone' => (string) ($data['supplier_phone'] ?? ''),
+                'supplier_email' => $email,
+                'responsible_name' => (string) ($data['responsible_name'] ?? ''),
+                'comm_date' => (string) ($data['comm_date'] ?? date('Y-m-d')),
+            ],
+            $commId
         );
 
         $sent = (bool) ($sendResult['success'] ?? false);

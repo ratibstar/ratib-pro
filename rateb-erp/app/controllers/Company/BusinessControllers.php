@@ -1858,12 +1858,23 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $row;
-        foreach (['subject', 'body', 'details', 'supplier_email', 'supplier_contact', 'supplier_phone', 'channel'] as $key) {
+        foreach (['subject', 'body', 'details', 'supplier_email', 'supplier_contact', 'supplier_phone', 'channel', 'responsible_name', 'comm_date'] as $key) {
             if (!array_key_exists($key, $_POST)) {
                 continue;
             }
             $data[$key] = trim((string) $this->input($key, (string) ($row[$key] ?? '')));
         }
+        // Persist form content before send so email matches what the user sees.
+        $this->model->update($id, [
+            'subject' => (string) ($data['subject'] ?? ''),
+            'body' => (string) ($data['body'] ?? ''),
+            'details' => (($data['details'] ?? '') !== '' ? (string) $data['details'] : null),
+            'supplier_email' => (string) ($data['supplier_email'] ?? ''),
+            'supplier_contact' => (($data['supplier_contact'] ?? '') !== '' ? (string) $data['supplier_contact'] : null),
+            'supplier_phone' => (($data['supplier_phone'] ?? '') !== '' ? (string) $data['supplier_phone'] : null),
+            'channel' => (string) ($data['channel'] ?? ($row['channel'] ?? 'email')),
+            'responsible_name' => (($data['responsible_name'] ?? '') !== '' ? (string) $data['responsible_name'] : null),
+        ]);
         $svc = new \Rateb\App\Services\SupplierCommService();
         $this->handleSendAction($id, $data, $svc);
         $this->redirect($failUrl);
