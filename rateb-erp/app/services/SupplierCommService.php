@@ -256,17 +256,6 @@ final class SupplierCommService
             ];
         }
 
-        if ($sent && $isExternal && !empty($sendResult['via_localhost'])) {
-            $sent = false;
-            return [
-                'success' => false,
-                'status' => 'failed',
-                'message' => __('mail_test_localhost_failed'),
-                'recipient' => $email,
-                'smtp_host' => $smtpHost,
-            ];
-        }
-
         $msg = $sent
             ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam')
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));

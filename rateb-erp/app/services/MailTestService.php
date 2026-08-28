@@ -74,14 +74,6 @@ final class MailTestService
             ];
         }
 
-        if ($isExternal && !empty($result['via_localhost'])) {
-            return [
-                'level' => 'error',
-                'message' => __('mail_test_localhost_failed'),
-                'detail' => $detail,
-            ];
-        }
-
         if ($isExternal) {
             $dns = (new MailDnsCheckService())->check($fromDomain !== '' ? $fromDomain : 'rateb.sa');
             $base = __('mail_test_ok', ['email' => $to, 'host' => $host]);
