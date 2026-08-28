@@ -147,12 +147,20 @@ final class MailService
      *
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool}
      */
-    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null): array
+    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = ''): array
     {
         $subject = trim($subject);
         $plainBody = trim($plainBody);
         $details = $details !== null ? trim($details) : '';
         $html = $this->buildSupplierCommHtml($subject, $plainBody, $details);
+        if ($footerUrl !== '') {
+            $safe = htmlspecialchars($footerUrl, ENT_QUOTES, 'UTF-8');
+            $html = str_replace(
+                '</body></html>',
+                '<p style="margin:24px 0 0;font-size:13px"><a href="' . $safe . '">' . $safe . '</a></p></body></html>',
+                $html
+            );
+        }
         $result = $this->sendDetailed($to, $subject !== '' ? $subject : __('supplier_comms'), $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
@@ -169,9 +177,9 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = (string) __('mail_test_body');
         }
-        return '<div dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.7;font-size:15px">'
-            . '<div style="white-space:pre-wrap">' . htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8') . '</div>'
-            . '</div>';
+        return '<!DOCTYPE html><html><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.7;font-size:15px;margin:0;padding:16px">'
+            . '<div>' . nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'), false) . '</div>'
+            . '</body></html>';
     }
 
     public function buildSupplierCommHtml(string $subject, string $body, string $details = ''): string
@@ -186,18 +194,17 @@ final class MailService
         if ($body === '') {
             $body = $subject !== '' ? $subject : (string) __('mail_test_body');
         }
-        $html = '<div dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111">';
+        $esc = static fn (string $t): string => htmlspecialchars($t, ENT_QUOTES, 'UTF-8');
+        $nl2br = static fn (string $t): string => nl2br($esc($t), false);
+        $html = '<!DOCTYPE html><html><body dir="auto" style="font-family:Tajawal,Arial,sans-serif;line-height:1.75;font-size:15px;color:#111;margin:0;padding:16px">';
         if ($subject !== '') {
-            $html .= '<div style="font-size:18px;font-weight:700;margin:0 0 12px">'
-                . htmlspecialchars($subject, ENT_QUOTES, 'UTF-8') . '</div>';
+            $html .= '<h2 style="font-size:18px;font-weight:700;margin:0 0 16px">' . $esc($subject) . '</h2>';
         }
-        $html .= '<div style="white-space:pre-wrap;margin:0 0 12px">'
-            . htmlspecialchars($body, ENT_QUOTES, 'UTF-8') . '</div>';
+        $html .= '<div style="margin:0 0 16px">' . $nl2br($body) . '</div>';
         if ($details !== '' && $details !== $body) {
-            $html .= '<div style="white-space:pre-wrap;margin:0 0 12px;color:#333">'
-                . htmlspecialchars($details, ENT_QUOTES, 'UTF-8') . '</div>';
+            $html .= '<div style="margin:0 0 16px;color:#333">' . $nl2br($details) . '</div>';
         }
-        $html .= '</div>';
+        $html .= '</body></html>';
         return $html;
     }
 
@@ -451,14 +458,17 @@ final class MailService
         $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
         $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . $msgDomain . '>' . "\r\n";
-        $headers .= 'Precedence: auto' . "\r\n";
-        $headers .= 'X-Auto-Response-Suppress: All' . "\r\n";
-        $headers .= 'X-Mailer: Rateb ERP' . "\r\n";
-        $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= $this->mimeBodyHeaders($body);
-        $payload = $this->dotStuff($headers . $body);
-        fwrite($fp, $payload . "\r\n.\r\n");
+        $headers .= 'MIME-Version: 1.0' . "\r\n";
+        $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
+        $headers .= 'Content-Transfer-Encoding: base64' . "\r\n";
+        $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
+        // Blank line ends headers; body is base64 HTML only (same path as working mail tests).
+        $payload = $this->dotStuff($headers . "\r\n" . chunk_split(base64_encode($body)));
+        fwrite($fp, $payload);
+        if (!str_ends_with($payload, "\r\n")) {
+            fwrite($fp, "\r\n");
+        }
+        fwrite($fp, ".\r\n");
         $result = $read();
         $write('QUIT');
         fclose($fp);
@@ -481,7 +491,35 @@ final class MailService
 
     private function encodeAddress(string $name, string $email): string
     {
-        return '=?UTF-8?B?' . base64_encode($name) . '?= <' . $email . '>';
+        return $this->encodeHeaderValue($name) . ' <' . $email . '>';
+    }
+
+    private function encodeHeaderValue(string $value): string
+    {
+        $value = trim(preg_replace("/[\r\n]+/", ' ', $value) ?? $value);
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('/^[\x20-\x7E]*$/', $value)) {
+            return $value;
+        }
+        // RFC 2047 — keep encoded-words short so MTAs do not truncate long subjects.
+        $parts = [];
+        $chars = preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $chunk = '';
+        foreach ($chars as $ch) {
+            $trial = $chunk . $ch;
+            if (strlen(base64_encode($trial)) > 60 && $chunk !== '') {
+                $parts[] = '=?UTF-8?B?' . base64_encode($chunk) . '?=';
+                $chunk = $ch;
+            } else {
+                $chunk = $trial;
+            }
+        }
+        if ($chunk !== '') {
+            $parts[] = '=?UTF-8?B?' . base64_encode($chunk) . '?=';
+        }
+        return implode(' ', $parts);
     }
 
     /** EHLO must match PTR (e.g. mail.rateb.sa) for Gmail delivery. */

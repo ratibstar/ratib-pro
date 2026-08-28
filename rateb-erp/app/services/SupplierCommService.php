@@ -232,12 +232,18 @@ final class SupplierCommService
             ];
         }
 
-        $footer = '';
+        $footerUrl = '';
         if ($commId > 0) {
-            $footer = "\n\n—\n" . rateb_app_url('supplier-comms/' . $commId . '/edit');
+            $footerUrl = rateb_app_url('supplier-comms/' . $commId . '/edit');
         }
-        $bodyForMail = $bodyText . $footer;
-        $sendResult = $mail->sendSupplierMessage($email, $mailSubject, $bodyForMail, $details !== '' ? $details : null, $cc);
+        $sendResult = $mail->sendSupplierMessage(
+            $email,
+            $mailSubject,
+            $bodyText,
+            $details !== '' ? $details : null,
+            $cc,
+            $footerUrl
+        );
 
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? '');
