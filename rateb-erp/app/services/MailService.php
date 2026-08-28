@@ -42,6 +42,7 @@ final class MailService
         }
 
         $profiles = $this->smtpProfiles($cfg, $to);
+        $simpleHtml = $this->isExternalRecipient($to, $fromEmail);
         $primaryError = null;
         $sent = false;
 
@@ -59,7 +60,8 @@ final class MailService
                 $htmlBody,
                 $replyTo,
                 $cc,
-                $bcc
+                $bcc,
+                $simpleHtml
             );
             if ($ok) {
                 $sent = true;
@@ -146,10 +148,15 @@ final class MailService
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
             if ($this->isExternalSmtpRelay($primary['host'])) {
                 $candidates = [$primary];
-            } elseif ($this->isLoopbackHost($primary['host'])) {
-                $candidates = [$mailTls, $mailSsl, $primary, $localhost, $loopback];
             } else {
-                $candidates = [$primary, $mailTls, $mailSsl];
+                $fromDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain((string) $cfg['from_email']));
+                if ($fromDomain === 'rateb.sa') {
+                    $candidates = [$mailTls, $mailSsl];
+                } elseif ($this->isLoopbackHost($primary['host'])) {
+                    $candidates = [$mailTls, $mailSsl];
+                } else {
+                    $candidates = [$primary, $mailTls, $mailSsl];
+                }
             }
         } else {
             $candidates = [$primary, $localhost, $loopback, $mailTls];
@@ -221,7 +228,7 @@ final class MailService
         return $method;
     }
 
-    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): bool
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $simpleHtml = false): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
         $context = stream_context_create([
@@ -334,12 +341,22 @@ final class MailService
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";
         }
-        $headers .= 'Reply-To: ' . ($replyTo !== null && $replyTo !== '' ? $replyTo : $fromEmail) . "\r\n";
+        $replyHeader = $fromEmail;
+        if ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) {
+            $replyHeader = $replyTo;
+        }
+        $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
         $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . $msgDomain . '>' . "\r\n";
         $headers .= 'Subject: =?UTF-8?B?' . base64_encode($subject) . "?=\r\n";
         $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= $this->mimeBodyHeaders($body);
+        if ($simpleHtml) {
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $headers .= "Content-Transfer-Encoding: base64\r\n\r\n";
+            $body = chunk_split(base64_encode($body));
+        } else {
+            $headers .= $this->mimeBodyHeaders($body);
+        }
         $write($headers . $body . "\r\n.");
         $result = $read();
         $write('QUIT');

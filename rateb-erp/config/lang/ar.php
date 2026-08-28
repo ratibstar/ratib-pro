@@ -3378,7 +3378,7 @@ return [
     'cms_lead_reply_send' => 'إرسال الرد بالبريد',
     'cms_lead_reply_hint' => 'يُسجَّل الرد في الملاحظات ويُحدَّث الحالة إلى «تم التواصل» إذا كان الطلب جديداً.',
     'cms_lead_reply_sent' => 'تم إرسال الرد إلى العميل بنجاح.',
-    'cms_lead_reply_sent_external' => 'أُرسل الرد — نسخة في info@rateb.sa. إن وصل «Mail delivery failed» فGmail لم يستلم بعد.',
+    'cms_lead_reply_sent_external' => 'أُرسل الرد إلى المستلم الخارجي. تحقق من الرسائل غير المرغوبة إن لم يصل خلال دقائق.',
     'cms_lead_reply_failed' => 'تعذر إرسال الرد — تحقق من إعدادات SMTP.',
     'cms_lead_reply_invalid_email' => 'بريد العميل غير صالح.',
     'cms_lead_reply_localhost_failed' => 'لم يُسلَّم البريد للعميل — SMTP يعمل عبر localhost فقط. اضبط mail.rateb.sa وبيانات SMTP في إعدادات النظام.',

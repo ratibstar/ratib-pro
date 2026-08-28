@@ -125,11 +125,7 @@ final class CmsLeadNotificationService
         $mail = new MailService();
         $fromInbox = $this->staffInboxEmail();
         $replyTo = $fromInbox !== '' ? $fromInbox : null;
-        $bcc = null;
-        if ($this->isExternalRecipient($email) && $fromInbox !== '' && filter_var($fromInbox, FILTER_VALIDATE_EMAIL)) {
-            $bcc = $fromInbox;
-        }
-        $result = $mail->sendDetailed($email, $subject, $body, $replyTo, null, $bcc);
+        $result = $mail->sendDetailed($email, $subject, $body, $replyTo, null, null);
         if (!($result['success'] ?? false)) {
             $this->lastError = (string) ($result['error'] ?? $mail->lastError() ?? __('cms_lead_reply_failed'));
             Logger::warning('CMS lead reply email failed', [

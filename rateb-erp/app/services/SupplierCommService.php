@@ -224,46 +224,28 @@ final class SupplierCommService
         $html = '<div dir="auto" style="font-family:Tajawal,sans-serif;line-height:1.6">'
             . nl2br(htmlspecialchars($bodyText, ENT_QUOTES, 'UTF-8'))
             . '</div>';
-        $cc = null;
-        if ($ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
-            $cc = $ccEmail;
-        }
-        $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo)) ? $replyTo : null;
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = trim((string) ($cfg['from_email'] ?? ''));
-        $bcc = null;
-        if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
-            && strcasecmp($fromEmail, $email) !== 0
-            && strcasecmp($fromEmail, (string) $cc) !== 0) {
-            $bcc = $fromEmail;
-        }
-
         $isExternal = $this->isExternalEmail($email);
-        // One SMTP transaction per destination class — mixed local BCC/CC + Gmail TO breaks Exim delivery.
-        if ($isExternal) {
-            $sendResult = $mail->sendDetailed(
-                $email,
-                $subject !== '' ? $subject : __('supplier_comms'),
-                $html,
-                $reply,
-                null,
-                null
-            );
-            if ($sendResult['success'] ?? false) {
-                $copySubject = '[ERP] ' . ($subject !== '' ? $subject : __('supplier_comms'));
-                if ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail)
-                    && strcasecmp($fromEmail, $email) !== 0) {
-                    $mail->sendDetailed($fromEmail, $copySubject, $html, $reply, null, null);
-                }
-                if ($cc !== null && \Rateb\App\Helpers\Str::isValidEmail($cc) && strcasecmp($cc, $email) !== 0) {
-                    $mail->sendDetailed($cc, $copySubject, $html, $reply, null, null);
-                }
-            }
-        } else {
-            $sendResult = $mail->sendDetailed($email, $subject !== '' ? $subject : __('supplier_comms'), $html, $reply, $cc, $bcc);
+        $cc = null;
+        if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
+            $cc = $ccEmail;
         }
+        $reply = ($replyTo !== null && $replyTo !== '' && \Rateb\App\Helpers\Str::isValidEmail($replyTo))
+            ? $replyTo
+            : ($fromEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($fromEmail) ? $fromEmail : null);
+
+        $sendResult = $mail->sendDetailed(
+            $email,
+            $subject !== '' ? $subject : __('supplier_comms'),
+            $html,
+            $reply,
+            $cc,
+            null
+        );
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? $mail->lastSmtpHost() ?? '');
+
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
                 'success' => false,
@@ -273,28 +255,31 @@ final class SupplierCommService
                 'smtp_config_required' => true,
             ];
         }
-        $msg = $sent ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam') : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
-        if ($sent && $this->isExternalEmail($email)) {
-            $msg .= ' — ' . __('comm_email_external_dns_hint');
-            if (!empty($sendResult['via_localhost'])) {
-                $msg .= ' — ' . __('comm_email_localhost_relay_hint');
-            }
-            if ($smtpHost !== '') {
-                $msg .= ' — SMTP: ' . $smtpHost;
-            }
+
+        if ($sent && $isExternal && !empty($sendResult['via_localhost'])) {
+            $sent = false;
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'message' => __('mail_test_localhost_failed'),
+                'recipient' => $email,
+                'smtp_host' => $smtpHost,
+            ];
         }
-        if (!$sent && $this->isExternalEmail($email) && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
+
+        $msg = $sent
+            ? __('comm_email_sent_to', ['email' => $email]) . ' — ' . __('comm_email_sent_spam')
+            : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
+        if ($sent && $isExternal && $smtpHost !== '') {
+            $msg .= ' — SMTP: ' . $smtpHost;
+        }
+        if (!$sent && $isExternal && ($sendResult['error_code'] ?? '') === 'smtp_auth') {
             $msg .= ' — ' . __('mail_password_env_hint');
         }
-        if ($sent && $cc !== null && !$isExternal) {
+        if ($sent && $cc !== null) {
             $msg .= ' — ' . __('comm_email_cc_you', ['email' => $cc]);
         }
-        if ($sent && $bcc !== null && !$isExternal) {
-            $msg .= ' — ' . __('comm_email_bcc_inbox', ['email' => $bcc]);
-        }
-        if ($sent && $isExternal && $fromEmail !== '') {
-            $msg .= ' — ' . __('comm_email_inbox_copy_sent', ['email' => $fromEmail]);
-        }
+
         return [
             'success' => $sent,
             'status' => $sent ? 'sent' : 'failed',

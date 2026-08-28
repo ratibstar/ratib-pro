@@ -3379,7 +3379,7 @@ return [
     'cms_lead_reply_send' => 'Send reply by email',
     'cms_lead_reply_hint' => 'Reply is logged in notes; status moves to Contacted when the lead was New.',
     'cms_lead_reply_sent' => 'Reply sent to the customer successfully.',
-    'cms_lead_reply_sent_external' => 'Reply sent — copy in info@rateb.sa. If «Mail delivery failed» arrives, Gmail has not received it yet.',
+    'cms_lead_reply_sent_external' => 'Reply sent to the external recipient. Check spam if it does not arrive within a few minutes.',
     'cms_lead_reply_failed' => 'Could not send reply — check SMTP settings.',
     'cms_lead_reply_invalid_email' => 'Customer email is invalid.',
     'cms_lead_reply_localhost_failed' => 'Email was not delivered — SMTP used localhost only. Configure mail.rateb.sa in system SMTP settings.',
