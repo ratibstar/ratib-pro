@@ -165,12 +165,12 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Unique subject prevents Gmail conversation-trim of repeated sends.
+        // Unique subject — Gmail threads by subject; deleted threads swallow later sends.
         $mailSubject = $subject;
         if ($commId > 0) {
             $mailSubject .= ' #' . $commId;
         }
-        $mailSubject .= ' · ' . date('H:i');
+        $mailSubject .= ' · ' . date('Y-m-d H:i:s') . ' · ' . strtoupper(bin2hex(random_bytes(2)));
 
         $html = $this->buildSupplierCommHtml($subject, $plainBody, '', [], $footerUrl, '', $commId);
         $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, null, false);
@@ -461,7 +461,6 @@ final class MailService
         $read();
         $msgDomain = $this->messageIdDomain($fromEmail, $ehloHost);
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
-        $headers .= 'Return-Path: <' . $fromEmail . ">\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";
@@ -472,14 +471,26 @@ final class MailService
         }
         $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
-        $headers .= 'Message-ID: <' . bin2hex(random_bytes(8)) . '.' . time() . '@' . $msgDomain . '>' . "\r\n";
+        $headers .= 'Message-ID: <' . bin2hex(random_bytes(12)) . '.' . time() . '@' . $msgDomain . '>' . "\r\n";
         $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
-        $headers .= 'Content-Language: ar' . "\r\n";
+        $headers .= 'X-Mailer: Rateb-ERP' . "\r\n";
         $headers .= 'MIME-Version: 1.0' . "\r\n";
-        $headers .= 'Content-Type: text/html; charset=UTF-8' . "\r\n";
-        $headers .= 'Content-Transfer-Encoding: base64' . "\r\n";
-        // Blank line ends headers; body is base64 HTML only.
-        $payload = $this->dotStuff($headers . "\r\n" . chunk_split(base64_encode($body)));
+
+        // multipart/alternative improves Gmail acceptance vs HTML-only payloads.
+        $plain = $this->htmlToPlain($body);
+        $boundary = 'rateb_' . bin2hex(random_bytes(8));
+        $headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . '"' . "\r\n";
+        $mime = '--' . $boundary . "\r\n";
+        $mime .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $mime .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $mime .= chunk_split(base64_encode($plain !== '' ? $plain : strip_tags($body))) . "\r\n";
+        $mime .= '--' . $boundary . "\r\n";
+        $mime .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $mime .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $mime .= chunk_split(base64_encode($body)) . "\r\n";
+        $mime .= '--' . $boundary . "--\r\n";
+
+        $payload = $this->dotStuff($headers . "\r\n" . $mime);
         fwrite($fp, $payload);
         if (!str_ends_with($payload, "\r\n")) {
             fwrite($fp, "\r\n");
