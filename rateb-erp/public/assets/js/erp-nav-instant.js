@@ -1228,6 +1228,42 @@
         });
     }
 
+    function ensureAgencyUpdates() {
+        var cfg = document.getElementById('erpAgencyUpdatesConfig');
+        if (!cfg) {
+            return;
+        }
+        var bootNow = function () {
+            try {
+                if (typeof root.ratebAgencyUpdatesBoot === 'function') {
+                    root.ratebAgencyUpdatesBoot();
+                }
+            } catch (eBoot) { /* ignore */ }
+        };
+        if (typeof root.ratebAgencyUpdatesBoot === 'function') {
+            bootNow();
+            return;
+        }
+        var src = cfg.getAttribute('data-script-src') || '';
+        if (!src) {
+            return;
+        }
+        var key = scriptKey(src);
+        if (loadedScripts[key]) {
+            // Marked loaded but boot missing — clear and retry.
+            delete loadedScripts[key];
+        }
+        var el = document.createElement('script');
+        el.src = src;
+        el.async = true;
+        el.onload = el.onerror = function () {
+            loadedScripts[key] = true;
+            bootNow();
+        };
+        (document.body || document.documentElement).appendChild(el);
+        root.setTimeout(bootNow, 2500);
+    }
+
     function reinitModuleUi() {
         // Soft badge must NOT skip chart hydrate (needs hard refresh otherwise).
         if (!isUiOffline()) {
@@ -1245,9 +1281,7 @@
             ensureMailDnsPanel();
         } catch (eMailDns) { /* ignore */ }
         try {
-            if (typeof root.ratebAgencyUpdatesBoot === 'function') {
-                root.ratebAgencyUpdatesBoot();
-            }
+            ensureAgencyUpdates();
         } catch (eAgencyUp) { /* ignore */ }
     }
 

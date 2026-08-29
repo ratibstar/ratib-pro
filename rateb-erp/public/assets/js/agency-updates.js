@@ -479,210 +479,11 @@
             });
     }
 
-    function bindControls() {
-        if (state.table) {
-            state.table.addEventListener('change', onTableChange);
-            state.table.addEventListener('click', onTableClick);
-        }
-        if (state.filterCompany) {
-            state.filterCompany.addEventListener('change', applyCompanyFilter);
-        }
-        if (state.syncConfirmInput) {
-            state.syncConfirmInput.addEventListener('input', syncUi);
-            state.syncConfirmInput.addEventListener('change', syncUi);
-        }
-        if (state.resetConfirmInput) {
-            state.resetConfirmInput.addEventListener('input', syncUi);
-            state.resetConfirmInput.addEventListener('change', syncUi);
-        }
-        if (state.includePlatform) {
-            state.includePlatform.addEventListener('change', syncUi);
-        }
-
-        var btnSelectAll = document.getElementById('erpSelectAllRows');
-        var btnSelectReady = document.getElementById('erpSelectReadyRows');
-        var btnSelectSub = document.getElementById('erpSelectSubscribedRows');
-        var btnSelectNone = document.getElementById('erpSelectNoneRows');
-
-        if (btnSelectAll) {
-            btnSelectAll.addEventListener('click', function () {
-                setRowChecks(function () { return true; });
-            });
-        }
-        if (btnSelectReady) {
-            btnSelectReady.addEventListener('click', function () {
-                setRowChecks(function (tr) { return tr.getAttribute('data-ready') === '1'; });
-            });
-        }
-        if (btnSelectSub) {
-            btnSelectSub.addEventListener('click', function () {
-                setRowChecks(function (tr) { return tr.getAttribute('data-subscribed') === '1'; });
-            });
-        }
-        if (btnSelectNone) {
-            btnSelectNone.addEventListener('click', function () {
-                setRowChecks(function () { return false; });
-            });
-        }
-
-        if (state.btnSyncSelected) {
-            state.btnSyncSelected.addEventListener('click', function () {
-                var ids = selectedIds();
-                if (!ids.length) {
-                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                    return;
-                }
-                runSync({ agency_ids: ids }, state.cfg.getAttribute('data-confirm-sync-selected'), true);
-            });
-        }
-        if (state.btnPushSelected) {
-            state.btnPushSelected.addEventListener('click', function () {
-                var payload = pushPayloadFromSelection();
-                if (!payload.agency_ids.length && !payload.include_platform) {
-                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                    return;
-                }
-                runPush(payload, state.cfg.getAttribute('data-confirm-selected'), true);
-            });
-        }
-        if (state.btnFullSelected) {
-            state.btnFullSelected.addEventListener('click', function () {
-                runFullDeploy(null, state.cfg.getAttribute('data-confirm-full-selected'));
-            });
-        }
-        if (state.btnRestoreSelected) {
-            state.btnRestoreSelected.addEventListener('click', function () {
-                var ids = selectedIds();
-                if (!ids.length) {
-                    showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
-                    return;
-                }
-                if (!root.confirm(state.cfg.getAttribute('data-confirm-restore-selected') || 'Restore admin@rateb.sa?')) {
-                    return;
-                }
-                setBusy(true);
-                showProgress(state.cfg.getAttribute('data-restore-running') || 'Restoring…');
-                if (state.resultsBox) {
-                    state.resultsBox.classList.remove('d-none');
-                    if (state.logEl) state.logEl.textContent = '';
-                }
-                postJson(state.restoreAdminUrl, { agency_ids: ids })
-                    .then(function (pack) {
-                        var data = pack.body || {};
-                        var lines = ['Restore admin@rateb.sa / 123456'];
-                        lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
-                        (data.results || []).forEach(function (r) {
-                            lines.push('');
-                            lines.push('=== Agency #' + (r.agency_id || '?') + ' ===');
-                            if (!r.ok) {
-                                lines.push('ERROR: ' + (r.error || 'failed'));
-                                return;
-                            }
-                            var rep = r.report || {};
-                            (rep.actions || []).forEach(function (a) { lines.push(a); });
-                            lines.push('restored_users: ' + (rep.restored_users || 0));
-                            lines.push('password_hashes_reset: ' + (rep.password_hashes_reset || 0));
-                        });
-                        if (state.logEl) state.logEl.textContent = lines.join('\n');
-                        showProgress(data.success
-                            ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
-                            : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.'));
-                    })
-                    .catch(function (err) {
-                        showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
-                    })
-                    .then(function () { setBusy(false); });
-            });
-        }
-        if (state.btnResetSelected) {
-            state.btnResetSelected.addEventListener('click', triggerResetSelected);
-        }
-        if (state.btnResetAll) {
-            state.btnResetAll.addEventListener('click', triggerResetAllReady);
-        }
-        document.querySelectorAll('.erp-reset-row-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                triggerResetRow(
-                    parseInt(btn.getAttribute('data-agency-id') || '0', 10),
-                    btn.getAttribute('data-agency-name') || ''
-                );
-            });
-        });
-        if (state.btnSyncAll) {
-            state.btnSyncAll.addEventListener('click', function () {
-                runSync({ scope: 'all_ready' }, state.cfg.getAttribute('data-confirm-sync-all'), true);
-            });
-        }
-        if (state.btnPushAll) {
-            state.btnPushAll.addEventListener('click', function () {
-                runPush({
-                    scope: 'all_ready',
-                    include_platform: !!(state.includePlatform && state.includePlatform.checked)
-                }, state.cfg.getAttribute('data-confirm-all'), true);
-            });
-        }
-        if (state.btnFullAll) {
-            state.btnFullAll.addEventListener('click', function () {
-                runFullDeploy('all_ready', state.cfg.getAttribute('data-confirm-full-all'));
-            });
-        }
-        if (state.btnPushSub) {
-            state.btnPushSub.addEventListener('click', function () {
-                runPush({
-                    scope: 'all_subscribed',
-                    include_platform: !!(state.includePlatform && state.includePlatform.checked)
-                }, state.cfg.getAttribute('data-confirm-subscribed'), true);
-            });
-        }
-        document.querySelectorAll('.erp-link-pick-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                linkAgency(
-                    parseInt(btn.getAttribute('data-agency-id') || '0', 10),
-                    parseInt(btn.getAttribute('data-company-id') || '0', 10)
-                );
-            });
-        });
-    }
-
-    function onTableChange(e) {
-        var t = e.target;
-        if (!t) return;
-        if (t.hasAttribute('data-rateb-select-all')) {
-            var on = !!t.checked;
-            boxes().forEach(function (cb) { cb.checked = on; });
-        } else if (!t.hasAttribute('data-rateb-row-check')) {
-            return;
-        }
-        syncUi();
-    }
-
-    function onTableClick(e) {
-        if (e.target.closest('a, button, .dropdown-menu')) {
-            return;
-        }
-        var tr = e.target.closest('tr.erp-agency-row');
-        if (!tr || e.target.closest('[data-rateb-row-check]')) return;
-        var cb = tr.querySelector('[data-rateb-row-check]');
-        if (cb) {
-            cb.checked = !cb.checked;
-            syncUi();
-        }
-    }
-
-    /**
-     * Soft-nav replaces #rateb-main-content — re-read DOM and bind once per config node.
-     */
-    function boot() {
+    function refreshDomRefs() {
         var cfg = document.getElementById('erpAgencyUpdatesConfig');
         if (!cfg) {
-            return;
+            return false;
         }
-        if (cfg.getAttribute('data-rateb-agency-updates-bound') === '1') {
-            syncUi();
-            return;
-        }
-        cfg.setAttribute('data-rateb-agency-updates-bound', '1');
-
         state.cfg = cfg;
         state.apiUrl = cfg.getAttribute('data-api-url') || '';
         state.linkUrl = cfg.getAttribute('data-link-url') || '';
@@ -709,20 +510,262 @@
         state.progress = document.getElementById('erpUpdateProgress');
         state.resultsBox = document.getElementById('erpUpdateResults');
         state.logEl = document.getElementById('erpUpdateLog');
-        state.bulkLabel = state.selectionBadge ? state.selectionBadge.textContent.replace(/^\d+\s*/, '') : '';
+        if (state.selectionBadge) {
+            state.bulkLabel = state.selectionBadge.getAttribute('data-bulk-label')
+                || state.selectionBadge.textContent.replace(/^\d+\s*/, '');
+        }
+        return true;
+    }
 
-        bindControls();
+    function onDocChange(e) {
+        if (!state.cfg || !document.getElementById('erpAgencyUpdatesConfig')) {
+            return;
+        }
+        var t = e.target;
+        if (!t) return;
+        if (t.id === 'erpAgencyFilterCompany') {
+            applyCompanyFilter();
+            return;
+        }
+        if (t.id === 'erpSyncConfirmInput' || t.id === 'erpResetConfirmInput' || t.id === 'erpUpdateIncludePlatform') {
+            syncUi();
+            return;
+        }
+        if (!state.table || !state.table.contains(t)) {
+            return;
+        }
+        if (t.hasAttribute('data-rateb-select-all')) {
+            var on = !!t.checked;
+            boxes().forEach(function (cb) { cb.checked = on; });
+            syncUi();
+            return;
+        }
+        if (t.hasAttribute('data-rateb-row-check')) {
+            syncUi();
+        }
+    }
+
+    function onDocInput(e) {
+        var t = e.target;
+        if (!t || !state.cfg) return;
+        if (t.id === 'erpSyncConfirmInput' || t.id === 'erpResetConfirmInput') {
+            syncUi();
+        }
+    }
+
+    function onDocClick(e) {
+        if (!document.getElementById('erpAgencyUpdatesConfig')) {
+            return;
+        }
+        if (!refreshDomRefs()) {
+            return;
+        }
+        var t = e.target;
+        if (!t || !t.closest) {
+            return;
+        }
+
+        var pick = t.closest('.erp-link-pick-btn');
+        if (pick) {
+            e.preventDefault();
+            linkAgency(
+                parseInt(pick.getAttribute('data-agency-id') || '0', 10),
+                parseInt(pick.getAttribute('data-company-id') || '0', 10)
+            );
+            return;
+        }
+
+        var resetRow = t.closest('.erp-reset-row-btn');
+        if (resetRow) {
+            e.preventDefault();
+            triggerResetRow(
+                parseInt(resetRow.getAttribute('data-agency-id') || '0', 10),
+                resetRow.getAttribute('data-agency-name') || ''
+            );
+            return;
+        }
+
+        var id = (t.closest('button[id], a[id], [id]') || {}).id || '';
+        if (!id && t.id) {
+            id = t.id;
+        }
+        var btn = t.closest('button');
+        if (btn && btn.id) {
+            id = btn.id;
+        }
+
+        if (id === 'erpSelectAllRows') {
+            e.preventDefault();
+            setRowChecks(function () { return true; });
+            return;
+        }
+        if (id === 'erpSelectReadyRows') {
+            e.preventDefault();
+            setRowChecks(function (tr) { return tr.getAttribute('data-ready') === '1'; });
+            return;
+        }
+        if (id === 'erpSelectSubscribedRows') {
+            e.preventDefault();
+            setRowChecks(function (tr) { return tr.getAttribute('data-subscribed') === '1'; });
+            return;
+        }
+        if (id === 'erpSelectNoneRows') {
+            e.preventDefault();
+            setRowChecks(function () { return false; });
+            return;
+        }
+        if (id === 'erpSyncRunSelected') {
+            e.preventDefault();
+            var idsSync = selectedIds();
+            if (!idsSync.length) {
+                showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                return;
+            }
+            runSync({ agency_ids: idsSync }, state.cfg.getAttribute('data-confirm-sync-selected'), true);
+            return;
+        }
+        if (id === 'erpUpdateRunSelected') {
+            e.preventDefault();
+            var payloadSel = pushPayloadFromSelection();
+            if (!payloadSel.agency_ids.length && !payloadSel.include_platform) {
+                showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                return;
+            }
+            runPush(payloadSel, state.cfg.getAttribute('data-confirm-selected'), true);
+            return;
+        }
+        if (id === 'erpFullDeploySelected') {
+            e.preventDefault();
+            runFullDeploy(null, state.cfg.getAttribute('data-confirm-full-selected'));
+            return;
+        }
+        if (id === 'erpRestoreAdminSelected') {
+            e.preventDefault();
+            var idsRestore = selectedIds();
+            if (!idsRestore.length) {
+                showProgress(state.cfg.getAttribute('data-select-first') || 'Select agencies first.');
+                return;
+            }
+            if (!root.confirm(state.cfg.getAttribute('data-confirm-restore-selected') || 'Restore admin@rateb.sa?')) {
+                return;
+            }
+            setBusy(true);
+            showProgress(state.cfg.getAttribute('data-restore-running') || 'Restoring…');
+            if (state.resultsBox) {
+                state.resultsBox.classList.remove('d-none');
+                if (state.logEl) state.logEl.textContent = '';
+            }
+            postJson(state.restoreAdminUrl, { agency_ids: idsRestore })
+                .then(function (pack) {
+                    var data = pack.body || {};
+                    var lines = ['Restore admin@rateb.sa / 123456'];
+                    lines.push('Total: ' + (data.total || 0) + ' | Failed: ' + (data.failed_count || 0));
+                    (data.results || []).forEach(function (r) {
+                        lines.push('');
+                        lines.push('=== Agency #' + (r.agency_id || '?') + ' ===');
+                        if (!r.ok) {
+                            lines.push('ERROR: ' + (r.error || 'failed'));
+                            return;
+                        }
+                        var rep = r.report || {};
+                        (rep.actions || []).forEach(function (a) { lines.push(a); });
+                        lines.push('restored_users: ' + (rep.restored_users || 0));
+                        lines.push('password_hashes_reset: ' + (rep.password_hashes_reset || 0));
+                    });
+                    if (state.logEl) state.logEl.textContent = lines.join('\n');
+                    showProgress(data.success
+                        ? (state.cfg.getAttribute('data-done-ok') || 'Done.')
+                        : (state.cfg.getAttribute('data-done-errors') || 'Done with errors.'));
+                })
+                .catch(function (err) {
+                    showProgress((state.cfg.getAttribute('data-request-failed') || 'Failed') + ': ' + (err && err.message ? err.message : 'unknown'));
+                })
+                .then(function () { setBusy(false); });
+            return;
+        }
+        if (id === 'erpResetDataSelected') {
+            e.preventDefault();
+            triggerResetSelected();
+            return;
+        }
+        if (id === 'erpResetDataAllReady') {
+            e.preventDefault();
+            triggerResetAllReady();
+            return;
+        }
+        if (id === 'erpSyncRunAllReady') {
+            e.preventDefault();
+            runSync({ scope: 'all_ready' }, state.cfg.getAttribute('data-confirm-sync-all'), true);
+            return;
+        }
+        if (id === 'erpUpdateRunAllReady') {
+            e.preventDefault();
+            runPush({
+                scope: 'all_ready',
+                include_platform: !!(state.includePlatform && state.includePlatform.checked)
+            }, state.cfg.getAttribute('data-confirm-all'), true);
+            return;
+        }
+        if (id === 'erpFullDeployAllReady') {
+            e.preventDefault();
+            runFullDeploy('all_ready', state.cfg.getAttribute('data-confirm-full-all'));
+            return;
+        }
+        if (id === 'erpUpdateRunSubscribed') {
+            e.preventDefault();
+            runPush({
+                scope: 'all_subscribed',
+                include_platform: !!(state.includePlatform && state.includePlatform.checked)
+            }, state.cfg.getAttribute('data-confirm-subscribed'), true);
+            return;
+        }
+
+        // Row click toggles checkbox (ignore links/buttons/dropdowns).
+        if (state.table && state.table.contains(t)) {
+            if (t.closest('a, button, .dropdown-menu, input, label')) {
+                return;
+            }
+            var tr = t.closest('tr.erp-agency-row');
+            if (!tr) return;
+            var cb = tr.querySelector('[data-rateb-row-check]');
+            if (cb) {
+                cb.checked = !cb.checked;
+                syncUi();
+            }
+        }
+    }
+
+    function ensureDelegates() {
+        if (root.__ratebAgencyUpdatesDelegates) {
+            return;
+        }
+        root.__ratebAgencyUpdatesDelegates = true;
+        document.addEventListener('change', onDocChange, true);
+        document.addEventListener('input', onDocInput, true);
+        document.addEventListener('click', onDocClick, false);
+    }
+
+    /**
+     * Soft-nav replaces #rateb-main-content — re-read DOM every boot.
+     * Listeners are document-delegated once (survives soft-nav).
+     */
+    function boot() {
+        ensureDelegates();
+        if (!refreshDomRefs()) {
+            return;
+        }
         applyCompanyFilter();
+        syncUi();
     }
 
     root.ratebAgencyUpdatesBoot = boot;
     root.__erpAgencyResetSelected = function () {
-        if (state.cfg) {
+        if (refreshDomRefs()) {
             triggerResetSelected();
         }
     };
     root.__erpAgencyResetAllReady = function () {
-        if (state.cfg) {
+        if (refreshDomRefs()) {
             triggerResetAllReady();
         }
     };

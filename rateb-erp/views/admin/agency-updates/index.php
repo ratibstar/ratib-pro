@@ -168,7 +168,7 @@ foreach ($agencies as $agency) {
 <div class="rateb-card mb-3 border-primary" id="erpAgencyCommandBar">
     <div class="rateb-card-body">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <span class="badge bg-primary fs-6" id="erpSelectionBadge">0 <?php echo __('agency_erp_push_bulk_label'); ?></span>
+            <span class="badge bg-primary fs-6" id="erpSelectionBadge" data-bulk-label="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_bulk_label')); ?>">0 <?php echo __('agency_erp_push_bulk_label'); ?></span>
             <?php if ($syncSource !== '') { ?>
             <span class="small text-muted ms-md-2">
                 <i class="fas fa-folder-open me-1"></i><code class="small"><?php echo Rateb\App\Core\View::escape($syncSource); ?></code>
@@ -240,6 +240,7 @@ foreach ($agencies as $agency) {
     data-sync-url="<?php echo Rateb\App\Core\View::escape($syncUrl); ?>"
     data-restore-admin-url="<?php echo Rateb\App\Core\View::escape($restoreAdminUrl ?? ''); ?>"
     data-reset-data-url="<?php echo Rateb\App\Core\View::escape($resetDataUrl ?? ''); ?>"
+    data-script-src="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/agency-updates.js')); ?>"
     data-csrf="<?php echo Rateb\App\Core\View::escape($csrf); ?>"
     data-confirm-selected="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_selected')); ?>"
     data-confirm-all="<?php echo Rateb\App\Core\View::escape(__('agency_erp_push_confirm_all')); ?>"
@@ -268,3 +269,4 @@ foreach ($agencies as $agency) {
     data-confirm-reset-row="<?php echo Rateb\App\Core\View::escape(__('agency_erp_reset_row_confirm')); ?>"
     data-select-first="<?php echo Rateb\App\Core\View::escape(__('agency_erp_select_agencies_first')); ?>">
 </div>
+<script src="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/agency-updates.js')); ?>"></script>
