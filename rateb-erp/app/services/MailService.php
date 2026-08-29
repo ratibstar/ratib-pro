@@ -84,6 +84,13 @@ final class MailService
             $this->lastError = $primaryError;
         }
 
+        // Localhost/Exim "250 OK" is not Gmail delivery — treat as failure for external recipients.
+        if ($sent && $this->isExternalRecipient($to, $fromEmail) && $this->isLoopbackHost((string) $this->lastSmtpHost)) {
+            $sent = false;
+            $this->lastSmtpHost = null;
+            $this->setError('smtp_localhost_external', (string) __('mail_test_localhost_failed'));
+        }
+
         try {
             (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
         } catch (\Throwable $e) {
@@ -108,7 +115,7 @@ final class MailService
             'error_code' => $this->lastErrorCode,
             'error' => $this->lastError,
             'smtp_host' => $this->lastSmtpHost,
-            'via_localhost' => $sent && $this->lastSmtpHost !== null && $this->isLoopbackHost($this->lastSmtpHost),
+            'via_localhost' => false,
         ];
     }
 
@@ -259,28 +266,23 @@ final class MailService
         $primary = ['host' => $cfg['host'], 'port' => $cfg['port'], 'encryption' => $cfg['encryption']];
         $mailTls = ['host' => 'mail.rateb.sa', 'port' => 587, 'encryption' => 'tls'];
         $mailSsl = ['host' => 'mail.rateb.sa', 'port' => 465, 'encryption' => 'ssl'];
-        $localhost = ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'];
-        $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
 
         if ($this->isExternalRecipient($to, (string) $cfg['from_email'])) {
+            // Never use localhost/127.0.0.1 for Gmail/external — agencies get a false "sent".
             if ($this->isExternalSmtpRelay($primary['host'])) {
                 $candidates = [$primary];
             } else {
-                $fromDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain((string) $cfg['from_email']));
-                if ($fromDomain === 'rateb.sa') {
-                    $candidates = [$mailTls, $mailSsl];
-                    if (!$this->isLoopbackHost($primary['host']) && strtolower($primary['host']) !== 'mail.rateb.sa') {
-                        $candidates[] = $primary;
-                    }
-                    $candidates[] = $localhost;
-                    $candidates[] = $loopback;
-                } elseif ($this->isLoopbackHost($primary['host'])) {
-                    $candidates = [$mailTls, $mailSsl, $localhost, $loopback];
-                } else {
-                    $candidates = [$primary, $mailTls, $mailSsl, $localhost, $loopback];
+                $candidates = [];
+                if (!$this->isLoopbackHost($primary['host'])) {
+                    $candidates[] = $primary;
                 }
+                $candidates[] = $mailTls;
+                $candidates[] = $mailSsl;
             }
         } else {
+            // Same-domain (e.g. *@rateb.sa): local relay is fine.
+            $localhost = ['host' => 'localhost', 'port' => 587, 'encryption' => 'tls'];
+            $loopback = ['host' => '127.0.0.1', 'port' => 587, 'encryption' => 'tls'];
             $candidates = [$primary, $localhost, $loopback, $mailTls];
         }
 

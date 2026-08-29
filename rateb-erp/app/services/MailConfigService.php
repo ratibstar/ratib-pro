@@ -52,7 +52,7 @@ final class MailConfigService
 
         $config = $this->buildConfig($settings);
         $sources = [
-            'host' => $this->sourceOf('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost'),
+            'host' => $this->sourceOf('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'mail.rateb.sa'),
             'port' => $this->sourceOf('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587'),
             'encryption' => $this->sourceOf('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'),
             'user' => $this->sourceOf('RATEB_ERP_SMTP_USER', 'smtp_user', $settings, 'info@rateb.sa'),
@@ -67,7 +67,7 @@ final class MailConfigService
     /** @return array{host:string,port:int,encryption:string,user:string,pass:string,from_email:string,from_name:string} */
     private function buildConfig(SystemSetting $settings): array
     {
-        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'localhost');
+        $host = $this->envOrSetting('RATEB_ERP_SMTP_HOST', 'smtp_host', $settings, 'mail.rateb.sa');
         $port = (int) $this->envOrSetting('RATEB_ERP_SMTP_PORT', 'smtp_port', $settings, '587');
         $encryption = strtolower($this->envOrSetting('RATEB_ERP_SMTP_ENCRYPTION', 'smtp_encryption', $settings, 'tls'));
         if (!in_array($encryption, ['tls', 'ssl', 'none'], true)) {
@@ -78,8 +78,21 @@ final class MailConfigService
         $fromName = $this->envOrSetting('RATEB_ERP_SMTP_FROM_NAME', 'smtp_from_name', $settings, 'Rateb ERP');
         $pass = $this->resolvePassword($settings);
 
+        // Agency DBs often keep smtp_host=localhost after sync — that accepts mail but
+        // never delivers to Gmail. Prefer the shared rateb.sa MTA when credentials exist.
+        $host = trim($host);
+        if ($this->isLocalRelayHost($host) && $pass !== '' && trim($user) !== '') {
+            $host = 'mail.rateb.sa';
+            if ($port < 1 || $port === 25) {
+                $port = 587;
+            }
+            if ($encryption === 'none') {
+                $encryption = 'tls';
+            }
+        }
+
         return [
-            'host' => trim($host),
+            'host' => $host,
             'port' => max(1, $port),
             'encryption' => $encryption,
             'user' => trim($user),
@@ -339,6 +352,21 @@ final class MailConfigService
     {
         $envHost = trim((string) (getenv('RATEB_ERP_SMTP_HOST') ?: $this->readDotenvValue('RATEB_ERP_SMTP_HOST')));
         if ($envHost === '' || $this->isLocalRelayHost($envHost)) {
+            // No usable env host — still lift DB localhost → mail.rateb.sa when password exists.
+            $dbHost = trim((string) ($settings->get('smtp_host', '') ?? ''));
+            $pass = $this->resolvePassword($settings);
+            $user = trim((string) ($settings->get('smtp_user', '') ?? 'info@rateb.sa'));
+            if ($this->isLocalRelayHost($dbHost === '' ? 'localhost' : $dbHost) && $pass !== '' && $user !== '') {
+                $this->upsertSetting($settings, 'smtp_host', 'mail.rateb.sa');
+                $dbPort = trim((string) ($settings->get('smtp_port', '') ?? ''));
+                if ($dbPort === '' || $dbPort === '25') {
+                    $this->upsertSetting($settings, 'smtp_port', '587');
+                }
+                $dbEnc = strtolower(trim((string) ($settings->get('smtp_encryption', '') ?? '')));
+                if ($dbEnc === '' || $dbEnc === 'none') {
+                    $this->upsertSetting($settings, 'smtp_encryption', 'tls');
+                }
+            }
             return;
         }
         $dbHost = trim((string) ($settings->get('smtp_host', '') ?? ''));
