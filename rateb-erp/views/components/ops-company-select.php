@@ -7,15 +7,15 @@ $companies = $companies ?? (function_exists('rateb_ops_companies_list') ? rateb_
 $selectedId = (int) ($selectedCompanyId ?? rateb_resolve_ops_company_id());
 $cpMode = defined('RATEB_CP_MODE') && RATEB_CP_MODE;
 $cpRoute = $cpMode ? rateb_current_erp_route() : rateb_current_erp_route('');
-// Always target the module list — staying on /{id}/edit re-binds session to that row's company.
-$listRoute = function_exists('rateb_ops_module_list_route')
-    ? rateb_ops_module_list_route($cpRoute !== '' ? $cpRoute : null)
+// create/list stay put; only /{id}/edit|/show leave for the module list (record rebinds tenant).
+$pickerRoute = function_exists('rateb_ops_company_picker_target_route')
+    ? rateb_ops_company_picker_target_route($cpRoute !== '' ? $cpRoute : null)
     : $cpRoute;
 $formAction = '';
 if ($cpMode && defined('RATEB_CP_APP_URL')) {
     $formAction = (string) RATEB_CP_APP_URL;
-} elseif (function_exists('rateb_url') && $listRoute !== '') {
-    $formAction = rateb_url($listRoute);
+} elseif (function_exists('rateb_url') && $pickerRoute !== '') {
+    $formAction = rateb_url($pickerRoute);
 }
 $selectedName = '';
 foreach ($companies as $c) {
@@ -45,8 +45,8 @@ foreach ($companies as $c) {
                 echo ' action="' . Rateb\App\Core\View::escape($formAction) . '"';
             }
         ?>>
-            <?php if ($cpMode && $listRoute !== '') { ?>
-            <input type="hidden" name="route" value="<?php echo Rateb\App\Core\View::escape($listRoute); ?>">
+            <?php if ($cpMode && $pickerRoute !== '') { ?>
+            <input type="hidden" name="route" value="<?php echo Rateb\App\Core\View::escape($pickerRoute); ?>">
             <?php } ?>
             <?php /* Bypass SW stale ops HTML for tenant switches (must hit live PHP). */ ?>
             <input type="hidden" name="rateb_live" value="1">

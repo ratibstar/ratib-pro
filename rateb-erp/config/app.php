@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260829-ops-company-picker-list-v2');
+define('RATEB_ASSET_BUILD', '20260830-ops-company-picker-stay-create-v3');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1496,7 +1496,7 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
 }
 
 if (!function_exists('rateb_ops_module_list_route')) {
-    /** Strip /{id}/edit|/create|/show so the ops company picker lands on the module list. */
+    /** Strip /{id}/edit|/create|/show so redirects land on the module list. */
     function rateb_ops_module_list_route(?string $route = null): string
     {
         $route = rateb_normalize_erp_route($route ?? rateb_current_erp_route(''));
@@ -1505,6 +1505,25 @@ if (!function_exists('rateb_ops_module_list_route')) {
         $route = (string) preg_replace('#/\d+$#', '', $route);
 
         return rateb_normalize_erp_route($route);
+    }
+}
+
+if (!function_exists('rateb_ops_company_picker_target_route')) {
+    /**
+     * Where the ops company picker should navigate after a tenant switch.
+     * Stay on create/list; leave /{id}/edit|/show (record re-binds session to its company).
+     */
+    function rateb_ops_company_picker_target_route(?string $route = null): string
+    {
+        $route = rateb_normalize_erp_route($route ?? rateb_current_erp_route(''));
+        if ($route !== '' && preg_match('#/\d+/(edit|show|update|delete)(/|$)#i', $route)) {
+            return rateb_ops_module_list_route($route);
+        }
+        if ($route !== '' && preg_match('#/\d+$#', $route)) {
+            return rateb_ops_module_list_route($route);
+        }
+
+        return $route;
     }
 }
 
