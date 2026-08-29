@@ -215,13 +215,15 @@ final class SupplierCommService
 
         $subjectOriginal = trim((string) ($_POST['subject'] ?? $data['subject'] ?? ''));
         $bodyText = trim((string) ($_POST['body'] ?? $data['body'] ?? ''));
+        $detailsText = trim((string) ($_POST['details'] ?? $data['details'] ?? ''));
+        if ($detailsText !== '' && $detailsText !== $bodyText && $detailsText !== $subjectOriginal) {
+            $bodyText = $bodyText === '' ? $detailsText : ($bodyText . "\n\n" . $detailsText);
+        }
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
 
+        // Never auto-CC (incl. info@ / logged-in user). Recipient only.
         $cc = null;
-        if (!$isExternal && $ccEmail !== null && $ccEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($ccEmail) && strcasecmp($ccEmail, $email) !== 0) {
-            $cc = $this->normalizeRecipientEmail($ccEmail);
-        }
 
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
@@ -248,6 +250,7 @@ final class SupplierCommService
         $sent = (bool) ($sendResult['success'] ?? false);
         $smtpHost = (string) ($sendResult['smtp_host'] ?? '');
         $bodyLen = (int) ($sendResult['body_len'] ?? mb_strlen($bodyText));
+        $sentSubject = trim((string) ($sendResult['subject'] ?? $mailSubject));
 
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -263,7 +266,7 @@ final class SupplierCommService
             ? __('comm_email_sent_to', ['email' => $email])
                 . ' — ' . __('comm_email_sent_spam')
                 . ' — ' . __('comm_email_sent_meta', [
-                    'subject' => mb_substr($mailSubject, 0, 60),
+                    'subject' => mb_substr($sentSubject, 0, 80),
                     'chars' => (string) $bodyLen,
                 ])
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
@@ -280,7 +283,7 @@ final class SupplierCommService
             'comm_id' => $commId,
             'success' => $sent,
             'smtp_host' => $smtpHost,
-            'subject_len' => mb_strlen($mailSubject),
+            'subject_len' => mb_strlen($sentSubject),
             'body_len' => $bodyLen,
             'error_code' => $sendResult['error_code'] ?? null,
         ]);

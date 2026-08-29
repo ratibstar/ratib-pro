@@ -2000,12 +2000,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $channel = (string) ($data['channel'] ?? '');
         $supplierEmail = $this->normalizeRecipientEmailForSend($commId, $data, $companyId, $svc);
         $hasEmail = $supplierEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($supplierEmail);
-        $user = \Rateb\App\Core\Auth::user();
-        $userEmail = trim((string) ($user['email'] ?? ''));
 
         if ($hasEmail) {
             $data['supplier_email'] = $supplierEmail;
-            $result = $svc->sendViaChannel($data, $userEmail, null, $commId);
+            $result = $svc->sendViaChannel($data, null, null, $commId);
             $status = (string) ($result['status'] ?? 'failed');
             $this->model->update($commId, [
                 'send_status' => $status,
