@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260829-ops-company-picker-v1');
+define('RATEB_ASSET_BUILD', '20260829-ops-company-picker-list-v2');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1495,6 +1495,19 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
     }
 }
 
+if (!function_exists('rateb_ops_module_list_route')) {
+    /** Strip /{id}/edit|/create|/show so the ops company picker lands on the module list. */
+    function rateb_ops_module_list_route(?string $route = null): string
+    {
+        $route = rateb_normalize_erp_route($route ?? rateb_current_erp_route(''));
+        $route = (string) preg_replace('#/\d+/(edit|show|update|delete)(/.*)?$#i', '', $route);
+        $route = (string) preg_replace('#/(create|new)(/.*)?$#i', '', $route);
+        $route = (string) preg_replace('#/\d+$#', '', $route);
+
+        return rateb_normalize_erp_route($route);
+    }
+}
+
 if (!function_exists('rateb_bootstrap_write_context_from_record')) {
     /** Align ops tenant/branch session with an existing row (edit/update/show). */
     function rateb_bootstrap_write_context_from_record(array $record): void
@@ -1503,6 +1516,33 @@ if (!function_exists('rateb_bootstrap_write_context_from_record')) {
         if ($companyId < 1) {
             return;
         }
+
+        // Platform SA company picker on another tenant's edit URL used to "snap back"
+        // to the record company (e.g. ddd). Honour the picker: leave the record.
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && array_key_exists('company_id', $_GET)
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()) {
+            $pickedRaw = trim((string) ($_GET['company_id'] ?? ''));
+            $picked = ($pickedRaw === '' || $pickedRaw === '0') ? 0 : (int) $pickedRaw;
+            if ($picked !== $companyId) {
+                if ($picked > 0 && function_exists('rateb_sync_ops_session_to_company')) {
+                    rateb_sync_ops_session_to_company($picked);
+                } else {
+                    \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+                }
+                if (function_exists('rateb_ops_company_request_state_reset')) {
+                    rateb_ops_company_request_state_reset();
+                }
+                $listRoute = rateb_ops_module_list_route();
+                $target = function_exists('rateb_url') ? rateb_url($listRoute) : ('/' . $listRoute);
+                $sep = strpos($target, '?') === false ? '?' : '&';
+                $qs = 'company_id=' . $picked . '&rateb_live=1';
+                header('Location: ' . $target . $sep . $qs, true, 302);
+                exit;
+            }
+        }
+
         \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         if (function_exists('rateb_adopt_ops_company_id')) {
             rateb_adopt_ops_company_id($companyId);
