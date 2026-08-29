@@ -85,9 +85,7 @@ $formAction = $isEdit ? rateb_app_url('supplier-comms/' . $commId) : rateb_app_u
                     <?php } else {
                         $timelineTotal = count($commTimeline);
                         $timelineHidden = max(0, $timelineTotal - 1);
-                        ?>
-                    <ul class="rateb-sc-timeline list-unstyled mb-0" data-sc-timeline="1">
-                        <?php foreach ($commTimeline as $ti => $ev) {
+                        $renderTimelineItem = static function (array $ev): void {
                             $etype = (string) ($ev['event_type'] ?? '');
                             $icon = match ($etype) {
                                 'email_send' => 'fa-envelope',
@@ -96,10 +94,8 @@ $formAction = $isEdit ? rateb_app_url('supplier-comms/' . $commId) : rateb_app_u
                                 'attachment' => 'fa-paperclip',
                                 'reminder', 'no_response' => 'fa-bell',
                                 default => 'fa-circle-dot',
-                            };
-                            $isOlder = $ti > 0;
-                            ?>
-                        <li class="rateb-sc-timeline-item<?php echo $isOlder ? ' is-collapsed' : ''; ?>"<?php echo $isOlder ? ' data-sc-timeline-older="1" hidden' : ''; ?>>
+                            }; ?>
+                        <li class="rateb-sc-timeline-item">
                             <div class="rateb-sc-timeline-icon"><i class="fas <?php echo $icon; ?>"></i></div>
                             <div class="rateb-sc-timeline-body">
                                 <div class="rateb-sc-timeline-summary"><?php echo Rateb\App\Core\View::escape((string) ($ev['summary'] ?? '')); ?></div>
@@ -114,20 +110,24 @@ $formAction = $isEdit ? rateb_app_url('supplier-comms/' . $commId) : rateb_app_u
                                 </div>
                             </div>
                         </li>
-                        <?php } ?>
+                            <?php
+                        };
+                        ?>
+                    <ul class="rateb-sc-timeline list-unstyled mb-0">
+                        <?php $renderTimelineItem($commTimeline[0]); ?>
                     </ul>
                     <?php if ($timelineHidden > 0) { ?>
-                    <div class="rateb-sc-timeline-more px-3 pb-3">
-                        <button type="button"
-                            class="btn btn-sm btn-outline-secondary w-100"
-                            data-sc-timeline-more="1"
-                            data-label-more="<?php echo Rateb\App\Core\View::escape(__('comm_timeline_show_more', ['count' => (string) $timelineHidden])); ?>"
-                            data-label-less="<?php echo Rateb\App\Core\View::escape(__('comm_timeline_show_less')); ?>"
-                            aria-expanded="false">
-                            <i class="fas fa-chevron-down me-1" data-sc-timeline-more-icon="1"></i>
-                            <span data-sc-timeline-more-label="1"><?php echo Rateb\App\Core\View::escape(__('comm_timeline_show_more', ['count' => (string) $timelineHidden])); ?></span>
-                        </button>
-                    </div>
+                    <details class="rateb-sc-timeline-details-wrap">
+                        <summary class="rateb-sc-timeline-more-btn">
+                            <span class="rateb-sc-timeline-more-open"><?php echo Rateb\App\Core\View::escape(__('comm_timeline_show_more', ['count' => (string) $timelineHidden])); ?></span>
+                            <span class="rateb-sc-timeline-more-close"><?php echo Rateb\App\Core\View::escape(__('comm_timeline_show_less')); ?></span>
+                        </summary>
+                        <ul class="rateb-sc-timeline list-unstyled mb-0 pt-0">
+                            <?php for ($ti = 1; $ti < $timelineTotal; $ti++) {
+                                $renderTimelineItem($commTimeline[$ti]);
+                            } ?>
+                        </ul>
+                    </details>
                     <?php } ?>
                     <?php } ?>
                 </div>

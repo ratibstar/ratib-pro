@@ -204,7 +204,54 @@
     font-size: 0.7rem;
 }
 
-.rateb-sc-timeline-more {
+.rateb-sc-timeline-details-wrap {
     border-top: 1px solid var(--rateb-border);
-    padding-top: 0.75rem;
+    margin: 0;
+    padding: 0 0 0.5rem;
+}
+
+.rateb-sc-timeline-more-btn {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin: 0.65rem 1rem 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--rateb-border);
+    border-radius: 0.4rem;
+    background: var(--rateb-surface-elevated);
+    color: var(--rateb-text, inherit);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.rateb-sc-timeline-more-btn::-webkit-details-marker {
+    display: none;
+}
+
+.rateb-sc-timeline-more-btn::after {
+    content: '\f078';
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+    font-weight: 900;
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.rateb-sc-timeline-details-wrap[open] > .rateb-sc-timeline-more-btn::after {
+    content: '\f077';
+}
+
+.rateb-sc-timeline-more-close {
+    display: none;
+}
+
+.rateb-sc-timeline-details-wrap[open] > .rateb-sc-timeline-more-btn .rateb-sc-timeline-more-open {
+    display: none;
+}
+
+.rateb-sc-timeline-details-wrap[open] > .rateb-sc-timeline-more-btn .rateb-sc-timeline-more-close {
+    display: inline;
 }

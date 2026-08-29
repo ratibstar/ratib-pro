@@ -227,46 +227,6 @@
             }
         });
         updateChannelActions();
-        initTimelineMore();
-    }
-
-    function initTimelineMore() {
-        document.querySelectorAll('[data-sc-timeline-more="1"]').forEach(function (btn) {
-            if (btn.getAttribute('data-sc-bound') === '1') {
-                return;
-            }
-            btn.setAttribute('data-sc-bound', '1');
-            btn.addEventListener('click', function () {
-                var card = btn.closest('.rateb-sc-card');
-                if (!card) {
-                    return;
-                }
-                var older = card.querySelectorAll('[data-sc-timeline-older="1"]');
-                var expanded = btn.getAttribute('aria-expanded') === 'true';
-                var next = !expanded;
-                older.forEach(function (el) {
-                    if (next) {
-                        el.removeAttribute('hidden');
-                        el.classList.remove('is-collapsed');
-                    } else {
-                        el.setAttribute('hidden', '');
-                        el.classList.add('is-collapsed');
-                    }
-                });
-                btn.setAttribute('aria-expanded', next ? 'true' : 'false');
-                var label = btn.querySelector('[data-sc-timeline-more-label="1"]');
-                var icon = btn.querySelector('[data-sc-timeline-more-icon="1"]');
-                if (label) {
-                    label.textContent = next
-                        ? (btn.getAttribute('data-label-less') || '')
-                        : (btn.getAttribute('data-label-more') || '');
-                }
-                if (icon) {
-                    icon.classList.toggle('fa-chevron-down', !next);
-                    icon.classList.toggle('fa-chevron-up', next);
-                }
-            });
-        });
     }
 
     function boot() {
