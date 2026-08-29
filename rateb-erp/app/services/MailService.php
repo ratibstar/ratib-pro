@@ -461,6 +461,7 @@ final class MailService
         $read();
         $msgDomain = $this->messageIdDomain($fromEmail, $ehloHost);
         $headers = 'From: ' . $this->encodeAddress($fromName, $fromEmail) . "\r\n";
+        $headers .= 'Return-Path: <' . $fromEmail . ">\r\n";
         $headers .= 'To: <' . $to . ">\r\n";
         if ($cc !== null && $cc !== '' && \Rateb\App\Helpers\Str::isValidEmail($cc)) {
             $headers .= 'Cc: <' . $cc . ">\r\n";

@@ -239,12 +239,143 @@ if (!function_exists('rateb_agency_erp_sync_run')) {
             }
         }
 
+        // Keep agency .env, but fill missing SMTP keys from platform so Gmail delivery works.
+        if ($ok) {
+            rateb_agency_erp_sync_merge_smtp_env($source, $target, $log);
+        }
+
         $buildMarker = $erpSrc . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'ratib-erp-build.txt';
         if (is_file($buildMarker)) {
             $log[] = 'BUILD ' . trim((string) @file_get_contents($buildMarker));
         }
 
         return ['ok' => $ok, 'log' => $log, 'source' => $source, 'target' => $target];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_smtp_env_keys')) {
+    /** @return list<string> */
+    function rateb_agency_erp_sync_smtp_env_keys(): array
+    {
+        return [
+            'RATEB_ERP_SMTP_HOST',
+            'RATEB_ERP_SMTP_PORT',
+            'RATEB_ERP_SMTP_ENCRYPTION',
+            'RATEB_ERP_SMTP_USER',
+            'RATEB_ERP_SMTP_FROM_EMAIL',
+            'RATEB_ERP_SMTP_FROM_NAME',
+            'RATEB_ERP_SMTP_PASS',
+        ];
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_parse_env_file')) {
+    /** @return array<string, string> */
+    function rateb_agency_erp_sync_parse_env_file(string $path): array
+    {
+        $out = [];
+        if (!is_readable($path)) {
+            return $out;
+        }
+        $lines = @file($path, FILE_IGNORE_NEW_LINES);
+        if (!is_array($lines)) {
+            return $out;
+        }
+        foreach ($lines as $line) {
+            $raw = (string) $line;
+            $trim = trim($raw);
+            if ($trim === '' || (isset($trim[0]) && $trim[0] === '#') || strpos($trim, '=') === false) {
+                continue;
+            }
+            [$k, $v] = explode('=', $trim, 2);
+            $k = trim($k);
+            if ($k === '') {
+                continue;
+            }
+            $out[$k] = trim($v, " \t\"'");
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('rateb_agency_erp_sync_merge_smtp_env')) {
+    /**
+     * Copy platform SMTP keys into agency .env when missing/empty (never wipe a non-empty agency value).
+     *
+     * @param list<string> $log
+     */
+    function rateb_agency_erp_sync_merge_smtp_env(string $source, string $target, array &$log): void
+    {
+        $srcEnv = rtrim($source, '/\\') . DIRECTORY_SEPARATOR . '.env';
+        $dstEnv = rtrim($target, '/\\') . DIRECTORY_SEPARATOR . '.env';
+        if (!is_readable($srcEnv)) {
+            $log[] = 'SKIP SMTP .env merge (platform .env missing)';
+            return;
+        }
+        $srcMap = rateb_agency_erp_sync_parse_env_file($srcEnv);
+        $keys = rateb_agency_erp_sync_smtp_env_keys();
+        $need = [];
+        foreach ($keys as $key) {
+            $srcVal = trim((string) ($srcMap[$key] ?? ''));
+            if ($srcVal === '') {
+                continue;
+            }
+            $need[$key] = $srcVal;
+        }
+        if ($need === []) {
+            $log[] = 'SKIP SMTP .env merge (platform has no SMTP keys)';
+            return;
+        }
+
+        $dstExists = is_file($dstEnv);
+        $dstMap = $dstExists ? rateb_agency_erp_sync_parse_env_file($dstEnv) : [];
+        $lines = $dstExists ? (@file($dstEnv, FILE_IGNORE_NEW_LINES) ?: []) : [];
+        if (!is_array($lines)) {
+            $lines = [];
+        }
+
+        $changed = 0;
+        foreach ($need as $key => $srcVal) {
+            $dstVal = trim((string) ($dstMap[$key] ?? ''));
+            if ($dstVal !== '') {
+                continue; // keep agency override
+            }
+            $written = false;
+            foreach ($lines as $i => $line) {
+                $trim = trim((string) $line);
+                if ($trim === '' || (isset($trim[0]) && $trim[0] === '#') || strpos($trim, '=') === false) {
+                    continue;
+                }
+                [$k] = explode('=', $trim, 2);
+                if (trim($k) !== $key) {
+                    continue;
+                }
+                $lines[$i] = $key . '=' . $srcVal;
+                $written = true;
+                $changed++;
+                break;
+            }
+            if (!$written) {
+                $lines[] = $key . '=' . $srcVal;
+                $changed++;
+            }
+        }
+
+        if ($changed < 1) {
+            $log[] = 'OK SMTP .env already complete on agency';
+            return;
+        }
+
+        $body = implode("\n", $lines);
+        if ($body !== '' && !str_ends_with($body, "\n")) {
+            $body .= "\n";
+        }
+        if (@file_put_contents($dstEnv, $body) === false) {
+            $log[] = 'FAIL SMTP .env merge write';
+            return;
+        }
+        @chmod($dstEnv, 0640);
+        $log[] = 'OK SMTP .env merged (' . $changed . ' key(s) from platform)';
     }
 }
 
