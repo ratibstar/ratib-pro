@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v40 — bust company-edit HTML poisoned under ops module URLs (first soft-nav click). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
+/* v43 — never share bare-path HTML across ?company_id= variants (ops company picker). */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v43';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260824-pos-register-live-bypass-v161';
+var SW_BUILD_ID = '20260829-ops-company-picker-live-v162';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2007,15 +2007,20 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
             return null;
         }
         // Keep puts lean (2–3 keys) — many aliases locked Cache API and black-screened F5.
+        // Never alias tenant-scoped HTML onto bare pathname: ignoreSearch / bare match then
+        // showed company "ddd" while the address bar had ?company_id=0 (ops picker "broken").
         var putKeys = [pageUrl];
         try {
             var u = new URL(pageUrl);
-            var bare = u.origin + u.pathname.replace(/\/+$/, '');
-            if (bare && putKeys.indexOf(bare) === -1) {
-                putKeys.push(bare);
-            }
-            if (bare && putKeys.indexOf(bare + '/') === -1) {
-                putKeys.push(bare + '/');
+            var hasCompanyParam = u.searchParams.has('company_id');
+            if (!hasCompanyParam) {
+                var bare = u.origin + u.pathname.replace(/\/+$/, '');
+                if (bare && putKeys.indexOf(bare) === -1) {
+                    putKeys.push(bare);
+                }
+                if (bare && putKeys.indexOf(bare + '/') === -1) {
+                    putKeys.push(bare + '/');
+                }
             }
         } catch (e5) { /* ignore */ }
         var headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
@@ -2040,6 +2045,12 @@ function putErpOpsHtmlResponse(opsCache, pageUrl, res) {
  * Few explicit keys + ignoreSearch — never cache.keys() / old-cache walks.
  */
 function matchSoftOnlineExactCache(request, url) {
+    var companyScoped = false;
+    try {
+        companyScoped = !!(url && url.searchParams && url.searchParams.has('company_id'));
+    } catch (eCs) {
+        companyScoped = false;
+    }
     var keys = [];
     try {
         if (request && request.url) {
@@ -2048,14 +2059,19 @@ function matchSoftOnlineExactCache(request, url) {
     } catch (e0) { /* ignore */ }
     try {
         if (url) {
-            keys.push(url.origin + url.pathname);
+            // Tenant picker: never match bare pathname (wrong company HTML + URL mismatch).
+            if (!companyScoped) {
+                keys.push(url.origin + url.pathname);
+            }
             if (url.search) {
                 keys.push(url.origin + url.pathname + url.search);
             }
             var bare = String(url.pathname || '').replace(/\/+$/, '');
             if (bare) {
-                keys.push(url.origin + bare);
-                keys.push(url.origin + bare + '/');
+                if (!companyScoped) {
+                    keys.push(url.origin + bare);
+                    keys.push(url.origin + bare + '/');
+                }
                 if (url.search) {
                     keys.push(url.origin + bare + url.search);
                 }
@@ -2063,15 +2079,21 @@ function matchSoftOnlineExactCache(request, url) {
             var p = String(url.pathname || '');
             if (/\/admin\/ops\//i.test(p)) {
                 var p2 = p.replace(/\/admin\/ops\//i, '/admin/');
-                keys.push(url.origin + p2, url.origin + p2.replace(/\/+$/, ''));
+                if (!companyScoped) {
+                    keys.push(url.origin + p2, url.origin + p2.replace(/\/+$/, ''));
+                }
                 if (url.search) {
                     keys.push(url.origin + p2 + url.search);
+                    keys.push(url.origin + p2.replace(/\/+$/, '') + url.search);
                 }
             } else if (/\/admin\/(?!ops\/)/i.test(p) && !/(^|\/)admin$/i.test(p.replace(/\/+$/, ''))) {
                 var p3 = p.replace(/\/admin\//i, '/admin/ops/');
-                keys.push(url.origin + p3, url.origin + p3.replace(/\/+$/, ''));
+                if (!companyScoped) {
+                    keys.push(url.origin + p3, url.origin + p3.replace(/\/+$/, ''));
+                }
                 if (url.search) {
                     keys.push(url.origin + p3 + url.search);
+                    keys.push(url.origin + p3.replace(/\/+$/, '') + url.search);
                 }
             }
         }
@@ -2094,6 +2116,10 @@ function matchSoftOnlineExactCache(request, url) {
                 }
             }
             if (!url || !url.pathname) {
+                return null;
+            }
+            // ignoreSearch crosses ?company_id= tenants — only allow when path has no company_id.
+            if (companyScoped) {
                 return null;
             }
             return cache.match(url.origin + url.pathname, { ignoreSearch: true });

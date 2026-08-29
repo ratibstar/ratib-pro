@@ -37,7 +37,7 @@ foreach ($companies as $c) {
             <a href="<?php echo rateb_url('admin/companies/create'); ?>" class="alert-link"><?php echo __('companies'); ?></a>
         </div>
         <?php } else { ?>
-        <form method="get" class="row g-2 align-items-end"<?php
+        <form method="get" class="row g-2 align-items-end rateb-ops-company-form" data-rateb-full-nav="1"<?php
             if ($formAction !== '') {
                 echo ' action="' . Rateb\App\Core\View::escape($formAction) . '"';
             }
@@ -45,9 +45,11 @@ foreach ($companies as $c) {
             <?php if ($cpMode && $cpRoute !== '') { ?>
             <input type="hidden" name="route" value="<?php echo Rateb\App\Core\View::escape($cpRoute); ?>">
             <?php } ?>
+            <?php /* Bypass SW stale ops HTML for tenant switches (must hit live PHP). */ ?>
+            <input type="hidden" name="rateb_live" value="1">
             <div class="col-md-5">
                 <label class="form-label mb-1"><?php echo __('select_company'); ?></label>
-                <select class="form-select" name="company_id" onchange="this.form.submit()">
+                <select class="form-select" name="company_id" data-rateb-ops-company-pick="1" onchange="(function(s){try{var f=s.form;var u=new URL(f.getAttribute('action')||location.href,location.href);u.searchParams.set('company_id',s.value);u.searchParams.set('rateb_live','1');location.assign(u.pathname+u.search+u.hash);}catch(e){f&&f.submit&&f.submit();}})(this)">
                     <option value="0"<?php echo $selectedId < 1 ? ' selected' : ''; ?>>
                         <?php echo __('ops_company_platform_mode'); ?>
                     </option>
