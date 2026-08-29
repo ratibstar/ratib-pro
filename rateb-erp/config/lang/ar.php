@@ -1597,6 +1597,8 @@ return [
     'comm_timeline_created' => 'تم إنشاء سجل التواصل',
     'comm_timeline_updated' => 'تم تحديث سجل التواصل',
     'comm_timeline_attachment' => 'تم رفع :count مرفق',
+    'comm_timeline_show_more' => 'المزيد (:count)',
+    'comm_timeline_show_less' => 'إخفاء',
     'comm_email_sent' => 'تم إرسال البريد الإلكتروني بنجاح',
     'comm_email_sent_to' => 'تم الإرسال إلى :email',
     'comm_email_sent_spam' => 'راجع الرسائل غير المرغوبة إن لم يظهر في الوارد',

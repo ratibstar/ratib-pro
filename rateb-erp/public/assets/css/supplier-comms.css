@@ -203,3 +203,8 @@
     margin-top: 0.15rem;
     font-size: 0.7rem;
 }
+
+.rateb-sc-timeline-more {
+    border-top: 1px solid var(--rateb-border);
+    padding-top: 0.75rem;
+}

@@ -1598,6 +1598,8 @@ return [
     'comm_timeline_created' => 'Communication record created',
     'comm_timeline_updated' => 'Communication record updated',
     'comm_timeline_attachment' => ':count attachment(s) uploaded',
+    'comm_timeline_show_more' => 'Show more (:count)',
+    'comm_timeline_show_less' => 'Show less',
     'comm_email_sent' => 'Email sent successfully',
     'comm_email_sent_to' => 'Sent to :email',
     'comm_email_sent_spam' => 'Ask the recipient to check spam/junk if not in inbox',
