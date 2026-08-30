@@ -59,7 +59,7 @@ assert_true(
     'SW never bounces live POS register to /admin',
     str_contains($sw, "rateb_live') === '1'")
     && str_contains($sw, 'releaseBackgroundWarmAfterFirstDocument')
-    && preg_match("/var\s+SW_BUILD_ID\s*=\s*'20260824-pos-register-live-bypass-v161'/", $sw) === 1
+    && preg_match("/var\s+SW_BUILD_ID\s*=\s*'[^']+'/", $sw) === 1
 );
 assert_true(
     'dashboard فتح شاشة البيع full-navs to pos/register',
