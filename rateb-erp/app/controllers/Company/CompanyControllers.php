@@ -1013,6 +1013,16 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         parent::create();
     }
 
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $opsCompanyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        $data['opsCompanyRequired'] = $opsCompanyId < 1
+            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
+        return $data;
+    }
+
     protected function collectData(): array
     {
         $data = parent::collectData();
@@ -2373,35 +2383,43 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
-        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? rateb_resolve_ops_company_id());
-        $items = $this->model->query(
-            'SELECT e.*, s.name AS supplier_name FROM rateb_supplier_evaluations e
-             LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
-             WHERE e.company_id = :cid ORDER BY e.id DESC LIMIT 100',
-            ['cid' => $companyId]
-        );
-        foreach ($items as &$row) {
-            $tier = (string) ($row['rating_tier'] ?? '');
-            if ($tier !== '') {
-                $row['rating_tier'] = 'eval_tier_' . $tier;
+        $companyId = rateb_resolve_ops_company_id();
+        TenantContext::setCompanyId($companyId > 0 ? $companyId : null);
+        $items = [];
+        if ($companyId > 0) {
+            $items = $this->model->query(
+                'SELECT e.*, s.name AS supplier_name FROM rateb_supplier_evaluations e
+                 LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
+                 WHERE e.company_id = :cid ORDER BY e.id DESC LIMIT 100',
+                ['cid' => $companyId]
+            );
+            foreach ($items as &$row) {
+                $tier = (string) ($row['rating_tier'] ?? '');
+                if ($tier !== '') {
+                    $row['rating_tier'] = 'eval_tier_' . $tier;
+                }
+                $approval = (string) ($row['manager_approval'] ?? 'pending');
+                $row['manager_approval'] = 'manager_approval_' . $approval;
+                $row['score_percent'] = number_format((float) ($row['score_percent'] ?? 0), 1) . '%';
             }
-            $approval = (string) ($row['manager_approval'] ?? 'pending');
-            $row['manager_approval'] = 'manager_approval_' . $approval;
-            $row['score_percent'] = number_format((float) ($row['score_percent'] ?? 0), 1) . '%';
+            unset($row);
+            $items = $this->enrichItemsWithDocumentCounts($items);
         }
-        unset($row);
-
-        $items = $this->enrichItemsWithDocumentCounts($items);
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
             'total' => count($items),
             'page' => 1,
             'limit' => 100,
+            'search' => '',
             'routePrefix' => $this->routePrefix,
             'fields' => $this->indexFields,
-            'documentEntityType' => $this->resolveDocumentEntityType(),
-            'csrf' => \Rateb\App\Core\Csrf::token(),
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+            'opsCompanyRequired' => $companyId < 1,
+            'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
         ]), $this->layout());
     }
 

@@ -112,7 +112,11 @@ abstract class Model
         }
         if ($filterId < 1) {
             $ctx = TenantContext::companyId();
-            if ($ctx !== null && $ctx > 0) {
+            // Platform SA «بدون شركة»: ignore leftover TenantContext (ops picker is source of truth).
+            $platformNoCompany = function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+                && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
+                && function_exists('rateb_resolve_ops_company_id') && rateb_resolve_ops_company_id() < 1;
+            if (!$platformNoCompany && $ctx !== null && $ctx > 0) {
                 $filterId = (int) $ctx;
             }
         }

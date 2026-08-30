@@ -394,17 +394,24 @@ final class ModulePageStatsService
         }
 
         $sup = new Supplier();
-        $total = $cid !== null ? $sup->count() : (int) ($sup->queryOne('SELECT COUNT(*) AS c FROM rateb_suppliers')['c'] ?? 0);
+        if ($cid === null) {
+            // Platform «بدون شركة»: show zeros — never global cross-tenant totals.
+            return $this->cards([
+                ['label' => __('suppliers'), 'value' => '0', 'tone' => 'blue'],
+                ['label' => __('active'), 'value' => '0', 'tone' => 'green'],
+                ['label' => __('supplier_evaluations'), 'value' => '0', 'tone' => 'orange'],
+                ['label' => __('purchase_orders'), 'value' => '0', 'tone' => 'purple'],
+            ]);
+        }
+        $total = $sup->count();
         $active = (int) ($sup->queryOne(
-            ($cid !== null ? 'SELECT COUNT(*) AS c FROM rateb_suppliers WHERE company_id = :cid AND status = \'active\'' : "SELECT COUNT(*) AS c FROM rateb_suppliers WHERE status = 'active'"),
-            $cid !== null ? ['cid' => $cid] : []
+            'SELECT COUNT(*) AS c FROM rateb_suppliers WHERE company_id = :cid AND status = \'active\'',
+            ['cid' => $cid]
         )['c'] ?? 0);
         $evalPending = $this->countRowsWhere('rateb_supplier_evaluations', "status = 'submitted'", $cid);
         $poWithSup = (int) ((new PurchaseOrder())->queryOne(
-            ($cid !== null
-                ? 'SELECT COUNT(DISTINCT supplier_id) AS c FROM rateb_purchase_orders WHERE company_id = :cid AND supplier_id IS NOT NULL'
-                : 'SELECT COUNT(DISTINCT supplier_id) AS c FROM rateb_purchase_orders WHERE supplier_id IS NOT NULL'),
-            $cid !== null ? ['cid' => $cid] : []
+            'SELECT COUNT(DISTINCT supplier_id) AS c FROM rateb_purchase_orders WHERE company_id = :cid AND supplier_id IS NOT NULL',
+            ['cid' => $cid]
         )['c'] ?? 0);
 
         return $this->cards([

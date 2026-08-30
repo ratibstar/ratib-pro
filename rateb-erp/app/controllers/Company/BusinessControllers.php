@@ -334,10 +334,15 @@ final class SupplierKpiController extends Controller
             : (int) SessionManager::get('rateb_company_id');
         if ($companyId > 0) {
             TenantContext::setCompanyId($companyId);
+        } else {
+            TenantContext::setCompanyId(null);
         }
         $this->view('company/supplier-kpi/index', [
             'title' => __('supplier_kpi'),
-            'suppliers' => (new ErpAnalyticsService())->supplierPerformance($companyId > 0 ? $companyId : null),
+            'suppliers' => $companyId > 0
+                ? (new ErpAnalyticsService())->supplierPerformance($companyId)
+                : [],
+            'opsCompanyRequired' => $companyId < 1,
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('supplier-kpi/export'),
             'exportEnabled' => rateb_can_export_entity('supplier-kpi'),

@@ -482,14 +482,18 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
     public function handle(): bool
     {
         if (SessionManager::get('rateb_is_super_admin')) {
-            rateb_resolve_ops_company_id();
-            $opsCompanyId = (int) SessionManager::get('rateb_company_id', 0);
-            // Tenant-level enforcement: no role bypass when a company context is active.
+            // Honour ops company picker — never re-bind leftover rateb_company_id while
+            // platform SA is in «المنصة بدون شركة» (that desynced suppliers lists/nav).
+            $opsCompanyId = function_exists('rateb_resolve_ops_company_id')
+                ? (int) rateb_resolve_ops_company_id()
+                : 0;
             if ($opsCompanyId > 0) {
                 \Rateb\App\Core\TenantContext::setCompanyId($opsCompanyId);
                 if (class_exists(\Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class)) {
                     return (new \Rateb\App\Subscription\SubscriptionEnforcementMiddleware())->handle();
                 }
+            } else {
+                \Rateb\App\Core\TenantContext::setCompanyId(null);
             }
             return true;
         }

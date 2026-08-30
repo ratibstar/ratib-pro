@@ -47,6 +47,11 @@ if (empty($columns) && !empty($items)) {
 $colspan = count($columns) + ($showActionsCol ? 1 : 0);
 $documentEntityType = (string) ($documentEntityType ?? '');
 $fkLabelMaps = [];
+?>
+<?php if (!empty($opsCompanyRequired)) { ?>
+<div class="alert alert-warning mb-3"><?php echo __('select_company_ops'); ?></div>
+<?php } ?>
+<?php
 if ($columns !== []) {
     $lookupSvc = new \Rateb\App\Services\FormLookupService();
     $indexItems = isset($items) && is_array($items) ? $items : [];

@@ -464,6 +464,13 @@ final class Auth
         if ($isSuper && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
             && function_exists('rateb_resolve_ops_company_id')) {
             $companyIdInt = (int) rateb_resolve_ops_company_id();
+            // Drop leftover rateb_company_id from a previous tenant preview so SaaS/middleware
+            // cannot re-bind a company while the picker shows «بدون شركة».
+            if ($companyIdInt < 1) {
+                SessionManager::set('rateb_company_id', null);
+            } else {
+                SessionManager::set('rateb_company_id', $companyIdInt);
+            }
         } elseif ($companyIdInt < 1 && $isSuper && function_exists('rateb_resolve_erp_shell_company_id')) {
             // Agency / dedicated SA — re-bind primary/ops tenant when session company is empty.
             $companyIdInt = (int) rateb_resolve_erp_shell_company_id();

@@ -29,6 +29,9 @@ if ($formFields !== null && $lookups === []) {
     $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);
 }
 ?>
+<?php if (!empty($opsCompanyRequired)) { ?>
+<div class="alert alert-warning"><?php echo __('select_company_ops'); ?></div>
+<?php } ?>
 <div class="rateb-card mb-4">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
