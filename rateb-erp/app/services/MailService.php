@@ -165,13 +165,9 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Same subject shape Gmail already accepted (29 Aug inbox): "Subject #id — d-m-Y H:i:s".
-        // Random hex suffixes looked like spam and new threads vanished after the burst of #18.
-        $mailSubject = $subject;
-        if ($commId > 0) {
-            $mailSubject .= ' #' . $commId;
-        }
-        $mailSubject .= ' — ' . date('d-m-Y H:i:s');
+        // Fresh subject token every send — do NOT reuse "— d-m-Y" shape from deleted Gmail threads.
+        $token = 'R' . max(0, $commId) . '-' . date('YmdHis');
+        $mailSubject = ($subject !== '' ? $subject : 'Rateb') . ' · ' . $token;
 
         // Same HTML envelope as mail-test (the path that reached Gmail).
         $html = $this->buildTransactionalHtml($plainBody);
@@ -183,6 +179,7 @@ final class MailService
             'smtp_host' => $result['smtp_host'] ?? null,
             'via_localhost' => !empty($result['via_localhost']),
             'subject' => $mailSubject,
+            'search_token' => $token,
             'body_len' => mb_strlen($plainBody),
         ];
     }
@@ -474,6 +471,8 @@ final class MailService
         $headers .= 'Reply-To: <' . $replyHeader . ">\r\n";
         $headers .= 'Date: ' . date('r') . "\r\n";
         $headers .= 'Message-ID: <' . bin2hex(random_bytes(12)) . '.' . time() . '@' . $msgDomain . '>' . "\r\n";
+        // Breaks Gmail conversation grouping — deleted threads otherwise swallow later sends.
+        $headers .= 'X-Entity-Ref-ID: ' . bin2hex(random_bytes(16)) . "\r\n";
         $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
         $headers .= 'X-Mailer: Rateb-ERP' . "\r\n";
         $headers .= 'MIME-Version: 1.0' . "\r\n";

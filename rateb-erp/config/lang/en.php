@@ -1614,6 +1614,7 @@ return [
     'comm_email_sent_meta' => 'Subject: :subject — body :chars characters',
     'comm_email_recipient_mx_warn' => 'Warning: recipient domain :domain may not accept mail (no MX) — verify the address',
     'comm_email_search_gmail' => 'In Gmail search: from::from or check Trash/Spam',
+    'comm_email_search_token' => 'Search Gmail (All Mail / Trash): :token',
     'comm_email_bcc_inbox' => 'Copy in inbox :email only — that does not mean the external recipient received it',
     'comm_email_inbox_copy_sent' => 'Internal copy at :email (separate send)',
     'comm_email_external_dns_hint' => 'For external mail (Gmail/Outlook/any provider): enable SPF and DKIM for rateb.sa in DirectAdmin → E-mail Manager → DNS',

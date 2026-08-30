@@ -19,7 +19,7 @@ $defaults = [
     'comm_date' => date('Y-m-d'),
     'comm_status' => 'new',
     'follow_up_priority' => 'medium',
-    'channel' => 'phone',
+    'channel' => 'email',
     'responsible_name' => $responsibleDefault,
 ];
 

@@ -251,6 +251,7 @@ final class SupplierCommService
         $smtpHost = (string) ($sendResult['smtp_host'] ?? '');
         $bodyLen = (int) ($sendResult['body_len'] ?? mb_strlen($bodyText));
         $sentSubject = trim((string) ($sendResult['subject'] ?? $mailSubject));
+        $searchToken = trim((string) ($sendResult['search_token'] ?? ''));
 
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -270,6 +271,9 @@ final class SupplierCommService
                     'chars' => (string) $bodyLen,
                 ])
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
+        if ($sent && $searchToken !== '') {
+            $msg .= ' — ' . __('comm_email_search_token', ['token' => $searchToken]);
+        }
         $deliveryWarning = false;
         if ($sent && $isExternal) {
             try {
@@ -313,6 +317,7 @@ final class SupplierCommService
             'smtp_host' => $smtpHost,
             'body_len' => $bodyLen,
             'delivery_warning' => $deliveryWarning,
+            'search_token' => $searchToken,
         ];
     }
 
