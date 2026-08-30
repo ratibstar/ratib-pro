@@ -66,7 +66,9 @@ $channelIcon = static function (string $ch): string {
                     <strong><?php echo Rateb\App\Core\View::escape((string) ($fu['supplier_name'] ?? '')); ?></strong>
                     — <?php echo Rateb\App\Core\View::escape((string) ($fu['subject'] ?? '')); ?>
                     <span class="text-muted">(<?php echo Rateb\App\Core\View::formatDate((string) ($fu['follow_up_date'] ?? '')); ?>)</span>
-                    <a href="<?php echo rateb_url($routePrefix . '/' . (int) ($fu['id'] ?? 0) . '/edit'); ?>" class="ms-1"><?php echo __('view'); ?></a>
+                    <?php if ($canManage) { ?>
+                    <a href="<?php echo rateb_url($routePrefix . '/' . (int) ($fu['id'] ?? 0) . '/edit'); ?>" class="ms-1" data-rateb-full-nav="1"><?php echo __('edit'); ?></a>
+                    <?php } ?>
                 </li>
                 <?php } ?>
             </ul>
@@ -220,7 +222,7 @@ $channelIcon = static function (string $ch): string {
                                 <td class="rateb-actions-cell text-nowrap">
                                     <div class="rateb-actions">
                                         <?php if ($canManage) { ?>
-                                        <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+                                        <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>" data-rateb-full-nav="1"><i class="fas fa-edit"></i></a>
                                         <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/print'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('print'); ?>" target="_blank"><i class="fas fa-print"></i></a>
                                         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

@@ -119,7 +119,11 @@ return [
             'procurement.portal',
         ],
         'inventory.manage' => ['inventory.oversight'],
-        'suppliers.manage' => ['suppliers.oversight'],
+        'suppliers.manage' => [
+            'suppliers.oversight',
+            'supplier_comms.view',
+            'supplier_comms.manage',
+        ],
         'hr.manage' => [
             'hr.oversight',
             'hr.view',

@@ -259,7 +259,11 @@ abstract class CrudController extends Controller
             if ($this->isDocumentsModalRequest()) {
                 $this->rejectDocumentsModal((string) __('access_denied'));
             }
-            SessionManager::flash('error', __('access_denied'));
+            // Soft-nav/prefetch: redirect only — flashing here poisons the next full page
+            // (form still loads; red «access_denied» banner appears on top).
+            if (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
+                SessionManager::flash('error', __('access_denied'));
+            }
             $this->redirect(rateb_url($this->routePrefix));
         }
     }

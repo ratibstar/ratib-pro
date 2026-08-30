@@ -642,7 +642,11 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
             return;
         }
 
-        SessionManager::flash('error', __('access_denied'));
+        // Soft-nav / prefetch must not leave an orphan session flash — a later successful
+        // page (e.g. edit) would otherwise show «ليس لديك صلاحية» while rendering fine.
+        if (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
+            SessionManager::flash('error', __('access_denied'));
+        }
         Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
     }
 

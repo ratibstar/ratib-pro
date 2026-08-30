@@ -9,7 +9,9 @@ trait CompanyControllerTrait
         if (rateb_can_manage_entity($resource)) {
             return;
         }
-        \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
+        if (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
+            \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
+        }
         $this->redirect(rateb_app_url($resource));
     }
 
