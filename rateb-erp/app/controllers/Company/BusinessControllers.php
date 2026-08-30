@@ -1747,6 +1747,11 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $data['response_rating'] = $responseRating !== '' ? $responseRating : null;
         $responseNotes = trim((string) ($data['response_notes'] ?? ''));
         $data['response_notes'] = $responseNotes !== '' ? $responseNotes : null;
+        $supplierEmail = strtolower(trim((string) ($data['supplier_email'] ?? '')));
+        if ($supplierEmail !== '' && \Rateb\App\Helpers\Str::isValidEmail($supplierEmail)
+            && trim((string) ($data['channel'] ?? '')) === 'phone') {
+            $data['channel'] = 'email';
+        }
         if (trim((string) ($data['body'] ?? '')) === '') {
             throw new \RuntimeException(__('comm_message_required'));
         }
