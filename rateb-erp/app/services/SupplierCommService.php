@@ -222,8 +222,19 @@ final class SupplierCommService
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
 
-        // Never auto-CC (incl. info@ / logged-in user). Recipient only.
+        // Never auto-CC logged-in users. External sends get a blind proof copy to From mailbox
+        // so ops can confirm the MTA accepted the message even when Gmail hides it.
         $cc = null;
+        $bcc = null;
+        $proofTo = '';
+        if ($isExternal) {
+            $cfgFrom = trim((string) ((new MailConfigService())->resolve()['from_email'] ?? ''));
+            if ($cfgFrom !== '' && \Rateb\App\Helpers\Str::isValidEmail($cfgFrom)
+                && strcasecmp($cfgFrom, $email) !== 0) {
+                $bcc = strtolower($cfgFrom);
+                $proofTo = $bcc;
+            }
+        }
 
         $mail = new MailService();
         if (!$mail->isSmtpConfigured()) {
@@ -244,7 +255,8 @@ final class SupplierCommService
             $cc,
             '',
             [],
-            $commId
+            $commId,
+            $bcc
         );
 
         $sent = (bool) ($sendResult['success'] ?? false);
@@ -273,6 +285,9 @@ final class SupplierCommService
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
         if ($sent && $searchToken !== '') {
             $msg .= ' — ' . __('comm_email_search_token', ['token' => $searchToken]);
+        }
+        if ($sent && $proofTo !== '') {
+            $msg .= ' — ' . __('comm_email_proof_bcc', ['email' => $proofTo]);
         }
         $deliveryWarning = false;
         if ($sent && $isExternal) {

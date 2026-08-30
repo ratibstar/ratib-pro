@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260830-gmail-break-trash-thread-v1');
+define('RATEB_ASSET_BUILD', '20260830-platform-default-mail-proof-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3019,13 +3019,15 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             ? rateb_request_company_id()
             : (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
 
-        // Platform SA: picker can clear ops tenant (?company_id=0) without destroying identity.
+        // Platform SA: picker can clear ops tenant (?company_id=0 / -0) without destroying identity.
         // Never call rateb_clear_ops_company_session() here — it zeroed rateb_company_id and
         // combined with login?err=session cookie purges caused logout on Users navigation.
         if ($isSuper && array_key_exists('company_id', $_GET)) {
             $rawPicker = trim((string) ($_GET['company_id'] ?? ''));
-            if ($rawPicker === '' || $rawPicker === '0') {
+            // Treat 0, -0, empty, non-numeric as platform mode (default for Super Admin).
+            if ($rawPicker === '' || (int) $rawPicker < 1) {
                 \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+                \Rateb\App\Core\SessionManager::set('rateb_ops_company_explicit', 0);
                 if (function_exists('rateb_ops_company_request_state_reset')) {
                     rateb_ops_company_request_state_reset();
                 }
@@ -3043,6 +3045,7 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             $valid = rateb_adopt_ops_company_id($fromRequest);
             if ($valid > 0) {
                 rateb_sync_ops_session_to_company($valid);
+                \Rateb\App\Core\SessionManager::set('rateb_ops_company_explicit', 1);
 
                 return $valid;
             }
@@ -3068,6 +3071,16 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
         }
 
         $opsCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_id', 0) ?? 0);
+        $opsExplicit = (int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_explicit', 0) ?? 0) === 1;
+        // Platform SA: leftover ops company without an explicit picker choice → المنصة (بدون شركة).
+        if ($isSuper && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
+            && !$opsExplicit) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+            $state['resolved'] = 0;
+            $state['resolved_set'] = true;
+
+            return 0;
+        }
         if ($opsCompany > 0) {
             $valid = rateb_adopt_ops_company_id($opsCompany);
             if ($valid > 0) {
@@ -3075,15 +3088,13 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
             }
         }
 
-        // Super-admin fallback: session company only when no ops selection exists.
-        if ($isSuper) {
-            $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
-            if ($sessionCompany > 0) {
-                $valid = rateb_adopt_ops_company_id($sessionCompany);
-                if ($valid > 0) {
-                    return $valid;
-                }
-            }
+        // Platform Super Admin default: المنصة (بدون شركة).
+        if ($isSuper && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', 0);
+            $state['resolved'] = 0;
+            $state['resolved_set'] = true;
+
+            return 0;
         }
 
         $ctx = \Rateb\App\Core\TenantContext::companyId();
@@ -3117,7 +3128,9 @@ if (!function_exists('rateb_resolve_erp_shell_company_id')) {
                 $resolved = (int) rateb_adopt_ops_company_id($sessionCompany);
             }
         }
-        if ($resolved < 1 && (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
+        // Platform Super Admin stays in «بدون شركة» — do not invent primary company for shell.
+        if ($resolved < 1 && (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')
+            && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())) {
             if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
                 $primary = (int) \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
                 if ($primary > 0 && function_exists('rateb_adopt_ops_company_id')) {

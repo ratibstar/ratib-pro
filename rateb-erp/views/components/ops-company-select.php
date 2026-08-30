@@ -52,7 +52,7 @@ foreach ($companies as $c) {
             <input type="hidden" name="rateb_live" value="1">
             <div class="col-md-5">
                 <label class="form-label mb-1"><?php echo __('select_company'); ?></label>
-                <select class="form-select" name="company_id" data-rateb-ops-company-pick="1" onchange="(function(s){try{var f=s.form;var u=new URL(f.getAttribute('action')||location.href,location.href);u.searchParams.set('company_id',s.value);u.searchParams.set('rateb_live','1');location.assign(u.pathname+u.search+u.hash);}catch(e){f&&f.submit&&f.submit();}})(this)">
+                <select class="form-select" name="company_id" data-rateb-ops-company-pick="1" onchange="(function(s){try{var f=s.form;var base=f.getAttribute('action')||(location.origin+location.pathname);var u=new URL(base,location.origin);u.search='';u.hash='';u.searchParams.set('company_id',String(s.value||'0'));u.searchParams.set('rateb_live','1');location.assign(u.pathname+u.search);}catch(e){f&&f.submit&&f.submit();}})(this)">
                     <option value="0"<?php echo $selectedId < 1 ? ' selected' : ''; ?>>
                         <?php echo __('ops_company_platform_mode'); ?>
                     </option>

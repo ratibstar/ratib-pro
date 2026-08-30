@@ -376,6 +376,12 @@ final class LoginController extends Controller
             }
             SessionManager::set('rateb_portal_branch_id', $branchId);
             SessionManager::forget('_rateb_login_branch_id');
+        } elseif ((bool) SessionManager::get('rateb_is_super_admin')
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()) {
+            // Default: المنصة (بدون شركة) for platform Super Admin.
+            SessionManager::set('rateb_ops_company_id', 0);
+            SessionManager::set('rateb_ops_company_explicit', 0);
         }
 
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {

@@ -155,7 +155,7 @@ final class MailService
      * @param array<string, mixed> $fields unused (kept for call-site compatibility)
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool,subject:string,body_len:int}
      */
-    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0): array
+    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0, ?string $bcc = null): array
     {
         $subject = trim(preg_replace("/[\r\n]+/", ' ', $subject) ?? $subject);
         $plainBody = str_replace(["\r\n", "\r"], "\n", trim($plainBody));
@@ -171,7 +171,7 @@ final class MailService
 
         // Same HTML envelope as mail-test (the path that reached Gmail).
         $html = $this->buildTransactionalHtml($plainBody);
-        $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, null, false);
+        $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, $bcc, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
@@ -424,11 +424,16 @@ final class MailService
                 return false;
             }
         }
-        $write('MAIL FROM:<' . $fromEmail . '>');
+        // Envelope MAIL FROM must match the authenticated mailbox when possible (Exim/Gmail).
+        $envelopeFrom = $fromEmail;
+        if ($user !== '' && \Rateb\App\Helpers\Str::isValidEmail($user)) {
+            $envelopeFrom = strtolower(trim($user));
+        }
+        $write('MAIL FROM:<' . $envelopeFrom . '>');
         $fromResp = $read();
         if (strpos($fromResp, '250') === false) {
             fclose($fp);
-            $this->setError('smtp_from', __('mail_error_from', ['email' => $fromEmail]));
+            $this->setError('smtp_from', __('mail_error_from', ['email' => $envelopeFrom]));
             return false;
         }
         $write('RCPT TO:<' . $to . '>');
