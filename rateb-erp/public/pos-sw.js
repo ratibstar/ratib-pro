@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v43 — never share bare-path HTML across ?company_id= variants (ops company picker). */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v43';
+/* v44 — soft-nav must not rewrite ops pages to bare /admin (create/edit bounce). */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v44';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260829-ops-company-picker-live-v162';
+var SW_BUILD_ID = '20260830-stop-ops-softnav-dashboard-bounce-v163';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';

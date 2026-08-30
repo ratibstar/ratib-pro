@@ -1545,6 +1545,27 @@
                 if (!absLoc) {
                     throw new Error('nav_fetch_failed');
                 }
+                // Ops create/edit/sidebar bounced to bare dashboard — stay in the module list.
+                try {
+                    var reqPath = new URL(href, root.location.href).pathname;
+                    var locPath = new URL(absLoc, href).pathname.replace(/\/+$/, '');
+                    if (/\/admin\/ops\//i.test(reqPath) && /\/admin$/i.test(locPath)) {
+                        var listHref = absLoc;
+                        try {
+                            var uReq = new URL(href, root.location.href);
+                            var listPath = uReq.pathname
+                                .replace(/\/\d+\/(edit|show|update|delete)(\/.*)?$/i, '')
+                                .replace(/\/(create|new)(\/.*)?$/i, '')
+                                .replace(/\/\d+$/i, '');
+                            listHref = uReq.origin + listPath + (uReq.search || '');
+                        } catch (eList) { /* keep absLoc */ }
+                        throw { message: 'nav_ops_bounced_dashboard', listHref: listHref };
+                    }
+                } catch (eBounce) {
+                    if (eBounce && eBounce.message === 'nav_ops_bounced_dashboard') {
+                        throw eBounce;
+                    }
+                }
                 return fetchWithTimeout(absLoc, {
                     credentials: 'same-origin',
                     cache: 'no-store',
@@ -1863,17 +1884,17 @@
                 try {
                     purgePoisonedOpsCaches();
                 } catch (ePurge) { /* ignore */ }
-                var denyTarget = pack.finalUrl || href;
+                // Only leave the module when the server itself landed on bare /admin.
+                // Never rewrite /admin/ops/... → لوحة التحكم (that trapped create/edit/sidebar clicks).
                 try {
-                    var uDeny = new URL(denyTarget, root.location.href);
-                    // Land on dashboard shell with a fresh sidebar, not a forbidden cached roles page.
-                    denyTarget = uDeny.origin + uDeny.pathname.replace(/\/admin\/ops\/.+$/i, '/admin') + (uDeny.search || '');
-                    if (!/\/admin\/?$/i.test(uDeny.pathname) && /\/admin\//i.test(uDeny.pathname)) {
-                        denyTarget = uDeny.origin + uDeny.pathname.split('/admin')[0] + '/admin';
+                    var uDeny = new URL(pack.finalUrl || href, root.location.href);
+                    var denyPath = uDeny.pathname.replace(/\/+$/, '');
+                    if (/\/admin$/i.test(denyPath)) {
+                        hardNavigate(uDeny.href);
+                        return false;
                     }
-                } catch (eDeny) { /* keep denyTarget */ }
-                hardNavigate(denyTarget);
-                return false;
+                } catch (eDeny) { /* paint below */ }
+                // Same-module flash (select company / manage denied): paint the page.
             }
             curMain.innerHTML = nextMain.innerHTML;
             // Keep sidebar RBAC in sync with the fetched page (permissions change must hide links).
@@ -1968,6 +1989,14 @@
                         hardNavigate(bounceLogin);
                     } catch (eNav) {
                         hardNavigate('/rateb-erp/public/login');
+                    }
+                    lastSoftNavMissHref = '';
+                } else if (err && err.message === 'nav_ops_bounced_dashboard') {
+                    // Server sent ops → /admin; reopen the module list instead of لوحة التحكم.
+                    try {
+                        hardNavigate(err.listHref || href);
+                    } catch (eOpsBounce) {
+                        hardNavigate(href);
                     }
                     lastSoftNavMissHref = '';
                 } else {
