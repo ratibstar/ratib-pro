@@ -1612,6 +1612,8 @@ return [
     'comm_email_truncated_note' => 'النص الكامل في ERP:',
     'comm_email_ref_line' => 'الموضوع: :subject — :preview',
     'comm_email_sent_meta' => 'الموضوع: :subject — المحتوى :chars حرفاً',
+    'comm_email_recipient_mx_warn' => 'تنبيه: نطاق المستلم :domain لا يبدو أنه يستقبل بريداً (MX مفقود) — تأكد من صحة العنوان',
+    'comm_email_search_gmail' => 'في Gmail ابحث: from::from أو راجع المحذوفات/غير المرغوب',
     'comm_email_bcc_inbox' => 'نسخة في وارد :email فقط — وصولها لا يعني أن المستلم الخارجي استلم الرسالة',
     'comm_email_inbox_copy_sent' => 'نسخة داخلية في :email (إرسال منفصل)',
     'comm_email_external_dns_hint' => 'للبريد الخارجي (Gmail/Outlook/أي مزود): فعّل SPF وDKIM لـ rateb.sa من DirectAdmin → E-mail Manager → DNS',

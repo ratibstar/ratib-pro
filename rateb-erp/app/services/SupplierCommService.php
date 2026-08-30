@@ -270,6 +270,24 @@ final class SupplierCommService
                     'chars' => (string) $bodyLen,
                 ])
             : ((string) ($sendResult['error'] ?? '') ?: __('comm_email_failed'));
+        $deliveryWarning = false;
+        if ($sent && $isExternal) {
+            $assessment = (new MailTestService())->assessExternalDelivery($email);
+            foreach ($assessment['warnings'] as $warning) {
+                if ($warning !== '') {
+                    $msg .= ' — ' . $warning;
+                    $deliveryWarning = true;
+                }
+            }
+            $msg .= ' — ' . __('mail_test_external_bounce_hint');
+            $msg .= ' — ' . __('comm_email_search_gmail', ['from' => trim((string) ((new MailConfigService())->resolve()['from_email'] ?? 'info@rateb.sa'))]);
+            if (!$assessment['recipient_mx_ok']) {
+                $deliveryWarning = true;
+            }
+            if (!$assessment['sender_dns_ready']) {
+                $deliveryWarning = true;
+            }
+        }
         if ($sent && $isExternal && $smtpHost !== '') {
             $msg .= ' — SMTP: ' . $smtpHost;
         }
@@ -295,6 +313,7 @@ final class SupplierCommService
             'recipient' => $email,
             'smtp_host' => $smtpHost,
             'body_len' => $bodyLen,
+            'delivery_warning' => $deliveryWarning,
         ];
     }
 

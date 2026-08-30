@@ -375,6 +375,17 @@ final class MailDnsCheckService
     }
 
     /** @return array{ok:bool,detail:string} */
+    public function recipientMxStatus(string $email): array
+    {
+        $domain = strtolower(trim(\Rateb\App\Helpers\Str::emailDomain($email)));
+        if ($domain === '') {
+            return ['ok' => false, 'detail' => __('mail_test_invalid')];
+        }
+
+        return $this->checkMx($domain);
+    }
+
+    /** @return array{ok:bool,detail:string} */
     private function checkMx(string $domain): array
     {
         $parts = $this->mxHosts($domain);

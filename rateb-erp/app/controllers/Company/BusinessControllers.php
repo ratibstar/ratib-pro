@@ -2018,7 +2018,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             }
             $svc->logTimeline($commId, $companyId, 'email_send', $msg, $timelineDetails);
             if ($result['success'] ?? false) {
-                SessionManager::flash('info', $msg);
+                SessionManager::flash(!empty($result['delivery_warning']) ? 'warning' : 'info', $msg);
             } elseif (!empty($result['smtp_config_required'])) {
                 $this->model->update($commId, ['send_status' => 'failed']);
                 SessionManager::flash('error', $msg);

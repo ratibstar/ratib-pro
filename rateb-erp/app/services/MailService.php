@@ -35,6 +35,14 @@ final class MailService
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = $cfg['from_email'] !== '' ? $cfg['from_email'] : 'info@rateb.sa';
         $fromName = $cfg['from_name'] !== '' ? $cfg['from_name'] : 'Rateb ERP';
+        $smtpUser = trim((string) ($cfg['user'] ?? ''));
+        if ($smtpUser !== '' && \Rateb\App\Helpers\Str::isValidEmail($smtpUser)) {
+            $authDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain($smtpUser));
+            $fromDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain($fromEmail));
+            if ($authDomain !== '' && ($fromDomain === '' || strcasecmp($authDomain, $fromDomain) !== 0)) {
+                $fromEmail = strtolower($smtpUser);
+            }
+        }
 
         if ($cfg['host'] === '' || $cfg['pass'] === '') {
             $this->setError('smtp_not_configured', __('comm_email_smtp_required'));

@@ -168,6 +168,44 @@ final class MailTestService
         ];
     }
 
+    /** @return array{external:bool,recipient_mx_ok:bool,sender_dns_ready:bool,warnings:list<string>} */
+    public function assessExternalDelivery(string $to): array
+    {
+        $cfg = (new MailConfigService())->resolve();
+        $fromDomain = Str::emailDomain((string) ($cfg['from_email'] ?? ''));
+        if ($fromDomain === '' && trim((string) ($cfg['user'] ?? '')) !== '' && Str::isValidEmail((string) $cfg['user'])) {
+            $fromDomain = Str::emailDomain((string) $cfg['user']);
+        }
+        $toDomain = Str::emailDomain($to);
+        $isExternal = $toDomain !== '' && $fromDomain !== '' && strcasecmp($toDomain, $fromDomain) !== 0;
+        if (!$isExternal) {
+            return [
+                'external' => false,
+                'recipient_mx_ok' => true,
+                'sender_dns_ready' => true,
+                'warnings' => [],
+            ];
+        }
+
+        $senderDomain = $fromDomain !== '' ? $fromDomain : 'rateb.sa';
+        $dns = (new MailDnsCheckService())->checkFast($senderDomain);
+        $recipientMx = (new MailDnsCheckService())->recipientMxStatus($to);
+        $warnings = [];
+        if (!$recipientMx['ok']) {
+            $warnings[] = (string) __('comm_email_recipient_mx_warn', ['domain' => $toDomain]);
+        }
+        if (!$dns['ready_for_external']) {
+            $warnings[] = (string) __('mail_test_external_dns_warn', ['email' => $to]);
+        }
+
+        return [
+            'external' => true,
+            'recipient_mx_ok' => $recipientMx['ok'],
+            'sender_dns_ready' => (bool) ($dns['ready_for_external'] ?? false),
+            'warnings' => $warnings,
+        ];
+    }
+
     /** @return array<string, mixed> */
     public function diagnostics(): array
     {
