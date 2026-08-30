@@ -69,8 +69,24 @@ final class SubscriptionAlertService
 
     private function resolve(): ?SubscriptionAlertViewModel
     {
+        // Platform Super Admin in «المنصة بدون شركة» — open console, no tenant expiry banner.
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            $opsId = function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0;
+            if ($opsId < 1) {
+                return null;
+            }
+        }
+
         $context = SubscriptionRuntime::get();
         if ($context === null || $context->companyId() < 1) {
+            return null;
+        }
+
+        // Open-ended subscription (no end date) — never show expiry/grace alerts.
+        $expiry = $context->expirationDate();
+        if ($context->hasRecord() && ($expiry === null || $expiry === '')
+            && !$context->isSuspended()) {
             return null;
         }
 
@@ -174,6 +190,10 @@ final class SubscriptionAlertService
     {
         if ($context->isSuspended()) {
             return NotificationType::SUSPENSION;
+        }
+        $expiry = $context->expirationDate();
+        if ($expiry === null || $expiry === '') {
+            return null;
         }
         if ($context->isInGrace() || $context->daysRemaining() < 0) {
             return NotificationType::GRACE;

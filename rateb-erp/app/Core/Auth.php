@@ -208,12 +208,15 @@ final class Auth
         TenantContext::setSuperAdmin($isSuper);
         TenantContext::setCompanyId($companyId > 0 ? $companyId : null);
         // Super-admin rows often have null company_id — bind operational tenant before ERP shell boot.
+        // Platform oversight SA stays in «بدون شركة» unless ops picker chose a company.
         if ($isSuper && $companyId < 1 && function_exists('rateb_resolve_erp_shell_company_id')) {
-            $shellCompany = (int) rateb_resolve_erp_shell_company_id();
-            if ($shellCompany > 0) {
-                $companyId = $shellCompany;
-                SessionManager::set('rateb_company_id', $companyId);
-                TenantContext::setCompanyId($companyId);
+            if (!(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())) {
+                $shellCompany = (int) rateb_resolve_erp_shell_company_id();
+                if ($shellCompany > 0) {
+                    $companyId = $shellCompany;
+                    SessionManager::set('rateb_company_id', $companyId);
+                    TenantContext::setCompanyId($companyId);
+                }
             }
         }
         SessionManager::forget('rateb_agency_access_perms_synced');
@@ -457,8 +460,12 @@ final class Auth
         TenantContext::setSuperAdmin($isSuper);
         $companyId = SessionManager::get('rateb_company_id');
         $companyIdInt = $companyId !== null ? (int) $companyId : 0;
-        // Stale super-admin sessions may still have null company_id — re-bind primary/ops tenant.
-        if ($companyIdInt < 1 && $isSuper && function_exists('rateb_resolve_erp_shell_company_id')) {
+        // Platform Super Admin: tenant follows ops picker only (المنصة بدون شركة = no expiry banner).
+        if ($isSuper && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()
+            && function_exists('rateb_resolve_ops_company_id')) {
+            $companyIdInt = (int) rateb_resolve_ops_company_id();
+        } elseif ($companyIdInt < 1 && $isSuper && function_exists('rateb_resolve_erp_shell_company_id')) {
+            // Agency / dedicated SA — re-bind primary/ops tenant when session company is empty.
             $companyIdInt = (int) rateb_resolve_erp_shell_company_id();
             if ($companyIdInt > 0) {
                 SessionManager::set('rateb_company_id', $companyIdInt);

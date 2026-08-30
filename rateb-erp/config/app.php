@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260830-platform-default-mail-proof-v1');
+define('RATEB_ASSET_BUILD', '20260830-platform-sa-no-expiry-banner-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3118,19 +3118,31 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
 if (!function_exists('rateb_resolve_erp_shell_company_id')) {
     function rateb_resolve_erp_shell_company_id(): int
     {
+        $isPlatformSa = (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')
+            && function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host();
+
         $resolved = 0;
         if (function_exists('rateb_resolve_ops_company_id')) {
             $resolved = (int) rateb_resolve_ops_company_id();
         }
+
+        // Platform Super Admin «بدون شركة»: never inherit leftover rateb_company_id / primary.
+        if ($isPlatformSa) {
+            if ($resolved > 0 && function_exists('rateb_sync_ops_session_to_company')) {
+                rateb_sync_ops_session_to_company($resolved);
+            }
+
+            return $resolved > 0 ? $resolved : 0;
+        }
+
         if ($resolved < 1) {
             $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
             if ($sessionCompany > 0 && function_exists('rateb_adopt_ops_company_id')) {
                 $resolved = (int) rateb_adopt_ops_company_id($sessionCompany);
             }
         }
-        // Platform Super Admin stays in «بدون شركة» — do not invent primary company for shell.
-        if ($resolved < 1 && (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')
-            && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())) {
+        if ($resolved < 1 && (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin')) {
             if (class_exists(\Rateb\App\Services\DedicatedTenantPolicy::class)) {
                 $primary = (int) \Rateb\App\Services\DedicatedTenantPolicy::primaryCompanyId();
                 if ($primary > 0 && function_exists('rateb_adopt_ops_company_id')) {
