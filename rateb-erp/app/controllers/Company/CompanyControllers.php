@@ -1008,7 +1008,14 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         $opsCompanyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
         if ($opsCompanyId < 1) {
             SessionManager::flash('error', __('select_company_ops'));
-            $this->redirect(rateb_url($this->routePrefix));
+            // Stay on suppliers list — never bounce to bare /admin (soft-nav / SW traps).
+            $list = function_exists('rateb_app_url')
+                ? rateb_app_url('suppliers')
+                : rateb_url($this->routePrefix);
+            if (function_exists('rateb_url_set_query_param')) {
+                $list = rateb_url_set_query_param($list, 'rateb_live', '1');
+            }
+            $this->redirect($list);
         }
         parent::create();
     }

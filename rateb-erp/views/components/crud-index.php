@@ -105,9 +105,52 @@ $ratebRowRecordLabel = static function (array $row): string {
         </a>
         <?php } ?>
         <?php if ($createEnabled) { ?>
-        <a href="<?php echo Rateb\App\Core\View::escape((string) ($createUrl ?? rateb_url($routePrefix . '/create'))); ?>" class="btn btn-primary btn-sm" data-rateb-full-nav="1">
+        <?php if (!empty($opsCompanyRequired)) { ?>
+        <button type="button" class="btn btn-primary btn-sm" id="rateb-ops-create-need-company"
+            data-rateb-ops-need-company="1"
+            title="<?php echo Rateb\App\Core\View::escape(__('select_company_ops')); ?>">
+            <i class="fas fa-plus"></i> <?php echo __('create'); ?>
+        </button>
+        <script>
+        (function () {
+            var btn = document.getElementById('rateb-ops-create-need-company');
+            if (!btn || btn.getAttribute('data-bound') === '1') return;
+            btn.setAttribute('data-bound', '1');
+            btn.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                try {
+                    var box = document.querySelector('.rateb-ops-company-select');
+                    var pick = document.querySelector('[data-rateb-ops-company-pick]');
+                    if (box && box.scrollIntoView) {
+                        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    if (pick) {
+                        pick.focus();
+                        try { pick.classList.add('border-warning'); } catch (eB) {}
+                    }
+                    var msg = <?php echo json_encode(__('select_company_ops'), JSON_UNESCAPED_UNICODE); ?>;
+                    if (window.RatebFlash && typeof window.RatebFlash.show === 'function') {
+                        window.RatebFlash.show(msg, 'warning');
+                    } else if (window.alert) {
+                        window.alert(msg);
+                    }
+                } catch (eNeed) {
+                    try { window.alert(<?php echo json_encode(__('select_company_ops'), JSON_UNESCAPED_UNICODE); ?>); } catch (e2) {}
+                }
+            });
+        })();
+        </script>
+        <?php } else {
+            $createHref = (string) ($createUrl ?? rateb_url($routePrefix . '/create'));
+            if (function_exists('rateb_url_set_query_param')) {
+                $createHref = rateb_url_set_query_param($createHref, 'rateb_live', '1');
+            }
+        ?>
+        <a href="<?php echo Rateb\App\Core\View::escape($createHref); ?>" class="btn btn-primary btn-sm" data-rateb-full-nav="1">
             <i class="fas fa-plus"></i> <?php echo __('create'); ?>
         </a>
+        <?php } ?>
         <?php } ?>
         </div>
     </div>

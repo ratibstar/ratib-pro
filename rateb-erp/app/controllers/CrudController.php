@@ -369,6 +369,22 @@ abstract class CrudController extends Controller
     public function create(): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        // Platform SA «بدون شركة»: never open tenant create forms (soft-nav bounced to /admin).
+        if ($this->model && $this->model->isTenantScoped()
+            && function_exists('rateb_resolve_ops_company_id')
+            && rateb_resolve_ops_company_id() < 1
+            && function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $list = rateb_url($this->routePrefix);
+            if (function_exists('rateb_url_set_query_param')) {
+                $list = rateb_url_set_query_param($list, 'rateb_live', '1');
+            }
+            $this->redirect($list);
+        }
         $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
