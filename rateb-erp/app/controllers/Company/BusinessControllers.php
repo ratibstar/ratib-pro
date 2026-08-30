@@ -1737,6 +1737,12 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $data['rfq_id'] = (int) ($data['rfq_id'] ?? 0) ?: null;
         $data['comm_status'] = trim((string) ($data['comm_status'] ?? 'new')) ?: 'new';
         $data['follow_up_priority'] = trim((string) ($data['follow_up_priority'] ?? 'medium')) ?: 'medium';
+        if (trim((string) ($data['body'] ?? '')) === '') {
+            $detailsFallback = trim((string) ($data['details'] ?? ''));
+            if ($detailsFallback !== '') {
+                $data['body'] = $detailsFallback;
+            }
+        }
         $responseRating = trim((string) ($data['response_rating'] ?? ''));
         $data['response_rating'] = $responseRating !== '' ? $responseRating : null;
         $responseNotes = trim((string) ($data['response_notes'] ?? ''));

@@ -35,14 +35,6 @@ final class MailService
         $cfg = (new MailConfigService())->resolve();
         $fromEmail = $cfg['from_email'] !== '' ? $cfg['from_email'] : 'info@rateb.sa';
         $fromName = $cfg['from_name'] !== '' ? $cfg['from_name'] : 'Rateb ERP';
-        $smtpUser = trim((string) ($cfg['user'] ?? ''));
-        if ($smtpUser !== '' && \Rateb\App\Helpers\Str::isValidEmail($smtpUser)) {
-            $authDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain($smtpUser));
-            $fromDomain = strtolower(\Rateb\App\Helpers\Str::emailDomain($fromEmail));
-            if ($authDomain !== '' && ($fromDomain === '' || strcasecmp($authDomain, $fromDomain) !== 0)) {
-                $fromEmail = strtolower($smtpUser);
-            }
-        }
 
         if ($cfg['host'] === '' || $cfg['pass'] === '') {
             $this->setError('smtp_not_configured', __('comm_email_smtp_required'));
@@ -173,14 +165,16 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Unique subject — Gmail threads by subject; deleted threads swallow later sends.
+        // Same subject shape Gmail already accepted (29 Aug inbox): "Subject #id — d-m-Y H:i:s".
+        // Random hex suffixes looked like spam and new threads vanished after the burst of #18.
         $mailSubject = $subject;
         if ($commId > 0) {
             $mailSubject .= ' #' . $commId;
         }
-        $mailSubject .= ' · ' . date('Y-m-d H:i:s') . ' · ' . strtoupper(bin2hex(random_bytes(2)));
+        $mailSubject .= ' — ' . date('d-m-Y H:i:s');
 
-        $html = $this->buildSupplierCommHtml($subject, $plainBody, '', [], $footerUrl, '', $commId);
+        // Same HTML envelope as mail-test (the path that reached Gmail).
+        $html = $this->buildTransactionalHtml($plainBody);
         $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
