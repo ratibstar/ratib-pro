@@ -12,6 +12,17 @@ if (is_string($error) && $error !== '') {
         $error = function_exists('__') ? (string) __('system_error_generic') : $error;
     }
 }
+// Ops edit/create/show already authorized: never show orphan soft-nav «access_denied».
+if (is_string($error) && $error !== '') {
+    $deniedMsg = function_exists('__') ? (string) __('access_denied') : '';
+    $isDenied = ($deniedMsg !== '' && $error === $deniedMsg)
+        || str_contains($error, 'ليس لديك صلاحية')
+        || stripos($error, 'do not have permission') !== false;
+    if ($isDenied && preg_match('#/admin/ops/.+/(edit|create|show)(/|\?|$)#i', (string) ($_SERVER['REQUEST_URI'] ?? ''))) {
+        // True denials redirect away before this view; reaching the form = stale flash.
+        $error = null;
+    }
+}
 ?>
 <?php if ($success) { ?>
 <div class="alert alert-success rateb-flash alert-dismissible fade show" role="alert">

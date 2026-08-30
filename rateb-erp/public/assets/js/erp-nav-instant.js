@@ -122,6 +122,37 @@
             && /alert-danger|alert alert-danger|role=["']alert["']/i.test(s);
     }
 
+    /** Drop orphan deny banner when the painted ops page clearly loaded (form/list present). */
+    function stripStaleAccessDeniedFlash(main, href) {
+        if (!main) {
+            return;
+        }
+        var path = '';
+        try {
+            path = new URL(href || root.location.href, root.location.href).pathname;
+        } catch (ePath) {
+            path = String(href || '');
+        }
+        if (!/\/admin\/ops\//i.test(path)) {
+            return;
+        }
+        if (/\/admin$/i.test(path.replace(/\/+$/, ''))) {
+            return;
+        }
+        var hasOpsBody = !!(main.querySelector(
+            '[data-supplier-comm-form], .rateb-sc-page, .rateb-card, form[method="post"], table.rateb-table'
+        ));
+        if (!hasOpsBody) {
+            return;
+        }
+        main.querySelectorAll('.rateb-flash.alert-danger, .alert.alert-danger.rateb-flash').forEach(function (el) {
+            var t = String(el.textContent || '');
+            if (/ليس لديك صلاحية|you do not have permission/i.test(t)) {
+                try { el.remove(); } catch (eRm) { /* ignore */ }
+            }
+        });
+    }
+
     /** Paths blocked until browser idle (PERF-P3). */
     function isDeferredPrefetchPath(pathname) {
         var p = String(pathname || '').replace(/\/+$/, '') || '/';
@@ -1909,6 +1940,7 @@
             // Inert scripts from innerHTML never run — strip from painted main only.
             // Keep scripts on `doc` so scheduleModuleScripts can inject them.
             stripInertScripts(curMain);
+            stripStaleAccessDeniedFlash(curMain, pack.finalUrl || href);
             syncMeta(doc);
             updateActiveNav(pack.finalUrl);
             clearNavPending();

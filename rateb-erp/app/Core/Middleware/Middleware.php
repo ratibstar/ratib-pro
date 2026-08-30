@@ -112,11 +112,19 @@ final class SuperAdminMiddleware implements MiddlewareInterface
             if ($uid > 0
                 && !SessionManager::get('rateb_is_super_admin')
                 && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
-                SessionManager::flash('error', __('access_denied'));
+                if (function_exists('rateb_flash_access_denied')) {
+                    rateb_flash_access_denied();
+                } else {
+                    SessionManager::flash('error', __('access_denied'));
+                }
                 Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
                 return false;
             }
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
@@ -373,14 +381,22 @@ final class RequirePermissionMiddleware implements MiddlewareInterface
 
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId < 1 || $this->permission === '') {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
         $authz = new \Rateb\App\Services\AuthorizationService();
         if (!$authz->userHasPermission($userId, $this->permission)) {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
@@ -552,7 +568,11 @@ final class CompanyPermissionMiddleware implements MiddlewareInterface
 
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId < 1 || $this->permission === '') {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
@@ -562,14 +582,22 @@ final class CompanyPermissionMiddleware implements MiddlewareInterface
             && rateb_is_branch_permission_slug($this->permission)
             && function_exists('rateb_company_branches_nav_enabled')
             && !rateb_company_branches_nav_enabled()) {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
         $authz = new \Rateb\App\Services\AuthorizationService();
         if (!$authz->companyUserCan($userId, $this->permission, $this->module)) {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
@@ -602,7 +630,11 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
             && rateb_resource_requires_branches_view($this->resource)
             && function_exists('rateb_company_branches_nav_enabled')
             && !rateb_company_branches_nav_enabled()) {
-            SessionManager::flash('error', __('access_denied'));
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } else {
+                SessionManager::flash('error', __('access_denied'));
+            }
             Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
@@ -642,9 +674,9 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
             return;
         }
 
-        // Soft-nav / prefetch must not leave an orphan session flash — a later successful
-        // page (e.g. edit) would otherwise show «ليس لديك صلاحية» while rendering fine.
-        if (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
+        if (function_exists('rateb_flash_access_denied')) {
+            rateb_flash_access_denied();
+        } else {
             SessionManager::flash('error', __('access_denied'));
         }
         Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));

@@ -372,6 +372,25 @@ final class SessionManager
         return $val;
     }
 
+    /**
+     * Drop orphan «access_denied» left by aborted soft-nav / concurrent deny.
+     * Call only after the current request has already passed its own auth guards.
+     */
+    public static function discardStaleAccessDeniedFlash(): void
+    {
+        self::ensureActive();
+        $err = $_SESSION['_flash']['error'] ?? null;
+        if (!is_string($err) || $err === '') {
+            return;
+        }
+        $denied = function_exists('__') ? (string) __('access_denied') : '';
+        if (($denied !== '' && $err === $denied)
+            || str_contains($err, 'ليس لديك صلاحية')
+            || stripos($err, 'do not have permission') !== false) {
+            unset($_SESSION['_flash']['error']);
+        }
+    }
+
     public static function regenerate(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {

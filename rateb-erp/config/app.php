@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260830-no-orphan-access-denied-flash-v1');
+define('RATEB_ASSET_BUILD', '20260830-kill-orphan-access-denied-v2');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -379,6 +379,17 @@ if (!function_exists('rateb_is_non_document_request')) {
         }
 
         return false;
+    }
+}
+
+if (!function_exists('rateb_flash_access_denied')) {
+    /** Session access_denied banner — skipped for soft-nav/prefetch (orphan flash). */
+    function rateb_flash_access_denied(): void
+    {
+        if (function_exists('rateb_is_non_document_request') && rateb_is_non_document_request()) {
+            return;
+        }
+        \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
     }
 }
 

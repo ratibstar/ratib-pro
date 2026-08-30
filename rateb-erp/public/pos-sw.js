@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v46 — soft-nav must not leave orphan access_denied flash on successful edit. */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v46';
+/* v47 — strip orphan access_denied flash on ops edit forms. */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v47';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260830-no-orphan-access-denied-flash-v165';
+var SW_BUILD_ID = '20260830-kill-orphan-access-denied-v166';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';

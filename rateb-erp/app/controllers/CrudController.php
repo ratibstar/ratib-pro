@@ -261,11 +261,15 @@ abstract class CrudController extends Controller
             }
             // Soft-nav/prefetch: redirect only — flashing here poisons the next full page
             // (form still loads; red «access_denied» banner appears on top).
-            if (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
+            if (function_exists('rateb_flash_access_denied')) {
+                rateb_flash_access_denied();
+            } elseif (!function_exists('rateb_is_non_document_request') || !rateb_is_non_document_request()) {
                 SessionManager::flash('error', __('access_denied'));
             }
             $this->redirect(rateb_url($this->routePrefix));
         }
+        // This request is allowed — drop orphan deny flash from earlier soft-nav races.
+        SessionManager::discardStaleAccessDeniedFlash();
     }
 
     protected function rejectDocumentsModal(string $message, int $count = 0): void
