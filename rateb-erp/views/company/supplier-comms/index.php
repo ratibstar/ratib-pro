@@ -14,6 +14,7 @@ $commSvc = $commSvc ?? new \Rateb\App\Services\SupplierCommService();
 $lookups = $lookups ?? [];
 $fields = $fields ?? [];
 $hasSuppliers = !empty($supplierOptions);
+$opsCompanyRequired = !empty($opsCompanyRequired);
 
 $channelLabel = static function (string $ch): string {
     $key = 'comm_channel_' . $ch;
@@ -82,7 +83,9 @@ $channelIcon = static function (string $ch): string {
                     <span><i class="fas fa-comments text-primary"></i> <?php echo __('supplier_comms_create'); ?></span>
                 </div>
                 <div class="rateb-sc-card-body">
-                    <?php if (!$hasSuppliers) { ?>
+                    <?php if ($opsCompanyRequired) { ?>
+                    <div class="alert alert-warning mb-0"><?php echo __('select_company_ops'); ?></div>
+                    <?php } elseif (!$hasSuppliers) { ?>
                     <div class="alert alert-warning mb-0"><?php echo __('supplier_comms_need_supplier'); ?></div>
                     <?php } else { ?>
                     <form method="post" action="<?php echo rateb_app_url('supplier-comms'); ?>" enctype="multipart/form-data"

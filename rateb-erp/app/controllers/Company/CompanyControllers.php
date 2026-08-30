@@ -1000,6 +1000,19 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    public function create(): void
+    {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
+        $opsCompanyId = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        if ($opsCompanyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        parent::create();
+    }
+
     protected function collectData(): array
     {
         $data = parent::collectData();

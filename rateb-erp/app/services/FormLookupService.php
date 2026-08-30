@@ -73,7 +73,12 @@ final class FormLookupService
                 $options = $this->mapRows((new BillingService())->companyOptions(), 'id', 'name');
                 break;
             case 'suppliers':
-                $options = $this->mapRows((new Supplier())->all(500, 0), 'id', 'name');
+                // Same company scope as Suppliers CRUD — never cross-tenant when ops company unset.
+                if ($this->resolveLookupCompanyId() < 1) {
+                    $options = [];
+                } else {
+                    $options = $this->mapRows((new Supplier())->all(500, 0), 'id', 'name');
+                }
                 break;
             case 'warehouses':
                 $options = $this->warehouseOptions();

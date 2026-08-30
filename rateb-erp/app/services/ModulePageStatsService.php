@@ -194,6 +194,11 @@ final class ModulePageStatsService
         if ($cid > 0) {
             return $cid;
         }
+        // Platform SA «بدون شركة»: do not reuse leftover rateb_company_id (skewed stats vs empty lists).
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return null;
+        }
         $sess = (int) (SessionManager::get('rateb_company_id') ?? 0);
         return $sess > 0 ? $sess : null;
     }

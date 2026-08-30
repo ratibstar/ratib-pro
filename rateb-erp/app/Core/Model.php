@@ -123,6 +123,12 @@ abstract class Model
             }
         }
         if ($filterId < 1) {
+            // Platform SA «بدون شركة»: never leak every tenant's rows into ops lists/lookups
+            // (suppliers table vs supplier-comms form were showing different sets).
+            if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+                return [' AND 1=0', []];
+            }
+
             return ['', []];
         }
         $col = ($alias !== '' ? $alias . '.' : '') . $this->tenantColumn;
