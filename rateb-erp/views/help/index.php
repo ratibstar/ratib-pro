@@ -14,19 +14,22 @@ use Rateb\App\Core\View;
 $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 'rtl';
 $hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
 ?>
-<div class="hc-page" id="rateb-help-center" data-hc-home="<?php echo View::escape($helpHomeUrl); ?>"
+<div class="hc-page" id="rateb-help-center"
+     data-hc-home="<?php echo View::escape($helpHomeUrl); ?>"
+     data-hc-search-url="<?php echo View::escape(rateb_url('admin/help/api/search')); ?>"
      data-hc-lang="<?php echo View::escape($hcLang); ?>" dir="<?php echo View::escape($hcDir); ?>">
     <section class="hc-hero" aria-labelledby="hc-hero-title">
         <p class="hc-hero__eyebrow"><?php echo View::escape(__('help_center')); ?></p>
         <h2 id="hc-hero-title" class="hc-hero__title"><?php echo View::escape(__('help_hero_title')); ?></h2>
         <p class="hc-hero__subtitle"><?php echo View::escape(__('help_hero_subtitle')); ?></p>
 
-        <div class="hc-search" role="search">
+        <form class="hc-search" role="search" id="hc-search-form" method="get" action="<?php echo View::escape($helpHomeUrl); ?>">
             <label class="visually-hidden" for="hc-search-input"><?php echo View::escape(__('help_search_label')); ?></label>
             <div class="hc-search__field">
                 <i class="fas fa-magnifying-glass hc-search__icon" aria-hidden="true"></i>
                 <input type="search"
                        id="hc-search-input"
+                       name="q"
                        class="hc-search__input"
                        autocomplete="off"
                        spellcheck="false"
@@ -40,7 +43,7 @@ $hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
             </div>
             <div class="hc-search__results" id="hc-search-results" role="listbox" hidden></div>
             <p class="hc-search__empty" id="hc-search-empty" hidden><?php echo View::escape(__('help_search_empty')); ?></p>
-        </div>
+        </form>
 
         <?php if (!empty($canManage)) { ?>
         <div class="hc-hero__admin">

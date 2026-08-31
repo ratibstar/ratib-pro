@@ -1401,6 +1401,7 @@ if ($navActive('admin/agency-updates')) {
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
 $ratebIdleScripts[] = rateb_asset('js/help-assistant.js');
+$ratebIdleScripts[] = rateb_asset('js/help-center.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */

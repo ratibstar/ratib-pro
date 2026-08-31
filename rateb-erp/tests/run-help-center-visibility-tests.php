@@ -95,5 +95,16 @@ $_SESSION['rateb_is_super_admin'] = $wasSa;
 $purchasesVisibleToPlan = $gate->canSeeAudience((string) ($purchases['audience'] ?? 'all'));
 hc_assert($purchasesVisibleToPlan === true, 'purchases audience is all');
 
+$js = (string) file_get_contents($root . '/public/assets/js/help-center.js');
+$css = (string) file_get_contents($root . '/public/assets/css/help-center.css');
+$indexView = (string) file_get_contents($root . '/views/help/index.php');
+$layout = (string) file_get_contents($root . '/views/layouts/main.php');
+
+hc_assert(str_contains($js, "rateb:nav:afterEnter"), 'help search rebinds after soft-nav');
+hc_assert(str_contains($js, 'fetchRemote'), 'help search fetches as you type');
+hc_assert(str_contains($css, 'overflow: visible'), 'search dropdown is not clipped by hero overflow');
+hc_assert(str_contains($indexView, 'data-hc-search-url'), 'help home exposes live search URL');
+hc_assert(str_contains($layout, "js/help-center.js"), 'layout always loads help-center.js');
+
 echo "\nHelp Center visibility tests: {$passed} passed, {$failed} failed\n";
 exit($failed > 0 ? 1 : 0);

@@ -4011,6 +4011,7 @@ return [
     'help_search_placeholder' => 'ابحث عن شرح، وحدة، أو كلمة مفتاحية...',
     'help_search_clear' => 'مسح',
     'help_search_empty' => 'لا توجد نتائج مطابقة. جرّب كلمات أخرى.',
+    'help_platform_only' => 'المنصة فقط',
     'help_modules_title' => 'وحدات النظام',
     'help_modules_subtitle' => 'اختر وحدة لاستكشاف الشروحات والخطوات الأساسية.',
     'help_articles_count' => ':count شرح',

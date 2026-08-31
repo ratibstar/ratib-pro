@@ -4012,6 +4012,7 @@ return [
     'help_search_placeholder' => 'Search articles, modules, or keywords…',
     'help_search_clear' => 'Clear',
     'help_search_empty' => 'No matching results. Try different words.',
+    'help_platform_only' => 'Platform only',
     'help_modules_title' => 'System modules',
     'help_modules_subtitle' => 'Pick a module to explore guides and getting-started steps.',
     'help_articles_count' => ':count guides',

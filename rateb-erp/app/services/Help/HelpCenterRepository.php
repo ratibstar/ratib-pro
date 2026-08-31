@@ -44,6 +44,7 @@ final class HelpCenterRepository
                     : (string) ($module['desc_ar'] ?? $module['desc_en'] ?? ''),
                 'article_count' => (int) ($counts[$slug] ?? 0),
                 'audience' => $audience,
+                'host' => (string) ($module['host'] ?? 'all'),
             ];
         }
 
