@@ -1616,6 +1616,8 @@ return [
     'comm_email_search_gmail' => 'In Gmail search: from::from or check Trash/Spam',
     'comm_email_search_token' => 'Search Gmail (All Mail / Trash): :token',
     'comm_email_gmail_search_hint' => 'Gmail search: :token',
+    'comm_email_footer_legit' => ':company — transactional message from Rateb ERP (rateb.sa). Ref: :token',
+    'comm_email_inbox_hint' => 'If in Spam: mark Not spam and add info@rateb.sa to contacts.',
     'comm_email_proof_bcc' => 'Proof copy at :email — if it arrives there, the server sent it and Gmail is filtering',
     'comm_email_proof_copy' => 'Internal copy at :email — original to :to was also sent (check Spam)',
     'comm_email_bcc_inbox' => 'Copy in inbox :email only — that does not mean the external recipient received it',

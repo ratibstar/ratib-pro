@@ -244,6 +244,17 @@ final class SupplierCommService
             ];
         }
 
+        $replyHeader = trim((string) ($replyTo ?? ''));
+        if ($replyHeader === '' || !\Rateb\App\Helpers\Str::isValidEmail($replyHeader)) {
+            $user = \Rateb\App\Core\Auth::user();
+            $replyHeader = trim((string) ($user['email'] ?? ''));
+            if ($replyHeader === '' || !\Rateb\App\Helpers\Str::isValidEmail($replyHeader)) {
+                $replyHeader = null;
+            }
+        } else {
+            $replyHeader = strtolower($replyHeader);
+        }
+
         $sendResult = $mail->sendSupplierMessage(
             $email,
             $mailSubject,
@@ -253,7 +264,8 @@ final class SupplierCommService
             '',
             [],
             $commId,
-            null
+            null,
+            $replyHeader
         );
 
         $sent = (bool) ($sendResult['success'] ?? false);

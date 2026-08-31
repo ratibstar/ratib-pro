@@ -27,7 +27,7 @@ final class MailService
     }
 
     /** @return array{success:bool,error_code:?string,error:?string,smtp_host:?string} */
-    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true): array
+    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true, ?string $listId = null): array
     {
         $this->lastError = null;
         $this->lastErrorCode = null;
@@ -68,7 +68,8 @@ final class MailService
                 $htmlBody,
                 $replyTo,
                 $cc,
-                $bcc
+                $bcc,
+                $listId
             );
             if ($ok) {
                 $sent = true;
@@ -155,7 +156,7 @@ final class MailService
      * @param array<string, mixed> $fields unused (kept for call-site compatibility)
      * @return array{success:bool,error_code:?string,error:?string,smtp_host:?string,via_localhost:bool,subject:string,body_len:int}
      */
-    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0, ?string $bcc = null): array
+    public function sendSupplierMessage(string $to, string $subject, string $plainBody, ?string $details = null, ?string $cc = null, string $footerUrl = '', array $fields = [], int $commId = 0, ?string $bcc = null, ?string $replyTo = null): array
     {
         $subject = trim(preg_replace("/[\r\n]+/", ' ', $subject) ?? $subject);
         $plainBody = str_replace(["\r\n", "\r"], "\n", trim($plainBody));
@@ -165,15 +166,14 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Exact mail-test subject shape — single RCPT TO supplier (no BCC on same message).
         $token = 'R' . max(0, $commId) . '-' . date('YmdHis');
         $label = (string) __('supplier_comms');
         $core = trim($subject);
+        // Clean subject (no random token) — spam filters flag R4-20260831… in Subject.
         $mailSubject = 'Rateb ERP — ' . $label;
         if ($core !== '' && $core !== $label) {
             $mailSubject .= ' — ' . $core;
         }
-        $mailSubject .= ' · ' . $token;
 
         $bodyOut = $plainBody;
         if ($token !== '') {
@@ -183,7 +183,8 @@ final class MailService
             }
         }
 
-        $result = $this->sendTransactional($to, $mailSubject, $bodyOut, null, $cc, null, false);
+        $html = $this->buildSupplierTransactionalHtml($bodyOut, $token);
+        $result = $this->sendDetailed($to, $mailSubject, $html, $replyTo, $cc, null, false, 'supplier-comms.rateb.sa');
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
@@ -194,6 +195,31 @@ final class MailService
             'search_token' => $token,
             'body_len' => mb_strlen($plainBody),
         ];
+    }
+
+    public function buildSupplierTransactionalHtml(string $plainBody, string $searchToken = ''): string
+    {
+        $cfg = (new MailConfigService())->resolve();
+        $company = trim((string) ($cfg['from_name'] ?? ''));
+        if ($company === '') {
+            $company = 'Rateb ERP';
+        }
+        $plainBody = trim($plainBody);
+        if ($plainBody === '') {
+            $plainBody = (string) __('mail_test_body');
+        }
+        $footer = (string) __('comm_email_footer_legit', [
+            'company' => $company,
+            'token' => $searchToken,
+        ]);
+        $bodyHtml = nl2br(htmlspecialchars($plainBody, ENT_QUOTES, 'UTF-8'), false);
+        $footerHtml = nl2br(htmlspecialchars($footer, ENT_QUOTES, 'UTF-8'), false);
+        return '<!DOCTYPE html><html lang="ar"><head><meta charset="UTF-8"></head>'
+            . '<body dir="rtl" style="font-family:Tajawal,Arial,sans-serif;font-size:16px;line-height:1.8;margin:0;padding:20px;color:#111827">'
+            . $bodyHtml
+            . '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">'
+            . '<p style="font-size:13px;color:#6b7280;margin:0">' . $footerHtml . '</p>'
+            . '</body></html>';
     }
 
     public function buildTransactionalHtml(string $plainBody): string
@@ -363,7 +389,7 @@ final class MailService
         return $method;
     }
 
-    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): bool
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, ?string $listId = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
         $context = stream_context_create([
@@ -491,7 +517,7 @@ final class MailService
         // Breaks Gmail conversation grouping — deleted threads otherwise swallow later sends.
         $headers .= 'X-Entity-Ref-ID: ' . bin2hex(random_bytes(16)) . "\r\n";
         $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
-        $headers .= 'X-Mailer: Rateb-ERP' . "\r\n";
+        $headers .= $this->deliverabilityHeaders($listId);
         $headers .= 'MIME-Version: 1.0' . "\r\n";
 
         // multipart/alternative improves Gmail acceptance vs HTML-only payloads.
@@ -636,6 +662,19 @@ final class MailService
             $stuffed[] = $line;
         }
         return implode("\r\n", $stuffed);
+    }
+
+    /** Headers that reduce spam scoring for transactional ERP mail. */
+    private function deliverabilityHeaders(?string $listId = null): string
+    {
+        $out = '';
+        if ($listId !== null && $listId !== '') {
+            $safe = preg_replace('/[^a-zA-Z0-9._-]/', '', $listId) ?? '';
+            if ($safe !== '') {
+                $out .= 'List-Id: <' . $safe . ">\r\n";
+            }
+        }
+        return $out;
     }
 
     /** Align outbound subjects with mail-test branding for Gmail recognition. */
