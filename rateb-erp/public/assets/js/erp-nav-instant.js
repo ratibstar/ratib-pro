@@ -1013,9 +1013,48 @@
         return true;
     }
 
+    function hydrateNavLazyGroup(group) {
+        if (!group) {
+            return;
+        }
+        try {
+            if (root.RatebSidebarNav && typeof root.RatebSidebarNav.hydrate === 'function') {
+                root.RatebSidebarNav.hydrate(group);
+                return;
+            }
+        } catch (eHydr) { /* ignore */ }
+        var body = group.querySelector('.rateb-nav-group-body, .rateb-nav-subgroup-body');
+        if (!body) {
+            return;
+        }
+        var tpl = body.querySelector('template[data-rateb-nav-lazy]');
+        if (!tpl) {
+            return;
+        }
+        try {
+            body.appendChild(tpl.content.cloneNode(true));
+            tpl.remove();
+        } catch (eTpl) { /* ignore */ }
+    }
+
+    function collapseSidebarNavGroups() {
+        var side = document.getElementById('rateb-sidebar') || document.querySelector('.rateb-sidebar');
+        if (!side) {
+            return;
+        }
+        side.querySelectorAll('.rateb-nav-group.is-open, .rateb-nav-subgroup.is-open').forEach(function (group) {
+            group.classList.remove('is-open');
+            var toggle = group.querySelector(':scope > [data-nav-group-toggle]');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
     function updateActiveNav(href) {
         try {
             var path = new URL(href, root.location.href).pathname.replace(/\/+$/, '');
+            collapseSidebarNavGroups();
             document.querySelectorAll('a.rateb-nav-link').forEach(function (a) {
                 var ap = '';
                 try {
@@ -1026,7 +1065,6 @@
                 a.classList.toggle('active', on);
                 a.classList.toggle('is-nav-pending', on);
                 if (on) {
-                    // Expand parent groups so the active link is visible immediately.
                     var group = a.closest('.rateb-nav-group, .rateb-nav-subgroup');
                     while (group) {
                         group.classList.add('is-open');
@@ -1034,6 +1072,7 @@
                         if (toggle) {
                             toggle.setAttribute('aria-expanded', 'true');
                         }
+                        hydrateNavLazyGroup(group);
                         group = group.parentElement
                             ? group.parentElement.closest('.rateb-nav-group, .rateb-nav-subgroup')
                             : null;
@@ -2337,6 +2376,9 @@
         if (!isUiOffline()) {
             idlePrefetchVisible();
         }
+        try {
+            updateActiveNav(root.location.href);
+        } catch (eNavInit) { /* ignore */ }
     }
 
     if (document.readyState === 'loading') {

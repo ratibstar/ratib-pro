@@ -15,4 +15,4 @@ $opsSection(__('pos_nav_section'), [
     ['pos/settings', 'pos_settings', 'fa-sliders', 'pos', 'pos.settings.manage'],
     ['guest-menu', 'guest_menu_nav', 'fa-qrcode', 'pos', 'pos.view'],
     ['guest-menu/orders', 'guest_menu_orders_nav', 'fa-receipt', 'pos', 'pos.view'],
-], 'fa-cash-register', true);
+], 'fa-cash-register');
