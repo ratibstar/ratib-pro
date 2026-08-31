@@ -25,6 +25,7 @@ final class CronService
             'trial_converted' => (new SaaSAutomationService())->processTrialConversion(),
             'trial_reminders' => (new SaaSAutomationService())->processTrialReminders(),
             'subscription_reminders' => (new SaaSAutomationService())->processSubscriptionReminders(),
+            'module_addons_expired' => $this->expireDueModuleAddons(),
             'workflow_escalations' => (new WorkflowSlaService())->processEscalations(),
             'supplier_kpi_updated' => (new SupplierAutomationService())->updateAllKpis(),
             'supplier_alerts' => (new SupplierAutomationService())->processAlerts(),
@@ -84,6 +85,20 @@ final class CronService
         (new AutomationHealthService())->checkLateJobs();
         Logger::info('Cron completed', $stats);
         return $stats;
+    }
+
+    /**
+     * Isolated add-on expiry: never throws, never aborts later cron jobs.
+     */
+    private function expireDueModuleAddons(): int
+    {
+        try {
+            return (new ModuleAddonService())->expireDueAddons(50);
+        } catch (\Throwable $e) {
+            Logger::error('cron_module_addons_expire_failed', ['error' => $e->getMessage()]);
+
+            return 0;
+        }
     }
 
     public function cleanupPasswordResets(): int

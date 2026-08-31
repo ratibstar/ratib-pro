@@ -28,12 +28,16 @@ final class ModuleAddonService
     /** @var array<string, array<string, mixed>> */
     private array $catalog;
 
+    /** Optional test double; production uses AgencyErpMigrationService. */
+    private mixed $agencySync;
+
     /**
      * @param array<string, array<string, mixed>>|null $catalog Injected catalog for tests
      */
-    public function __construct(?array $catalog = null)
+    public function __construct(?array $catalog = null, mixed $agencySync = null)
     {
         $this->catalog = $catalog ?? $this->loadCatalogFile();
+        $this->agencySync = $agencySync;
     }
 
     public function isEnabled(): bool
@@ -212,6 +216,14 @@ final class ModuleAddonService
                     if ($started) {
                         $db->commit();
                     }
+                    $this->syncLinkedAgencyAfterCommit(
+                        $started,
+                        !empty($addon['_json_changed']),
+                        (int) ($addon['company_id'] ?? $invoiceCompany),
+                        is_array($addon['_modules'] ?? null) ? $addon['_modules'] : [],
+                        0,
+                        strtolower(trim((string) ($addon['module_slug'] ?? '')))
+                    );
 
                     return [
                         'ok' => true,
@@ -251,16 +263,19 @@ final class ModuleAddonService
             $addonId = (int) ($addon['id'] ?? 0);
 
             if ($status !== 'active' && $this->hasOtherActiveAddon($companyId, $slug, $addonId)) {
+                $jsonChanged = false;
                 if (!$alreadyPresent) {
                     $newModules = $this->normalizeSlugList(array_merge($snapshot, [$slug]));
                     (new Company())->updateModules($companyId, $newModules);
                     PlanLimitService::forgetCompanyLimits($companyId);
                     $this->forgetCompanyRowMemo($companyId);
                     $snapshot = $newModules;
+                    $jsonChanged = true;
                 }
                 if ($started) {
                     $db->commit();
                 }
+                $this->syncLinkedAgencyAfterCommit($started, $jsonChanged, $companyId, $snapshot, $addonId, $slug);
 
                 return [
                     'ok' => true,
@@ -312,6 +327,7 @@ final class ModuleAddonService
             if ($started) {
                 $db->commit();
             }
+            $this->syncLinkedAgencyAfterCommit($started, true, $companyId, $newModules, (int) $addon['id'], $slug);
 
             return [
                 'ok' => true,
@@ -338,7 +354,7 @@ final class ModuleAddonService
     /**
      * @return array{ok:bool, code:string, disabled?:bool, addon_id?:int, removed?:bool, modules?:list<string>}
      */
-    public function expireAddon(int $addonId): array
+    public function expireAddon(int $addonId, bool $onlyIfDue = false): array
     {
         if (!$this->isEnabled()) {
             return ['ok' => false, 'code' => 'disabled', 'disabled' => true];
@@ -366,10 +382,11 @@ final class ModuleAddonService
 
             $companyId = (int) ($addon['company_id'] ?? 0);
             $slug = strtolower(trim((string) ($addon['module_slug'] ?? '')));
+            $status = (string) ($addon['status'] ?? '');
             $this->lockCompany($db, $companyId);
             $this->forgetCompanyRowMemo($companyId);
 
-            if ((string) ($addon['status'] ?? '') === 'expired') {
+            if ($status === 'expired') {
                 if ($started) {
                     $db->commit();
                 }
@@ -382,29 +399,62 @@ final class ModuleAddonService
                     'modules' => $this->currentJson($companyId),
                 ];
             }
+            if ($status !== 'active') {
+                if ($started) {
+                    $db->commit();
+                }
 
-            $this->markAddonExpired($db, $addonId);
+                return [
+                    'ok' => true,
+                    'code' => 'not_eligible',
+                    'addon_id' => $addonId,
+                    'removed' => false,
+                    'modules' => $this->currentJson($companyId),
+                ];
+            }
+            if ($onlyIfDue && !$this->addonEndsBeforeToday($addon)) {
+                if ($started) {
+                    $db->commit();
+                }
+
+                return [
+                    'ok' => true,
+                    'code' => 'not_due',
+                    'addon_id' => $addonId,
+                    'removed' => false,
+                    'modules' => $this->currentJson($companyId),
+                ];
+            }
 
             $explicit = $this->currentJson($companyId);
             $removed = false;
             if ($explicit !== [] && $this->shouldStripModule($companyId, $slug, $addonId, (int) ($addon['preexisting_grant'] ?? 0))) {
-                $kept = array_values(array_filter(
+                $kept = $this->uniquePreserveOrder(array_values(array_filter(
                     $explicit,
                     static fn(string $m): bool => $m !== $slug
-                ));
+                )));
                 if ($kept !== $explicit) {
-                    (new Company())->updateModules($companyId, $kept);
+                    $okWrite = (new Company())->updateModules($companyId, $kept);
+                    if (!$okWrite) {
+                        if ($started) {
+                            $db->rollBack();
+                        }
+
+                        return ['ok' => false, 'code' => 'modules_write_failed'];
+                    }
                     $removed = true;
                     $explicit = $kept;
                 }
             }
 
+            $this->markAddonExpired($db, $addonId);
             PlanLimitService::forgetCompanyLimits($companyId);
             $this->forgetCompanyRowMemo($companyId);
 
             if ($started) {
                 $db->commit();
             }
+            $this->syncLinkedAgencyAfterCommit($started, $removed, $companyId, $explicit, $addonId, $slug);
 
             return [
                 'ok' => true,
@@ -428,7 +478,7 @@ final class ModuleAddonService
 
     /**
      * Expire add-ons whose ends_at calendar date has passed (valid through ends_at).
-     * Not wired to CronService in Phase 1.
+     * Wired from CronService::runAll(); never throws to the cron caller.
      */
     public function expireDueAddons(int $limit = 50): int
     {
@@ -451,8 +501,8 @@ final class ModuleAddonService
                 if ($id < 1) {
                     continue;
                 }
-                $result = $this->expireAddon($id);
-                if (!empty($result['ok'])) {
+                $result = $this->expireAddon($id, true);
+                if (($result['code'] ?? '') === 'expired') {
                     $count++;
                 }
             }
@@ -461,6 +511,47 @@ final class ModuleAddonService
         }
 
         return $count;
+    }
+
+    /**
+     * Post-commit overwrite of a linked agency company.modules snapshot.
+     * Failure is logged and never rolls back the local commercial transaction.
+     *
+     * @param list<string> $modules
+     */
+    private function syncLinkedAgencyAfterCommit(
+        bool $committedHere,
+        bool $jsonChanged,
+        int $companyId,
+        array $modules,
+        int $addonId,
+        string $slug
+    ): void {
+        if (!$committedHere || !$jsonChanged || $companyId < 1) {
+            return;
+        }
+        try {
+            $agency = $this->agencySync ?? new AgencyErpMigrationService();
+            $agency->pushModulesToLinkedAgency($companyId, array_values($modules));
+        } catch (Throwable $e) {
+            Logger::error('module_addon_agency_push_failed', [
+                'company_id' => $companyId,
+                'module_slug' => $slug,
+                'addon_id' => $addonId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** @param array<string, mixed> $addon */
+    private function addonEndsBeforeToday(array $addon): bool
+    {
+        $ends = substr(trim((string) ($addon['ends_at'] ?? '')), 0, 10);
+        if ($ends === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ends)) {
+            return false;
+        }
+
+        return $ends < date('Y-m-d');
     }
 
     /**
@@ -565,10 +656,14 @@ final class ModuleAddonService
             $this->lockCompany($db, $companyId);
             $this->forgetCompanyRowMemo($companyId);
             $snapshot = $this->materializeCurrentModules($companyId);
+            $modules = $snapshot;
+            $wrote = false;
             if (!in_array($slug, $snapshot, true)) {
-                (new Company())->updateModules($companyId, $this->normalizeSlugList(array_merge($snapshot, [$slug])));
+                $modules = $this->normalizeSlugList(array_merge($snapshot, [$slug]));
+                (new Company())->updateModules($companyId, $modules);
                 PlanLimitService::forgetCompanyLimits($companyId);
                 $this->forgetCompanyRowMemo($companyId);
+                $wrote = true;
             }
 
             return [
@@ -577,6 +672,8 @@ final class ModuleAddonService
                 'module_slug' => $slug,
                 'status' => 'active',
                 'preexisting_grant' => 1,
+                '_json_changed' => $wrote,
+                '_modules' => $modules,
             ];
         }
 

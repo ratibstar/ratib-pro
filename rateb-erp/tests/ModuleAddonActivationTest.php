@@ -105,7 +105,8 @@ mac3_assert(str_contains($svc, "\$st === 'cancelled'"), 'cancelled invoice does 
 mac3_assert(str_contains($svc, 'already_active'), 'second activation is idempotent');
 mac3_assert(str_contains($svc, 'invoice_company_mismatch'), 'invoice company is authoritative');
 mac3_assert(str_contains($svc, "'code' => 'ignored'"), 'non-add-on invoices are ignored');
-mac3_assert(!str_contains($svc, 'pushModulesToLinkedAgency'), 'no agency sync');
+mac3_assert(str_contains($svc, 'pushModulesToLinkedAgency'), 'activation/expiration can push linked agency after commit');
+mac3_assert(str_contains($svc, 'module_addon_agency_push_failed'), 'agency push failure is logged and does not roll back');
 mac3_assert(!str_contains($svc, 'new CronService') && !str_contains($svc, 'erp-cron.php'), 'no cron coupling');
 
 $chk = (string) file_get_contents($root . '/app/services/ModuleAddonCheckoutService.php');
