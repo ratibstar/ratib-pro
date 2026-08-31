@@ -294,6 +294,60 @@ final class ModuleAddonCheckoutService
         ];
     }
 
+    /**
+     * Recovery: if this company's add-on invoice is paid, retry idempotent activation.
+     * Ignores client-supplied company_id / invoice_id.
+     *
+     * @return array{ok:bool,code:string}
+     */
+    public function retryPaidActivation(int $sessionCompanyId, string $slug): array
+    {
+        if (!$this->addons->isEnabled()) {
+            return ['ok' => false, 'code' => 'disabled'];
+        }
+        if ($sessionCompanyId < 1) {
+            return ['ok' => false, 'code' => 'no_company'];
+        }
+        $slug = strtolower(trim($slug));
+        $invoice = $this->findLatestAddonInvoice($sessionCompanyId, $slug);
+        if ($invoice === null) {
+            return ['ok' => false, 'code' => 'invoice_not_found'];
+        }
+        if ((int) ($invoice['company_id'] ?? 0) !== $sessionCompanyId) {
+            return ['ok' => false, 'code' => 'forbidden'];
+        }
+        $st = strtolower(trim((string) ($invoice['status'] ?? '')));
+        $pay = strtolower(trim((string) ($invoice['payment_status'] ?? '')));
+        if ($st === 'cancelled' || ($pay !== 'paid' && $st !== 'paid')) {
+            return ['ok' => false, 'code' => 'invoice_not_paid'];
+        }
+        $invoiceId = (int) ($invoice['id'] ?? 0);
+        $txId = $this->completedTransactionId($invoiceId, $sessionCompanyId);
+
+        return $this->addons->activateFromPaidInvoice($invoiceId, $txId);
+    }
+
+    private function completedTransactionId(int $invoiceId, int $companyId): ?int
+    {
+        if ($invoiceId < 1 || $companyId < 1) {
+            return null;
+        }
+        try {
+            $db = Database::connection();
+            $stmt = $db->prepare(
+                "SELECT id FROM rateb_payment_transactions
+                 WHERE invoice_id = :iid AND company_id = :cid AND status = 'completed'
+                 ORDER BY id DESC LIMIT 1"
+            );
+            $stmt->execute(['iid' => $invoiceId, 'cid' => $companyId]);
+            $id = (int) ($stmt->fetchColumn() ?: 0);
+
+            return $id > 0 ? $id : null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
     public function poNumber(string $slug, string $cycle): string
     {
         return 'ADDON:' . strtolower(trim($slug)) . ':' . strtolower(trim($cycle));

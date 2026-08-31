@@ -10,7 +10,6 @@ use Rateb\App\Services\ModuleAddonCheckoutService;
 
 /**
  * Self-serve module add-on checkout. Company ID comes only from the session.
- * Does not activate modules (Phase 3).
  */
 final class ModuleAddonCheckoutController extends Controller
 {
@@ -99,6 +98,15 @@ final class ModuleAddonCheckoutController extends Controller
             return;
         }
         [$companyId, $slug, $checkout] = $ctx;
+
+        unset($_GET['company_id'], $_GET['invoice_id'], $_POST['company_id'], $_POST['invoice_id']);
+        try {
+            $checkout->retryPaidActivation($companyId, $slug);
+        } catch (\Throwable $e) {
+            \Rateb\App\Services\Logger::error('module_addon_status_retry_failed', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $payload = $checkout->statusPayload($companyId, $slug);
         if (!($payload['ok'] ?? false) && ($payload['code'] ?? '') === 'unknown_module') {

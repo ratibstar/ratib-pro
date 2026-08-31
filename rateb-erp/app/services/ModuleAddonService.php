@@ -156,7 +156,7 @@ final class ModuleAddonService
     /**
      * @return array{ok:bool, code:string, disabled?:bool, addon_id?:int, company_id?:int, module?:string, preexisting_grant?:int, modules?:list<string>}
      */
-    public function activateFromPaidInvoice(int $invoiceId): array
+    public function activateFromPaidInvoice(int $invoiceId, ?int $paymentTransactionId = null): array
     {
         if (!$this->isEnabled()) {
             return ['ok' => false, 'code' => 'disabled', 'disabled' => true];
@@ -181,6 +181,16 @@ final class ModuleAddonService
 
                 return ['ok' => false, 'code' => 'invoice_not_found'];
             }
+
+            $invoiceCompany = (int) ($invoice['company_id'] ?? 0);
+            $addon = $this->lockAddonByInvoice($db, $invoiceId);
+            if ($addon === null && !$this->isAddonInvoice($invoice)) {
+                if ($started) {
+                    $db->commit();
+                }
+
+                return ['ok' => true, 'code' => 'ignored'];
+            }
             if (!$this->invoiceIsPaid($invoice)) {
                 if ($started) {
                     $db->rollBack();
@@ -189,17 +199,31 @@ final class ModuleAddonService
                 return ['ok' => false, 'code' => 'invoice_not_paid'];
             }
 
-            $addon = $this->lockAddonByInvoice($db, $invoiceId);
             if ($addon === null) {
-                if ($started) {
-                    $db->rollBack();
-                }
+                $addon = $this->ensurePendingLedgerFromPaidInvoice($db, $invoice, $paymentTransactionId);
+                if ($addon === null) {
+                    if ($started) {
+                        $db->commit();
+                    }
 
-                return ['ok' => false, 'code' => 'addon_not_found'];
+                    return ['ok' => true, 'code' => 'ignored'];
+                }
+                if ((int) ($addon['id'] ?? 0) < 1) {
+                    if ($started) {
+                        $db->commit();
+                    }
+
+                    return [
+                        'ok' => true,
+                        'code' => 'already_active',
+                        'company_id' => (int) ($addon['company_id'] ?? $invoiceCompany),
+                        'module' => strtolower(trim((string) ($addon['module_slug'] ?? ''))),
+                        'preexisting_grant' => 1,
+                    ];
+                }
             }
 
             $companyId = (int) ($addon['company_id'] ?? 0);
-            $invoiceCompany = (int) ($invoice['company_id'] ?? 0);
             if ($companyId < 1 || $invoiceCompany !== $companyId) {
                 if ($started) {
                     $db->rollBack();
@@ -224,8 +248,33 @@ final class ModuleAddonService
             $snapshot = $this->materializeCurrentModules($companyId);
             $alreadyPresent = in_array($slug, $snapshot, true);
             $status = (string) ($addon['status'] ?? '');
+            $addonId = (int) ($addon['id'] ?? 0);
+
+            if ($status !== 'active' && $this->hasOtherActiveAddon($companyId, $slug, $addonId)) {
+                if (!$alreadyPresent) {
+                    $newModules = $this->normalizeSlugList(array_merge($snapshot, [$slug]));
+                    (new Company())->updateModules($companyId, $newModules);
+                    PlanLimitService::forgetCompanyLimits($companyId);
+                    $this->forgetCompanyRowMemo($companyId);
+                    $snapshot = $newModules;
+                }
+                if ($started) {
+                    $db->commit();
+                }
+
+                return [
+                    'ok' => true,
+                    'code' => 'already_active',
+                    'addon_id' => $addonId,
+                    'company_id' => $companyId,
+                    'module' => $slug,
+                    'preexisting_grant' => 1,
+                    'modules' => $snapshot,
+                ];
+            }
 
             if ($status === 'active' && $alreadyPresent) {
+                $this->markAddonActive($db, (int) $addon['id'], (int) ($addon['preexisting_grant'] ?? 0), $paymentTransactionId);
                 if ($started) {
                     $db->commit();
                 }
@@ -256,7 +305,7 @@ final class ModuleAddonService
                 return ['ok' => false, 'code' => 'modules_write_failed'];
             }
 
-            $this->markAddonActive($db, (int) $addon['id'], $preexisting);
+            $this->markAddonActive($db, (int) $addon['id'], $preexisting, $paymentTransactionId);
             PlanLimitService::forgetCompanyLimits($companyId);
             $this->forgetCompanyRowMemo($companyId);
 
@@ -460,6 +509,134 @@ final class ModuleAddonService
     }
 
     /**
+     * Phase 2 marker: po_number = ADDON:{slug}:{monthly|yearly}
+     *
+     * @return array{slug:string,cycle:string}|null
+     */
+    public function parseAddonPoNumber(string $poNumber): ?array
+    {
+        if (!preg_match('/^ADDON:([a-z0-9_]+):(monthly|yearly)$/i', trim($poNumber), $m)) {
+            return null;
+        }
+
+        return ['slug' => strtolower($m[1]), 'cycle' => strtolower($m[2])];
+    }
+
+    /** @param array<string, mixed> $invoice */
+    public function isAddonInvoice(array $invoice): bool
+    {
+        $parsed = $this->parseAddonPoNumber((string) ($invoice['po_number'] ?? ''));
+        if ($parsed === null) {
+            return false;
+        }
+        $known = PlanLimitService::filterKnownModules([$parsed['slug']]);
+
+        return $known !== [] && isset($this->catalog()[$parsed['slug']]);
+    }
+
+    /**
+     * Create a pending ledger row for a paid Phase 2 add-on invoice.
+     * Customer invoices (non-ADDON po_number) return null — no activation.
+     *
+     * @param array<string, mixed> $invoice
+     * @return array<string, mixed>|null
+     */
+    private function ensurePendingLedgerFromPaidInvoice(PDO $db, array $invoice, ?int $paymentTransactionId): ?array
+    {
+        $invoiceId = (int) ($invoice['id'] ?? 0);
+        $companyId = (int) ($invoice['company_id'] ?? 0);
+        $parsed = $this->parseAddonPoNumber((string) ($invoice['po_number'] ?? ''));
+        if ($invoiceId < 1 || $companyId < 1 || $parsed === null) {
+            return null;
+        }
+        $slug = $parsed['slug'];
+        $cycle = $parsed['cycle'];
+        $known = PlanLimitService::filterKnownModules([$slug]);
+        if ($known === [] || !isset($this->catalog()[$slug])) {
+            return null;
+        }
+
+        $existing = $this->lockAddonByInvoice($db, $invoiceId);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        if ($this->hasOtherActiveAddon($companyId, $slug, 0)) {
+            $this->lockCompany($db, $companyId);
+            $this->forgetCompanyRowMemo($companyId);
+            $snapshot = $this->materializeCurrentModules($companyId);
+            if (!in_array($slug, $snapshot, true)) {
+                (new Company())->updateModules($companyId, $this->normalizeSlugList(array_merge($snapshot, [$slug])));
+                PlanLimitService::forgetCompanyLimits($companyId);
+                $this->forgetCompanyRowMemo($companyId);
+            }
+
+            return [
+                'id' => 0,
+                'company_id' => $companyId,
+                'module_slug' => $slug,
+                'status' => 'active',
+                'preexisting_grant' => 1,
+            ];
+        }
+
+        $starts = date('Y-m-d');
+        $ends = $cycle === 'yearly'
+            ? date('Y-m-d', strtotime('+1 year'))
+            : date('Y-m-d', strtotime('+1 month'));
+        try {
+            $stmt = $db->prepare(
+                "INSERT INTO rateb_company_module_addons
+                    (company_id, module_slug, status, starts_at, ends_at, billing_cycle, invoice_id,
+                     payment_transaction_id, preexisting_grant, source)
+                 VALUES
+                    (:cid, :slug, 'pending', :starts, :ends, :cycle, :iid, :txid, 0, 'self_serve')"
+            );
+            $stmt->execute([
+                'cid' => $companyId,
+                'slug' => $slug,
+                'starts' => $starts,
+                'ends' => $ends,
+                'cycle' => $cycle,
+                'iid' => $invoiceId,
+                'txid' => ($paymentTransactionId !== null && $paymentTransactionId > 0) ? $paymentTransactionId : null,
+            ]);
+        } catch (Throwable $e) {
+            $again = $this->lockAddonByInvoice($db, $invoiceId);
+            if ($again !== null) {
+                return $again;
+            }
+            if ($paymentTransactionId !== null && $paymentTransactionId > 0) {
+                try {
+                    $retry = $db->prepare(
+                        "INSERT INTO rateb_company_module_addons
+                            (company_id, module_slug, status, starts_at, ends_at, billing_cycle, invoice_id,
+                             payment_transaction_id, preexisting_grant, source)
+                         VALUES
+                            (:cid, :slug, 'pending', :starts, :ends, :cycle, :iid, NULL, 0, 'self_serve')"
+                    );
+                    $retry->execute([
+                        'cid' => $companyId,
+                        'slug' => $slug,
+                        'starts' => $starts,
+                        'ends' => $ends,
+                        'cycle' => $cycle,
+                        'iid' => $invoiceId,
+                    ]);
+                } catch (Throwable $retryError) {
+                    return $this->lockAddonByInvoice($db, $invoiceId);
+                }
+
+                return $this->lockAddonByInvoice($db, $invoiceId);
+            }
+
+            return null;
+        }
+
+        return $this->lockAddonByInvoice($db, $invoiceId);
+    }
+
+    /**
      * @return array<string, array<string, mixed>>
      */
     private function loadCatalogFile(): array
@@ -595,8 +772,11 @@ final class ModuleAddonService
     /** @param array<string, mixed> $invoice */
     private function invoiceIsPaid(array $invoice): bool
     {
-        $pay = strtolower(trim((string) ($invoice['payment_status'] ?? '')));
         $st = strtolower(trim((string) ($invoice['status'] ?? '')));
+        if ($st === 'cancelled') {
+            return false;
+        }
+        $pay = strtolower(trim((string) ($invoice['payment_status'] ?? '')));
 
         return $pay === 'paid' || $st === 'paid';
     }
@@ -663,18 +843,39 @@ final class ModuleAddonService
         $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    private function markAddonActive(PDO $db, int $addonId, int $preexisting): void
+    private function markAddonActive(PDO $db, int $addonId, int $preexisting, ?int $paymentTransactionId = null): void
     {
-        $stmt = $db->prepare(
-            "UPDATE rateb_company_module_addons
-             SET status = 'active', preexisting_grant = :pg, updated_at = :ts
-             WHERE id = :id"
-        );
-        $stmt->execute([
+        $sql = "UPDATE rateb_company_module_addons
+             SET status = 'active', preexisting_grant = :pg, updated_at = :ts";
+        $params = [
             'pg' => $preexisting,
             'ts' => date('Y-m-d H:i:s'),
             'id' => $addonId,
-        ]);
+        ];
+        if ($paymentTransactionId !== null && $paymentTransactionId > 0) {
+            $sql .= ', payment_transaction_id = :txid';
+            $params['txid'] = $paymentTransactionId;
+        }
+        $sql .= ' WHERE id = :id';
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+        } catch (Throwable $e) {
+            if ($paymentTransactionId !== null && $paymentTransactionId > 0) {
+                $fallback = $db->prepare(
+                    "UPDATE rateb_company_module_addons
+                     SET status = 'active', preexisting_grant = :pg, updated_at = :ts
+                     WHERE id = :id"
+                );
+                $fallback->execute([
+                    'pg' => $preexisting,
+                    'ts' => date('Y-m-d H:i:s'),
+                    'id' => $addonId,
+                ]);
+            } else {
+                throw $e;
+            }
+        }
     }
 
     private function markAddonExpired(PDO $db, int $addonId): void

@@ -119,9 +119,11 @@ mac2_assert(str_contains($ctrl, "SessionManager::get('rateb_company_id')"), 'com
 mac2_assert(str_contains($ctrl, 'validateCsrf'), 'CSRF on POST');
 mac2_assert(str_contains($ctrl, "\$posted['company_id']"), 'POST company_id ignored');
 mac2_assert(str_contains($ctrl, "\$posted['price']"), 'POST price ignored');
-mac2_assert(!str_contains($ctrl, 'activateFromPaidInvoice'), 'controller does not activate');
+mac2_assert(!str_contains($ctrl, 'activateFromPaidInvoice'), 'controller does not call activate directly');
+mac2_assert(str_contains($ctrl, 'retryPaidActivation'), 'status page retries activation via checkout service');
 mac2_assert(!str_contains($ctrl, 'updateModules'), 'controller does not write company.modules');
-mac2_assert(!str_contains($svcSrc, 'activateFromPaidInvoice'), 'checkout service does not activate');
+mac2_assert(str_contains($svcSrc, 'retryPaidActivation'), 'checkout service status retry exists');
+mac2_assert(str_contains($svcSrc, 'activateFromPaidInvoice'), 'status retry uses ModuleAddonService');
 mac2_assert(!str_contains($svcSrc, 'updateModules'), 'checkout service does not write company.modules');
 mac2_assert(str_contains($svcSrc, "initiate(\$invoiceId, 'moyasar', null, \$companyId)"), 'PaymentService called with session company');
 mac2_assert(str_contains($svcSrc, "'status' => 'sent'"), 'created invoices are sent');

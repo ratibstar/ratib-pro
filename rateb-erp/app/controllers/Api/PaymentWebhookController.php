@@ -5,6 +5,9 @@ namespace Rateb\App\Controllers\Api;
 
 use Rateb\App\Core\Controller;
 use Rateb\App\Payment\PaymentWebhookService;
+use Rateb\App\Services\Logger;
+use Rateb\App\Services\ModuleAddonActivationHook;
+use Throwable;
 
 final class PaymentWebhookController extends Controller
 {
@@ -22,6 +25,15 @@ final class PaymentWebhookController extends Controller
         $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : null;
 
         $result = (new PaymentWebhookService())->handleMoyasar($rawBody, $headers, $ip);
+        try {
+            if ((int) ($result['http'] ?? 200) === 200) {
+                (new ModuleAddonActivationHook())->afterSuccessfulWebhook($rawBody);
+            }
+        } catch (Throwable $activationError) {
+            Logger::error('module_addon_webhook_activation_failed', [
+                'error' => $activationError->getMessage(),
+            ]);
+        }
         http_response_code((int) ($result['http'] ?? 200));
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode([
