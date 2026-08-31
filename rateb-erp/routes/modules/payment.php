@@ -20,3 +20,5 @@ $router->get('/admin/payment-gateways/transactions', [PaymentGatewaysController:
 $router->get('/admin/payment-gateways/failed', [PaymentGatewaysController::class, 'failed'], $pgMw);
 $router->post('/admin/payment-gateways/refund', [PaymentGatewaysController::class, 'refund'], $pgMw);
 $router->post('/admin/payment-gateways/retry', [PaymentGatewaysController::class, 'retry'], $pgMw);
+
+require RATEB_ROOT . '/routes/modules/module-addons.php';
