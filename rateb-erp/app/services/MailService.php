@@ -165,13 +165,14 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Fresh subject token every send — do NOT reuse "— d-m-Y" shape from deleted Gmail threads.
+        // Match mail-test subject branding (Rateb ERP — …) so Gmail Primary shows supplier comms like test mail.
         $token = 'R' . max(0, $commId) . '-' . date('YmdHis');
-        $mailSubject = ($subject !== '' ? $subject : 'Rateb') . ' · ' . $token;
+        $label = (string) __('supplier_comms');
+        $core = trim($subject) !== '' ? trim($subject) : $label;
+        $mailSubject = $label . ' — ' . $core . ' · ' . $token;
 
-        // Same HTML envelope as mail-test (the path that reached Gmail).
-        $html = $this->buildTransactionalHtml($plainBody);
-        $result = $this->sendDetailed($to, $mailSubject, $html, null, $cc, $bcc, false);
+        // Identical stack as Settings → mail test (sendTransactional + branded subject).
+        $result = $this->sendTransactional($to, $mailSubject, $plainBody, null, $cc, $bcc, true);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,
