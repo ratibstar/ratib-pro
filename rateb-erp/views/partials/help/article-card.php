@@ -21,7 +21,7 @@ if ($diffLabel === 'help_difficulty_' . $difficulty) {
             <span><i class="far fa-clock" aria-hidden="true"></i> <?php echo (int) ($article['minutes'] ?? 3); ?> <?php echo Rateb\App\Core\View::escape(__('help_minutes')); ?></span>
         </div>
     </div>
-    <a class="hc-article-card__open" href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
+    <a class="hc-article-card__open" data-hc-nav="1" href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>">
         <?php echo Rateb\App\Core\View::escape(__('help_open_article')); ?>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
     </a>

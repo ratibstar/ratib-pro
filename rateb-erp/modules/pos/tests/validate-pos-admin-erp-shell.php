@@ -50,6 +50,7 @@ assert_true(
     && str_contains($side, 'admin/ops/pos/register')
     && str_contains($side, "rateb_url_set_query_param(\$href, 'rateb_live', '1')")
     && str_contains($mainLayout, '__ratebGoPosRegister')
+    && str_contains($mainLayout, 'data-hc-nav')
     && str_contains($mainLayout, '/admin/ops/pos/register')
     && str_contains($mainLayout, "rateb_live")
     && !str_contains($mainLayout, "rateb_nav_can('pos.register'")

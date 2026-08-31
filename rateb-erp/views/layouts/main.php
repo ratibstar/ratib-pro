@@ -191,6 +191,12 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             } catch (ePath) {
                 path = String(raw || '');
             }
+            var isHelp = /\/admin\/help(?:\/|$)/i.test(path)
+                || a.getAttribute('data-hc-nav') === '1'
+                || (a.closest && a.closest('#rateb-help-center, .hc-page, .hc-search__hit, .hc-module-card'));
+            if (isHelp) {
+                return false;
+            }
             var isReg = a.getAttribute('data-pos-open-register') === '1'
                 || /شاشة البيع/.test(label)
                 || /\/(?:admin\/ops\/)?pos(?:\/register|\/biometric)?$/.test(path);

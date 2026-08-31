@@ -196,6 +196,7 @@ final class HelpCenterRepository
                 'minutes' => (int) ($article['minutes'] ?? 3),
                 'icon' => (string) ($article['icon'] ?? 'fa-circle-question'),
                 'type' => 'article',
+                'help_url' => rateb_url('admin/help/article/' . rawurlencode((string) ($article['slug'] ?? ''))),
             ];
         }
         foreach ($this->dbPublishedArticles() as $article) {
@@ -226,6 +227,7 @@ final class HelpCenterRepository
                 'minutes' => (int) ($article['minutes'] ?? 3),
                 'icon' => (string) ($article['icon'] ?? 'fa-circle-question'),
                 'type' => 'article',
+                'help_url' => rateb_url('admin/help/article/' . rawurlencode((string) ($article['slug'] ?? ''))),
             ];
         }
         foreach ($this->modulesForUser() as $module) {
@@ -240,6 +242,7 @@ final class HelpCenterRepository
                 'minutes' => 0,
                 'icon' => (string) $module['icon'],
                 'type' => 'module',
+                'help_url' => rateb_url('admin/help/module/' . rawurlencode((string) $module['slug'])),
             ];
         }
 

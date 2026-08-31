@@ -12,7 +12,7 @@ declare(strict_types=1);
             ?>
         <li>
             <?php if (!$isLast && is_string($url) && $url !== '') { ?>
-            <a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>"><?php echo Rateb\App\Core\View::escape($label); ?></a>
+            <a data-hc-nav="1" href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>"><?php echo Rateb\App\Core\View::escape($label); ?></a>
             <?php } else { ?>
             <span aria-current="page"><?php echo Rateb\App\Core\View::escape($label); ?></span>
             <?php } ?>

@@ -4,18 +4,34 @@ declare(strict_types=1);
 /** @var array<string,mixed> $module */
 /** @var list<array<string,mixed>> $articles */
 /** @var list<array<string,mixed>> $faqs */
+/** @var list<array<string,mixed>> $searchIndex */
+/** @var list<array<string,mixed>> $searchHits */
+/** @var string $searchQuery */
 /** @var string $helpHomeUrl */
 
 use Rateb\App\Core\View;
 
 $accent = preg_replace('/[^a-z]/', '', (string) ($module['accent'] ?? 'sky')) ?: 'sky';
+$searchQuery = trim((string) ($searchQuery ?? ''));
+$searchHits = is_array($searchHits ?? null) ? $searchHits : [];
+$searchIndex = is_array($searchIndex ?? null) ? $searchIndex : [];
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/help-center.css'); ?>">
 <?php
 $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 'rtl';
+$hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
 ?>
 <div class="hc-page hc-module-page hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>"
+     id="rateb-help-center"
+     data-hc-home="<?php echo View::escape($helpHomeUrl); ?>"
+     data-hc-search-url="<?php echo View::escape(rateb_url('admin/help/api/search')); ?>"
+     data-hc-lang="<?php echo View::escape($hcLang); ?>"
      dir="<?php echo htmlspecialchars($hcDir, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php View::partial('help/search-bar', [
+        'searchQuery' => $searchQuery,
+        'searchHits' => $searchHits,
+        'hcSearchCompact' => true,
+    ]); ?>
     <?php View::partial('help/breadcrumb', [
         'crumbs' => [
             ['label' => __('help_center'), 'url' => $helpHomeUrl],
@@ -78,3 +94,5 @@ $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 
     </section>
     <?php } ?>
 </div>
+<script type="application/json" id="hc-search-index"><?php echo json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+<script src="<?php echo rateb_asset('js/help-center.js'); ?>" defer></script>

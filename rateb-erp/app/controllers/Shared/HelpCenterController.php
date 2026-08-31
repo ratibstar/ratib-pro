@@ -24,16 +24,12 @@ final class HelpCenterController extends Controller
     public function index(): void
     {
         $q = trim((string) $this->input('q', ''));
-        $this->view('help/index', [
+        $this->view('help/index', array_merge($this->searchChrome($q), [
             'title' => __('help_center'),
             'modules' => $this->repo->modulesForUser(),
-            'searchIndex' => $this->repo->searchIndex(),
-            'searchQuery' => $q,
-            'searchHits' => $q !== '' ? $this->search->search($q, 20) : [],
             'faqs' => $this->repo->faqs(),
             'canManage' => $this->repo->gate()->canManageContent(),
-            'helpHomeUrl' => rateb_url('admin/help'),
-        ], 'main');
+        ]), 'main');
     }
 
     public function module(string $slug): void
@@ -44,13 +40,13 @@ final class HelpCenterController extends Controller
 
             return;
         }
-        $this->view('help/module', [
+        $q = trim((string) $this->input('q', ''));
+        $this->view('help/module', array_merge($this->searchChrome($q), [
             'title' => (string) ($module['title'] ?? __('help_center')),
             'module' => $module,
             'articles' => $this->repo->articlesForModule($slug),
             'faqs' => $this->repo->faqs($slug),
-            'helpHomeUrl' => rateb_url('admin/help'),
-        ], 'main');
+        ]), 'main');
     }
 
     public function article(string $slug): void
@@ -61,11 +57,24 @@ final class HelpCenterController extends Controller
 
             return;
         }
-        $this->view('help/article', [
+        $q = trim((string) $this->input('q', ''));
+        $this->view('help/article', array_merge($this->searchChrome($q), [
             'title' => (string) ($article['title'] ?? __('help_center')),
             'article' => $article,
+        ]), 'main');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function searchChrome(string $q): array
+    {
+        return [
+            'searchIndex' => $this->repo->searchIndex(),
+            'searchQuery' => $q,
+            'searchHits' => $q !== '' ? $this->search->search($q, 20) : [],
             'helpHomeUrl' => rateb_url('admin/help'),
-        ], 'main');
+        ];
     }
 
     public function searchApi(): void

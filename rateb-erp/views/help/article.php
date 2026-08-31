@@ -20,9 +20,22 @@ if ($diffLabel === 'help_difficulty_' . $difficulty) {
 <link rel="stylesheet" href="<?php echo rateb_asset('css/help-center.css'); ?>">
 <?php
 $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 'rtl';
+$hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
+$searchQuery = trim((string) ($searchQuery ?? ''));
+$searchHits = is_array($searchHits ?? null) ? $searchHits : [];
+$searchIndex = is_array($searchIndex ?? null) ? $searchIndex : [];
 ?>
 <article class="hc-page hc-article-page hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>"
+         id="rateb-help-center"
+         data-hc-home="<?php echo View::escape($helpHomeUrl); ?>"
+         data-hc-search-url="<?php echo View::escape(rateb_url('admin/help/api/search')); ?>"
+         data-hc-lang="<?php echo View::escape($hcLang); ?>"
          dir="<?php echo htmlspecialchars($hcDir, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php View::partial('help/search-bar', [
+        'searchQuery' => $searchQuery,
+        'searchHits' => $searchHits,
+        'hcSearchCompact' => true,
+    ]); ?>
     <?php View::partial('help/breadcrumb', [
         'crumbs' => [
             ['label' => __('help_center'), 'url' => $helpHomeUrl],
@@ -87,7 +100,7 @@ $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 
 
     <nav class="hc-pager" aria-label="<?php echo View::escape(__('help_pager')); ?>">
         <?php if (!empty($article['prev']) && is_array($article['prev'])) { ?>
-        <a class="hc-pager__link" href="<?php echo rateb_url('admin/help/article/' . rawurlencode((string) $article['prev']['slug'])); ?>">
+        <a class="hc-pager__link" data-hc-nav="1" href="<?php echo rateb_url('admin/help/article/' . rawurlencode((string) $article['prev']['slug'])); ?>">
             <span class="hc-pager__dir"><?php echo View::escape(__('help_prev')); ?></span>
             <span><?php echo View::escape((string) ($article['prev']['title'] ?? '')); ?></span>
         </a>
@@ -95,7 +108,7 @@ $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 
         <span></span>
         <?php } ?>
         <?php if (!empty($article['next']) && is_array($article['next'])) { ?>
-        <a class="hc-pager__link hc-pager__link--next" href="<?php echo rateb_url('admin/help/article/' . rawurlencode((string) $article['next']['slug'])); ?>">
+        <a class="hc-pager__link hc-pager__link--next" data-hc-nav="1" href="<?php echo rateb_url('admin/help/article/' . rawurlencode((string) $article['next']['slug'])); ?>">
             <span class="hc-pager__dir"><?php echo View::escape(__('help_next')); ?></span>
             <span><?php echo View::escape((string) ($article['next']['title'] ?? '')); ?></span>
         </a>
@@ -113,3 +126,5 @@ $hcDir = (function_exists('rateb_locale') && rateb_locale() === 'en') ? 'ltr' : 
     </section>
     <?php } ?>
 </article>
+<script type="application/json" id="hc-search-index"><?php echo json_encode($searchIndex, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+<script src="<?php echo rateb_asset('js/help-center.js'); ?>" defer></script>

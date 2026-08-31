@@ -107,6 +107,12 @@ hc_assert(str_contains($css, 'overflow: visible'), 'search dropdown is not clipp
 hc_assert(str_contains($indexView, 'data-hc-search-url'), 'help home exposes live search URL');
 hc_assert(!str_contains($indexView, 'method="get"'), 'help search does not GET-submit the page');
 hc_assert(str_contains($layout, "js/help-center.js"), 'layout always loads help-center.js');
+hc_assert(str_contains($layout, 'data-hc-nav') && str_contains($layout, 'admin\\/help'), 'POS register hijack skips Help Center URLs');
+hc_assert(str_contains($js, 'help_url') && str_contains($js, "data-hc-nav"), 'search hits prefer Help Center URLs');
+hc_assert(str_contains((string) file_get_contents($root . '/views/help/module.php'), 'help/search-bar'), 'help module pages keep the search bar');
+hc_assert(str_contains((string) file_get_contents($root . '/views/help/article.php'), 'help/search-bar'), 'help article pages keep the search bar');
+hc_assert(str_contains((string) file_get_contents($root . '/views/partials/help/search-bar.php'), 'hc-search-input'), 'shared help search bar is present');
+hc_assert(str_contains((string) file_get_contents($root . '/views/partials/help/module-card.php'), 'admin/help/module/'), 'module cards open Help Center pages');
 hc_assert(str_contains((string) file_get_contents($root . '/app/controllers/Shared/HelpCenterController.php'), 'searchHits'), 'controller renders server-side search hits');
 
 echo "\nHelp Center visibility tests: {$passed} passed, {$failed} failed\n";

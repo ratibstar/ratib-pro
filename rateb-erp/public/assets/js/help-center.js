@@ -56,6 +56,9 @@
   }
 
   function itemUrl(item) {
+    if (item && item.help_url) {
+      return String(item.help_url);
+    }
     var home = homeUrl().replace(/\/?$/, '/');
     if (item.type === 'module') {
       return home + 'module/' + encodeURIComponent(item.slug);
@@ -137,6 +140,7 @@
       var a = document.createElement('a');
       a.className = 'hc-search__hit' + (i === 0 ? ' is-active' : '');
       a.setAttribute('role', 'option');
+      a.setAttribute('data-hc-nav', '1');
       a.href = itemUrl(item);
       a.innerHTML =
         '<span class="hc-search__hit-icon"><i class="fas ' +

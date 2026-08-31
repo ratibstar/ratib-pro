@@ -58,6 +58,11 @@
   max-width: 42rem;
 }
 
+.hc-search--compact {
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
 .hc-search__field {
   display: flex;
   align-items: center;
