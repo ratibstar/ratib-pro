@@ -1,0 +1,701 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Services;
+
+use PDO;
+use Rateb\App\Core\Database;
+use Rateb\App\Models\Company;
+use Rateb\App\Models\Plan;
+use Throwable;
+
+/**
+ * Module Add-on Commerce ledger (Phase 1).
+ *
+ * NOT a runtime access authority. HTTP access remains:
+ * company.modules → PlanLimitService::companyHasModule() → CompanyModuleMiddleware.
+ *
+ * calculateEffectiveModules() is diagnostics/tests only — never call from middleware.
+ *
+ * V1 limitation: JSON cannot tag plan vs add-on vs manual grant. Expiration uses
+ * only plan membership, other active add-ons, and preexisting_grant (set at
+ * activation). Do not infer a fourth "manual" source from JSON after purchase.
+ */
+final class ModuleAddonService
+{
+    public const FLAG_NAME = 'MODULE_ADDON_COMMERCE_ENABLED';
+
+    /** @var array<string, array<string, mixed>> */
+    private array $catalog;
+
+    /**
+     * @param array<string, array<string, mixed>>|null $catalog Injected catalog for tests
+     */
+    public function __construct(?array $catalog = null)
+    {
+        $this->catalog = $catalog ?? $this->loadCatalogFile();
+    }
+
+    public function isEnabled(): bool
+    {
+        if (defined(self::FLAG_NAME)) {
+            return (bool) constant(self::FLAG_NAME);
+        }
+        $env = getenv(self::FLAG_NAME);
+        if ($env === false || $env === '') {
+            $env = $_ENV[self::FLAG_NAME] ?? '';
+        }
+        if ($env === '' || $env === false) {
+            return false;
+        }
+
+        return in_array(strtolower(trim((string) $env)), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /**
+     * @return array<string, array{name:string, monthly:float, yearly:float, enabled:bool}>
+     */
+    public function catalog(): array
+    {
+        $out = [];
+        foreach ($this->catalog as $slug => $row) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '' || !is_array($row)) {
+                continue;
+            }
+            $out[$slug] = [
+                'name' => (string) ($row['name'] ?? $slug),
+                'monthly' => (float) ($row['monthly'] ?? 0),
+                'yearly' => (float) ($row['yearly'] ?? 0),
+                'enabled' => !empty($row['enabled']),
+            ];
+        }
+
+        return $out;
+    }
+
+    public function isPurchasable(string $slug): bool
+    {
+        $slug = strtolower(trim($slug));
+        if ($slug === '') {
+            return false;
+        }
+        $known = PlanLimitService::filterKnownModules([$slug]);
+        if ($known === [] || $known[0] !== $slug) {
+            return false;
+        }
+        $item = $this->catalog()[$slug] ?? null;
+        if ($item === null || empty($item['enabled'])) {
+            return false;
+        }
+        $monthly = (float) ($item['monthly'] ?? 0);
+        $yearly = (float) ($item['yearly'] ?? 0);
+
+        return $monthly > 0 || $yearly > 0;
+    }
+
+    /**
+     * Raw company.modules decoded to unique string slugs.
+     * Empty list means plan fallback at the access gate — not "no modules".
+     *
+     * @return list<string>
+     */
+    public function currentJson(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $company = $this->companyRow($companyId);
+
+        return $this->decodeModulesList($company['modules'] ?? null);
+    }
+
+    /**
+     * Plan pack only (read-only). Does not apply company.modules override.
+     *
+     * @return list<string>
+     */
+    public function planModules(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $company = $this->companyRow($companyId);
+        if ($company === null) {
+            return [];
+        }
+        $planId = (int) ($company['plan_id'] ?? 0);
+        $slug = '';
+        if ($planId > 0) {
+            $plan = (new Plan())->find($planId);
+            $slug = strtolower(trim((string) ($plan['slug'] ?? '')));
+        }
+        $mods = $slug !== ''
+            ? PlanLimitService::modulesForSlug($slug)
+            : PlanLimitService::defaultModules();
+
+        return PlanLimitService::filterKnownModules($mods);
+    }
+
+    /**
+     * Diagnostics/tests only. NEVER use as HTTP access gate.
+     *
+     * @return list<string>
+     */
+    public function calculateEffectiveModules(int $companyId): array
+    {
+        $union = array_merge(
+            $this->planModules($companyId),
+            $this->activeAddonSlugs($companyId),
+            $this->currentJson($companyId)
+        );
+
+        return $this->normalizeSlugList($union);
+    }
+
+    /**
+     * @return array{ok:bool, code:string, disabled?:bool, addon_id?:int, company_id?:int, module?:string, preexisting_grant?:int, modules?:list<string>}
+     */
+    public function activateFromPaidInvoice(int $invoiceId): array
+    {
+        if (!$this->isEnabled()) {
+            return ['ok' => false, 'code' => 'disabled', 'disabled' => true];
+        }
+        if ($invoiceId < 1) {
+            return ['ok' => false, 'code' => 'invoice_not_found'];
+        }
+
+        $db = Database::connection();
+        $started = false;
+        try {
+            if (!$db->inTransaction()) {
+                $db->beginTransaction();
+                $started = true;
+            }
+
+            $invoice = $this->lockInvoice($db, $invoiceId);
+            if ($invoice === null) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'invoice_not_found'];
+            }
+            if (!$this->invoiceIsPaid($invoice)) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'invoice_not_paid'];
+            }
+
+            $addon = $this->lockAddonByInvoice($db, $invoiceId);
+            if ($addon === null) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'addon_not_found'];
+            }
+
+            $companyId = (int) ($addon['company_id'] ?? 0);
+            $invoiceCompany = (int) ($invoice['company_id'] ?? 0);
+            if ($companyId < 1 || $invoiceCompany !== $companyId) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'invoice_company_mismatch'];
+            }
+
+            $slug = strtolower(trim((string) ($addon['module_slug'] ?? '')));
+            $known = PlanLimitService::filterKnownModules([$slug]);
+            if ($slug === '' || $known === [] || !isset($this->catalog()[$slug])) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'invalid_module'];
+            }
+
+            $this->lockCompany($db, $companyId);
+            $this->forgetCompanyRowMemo($companyId);
+
+            $snapshot = $this->materializeCurrentModules($companyId);
+            $alreadyPresent = in_array($slug, $snapshot, true);
+            $status = (string) ($addon['status'] ?? '');
+
+            if ($status === 'active' && $alreadyPresent) {
+                if ($started) {
+                    $db->commit();
+                }
+
+                return [
+                    'ok' => true,
+                    'code' => 'already_active',
+                    'addon_id' => (int) $addon['id'],
+                    'company_id' => $companyId,
+                    'module' => $slug,
+                    'preexisting_grant' => (int) ($addon['preexisting_grant'] ?? 0),
+                    'modules' => $snapshot,
+                ];
+            }
+
+            $preexisting = $alreadyPresent ? 1 : (int) ($addon['preexisting_grant'] ?? 0);
+            if ($status !== 'active') {
+                $preexisting = $alreadyPresent ? 1 : 0;
+            }
+
+            $newModules = $this->normalizeSlugList(array_merge($snapshot, [$slug]));
+            $okWrite = (new Company())->updateModules($companyId, $newModules);
+            if (!$okWrite) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'modules_write_failed'];
+            }
+
+            $this->markAddonActive($db, (int) $addon['id'], $preexisting);
+            PlanLimitService::forgetCompanyLimits($companyId);
+            $this->forgetCompanyRowMemo($companyId);
+
+            if ($started) {
+                $db->commit();
+            }
+
+            return [
+                'ok' => true,
+                'code' => 'activated',
+                'addon_id' => (int) $addon['id'],
+                'company_id' => $companyId,
+                'module' => $slug,
+                'preexisting_grant' => $preexisting,
+                'modules' => $newModules,
+            ];
+        } catch (Throwable $e) {
+            if ($started && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            Logger::error('module_addon_activate_failed', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['ok' => false, 'code' => 'activate_failed'];
+        }
+    }
+
+    /**
+     * @return array{ok:bool, code:string, disabled?:bool, addon_id?:int, removed?:bool, modules?:list<string>}
+     */
+    public function expireAddon(int $addonId): array
+    {
+        if (!$this->isEnabled()) {
+            return ['ok' => false, 'code' => 'disabled', 'disabled' => true];
+        }
+        if ($addonId < 1) {
+            return ['ok' => false, 'code' => 'addon_not_found'];
+        }
+
+        $db = Database::connection();
+        $started = false;
+        try {
+            if (!$db->inTransaction()) {
+                $db->beginTransaction();
+                $started = true;
+            }
+
+            $addon = $this->lockAddonById($db, $addonId);
+            if ($addon === null) {
+                if ($started) {
+                    $db->rollBack();
+                }
+
+                return ['ok' => false, 'code' => 'addon_not_found'];
+            }
+
+            $companyId = (int) ($addon['company_id'] ?? 0);
+            $slug = strtolower(trim((string) ($addon['module_slug'] ?? '')));
+            $this->lockCompany($db, $companyId);
+            $this->forgetCompanyRowMemo($companyId);
+
+            if ((string) ($addon['status'] ?? '') === 'expired') {
+                if ($started) {
+                    $db->commit();
+                }
+
+                return [
+                    'ok' => true,
+                    'code' => 'already_expired',
+                    'addon_id' => $addonId,
+                    'removed' => false,
+                    'modules' => $this->currentJson($companyId),
+                ];
+            }
+
+            $this->markAddonExpired($db, $addonId);
+
+            $explicit = $this->currentJson($companyId);
+            $removed = false;
+            if ($explicit !== [] && $this->shouldStripModule($companyId, $slug, $addonId, (int) ($addon['preexisting_grant'] ?? 0))) {
+                $kept = array_values(array_filter(
+                    $explicit,
+                    static fn(string $m): bool => $m !== $slug
+                ));
+                if ($kept !== $explicit) {
+                    (new Company())->updateModules($companyId, $kept);
+                    $removed = true;
+                    $explicit = $kept;
+                }
+            }
+
+            PlanLimitService::forgetCompanyLimits($companyId);
+            $this->forgetCompanyRowMemo($companyId);
+
+            if ($started) {
+                $db->commit();
+            }
+
+            return [
+                'ok' => true,
+                'code' => 'expired',
+                'addon_id' => $addonId,
+                'removed' => $removed,
+                'modules' => $explicit,
+            ];
+        } catch (Throwable $e) {
+            if ($started && $db->inTransaction()) {
+                $db->rollBack();
+            }
+            Logger::error('module_addon_expire_failed', [
+                'addon_id' => $addonId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['ok' => false, 'code' => 'expire_failed'];
+        }
+    }
+
+    /**
+     * Expire add-ons whose ends_at calendar date has passed (valid through ends_at).
+     * Not wired to CronService in Phase 1.
+     */
+    public function expireDueAddons(int $limit = 50): int
+    {
+        if (!$this->isEnabled()) {
+            return 0;
+        }
+        $limit = max(1, min(500, $limit));
+        $todayExpr = Database::isSqlite() ? "date('now')" : 'CURDATE()';
+        $count = 0;
+        try {
+            $db = Database::connection();
+            $stmt = $db->query(
+                "SELECT id FROM rateb_company_module_addons
+                 WHERE status = 'active' AND ends_at IS NOT NULL AND ends_at < {$todayExpr}
+                 ORDER BY id ASC LIMIT " . $limit
+            );
+            $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            foreach ($rows as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $result = $this->expireAddon($id);
+                if (!empty($result['ok'])) {
+                    $count++;
+                }
+            }
+        } catch (Throwable $e) {
+            Logger::error('module_addon_expire_due_failed', ['error' => $e->getMessage()]);
+        }
+
+        return $count;
+    }
+
+    /**
+     * Explicit JSON if non-empty, otherwise plan pack. Then unique + implied core slugs.
+     *
+     * @return list<string>
+     */
+    public function materializeCurrentModules(int $companyId): array
+    {
+        $explicit = $this->currentJson($companyId);
+        $base = $explicit !== [] ? $explicit : $this->planModules($companyId);
+
+        return $this->normalizeSlugList($base);
+    }
+
+    /**
+     * @param mixed $raw
+     * @return list<string>
+     */
+    public function decodeModulesList($raw): array
+    {
+        $list = [];
+        if (is_array($raw)) {
+            if ($this->isListArray($raw)) {
+                foreach ($raw as $item) {
+                    if (is_string($item) || is_int($item)) {
+                        $list[] = strtolower(trim((string) $item));
+                    }
+                }
+            }
+        } elseif (is_string($raw) && trim($raw) !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) && $this->isListArray($decoded)) {
+                foreach ($decoded as $item) {
+                    if (is_string($item) || is_int($item)) {
+                        $list[] = strtolower(trim((string) $item));
+                    }
+                }
+            }
+        }
+
+        return $this->uniquePreserveOrder(array_values(array_filter(
+            $list,
+            static fn(string $s): bool => $s !== ''
+        )));
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function loadCatalogFile(): array
+    {
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $file = $root . '/config/module-addons.php';
+        if (!is_file($file)) {
+            return [];
+        }
+        $data = require $file;
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function companyRow(int $companyId): ?array
+    {
+        return (new Company())->find($companyId);
+    }
+
+    /**
+     * @param list<string> $slugs
+     * @return list<string>
+     */
+    private function normalizeSlugList(array $slugs): array
+    {
+        $known = PlanLimitService::filterKnownModules($this->uniquePreserveOrder($slugs));
+        foreach (['dashboard', 'notifications'] as $implied) {
+            if (!in_array($implied, $known, true)) {
+                $known[] = $implied;
+            }
+        }
+
+        return array_values($known);
+    }
+
+    /**
+     * @param list<string> $slugs
+     * @return list<string>
+     */
+    private function uniquePreserveOrder(array $slugs): array
+    {
+        $seen = [];
+        $out = [];
+        foreach ($slugs as $slug) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '' || isset($seen[$slug])) {
+                continue;
+            }
+            $seen[$slug] = true;
+            $out[] = $slug;
+        }
+
+        return $out;
+    }
+
+    /** @param array<int|string, mixed> $arr */
+    private function isListArray(array $arr): bool
+    {
+        if ($arr === []) {
+            return true;
+        }
+        $i = 0;
+        foreach ($arr as $k => $_) {
+            if ($k !== $i) {
+                return false;
+            }
+            $i++;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function activeAddonSlugs(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        try {
+            $todayExpr = Database::isSqlite() ? "date('now')" : 'CURDATE()';
+            $stmt = Database::connection()->prepare(
+                "SELECT module_slug FROM rateb_company_module_addons
+                 WHERE company_id = :cid AND status = 'active'
+                   AND (ends_at IS NULL OR ends_at >= {$todayExpr})"
+            );
+            $stmt->execute(['cid' => $companyId]);
+            $slugs = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $slugs[] = strtolower(trim((string) ($row['module_slug'] ?? '')));
+            }
+
+            return array_values(array_filter($slugs, static fn(string $s): bool => $s !== ''));
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    private function shouldStripModule(int $companyId, string $slug, int $exceptAddonId, int $preexistingGrant): bool
+    {
+        if ($slug === '' || $preexistingGrant === 1) {
+            return false;
+        }
+        if (in_array($slug, $this->planModules($companyId), true)) {
+            return false;
+        }
+
+        return !$this->hasOtherActiveAddon($companyId, $slug, $exceptAddonId);
+    }
+
+    private function hasOtherActiveAddon(int $companyId, string $slug, int $exceptAddonId): bool
+    {
+        $todayExpr = Database::isSqlite() ? "date('now')" : 'CURDATE()';
+        $stmt = Database::connection()->prepare(
+            "SELECT id FROM rateb_company_module_addons
+             WHERE company_id = :cid AND module_slug = :slug AND status = 'active' AND id <> :xid
+               AND (ends_at IS NULL OR ends_at >= {$todayExpr})
+             LIMIT 1"
+        );
+        $stmt->execute([
+            'cid' => $companyId,
+            'slug' => $slug,
+            'xid' => $exceptAddonId,
+        ]);
+
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /** @param array<string, mixed> $invoice */
+    private function invoiceIsPaid(array $invoice): bool
+    {
+        $pay = strtolower(trim((string) ($invoice['payment_status'] ?? '')));
+        $st = strtolower(trim((string) ($invoice['status'] ?? '')));
+
+        return $pay === 'paid' || $st === 'paid';
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function lockInvoice(PDO $db, int $invoiceId): ?array
+    {
+        $sql = 'SELECT * FROM rateb_invoices WHERE id = :id LIMIT 1';
+        if (!Database::isSqlite()) {
+            $sql .= ' FOR UPDATE';
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $invoiceId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function lockAddonByInvoice(PDO $db, int $invoiceId): ?array
+    {
+        $sql = 'SELECT * FROM rateb_company_module_addons WHERE invoice_id = :id LIMIT 1';
+        if (!Database::isSqlite()) {
+            $sql .= ' FOR UPDATE';
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $invoiceId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function lockAddonById(PDO $db, int $addonId): ?array
+    {
+        $sql = 'SELECT * FROM rateb_company_module_addons WHERE id = :id LIMIT 1';
+        if (!Database::isSqlite()) {
+            $sql .= ' FOR UPDATE';
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $addonId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    private function lockCompany(PDO $db, int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $sql = 'SELECT id FROM rateb_companies WHERE id = :id LIMIT 1';
+        if (!Database::isSqlite()) {
+            $sql .= ' FOR UPDATE';
+        }
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $companyId]);
+        $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function markAddonActive(PDO $db, int $addonId, int $preexisting): void
+    {
+        $stmt = $db->prepare(
+            "UPDATE rateb_company_module_addons
+             SET status = 'active', preexisting_grant = :pg, updated_at = :ts
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            'pg' => $preexisting,
+            'ts' => date('Y-m-d H:i:s'),
+            'id' => $addonId,
+        ]);
+    }
+
+    private function markAddonExpired(PDO $db, int $addonId): void
+    {
+        $stmt = $db->prepare(
+            "UPDATE rateb_company_module_addons
+             SET status = 'expired', updated_at = :ts
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            'ts' => date('Y-m-d H:i:s'),
+            'id' => $addonId,
+        ]);
+    }
+
+    private function forgetCompanyRowMemo(int $companyId): void
+    {
+        if ($companyId < 1 || !function_exists('rateb_ops_company_request_state')) {
+            return;
+        }
+        $state = &rateb_ops_company_request_state();
+        unset($state['rows'][$companyId], $state['exists'][$companyId]);
+    }
+}
