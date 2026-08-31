@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services\Help;
 
 /**
- * Permission gate for Help Center visibility (audience + optional module plan gate).
+ * Permission gate for Help Center visibility (host + audience + optional module plan gate).
  */
 final class HelpPermissionGate
 {
@@ -46,6 +46,27 @@ final class HelpPermissionGate
         return true;
     }
 
+    /**
+     * Host visibility: "platform" = rateb.sa (and other platform oversight hosts) only.
+     */
+    public function canSeeHost(string $host): bool
+    {
+        $host = strtolower(trim($host));
+        if ($host === '' || $host === 'all') {
+            return true;
+        }
+        if ($host === 'platform') {
+            return function_exists('rateb_is_platform_oversight_host')
+                && rateb_is_platform_oversight_host();
+        }
+
+        return true;
+    }
+
+    /**
+     * Soft plan gate: hide the card when the company pack clearly lacks this module.
+     * Does not require a nav permission slug — help is readable, not an action.
+     */
     public function canSeeModule(?string $moduleGate): bool
     {
         if ($moduleGate === null || $moduleGate === '') {
@@ -54,15 +75,44 @@ final class HelpPermissionGate
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             return true;
         }
-        if (!function_exists('rateb_nav_can')) {
+        if (!function_exists('rateb_nav_tenant_company_id_for_gate')) {
             return true;
         }
-        // Soft gate: hide module card when plan/module clearly unavailable.
+        $companyId = (int) rateb_nav_tenant_company_id_for_gate();
+        if ($companyId < 1) {
+            return false;
+        }
+        if (!class_exists(\Rateb\App\Services\PlanLimitService::class)) {
+            return true;
+        }
         try {
-            return (bool) rateb_nav_can('', $moduleGate);
+            return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $moduleGate);
         } catch (\Throwable $e) {
             return true;
         }
+    }
+
+    /**
+     * Full catalog-row check used by Help Center listings, search, and articles.
+     *
+     * @param array<string,mixed> $module
+     */
+    public function canSeeCatalogModule(array $module): bool
+    {
+        if (!$this->canSeeHost((string) ($module['host'] ?? 'all'))) {
+            return false;
+        }
+        if (!empty($module['requires_super_admin'])) {
+            if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+                return false;
+            }
+        }
+        if (!$this->canSeeAudience((string) ($module['audience'] ?? 'all'))) {
+            return false;
+        }
+        $gate = isset($module['module_gate']) ? (string) $module['module_gate'] : '';
+
+        return $this->canSeeModule($gate !== '' ? $gate : null);
     }
 
     public function canManageContent(): bool

@@ -43,4 +43,13 @@ return [
         'a_en' => 'An audit counts physical stock. An adjustment corrects differences after audit or when an error is found.',
         'keywords' => ['جرد', 'تسوية', 'audit', 'adjustment'],
     ],
+    [
+        'id' => 'faq-oversight-platform',
+        'module' => 'admin-oversight',
+        'q_ar' => 'لماذا لا تظهر مراقبة الإدارة في مركز المساعدة على نطاق الشركة؟',
+        'q_en' => 'Why is Admin oversight missing from Help on the company host?',
+        'a_ar' => 'شروحات مراقبة الإدارة تظهر فقط على منصة rateb.sa لأنها أداة سوبر أدمن للمنصة وليست جزءاً من لوحة الشركة المستأجرة.',
+        'a_en' => 'Admin oversight guides appear only on rateb.sa. They are a platform Super Admin tool, not part of the tenant company console.',
+        'keywords' => ['مراقبة الإدارة', 'المنصة', 'rateb.sa', 'oversight'],
+    ],
 ];

@@ -61,6 +61,9 @@ final class HelpContextService
             if ($slug === '') {
                 continue;
             }
+            if (!$this->repo->gate()->canSeeCatalogModule($module)) {
+                continue;
+            }
             $hints = array_map('strval', $module['route_hints'] ?? []);
             foreach ($hints as $hint) {
                 $hint = mb_strtolower(trim(str_replace('\\', '/', $hint), '/'));

@@ -27,14 +27,10 @@ final class HelpCenterRepository
         $out = [];
         $counts = $this->articleCountsByModule();
         foreach (HelpContentBuilder::modules() as $module) {
-            $gate = isset($module['module_gate']) ? (string) $module['module_gate'] : null;
-            if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
+            if (!$this->gate->canSeeCatalogModule($module)) {
                 continue;
             }
             $audience = (string) ($module['audience'] ?? 'all');
-            if (!$this->gate->canSeeAudience($audience)) {
-                continue;
-            }
             $slug = (string) ($module['slug'] ?? '');
             $out[] = [
                 'slug' => $slug,
@@ -61,11 +57,7 @@ final class HelpCenterRepository
         if ($raw === null) {
             return null;
         }
-        $gate = isset($raw['module_gate']) ? (string) $raw['module_gate'] : null;
-        if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
-            return null;
-        }
-        if (!$this->gate->canSeeAudience((string) ($raw['audience'] ?? 'all'))) {
+        if (!$this->gate->canSeeCatalogModule($raw)) {
             return null;
         }
         $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
@@ -96,6 +88,10 @@ final class HelpCenterRepository
     /** @return list<array<string,mixed>> */
     public function articlesForModule(string $moduleSlug): array
     {
+        $raw = HelpContentBuilder::modulesBySlug()[$moduleSlug] ?? null;
+        if ($raw !== null && !$this->gate->canSeeCatalogModule($raw)) {
+            return [];
+        }
         $out = [];
         foreach (HelpContentBuilder::articles() as $article) {
             if ((string) ($article['module'] ?? '') !== $moduleSlug) {
@@ -138,13 +134,9 @@ final class HelpCenterRepository
             $moduleSlug = (string) ($article['module'] ?? '');
             $module = $this->module($moduleSlug);
             if ($module === null && $moduleSlug !== '') {
-                // Module soft-hidden — still allow article if audience ok and no hard gate fail.
                 $rawMod = HelpContentBuilder::modulesBySlug()[$moduleSlug] ?? null;
-                if ($rawMod !== null) {
-                    $gate = isset($rawMod['module_gate']) ? (string) $rawMod['module_gate'] : null;
-                    if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
-                        return null;
-                    }
+                if ($rawMod !== null && !$this->gate->canSeeCatalogModule($rawMod)) {
+                    return null;
                 }
             }
 
@@ -181,11 +173,8 @@ final class HelpCenterRepository
             }
             $moduleSlug = (string) ($article['module'] ?? '');
             $mod = $modules[$moduleSlug] ?? null;
-            if ($mod !== null) {
-                $gate = isset($mod['module_gate']) ? (string) $mod['module_gate'] : null;
-                if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
-                    continue;
-                }
+            if ($mod !== null && !$this->gate->canSeeCatalogModule($mod)) {
+                continue;
             }
             $out[] = [
                 'slug' => (string) ($article['slug'] ?? ''),
@@ -214,11 +203,8 @@ final class HelpCenterRepository
             }
             $moduleSlug = (string) ($article['module'] ?? '');
             $mod = $modules[$moduleSlug] ?? null;
-            if ($mod !== null) {
-                $gate = isset($mod['module_gate']) ? (string) $mod['module_gate'] : null;
-                if (!$this->gate->canSeeModule($gate !== '' ? $gate : null)) {
-                    continue;
-                }
+            if ($mod !== null && !$this->gate->canSeeCatalogModule($mod)) {
+                continue;
             }
             $out[] = [
                 'slug' => (string) ($article['slug'] ?? ''),
@@ -268,6 +254,12 @@ final class HelpCenterRepository
             $mod = $faq['module'] ?? null;
             if ($moduleSlug !== null && $mod !== null && (string) $mod !== $moduleSlug) {
                 continue;
+            }
+            if ($mod !== null && $mod !== '') {
+                $catalog = HelpContentBuilder::modulesBySlug()[(string) $mod] ?? null;
+                if ($catalog !== null && !$this->gate->canSeeCatalogModule($catalog)) {
+                    continue;
+                }
             }
             if ($moduleSlug !== null && $mod === null) {
                 // include global FAQs on module pages too

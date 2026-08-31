@@ -7,7 +7,8 @@ declare(strict_types=1);
  * @return list<array{
  *   slug:string,icon:string,accent:string,sort:int,
  *   title_ar:string,title_en:string,desc_ar:string,desc_en:string,
- *   audience:string,route_hints:list<string>,module_gate:?string
+ *   audience:string,route_hints:list<string>,module_gate:?string,
+ *   host?:string,requires_super_admin?:bool
  * }>
  */
 return [
@@ -22,6 +23,28 @@ return [
         'desc_en' => 'Overview of KPIs and quick actions.',
         'audience' => 'all',
         'route_hints' => ['admin', 'admin/executive-dashboard'],
+        'module_gate' => null,
+    ],
+    [
+        'slug' => 'admin-oversight',
+        'icon' => 'fa-shield-halved',
+        'accent' => 'red',
+        'sort' => 12,
+        'title_ar' => 'مراقبة الإدارة',
+        'title_en' => 'Admin oversight',
+        'desc_ar' => 'مراقبة المنصة عبر الشركات: الاعتمادات والاشتراكات والمشتريات والمخزون.',
+        'desc_en' => 'Cross-company platform monitoring: approvals, subscriptions, procurement, and inventory.',
+        'audience' => 'admin',
+        'host' => 'platform',
+        'requires_super_admin' => true,
+        'route_hints' => [
+            'admin/oversight',
+            'admin/companies',
+            'admin/company-permissions',
+            'admin/agency-updates',
+            'admin/subscriptions',
+            'admin/subscription-engine',
+        ],
         'module_gate' => null,
     ],
     [
@@ -153,6 +176,19 @@ return [
         'audience' => 'all',
         'route_hints' => ['crm'],
         'module_gate' => 'crm',
+    ],
+    [
+        'slug' => 'marketplace',
+        'icon' => 'fa-store',
+        'accent' => 'lime',
+        'sort' => 115,
+        'title_ar' => 'سوق الخدمات',
+        'title_en' => 'Services marketplace',
+        'desc_ar' => 'مزودو الخدمات والخدمات والعروض داخل سوق الشركة.',
+        'desc_en' => 'Service providers, offerings, and marketplace operations.',
+        'audience' => 'all',
+        'route_hints' => ['marketplace'],
+        'module_gate' => 'marketplace',
     ],
     [
         'slug' => 'projects',
@@ -295,6 +331,19 @@ return [
         'desc_en' => 'Account details, language, and security.',
         'audience' => 'all',
         'route_hints' => ['profile'],
+        'module_gate' => null,
+    ],
+    [
+        'slug' => 'settings-support',
+        'icon' => 'fa-gear',
+        'accent' => 'slate',
+        'sort' => 225,
+        'title_ar' => 'الإعدادات والدعم',
+        'title_en' => 'Settings & Support',
+        'desc_ar' => 'تذاكر الدعم وسجلات التدقيق وقوالب البريد والرسائل.',
+        'desc_en' => 'Support tickets, audit logs, and email/SMS templates.',
+        'audience' => 'all',
+        'route_hints' => ['support-tickets', 'audit-logs', 'email-templates', 'sms-templates', 'email-diagnostics'],
         'module_gate' => null,
     ],
     [

@@ -22,6 +22,22 @@ return [
             ['slug' => 'dashboard-charts', 'title_ar' => 'قراءة الرسوم البيانية', 'title_en' => 'Reading charts', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['رسم', 'chart', 'نمو', 'growth'], 'icon' => 'fa-chart-column', 'audience' => 'manager'],
         ],
     ],
+    'admin-oversight' => [
+        'flow_ar' => ['فتح مراقبة الإدارة', 'مراجعة الاعتمادات', 'اعتماد شركة أو طلب', 'مراقبة الاشتراكات', 'متابعة المشتريات والمخزون'],
+        'flow_en' => ['Open admin oversight', 'Review queues', 'Approve a company or request', 'Monitor subscriptions', 'Follow procurement and inventory'],
+        'overview_ar' => 'مراقبة الإدارة متاحة على منصة rateb.sa فقط، وتعرض نظرة عبر الشركات للاعتمادات والاشتراكات والمشتريات والمخزون دون العمل من لوحة الشركة المستأجرة.',
+        'overview_en' => 'Admin oversight is available on the rateb.sa platform only. It is a cross-company view of approvals, subscriptions, procurement, and inventory — not the tenant company console.',
+        'start_ar' => ['افتح rateb.sa وليس نطاق الشركة', 'من الشريط الجانبي اختر مراقبة الإدارة', 'ابدأ من الاعتمادات المعلقة أو اعتماد الشركات'],
+        'start_en' => ['Open rateb.sa, not the company host', 'From the sidebar choose Admin oversight', 'Start with pending approvals or company approvals'],
+        'articles' => [
+            ['slug' => 'oversight-overview', 'title_ar' => 'ما هي مراقبة الإدارة؟', 'title_en' => 'What is admin oversight?', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['مراقبة الإدارة', 'المنصة', 'rateb.sa', 'oversight', 'platform'], 'icon' => 'fa-shield-halved', 'audience' => 'admin'],
+            ['slug' => 'oversight-company-approvals', 'title_ar' => 'اعتماد الشركات', 'title_en' => 'Company approvals', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['اعتماد شركات', 'تفعيل شركة', 'company approval'], 'icon' => 'fa-building-circle-check', 'audience' => 'admin'],
+            ['slug' => 'oversight-approvals', 'title_ar' => 'مراقبة الاعتمادات', 'title_en' => 'Approvals oversight', 'difficulty' => 'intermediate', 'minutes' => 5, 'keywords' => ['اعتماد', 'موافقة', 'approvals oversight'], 'icon' => 'fa-check-double', 'audience' => 'admin'],
+            ['slug' => 'oversight-hr', 'title_ar' => 'اعتمادات الموارد البشرية من المنصة', 'title_en' => 'HR approvals from the platform', 'difficulty' => 'intermediate', 'minutes' => 4, 'keywords' => ['إجازة', 'HR', 'اعتماد موارد بشرية'], 'icon' => 'fa-user-check', 'audience' => 'admin'],
+            ['slug' => 'oversight-operations', 'title_ar' => 'مراقبة المشتريات والمخزون وعروض الأسعار', 'title_en' => 'Procurement, inventory, and RFQ oversight', 'difficulty' => 'intermediate', 'minutes' => 5, 'keywords' => ['مراقبة المشتريات', 'مخزون', 'RFQ', 'تقييم موردين'], 'icon' => 'fa-chart-column', 'audience' => 'admin'],
+            ['slug' => 'oversight-subscriptions', 'title_ar' => 'مراقبة الاشتراكات', 'title_en' => 'Subscription monitoring', 'difficulty' => 'intermediate', 'minutes' => 4, 'keywords' => ['اشتراك', 'subscription', 'فوترة'], 'icon' => 'fa-credit-card', 'audience' => 'admin'],
+        ],
+    ],
     'sales-screen' => [
         'flow_ar' => ['عميل', 'بيع', 'فاتورة', 'دفع', 'خصم المخزون', 'تقرير'],
         'flow_en' => ['Customer', 'Sale', 'Invoice', 'Payment', 'Stock deduct', 'Report'],
@@ -157,6 +173,19 @@ return [
             ['slug' => 'crm-customer', 'title_ar' => 'إضافة عميل في CRM', 'title_en' => 'Add a CRM customer', 'difficulty' => 'beginner', 'minutes' => 3, 'keywords' => ['عميل', 'customer', 'CRM'], 'icon' => 'fa-address-book'],
             ['slug' => 'crm-opportunity', 'title_ar' => 'إنشاء فرصة بيع', 'title_en' => 'Create a sales opportunity', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['فرصة', 'opportunity', 'صفقة'], 'icon' => 'fa-bullseye'],
             ['slug' => 'crm-quote', 'title_ar' => 'عروض الأسعار في CRM', 'title_en' => 'CRM quotations', 'difficulty' => 'intermediate', 'minutes' => 4, 'keywords' => ['عرض سعر', 'quotation', 'quote'], 'icon' => 'fa-file-signature'],
+        ],
+    ],
+    'marketplace' => [
+        'flow_ar' => ['لوحة السوق', 'مزود خدمة', 'خدمة', 'نشر', 'متابعة الطلبات'],
+        'flow_en' => ['Marketplace dashboard', 'Provider', 'Service', 'Publish', 'Track requests'],
+        'overview_ar' => 'سوق الخدمات يتيح إدارة مزودي الخدمة وعروضهم داخل الشركة.',
+        'overview_en' => 'The services marketplace manages providers and their offerings inside the company.',
+        'start_ar' => ['افتح سوق الخدمات', 'أضف مزود خدمة', 'أضف خدمة واربطها بالمزود'],
+        'start_en' => ['Open the services marketplace', 'Add a provider', 'Add a service and link it to the provider'],
+        'articles' => [
+            ['slug' => 'marketplace-dashboard', 'title_ar' => 'لوحة سوق الخدمات', 'title_en' => 'Marketplace dashboard', 'difficulty' => 'beginner', 'minutes' => 3, 'keywords' => ['سوق الخدمات', 'marketplace', 'سوق'], 'icon' => 'fa-gauge-high'],
+            ['slug' => 'marketplace-providers', 'title_ar' => 'إدارة مزودي الخدمات', 'title_en' => 'Manage service providers', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['مزود', 'provider', 'سوق'], 'icon' => 'fa-store'],
+            ['slug' => 'marketplace-services', 'title_ar' => 'إضافة خدمة في السوق', 'title_en' => 'Add a marketplace service', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['خدمة', 'service', 'سوق الخدمات'], 'icon' => 'fa-concierge-bell'],
         ],
     ],
     'projects' => [
@@ -300,6 +329,19 @@ return [
             ['slug' => 'profile-update', 'title_ar' => 'تحديث بيانات الملف الشخصي', 'title_en' => 'Update your profile', 'difficulty' => 'beginner', 'minutes' => 2, 'keywords' => ['ملف', 'profile', 'حساب'], 'icon' => 'fa-user'],
             ['slug' => 'profile-language', 'title_ar' => 'تغيير لغة الواجهة', 'title_en' => 'Change interface language', 'difficulty' => 'beginner', 'minutes' => 2, 'keywords' => ['لغة', 'language', 'عربي', 'English'], 'icon' => 'fa-language'],
             ['slug' => 'profile-2fa', 'title_ar' => 'تفعيل التحقق بخطوتين', 'title_en' => 'Enable two-factor authentication', 'difficulty' => 'intermediate', 'minutes' => 4, 'keywords' => ['2FA', 'أمان', 'security'], 'icon' => 'fa-shield-halved'],
+        ],
+    ],
+    'settings-support' => [
+        'flow_ar' => ['تذكرة دعم', 'رد', 'سجل تدقيق', 'قالب بريد/رسالة', 'إغلاق'],
+        'flow_en' => ['Support ticket', 'Reply', 'Audit log', 'Email/SMS template', 'Close'],
+        'overview_ar' => 'الإعدادات والدعم تجمع تذاكر الدعم وسجلات التدقيق وقوالب التواصل.',
+        'overview_en' => 'Settings & Support covers support tickets, audit logs, and communication templates.',
+        'start_ar' => ['افتح تذاكر الدعم من الإعدادات والدعم', 'راجع التذاكر المفتوحة', 'رد أو أغلق بعد الحل'],
+        'start_en' => ['Open support tickets under Settings & Support', 'Review open tickets', 'Reply or close after resolution'],
+        'articles' => [
+            ['slug' => 'settings-tickets', 'title_ar' => 'تذاكر الدعم', 'title_en' => 'Support tickets', 'difficulty' => 'beginner', 'minutes' => 4, 'keywords' => ['تذكرة', 'دعم', 'support ticket'], 'icon' => 'fa-life-ring'],
+            ['slug' => 'settings-audit', 'title_ar' => 'سجلات التدقيق', 'title_en' => 'Audit logs', 'difficulty' => 'intermediate', 'minutes' => 3, 'keywords' => ['تدقيق', 'audit log', 'سجل'], 'icon' => 'fa-clipboard-list'],
+            ['slug' => 'settings-templates', 'title_ar' => 'قوالب البريد والرسائل', 'title_en' => 'Email and SMS templates', 'difficulty' => 'beginner', 'minutes' => 3, 'keywords' => ['قالب', 'بريد', 'رسالة', 'template'], 'icon' => 'fa-envelope'],
         ],
     ],
     'website' => [
