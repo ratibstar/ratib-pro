@@ -165,14 +165,25 @@ final class MailService
         if ($plainBody === '') {
             $plainBody = $subject;
         }
-        // Match mail-test subject branding (Rateb ERP — …) so Gmail Primary shows supplier comms like test mail.
+        // Exact mail-test subject shape — single RCPT TO supplier (no BCC on same message).
         $token = 'R' . max(0, $commId) . '-' . date('YmdHis');
         $label = (string) __('supplier_comms');
-        $core = trim($subject) !== '' ? trim($subject) : $label;
-        $mailSubject = $label . ' — ' . $core . ' · ' . $token;
+        $core = trim($subject);
+        $mailSubject = 'Rateb ERP — ' . $label;
+        if ($core !== '' && $core !== $label) {
+            $mailSubject .= ' — ' . $core;
+        }
+        $mailSubject .= ' · ' . $token;
 
-        // Identical stack as Settings → mail test (sendTransactional + branded subject).
-        $result = $this->sendTransactional($to, $mailSubject, $plainBody, null, $cc, $bcc, true);
+        $bodyOut = $plainBody;
+        if ($token !== '') {
+            $hint = (string) __('comm_email_gmail_search_hint', ['token' => $token]);
+            if ($hint !== '' && $hint !== 'comm_email_gmail_search_hint') {
+                $bodyOut .= "\n\n—\n" . $hint;
+            }
+        }
+
+        $result = $this->sendTransactional($to, $mailSubject, $bodyOut, null, $cc, null, false);
         return [
             'success' => (bool) ($result['success'] ?? false),
             'error_code' => $result['error_code'] ?? null,

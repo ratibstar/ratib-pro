@@ -222,17 +222,14 @@ final class SupplierCommService
         $isExternal = $this->isExternalEmail($email);
         $mailSubject = $subjectOriginal !== '' ? $subjectOriginal : (string) __('supplier_comms');
 
-        // Never auto-CC logged-in users. External sends get a blind proof copy to From mailbox
-        // so ops can confirm the MTA accepted the message even when Gmail hides it.
+        // Primary = single recipient (same as mail test). Proof copy = separate message to info@.
         $cc = null;
-        $bcc = null;
         $proofTo = '';
         if ($isExternal) {
             $cfgFrom = trim((string) ((new MailConfigService())->resolve()['from_email'] ?? ''));
             if ($cfgFrom !== '' && \Rateb\App\Helpers\Str::isValidEmail($cfgFrom)
                 && strcasecmp($cfgFrom, $email) !== 0) {
-                $bcc = strtolower($cfgFrom);
-                $proofTo = $bcc;
+                $proofTo = strtolower($cfgFrom);
             }
         }
 
@@ -256,7 +253,7 @@ final class SupplierCommService
             '',
             [],
             $commId,
-            $bcc
+            null
         );
 
         $sent = (bool) ($sendResult['success'] ?? false);
@@ -264,6 +261,22 @@ final class SupplierCommService
         $bodyLen = (int) ($sendResult['body_len'] ?? mb_strlen($bodyText));
         $sentSubject = trim((string) ($sendResult['subject'] ?? $mailSubject));
         $searchToken = trim((string) ($sendResult['search_token'] ?? ''));
+
+        if ($sent && $proofTo !== '') {
+            try {
+                $mail->sendTransactional(
+                    $proofTo,
+                    '[نسخة] ' . $sentSubject,
+                    $bodyText,
+                    null,
+                    null,
+                    null,
+                    false
+                );
+            } catch (\Throwable $e) {
+                Logger::warning('Supplier comm proof copy failed', ['to' => $proofTo, 'error' => $e->getMessage()]);
+            }
+        }
 
         if (!$sent && ($sendResult['error_code'] ?? '') === 'smtp_not_configured') {
             return [
@@ -287,7 +300,7 @@ final class SupplierCommService
             $msg .= ' — ' . __('comm_email_search_token', ['token' => $searchToken]);
         }
         if ($sent && $proofTo !== '') {
-            $msg .= ' — ' . __('comm_email_proof_bcc', ['email' => $proofTo]);
+            $msg .= ' — ' . __('comm_email_proof_copy', ['email' => $proofTo, 'to' => $email]);
         }
         $deliveryWarning = false;
         if ($sent && $isExternal) {
