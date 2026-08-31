@@ -1365,6 +1365,7 @@ $ratebCriticalScripts = [
     rateb_asset('js/rateb-date-inputs.js'),
     // Approvals actions must survive soft-nav (idle/one-shot bind left buttons dead).
     rateb_asset('js/approvals-oversight.js'),
+    rateb_asset('js/help-center.js'),
 ];
 if (!empty($layoutAssets['formHybrid'])) {
     $ratebCriticalScripts[] = rateb_asset('js/form-hybrid.js');
@@ -1401,7 +1402,6 @@ if ($navActive('admin/agency-updates')) {
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
 $ratebIdleScripts[] = rateb_asset('js/help-assistant.js');
-$ratebIdleScripts[] = rateb_asset('js/help-center.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */

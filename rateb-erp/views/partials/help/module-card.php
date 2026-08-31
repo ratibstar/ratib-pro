@@ -13,7 +13,8 @@ $hay = $title . ' ' . $desc . ' ' . $slug;
 ?>
 <a class="hc-module-card hc-accent-<?php echo htmlspecialchars($accent, ENT_QUOTES, 'UTF-8'); ?>"
    href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>"
-   data-hc-hay="<?php echo Rateb\App\Core\View::escape($hay); ?>">
+   data-hc-hay="<?php echo Rateb\App\Core\View::escape($hay); ?>"
+   <?php echo !empty($module['search_hidden']) ? 'hidden' : ''; ?>>
     <span class="hc-module-card__icon" aria-hidden="true"><i class="fas <?php echo htmlspecialchars((string) ($module['icon'] ?? 'fa-circle-question'), ENT_QUOTES, 'UTF-8'); ?>"></i></span>
     <span class="hc-module-card__body">
         <span class="hc-module-card__title">

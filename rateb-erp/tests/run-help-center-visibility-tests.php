@@ -102,9 +102,12 @@ $layout = (string) file_get_contents($root . '/views/layouts/main.php');
 
 hc_assert(str_contains($js, "rateb:nav:afterEnter"), 'help search rebinds after soft-nav');
 hc_assert(str_contains($js, 'fetchRemote'), 'help search fetches as you type');
+hc_assert(str_contains($js, "addEventListener('input'"), 'help search listens to typing on document');
 hc_assert(str_contains($css, 'overflow: visible'), 'search dropdown is not clipped by hero overflow');
 hc_assert(str_contains($indexView, 'data-hc-search-url'), 'help home exposes live search URL');
+hc_assert(!str_contains($indexView, 'method="get"'), 'help search does not GET-submit the page');
 hc_assert(str_contains($layout, "js/help-center.js"), 'layout always loads help-center.js');
+hc_assert(str_contains((string) file_get_contents($root . '/app/controllers/Shared/HelpCenterController.php'), 'searchHits'), 'controller renders server-side search hits');
 
 echo "\nHelp Center visibility tests: {$passed} passed, {$failed} failed\n";
 exit($failed > 0 ? 1 : 0);

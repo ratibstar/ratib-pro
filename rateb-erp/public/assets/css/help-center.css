@@ -107,9 +107,8 @@
 }
 
 .hc-search__results {
-  position: absolute;
-  inset-inline: 0;
-  top: calc(100% + 0.45rem);
+  position: static;
+  margin-top: 0.75rem;
   z-index: 80;
   max-height: min(22rem, 60vh);
   overflow: auto;
@@ -117,6 +116,10 @@
   background: var(--rateb-surface-elevated);
   border: 1px solid var(--rateb-border);
   box-shadow: var(--rateb-shadow);
+}
+
+.hc-search__results[hidden] {
+  display: none !important;
 }
 
 .hc-search__hit {

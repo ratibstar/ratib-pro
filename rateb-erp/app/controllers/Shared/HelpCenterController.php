@@ -23,10 +23,13 @@ final class HelpCenterController extends Controller
 
     public function index(): void
     {
+        $q = trim((string) $this->input('q', ''));
         $this->view('help/index', [
             'title' => __('help_center'),
             'modules' => $this->repo->modulesForUser(),
             'searchIndex' => $this->repo->searchIndex(),
+            'searchQuery' => $q,
+            'searchHits' => $q !== '' ? $this->search->search($q, 20) : [],
             'faqs' => $this->repo->faqs(),
             'canManage' => $this->repo->gate()->canManageContent(),
             'helpHomeUrl' => rateb_url('admin/help'),
