@@ -5,7 +5,32 @@ declare(strict_types=1);
  * Human Resources — nested sidebar section (tree inside main nav).
  */
 $entity = rateb_entity_perms('hr');
-if (!rateb_nav_can($entity['view'], 'hr')) {
+$hrPerm = (string) ($entity['view'] ?? '');
+$hrUnlocked = rateb_nav_can($hrPerm, 'hr');
+$hrLocked = !$hrUnlocked
+    && isset($isLockedPurchasableModule)
+    && is_callable($isLockedPurchasableModule)
+    && $isLockedPurchasableModule('hr', $hrPerm);
+if (!$hrUnlocked && !$hrLocked) {
+    return;
+}
+
+if ($hrLocked) {
+    $billingRoute = 'admin/billing/modules/hr';
+    $href = rateb_url($billingRoute);
+    $active = $navActive($billingRoute) ? ' active' : '';
+    $hint = isset($addonLockedHint) && is_callable($addonLockedHint)
+        ? $addonLockedHint()
+        : 'Available to purchase';
+    $label = __('human_resources');
+    $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+    $hrSectionActive = $navActive($billingRoute);
+    $renderNavGroup($label, 'fa-users-gear', $hrSectionActive, static function () use ($href, $active, $hint, $label, $esc): void {
+        echo '<a href="' . $esc($href) . '" data-rateb-href="' . $esc($href) . '" class="rateb-nav-link' . $active . '" title="' . $esc($hint) . '" aria-label="' . $esc($label . ' — ' . $hint) . '" onclick="return false;">';
+        echo '<i class="fas fa-users-gear"></i><span>' . $esc($label) . '</span>';
+        echo '<i class="fas fa-lock" aria-hidden="true"></i>';
+        echo '</a>';
+    }, 0, 'rateb-nav-badge--pending', 'ops_nav_pending_hint');
     return;
 }
 

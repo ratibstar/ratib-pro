@@ -4,21 +4,101 @@ declare(strict_types=1);
 /**
  * Unified ERP sidebar — platform oversight for super admin, company operations for tenant users.
  */
+
+$addonNavContext = static function (): array {
+    static $ctx = null;
+    if (is_array($ctx)) {
+        return $ctx;
+    }
+    $ctx = ['on' => false, 'company_id' => 0, 'addons' => null, 'limits' => null];
+    if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+        return $ctx;
+    }
+    $flag = \Rateb\App\Services\ModuleAddonService::FLAG_NAME;
+    $env = getenv($flag);
+    if ($env === false || $env === '') {
+        $env = $_ENV[$flag] ?? '';
+    }
+    if ($env === '' && defined($flag)) {
+        $env = (string) constant($flag);
+    }
+    if (!in_array(strtolower(trim((string) $env)), ['1', 'true', 'yes', 'on'], true)) {
+        return $ctx;
+    }
+    $companyId = function_exists('rateb_nav_tenant_company_id_for_gate')
+        ? rateb_nav_tenant_company_id_for_gate()
+        : (int) ($_SESSION['rateb_company_id'] ?? 0);
+    if ($companyId < 1) {
+        return $ctx;
+    }
+    $ctx['on'] = true;
+    $ctx['company_id'] = $companyId;
+    $ctx['addons'] = new \Rateb\App\Services\ModuleAddonService();
+    $ctx['limits'] = new \Rateb\App\Services\PlanLimitService();
+
+    return $ctx;
+};
+
+$isLockedPurchasableModule = static function (string $slug, string $permission) use ($addonNavContext): bool {
+    $ctx = $addonNavContext();
+    if (!$ctx['on'] || $ctx['company_id'] < 1) {
+        return false;
+    }
+    $slug = strtolower(trim($slug));
+    if ($slug === '' || $permission === '' || !rateb_can($permission)) {
+        return false;
+    }
+    if (!$ctx['addons']->isPurchasable($slug)) {
+        return false;
+    }
+
+    return !$ctx['limits']->companyHasModule($ctx['company_id'], $slug);
+};
+
+$addonLockedHint = static function (): string {
+    $locale = function_exists('rateb_locale') ? strtolower((string) rateb_locale()) : '';
+
+    return str_starts_with($locale, 'ar') ? 'متاح للشراء' : 'Available to purchase';
+};
+
+$addonLockedRendered = [];
+
 $opsLink = static function (
     string $resourcePath,
     string $labelKey,
     string $icon,
     string $module = '',
     string $perm = ''
-) use ($navActive): void {
+) use ($navActive, $isLockedPurchasableModule, $addonLockedHint, &$addonLockedRendered): void {
     $entity = rateb_entity_perms($resourcePath);
     $permission = $perm !== '' ? $perm : $entity['view'];
     $module = $module !== '' ? $module : $entity['module'];
+    $locked = false;
     if ($permission === '' && $module === '') {
         if (!rateb_is_super_admin() && (int) ($_SESSION['rateb_company_id'] ?? 0) < 1) {
             return;
         }
     } elseif (!rateb_nav_can($permission, $module)) {
+        if (!$isLockedPurchasableModule($module, $permission)) {
+            return;
+        }
+        $locked = true;
+    }
+    if ($locked) {
+        if (isset($addonLockedRendered[$module])) {
+            return;
+        }
+        $addonLockedRendered[$module] = true;
+        $billingRoute = 'admin/billing/modules/' . $module;
+        $href = rateb_url($billingRoute);
+        $active = $navActive($billingRoute) ? ' active' : '';
+        $label = __($labelKey);
+        $hint = $addonLockedHint();
+        $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        echo '<a href="' . $esc($href) . '" data-rateb-href="' . $esc($href) . '" class="rateb-nav-link' . $active . '" title="' . $esc($hint) . '" aria-label="' . $esc($label . ' — ' . $hint) . '" onclick="return false;">';
+        echo '<i class="fas ' . $icon . '"></i><span>' . $label . '</span>';
+        echo '<i class="fas fa-lock" aria-hidden="true"></i>';
+        echo '</a>';
         return;
     }
     $route = rateb_app_route($resourcePath);
@@ -89,7 +169,7 @@ $opsSection = static function (
     array $links,
     string $groupIcon = 'fa-folder-open',
     bool $eager = false
-) use ($opsLink, $navActive, $renderNavGroup): void {
+) use ($opsLink, $navActive, $renderNavGroup, $isLockedPurchasableModule): void {
     $hasActive = false;
     $hasVisible = false;
     $sectionBadge = 0;
@@ -104,10 +184,20 @@ $opsSection = static function (
         } else {
             $can = rateb_nav_can($permission, $module);
         }
+        $locked = false;
         if (!$can) {
-            continue;
+            $locked = $isLockedPurchasableModule($module, $permission);
+            if (!$locked) {
+                continue;
+            }
         }
         $hasVisible = true;
+        if ($locked) {
+            if ($navActive('admin/billing/modules/' . $module)) {
+                $hasActive = true;
+            }
+            continue;
+        }
         if (function_exists('rateb_ops_nav_pending_badge')) {
             $sectionBadge += rateb_ops_nav_pending_badge($path);
         }
