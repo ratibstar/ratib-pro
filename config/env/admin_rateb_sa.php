@@ -4,6 +4,15 @@
  */
 declare(strict_types=1);
 
+// Demo-host Module Add-on UI preview only. This file is loaded solely for admin.rateb.sa.
+// Does not enable commerce on rateb.sa. Do not process purchases from this preview.
+putenv('RATEB_ENV=staging');
+$_ENV['RATEB_ENV'] = 'staging';
+putenv('RATIB_MODULE_ADDON_PREVIEW=1');
+$_ENV['RATIB_MODULE_ADDON_PREVIEW'] = '1';
+putenv('MODULE_ADDON_COMMERCE_ENABLED=1');
+$_ENV['MODULE_ADDON_COMMERCE_ENABLED'] = '1';
+
 if (defined('DB_NAME')) {
     return;
 }

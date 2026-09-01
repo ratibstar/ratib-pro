@@ -751,11 +751,11 @@ final class ModuleAddonService
         if ($base === [] || !$this->previewCatalogOverlayAllowed()) {
             return $base;
         }
-        $local = $root . '/config/module-addons.local.php';
-        if (!is_file($local)) {
+        $overlayFile = $this->previewOverlayCatalogPath($root);
+        if ($overlayFile === null) {
             return $base;
         }
-        $overlay = require $local;
+        $overlay = require $overlayFile;
         if (!is_array($overlay)) {
             return $base;
         }
@@ -771,9 +771,29 @@ final class ModuleAddonService
     }
 
     /**
+     * Gitignored local overlay first. On exact demo host admin.rateb.sa, fall back to
+     * the tracked admin-demo catalog so preview prices can deploy without the gitignored file.
+     */
+    private function previewOverlayCatalogPath(string $root): ?string
+    {
+        $local = $root . '/config/module-addons.local.php';
+        if (is_file($local)) {
+            return $local;
+        }
+        $host = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        if ($host !== 'admin.rateb.sa') {
+            return null;
+        }
+        $demo = $root . '/config/module-addons.admin-demo.php';
+
+        return is_file($demo) ? $demo : null;
+    }
+
+    /**
      * Gitignored catalog overlay is allowed only when ALL are true:
      * explicit RATIB_MODULE_ADDON_PREVIEW, RATEB_ENV/APP_ENV is local/staging,
-     * and this process is not production (env or rateb.sa host).
+     * process is not production, and host is not rateb.sa / *.rateb.sa —
+     * except the exact demo host admin.rateb.sa.
      */
     private function previewCatalogOverlayAllowed(): bool
     {
@@ -795,8 +815,14 @@ final class ModuleAddonService
         }
 
         $host = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        if ($host === 'admin.rateb.sa') {
+            return true;
+        }
+        if ($host === 'rateb.sa') {
+            return false;
+        }
         $suffix = '.rateb.sa';
-        if ($host === 'rateb.sa' || ($host !== '' && strlen($host) >= strlen($suffix) && substr($host, -strlen($suffix)) === $suffix)) {
+        if ($host !== '' && strlen($host) >= strlen($suffix) && substr($host, -strlen($suffix)) === $suffix) {
             return false;
         }
 

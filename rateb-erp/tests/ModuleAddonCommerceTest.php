@@ -76,6 +76,16 @@ function mac_overlay_env(bool $on): void
 
 $prodCatalog = require $root . '/config/module-addons.php';
 mac_assert(is_array($prodCatalog) && isset($prodCatalog['crm']), 'production catalog file loads');
+$adminDemoCatalog = is_file($root . '/config/module-addons.admin-demo.php')
+    ? require $root . '/config/module-addons.admin-demo.php'
+    : [];
+mac_assert(is_array($adminDemoCatalog) && !empty($adminDemoCatalog['crm']['enabled']), 'tracked admin-demo catalog exists');
+mac_assert(
+    (float) ($adminDemoCatalog['crm']['monthly'] ?? 0) === 49.0
+    && (float) ($adminDemoCatalog['crm']['yearly'] ?? 0) === 490.0,
+    'tracked admin-demo CRM is 49 / 490'
+);
+mac_assert(!isset($adminDemoCatalog['pos']) || empty($adminDemoCatalog['pos']['enabled']), 'admin-demo catalog does not enable POS');
 mac_assert(
     (float) ($prodCatalog['crm']['monthly'] ?? 0) <= 0
     && (float) ($prodCatalog['crm']['yearly'] ?? 0) <= 0
@@ -105,24 +115,47 @@ mac_set_env('APP_ENV', 'production');
 $prodHost = new ModuleAddonService();
 mac_assert($prodHost->isPurchasable('crm') === false, 'preview overlay refused when RATEB_ENV=production');
 
-mac_set_env('RATEB_ENV', 'local');
-mac_set_env('APP_ENV', 'local');
+mac_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');
+mac_set_env('RATEB_ENV', 'staging');
+mac_set_env('APP_ENV', 'staging');
 $_SERVER['HTTP_HOST'] = 'rateb.sa';
 $saHost = new ModuleAddonService();
 mac_assert($saHost->isPurchasable('crm') === false, 'preview overlay refused on rateb.sa host');
-unset($_SERVER['HTTP_HOST']);
 
-mac_overlay_env(true);
-$previewSvc = new ModuleAddonService();
+$_SERVER['HTTP_HOST'] = 'foo.rateb.sa';
+mac_assert((new ModuleAddonService())->isPurchasable('crm') === false, 'preview overlay refused on foo.rateb.sa');
+
+$_SERVER['HTTP_HOST'] = 'eviladmin.rateb.sa';
+mac_assert((new ModuleAddonService())->isPurchasable('crm') === false, 'preview overlay refused on eviladmin.rateb.sa');
+
 $localOverlay = is_file($root . '/config/module-addons.local.php');
-if ($localOverlay) {
-    mac_assert($previewSvc->isPurchasable('crm') === true, 'local overlay makes CRM purchasable under preview env');
-    mac_assert($previewSvc->isPurchasable('pos') === false, 'local overlay does not enable other modules');
-    $crm = $previewSvc->catalog()['crm'];
+$adminDemoFile = is_file($root . '/config/module-addons.admin-demo.php');
+if ($adminDemoFile || $localOverlay) {
+    $_SERVER['HTTP_HOST'] = 'admin.rateb.sa';
+    $demoHost = new ModuleAddonService();
+    mac_assert($demoHost->isPurchasable('crm') === true, 'preview overlay allowed on exact admin.rateb.sa');
+    mac_assert($demoHost->isPurchasable('pos') === false, 'demo overlay does not enable other modules');
+    $crm = $demoHost->catalog()['crm'];
     mac_assert((float) $crm['monthly'] === 49.0 && (float) $crm['yearly'] === 490.0, 'preview CRM prices are 49 / 490');
+
+    $_SERVER['HTTP_HOST'] = 'localhost';
+    mac_assert(
+        (new ModuleAddonService())->isPurchasable('crm') === $localOverlay,
+        'localhost preview overlay requires gitignored local catalog'
+    );
+
+    unset($_SERVER['HTTP_HOST']);
+    mac_overlay_env(true);
+    $previewSvc = new ModuleAddonService();
+    mac_assert(
+        $previewSvc->isPurchasable('crm') === $localOverlay,
+        'CLI/local overlay without host uses gitignored catalog only'
+    );
+    mac_assert($previewSvc->isPurchasable('pos') === false, 'local overlay does not enable other modules');
 } else {
+    unset($_SERVER['HTTP_HOST']);
     ++$skipped;
-    echo "SKIP: config/module-addons.local.php absent (copy from module-addons.local.example.php)\n";
+    echo "SKIP: no admin-demo or local overlay catalog\n";
 }
 
 mac_overlay_env(false);
