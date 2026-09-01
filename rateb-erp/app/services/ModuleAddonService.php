@@ -25,6 +25,9 @@ final class ModuleAddonService
 {
     public const FLAG_NAME = 'MODULE_ADDON_COMMERCE_ENABLED';
 
+    /** Local/staging catalog overlay only. Never honor this on production hosts. */
+    public const PREVIEW_FLAG_NAME = 'RATIB_MODULE_ADDON_PREVIEW';
+
     /** @var array<string, array<string, mixed>> */
     private array $catalog;
 
@@ -744,8 +747,60 @@ final class ModuleAddonService
             return [];
         }
         $data = require $file;
+        $base = is_array($data) ? $data : [];
+        if ($base === [] || !$this->previewCatalogOverlayAllowed()) {
+            return $base;
+        }
+        $local = $root . '/config/module-addons.local.php';
+        if (!is_file($local)) {
+            return $base;
+        }
+        $overlay = require $local;
+        if (!is_array($overlay)) {
+            return $base;
+        }
+        foreach ($overlay as $slug => $row) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '' || !isset($base[$slug]) || !is_array($row)) {
+                continue;
+            }
+            $base[$slug] = array_merge($base[$slug], $row);
+        }
 
-        return is_array($data) ? $data : [];
+        return $base;
+    }
+
+    /**
+     * Gitignored catalog overlay is allowed only when ALL are true:
+     * explicit RATIB_MODULE_ADDON_PREVIEW, RATEB_ENV/APP_ENV is local/staging,
+     * and this process is not production (env or rateb.sa host).
+     */
+    private function previewCatalogOverlayAllowed(): bool
+    {
+        $preview = getenv(self::PREVIEW_FLAG_NAME);
+        if ($preview === false || $preview === '') {
+            $preview = $_ENV[self::PREVIEW_FLAG_NAME] ?? '';
+        }
+        if (!in_array(strtolower(trim((string) $preview)), ['1', 'true', 'yes', 'on'], true)) {
+            return false;
+        }
+
+        $env = strtolower(trim((string) (getenv('RATEB_ENV') ?: getenv('APP_ENV') ?: ($_ENV['RATEB_ENV'] ?? $_ENV['APP_ENV'] ?? ''))));
+        if (!in_array($env, ['local', 'staging', 'stage', 'dev', 'development'], true)) {
+            return false;
+        }
+
+        if (function_exists('rateb_is_production') && rateb_is_production()) {
+            return false;
+        }
+
+        $host = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+        $suffix = '.rateb.sa';
+        if ($host === 'rateb.sa' || ($host !== '' && strlen($host) >= strlen($suffix) && substr($host, -strlen($suffix)) === $suffix)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

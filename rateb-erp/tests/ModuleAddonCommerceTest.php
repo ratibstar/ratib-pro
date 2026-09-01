@@ -50,13 +50,96 @@ function mac_set_flag(?string $value): void
     $_ENV[$name] = $value;
 }
 
+function mac_set_env(string $name, ?string $value): void
+{
+    if ($value === null || $value === '') {
+        putenv($name);
+        unset($_ENV[$name]);
+        return;
+    }
+    putenv($name . '=' . $value);
+    $_ENV[$name] = $value;
+}
+
+function mac_overlay_env(bool $on): void
+{
+    if ($on) {
+        mac_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');
+        mac_set_env('RATEB_ENV', 'local');
+        mac_set_env('APP_ENV', 'local');
+        return;
+    }
+    mac_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, null);
+    mac_set_env('RATEB_ENV', null);
+    mac_set_env('APP_ENV', null);
+}
+
 $prodCatalog = require $root . '/config/module-addons.php';
 mac_assert(is_array($prodCatalog) && isset($prodCatalog['crm']), 'production catalog file loads');
 mac_assert(
     (float) ($prodCatalog['crm']['monthly'] ?? 0) <= 0
-    && (float) ($prodCatalog['crm']['yearly'] ?? 0) <= 0,
+    && (float) ($prodCatalog['crm']['yearly'] ?? 0) <= 0
+    && empty($prodCatalog['crm']['enabled']),
     'production catalog prices are unset (fail closed)'
 );
+mac_assert(
+    (float) ($prodCatalog['crm']['monthly'] ?? 0) === 0.0
+    && empty($prodCatalog['crm']['enabled']),
+    'tracked production CRM remains disabled'
+);
+
+$savedPreview = getenv(ModuleAddonService::PREVIEW_FLAG_NAME);
+$savedRatebEnv = getenv('RATEB_ENV');
+$savedAppEnv = getenv('APP_ENV');
+$savedHost = $_SERVER['HTTP_HOST'] ?? null;
+
+mac_overlay_env(false);
+mac_set_flag(null);
+unset($_SERVER['HTTP_HOST']);
+$fileLoaded = new ModuleAddonService();
+mac_assert($fileLoaded->isPurchasable('crm') === false, 'file catalog without preview overlay is not purchasable');
+
+mac_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');
+mac_set_env('RATEB_ENV', 'production');
+mac_set_env('APP_ENV', 'production');
+$prodHost = new ModuleAddonService();
+mac_assert($prodHost->isPurchasable('crm') === false, 'preview overlay refused when RATEB_ENV=production');
+
+mac_set_env('RATEB_ENV', 'local');
+mac_set_env('APP_ENV', 'local');
+$_SERVER['HTTP_HOST'] = 'rateb.sa';
+$saHost = new ModuleAddonService();
+mac_assert($saHost->isPurchasable('crm') === false, 'preview overlay refused on rateb.sa host');
+unset($_SERVER['HTTP_HOST']);
+
+mac_overlay_env(true);
+$previewSvc = new ModuleAddonService();
+$localOverlay = is_file($root . '/config/module-addons.local.php');
+if ($localOverlay) {
+    mac_assert($previewSvc->isPurchasable('crm') === true, 'local overlay makes CRM purchasable under preview env');
+    mac_assert($previewSvc->isPurchasable('pos') === false, 'local overlay does not enable other modules');
+    $crm = $previewSvc->catalog()['crm'];
+    mac_assert((float) $crm['monthly'] === 49.0 && (float) $crm['yearly'] === 490.0, 'preview CRM prices are 49 / 490');
+} else {
+    ++$skipped;
+    echo "SKIP: config/module-addons.local.php absent (copy from module-addons.local.example.php)\n";
+}
+
+mac_overlay_env(false);
+if ($savedPreview !== false && $savedPreview !== '') {
+    mac_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, (string) $savedPreview);
+}
+if ($savedRatebEnv !== false && $savedRatebEnv !== '') {
+    mac_set_env('RATEB_ENV', (string) $savedRatebEnv);
+}
+if ($savedAppEnv !== false && $savedAppEnv !== '') {
+    mac_set_env('APP_ENV', (string) $savedAppEnv);
+}
+if ($savedHost !== null) {
+    $_SERVER['HTTP_HOST'] = $savedHost;
+} else {
+    unset($_SERVER['HTTP_HOST']);
+}
 
 $svcOff = new ModuleAddonService($prodCatalog);
 mac_set_flag(null);

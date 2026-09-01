@@ -16,6 +16,9 @@ storage/.rateb_infra_local_secret_key
 !.env.example
 !.env.ngenius.example
 
+# Local/staging Module Add-on catalog overlay (never production)
+rateb-erp/config/module-addons.local.php
+
 # Dependencies/build artifacts
 node_modules/
 vendor/
