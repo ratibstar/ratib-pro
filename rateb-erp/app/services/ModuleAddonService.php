@@ -7,6 +7,7 @@ use PDO;
 use Rateb\App\Core\Database;
 use Rateb\App\Models\Company;
 use Rateb\App\Models\Plan;
+use Rateb\App\Models\SystemSetting;
 use Throwable;
 
 /**
@@ -28,6 +29,9 @@ final class ModuleAddonService
     /** Local/staging catalog overlay only. Never honor this on production hosts. */
     public const PREVIEW_FLAG_NAME = 'RATIB_MODULE_ADDON_PREVIEW';
 
+    /** Platform-admin commerce overlay in rateb_system_settings (this ERP database). */
+    public const CATALOG_SETTING_KEY = 'module_addon_commerce_catalog';
+
     /** @var array<string, array<string, mixed>> */
     private array $catalog;
 
@@ -36,11 +40,20 @@ final class ModuleAddonService
 
     /**
      * @param array<string, array<string, mixed>>|null $catalog Injected catalog for tests
+     * @param array<string, array<string, mixed>>|null $databaseOverlay Injected DB overlay for tests
      */
-    public function __construct(?array $catalog = null, mixed $agencySync = null)
+    public function __construct(?array $catalog = null, mixed $agencySync = null, ?array $databaseOverlay = null)
     {
-        $this->catalog = $catalog ?? $this->loadCatalogFile();
         $this->agencySync = $agencySync;
+        if ($catalog !== null) {
+            $this->catalog = $this->mergeCatalogOverlay($catalog, $databaseOverlay ?? []);
+
+            return;
+        }
+        $this->catalog = $this->mergeCatalogOverlay(
+            $this->loadCatalogFile(),
+            $databaseOverlay ?? $this->loadDatabaseOverlay()
+        );
     }
 
     public function isEnabled(): bool
@@ -74,6 +87,139 @@ final class ModuleAddonService
         $host = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
 
         return $host === 'admin.rateb.sa';
+    }
+
+    /**
+     * Super Admin on the platform host or the exact demo preview host.
+     * Tenants never manage commercial availability or prices.
+     */
+    public function canManagePlatformCatalog(): bool
+    {
+        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+            return false;
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
+        return $this->previewDemoHostAllowed();
+    }
+
+    /**
+     * Persist platform commerce overrides for known catalog slugs only.
+     *
+     * @param array<string, mixed> $postedBySlug
+     * @return array{ok:bool,code:string}
+     */
+    public function saveCommerceOverrides(array $postedBySlug): array
+    {
+        $base = $this->loadCatalogFile();
+        $sanitized = $this->sanitizeCommerceOverrides($postedBySlug, array_keys($base));
+        $json = json_encode($sanitized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($json) || $json === '') {
+            return ['ok' => false, 'code' => 'encode_failed'];
+        }
+        try {
+            $model = new SystemSetting();
+            $existing = $model->queryOne(
+                'SELECT id FROM rateb_system_settings WHERE setting_key = :k LIMIT 1',
+                ['k' => self::CATALOG_SETTING_KEY]
+            );
+            if (is_array($existing) && (int) ($existing['id'] ?? 0) > 0) {
+                $model->update((int) $existing['id'], [
+                    'setting_value' => $json,
+                    'setting_group' => 'module_addons',
+                ]);
+            } else {
+                $model->create([
+                    'setting_key' => self::CATALOG_SETTING_KEY,
+                    'setting_value' => $json,
+                    'setting_group' => 'module_addons',
+                ]);
+            }
+            $this->catalog = $this->mergeCatalogOverlay($base, $sanitized);
+
+            return ['ok' => true, 'code' => 'saved'];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'code' => 'save_failed'];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $postedBySlug
+     * @param list<string> $knownSlugs
+     * @return array<string, array<string, mixed>>
+     */
+    public function sanitizeCommerceOverrides(array $postedBySlug, array $knownSlugs): array
+    {
+        $known = [];
+        foreach ($knownSlugs as $slug) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug !== '') {
+                $known[$slug] = true;
+            }
+        }
+        $out = [];
+        foreach ($postedBySlug as $slug => $row) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '' || !isset($known[$slug]) || !is_array($row)) {
+                continue;
+            }
+            $out[$slug] = $this->sanitizeCommerceRow($row);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array{en?:string,ar?:string}> $features
+     */
+    public static function featuresToTextarea(array $features): string
+    {
+        $lines = [];
+        foreach ($features as $feature) {
+            if (!is_array($feature)) {
+                $text = trim((string) $feature);
+                if ($text !== '') {
+                    $lines[] = $text;
+                }
+                continue;
+            }
+            $en = trim((string) ($feature['en'] ?? ''));
+            $ar = trim((string) ($feature['ar'] ?? ''));
+            if ($en === '' && $ar === '') {
+                continue;
+            }
+            $lines[] = $ar !== '' ? ($en . ' | ' . $ar) : $en;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @return list<array{en:string,ar:string}>
+     */
+    public static function parseFeaturesTextarea(string $text): array
+    {
+        $out = [];
+        foreach (preg_split('/\R/u', $text) ?: [] as $line) {
+            $line = trim((string) $line);
+            if ($line === '') {
+                continue;
+            }
+            $parts = preg_split('/\s*\|\s*/u', $line, 2) ?: [];
+            $en = trim((string) ($parts[0] ?? ''));
+            $ar = trim((string) ($parts[1] ?? ''));
+            if ($en === '' && $ar === '') {
+                continue;
+            }
+            $out[] = ['en' => $en !== '' ? $en : $ar, 'ar' => $ar];
+            if (count($out) >= 20) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -862,6 +1008,122 @@ final class ModuleAddonService
     }
 
     /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function sanitizeCommerceRow(array $row): array
+    {
+        $monthly = (float) ($row['monthly'] ?? $row['monthly_price'] ?? 0);
+        $yearly = (float) ($row['yearly'] ?? $row['yearly_price'] ?? 0);
+        if ($monthly < 0) {
+            $monthly = 0.0;
+        }
+        if ($yearly < 0) {
+            $yearly = 0.0;
+        }
+        $monthly = min($monthly, 1000000.0);
+        $yearly = min($yearly, 1000000.0);
+        $promo = strtolower(trim((string) ($row['promo_label'] ?? '')));
+        $promo = str_replace([' ', '-'], '_', $promo);
+        if (!in_array($promo, ['popular', 'best_value', 'recommended'], true)) {
+            $promo = '';
+        }
+        $features = $row['features'] ?? [];
+        if (is_string($features)) {
+            $features = self::parseFeaturesTextarea($features);
+        }
+        $sort = (int) ($row['sort_order'] ?? 100);
+        if ($sort < 0) {
+            $sort = 0;
+        }
+        if ($sort > 9999) {
+            $sort = 9999;
+        }
+        $icon = strtolower(trim((string) ($row['icon'] ?? '')));
+        if ($icon === '' || str_contains($icon, '://') || str_contains($icon, '/') || str_contains($icon, '.')) {
+            $icon = '';
+        }
+
+        $out = [
+            'enabled' => !empty($row['enabled']),
+            'monthly' => $monthly,
+            'yearly' => $yearly,
+            'featured' => !empty($row['featured']),
+            'sort_order' => $sort,
+            'promo_label' => $promo,
+        ];
+        $description = mb_substr(trim((string) ($row['description'] ?? '')), 0, 500);
+        $descriptionAr = mb_substr(trim((string) ($row['description_ar'] ?? '')), 0, 500);
+        $name = mb_substr(trim((string) ($row['name'] ?? '')), 0, 80);
+        $nameAr = mb_substr(trim((string) ($row['name_ar'] ?? '')), 0, 80);
+        if ($description !== '') {
+            $out['description'] = $description;
+        }
+        if ($descriptionAr !== '') {
+            $out['description_ar'] = $descriptionAr;
+        }
+        if ($name !== '') {
+            $out['name'] = $name;
+        }
+        if ($nameAr !== '') {
+            $out['name_ar'] = $nameAr;
+        }
+        if ($icon !== '') {
+            $out['icon'] = $icon;
+        }
+        if (array_key_exists('features', $row) && is_array($features)) {
+            $out['features'] = array_slice($features, 0, 20);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $base
+     * @param array<string, mixed> $overlay
+     * @return array<string, array<string, mixed>>
+     */
+    private function mergeCatalogOverlay(array $base, array $overlay): array
+    {
+        foreach ($overlay as $slug => $row) {
+            $slug = strtolower(trim((string) $slug));
+            if ($slug === '' || !isset($base[$slug]) || !is_array($row)) {
+                continue;
+            }
+            $base[$slug] = array_merge($base[$slug], $row);
+        }
+
+        return $base;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function loadDatabaseOverlay(): array
+    {
+        if (PHP_SAPI === 'cli') {
+            $force = getenv('RATEB_MODULE_ADDON_LOAD_DB_CATALOG');
+            if ($force === false || $force === '') {
+                $force = $_ENV['RATEB_MODULE_ADDON_LOAD_DB_CATALOG'] ?? '';
+            }
+            if (!in_array(strtolower(trim((string) $force)), ['1', 'true', 'yes', 'on'], true)) {
+                return [];
+            }
+        }
+        try {
+            $raw = (new SystemSetting())->get(self::CATALOG_SETTING_KEY, '');
+            if (!is_string($raw) || trim($raw) === '') {
+                return [];
+            }
+            $decoded = json_decode($raw, true);
+
+            return is_array($decoded) ? $decoded : [];
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
      * @return array<string, array<string, mixed>>
      */
     private function loadCatalogFile(): array
@@ -884,15 +1146,8 @@ final class ModuleAddonService
         if (!is_array($overlay)) {
             return $base;
         }
-        foreach ($overlay as $slug => $row) {
-            $slug = strtolower(trim((string) $slug));
-            if ($slug === '' || !isset($base[$slug]) || !is_array($row)) {
-                continue;
-            }
-            $base[$slug] = array_merge($base[$slug], $row);
-        }
 
-        return $base;
+        return $this->mergeCatalogOverlay($base, $overlay);
     }
 
     /**

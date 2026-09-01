@@ -471,6 +471,7 @@ final class ModuleAddonCheckoutService
             $row = (new Invoice())->queryOne(
                 "SELECT * FROM rateb_invoices
                  WHERE company_id = :cid AND po_number LIKE :pfx
+                   AND status <> 'cancelled'
                  ORDER BY id DESC LIMIT 1",
                 ['cid' => $companyId, 'pfx' => 'ADDON:' . $slug . ':%']
             );
@@ -478,6 +479,74 @@ final class ModuleAddonCheckoutService
             return is_array($row) ? $row : null;
         } catch (Throwable $e) {
             return null;
+        }
+    }
+
+    /**
+     * Unpaid add-on invoices only (demo cleanup). Never returns paid invoices.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listUnpaidAddonInvoices(int $limit = 50): array
+    {
+        $limit = max(1, min(50, $limit));
+        try {
+            $rows = (new Invoice())->query(
+                "SELECT i.id, i.invoice_no, i.company_id, i.po_number, i.status, i.payment_status,
+                        i.total_amount, i.currency, i.issued_at, c.name AS company_name
+                 FROM rateb_invoices i
+                 LEFT JOIN rateb_companies c ON c.id = i.company_id
+                 WHERE i.po_number LIKE 'ADDON:%'
+                   AND i.status <> 'cancelled' AND i.status <> 'draft'
+                   AND i.payment_status <> 'paid' AND i.status <> 'paid'
+                 ORDER BY i.id DESC
+                 LIMIT {$limit}"
+            );
+
+            return is_array($rows) ? $rows : [];
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Cancel an unpaid add-on invoice. Does not call Moyasar or delete rows.
+     *
+     * @return array{ok:bool,code:string}
+     */
+    public function voidUnpaidAddonInvoice(int $invoiceId): array
+    {
+        if ($invoiceId < 1) {
+            return ['ok' => false, 'code' => 'not_found'];
+        }
+        try {
+            $invoice = (new Invoice())->find($invoiceId);
+            if (!is_array($invoice)) {
+                return ['ok' => false, 'code' => 'not_found'];
+            }
+            $po = trim((string) ($invoice['po_number'] ?? ''));
+            if (!preg_match('/^ADDON:[a-z0-9_]+:(monthly|yearly)$/', $po)) {
+                return ['ok' => false, 'code' => 'not_addon'];
+            }
+            $pay = strtolower(trim((string) ($invoice['payment_status'] ?? '')));
+            $st = strtolower(trim((string) ($invoice['status'] ?? '')));
+            if ($pay === 'paid' || $st === 'paid') {
+                return ['ok' => false, 'code' => 'already_paid'];
+            }
+            if ($st === 'cancelled') {
+                return ['ok' => true, 'code' => 'already_voided'];
+            }
+            $notes = trim((string) ($invoice['notes'] ?? ''));
+            $stamp = date('Y-m-d H:i:s');
+            $notes = ($notes !== '' ? $notes . "\n" : '') . 'Voided unpaid add-on invoice at ' . $stamp;
+            (new Invoice())->update($invoiceId, [
+                'status' => 'cancelled',
+                'notes' => $notes,
+            ]);
+
+            return ['ok' => true, 'code' => 'voided'];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'code' => 'void_failed'];
         }
     }
 

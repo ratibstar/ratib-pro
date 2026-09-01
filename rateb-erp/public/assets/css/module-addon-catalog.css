@@ -1,0 +1,216 @@
+.rateb-mac-page {
+    --mac-border: color-mix(in srgb, var(--rateb-border, #334155) 85%, transparent);
+    --mac-surface: var(--rateb-card-bg, var(--rateb-surface-elevated, #111827));
+    --mac-muted: var(--rateb-muted, #94a3b8);
+    --mac-accent: var(--rateb-primary, #3b82f6);
+    --mac-ok: var(--rateb-success, #16a34a);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 72rem;
+}
+
+.rateb-mac-hero,
+.rateb-mac-card,
+.rateb-mac-invoices {
+    border: 1px solid var(--mac-border);
+    border-radius: 1rem;
+    background: var(--mac-surface);
+    padding: 1.2rem 1.3rem;
+}
+
+.rateb-mac-hero {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--mac-accent) 12%, transparent), transparent 55%),
+        var(--mac-surface);
+}
+
+.rateb-mac-kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--mac-muted);
+}
+
+.rateb-mac-title {
+    margin: 0.2rem 0 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.rateb-mac-lead,
+.rateb-mac-note,
+.rateb-mac-empty {
+    margin: 0.45rem 0 0;
+    color: var(--mac-muted);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    max-width: 46rem;
+}
+
+.rateb-mac-flags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-width: 22rem;
+}
+
+.rateb-mac-chip {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    background: color-mix(in srgb, var(--mac-muted) 16%, transparent);
+}
+
+.rateb-mac-chip--on {
+    background: color-mix(in srgb, var(--mac-ok) 18%, transparent);
+    color: var(--mac-ok);
+}
+
+.rateb-mac-chip--preview {
+    background: color-mix(in srgb, var(--mac-accent) 16%, transparent);
+}
+
+.rateb-mac-chip--warn {
+    background: color-mix(in srgb, #d97706 20%, transparent);
+    color: #d97706;
+}
+
+.rateb-mac-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.rateb-mac-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.8rem;
+    background: color-mix(in srgb, var(--mac-accent) 16%, transparent);
+    color: var(--mac-accent);
+    flex-shrink: 0;
+}
+
+.rateb-mac-icon .rateb-addon-svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    fill: currentColor;
+}
+
+.rateb-mac-card-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.rateb-mac-slug {
+    margin-inline-start: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--mac-muted);
+}
+
+.rateb-mac-state {
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--mac-muted);
+}
+
+.rateb-mac-state--on {
+    color: var(--mac-ok);
+    font-weight: 600;
+}
+
+.rateb-mac-grid,
+.rateb-mac-copy {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+}
+
+.rateb-mac-grid label,
+.rateb-mac-copy label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    color: var(--mac-muted);
+}
+
+.rateb-mac-switch {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.5rem !important;
+}
+
+.rateb-mac-grid input,
+.rateb-mac-grid select,
+.rateb-mac-copy input,
+.rateb-mac-copy textarea {
+    border: 1px solid var(--mac-border);
+    border-radius: 0.6rem;
+    background: transparent;
+    color: inherit;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+}
+
+.rateb-mac-span {
+    grid-column: 1 / -1;
+}
+
+.rateb-mac-saving {
+    margin: 0.8rem 0 0;
+    color: var(--mac-ok);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.rateb-mac-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.rateb-mac-invoice-list {
+    list-style: none;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.rateb-mac-invoice-list li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--mac-border);
+}
+
+.rateb-mac-invoice-list li div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 720px) {
+    .rateb-mac-grid,
+    .rateb-mac-copy {
+        grid-template-columns: 1fr;
+    }
+}

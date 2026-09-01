@@ -646,6 +646,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     if ($erpRoute !== '' && str_starts_with($erpRoute, 'admin/billing/modules')) {
         $ratebAsyncStyles[] = rateb_asset('css/module-addon-checkout.css');
     }
+    if ($erpRoute !== '' && str_starts_with($erpRoute, 'admin/module-addons')) {
+        $ratebAsyncStyles[] = rateb_asset('css/module-addon-catalog.css');
+    }
     // Soft-nav cannot reliably apply <link> tags from swapped HTML — keep in shell when already on route.
     // Other pages inject via erp-nav-instant ensureAgentAppsCss (see __RATEB_MODULE_CSS__).
     if ($erpRoute !== '' && (
@@ -838,7 +841,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     window.__RATEB_BOOT__ = { t0: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() };
     window.__RATEB_MODULE_CSS__ = {
         agentApps: <?php echo json_encode(rateb_asset('css/agent-apps.css'), JSON_UNESCAPED_SLASHES); ?>,
-        moduleAddons: <?php echo json_encode(rateb_asset('css/module-addon-checkout.css'), JSON_UNESCAPED_SLASHES); ?>
+        moduleAddons: <?php echo json_encode(rateb_asset('css/module-addon-checkout.css'), JSON_UNESCAPED_SLASHES); ?>,
+        moduleAddonCatalog: <?php echo json_encode(rateb_asset('css/module-addon-catalog.css'), JSON_UNESCAPED_SLASHES); ?>
     };
     </script>
 </head>
@@ -899,6 +903,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             $adminSection(__('admin_oversight_section'), [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'companies.view']],
+                ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'settings.manage']],
                 ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
                 ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
                 [
@@ -934,6 +939,18 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ],
             ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
             ?>
+            <?php } ?>
+            <?php
+            $showModuleAddonCatalogNav = rateb_is_super_admin()
+                && (new \Rateb\App\Services\ModuleAddonService())->canManagePlatformCatalog()
+                && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
+            if ($showModuleAddonCatalogNav) {
+                $macHref = rateb_url('admin/module-addons');
+                $macActive = $navActive('admin/module-addons') ? ' active' : '';
+                ?>
+            <a href="<?php echo $macHref; ?>" data-rateb-href="<?php echo $macHref; ?>" data-rateb-full-nav="1" class="rateb-nav-link<?php echo $macActive; ?>">
+                <i class="fas fa-store"></i><span><?php echo __('module_addon_catalog'); ?></span>
+            </a>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php

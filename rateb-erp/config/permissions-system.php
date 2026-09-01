@@ -722,6 +722,7 @@ return [
         'admin/invoices/{id}/edit' => 'billing.manage',
         'admin/payments' => 'accounting.view',
         'admin/invoices' => 'accounting.view',
+        'admin/module-addons' => 'settings.manage',
         'admin/payment-gateways' => 'billing.manage',
         'admin/payment-gateways/transactions' => 'billing.manage',
         'admin/payment-gateways/failed' => 'billing.manage',

@@ -447,6 +447,28 @@
         } catch (eCss) { /* ignore */ }
     }
 
+    function ensureModuleAddonCatalogCss(href) {
+        try {
+            if (!/\/admin\/module-addons(?:\/|$|\?)/i.test(String(href || ''))) {
+                return;
+            }
+            if (document.getElementById('rateb-module-addon-catalog-css')
+                || document.querySelector('link[href*="module-addon-catalog.css"]')) {
+                return;
+            }
+            var map = root.__RATEB_MODULE_CSS__ || {};
+            var hrefCss = map.moduleAddonCatalog || '';
+            if (!hrefCss) {
+                return;
+            }
+            var link = document.createElement('link');
+            link.id = 'rateb-module-addon-catalog-css';
+            link.rel = 'stylesheet';
+            link.href = hrefCss;
+            document.head.appendChild(link);
+        } catch (eMac) { /* ignore */ }
+    }
+
     function fetchWithTimeout(url, opts, ms) {
         opts = opts || {};
         var timedOut = false;
@@ -1950,6 +1972,7 @@
             }
             cleanupSoftNavUiArtifacts();
             ensureAgentAppsCss(pack.finalUrl || href);
+            ensureModuleAddonCatalogCss(pack.finalUrl || href);
             if (htmlLooksAccessDenied(pack.html)) {
                 try {
                     purgePoisonedOpsCaches();
