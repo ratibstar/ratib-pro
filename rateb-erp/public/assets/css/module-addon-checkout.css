@@ -1,0 +1,345 @@
+.rateb-addon {
+    max-width: 36rem;
+    margin: 0 auto;
+    padding: 0.5rem 0 2rem;
+}
+
+.rateb-addon-card {
+    background: var(--rateb-surface-elevated, #fff);
+    border: 1px solid var(--rateb-border);
+    border-radius: calc(var(--rateb-radius, 12px) + 4px);
+    box-shadow: var(--rateb-shadow);
+    padding: 1.5rem 1.35rem 1.35rem;
+}
+
+.rateb-addon-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    margin-bottom: 1.15rem;
+}
+
+.rateb-addon-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--rateb-primary) 16%, transparent);
+    color: var(--rateb-primary);
+    flex-shrink: 0;
+}
+
+.rateb-addon-icon .rateb-addon-svg {
+    width: 1.55rem;
+    height: 1.55rem;
+    fill: currentColor;
+}
+
+.rateb-addon-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.rateb-addon-kicker {
+    margin: 0 0 0.2rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--rateb-text-muted);
+    font-weight: 600;
+}
+
+.rateb-addon-title {
+    margin: 0;
+    font-size: 1.45rem;
+    line-height: 1.3;
+    color: var(--rateb-text);
+}
+
+.rateb-addon-lead {
+    margin: 0.4rem 0 0;
+    color: var(--rateb-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+.rateb-addon-badge {
+    flex-shrink: 0;
+    align-self: flex-start;
+    background: color-mix(in srgb, var(--rateb-warning) 22%, transparent);
+    color: #92400e;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.rateb-addon-features {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.rateb-addon-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    color: var(--rateb-text);
+    font-size: 0.95rem;
+}
+
+.rateb-addon-features .rateb-addon-svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: 0.15rem;
+    color: var(--rateb-success);
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.rateb-addon-cycles {
+    border: 0;
+    margin: 0 0 1.15rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.rateb-addon-cycle {
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+}
+
+.rateb-addon-cycle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rateb-addon-cycle-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.9rem 0.85rem;
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius, 12px);
+    background: var(--rateb-surface);
+    min-height: 100%;
+}
+
+.rateb-addon-cycle input:focus-visible + .rateb-addon-cycle-body {
+    outline: 2px solid var(--rateb-primary);
+    outline-offset: 2px;
+}
+
+.rateb-addon-cycle input:checked + .rateb-addon-cycle-body {
+    border-color: var(--rateb-primary);
+    box-shadow: 0 0 0 1px var(--rateb-primary);
+    background: color-mix(in srgb, var(--rateb-primary) 8%, var(--rateb-surface-elevated));
+}
+
+.rateb-addon-cycle-icon .rateb-addon-svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--rateb-primary);
+    fill: currentColor;
+}
+
+.rateb-addon-cycle-label {
+    font-weight: 700;
+    color: var(--rateb-text);
+}
+
+.rateb-addon-cycle-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--rateb-text);
+}
+
+.rateb-addon-cycle-period {
+    font-size: 0.8rem;
+    color: var(--rateb-text-muted);
+}
+
+.rateb-addon-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    color: #047857;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.rateb-addon-save .rateb-addon-svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: currentColor;
+}
+
+.rateb-addon-totals {
+    display: none;
+    gap: 0.45rem;
+    margin: 0 0 1.15rem;
+}
+
+.rateb-addon-totals.is-selected,
+.rateb-addon-card:has(input[name="cycle"][value="monthly"]:checked) .rateb-addon-totals[data-cycle="monthly"],
+.rateb-addon-card:has(input[name="cycle"][value="yearly"]:checked) .rateb-addon-totals[data-cycle="yearly"] {
+    display: grid;
+}
+
+.rateb-addon-card:has(input[name="cycle"][value="monthly"]:checked) .rateb-addon-totals.is-selected:not([data-cycle="monthly"]),
+.rateb-addon-card:has(input[name="cycle"][value="yearly"]:checked) .rateb-addon-totals.is-selected:not([data-cycle="yearly"]) {
+    display: none;
+}
+
+.rateb-addon-totals > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--rateb-text-muted);
+    font-size: 0.92rem;
+}
+
+.rateb-addon-totals dt,
+.rateb-addon-totals dd {
+    margin: 0;
+}
+
+.rateb-addon-total {
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--rateb-border);
+    color: var(--rateb-text);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.rateb-addon-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border: 0;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: var(--rateb-primary);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.rateb-addon-cta:hover {
+    background: var(--rateb-primary-dark);
+    color: #fff;
+}
+
+.rateb-addon-secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0.85rem 0 0.35rem;
+    color: var(--rateb-text-muted);
+    font-size: 0.82rem;
+}
+
+.rateb-addon-secure .rateb-addon-svg {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
+}
+
+.rateb-addon-status-link {
+    display: block;
+    text-align: center;
+    margin-top: 0.5rem;
+    color: var(--rateb-text-muted);
+    font-size: 0.88rem;
+}
+
+.rateb-addon-state {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.85rem;
+    font-size: 1.05rem;
+}
+
+.rateb-addon-state .rateb-addon-svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: currentColor;
+}
+
+.rateb-addon-status--active .rateb-addon-state {
+    color: var(--rateb-success);
+}
+
+.rateb-addon-status--failed .rateb-addon-state {
+    color: var(--rateb-danger);
+}
+
+.rateb-addon-status--payment_pending .rateb-addon-state,
+.rateb-addon-status--paid_pending_activation .rateb-addon-state {
+    color: var(--rateb-warning);
+}
+
+.rateb-addon-meta {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+}
+
+.rateb-addon-meta > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--rateb-text-muted);
+    font-size: 0.92rem;
+}
+
+.rateb-addon-meta dt,
+.rateb-addon-meta dd {
+    margin: 0;
+}
+
+.rateb-addon-note {
+    margin: 0 0 1rem;
+    color: var(--rateb-text-muted);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 640px) {
+    .rateb-addon-cycles {
+        grid-template-columns: 1fr;
+    }
+
+    .rateb-addon-header {
+        flex-wrap: wrap;
+    }
+}
+
+[dir="rtl"] .rateb-addon-kicker {
+    letter-spacing: 0;
+    text-transform: none;
+}

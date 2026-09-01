@@ -643,6 +643,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     if ($dir === 'rtl') {
         $ratebAsyncStyles[] = rateb_asset('css/ar-typography.css');
     }
+    if ($erpRoute !== '' && str_starts_with($erpRoute, 'admin/billing/modules')) {
+        $ratebAsyncStyles[] = rateb_asset('css/module-addon-checkout.css');
+    }
     // Soft-nav cannot reliably apply <link> tags from swapped HTML — keep in shell when already on route.
     // Other pages inject via erp-nav-instant ensureAgentAppsCss (see __RATEB_MODULE_CSS__).
     if ($erpRoute !== '' && (
@@ -834,7 +837,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     /* Boot marks — First Paint / TTI proxies (no network). */
     window.__RATEB_BOOT__ = { t0: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() };
     window.__RATEB_MODULE_CSS__ = {
-        agentApps: <?php echo json_encode(rateb_asset('css/agent-apps.css'), JSON_UNESCAPED_SLASHES); ?>
+        agentApps: <?php echo json_encode(rateb_asset('css/agent-apps.css'), JSON_UNESCAPED_SLASHES); ?>,
+        moduleAddons: <?php echo json_encode(rateb_asset('css/module-addon-checkout.css'), JSON_UNESCAPED_SLASHES); ?>
     };
     </script>
 </head>

@@ -101,6 +101,47 @@ final class ModuleAddonCheckoutService
     }
 
     /**
+     * Yearly vs 12× monthly. Browser values are never used.
+     *
+     * @return array{annualized_monthly:float,yearly:float,amount:float,percent:float}|null
+     */
+    public static function annualSaving(float $monthly, float $yearly): ?array
+    {
+        if ($monthly <= 0 || $yearly <= 0) {
+            return null;
+        }
+        $annualized = round($monthly * 12, 2);
+        if ($yearly >= $annualized) {
+            return null;
+        }
+        $amount = round($annualized - $yearly, 2);
+        $percent = round((1 - ($yearly / $annualized)) * 100, 2);
+        if ($amount <= 0 || $percent <= 0) {
+            return null;
+        }
+
+        return [
+            'annualized_monthly' => $annualized,
+            'yearly' => round($yearly, 2),
+            'amount' => $amount,
+            'percent' => $percent,
+        ];
+    }
+
+    /**
+     * @return array{annualized_monthly:float,yearly:float,amount:float,percent:float}|null
+     */
+    public function savingsForSlug(string $slug): ?array
+    {
+        $item = $this->addons->catalog()[strtolower(trim($slug))] ?? null;
+        if ($item === null) {
+            return null;
+        }
+
+        return self::annualSaving((float) ($item['monthly'] ?? 0), (float) ($item['yearly'] ?? 0));
+    }
+
+    /**
      * @return list<string>
      */
     public function availableCycles(string $slug): array

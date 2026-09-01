@@ -50,6 +50,8 @@ mac5_assert(!preg_match('/style\s*=/', $nav) && !preg_match('/style\s*=/', $hr),
 mac5_assert(!preg_match('/<script/i', $nav) && !preg_match('/<script/i', $hr), 'no inline JS');
 mac5_assert(!preg_match('/\b(49|441)\b/', $nav), 'no hard-coded prices');
 mac5_assert(str_contains($nav, 'fa-lock'), 'lock icon is visible');
+mac5_assert(str_contains($nav, 'rateb-nav-link--locked'), 'locked items have a dedicated nav class');
+mac5_assert(str_contains($nav, 'data-rateb-full-nav'), 'locked checkout uses full navigation so marketplace CSS loads');
 mac5_assert(str_contains($nav, 'aria-label'), 'locked links are accessible');
 mac5_assert(str_contains($nav, 'rateb_nav_can($permission, $module)'), 'accessible modules still use rateb_nav_can');
 mac5_assert(str_contains($nav, 'addonLockedRendered'), 'one locked item per module slug');

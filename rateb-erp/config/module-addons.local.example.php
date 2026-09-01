@@ -23,5 +23,7 @@ return [
         'monthly' => 49.0,
         'yearly' => 490.0,
         'enabled' => true,
+        'featured' => true,
+        'promo_label' => 'popular',
     ],
 ];

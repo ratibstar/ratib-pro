@@ -119,6 +119,9 @@ mac2_assert(str_contains($ctrl, "SessionManager::get('rateb_company_id')"), 'com
 mac2_assert(str_contains($ctrl, 'validateCsrf'), 'CSRF on POST');
 mac2_assert(str_contains($ctrl, "\$posted['company_id']"), 'POST company_id ignored');
 mac2_assert(str_contains($ctrl, "\$posted['price']"), 'POST price ignored');
+mac2_assert(str_contains($ctrl, "\$posted['monthly_price']"), 'POST monthly_price ignored');
+mac2_assert(str_contains($ctrl, "\$posted['yearly_price']"), 'POST yearly_price ignored');
+mac2_assert(str_contains($ctrl, "\$posted['discount']"), 'POST discount ignored');
 mac2_assert(!str_contains($ctrl, 'activateFromPaidInvoice'), 'controller does not call activate directly');
 mac2_assert(str_contains($ctrl, 'retryPaidActivation'), 'status page retries activation via checkout service');
 mac2_assert(!str_contains($ctrl, 'updateModules'), 'controller does not write company.modules');

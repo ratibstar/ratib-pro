@@ -45,14 +45,26 @@ final class ModuleAddonCheckoutController extends Controller
             }
         }
         $item = $checkout->addons()->catalog()[$slug] ?? ['name' => $slug];
+        $locale = function_exists('rateb_locale') ? (string) rateb_locale() : '';
+        $display = $checkout->addons()->localizedDisplay($slug, $locale) ?? [
+            'slug' => $slug,
+            'name' => (string) ($item['name'] ?? $slug),
+            'description' => '',
+            'features' => [],
+            'promo_label' => '',
+            'icon' => 'default',
+            'featured' => false,
+        ];
 
         $this->view('billing/module-checkout', [
-            'title' => (string) ($item['name'] ?? $slug),
+            'title' => (string) ($display['name'] ?? $slug),
             'slug' => $slug,
-            'moduleName' => (string) ($item['name'] ?? $slug),
+            'moduleName' => (string) ($display['name'] ?? $slug),
+            'display' => $display,
             'cycles' => $cycles,
             'quotes' => $quotes,
             'quote' => $quote,
+            'savings' => $checkout->savingsForSlug($slug),
             'csrf' => Csrf::token(),
             'action' => rateb_url('admin/billing/modules/' . rawurlencode($slug)),
             'statusUrl' => rateb_url('admin/billing/modules/' . rawurlencode($slug) . '/status'),
@@ -74,7 +86,23 @@ final class ModuleAddonCheckoutController extends Controller
         [$companyId, $slug, $checkout] = $ctx;
 
         $posted = is_array($_POST) ? $_POST : [];
-        unset($posted['company_id'], $posted['price'], $posted['amount'], $posted['tax'], $posted['tax_rate'], $posted['total'], $posted['currency']);
+        unset(
+            $posted['company_id'],
+            $posted['price'],
+            $posted['monthly_price'],
+            $posted['yearly_price'],
+            $posted['amount'],
+            $posted['tax'],
+            $posted['tax_rate'],
+            $posted['tax_amount'],
+            $posted['total'],
+            $posted['total_amount'],
+            $posted['currency'],
+            $posted['discount'],
+            $posted['saving'],
+            $posted['savings'],
+            $posted['percent']
+        );
 
         $result = $checkout->startCheckout($companyId, $slug, $posted);
         $code = (string) ($result['code'] ?? '');
@@ -114,15 +142,31 @@ final class ModuleAddonCheckoutController extends Controller
             return;
         }
 
-        $this->view('billing/module-status', [
-            'title' => (string) (($payload['module']['name'] ?? $slug)),
+        $locale = function_exists('rateb_locale') ? (string) rateb_locale() : '';
+        $display = $checkout->addons()->localizedDisplay($slug, $locale) ?? [
             'slug' => $slug,
-            'moduleName' => (string) ($payload['module']['name'] ?? $slug),
+            'name' => (string) (($payload['module']['name'] ?? $slug)),
+            'description' => '',
+            'features' => [],
+            'promo_label' => '',
+            'icon' => 'default',
+            'featured' => false,
+        ];
+        $openUrl = function_exists('rateb_app_url')
+            ? rateb_app_url($slug)
+            : rateb_url('admin/' . rawurlencode($slug));
+
+        $this->view('billing/module-status', [
+            'title' => (string) ($display['name'] ?? $slug),
+            'slug' => $slug,
+            'moduleName' => (string) ($display['name'] ?? $slug),
+            'display' => $display,
             'state' => (string) ($payload['state'] ?? 'unavailable'),
             'cycle' => (string) ($payload['cycle'] ?? ''),
             'invoice' => $payload['invoice'] ?? null,
             'paymentStatus' => (string) ($payload['payment_status'] ?? ''),
             'checkoutUrl' => rateb_url('admin/billing/modules/' . rawurlencode($slug)),
+            'openModuleUrl' => $openUrl,
         ], 'main');
     }
 

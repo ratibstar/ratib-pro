@@ -77,7 +77,7 @@ final class ModuleAddonService
     }
 
     /**
-     * @return array<string, array{name:string, monthly:float, yearly:float, enabled:bool}>
+     * @return array<string, array<string, mixed>>
      */
     public function catalog(): array
     {
@@ -87,15 +87,72 @@ final class ModuleAddonService
             if ($slug === '' || !is_array($row)) {
                 continue;
             }
-            $out[$slug] = [
-                'name' => (string) ($row['name'] ?? $slug),
-                'monthly' => (float) ($row['monthly'] ?? 0),
-                'yearly' => (float) ($row['yearly'] ?? 0),
-                'enabled' => !empty($row['enabled']),
-            ];
+            $out[$slug] = $this->normalizeCatalogItem($slug, $row);
         }
+        uasort($out, static function (array $a, array $b): int {
+            $oa = (int) ($a['sort_order'] ?? 100);
+            $ob = (int) ($b['sort_order'] ?? 100);
+            if ($oa === $ob) {
+                return strcmp((string) ($a['slug'] ?? ''), (string) ($b['slug'] ?? ''));
+            }
+
+            return $oa <=> $ob;
+        });
 
         return $out;
+    }
+
+    /**
+     * Localized marketing copy from the platform catalog. Informational only.
+     *
+     * @return array{slug:string,name:string,description:string,features:list<string>,promo_label:string,icon:string,featured:bool}|null
+     */
+    public function localizedDisplay(string $slug, string $locale = ''): ?array
+    {
+        $item = $this->catalog()[strtolower(trim($slug))] ?? null;
+        if ($item === null) {
+            return null;
+        }
+        $ar = str_starts_with(strtolower(trim($locale)), 'ar');
+        $name = $ar && (string) ($item['name_ar'] ?? '') !== ''
+            ? (string) $item['name_ar']
+            : (string) ($item['name'] ?? $slug);
+        $description = $ar && (string) ($item['description_ar'] ?? '') !== ''
+            ? (string) $item['description_ar']
+            : (string) ($item['description'] ?? '');
+        $features = [];
+        foreach ((array) ($item['features'] ?? []) as $feature) {
+            if (!is_array($feature)) {
+                $text = trim((string) $feature);
+                if ($text !== '') {
+                    $features[] = $text;
+                }
+                continue;
+            }
+            $text = $ar && trim((string) ($feature['ar'] ?? '')) !== ''
+                ? (string) $feature['ar']
+                : (string) ($feature['en'] ?? '');
+            $text = trim($text);
+            if ($text !== '') {
+                $features[] = $text;
+            }
+        }
+        $promo = (string) ($item['promo_label'] ?? '');
+        $promoMap = [
+            'popular' => $ar ? 'الأكثر طلبًا' : 'POPULAR',
+            'best_value' => $ar ? 'أفضل قيمة' : 'BEST VALUE',
+            'recommended' => $ar ? 'موصى به' : 'RECOMMENDED',
+        ];
+
+        return [
+            'slug' => (string) ($item['slug'] ?? $slug),
+            'name' => $name,
+            'description' => $description,
+            'features' => $features,
+            'promo_label' => $promoMap[$promo] ?? '',
+            'icon' => (string) ($item['icon'] ?? 'default'),
+            'featured' => !empty($item['featured']),
+        ];
     }
 
     public function isPurchasable(string $slug): bool
@@ -116,6 +173,57 @@ final class ModuleAddonService
         $yearly = (float) ($item['yearly'] ?? 0);
 
         return $monthly > 0 || $yearly > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeCatalogItem(string $slug, array $row): array
+    {
+        $monthly = (float) ($row['monthly'] ?? $row['monthly_price'] ?? 0);
+        $yearly = (float) ($row['yearly'] ?? $row['yearly_price'] ?? 0);
+        $icon = strtolower(trim((string) ($row['icon'] ?? $slug)));
+        if ($icon === '' || str_contains($icon, '://') || str_contains($icon, '/') || str_contains($icon, '.')) {
+            $icon = 'default';
+        }
+        $promo = strtolower(trim((string) ($row['promo_label'] ?? $row['badge'] ?? '')));
+        $promo = str_replace([' ', '-'], '_', $promo);
+        if (!in_array($promo, ['popular', 'best_value', 'recommended'], true)) {
+            $promo = '';
+        }
+        $features = [];
+        foreach ((array) ($row['features'] ?? []) as $feature) {
+            if (is_array($feature)) {
+                $en = trim((string) ($feature['en'] ?? $feature['name'] ?? ''));
+                $ar = trim((string) ($feature['ar'] ?? $feature['name_ar'] ?? ''));
+                if ($en === '' && $ar === '') {
+                    continue;
+                }
+                $features[] = ['en' => $en !== '' ? $en : $ar, 'ar' => $ar];
+                continue;
+            }
+            $text = trim((string) $feature);
+            if ($text !== '') {
+                $features[] = ['en' => $text, 'ar' => ''];
+            }
+        }
+
+        return [
+            'slug' => $slug,
+            'name' => (string) ($row['name'] ?? $slug),
+            'name_ar' => (string) ($row['name_ar'] ?? ''),
+            'description' => (string) ($row['description'] ?? ''),
+            'description_ar' => (string) ($row['description_ar'] ?? ''),
+            'icon' => $icon,
+            'monthly' => $monthly,
+            'yearly' => $yearly,
+            'enabled' => !empty($row['enabled']),
+            'featured' => !empty($row['featured']),
+            'sort_order' => (int) ($row['sort_order'] ?? 100),
+            'promo_label' => $promo,
+            'features' => $features,
+        ];
     }
 
     /**

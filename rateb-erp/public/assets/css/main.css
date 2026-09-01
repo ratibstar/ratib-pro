@@ -265,6 +265,28 @@ body.rateb-app {
     text-overflow: ellipsis;
 }
 
+.rateb-nav-link--locked .rateb-nav-locked-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    white-space: normal;
+    overflow: hidden;
+}
+
+.rateb-nav-link--locked .rateb-nav-locked-hint {
+    font-size: 0.68rem;
+    line-height: 1.2;
+    opacity: 0.78;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rateb-nav-link--locked .fa-lock {
+    color: var(--rateb-warning);
+    opacity: 1;
+}
+
 .rateb-nav-link:hover {
     background: rgba(255, 255, 255, 0.06);
     color: #fff;

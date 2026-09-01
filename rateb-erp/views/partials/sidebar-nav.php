@@ -95,8 +95,9 @@ $opsLink = static function (
         $label = __($labelKey);
         $hint = $addonLockedHint();
         $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-        echo '<a href="' . $esc($href) . '" data-rateb-href="' . $esc($href) . '" class="rateb-nav-link' . $active . '" title="' . $esc($hint) . '" aria-label="' . $esc($label . ' — ' . $hint) . '" onclick="return false;">';
-        echo '<i class="fas ' . $icon . '"></i><span>' . $label . '</span>';
+        echo '<a href="' . $esc($href) . '" data-rateb-href="' . $esc($href) . '" data-rateb-full-nav="1" class="rateb-nav-link rateb-nav-link--locked' . $active . '" title="' . $esc($hint) . '" aria-label="' . $esc($label . ' — ' . $hint) . '">';
+        echo '<i class="fas ' . $icon . '"></i>';
+        echo '<span class="rateb-nav-locked-text"><span class="rateb-nav-locked-label">' . $esc($label) . '</span><span class="rateb-nav-locked-hint">' . $esc($hint) . '</span></span>';
         echo '<i class="fas fa-lock" aria-hidden="true"></i>';
         echo '</a>';
         return;
