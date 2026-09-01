@@ -59,6 +59,23 @@ final class ModuleAddonService
         return in_array(strtolower(trim((string) $env)), ['1', 'true', 'yes', 'on'], true);
     }
 
+    /** Catalog overlay / demo UI — same fail-closed guards as loadCatalogFile(). */
+    public function previewUiAllowed(): bool
+    {
+        return $this->previewCatalogOverlayAllowed();
+    }
+
+    /** Demo user bootstrap is allowed only on the exact preview host. */
+    public function previewDemoHostAllowed(): bool
+    {
+        if (!$this->previewCatalogOverlayAllowed()) {
+            return false;
+        }
+        $host = strtolower((string) preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+
+        return $host === 'admin.rateb.sa';
+    }
+
     /**
      * @return array<string, array{name:string, monthly:float, yearly:float, enabled:bool}>
      */

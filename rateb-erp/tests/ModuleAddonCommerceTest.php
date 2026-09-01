@@ -134,6 +134,7 @@ if ($adminDemoFile || $localOverlay) {
     $_SERVER['HTTP_HOST'] = 'admin.rateb.sa';
     $demoHost = new ModuleAddonService();
     mac_assert($demoHost->isPurchasable('crm') === true, 'preview overlay allowed on exact admin.rateb.sa');
+    mac_assert($demoHost->previewDemoHostAllowed() === true, 'demo bootstrap host allowed on admin.rateb.sa');
     mac_assert($demoHost->isPurchasable('pos') === false, 'demo overlay does not enable other modules');
     $crm = $demoHost->catalog()['crm'];
     mac_assert((float) $crm['monthly'] === 49.0 && (float) $crm['yearly'] === 490.0, 'preview CRM prices are 49 / 490');
