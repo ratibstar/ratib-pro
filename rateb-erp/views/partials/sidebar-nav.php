@@ -68,7 +68,8 @@ $opsLink = static function (
     string $labelKey,
     string $icon,
     string $module = '',
-    string $perm = ''
+    string $perm = '',
+    ?string $labelOverride = null
 ) use ($navActive, $isLockedPurchasableModule, $addonLockedHint, &$addonLockedRendered): void {
     $entity = rateb_entity_perms($resourcePath);
     $permission = $perm !== '' ? $perm : $entity['view'];
@@ -92,7 +93,7 @@ $opsLink = static function (
         $billingRoute = 'admin/billing/modules/' . $module;
         $href = rateb_url($billingRoute);
         $active = $navActive($billingRoute) ? ' active' : '';
-        $label = __($labelKey);
+        $label = ($labelOverride !== null && $labelOverride !== '') ? $labelOverride : __($labelKey);
         $hint = $addonLockedHint();
         $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         echo '<a href="' . $esc($href) . '" data-rateb-href="' . $esc($href) . '" data-rateb-full-nav="1" class="rateb-nav-link rateb-nav-link--locked' . $active . '" title="' . $esc($hint) . '" aria-label="' . $esc($label . ' — ' . $hint) . '">';
@@ -172,10 +173,11 @@ $opsSection = static function (
     bool $eager = false
 ) use ($opsLink, $navActive, $renderNavGroup, $isLockedPurchasableModule): void {
     $hasActive = false;
-    $hasVisible = false;
     $sectionBadge = 0;
+    $unlocked = [];
+    $lockedFirst = null;
     foreach ($links as $link) {
-        [$path, , , $module, $perm] = array_pad($link, 5, '');
+        [$path, $labelKey, $icon, $module, $perm] = array_pad($link, 5, '');
         $entity = rateb_entity_perms($path);
         $permission = $perm !== '' ? $perm : $entity['view'];
         $module = $module !== '' ? $module : $entity['module'];
@@ -185,28 +187,32 @@ $opsSection = static function (
         } else {
             $can = rateb_nav_can($permission, $module);
         }
-        $locked = false;
-        if (!$can) {
-            $locked = $isLockedPurchasableModule($module, $permission);
-            if (!$locked) {
-                continue;
+        if ($can) {
+            $unlocked[] = $link;
+            if (function_exists('rateb_ops_nav_pending_badge')) {
+                $sectionBadge += rateb_ops_nav_pending_badge($path);
             }
-        }
-        $hasVisible = true;
-        if ($locked) {
-            if ($navActive('admin/billing/modules/' . $module)) {
+            if ($navActive(rateb_app_route($path))) {
                 $hasActive = true;
             }
             continue;
         }
-        if (function_exists('rateb_ops_nav_pending_badge')) {
-            $sectionBadge += rateb_ops_nav_pending_badge($path);
+        if (!$isLockedPurchasableModule($module, $permission)) {
+            continue;
         }
-        if ($navActive(rateb_app_route($path))) {
+        if ($lockedFirst === null) {
+            $lockedFirst = [$path, $labelKey, $groupIcon !== '' ? $groupIcon : $icon, $module, $permission];
+        }
+        if ($navActive('admin/billing/modules/' . $module)) {
             $hasActive = true;
         }
     }
-    if (!$hasVisible) {
+    if ($unlocked === []) {
+        if ($lockedFirst === null) {
+            return;
+        }
+        // Lock-only section: one top-level locked link (visible lock, one click → checkout).
+        $opsLink($lockedFirst[0], $lockedFirst[1], $lockedFirst[2], $lockedFirst[3], $lockedFirst[4], $title);
         return;
     }
     $renderNavGroup($title, $groupIcon, $hasActive || $eager, static function () use ($links, $opsLink): void {

@@ -115,6 +115,7 @@ $svcSrc = (string) file_get_contents($root . '/app/services/ModuleAddonCheckoutS
 $routes = (string) file_get_contents($root . '/routes/modules/module-addons.php');
 $payRoutes = (string) file_get_contents($root . '/routes/modules/payment.php');
 
+mac2_assert(str_contains($ctrl, 'discardStaleModuleNotInPlanFlash'), 'checkout drops leftover plan flashes from other modules');
 mac2_assert(str_contains($ctrl, "SessionManager::get('rateb_company_id')"), 'company comes from session');
 mac2_assert(str_contains($ctrl, 'validateCsrf'), 'CSRF on POST');
 mac2_assert(str_contains($ctrl, "\$posted['company_id']"), 'POST company_id ignored');

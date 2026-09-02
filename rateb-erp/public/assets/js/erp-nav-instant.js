@@ -133,22 +133,29 @@
         } catch (ePath) {
             path = String(href || '');
         }
-        if (!/\/admin\/ops\//i.test(path)) {
+        var onBilling = /\/admin\/billing\/modules\//i.test(path);
+        var onOps = /\/admin\/ops\//i.test(path);
+        if (!onBilling && !onOps) {
             return;
         }
         if (/\/admin$/i.test(path.replace(/\/+$/, ''))) {
             return;
         }
-        var hasOpsBody = !!(main.querySelector(
-            '[data-supplier-comm-form], .rateb-sc-page, .rateb-card, form[method="post"], table.rateb-table'
-        ));
-        if (!hasOpsBody) {
-            return;
+        if (onOps) {
+            var hasOpsBody = !!(main.querySelector(
+                '[data-supplier-comm-form], .rateb-sc-page, .rateb-card, form[method="post"], table.rateb-table'
+            ));
+            if (!hasOpsBody) {
+                return;
+            }
         }
         main.querySelectorAll('.rateb-flash.alert-danger, .alert.alert-danger.rateb-flash').forEach(function (el) {
             var t = String(el.textContent || '');
-            if (/ليس لديك صلاحية|you do not have permission/i.test(t)) {
+            if (onOps && /ليس لديك صلاحية|you do not have permission/i.test(t)) {
                 try { el.remove(); } catch (eRm) { /* ignore */ }
+            }
+            if (onBilling && /غير مشمولة|not included in your current plan/i.test(t)) {
+                try { el.remove(); } catch (ePlan) { /* ignore */ }
             }
         });
     }
@@ -826,6 +833,9 @@
                 return;
             }
             a.__ratebPrefetchBound = true;
+            if (a.classList && a.classList.contains('rateb-nav-link--locked')) {
+                return;
+            }
             var go = function () {
                 try {
                     if (document.visibilityState && document.visibilityState !== 'visible') {
@@ -2227,6 +2237,7 @@
                     || PLATFORM_CATALOG_RE.test(fu.pathname)
                     || PLATFORM_CATALOG_SSO_RE.test(fu.pathname)
                     || (ADMIN_PATH_RE.test(fu.pathname) && POS_RUNTIME_RE.test(fu.pathname))
+                    || /\/admin\/billing\/modules(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/company-permissions(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/oversight\/approvals(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/(?:mfg|payroll|qms|bi|recruitment|crm|projects|approvals|eam|procurement|website)(?:\/|$)/i.test(fu.pathname)

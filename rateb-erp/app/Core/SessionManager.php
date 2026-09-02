@@ -391,6 +391,24 @@ final class SessionManager
         }
     }
 
+    /**
+     * Drop leftover «module not in plan» flashes (wrong-module banner after prefetch).
+     * Call on add-on checkout/status pages that already explain the locked state.
+     */
+    public static function discardStaleModuleNotInPlanFlash(): void
+    {
+        self::ensureActive();
+        $err = $_SESSION['_flash']['error'] ?? null;
+        if (!is_string($err) || $err === '') {
+            return;
+        }
+        if (str_contains($err, 'غير مشمولة')
+            || stripos($err, 'not included in your current plan') !== false
+            || str_contains($err, 'module_not_in_plan')) {
+            unset($_SESSION['_flash']['error']);
+        }
+    }
+
     public static function regenerate(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {

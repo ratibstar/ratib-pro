@@ -23,6 +23,16 @@ if (is_string($error) && $error !== '') {
         $error = null;
     }
 }
+// Checkout already explains the locked module — never show a leftover plan banner
+// (often naming a *different* module after prefetch/warm of /admin/hr etc.).
+if (is_string($error) && $error !== '') {
+    $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+    $isPlanFlash = str_contains($error, 'غير مشمولة')
+        || stripos($error, 'not included in your current plan') !== false;
+    if ($isPlanFlash && preg_match('#/admin/billing/modules/#i', $uri)) {
+        $error = null;
+    }
+}
 ?>
 <?php if ($success) { ?>
 <div class="alert alert-success rateb-flash alert-dismissible fade show" role="alert">

@@ -15,6 +15,7 @@ final class ModuleAddonCheckoutController extends Controller
 {
     public function show(string $slug = ''): void
     {
+        SessionManager::discardStaleModuleNotInPlanFlash();
         $ctx = $this->gate($slug);
         if ($ctx === null) {
             return;
@@ -121,6 +122,7 @@ final class ModuleAddonCheckoutController extends Controller
 
     public function status(string $slug = ''): void
     {
+        SessionManager::discardStaleModuleNotInPlanFlash();
         $ctx = $this->gate($slug, false);
         if ($ctx === null) {
             return;

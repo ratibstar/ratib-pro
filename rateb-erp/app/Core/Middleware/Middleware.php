@@ -449,6 +449,12 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
         $limits = new \Rateb\App\Services\PlanLimitService();
         if (!$limits->companyHasModule($companyId, $this->module)) {
+            // Commerce preview: send the user to checkout instead of flashing a
+            // dashboard error. Prefetch / offline-warm of ops URLs used to plant
+            // «module not in plan» on whichever page loaded next.
+            if (!$jsonOnly && $this->redirectToPurchasableAddonCheckout()) {
+                return false;
+            }
             $label = function_exists('__') ? __($this->module) : $this->module;
             $msg = __('module_not_in_plan_named', ['module' => $label]);
             if ($jsonOnly) {
@@ -466,6 +472,29 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         }
 
         return true;
+    }
+
+    /**
+     * When add-on commerce is on and this module is for sale, open checkout.
+     * Production (flag off) is unchanged. Never flashes — the checkout page is the UI.
+     */
+    private function redirectToPurchasableAddonCheckout(): bool
+    {
+        try {
+            if ($this->module === '' || !class_exists(\Rateb\App\Services\ModuleAddonService::class)) {
+                return false;
+            }
+            $addons = new \Rateb\App\Services\ModuleAddonService();
+            if (!$addons->isEnabled() || !$addons->isPurchasable($this->module)) {
+                return false;
+            }
+            $path = 'admin/billing/modules/' . rawurlencode($this->module);
+            $url = function_exists('rateb_url') ? rateb_url($path) : (RATEB_BASE_URL . '/' . $path);
+            Response::redirect($url);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     private static function isSuperAdminSession(): bool

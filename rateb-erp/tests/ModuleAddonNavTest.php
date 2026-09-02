@@ -58,11 +58,15 @@ mac5_assert(str_contains($nav, 'addonLockedRendered'), 'one locked item per modu
 mac5_assert(!str_contains($nav, 'activateFromPaidInvoice') && !str_contains($nav, 'expireDueAddons'), 'sidebar is read-only');
 mac5_assert(!str_contains($nav, 'updateModules') && !str_contains($hr, 'updateModules'), 'sidebar does not write company.modules');
 
-mac5_assert(str_contains($hr, "admin/billing/modules/hr"), 'locked HR goes to billing/modules/hr');
+mac5_assert(str_contains($nav, 'Lock-only section'), 'lock-only sections flatten to a top-level locked link');
+mac5_assert(str_contains($nav, '$unlocked === []'), 'flatten runs only when no entitled items remain');
+mac5_assert(str_contains($hr, "opsLink('hr'"), 'locked HR uses the shared top-level locked link');
+mac5_assert(str_contains($hr, "admin/billing/modules/hr"), 'locked HR still targets billing/modules/hr');
 mac5_assert(str_contains($hr, 'rateb_nav_can($hrPerm, \'hr\')'), 'enabled HR keeps existing rateb_nav_can gate');
 mac5_assert(str_contains($hr, 'isLockedPurchasableModule(\'hr\''), 'HR locked state uses the same local helper');
 mac5_assert(str_contains($hr, 'fa-lock'), 'HR locked item shows a lock');
 mac5_assert(str_contains($hr, 'config/hr-menu.php'), 'enabled HR still loads the existing HR tree');
+mac5_assert(!str_contains($hr, 'renderNavGroup($label'), 'locked HR is not wrapped in a chevron group');
 
 mac5_assert(str_contains($ops, "require RATEB_ROOT . '/views/partials/sidebar-hr-nav.php'"), 'HR still included from ops nav');
 mac5_assert(!str_contains($ops, 'billing/modules'), 'ops nav partial itself is unchanged');
@@ -72,6 +76,8 @@ mac5_assert(
     'rateb_nav_can still gates on company modules'
 );
 mac5_assert(str_contains($mw, 'final class CompanyModuleMiddleware'), 'CompanyModuleMiddleware remains in Middleware.php');
+mac5_assert(str_contains($mw, 'redirectToPurchasableAddonCheckout'), 'purchasable locked modules redirect to checkout');
+mac5_assert(str_contains($mw, "admin/billing/modules/"), 'module deny checkout path is billing/modules');
 mac5_assert(str_contains($pls, 'function companyHasModule'), 'PlanLimitService companyHasModule unchanged as the access reader');
 
 $frozen = [

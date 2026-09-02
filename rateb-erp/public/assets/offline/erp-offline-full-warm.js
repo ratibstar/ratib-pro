@@ -499,6 +499,9 @@
                 if (!raw || raw === '#' || /^javascript:/i.test(raw)) {
                     return;
                 }
+                if (a.classList && a.classList.contains('rateb-nav-link--locked')) {
+                    return;
+                }
                 pushUrl(seen, out, raw);
             });
         }
