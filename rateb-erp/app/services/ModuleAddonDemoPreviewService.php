@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
 use Rateb\App\Models\Permission;
 use Rateb\App\Models\Role;
@@ -20,8 +21,23 @@ final class ModuleAddonDemoPreviewService
     public const DEMO_NAME = 'Module Add-on Preview';
     public const ROLE_SLUG = 'addon-preview-crm';
 
-    /** @var list<string> */
-    private const ROLE_PERMISSIONS = ['dashboard.view', 'crm.view'];
+    /** View slugs that make locked add-on nav visible (sidebar first item). */
+    private const ROLE_PERMISSIONS = [
+        'dashboard.view',
+        'pos.view',
+        'hr.view',
+        'recruitment.view',
+        'logistics.view',
+        'marketplace.view',
+        'manufacturing.view',
+        'payroll.view',
+        'accounting.view',
+        'projects.view',
+        'quality.view',
+        'bi.view',
+        'website.view',
+        'crm.view',
+    ];
 
     /**
      * @param list<string> $modules
@@ -47,6 +63,211 @@ final class ModuleAddonDemoPreviewService
         }
 
         return $kept;
+    }
+
+    /**
+     * @param list<string> $modules
+     * @return list<string>
+     */
+    public static function modulesWithSlug(array $modules, string $slug): array
+    {
+        $slug = strtolower(trim($slug));
+        $kept = [];
+        foreach ($modules as $mod) {
+            $mod = strtolower(trim((string) $mod));
+            if ($mod === '' || in_array($mod, $kept, true)) {
+                continue;
+            }
+            $kept[] = $mod;
+        }
+        if ($slug !== '' && !in_array($slug, $kept, true)) {
+            $kept[] = $slug;
+        }
+        foreach (['dashboard', 'notifications'] as $implied) {
+            if (!in_array($implied, $kept, true)) {
+                $kept[] = $implied;
+            }
+        }
+
+        return $kept;
+    }
+
+    public static function sessionCanManageDemoLocks(): bool
+    {
+        try {
+            $addons = new ModuleAddonService();
+            if (!$addons->isEnabled() || !$addons->previewDemoHostAllowed()) {
+                return false;
+            }
+        } catch (Throwable $e) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        $email = strtolower(trim((string) SessionManager::get('rateb_user_email', '')));
+
+        return $email !== '' && $email === strtolower(self::DEMO_EMAIL);
+    }
+
+    /**
+     * @return list<array{slug:string,name:string,locked:bool,entitled:bool,purchasable:bool}>
+     */
+    public function lockBoard(): array
+    {
+        if (!self::sessionCanManageDemoLocks()) {
+            return [];
+        }
+        $companyId = $this->targetCompanyId();
+        if ($companyId < 1) {
+            return [];
+        }
+        $addons = new ModuleAddonService();
+        $limits = new PlanLimitService();
+        $locale = function_exists('rateb_locale') ? (string) rateb_locale() : '';
+        $rows = [];
+        foreach ($addons->catalog() as $slug => $item) {
+            if (!$addons->isPurchasable($slug)) {
+                continue;
+            }
+            $display = $addons->localizedDisplay($slug, $locale) ?? [];
+            $entitled = $limits->companyHasModule($companyId, $slug);
+            $rows[] = [
+                'slug' => $slug,
+                'name' => (string) ($display['name'] ?? $item['name'] ?? $slug),
+                'locked' => !$entitled,
+                'entitled' => $entitled,
+                'purchasable' => true,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Grant or revoke purchasable add-on slugs on the demo tenant (no payment).
+     *
+     * @return array{ok:bool,code:string,company_id?:int,modules?:list<string>}
+     */
+    public function setLocks(string $action, string $slug = ''): array
+    {
+        $addons = new ModuleAddonService();
+        if (!$addons->previewDemoHostAllowed()) {
+            return ['ok' => false, 'code' => 'not_demo_host'];
+        }
+        if (!$addons->isEnabled()) {
+            return ['ok' => false, 'code' => 'disabled'];
+        }
+        if (!self::sessionCanManageDemoLocks()) {
+            return ['ok' => false, 'code' => 'forbidden'];
+        }
+        $companyId = $this->targetCompanyId();
+        if ($companyId < 1) {
+            return ['ok' => false, 'code' => 'no_company'];
+        }
+
+        $action = strtolower(trim($action));
+        $slug = strtolower(trim($slug));
+        $purchasable = [];
+        foreach ($addons->catalog() as $key => $item) {
+            if ($addons->isPurchasable($key)) {
+                $purchasable[] = $key;
+            }
+        }
+        if ($purchasable === []) {
+            return ['ok' => false, 'code' => 'no_purchasable'];
+        }
+
+        $current = $this->workingModules($companyId, $addons);
+        if ($action === 'lock' || $action === 'unlock') {
+            if ($slug === '' || !in_array($slug, $purchasable, true)) {
+                return ['ok' => false, 'code' => 'unknown_module'];
+            }
+            $next = $action === 'lock'
+                ? self::modulesWithoutSlug($current, $slug)
+                : self::modulesWithSlug($current, $slug);
+        } elseif ($action === 'lock_all') {
+            $next = $current;
+            foreach ($purchasable as $key) {
+                $next = self::modulesWithoutSlug($next, $key);
+            }
+        } elseif ($action === 'unlock_all') {
+            $next = $current;
+            foreach ($purchasable as $key) {
+                $next = self::modulesWithSlug($next, $key);
+            }
+        } else {
+            return ['ok' => false, 'code' => 'invalid_action'];
+        }
+
+        if (!(new Company())->updateModules($companyId, $next)) {
+            return ['ok' => false, 'code' => 'modules_write_failed'];
+        }
+        PlanLimitService::forgetCompanyLimits($companyId);
+        if (function_exists('rateb_ops_company_request_state')) {
+            $state = &rateb_ops_company_request_state();
+            unset($state['rows'][$companyId], $state['exists'][$companyId]);
+        }
+        $this->attachPreviewViewPermissions($companyId);
+
+        try {
+            (new AuditService())->log('update', 'module_addon_demo_locks', $companyId, [
+                'action' => $action,
+                'slug' => $slug,
+                'company_id' => $companyId,
+            ]);
+        } catch (Throwable $e) {
+            // Lock board must still work if audit is unavailable.
+        }
+
+        return [
+            'ok' => true,
+            'code' => 'ok',
+            'company_id' => $companyId,
+            'modules' => $next,
+        ];
+    }
+
+    private function targetCompanyId(): int
+    {
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return DedicatedTenantPolicy::primaryCompanyId();
+        }
+
+        return (int) SessionManager::get('rateb_company_id', 0);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function workingModules(int $companyId, ModuleAddonService $addons): array
+    {
+        $json = $addons->currentJson($companyId);
+        if ($json !== []) {
+            return $json;
+        }
+        $limits = (new PlanLimitService())->getLimits($companyId);
+        $mods = is_array($limits['modules'] ?? null) ? $limits['modules'] : [];
+        $out = [];
+        foreach ($mods as $mod) {
+            $mod = strtolower(trim((string) $mod));
+            if ($mod === '' || in_array($mod, $out, true)) {
+                continue;
+            }
+            $out[] = $mod;
+        }
+
+        return $out;
+    }
+
+    private function attachPreviewViewPermissions(int $companyId): void
+    {
+        $authz = new AuthorizationService();
+        $existing = $authz->findRoleBySlug(self::ROLE_SLUG, $companyId);
+        $roleId = (int) ($existing['id'] ?? 0);
+        if ($roleId > 0) {
+            $this->syncRoleViewPermissions($roleId);
+        }
     }
 
     /**
@@ -180,7 +401,16 @@ final class ModuleAddonDemoPreviewService
         if ($roleId < 1) {
             return 0;
         }
+        $this->syncRoleViewPermissions($roleId);
 
+        return $roleId;
+    }
+
+    private function syncRoleViewPermissions(int $roleId): void
+    {
+        if ($roleId < 1) {
+            return;
+        }
         $db = Database::connection();
         $insert = $db->prepare(
             'INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)'
@@ -192,11 +422,9 @@ final class ModuleAddonDemoPreviewService
             );
             $pid = (int) ($perm['id'] ?? 0);
             if ($pid < 1) {
-                return 0;
+                continue;
             }
             $insert->execute(['rid' => $roleId, 'pid' => $pid]);
         }
-
-        return $roleId;
     }
 }

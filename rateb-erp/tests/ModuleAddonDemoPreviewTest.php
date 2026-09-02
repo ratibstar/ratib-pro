@@ -49,6 +49,9 @@ $kept = ModuleAddonDemoPreviewService::modulesWithoutSlug(
 macd_assert($kept === ['dashboard', 'inventory', 'notifications'], 'modulesWithoutSlug drops crm and keeps implied');
 macd_assert(!in_array('crm', $kept, true), 'crm is absent after strip');
 
+$with = ModuleAddonDemoPreviewService::modulesWithSlug(['dashboard', 'inventory'], 'crm');
+macd_assert(in_array('crm', $with, true) && in_array('dashboard', $with, true), 'modulesWithSlug adds crm and keeps dashboard');
+
 $src = (string) file_get_contents($root . '/app/services/ModuleAddonDemoPreviewService.php');
 $ctrl = (string) file_get_contents($root . '/app/controllers/Company/ModuleAddonDemoPreviewController.php');
 $routes = (string) file_get_contents($root . '/routes/modules/module-addons.php');
@@ -56,18 +59,27 @@ $view = (string) file_get_contents($root . '/views/billing/module-demo-preview.p
 
 macd_assert(str_contains($src, 'previewDemoHostAllowed'), 'service requires demo host guard');
 macd_assert(str_contains($src, 'updateModules'), 'service writes company.modules via Company model');
+macd_assert(str_contains($src, 'function setLocks'), 'demo lock board writes entitlement without payment');
+macd_assert(str_contains($src, 'sessionCanManageDemoLocks'), 'lock board is demo-host + preview user or Super Admin');
 macd_assert(!str_contains($src, 'PaymentService') && !str_contains($ctrl, 'PaymentService'), 'no PaymentService');
 macd_assert(!str_contains($src, 'Moyasar') && !str_contains($ctrl, 'Moyasar'), 'no Moyasar');
 macd_assert(!str_contains($src, 'startCheckout') && !str_contains($ctrl, 'startCheckout'), 'does not start checkout');
 macd_assert(!str_contains($src, 'activateFromPaidInvoice'), 'does not activate CRM add-on');
 macd_assert(str_contains($src, 'is_super_admin') && str_contains($src, '0'), 'demo user is not super admin');
 macd_assert(str_contains($src, 'crm.view'), 'demo role includes crm.view');
+macd_assert(str_contains($src, 'pos.view') && str_contains($src, 'hr.view'), 'demo role includes the locked add-on view permissions');
 macd_assert(str_contains($routes, '/admin/billing/addon-preview-user'), 'preview route registered before slug routes');
+macd_assert(str_contains($routes, '/admin/billing/addon-locks'), 'demo lock route is registered');
 macd_assert(str_contains($routes, 'rateb_admin_mw()'), 'preview route is Super Admin only');
 macd_assert(strpos($routes, 'addon-preview-user') < strpos($routes, '/admin/billing/modules/{slug}'), 'preview route is not captured as a slug');
+macd_assert(strpos($routes, 'addon-locks') < strpos($routes, '/admin/billing/modules/{slug}'), 'lock route is not captured as a slug');
 macd_assert(str_contains($ctrl, 'previewDemoHostAllowed'), 'controller 404s off demo host');
+macd_assert(str_contains($ctrl, 'toggleLocks'), 'controller exposes lock POST');
 macd_assert(str_contains($view, 'demo-preview-password'), 'password is shown once after bootstrap');
 macd_assert(!str_contains($view, 'Purchase'), 'preview bootstrap is not the purchase form');
+$board = (string) file_get_contents($root . '/views/partials/billing/addon-lock-board.php');
+macd_assert(str_contains($board, 'lock_action'), 'lock board posts named actions');
+macd_assert(!str_contains($board, 'PaymentService'), 'lock board does not start payment');
 
 $savedHost = $_SERVER['HTTP_HOST'] ?? null;
 macd_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');
@@ -88,6 +100,8 @@ if ($savedHost === null) {
     $_SERVER['HTTP_HOST'] = $savedHost;
 }
 
+$blockedLocks = (new ModuleAddonDemoPreviewService())->setLocks('unlock', 'crm');
+macd_assert(($blockedLocks['ok'] ?? true) === false, 'setLocks refuses when not on demo host');
 $blocked = (new ModuleAddonDemoPreviewService())->ensureDemoUser('PreviewPass#1');
 macd_assert(($blocked['ok'] ?? true) === false, 'ensureDemoUser refuses when not on demo host');
 macd_assert(($blocked['code'] ?? '') === 'not_demo_host' || ($blocked['code'] ?? '') === 'disabled', 'refusal code is fail-closed');

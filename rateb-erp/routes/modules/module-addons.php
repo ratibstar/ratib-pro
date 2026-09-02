@@ -23,6 +23,8 @@ $router->post('/admin/module-addons/void-invoice', [ModuleAddonCatalogController
 
 $router->get('/admin/billing/addon-preview-user', [ModuleAddonDemoPreviewController::class, 'show'], $previewMw);
 $router->post('/admin/billing/addon-preview-user', [ModuleAddonDemoPreviewController::class, 'bootstrap'], $previewMw);
+$router->get('/admin/billing/addon-locks', [ModuleAddonDemoPreviewController::class, 'locks'], $addonMw);
+$router->post('/admin/billing/addon-locks', [ModuleAddonDemoPreviewController::class, 'toggleLocks'], $addonMw);
 
 $router->get('/admin/billing/modules/{slug}/status', [ModuleAddonCheckoutController::class, 'status'], $addonMw);
 $router->get('/admin/billing/modules/{slug}', [ModuleAddonCheckoutController::class, 'show'], $addonMw);

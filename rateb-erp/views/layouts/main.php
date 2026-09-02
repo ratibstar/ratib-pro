@@ -952,6 +952,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-store"></i><span><?php echo __('module_addon_catalog'); ?></span>
             </a>
             <?php } ?>
+            <?php
+            if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
+                $locksHref = rateb_url('admin/billing/addon-locks');
+                $locksActive = $navActive('admin/billing/addon-locks') ? ' active' : '';
+                ?>
+            <a href="<?php echo $locksHref; ?>" data-rateb-href="<?php echo $locksHref; ?>" data-rateb-full-nav="1" class="rateb-nav-link<?php echo $locksActive; ?>">
+                <i class="fas fa-lock"></i><span><?php echo __('module_addon_demo_locks'); ?></span>
+            </a>
+            <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php
             // Agent Apps routes are platform SuperAdmin-only (rateb_admin_mw).

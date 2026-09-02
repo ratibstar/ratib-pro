@@ -35,5 +35,8 @@ $email = (string) ($email ?? '');
             <input type="hidden" name="confirm" value="1">
             <button type="submit" class="btn btn-primary" id="demo-preview-bootstrap">Create / reset demo user</button>
         </form>
+        <?php if (!empty($locksUrl)) { ?>
+        <p class="mt-3 mb-0"><a href="<?php echo $esc((string) $locksUrl); ?>"><?php echo $esc(__('module_addon_demo_locks')); ?></a></p>
+        <?php } ?>
     </div>
 </div>
