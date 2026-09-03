@@ -17,7 +17,8 @@ declare(strict_types=1);
             <?php foreach (($dashboards ?? []) as $d): ?>
             <div class="border rounded p-3 mb-2">
                 <div class="fw-semibold"><?php echo htmlspecialchars((string) ($d['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="small text-muted"><?php echo htmlspecialchars((string) (($d['role_key'] ?? '') . ' · shared=' . ((int) ($d['is_shared'] ?? 0))), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($d['role_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_shared'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo !empty($d['is_shared']) ? htmlspecialchars(__('yes'), ENT_QUOTES, 'UTF-8') : htmlspecialchars(__('no'), ENT_QUOTES, 'UTF-8'); ?></div>
             </div>
             <?php endforeach; ?>
             <?php if (($dashboards ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
@@ -26,9 +27,9 @@ declare(strict_types=1);
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input class="form-control form-control-sm mb-2" name="name" placeholder="<?php echo htmlspecialchars(__('crm_dashboard_name'), ENT_QUOTES, 'UTF-8'); ?>" required>
                 <select class="form-select form-select-sm mb-2" name="role_key">
-                    <option value="executive">executive</option>
-                    <option value="manager">manager</option>
-                    <option value="rep">rep</option>
+                    <option value="executive"><?php echo htmlspecialchars(__('executive'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="manager"><?php echo htmlspecialchars(__('manager'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="rep"><?php echo htmlspecialchars(__('rep'), ENT_QUOTES, 'UTF-8'); ?></option>
                 </select>
                 <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_shared" value="1"><label class="form-check-label"><?php echo htmlspecialchars(__('crm_shared'), ENT_QUOTES, 'UTF-8'); ?></label></div>
                 <button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
@@ -40,8 +41,10 @@ declare(strict_types=1);
             <?php foreach (($schedules ?? []) as $s): ?>
             <div class="border rounded p-3 mb-2 small">
                 <div class="fw-semibold"><?php echo htmlspecialchars((string) ($s['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div><?php echo htmlspecialchars((string) (($s['report_key'] ?? '') . ' · ' . ($s['frequency'] ?? '') . ' · ' . ($s['last_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="text-muted">next: <?php echo htmlspecialchars((string) ($s['next_run_at'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div><?php echo htmlspecialchars(rateb_ui((string) ($s['report_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(rateb_ui((string) ($s['frequency'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(rateb_ui((string) ($s['last_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="text-muted"><?php echo htmlspecialchars(__('crm_next'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($s['next_run_at'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></div>
             </div>
             <?php endforeach; ?>
             <?php if (($schedules ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
@@ -50,15 +53,15 @@ declare(strict_types=1);
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input class="form-control form-control-sm mb-2" name="name" placeholder="<?php echo htmlspecialchars(__('crm_schedule_name'), ENT_QUOTES, 'UTF-8'); ?>" required>
                 <select class="form-select form-select-sm mb-2" name="report_key">
-                    <option value="funnel">funnel</option>
-                    <option value="performance">performance</option>
-                    <option value="activity">activity</option>
-                    <option value="velocity">velocity</option>
+                    <option value="funnel"><?php echo htmlspecialchars(__('funnel'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="performance"><?php echo htmlspecialchars(__('performance'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="activity"><?php echo htmlspecialchars(__('activity'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="velocity"><?php echo htmlspecialchars(__('velocity'), ENT_QUOTES, 'UTF-8'); ?></option>
                 </select>
                 <select class="form-select form-select-sm mb-2" name="frequency">
-                    <option value="daily">daily</option>
-                    <option value="weekly" selected>weekly</option>
-                    <option value="monthly">monthly</option>
+                    <option value="daily"><?php echo htmlspecialchars(__('daily'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="weekly" selected><?php echo htmlspecialchars(__('weekly'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="monthly"><?php echo htmlspecialchars(__('monthly'), ENT_QUOTES, 'UTF-8'); ?></option>
                 </select>
                 <button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>

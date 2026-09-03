@@ -13,7 +13,7 @@ declare(strict_types=1);
             <ul class="list-group mb-3">
                 <?php foreach (($pipelines ?? []) as $p): ?>
                 <li class="list-group-item d-flex justify-content-between">
-                    <span><?php echo htmlspecialchars((string) ($p['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span><?php echo htmlspecialchars(rateb_ui((string) ($p['name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span>
                     <a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/pipeline') . '?pipeline_id=' . (int) $p['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('crm_pipeline_stage_manage'), ENT_QUOTES, 'UTF-8'); ?></a>
                 </li>
                 <?php endforeach; ?>
@@ -23,7 +23,7 @@ declare(strict_types=1);
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_loss_reason'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <ul class="list-group mb-3">
                 <?php foreach (($loss_reasons ?? []) as $lr): ?>
-                <li class="list-group-item"><?php echo htmlspecialchars((string) ($lr['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></li>
+                <li class="list-group-item"><?php echo htmlspecialchars(rateb_ui((string) ($lr['name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></li>
                 <?php endforeach; ?>
                 <?php if (($loss_reasons ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>
@@ -45,7 +45,7 @@ declare(strict_types=1);
             <ul class="list-group mb-4">
                 <?php foreach (($activity_types ?? []) as $t): ?>
                 <li class="list-group-item d-flex justify-content-between">
-                    <span><?php echo htmlspecialchars((string) (($t['code'] ?? '') . ' — ' . ($t['name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span><?php echo htmlspecialchars(rateb_ui((string) ($t['name'] ?? $t['code'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span>
                     <span class="small text-muted"><?php echo htmlspecialchars(!empty($t['is_active']) ? __('active') : __('off'), ENT_QUOTES, 'UTF-8'); ?></span>
                 </li>
                 <?php endforeach; ?>
@@ -56,12 +56,12 @@ declare(strict_types=1);
             <?php foreach (($automation_rules ?? []) as $rule): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/admin/automation-rules') . '/' . (int) $rule['id']), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-2">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <div class="fw-semibold"><?php echo htmlspecialchars((string) ($rule['name'] ?? $rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="small text-muted mb-2"><?php echo htmlspecialchars((string) ($rule['rule_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold"><?php echo htmlspecialchars(rateb_ui((string) ($rule['name'] ?? $rule['rule_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small text-muted mb-2"><?php echo htmlspecialchars(rateb_ui((string) ($rule['rule_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                 <?php if (!empty($canManage)): ?>
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" name="is_enabled" value="1" id="rule_<?php echo (int) $rule['id']; ?>" <?php echo !empty($rule['is_enabled']) ? 'checked' : ''; ?>>
-                    <label class="form-check-label" for="rule_<?php echo (int) $rule['id']; ?>">enabled</label>
+                    <label class="form-check-label" for="rule_<?php echo (int) $rule['id']; ?>"><?php echo htmlspecialchars(__('enabled'), ENT_QUOTES, 'UTF-8'); ?></label>
                 </div>
                 <label class="form-label small"><?php echo htmlspecialchars(__('crm_rule_conditions'), ENT_QUOTES, 'UTF-8'); ?></label>
                 <textarea class="form-control form-control-sm mb-2" name="condition_json" rows="2"><?php echo htmlspecialchars((string) ($rule['condition_json'] ?? '{"type":"always"}'), ENT_QUOTES, 'UTF-8'); ?></textarea>
@@ -77,7 +77,10 @@ declare(strict_types=1);
             <ul class="list-group">
                 <?php foreach (($execution_history ?? []) as $h): ?>
                 <li class="list-group-item small">
-                    <?php echo htmlspecialchars((string) (($h['event_type'] ?? '') . ' · ' . ($h['entity_type'] ?? '') . ' #' . ($h['entity_id'] ?? '') . ' · ' . ($h['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    <?php echo htmlspecialchars(rateb_ui((string) ($h['event_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(rateb_ui((string) ($h['entity_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    #<?php echo (int) ($h['entity_id'] ?? 0); ?>
+                    · <?php echo htmlspecialchars((string) ($h['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($execution_history ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

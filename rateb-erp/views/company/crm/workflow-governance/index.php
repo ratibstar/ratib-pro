@@ -7,7 +7,7 @@ declare(strict_types=1);
         <div class="col-auto">
             <select name="pipeline_id" class="form-select form-select-sm" onchange="this.form.submit()">
                 <?php foreach (($pipelines ?? []) as $p): ?>
-                <option value="<?php echo (int) $p['id']; ?>" <?php echo ((int) ($pipeline_id ?? 0) === (int) $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($p['name'] ?? $p['id']), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="<?php echo (int) $p['id']; ?>" <?php echo ((int) ($pipeline_id ?? 0) === (int) $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars(rateb_ui((string) ($p['name'] ?? $p['id'])), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -17,7 +17,7 @@ declare(strict_types=1);
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_stage_rules'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php foreach (($rules ?? []) as $rule): ?>
             <div class="border rounded p-3 mb-2 small">
-                <div class="fw-semibold"><?php echo htmlspecialchars((string) (($rule['stage_name'] ?? '') . ' #' . ($rule['stage_id'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold"><?php echo htmlspecialchars(rateb_ui((string) ($rule['stage_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> #<?php echo (int) ($rule['stage_id'] ?? 0); ?></div>
                 <div><?php echo htmlspecialchars(__('crm_fields'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['required_fields_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
                 <div><?php echo htmlspecialchars(__('crm_actions'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['required_actions_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
                 <div><?php echo htmlspecialchars(__('crm_sla_hours'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['sla_hours'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
@@ -34,7 +34,7 @@ declare(strict_types=1);
                     <label class="form-label"><?php echo htmlspecialchars(__('crm_stage'), ENT_QUOTES, 'UTF-8'); ?></label>
                     <select name="stage_id" class="form-select form-select-sm" required>
                         <?php foreach (($stages ?? []) as $s): ?>
-                        <option value="<?php echo (int) $s['id']; ?>"><?php echo htmlspecialchars((string) ($s['name'] ?? $s['id']), ENT_QUOTES, 'UTF-8'); ?></option>
+                        <option value="<?php echo (int) $s['id']; ?>"><?php echo htmlspecialchars(rateb_ui((string) ($s['name'] ?? $s['id'])), ENT_QUOTES, 'UTF-8'); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

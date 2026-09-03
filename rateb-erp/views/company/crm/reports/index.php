@@ -83,7 +83,7 @@ $forecast = $forecast ?? [];
 
     <?php $engine = $engine ?? []; $quote_metrics = $quote_metrics ?? []; $revenue = $revenue ?? []; ?>
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_kpi_conversion_rate'), ENT_QUOTES, 'UTF-8'); ?> (leads)</div><div class="fs-4"><?php echo htmlspecialchars((string) ($conversions['lead_conversion_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_kpi_conversion_rate'), ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars(__('leads'), ENT_QUOTES, 'UTF-8'); ?>)</div><div class="fs-4"><?php echo htmlspecialchars((string) ($conversions['lead_conversion_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_weighted_pipeline'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($engine['weighted_amount'] ?? $forecast['total_expected_revenue'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_quote_acceptance_rate'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($quote_metrics['acceptance_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_revenue_tracked'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($revenue['total'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
@@ -92,9 +92,9 @@ $forecast = $forecast ?? [];
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_sales_funnel'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_pipeline_stages'), ENT_QUOTES, 'UTF-8'); ?></th><th>#</th><th><?php echo htmlspecialchars(__('amount'), ENT_QUOTES, 'UTF-8'); ?></th><th>ER</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_pipeline_stages'), ENT_QUOTES, 'UTF-8'); ?></th><th>#</th><th><?php echo htmlspecialchars(__('amount'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('ER'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach ($funnel as $row): ?>
-                <tr><td><?php echo htmlspecialchars($row['stage'], ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['count']; ?></td><td><?php echo htmlspecialchars(number_format($row['amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['expected_revenue'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
+                <tr><td><?php echo htmlspecialchars(rateb_ui((string) $row['stage']), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['count']; ?></td><td><?php echo htmlspecialchars(number_format($row['amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['expected_revenue'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
             <?php if ($funnel === []): ?><tr><td colspan="4" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
             </tbody></table></div>
@@ -103,14 +103,14 @@ $forecast = $forecast ?? [];
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_lead_sources'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?></th><th>#</th></tr></thead><tbody>
             <?php foreach ($sources as $row): ?>
-                <tr><td><?php echo htmlspecialchars($row['source'], ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['count']; ?></td></tr>
+                <tr><td><?php echo htmlspecialchars(rateb_ui((string) $row['source']), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['count']; ?></td></tr>
             <?php endforeach; ?>
             <?php if ($sources === []): ?><tr><td colspan="2" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
             </tbody></table></div>
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_sales_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_owner'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_opps'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_amount'), ENT_QUOTES, 'UTF-8'); ?></th><th>ER</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_owner'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_opps'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_amount'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('ER'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach ($performance as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['opportunities']; ?></td><td><?php echo (int) $row['won']; ?></td><td><?php echo htmlspecialchars(number_format($row['amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['expected_revenue'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -176,7 +176,7 @@ $forecast = $forecast ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_cac_placeholder'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <p class="small text-muted mb-2"><?php echo htmlspecialchars((string) ($cac['note'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="small text-muted mb-2"><?php echo htmlspecialchars(rateb_ui((string) ($cac['note'] ?? __('crm_cac_note'))), ENT_QUOTES, 'UTF-8'); ?></p>
             <ul class="list-group">
                 <li class="list-group-item d-flex justify-content-between"><span><?php echo htmlspecialchars(__('CAC'), ENT_QUOTES, 'UTF-8'); ?></span><span><?php echo $cac['cac_placeholder'] === null ? htmlspecialchars(__('n/a'), ENT_QUOTES, 'UTF-8') : htmlspecialchars((string) $cac['cac_placeholder'], ENT_QUOTES, 'UTF-8'); ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span><?php echo htmlspecialchars(__('crm_customers_acquired'), ENT_QUOTES, 'UTF-8'); ?></span><span><?php echo (int) ($cac['customers_acquired'] ?? 0); ?></span></li>

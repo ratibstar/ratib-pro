@@ -83,7 +83,7 @@ final class CrmAnalyticsService
 
         return [
             'cac_placeholder' => null,
-            'note' => 'CAC requires marketing spend source — not wired (Accounting/Marketplace out of scope).',
+            'note' => function_exists('__') ? __('crm_cac_note') : 'CAC requires marketing spend source — not wired (Accounting/Marketplace out of scope).',
             'customers_acquired' => $acquired,
             'leads_total' => $leads,
         ];
