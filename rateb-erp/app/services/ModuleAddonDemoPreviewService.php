@@ -96,18 +96,37 @@ final class ModuleAddonDemoPreviewService
     {
         try {
             $addons = new ModuleAddonService();
+            if ($addons->canManagePlatformCatalog()) {
+                return true;
+            }
             if (!$addons->isEnabled() || !$addons->previewDemoHostAllowed()) {
                 return false;
             }
         } catch (Throwable $e) {
             return false;
         }
-        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            return true;
-        }
         $email = strtolower(trim((string) SessionManager::get('rateb_user_email', '')));
 
         return $email !== '' && $email === strtolower(self::DEMO_EMAIL);
+    }
+
+    /**
+     * @return array{company_id:int,company_name:string,needs_company:bool}
+     */
+    public function lockBoardContext(): array
+    {
+        $companyId = $this->targetCompanyId();
+        $companyName = '';
+        if ($companyId > 0) {
+            $row = (new Company())->find($companyId);
+            $companyName = is_array($row) ? (string) ($row['name'] ?? '') : '';
+        }
+
+        return [
+            'company_id' => $companyId,
+            'company_name' => $companyName,
+            'needs_company' => $this->isPlatformSuperAdminLockContext() && $companyId < 1,
+        ];
     }
 
     /**
@@ -126,10 +145,8 @@ final class ModuleAddonDemoPreviewService
         $limits = new PlanLimitService();
         $locale = function_exists('rateb_locale') ? (string) rateb_locale() : '';
         $rows = [];
-        foreach ($addons->catalog() as $slug => $item) {
-            if (!$addons->isPurchasable($slug)) {
-                continue;
-            }
+        foreach ($this->commercialLockSlugs($addons) as $slug) {
+            $item = $addons->catalog()[$slug] ?? ['name' => $slug];
             $display = $addons->localizedDisplay($slug, $locale) ?? [];
             $entitled = $limits->companyHasModule($companyId, $slug);
             $rows[] = [
@@ -137,7 +154,7 @@ final class ModuleAddonDemoPreviewService
                 'name' => (string) ($display['name'] ?? $item['name'] ?? $slug),
                 'locked' => !$entitled,
                 'entitled' => $entitled,
-                'purchasable' => true,
+                'purchasable' => $addons->isPurchasable($slug),
             ];
         }
 
@@ -151,15 +168,14 @@ final class ModuleAddonDemoPreviewService
      */
     public function setLocks(string $action, string $slug = ''): array
     {
-        $addons = new ModuleAddonService();
-        if (!$addons->previewDemoHostAllowed()) {
-            return ['ok' => false, 'code' => 'not_demo_host'];
-        }
-        if (!$addons->isEnabled()) {
-            return ['ok' => false, 'code' => 'disabled'];
-        }
         if (!self::sessionCanManageDemoLocks()) {
             return ['ok' => false, 'code' => 'forbidden'];
+        }
+        $addons = new ModuleAddonService();
+        if (!$addons->canManagePlatformCatalog()) {
+            if (!$addons->isEnabled()) {
+                return ['ok' => false, 'code' => 'disabled'];
+            }
         }
         $companyId = $this->targetCompanyId();
         if ($companyId < 1) {
@@ -168,12 +184,7 @@ final class ModuleAddonDemoPreviewService
 
         $action = strtolower(trim($action));
         $slug = strtolower(trim($slug));
-        $purchasable = [];
-        foreach ($addons->catalog() as $key => $item) {
-            if ($addons->isPurchasable($key)) {
-                $purchasable[] = $key;
-            }
-        }
+        $purchasable = $this->commercialLockSlugs($addons);
         if ($purchasable === []) {
             return ['ok' => false, 'code' => 'no_purchasable'];
         }
@@ -231,10 +242,42 @@ final class ModuleAddonDemoPreviewService
     private function targetCompanyId(): int
     {
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $resolved = (int) rateb_resolve_ops_company_id();
+                if ($resolved > 0) {
+                    return $resolved;
+                }
+            }
+            $sessionCompany = (int) SessionManager::get('rateb_company_id', 0);
+            if ($sessionCompany > 0) {
+                return $sessionCompany;
+            }
+
             return DedicatedTenantPolicy::primaryCompanyId();
         }
 
         return (int) SessionManager::get('rateb_company_id', 0);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function commercialLockSlugs(ModuleAddonService $addons): array
+    {
+        $slugs = [];
+        foreach ($addons->catalog() as $slug => $item) {
+            if ($this->isPlatformSuperAdminLockContext() || $addons->isPurchasable($slug)) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return $slugs;
+    }
+
+    private function isPlatformSuperAdminLockContext(): bool
+    {
+        return function_exists('rateb_is_super_admin') && rateb_is_super_admin()
+            && function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host();
     }
 
     /**

@@ -5,6 +5,7 @@ use Rateb\App\Core\View;
 
 View::partial('billing/addon-lock-board', [
     'rows' => $rows ?? [],
+    'context' => $context ?? [],
     'csrf' => $csrf ?? '',
     'action' => $action ?? rateb_url('admin/billing/addon-locks'),
     'returnTo' => $returnTo ?? 'locks',

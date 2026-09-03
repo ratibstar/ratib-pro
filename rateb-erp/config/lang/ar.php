@@ -1130,6 +1130,8 @@ return [
     'module_addon_demo_locked' => 'مقفلة — متاحة للشراء',
     'module_addon_demo_unlocked' => 'مفتوحة — الوحدة مفعّلة',
     'module_addon_demo_locks_saved' => 'تم تحديث الأقفال التجريبية.',
+    'module_addon_demo_locks_company' => 'الشركة: :name (#:id)',
+    'module_addon_demo_locks_pick_company' => 'اختر شركة من محدّد المنصة (?company_id=) قبل تغيير الأقفال.',
     'more' => 'المزيد',
     'company_admin_login_title' => 'حساب دخول العميل (مدير الشركة)',
     'company_admin_login_help' => 'يُنشأ مستخدم تابع لهذه الشركة فقط — ليس من مستخدمي الوكالة في التحكم بالوصول. سلّم العميل اسم المستخدم وكلمة المرور بعد الاعتماد.',

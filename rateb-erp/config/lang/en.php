@@ -1129,6 +1129,8 @@ return [
     'module_addon_demo_locked' => 'Locked — available to purchase',
     'module_addon_demo_unlocked' => 'Open — module enabled',
     'module_addon_demo_locks_saved' => 'Demo locks updated.',
+    'module_addon_demo_locks_company' => 'Company: :name (#:id)',
+    'module_addon_demo_locks_pick_company' => 'Select a company from the platform picker (?company_id=) before toggling locks.',
     'more' => 'More',
     'company_admin_login_title' => 'Client login (company admin)',
     'company_admin_login_help' => 'Creates a user for this company only — not an agency Access Control user. Give the client the username and password after approval.',

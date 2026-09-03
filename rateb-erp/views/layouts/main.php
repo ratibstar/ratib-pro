@@ -900,12 +900,19 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 'admin/oversight/inventory' => rateb_nav_can('inventory.manage') ? (int) ($oversightCounts['inventory'] ?? 0) : 0,
                 'admin/oversight/supplier-evaluations' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['supplier_evaluations'] ?? 0) : 0,
             ];
-            $adminSection(__('admin_oversight_section'), [
+            $oversightLinks = [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'settings.manage']],
+            ];
+            if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', 'settings.manage']];
+            }
+            $oversightLinks = array_merge($oversightLinks, [
                 ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
                 ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
+            ]);
+            $adminSection(__('admin_oversight_section'), array_merge($oversightLinks, [
                 [
                     'type' => 'subgroup',
                     'label' => __('branches'),
@@ -937,7 +944,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                         ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
                     ],
                 ],
-            ], 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
+            ]), 'fa-shield-halved', (int) ($oversightCounts['total'] ?? 0), $oversightLinkBadges, 'rateb-nav-badge--pending');
             ?>
             <?php } ?>
             <?php

@@ -9,16 +9,32 @@ if (!ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
     return;
 }
 
-$rows = is_array($rows ?? null) ? $rows : (new ModuleAddonDemoPreviewService())->lockBoard();
+$preview = new ModuleAddonDemoPreviewService();
+$rows = is_array($rows ?? null) ? $rows : $preview->lockBoard();
+$context = is_array($context ?? null) ? $context : $preview->lockBoardContext();
 $csrf = (string) ($csrf ?? Csrf::token());
 $action = (string) ($action ?? rateb_url('admin/billing/addon-locks'));
 $returnTo = (string) ($returnTo ?? 'locks');
+$companyId = (int) ($context['company_id'] ?? 0);
+$companyName = (string) ($context['company_name'] ?? '');
+$needsCompany = !empty($context['needs_company']);
 $esc = static fn ($v): string => View::escape((string) $v);
 ?>
 <div class="rateb-card mb-4" data-addon-lock-board>
     <div class="rateb-card-header"><?php echo $esc(__('module_addon_demo_locks')); ?></div>
     <div class="rateb-card-body">
         <p class="text-muted mb-3"><?php echo $esc(__('module_addon_demo_locks_help')); ?></p>
+        <?php if ($companyId > 0 && $companyName !== '') { ?>
+        <p class="mb-3"><strong><?php echo $esc(__('module_addon_demo_locks_company', ['name' => $companyName, 'id' => (string) $companyId])); ?></strong></p>
+        <?php } elseif ($needsCompany) { ?>
+        <div class="alert alert-warning mb-3" role="alert">
+            <?php echo $esc(__('module_addon_demo_locks_pick_company')); ?>
+            <?php if (function_exists('rateb_url')) { ?>
+            <a href="<?php echo $esc(rateb_url('admin/company-permissions')); ?>" class="alert-link"><?php echo $esc(__('company_permissions')); ?></a>
+            <?php } ?>
+        </div>
+        <?php } ?>
+        <?php if (!$needsCompany) { ?>
         <div class="d-flex flex-wrap gap-2 mb-3">
             <form method="post" action="<?php echo $esc($action); ?>">
                 <input type="hidden" name="_csrf" value="<?php echo $esc($csrf); ?>">
@@ -33,6 +49,7 @@ $esc = static fn ($v): string => View::escape((string) $v);
                 <button type="submit" class="btn btn-outline-secondary"><?php echo $esc(__('module_addon_demo_lock_all')); ?></button>
             </form>
         </div>
+        <?php } ?>
         <?php if ($rows === []) { ?>
         <p class="text-muted mb-0"><?php echo $esc(__('module_addon_demo_locks_empty')); ?></p>
         <?php } else { ?>
@@ -68,7 +85,7 @@ $esc = static fn ($v): string => View::escape((string) $v);
                                 <input type="hidden" name="return_to" value="<?php echo $esc($returnTo); ?>">
                                 <input type="hidden" name="slug" value="<?php echo $esc($slug); ?>">
                                 <input type="hidden" name="lock_action" value="<?php echo $locked ? 'unlock' : 'lock'; ?>">
-                                <button type="submit" class="btn btn-sm <?php echo $locked ? 'btn-primary' : 'btn-outline-secondary'; ?>">
+                                <button type="submit" class="btn btn-sm <?php echo $locked ? 'btn-primary' : 'btn-outline-secondary'; ?>"<?php echo $needsCompany ? ' disabled' : ''; ?>>
                                     <?php echo $esc($locked ? __('module_addon_demo_lock_open') : __('module_addon_demo_lock_close')); ?>
                                 </button>
                             </form>

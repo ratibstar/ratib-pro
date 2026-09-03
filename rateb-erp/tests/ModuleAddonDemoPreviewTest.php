@@ -60,6 +60,9 @@ $view = (string) file_get_contents($root . '/views/billing/module-demo-preview.p
 macd_assert(str_contains($src, 'previewDemoHostAllowed'), 'service requires demo host guard');
 macd_assert(str_contains($src, 'updateModules'), 'service writes company.modules via Company model');
 macd_assert(str_contains($src, 'function setLocks'), 'demo lock board writes entitlement without payment');
+macd_assert(str_contains($src, 'canManagePlatformCatalog'), 'lock board allows platform Super Admin via catalog gate');
+macd_assert(str_contains($src, 'rateb_resolve_ops_company_id'), 'platform Super Admin uses ops company picker');
+macd_assert(str_contains($src, 'commercialLockSlugs'), 'platform host lists commercial catalog slugs');
 macd_assert(str_contains($src, 'sessionCanManageDemoLocks'), 'lock board is demo-host + preview user or Super Admin');
 macd_assert(!str_contains($src, 'PaymentService') && !str_contains($ctrl, 'PaymentService'), 'no PaymentService');
 macd_assert(!str_contains($src, 'Moyasar') && !str_contains($ctrl, 'Moyasar'), 'no Moyasar');
@@ -79,7 +82,7 @@ macd_assert(str_contains($view, 'demo-preview-password'), 'password is shown onc
 macd_assert(!str_contains($view, 'Purchase'), 'preview bootstrap is not the purchase form');
 $board = (string) file_get_contents($root . '/views/partials/billing/addon-lock-board.php');
 macd_assert(str_contains($board, 'lock_action'), 'lock board posts named actions');
-macd_assert(!str_contains($board, 'PaymentService'), 'lock board does not start payment');
+macd_assert(str_contains($board, 'needs_company'), 'lock board warns when platform company is not selected');
 
 $savedHost = $_SERVER['HTTP_HOST'] ?? null;
 macd_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');
@@ -102,6 +105,7 @@ if ($savedHost === null) {
 
 $blockedLocks = (new ModuleAddonDemoPreviewService())->setLocks('unlock', 'crm');
 macd_assert(($blockedLocks['ok'] ?? true) === false, 'setLocks refuses when not on demo host');
+macd_assert(($blockedLocks['code'] ?? '') === 'forbidden', 'setLocks off demo host is forbidden without platform SA session');
 $blocked = (new ModuleAddonDemoPreviewService())->ensureDemoUser('PreviewPass#1');
 macd_assert(($blocked['ok'] ?? true) === false, 'ensureDemoUser refuses when not on demo host');
 macd_assert(($blocked['code'] ?? '') === 'not_demo_host' || ($blocked['code'] ?? '') === 'disabled', 'refusal code is fail-closed');

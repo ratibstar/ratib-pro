@@ -64,11 +64,14 @@ final class ModuleAddonDemoPreviewController extends Controller
             return;
         }
 
+        $preview = new ModuleAddonDemoPreviewService();
+
         $this->view('billing/module-demo-locks', [
             'title' => __('module_addon_demo_locks'),
             'csrf' => Csrf::token(),
             'action' => rateb_url('admin/billing/addon-locks'),
-            'rows' => (new ModuleAddonDemoPreviewService())->lockBoard(),
+            'rows' => $preview->lockBoard(),
+            'context' => $preview->lockBoardContext(),
             'returnTo' => 'locks',
         ], 'main');
     }
@@ -101,6 +104,9 @@ final class ModuleAddonDemoPreviewController extends Controller
     {
         $to = strtolower(trim((string) ($_POST['return_to'] ?? 'locks')));
         if ($to === 'dashboard') {
+            return rateb_url('admin');
+        }
+        if ($to === 'platform') {
             return rateb_url('admin');
         }
 
