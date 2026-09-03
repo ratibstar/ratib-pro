@@ -81,6 +81,8 @@ macd_assert(str_contains($ctrl, 'toggleLocks'), 'controller exposes lock POST');
 macd_assert(str_contains($view, 'demo-preview-password'), 'password is shown once after bootstrap');
 macd_assert(!str_contains($view, 'Purchase'), 'preview bootstrap is not the purchase form');
 $board = (string) file_get_contents($root . '/views/partials/billing/addon-lock-board.php');
+macd_assert(str_contains($src, 'pushModulesToLinkedAgency'), 'platform lock board pushes modules to the linked agency ERP');
+macd_assert(str_contains($ctrl, 'module_addon_demo_locks_saved_agency'), 'success flash names agency sync');
 macd_assert(str_contains($src, 'companyEntitledSlugs'), 'lock board status uses company DB modules not Super Admin bypass');
 macd_assert(!str_contains($src, 'companyHasModule('), 'lock board does not call companyHasModule (always true for Super Admin)');
 macd_assert(str_contains($board, 'lock_action'), 'lock board posts named actions');

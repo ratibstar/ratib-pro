@@ -98,7 +98,20 @@ final class ModuleAddonDemoPreviewController extends Controller
         unset($_POST['company_id'], $_POST['modules']);
         $result = (new ModuleAddonDemoPreviewService())->setLocks($action, $slug, $pickedCompanyId);
         if (!empty($result['ok'])) {
-            SessionManager::flash('success', __('module_addon_demo_locks_saved'));
+            if (!empty($result['agency_synced'])) {
+                SessionManager::flash('success', __('module_addon_demo_locks_saved_agency'));
+            } elseif ((string) ($result['agency_error'] ?? '') !== '') {
+                SessionManager::flash('success', __('module_addon_demo_locks_saved'));
+                SessionManager::flash(
+                    'warning',
+                    __('module_addon_demo_locks_agency_sync_failed') . ' — ' . (string) $result['agency_error']
+                );
+            } else {
+                SessionManager::flash('success', __('module_addon_demo_locks_saved'));
+                if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+                    SessionManager::flash('warning', __('module_addon_demo_locks_no_agency'));
+                }
+            }
         } else {
             SessionManager::flash('error', (string) ($result['code'] ?? 'error'));
         }

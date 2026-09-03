@@ -195,7 +195,7 @@ final class ModuleAddonDemoPreviewService
     /**
      * Grant or revoke purchasable add-on slugs on the demo tenant (no payment).
      *
-     * @return array{ok:bool,code:string,company_id?:int,modules?:list<string>}
+     * @return array{ok:bool,code:string,company_id?:int,modules?:list<string>,agency_synced?:bool,agency_id?:int,agency_error?:string}
      */
     public function setLocks(string $action, string $slug = '', int $forcedCompanyId = 0): array
     {
@@ -256,11 +256,23 @@ final class ModuleAddonDemoPreviewService
         }
         $this->attachPreviewViewPermissions($companyId);
 
+        $agencyPush = ['synced' => false, 'agency_id' => 0, 'agency_company_id' => 0];
+        $agencyError = '';
+        if ($this->isPlatformSuperAdminLockContext()) {
+            try {
+                $agencyPush = (new AgencyErpMigrationService())->pushModulesToLinkedAgency($companyId, $next);
+            } catch (Throwable $e) {
+                $agencyError = $e->getMessage();
+            }
+        }
+
         try {
             (new AuditService())->log('update', 'module_addon_demo_locks', $companyId, [
                 'action' => $action,
                 'slug' => $slug,
                 'company_id' => $companyId,
+                'agency_synced' => !empty($agencyPush['synced']),
+                'agency_id' => (int) ($agencyPush['agency_id'] ?? 0),
             ]);
         } catch (Throwable $e) {
             // Lock board must still work if audit is unavailable.
@@ -271,6 +283,9 @@ final class ModuleAddonDemoPreviewService
             'code' => 'ok',
             'company_id' => $companyId,
             'modules' => $next,
+            'agency_synced' => !empty($agencyPush['synced']),
+            'agency_id' => (int) ($agencyPush['agency_id'] ?? 0),
+            'agency_error' => $agencyError,
         ];
     }
 
