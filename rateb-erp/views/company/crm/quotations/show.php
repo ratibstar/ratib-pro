@@ -10,9 +10,9 @@ $history = $history ?? [];
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h1 class="h3 mb-1"><?php echo htmlspecialchars((string) ($item['quotation_no'] ?? ($title ?? '')), ENT_QUOTES, 'UTF-8'); ?></h1>
-            <span class="badge text-bg-secondary"><?php echo htmlspecialchars((string) ($item['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="badge text-bg-secondary"><?php echo htmlspecialchars(rateb_enum_label((string) ($item['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span>
             <span class="badge text-bg-info">v<?php echo (int) ($item['version_no'] ?? 1); ?></span>
-            <span class="badge text-bg-light"><?php echo htmlspecialchars((string) ($item['approval_status'] ?? 'none'), ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="badge text-bg-light"><?php echo htmlspecialchars(rateb_enum_label((string) ($item['approval_status'] ?? 'none')), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <?php if (!empty($canVersion)): ?>
@@ -60,7 +60,7 @@ $history = $history ?? [];
         <label class="form-label"><?php echo htmlspecialchars(__('crm_quotation_transition'), ENT_QUOTES, 'UTF-8'); ?></label>
         <div class="input-group">
             <select class="form-select" name="to_status" required>
-                <?php foreach ($transitions as $t): ?><option value="<?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
+                <?php foreach ($transitions as $t): ?><option value="<?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(rateb_enum_label($t), ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
             </select>
             <input class="form-control" name="reason" placeholder="<?php echo htmlspecialchars(__('notes'), ENT_QUOTES, 'UTF-8'); ?>">
             <button class="btn btn-primary" type="submit"><?php echo htmlspecialchars(__('apply'), ENT_QUOTES, 'UTF-8'); ?></button>
@@ -106,7 +106,7 @@ $history = $history ?? [];
             <ul class="list-group">
                 <?php foreach ($timeline as $ev): ?>
                 <li class="list-group-item">
-                    <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                     <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
@@ -118,7 +118,7 @@ $history = $history ?? [];
             <ul class="list-group">
                 <?php foreach ($history as $h): ?>
                 <li class="list-group-item">
-                    <div><?php echo htmlspecialchars((string) (($h['from_status'] ?? '') . ' → ' . ($h['to_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div><?php echo htmlspecialchars(rateb_enum_label((string) (($h['from_status'] ?? '') . ' → ' . ($h['to_status'] ?? ''))), ENT_QUOTES, 'UTF-8'); ?></div>
                     <div class="small text-muted"><?php echo htmlspecialchars((string) ($h['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>

@@ -30,7 +30,7 @@ declare(strict_types=1);
                     <td><?php echo htmlspecialchars((string) ($row['quotation_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['total_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($row['currency_code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string) ($row['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(rateb_enum_label((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations/' . (int) ($row['id'] ?? 0))), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('view'), ENT_QUOTES, 'UTF-8'); ?></a></td>
                 </tr>
             <?php endforeach; ?>

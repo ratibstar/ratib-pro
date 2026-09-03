@@ -16,7 +16,7 @@ $data = $data ?? [];
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_quality_score'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($data['quality_score'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_completeness_score'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($data['completeness_score'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_open_issues'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) ($data['open_issues'] ?? 0); ?></div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Dup / Missing / Own</div><div class="fs-6"><?php echo (int) ($data['duplicates'] ?? 0); ?> / <?php echo (int) ($data['missing'] ?? 0); ?> / <?php echo (int) ($data['ownership'] ?? 0); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_dup_missing_own'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-6"><?php echo (int) ($data['duplicates'] ?? 0); ?> / <?php echo (int) ($data['missing'] ?? 0); ?> / <?php echo (int) ($data['ownership'] ?? 0); ?></div></div></div>
     </div>
     <div class="row g-3">
         <div class="col-lg-6">
@@ -39,7 +39,7 @@ $data = $data ?? [];
             </div>
         </div>
         <div class="col-lg-6">
-            <h2 class="h5">Resolution tracking</h2>
+            <h2 class="h5"><?php echo htmlspecialchars(__('crm_resolution_tracking'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php foreach (($data['resolution'] ?? []) as $r): ?>
             <div class="border rounded p-2 mb-2 small">
                 #<?php echo (int) ($r['id'] ?? 0); ?> · <?php echo htmlspecialchars((string) (($r['issue_code'] ?? '') . ' · ' . ($r['resolution_note'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>

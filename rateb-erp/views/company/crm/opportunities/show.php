@@ -7,7 +7,7 @@ $timeline = $timeline ?? [];
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1"><?php echo htmlspecialchars((string) ($item['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></h1>
-            <div class="text-muted"><?php echo htmlspecialchars((string) ($item['opportunity_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <span class="badge text-bg-secondary"><?php echo htmlspecialchars((string) ($item['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></div>
+            <div class="text-muted"><?php echo htmlspecialchars((string) ($item['opportunity_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <span class="badge text-bg-secondary"><?php echo htmlspecialchars(rateb_enum_label((string) ($item['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span></div>
         </div>
         <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
@@ -26,7 +26,7 @@ $timeline = $timeline ?? [];
     <ul class="list-group">
         <?php foreach ($timeline as $ev): ?>
         <li class="list-group-item">
-            <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+            <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
             <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
         </li>
         <?php endforeach; ?>

@@ -16,7 +16,7 @@ declare(strict_types=1);
                 <td><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['opportunity_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a></td>
                 <td><?php echo htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                 <td><?php echo htmlspecialchars((string) ($row['amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars((string) ($row['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
             </tr>
         <?php endforeach; ?>
         <?php if (($items ?? []) === []): ?><tr><td colspan="4" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>

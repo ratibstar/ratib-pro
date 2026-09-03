@@ -19,7 +19,7 @@ declare(strict_types=1);
             <select class="form-select" name="status">
                 <option value=""><?php echo htmlspecialchars(__('all'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php foreach (($statuses ?? []) as $st): ?>
-                <option value="<?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?>" <?php echo (($status ?? '') === $st) ? 'selected' : ''; ?>><?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="<?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?>" <?php echo (($status ?? '') === $st) ? 'selected' : ''; ?>><?php echo htmlspecialchars(rateb_enum_label($st), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -34,7 +34,7 @@ declare(strict_types=1);
                     <td><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a></td>
                     <td><?php echo htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['contact_name'] ?? $row['email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><span class="badge text-bg-secondary"><?php echo htmlspecialchars((string) ($row['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                    <td><span class="badge text-bg-secondary"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (($items ?? []) === []): ?><tr><td colspan="4" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>

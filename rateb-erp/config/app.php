@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260903-addon-lock-agency-v1');
+define('RATEB_ASSET_BUILD', '20260903-ar-crm-i18n-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2125,14 +2125,112 @@ if (!function_exists('rateb_enrich_index_columns')) {
 if (!function_exists('rateb_enum_label')) {
     function rateb_enum_label(string $value): string
     {
+        $value = trim($value);
         if ($value === '') {
             return '—';
         }
-        if (function_exists('rateb_table_cell_meta')) {
-            return rateb_table_cell_meta($value, ['name' => 'status', 'type' => 'status'])['display'];
+        if (preg_match('/^(.+?)\s*(?:→|->|—>)\s*(.+)$/u', $value, $m)) {
+            return rateb_enum_label(trim($m[1])) . ' → ' . rateb_enum_label(trim($m[2]));
         }
-        $t = __($value);
-        return $t !== $value ? $t : $value;
+        if (function_exists('rateb_table_cell_meta')) {
+            $viaMeta = rateb_table_cell_meta($value, ['name' => 'status', 'type' => 'status'])['display'];
+            if ($viaMeta !== '' && $viaMeta !== $value) {
+                return $viaMeta;
+            }
+        }
+        if (function_exists('__')) {
+            foreach (['status_', 'crm_status_', 'crm_lifecycle_', 'crm_health_', ''] as $prefix) {
+                $key = $prefix . $value;
+                $t = __($key);
+                if ($t !== $key) {
+                    return $t;
+                }
+            }
+        }
+
+        return $value;
+    }
+}
+
+if (!function_exists('rateb_log_title')) {
+    /**
+     * Translate stored activity/timeline titles for non-English UI.
+     * Keeps English storage for audit stability; translates on display only.
+     */
+    function rateb_log_title(string $title): string
+    {
+        $title = trim($title);
+        if ($title === '') {
+            return '';
+        }
+        if (!function_exists('rateb_locale') || rateb_locale() === 'en' || !function_exists('__')) {
+            return $title;
+        }
+
+        $exact = [
+            'Lead created' => 'crm_log_lead_created',
+            'Lead updated' => 'crm_log_lead_updated',
+            'Opportunity created' => 'crm_log_opportunity_created',
+            'Opportunity updated' => 'crm_log_opportunity_updated',
+            'Quotation created' => 'crm_log_quotation_created',
+            'Company created' => 'crm_log_company_created',
+            'Contact created' => 'crm_log_contact_created',
+            'Note added' => 'crm_log_note_added',
+            'Task completed' => 'crm_log_task_completed',
+        ];
+        if (isset($exact[$title])) {
+            return __($exact[$title]);
+        }
+
+        if (preg_match('/^Lead status:\s*(.+)$/i', $title, $m)) {
+            return __('crm_log_lead_status') . ': ' . rateb_enum_label($m[1]);
+        }
+        if (preg_match('/^Quotation status:\s*(.+)$/i', $title, $m)) {
+            return __('crm_log_quotation_status') . ': ' . rateb_enum_label($m[1]);
+        }
+        if (preg_match('/^Opportunity status:\s*(.+)$/i', $title, $m)) {
+            return __('crm_log_opportunity_status') . ': ' . rateb_enum_label($m[1]);
+        }
+        if (preg_match('/^Converted lead to opportunity\s+(.+)$/i', $title, $m)) {
+            return __('crm_log_converted_lead_to_opportunity', ['id' => $m[1]]);
+        }
+        if (preg_match('/^Converted opportunity to quotation\s+(.+)$/i', $title, $m)) {
+            return __('crm_log_converted_opportunity_to_quotation', ['id' => $m[1]]);
+        }
+        if (preg_match('/^Converted quotation to customer\s*(.*)$/i', $title, $m)) {
+            $id = trim((string) ($m[1] ?? ''));
+
+            return $id !== ''
+                ? __('crm_log_converted_quotation_to_customer', ['id' => $id])
+                : __('crm_log_converted_quotation_to_customer_plain');
+        }
+        if (preg_match('/^Opportunity created:\s*(.+)$/i', $title, $m)) {
+            return __('crm_log_opportunity_created_named', ['name' => $m[1]]);
+        }
+        if (preg_match('/^Assigned to user\s*#?\s*(\d+)$/i', $title, $m)) {
+            return __('crm_log_assigned_to_user', ['id' => $m[1]]);
+        }
+        if (preg_match('/^Stage\s*(?:→|->)\s*(.+)$/i', $title, $m)) {
+            return __('crm_log_stage') . ' → ' . rateb_enum_label($m[1]);
+        }
+        if (preg_match('/^(Task|Meeting|Call):\s*(.+)$/i', $title, $m)) {
+            $kind = strtolower($m[1]);
+            $label = match ($kind) {
+                'task' => __('crm_task'),
+                'meeting' => __('crm_meeting'),
+                'call' => __('crm_call'),
+                default => rateb_enum_label($kind),
+            };
+
+            return $label . ': ' . $m[2];
+        }
+
+        $t = __($title);
+        if ($t !== $title) {
+            return $t;
+        }
+
+        return rateb_enum_label($title);
     }
 }
 

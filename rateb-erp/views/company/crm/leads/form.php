@@ -19,7 +19,7 @@ $isEdit = is_array($item ?? null);
             <div class="col-md-6"><label class="form-label"><?php echo htmlspecialchars(__('priority'), ENT_QUOTES, 'UTF-8'); ?></label>
                 <select class="form-select" name="priority">
                     <?php foreach (['low','normal','high','urgent'] as $p): ?>
-                    <option value="<?php echo $p; ?>" <?php echo (($item['priority'] ?? 'normal') === $p) ? 'selected' : ''; ?>><?php echo $p; ?></option>
+                    <option value="<?php echo $p; ?>" <?php echo (($item['priority'] ?? 'normal') === $p) ? 'selected' : ''; ?>><?php echo htmlspecialchars(rateb_enum_label($p), ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php endforeach; ?>
                 </select></div>
         </div>

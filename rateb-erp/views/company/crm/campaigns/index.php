@@ -10,7 +10,7 @@ declare(strict_types=1);
             <div class="col-md-6"><input class="form-control" name="name" required placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>"></div>
             <div class="col-md-3">
                 <select class="form-select" name="campaign_type">
-                    <?php foreach (['email','call','event','social','other'] as $t): ?><option value="<?php echo $t; ?>"><?php echo $t; ?></option><?php endforeach; ?>
+                    <?php foreach (['email','call','event','social','other'] as $t): ?><option value="<?php echo $t; ?>"><?php echo htmlspecialchars(rateb_enum_label($t), ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3"><button class="btn btn-primary w-100" type="submit"><?php echo htmlspecialchars(__('create'), ENT_QUOTES, 'UTF-8'); ?></button></div>
@@ -20,7 +20,7 @@ declare(strict_types=1);
     <div class="table-responsive"><table class="table table-striped"><thead><tr><th><?php echo htmlspecialchars(__('code'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('status'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
     <tbody>
     <?php foreach (($items ?? []) as $row): ?>
-        <tr><td><?php echo htmlspecialchars((string) ($row['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td></tr>
+        <tr><td><?php echo htmlspecialchars((string) ($row['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(rateb_enum_label((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td></tr>
     <?php endforeach; ?>
     <?php if (($items ?? []) === []): ?><tr><td colspan="3" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
     </tbody></table></div>

@@ -9,12 +9,12 @@ $customer = $customer ?? [];
             <div class="text-muted"><?php echo htmlspecialchars((string) ($customer['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($customer['email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($customer['phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
             <div class="small mt-1">
                 <?php echo htmlspecialchars(__('crm_lifecycle'), ENT_QUOTES, 'UTF-8'); ?>:
-                <strong><?php echo htmlspecialchars((string) ($customer['crm_lifecycle_stage'] ?? 'customer'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                <strong><?php echo htmlspecialchars(rateb_enum_label((string) ($customer['crm_lifecycle_stage'] ?? 'customer')), ENT_QUOTES, 'UTF-8'); ?></strong>
                 · <?php echo htmlspecialchars(__('crm_activity_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_activity_score'] ?? ($health['activity_score'] ?? 0)); ?>
                 · <?php echo htmlspecialchars(__('crm_engagement_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_engagement_score'] ?? ($health['engagement_score'] ?? 0)); ?>
                 · <?php echo htmlspecialchars(__('crm_health_score'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) ($customer['crm_health_score'] ?? ($health['health_score'] ?? 0)); ?>
-                (<?php echo htmlspecialchars((string) ($customer['crm_health_status'] ?? ($health['health_status'] ?? 'unknown')), ENT_QUOTES, 'UTF-8'); ?>)
-                · <?php echo htmlspecialchars(__('crm_renewal_risk'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($customer['crm_renewal_risk'] ?? ($health['renewal_risk'] ?? 'low')), ENT_QUOTES, 'UTF-8'); ?>
+                (<?php echo htmlspecialchars(rateb_enum_label((string) ($customer['crm_health_status'] ?? ($health['health_status'] ?? 'unknown'))), ENT_QUOTES, 'UTF-8'); ?>)
+                · <?php echo htmlspecialchars(__('crm_renewal_risk'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars(rateb_enum_label((string) ($customer['crm_renewal_risk'] ?? ($health['renewal_risk'] ?? 'low'))), ENT_QUOTES, 'UTF-8'); ?>
                 <?php if (!empty($customer['crm_at_risk'])): ?> · <span class="text-danger"><?php echo htmlspecialchars(__('crm_at_risk'), ENT_QUOTES, 'UTF-8'); ?></span><?php endif; ?>
             </div>
         </div>
@@ -29,7 +29,7 @@ $customer = $customer ?? [];
                 <h2 class="h6"><?php echo htmlspecialchars(__('crm_lifecycle'), ENT_QUOTES, 'UTF-8'); ?></h2>
                 <select class="form-select mb-2" name="to_stage" required>
                     <?php foreach (($lifecycle_stages ?? []) as $st): ?>
-                    <option value="<?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?>" <?php echo (($customer['crm_lifecycle_stage'] ?? '') === $st) ? 'selected' : ''; ?>><?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="<?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?>" <?php echo (($customer['crm_lifecycle_stage'] ?? '') === $st) ? 'selected' : ''; ?>><?php echo htmlspecialchars(rateb_enum_label($st), ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <input class="form-control mb-2" name="reason" placeholder="<?php echo htmlspecialchars(__('reason'), ENT_QUOTES, 'UTF-8'); ?>">
@@ -74,8 +74,8 @@ $customer = $customer ?? [];
             <ul class="list-group mb-3">
                 <?php foreach (($lifecycle_history ?? []) as $ev): ?>
                 <li class="list-group-item">
-                    <div class="fw-semibold"><?php echo htmlspecialchars((string) (($ev['from_stage'] ?? '—') . ' → ' . ($ev['to_stage'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($ev['event_type'] ?? '') . ' · ' . ($ev['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="fw-semibold"><?php echo htmlspecialchars(rateb_enum_label((string) (($ev['from_stage'] ?? '—') . ' → ' . ($ev['to_stage'] ?? ''))), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['event_type'] ?? '')) . ' · ' . (string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($lifecycle_history ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
@@ -150,7 +150,7 @@ $customer = $customer ?? [];
             <ul class="list-group mb-3">
                 <?php foreach (($revenue_events ?? []) as $row): ?>
                 <li class="list-group-item">
-                    <div class="fw-semibold"><?php echo htmlspecialchars((string) ($row['event_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($row['event_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                     <div class="small text-muted"><?php echo htmlspecialchars((string) (($row['amount'] ?? '') . ' ' . ($row['currency_code'] ?? '') . ' · ' . ($row['period_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
@@ -163,7 +163,7 @@ $customer = $customer ?? [];
                 <?php foreach (($opportunities ?? []) as $row): ?>
                 <li class="list-group-item">
                     <a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['opportunity_no'] ?? $row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) ($row['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · ER <?php echo htmlspecialchars((string) ($row['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · ER <?php echo htmlspecialchars((string) ($row['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($opportunities ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
@@ -173,7 +173,7 @@ $customer = $customer ?? [];
                 <?php foreach (($quotations ?? []) as $row): ?>
                 <li class="list-group-item">
                     <a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/quotations') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['quotation_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) ($row['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($row['total_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($row['total_amount'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($quotations ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
@@ -181,10 +181,10 @@ $customer = $customer ?? [];
             <h2 class="h6"><?php echo htmlspecialchars(__('crm_activities'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <ul class="list-group mb-3">
                 <?php foreach (($activities ?? []) as $row): ?>
-                <li class="list-group-item"><div class="fw-semibold"><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div><div class="small text-muted"><?php echo htmlspecialchars((string) (($row['activity_type'] ?? '') . ' · ' . ($row['priority'] ?? '') . ' · ' . ($row['due_at'] ?? $row['activity_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div></li>
+                <li class="list-group-item"><div class="fw-semibold"><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div><div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['activity_type'] ?? '')) . ' · ' . rateb_enum_label((string) ($row['priority'] ?? '')) . ' · ' . (string) ($row['due_at'] ?? $row['activity_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></li>
                 <?php endforeach; ?>
                 <?php foreach (($tasks ?? []) as $row): ?>
-                <li class="list-group-item"><div class="fw-semibold">Task: <?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div><div class="small text-muted"><?php echo htmlspecialchars((string) (($row['priority'] ?? '') . ' · ' . ($row['due_at'] ?? '') . ' · ' . ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div></li>
+                <li class="list-group-item"><div class="fw-semibold"><?php echo htmlspecialchars(__('crm_task') . ': ' . (string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div><div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['priority'] ?? '')) . ' · ' . (string) ($row['due_at'] ?? '') . ' · ' . rateb_enum_label((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div></li>
                 <?php endforeach; ?>
                 <?php if (($activities ?? []) === [] && ($tasks ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>
@@ -194,8 +194,8 @@ $customer = $customer ?? [];
             <ul class="list-group">
                 <?php foreach (($timeline ?? []) as $ev): ?>
                 <li class="list-group-item">
-                    <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($ev['event_type'] ?? '') . ' · ' . ($ev['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['event_type'] ?? '')) . ' · ' . (string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($timeline ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

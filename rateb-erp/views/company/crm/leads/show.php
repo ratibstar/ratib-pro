@@ -8,7 +8,7 @@ declare(strict_types=1);
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
         <div>
             <h1 class="h3 mb-1"><?php echo htmlspecialchars((string) ($item['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></h1>
-            <div class="text-muted"><?php echo htmlspecialchars((string) ($item['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <span class="badge text-bg-secondary"><?php echo htmlspecialchars((string) ($item['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></div>
+            <div class="text-muted"><?php echo htmlspecialchars((string) ($item['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <span class="badge text-bg-secondary"><?php echo htmlspecialchars(rateb_enum_label((string) ($item['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span></div>
         </div>
         <a class="btn btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $item['id'] . '/edit'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('edit'), ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
@@ -26,7 +26,7 @@ declare(strict_types=1);
                 <label class="form-label"><?php echo htmlspecialchars(__('crm_workflow_transition'), ENT_QUOTES, 'UTF-8'); ?></label>
                 <div class="input-group">
                     <select class="form-select" name="to_status" required>
-                        <?php foreach ($transitions as $t): ?><option value="<?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
+                        <?php foreach ($transitions as $t): ?><option value="<?php echo htmlspecialchars($t, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(rateb_enum_label($t), ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
                     </select>
                     <button class="btn btn-primary" type="submit"><?php echo htmlspecialchars(__('apply'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </div>
@@ -50,7 +50,7 @@ declare(strict_types=1);
             <ul class="list-group">
                 <?php foreach (($timeline ?? []) as $ev): ?>
                 <li class="list-group-item">
-                    <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                     <?php if (!empty($ev['body'])): ?><div class="small"><?php echo htmlspecialchars((string) $ev['body'], ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
                     <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>

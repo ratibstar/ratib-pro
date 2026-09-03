@@ -76,7 +76,7 @@ $kpis = $kpis ?? [];
                         <tr>
                             <td><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a></td>
                             <td><?php echo htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($row['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                         </tr>
                     <?php endforeach; ?>
                     <?php if (($recent ?? []) === []): ?><tr><td colspan="3" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
@@ -89,7 +89,7 @@ $kpis = $kpis ?? [];
             <ul class="list-group list-group-flush border rounded">
                 <?php foreach (($timeline ?? []) as $ev): ?>
                     <li class="list-group-item">
-                        <div class="fw-semibold"><?php echo htmlspecialchars((string) ($ev['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                        <div class="fw-semibold"><?php echo htmlspecialchars(rateb_log_title((string) ($ev['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                         <div class="small text-muted"><?php echo htmlspecialchars((string) ($ev['event_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($ev['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                     </li>
                 <?php endforeach; ?>

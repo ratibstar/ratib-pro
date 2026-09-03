@@ -79,7 +79,7 @@ $filters = $filters ?? [];
             <ul class="list-group">
                 <?php foreach (($my_leads ?? []) as $row): ?>
                 <li class="list-group-item"><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/leads') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['title'] ?? $row['lead_no'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) ($row['workflow_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></li>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div></li>
                 <?php endforeach; ?>
                 <?php if (($my_leads ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>

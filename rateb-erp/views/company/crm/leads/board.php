@@ -8,7 +8,7 @@ declare(strict_types=1);
         <?php foreach (($statuses ?? []) as $st): ?>
         <div class="col-10 col-md-4 col-xl-3">
             <div class="border rounded bg-light-subtle h-100">
-                <div class="px-3 py-2 border-bottom fw-semibold"><?php echo htmlspecialchars((string) $st, ENT_QUOTES, 'UTF-8'); ?>
+                <div class="px-3 py-2 border-bottom fw-semibold"><?php echo htmlspecialchars(rateb_enum_label((string) $st), ENT_QUOTES, 'UTF-8'); ?>
                     <span class="badge text-bg-dark"><?php echo (int) (($board[$st] ?? 0)); ?></span>
                 </div>
                 <div class="p-2" style="min-height:12rem;">

@@ -84,8 +84,8 @@ $pipelineId = (int) (($board['pipeline']['id'] ?? 0));
                         <div class="col-md-2"><input class="form-control" name="probability_percent" type="number" min="0" max="100" step="1" placeholder="%" value="20"></div>
                         <div class="col-md-3"><input class="form-control" name="expected_duration_days" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_stage_duration_days'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                         <div class="col-md-3"><input class="form-control" name="sort_order" type="number" placeholder="#" value="0"></div>
-                        <div class="col-md-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="is_won" value="1" id="is_won"><label class="form-check-label" for="is_won">won</label></div>
-                        <div class="col-md-6 form-check"><input class="form-check-input" type="checkbox" name="is_lost" value="1" id="is_lost"><label class="form-check-label" for="is_lost">lost</label></div>
+                        <div class="col-md-6 form-check ms-2"><input class="form-check-input" type="checkbox" name="is_won" value="1" id="is_won"><label class="form-check-label" for="is_won"><?php echo htmlspecialchars(rateb_enum_label('won'), ENT_QUOTES, 'UTF-8'); ?></label></div>
+                        <div class="col-md-6 form-check"><input class="form-check-input" type="checkbox" name="is_lost" value="1" id="is_lost"><label class="form-check-label" for="is_lost"><?php echo htmlspecialchars(rateb_enum_label('lost'), ENT_QUOTES, 'UTF-8'); ?></label></div>
                         <div class="col-12"><button class="btn btn-outline-primary btn-sm" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button></div>
                     </div>
                 </form>

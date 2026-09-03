@@ -19,7 +19,7 @@ declare(strict_types=1);
         <tr>
             <td><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
             <td><?php echo htmlspecialchars((string) ($row['due_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-            <td><?php echo htmlspecialchars((string) ($row['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+            <td><?php echo htmlspecialchars(rateb_enum_label((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
             <td>
                 <?php if (($row['status'] ?? '') === 'open'): ?>
                 <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/tasks') . '/' . (int) $row['id'] . '/complete'), ENT_QUOTES, 'UTF-8'); ?>">
