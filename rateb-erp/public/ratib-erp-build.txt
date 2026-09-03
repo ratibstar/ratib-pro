@@ -1,1 +1,1 @@
-20260902-addon-lock-nav-v1
+20260903-addon-lock-picker-v1
