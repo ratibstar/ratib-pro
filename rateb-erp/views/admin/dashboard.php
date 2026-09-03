@@ -44,9 +44,6 @@ if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_ove
         $actions[] = ['href' => rateb_url('admin/company-permissions'), 'label' => __('company_permissions'), 'icon' => 'fa-sliders'];
     }
     $actions[] = ['href' => rateb_url('admin/module-addons'), 'label' => __('module_addon_catalog'), 'icon' => 'fa-store'];
-    if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
-        $actions[] = ['href' => rateb_url('admin/billing/addon-locks'), 'label' => __('module_addon_demo_locks'), 'icon' => 'fa-lock'];
-    }
 }
 if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
     && (new \Rateb\App\Services\ModuleAddonService())->previewDemoHostAllowed()) {
@@ -85,9 +82,6 @@ if (!empty($dashboardChartsUrl)) {
         'subtitle' => __('platform_dashboard_intro') . ' · ' . date('Y-m-d'),
         'actions' => $actions,
     ]);
-    if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
-        Rateb\App\Core\View::partial('billing/addon-lock-board', ['returnTo' => 'platform']);
-    }
     Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
     Rateb\App\Core\View::partial('dashboard/metrics-strip', ['metrics' => $metrics]);
     ?>

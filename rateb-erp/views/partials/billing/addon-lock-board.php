@@ -53,14 +53,14 @@ $esc = static fn ($v): string => View::escape((string) $v);
         <?php } ?>
         <?php if (!$needsCompany && $companyId > 0) { ?>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <form method="post" action="<?php echo $esc($action); ?>">
+            <form method="post" action="<?php echo $esc($action); ?>" data-rateb-offline-writable="1">
                 <input type="hidden" name="_csrf" value="<?php echo $esc($csrf); ?>">
                 <input type="hidden" name="return_to" value="<?php echo $esc($returnTo); ?>">
                 <input type="hidden" name="picked_company_id" value="<?php echo $esc((string) $companyId); ?>">
                 <input type="hidden" name="lock_action" value="unlock_all">
                 <button type="submit" class="btn btn-primary"><?php echo $esc(__('module_addon_demo_unlock_all')); ?></button>
             </form>
-            <form method="post" action="<?php echo $esc($action); ?>">
+            <form method="post" action="<?php echo $esc($action); ?>" data-rateb-offline-writable="1">
                 <input type="hidden" name="_csrf" value="<?php echo $esc($csrf); ?>">
                 <input type="hidden" name="return_to" value="<?php echo $esc($returnTo); ?>">
                 <input type="hidden" name="picked_company_id" value="<?php echo $esc((string) $companyId); ?>">
@@ -99,7 +99,7 @@ $esc = static fn ($v): string => View::escape((string) $v);
                             <?php } ?>
                         </td>
                         <td class="text-end">
-                            <form method="post" action="<?php echo $esc($action); ?>">
+                            <form method="post" action="<?php echo $esc($action); ?>" data-rateb-offline-writable="1">
                                 <input type="hidden" name="_csrf" value="<?php echo $esc($csrf); ?>">
                                 <input type="hidden" name="return_to" value="<?php echo $esc($returnTo); ?>">
                                 <input type="hidden" name="picked_company_id" value="<?php echo $esc((string) $companyId); ?>">

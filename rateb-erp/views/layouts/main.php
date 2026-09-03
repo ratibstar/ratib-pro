@@ -960,7 +960,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </a>
             <?php } ?>
             <?php
-            if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
+            $showStandaloneAddonLocks = \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()
+                && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
+            if ($showStandaloneAddonLocks) {
                 $locksHref = rateb_url('admin/billing/addon-locks');
                 $locksActive = $navActive('admin/billing/addon-locks') ? ' active' : '';
                 ?>

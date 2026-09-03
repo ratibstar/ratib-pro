@@ -1120,7 +1120,7 @@ return [
     'module_addon_catalog_void_refused' => 'Invoice was not voided (paid, missing, or not an add-on invoice).',
     'module_addon_catalog_saving' => 'Annual saving',
     'module_addon_demo_locks' => 'Demo module locks',
-    'module_addon_demo_locks_help' => 'Open a lock to show the module in the sidebar. Close it to return the purchase page. Demo host only — no payment.',
+    'module_addon_demo_locks_help' => 'Open a lock to entitle the selected company. Close it to send that company to the purchase page. Super Admin navigation stays open — this board changes the company, not your session.',
     'module_addon_demo_locks_empty' => 'No purchasable add-on modules are available on this host.',
     'module_addon_demo_lock_open' => 'Open lock',
     'module_addon_demo_lock_close' => 'Close lock',

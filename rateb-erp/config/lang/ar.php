@@ -1121,7 +1121,7 @@ return [
     'module_addon_catalog_void_refused' => 'لم تُلغَ الفاتورة (مدفوعة أو غير موجودة أو ليست فاتورة إضافة).',
     'module_addon_catalog_saving' => 'التوفير السنوي',
     'module_addon_demo_locks' => 'أقفال الوحدات التجريبية',
-    'module_addon_demo_locks_help' => 'افتح القفل لتظهر الوحدة في القائمة. أقفله لترجع صفحة الاشتراك. لمعاينة admin.rateb.sa فقط — بدون دفع.',
+    'module_addon_demo_locks_help' => 'افتح القفل لتفعيل الوحدة للشركة المختارة. أقفله لتعود تلك الشركة لصفحة الاشتراك. قائمة Super Admin تبقى مفتوحة — هذا اللوح يغيّر صلاحية الشركة وليس جلستك.',
     'module_addon_demo_locks_empty' => 'لا توجد وحدات إضافية قابلة للشراء على هذا المضيف.',
     'module_addon_demo_lock_open' => 'افتح القفل',
     'module_addon_demo_lock_close' => 'أقفل',

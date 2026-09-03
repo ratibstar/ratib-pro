@@ -172,12 +172,14 @@ final class ModuleAddonDemoPreviewService
         }
         $addons = new ModuleAddonService();
         $limits = new PlanLimitService();
+        PlanLimitService::forgetCompanyLimits($companyId);
+        $entitledList = $this->companyEntitledSlugs($companyId, $addons, $limits);
         $locale = function_exists('rateb_locale') ? (string) rateb_locale() : '';
         $rows = [];
         foreach ($this->commercialLockSlugs($addons) as $slug) {
             $item = $addons->catalog()[$slug] ?? ['name' => $slug];
             $display = $addons->localizedDisplay($slug, $locale) ?? [];
-            $entitled = $limits->companyHasModule($companyId, $slug);
+            $entitled = in_array($slug, $entitledList, true);
             $rows[] = [
                 'slug' => $slug,
                 'name' => (string) ($display['name'] ?? $item['name'] ?? $slug),
@@ -238,6 +240,10 @@ final class ModuleAddonDemoPreviewService
             }
         } else {
             return ['ok' => false, 'code' => 'invalid_action'];
+        }
+
+        if ($next === []) {
+            $next = ['dashboard'];
         }
 
         if (!(new Company())->updateModules($companyId, $next)) {
@@ -310,18 +316,19 @@ final class ModuleAddonDemoPreviewService
     }
 
     /**
+     * Company entitlement from DB/plan — never Super Admin session bypass.
+     *
      * @return list<string>
      */
-    private function workingModules(int $companyId, ModuleAddonService $addons): array
+    private function companyEntitledSlugs(int $companyId, ModuleAddonService $addons, PlanLimitService $limits): array
     {
         $json = $addons->currentJson($companyId);
         if ($json !== []) {
             return $json;
         }
-        $limits = (new PlanLimitService())->getLimits($companyId);
-        $mods = is_array($limits['modules'] ?? null) ? $limits['modules'] : [];
+        $mods = $limits->getLimits($companyId)['modules'] ?? [];
         $out = [];
-        foreach ($mods as $mod) {
+        foreach (is_array($mods) ? $mods : [] as $mod) {
             $mod = strtolower(trim((string) $mod));
             if ($mod === '' || in_array($mod, $out, true)) {
                 continue;
@@ -330,6 +337,16 @@ final class ModuleAddonDemoPreviewService
         }
 
         return $out;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function workingModules(int $companyId, ModuleAddonService $addons): array
+    {
+        PlanLimitService::forgetCompanyLimits($companyId);
+
+        return $this->companyEntitledSlugs($companyId, $addons, new PlanLimitService());
     }
 
     private function attachPreviewViewPermissions(int $companyId): void

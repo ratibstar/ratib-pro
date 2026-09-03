@@ -81,8 +81,14 @@ macd_assert(str_contains($ctrl, 'toggleLocks'), 'controller exposes lock POST');
 macd_assert(str_contains($view, 'demo-preview-password'), 'password is shown once after bootstrap');
 macd_assert(!str_contains($view, 'Purchase'), 'preview bootstrap is not the purchase form');
 $board = (string) file_get_contents($root . '/views/partials/billing/addon-lock-board.php');
+macd_assert(str_contains($src, 'companyEntitledSlugs'), 'lock board status uses company DB modules not Super Admin bypass');
+macd_assert(!str_contains($src, 'companyHasModule('), 'lock board does not call companyHasModule (always true for Super Admin)');
 macd_assert(str_contains($board, 'lock_action'), 'lock board posts named actions');
 macd_assert(str_contains($board, 'needs_company'), 'lock board warns when platform company is not selected');
+$adminDash = (string) file_get_contents($root . '/views/admin/dashboard.php');
+$companyDash = (string) file_get_contents($root . '/views/company/dashboard.php');
+macd_assert(!str_contains($adminDash, 'addon-lock-board'), 'platform dashboard does not embed the lock board');
+macd_assert(!str_contains($companyDash, 'addon-lock-board'), 'company dashboard does not embed the lock board');
 
 $savedHost = $_SERVER['HTTP_HOST'] ?? null;
 macd_set_env(ModuleAddonService::PREVIEW_FLAG_NAME, '1');

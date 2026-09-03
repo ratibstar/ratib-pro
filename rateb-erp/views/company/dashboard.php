@@ -98,7 +98,6 @@ Rateb\App\Core\View::partial('dashboard/head');
         'subtitle' => $subtitle . ' · ' . date('Y-m-d'),
         'actions' => $actions,
     ]);
-    Rateb\App\Core\View::partial('billing/addon-lock-board', ['returnTo' => 'dashboard']);
     Rateb\App\Core\View::partial('dashboard/alerts', ['alerts' => $alerts]);
     Rateb\App\Core\View::partial('dashboard/metrics-strip', ['metrics' => $metrics]);
     ?>
