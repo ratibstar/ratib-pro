@@ -37,7 +37,7 @@ $members_by_team = $members_by_team ?? [];
                 <?php if (!empty($canManage)): ?>
                 <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/teams') . '/' . (int) $team['id'] . '/members'), ENT_QUOTES, 'UTF-8'); ?>" class="d-flex gap-2">
                     <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input class="form-control form-control-sm" name="user_id" type="number" min="1" placeholder="user_id" required>
+                    <input class="form-control form-control-sm" name="user_id" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_user_id'), ENT_QUOTES, 'UTF-8'); ?>" required>
                     <input class="form-control form-control-sm" name="role_code" placeholder="role" value="member">
                     <button class="btn btn-sm btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('add'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </form>

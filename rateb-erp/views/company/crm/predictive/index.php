@@ -14,7 +14,7 @@ foreach ($matches as $rows) {
     <h1 class="h3 mb-3"><?php echo htmlspecialchars((string) ($title ?? __('crm_predictive_rules')), ENT_QUOTES, 'UTF-8'); ?></h1>
     <div class="row g-3 mb-4">
         <?php foreach (($evaluation['counts'] ?? []) as $type => $cnt): ?>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars((string) $type, ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) $cnt; ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) $type), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) $cnt; ?></div></div></div>
         <?php endforeach; ?>
         <?php if (($evaluation['counts'] ?? []) === []): ?>
         <div class="col-12 border rounded px-3"><?php require __DIR__ . '/../partials/empty.php'; ?></div>
@@ -25,9 +25,9 @@ foreach ($matches as $rows) {
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rules'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php foreach (($rules ?? []) as $rule): ?>
             <div class="border rounded p-3 mb-2 small">
-                <div class="fw-semibold"><?php echo htmlspecialchars((string) ($rule['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div><?php echo htmlspecialchars((string) (($rule['rule_key'] ?? '') . ' · ' . ($rule['rule_type'] ?? '') . ' · p' . ($rule['priority'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="text-muted"><?php echo htmlspecialchars((string) ($rule['config_json'] ?? '{}'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold"><?php echo htmlspecialchars(rateb_ui((string) ($rule['name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div><?php echo htmlspecialchars(rateb_ui((string) ($rule['rule_type'] ?? $rule['rule_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_rule_priority'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) ($rule['priority'] ?? 0); ?></div>
             </div>
             <?php endforeach; ?>
             <?php if (($rules ?? []) === []): ?>
@@ -36,12 +36,12 @@ foreach ($matches as $rows) {
             <?php if (!empty($canManage)): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/predictive/rules')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mt-2">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <input class="form-control form-control-sm mb-2" name="rule_key" placeholder="rule_key" required>
-                <input class="form-control form-control-sm mb-2" name="name" placeholder="name" required>
-                <input class="form-control form-control-sm mb-2" name="rule_type" placeholder="rule_type e.g. high_probability" required>
-                <textarea class="form-control form-control-sm mb-2" name="config_json" rows="3">{"min_probability":70}</textarea>
-                <input class="form-control form-control-sm mb-2" type="number" name="priority" value="100">
-                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_enabled" value="1" checked><label class="form-check-label">Enabled</label></div>
+                <input class="form-control form-control-sm mb-2" name="rule_key" placeholder="<?php echo htmlspecialchars(__('crm_rule_key'), ENT_QUOTES, 'UTF-8'); ?>" required>
+                <input class="form-control form-control-sm mb-2" name="name" placeholder="<?php echo htmlspecialchars(__('crm_rule_name'), ENT_QUOTES, 'UTF-8'); ?>" required>
+                <input class="form-control form-control-sm mb-2" name="rule_type" placeholder="<?php echo htmlspecialchars(__('crm_rule_type'), ENT_QUOTES, 'UTF-8'); ?>" required>
+                <textarea class="form-control form-control-sm mb-2" name="config_json" rows="3" aria-label="<?php echo htmlspecialchars(__('crm_rule_config'), ENT_QUOTES, 'UTF-8'); ?>">{"min_probability":70}</textarea>
+                <input class="form-control form-control-sm mb-2" type="number" name="priority" value="100" aria-label="<?php echo htmlspecialchars(__('crm_rule_priority'), ENT_QUOTES, 'UTF-8'); ?>">
+                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_enabled" value="1" checked id="crm-rule-enabled"><label class="form-check-label" for="crm-rule-enabled"><?php echo htmlspecialchars(__('crm_rule_enabled'), ENT_QUOTES, 'UTF-8'); ?></label></div>
                 <button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
             <?php endif; ?>
@@ -54,7 +54,7 @@ foreach ($matches as $rows) {
                 <?php else: ?>
                     <?php foreach ($matches as $type => $rows): ?>
                         <?php if (!is_array($rows) || $rows === []) { continue; } ?>
-                        <h3 class="h6 mt-2"><?php echo htmlspecialchars((string) $type, ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <h3 class="h6 mt-2"><?php echo htmlspecialchars(rateb_ui((string) $type), ENT_QUOTES, 'UTF-8'); ?></h3>
                         <ul class="list-unstyled small mb-3">
                             <?php foreach ($rows as $row): ?>
                             <li class="mb-2 pb-2 border-bottom">

@@ -15,20 +15,16 @@ declare(strict_types=1);
             <div class="col-md-3"><input class="form-control" name="subject" placeholder="<?php echo htmlspecialchars(__('subject'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
             <div class="col-md-2">
                 <select class="form-select" name="activity_type">
-                    <option value="note">note</option>
-                    <option value="call">call</option>
-                    <option value="meeting">meeting</option>
-                    <option value="task">task</option>
-                    <option value="follow_up">follow_up</option>
-                    <option value="other">other</option>
+                    <?php foreach (['note','call','meeting','task','follow_up','other'] as $at): ?>
+                    <option value="<?php echo $at; ?>"><?php echo htmlspecialchars(rateb_ui($at), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
                 <select class="form-select" name="priority">
-                    <option value="low">low</option>
-                    <option value="normal" selected>normal</option>
-                    <option value="high">high</option>
-                    <option value="urgent">urgent</option>
+                    <?php foreach (['low','normal','high','urgent'] as $pr): ?>
+                    <option value="<?php echo $pr; ?>" <?php echo $pr === 'normal' ? 'selected' : ''; ?>><?php echo htmlspecialchars(rateb_ui($pr), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2"><input class="form-control" type="datetime-local" name="due_at" title="due"></div>
@@ -45,13 +41,13 @@ declare(strict_types=1);
     <div class="row g-3">
         <div class="col-lg-7">
             <h2 class="h6"><?php echo htmlspecialchars(__('crm_activities'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-striped"><thead><tr><th><?php echo htmlspecialchars(__('subject'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('type'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('priority'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_due_at'), ENT_QUOTES, 'UTF-8'); ?></th><th>Owner</th></tr></thead>
+            <div class="table-responsive"><table class="table table-striped"><thead><tr><th><?php echo htmlspecialchars(__('subject'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('type'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('priority'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_due_at'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_owner'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
             <tbody>
             <?php foreach (($items ?? []) as $row): ?>
                 <tr>
                     <td><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string) ($row['activity_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string) ($row['priority'] ?? 'normal'), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(rateb_ui((string) ($row['activity_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(rateb_ui((string) ($row['priority'] ?? 'normal')), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['due_at'] ?? $row['activity_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td>#<?php echo (int) ($row['owner_user_id'] ?? 0); ?></td>
                 </tr>
@@ -65,7 +61,7 @@ declare(strict_types=1);
                 <?php foreach (($history ?? []) as $row): ?>
                 <li class="list-group-item">
                     <div class="fw-semibold"><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($row['activity_type'] ?? '') . ' · ' . ($row['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($row['activity_type'] ?? '')) . ' · ' . (string) ($row['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($history ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
@@ -75,7 +71,7 @@ declare(strict_types=1);
                 <?php foreach (($tasks ?? []) as $row): ?>
                 <li class="list-group-item">
                     <div class="fw-semibold"><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($row['priority'] ?? '') . ' · due ' . ($row['due_at'] ?? '—') . ' · ' . ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($row['priority'] ?? '')) . ' · ' . __('crm_due') . ' ' . (string) ($row['due_at'] ?? '—') . ' · ' . rateb_ui((string) ($row['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($tasks ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

@@ -15,7 +15,7 @@ $filters = $filters ?? [];
     </div>
 
     <form method="get" class="row g-2 mb-3">
-        <div class="col-md-3"><input class="form-control" type="number" name="user_id" placeholder="user_id" value="<?php echo (int) ($filters['user_id'] ?? 0) ?: ''; ?>"></div>
+        <div class="col-md-3"><input class="form-control" type="number" name="user_id" placeholder="<?php echo htmlspecialchars(__('crm_user_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($filters['user_id'] ?? 0) ?: ''; ?>"></div>
         <div class="col-md-3">
             <select class="form-select" name="team_id">
                 <option value="0"><?php echo htmlspecialchars(__('crm_sales_teams'), ENT_QUOTES, 'UTF-8'); ?></option>
@@ -92,9 +92,9 @@ $filters = $filters ?? [];
                     <a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
                     <div class="small text-muted">
                         <?php echo htmlspecialchars((string) ($row['amount'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?>
-                        · score <?php echo (int) ($row['intelligence_score'] ?? 0); ?>
+                        · <?php echo htmlspecialchars(__('crm_score'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) ($row['intelligence_score'] ?? 0); ?>
                         · <?php echo htmlspecialchars((string) ($row['risk_level'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                        <?php if (!empty($row['is_stale'])): ?> · stale<?php endif; ?>
+                        <?php if (!empty($row['is_stale'])): ?> · <?php echo htmlspecialchars(__('crm_stale'), ENT_QUOTES, 'UTF-8'); ?><?php endif; ?>
                     </div>
                     <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id'] . '/score'), ENT_QUOTES, 'UTF-8'); ?>" class="mt-1">
                         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
@@ -110,7 +110,7 @@ $filters = $filters ?? [];
             <ul class="list-group">
                 <?php foreach (($my_tasks ?? []) as $row): ?>
                 <li class="list-group-item"><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($row['priority'] ?? '') . ' · ' . ($row['due_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div></li>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($row['priority'] ?? '')) . ' · ' . (string) ($row['due_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></li>
                 <?php endforeach; ?>
                 <?php if (($my_tasks ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>

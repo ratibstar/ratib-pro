@@ -44,7 +44,7 @@ $pipelineId = (int) (($board['pipeline']['id'] ?? 0));
                         <?php foreach ($opps as $opp): if ((int) ($opp['stage_id'] ?? 0) !== (int) $stage['id']) continue; ?>
                             <div class="border rounded p-2 mb-2 bg-white">
                                 <div class="fw-semibold"><a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $opp['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($opp['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a></div>
-                                <div class="small text-muted"><?php echo htmlspecialchars((string) ($opp['amount'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?> · ER <?php echo htmlspecialchars((string) ($opp['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="small text-muted"><?php echo htmlspecialchars((string) ($opp['amount'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars(__('crm_expected_rev_short'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($opp['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
                                 <?php if (!empty($canManage)): ?>
                                 <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $opp['id'] . '/move-stage'), ENT_QUOTES, 'UTF-8'); ?>" class="mt-2">
                                     <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">

@@ -15,13 +15,13 @@ $data = $data ?? [];
     <div class="row g-3 mb-4">
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_response_sla'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($sla['sla_pct'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_activity_intelligence'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($eff['activity_effectiveness_pct'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Activities</div><div class="fs-4"><?php echo (int) ($eff['activity_count'] ?? 0); ?></div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Avg delay (h)</div><div class="fs-4"><?php echo htmlspecialchars((string) ($sla['avg_delay_hours'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_activities_count'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) ($eff['activity_count'] ?? 0); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_avg_delay_h'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($sla['avg_delay_hours'] ?? 0), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
     </div>
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rep_productivity'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Rep</th><th>Acts</th><th>Tasks</th><th>Won</th><th>Score</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_acts'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_tasks_short'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_score_col'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($data['rep_productivity'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['activities']; ?></td><td><?php echo (int) $row['tasks_completed']; ?></td><td><?php echo (int) $row['opps_won']; ?></td><td><?php echo htmlspecialchars((string) $row['productivity_score'], ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -30,7 +30,7 @@ $data = $data ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_pipeline_contribution'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Rep</th><th>Open</th><th>%</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_open'), ENT_QUOTES, 'UTF-8'); ?></th><th>%</th></tr></thead><tbody>
             <?php foreach (($data['pipeline_contribution'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo htmlspecialchars(number_format($row['open_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) $row['contribution_pct'], ENT_QUOTES, 'UTF-8'); ?>%</td></tr>
             <?php endforeach; ?>

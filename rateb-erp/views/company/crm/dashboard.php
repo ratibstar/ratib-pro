@@ -59,7 +59,7 @@ $kpis = $kpis ?? [];
         <?php foreach (($board ?? []) as $st => $cnt): ?>
         <div class="col-6 col-md-3 col-xl">
             <div class="border rounded p-3 h-100">
-                <div class="text-muted small"><?php echo htmlspecialchars((string) $st, ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="text-muted small"><?php echo htmlspecialchars(rateb_ui((string) $st), ENT_QUOTES, 'UTF-8'); ?></div>
                 <div class="fs-4 fw-semibold"><?php echo (int) $cnt; ?></div>
             </div>
         </div>

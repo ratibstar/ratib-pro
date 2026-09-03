@@ -109,7 +109,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
                     <h3 class="h6"><?php echo htmlspecialchars(__('crm_activity_patterns'), ENT_QUOTES, 'UTF-8'); ?></h3>
                     <ul class="list-unstyled small mb-3">
                         <?php foreach ($patterns as $type => $cnt): ?>
-                        <li><?php echo htmlspecialchars((string) $type, ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) $cnt; ?></li>
+                        <li><?php echo htmlspecialchars(rateb_ui((string) $type), ENT_QUOTES, 'UTF-8'); ?>: <?php echo (int) $cnt; ?></li>
                         <?php endforeach; ?>
                     </ul>
                     <?php endif; ?>

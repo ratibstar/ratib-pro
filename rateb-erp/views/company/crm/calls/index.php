@@ -10,8 +10,8 @@ declare(strict_types=1);
             <div class="col-md-4"><input class="form-control" name="subject" placeholder="<?php echo htmlspecialchars(__('subject'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
             <div class="col-md-3">
                 <select class="form-select" name="direction">
-                    <option value="outbound">outbound</option>
-                    <option value="inbound">inbound</option>
+                    <option value="outbound"><?php echo htmlspecialchars(rateb_ui('outbound'), ENT_QUOTES, 'UTF-8'); ?></option>
+                    <option value="inbound"><?php echo htmlspecialchars(rateb_ui('inbound'), ENT_QUOTES, 'UTF-8'); ?></option>
                 </select>
             </div>
             <div class="col-md-3"><input class="form-control" type="datetime-local" name="called_at"></div>
@@ -22,7 +22,7 @@ declare(strict_types=1);
     <div class="table-responsive"><table class="table table-striped"><thead><tr><th><?php echo htmlspecialchars(__('subject'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('date'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('status'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
     <tbody>
     <?php foreach (($items ?? []) as $row): ?>
-        <tr><td><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['called_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['direction'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td></tr>
+        <tr><td><?php echo htmlspecialchars((string) ($row['subject'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) ($row['called_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(rateb_ui((string) ($row['direction'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td></tr>
     <?php endforeach; ?>
     <?php if (($items ?? []) === []): ?><tr><td colspan="3" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
     </tbody></table></div>

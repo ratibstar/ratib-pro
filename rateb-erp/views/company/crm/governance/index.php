@@ -15,7 +15,7 @@ $health = $health ?? [];
     <div class="row g-3 mb-4">
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_governance_score'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) ($health['score'] ?? 0); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_open_issues'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo (int) ($health['open_issues'] ?? 0); ?></div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Missing / Ownership / Dupes</div><div class="fs-6"><?php echo (int) ($health['missing_fields'] ?? 0); ?> / <?php echo (int) ($health['ownership_gaps'] ?? 0); ?> / <?php echo (int) ($health['duplicate_candidates'] ?? 0); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_missing_own_dupes'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-6"><?php echo (int) ($health['missing_fields'] ?? 0); ?> / <?php echo (int) ($health['ownership_gaps'] ?? 0); ?> / <?php echo (int) ($health['duplicate_candidates'] ?? 0); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_automation_governance'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-6"><?php echo !empty($automation_gov['ok']) ? 'OK' : 'Review'; ?> (always <?php echo (int) ($automation_gov['always_rules'] ?? 0); ?>/<?php echo (int) ($automation_gov['max_always_rules'] ?? 0); ?>)</div></div></div>
     </div>
     <div class="row g-3">

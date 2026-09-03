@@ -110,7 +110,7 @@ $forecast = $forecast ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_sales_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Owner</th><th>Opps</th><th>Won</th><th>Amount</th><th>ER</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_owner'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_opps'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_amount'), ENT_QUOTES, 'UTF-8'); ?></th><th>ER</th></tr></thead><tbody>
             <?php foreach ($performance as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['opportunities']; ?></td><td><?php echo (int) $row['won']; ?></td><td><?php echo htmlspecialchars(number_format($row['amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['expected_revenue'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -132,7 +132,7 @@ $forecast = $forecast ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_team_forecast'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Owner</th><th>Open</th><th>Weighted</th><th>Won</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_owner'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_open'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_weighted'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($engine['by_owner'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo htmlspecialchars(number_format($row['open_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['weighted_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['won_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -141,7 +141,7 @@ $forecast = $forecast ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_win_probability'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>%</th><th>#</th><th>Amount</th><th>Weighted</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>%</th><th>#</th><th><?php echo htmlspecialchars(__('crm_amount'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_weighted'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($win_probability ?? []) as $row): ?>
                 <tr><td><?php echo htmlspecialchars($row['bucket'], ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['count']; ?></td><td><?php echo htmlspecialchars(number_format($row['amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['weighted'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -150,7 +150,7 @@ $forecast = $forecast ?? [];
         </div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_forecast_accuracy'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Period</th><th>Forecast</th><th>Actual Won</th><th>%</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_period'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_forecast_col'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_actual_won'), ENT_QUOTES, 'UTF-8'); ?></th><th>%</th></tr></thead><tbody>
             <?php foreach (($accuracy ?? []) as $row): ?>
                 <tr><td><?php echo htmlspecialchars($row['period_key'], ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['forecast_weighted'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['actual_won'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars((string) $row['accuracy_pct'], ENT_QUOTES, 'UTF-8'); ?>%</td></tr>
             <?php endforeach; ?>
@@ -167,7 +167,7 @@ $forecast = $forecast ?? [];
         <div class="col-6 col-md-3"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_at_risk'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo (int) ($ret['at_risk'] ?? 0); ?></div></div></div>
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rep_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Rep</th><th>Open</th><th>Won</th><th>Win%</th><th>Won Amt</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_open'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_win_pct'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won_amt'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($a['rep_performance'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['open_count']; ?></td><td><?php echo (int) $row['won_count']; ?></td><td><?php echo htmlspecialchars((string) round($row['win_rate'] * 100, 1), ENT_QUOTES, 'UTF-8'); ?>%</td><td><?php echo htmlspecialchars(number_format($row['won_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>

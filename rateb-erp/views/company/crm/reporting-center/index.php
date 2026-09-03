@@ -24,13 +24,13 @@ declare(strict_types=1);
             <?php if (!empty($canManage)): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/reporting-center/dashboards')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mt-2">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <input class="form-control form-control-sm mb-2" name="name" placeholder="Dashboard name" required>
+                <input class="form-control form-control-sm mb-2" name="name" placeholder="<?php echo htmlspecialchars(__('crm_dashboard_name'), ENT_QUOTES, 'UTF-8'); ?>" required>
                 <select class="form-select form-select-sm mb-2" name="role_key">
                     <option value="executive">executive</option>
                     <option value="manager">manager</option>
                     <option value="rep">rep</option>
                 </select>
-                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_shared" value="1"><label class="form-check-label">Shared</label></div>
+                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="is_shared" value="1"><label class="form-check-label"><?php echo htmlspecialchars(__('crm_shared'), ENT_QUOTES, 'UTF-8'); ?></label></div>
                 <button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
             <?php endif; ?>
@@ -48,7 +48,7 @@ declare(strict_types=1);
             <?php if (!empty($canManage)): ?>
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/reporting-center/schedules')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mt-2">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                <input class="form-control form-control-sm mb-2" name="name" placeholder="Schedule name" required>
+                <input class="form-control form-control-sm mb-2" name="name" placeholder="<?php echo htmlspecialchars(__('crm_schedule_name'), ENT_QUOTES, 'UTF-8'); ?>" required>
                 <select class="form-select form-select-sm mb-2" name="report_key">
                     <option value="funnel">funnel</option>
                     <option value="performance">performance</option>

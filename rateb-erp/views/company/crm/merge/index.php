@@ -66,7 +66,7 @@ $freshness = $freshness ?? [];
                         <?php foreach ($hist as $h): ?>
                         <li class="mb-2 pb-2 border-bottom">
                             <?php echo htmlspecialchars((string) ($h['created_at'] ?? $h['checked_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                            · score <?php echo htmlspecialchars((string) ($h['freshness_score'] ?? $h['score'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
+                            · <?php echo htmlspecialchars(__('crm_score'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($h['freshness_score'] ?? $h['score'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
                         </li>
                         <?php endforeach; ?>
                     </ul>

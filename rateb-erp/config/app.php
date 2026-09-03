@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260903-ar-crm-i18n-v1');
+define('RATEB_ASSET_BUILD', '20260903-ar-crm-full-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2231,6 +2231,46 @@ if (!function_exists('rateb_log_title')) {
         }
 
         return rateb_enum_label($title);
+    }
+}
+
+if (!function_exists('rateb_ui')) {
+    /**
+     * Display helper: translate codes, snake_case keys, and known English UI phrases for non-EN locales.
+     */
+    function rateb_ui(string $text): string
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return '';
+        }
+        if (!function_exists('__')) {
+            return $text;
+        }
+        if (function_exists('rateb_locale') && rateb_locale() === 'en') {
+            return $text;
+        }
+        $direct = __($text);
+        if ($direct !== $text) {
+            return $direct;
+        }
+        $snake = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
+        $snake = trim($snake, '_');
+        if ($snake !== '') {
+            foreach (['crm_rule_', 'crm_', 'status_', ''] as $prefix) {
+                $key = $prefix . $snake;
+                $t = __($key);
+                if ($t !== $key) {
+                    return $t;
+                }
+            }
+            $enum = rateb_enum_label($snake);
+            if ($enum !== $snake) {
+                return $enum;
+            }
+        }
+
+        return rateb_log_title($text);
     }
 }
 

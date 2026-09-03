@@ -13,9 +13,9 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
         <?php foreach ($cards as $card): ?>
         <div class="col-md-4 col-xl-2">
             <div class="border rounded p-3 h-100">
-                <div class="small text-muted"><?php echo htmlspecialchars((string) ($card['type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($card['severity'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="fw-semibold"><?php echo htmlspecialchars((string) ($card['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="small"><?php echo htmlspecialchars((string) ($card['body'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($card['type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars(rateb_ui((string) ($card['severity'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold"><?php echo htmlspecialchars(rateb_ui((string) ($card['title'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small"><?php echo htmlspecialchars(rateb_ui((string) ($card['body'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
             </div>
         </div>
         <?php endforeach; ?>
@@ -32,7 +32,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
                 <?php else: ?>
                     <dl class="row mb-0 small">
                         <?php foreach ($trends as $k => $v): ?>
-                        <dt class="col-6 text-muted"><?php echo htmlspecialchars((string) $k, ENT_QUOTES, 'UTF-8'); ?></dt>
+                        <dt class="col-6 text-muted"><?php echo htmlspecialchars(rateb_ui((string) $k), ENT_QUOTES, 'UTF-8'); ?></dt>
                         <dd class="col-6"><?php echo htmlspecialchars(is_scalar($v) ? (string) $v : '', ENT_QUOTES, 'UTF-8'); ?></dd>
                         <?php endforeach; ?>
                     </dl>

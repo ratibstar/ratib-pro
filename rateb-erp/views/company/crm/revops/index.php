@@ -32,7 +32,7 @@ $dqEmpty = $dq === [] || isset($dq['error']);
         <div class="col-auto"><input type="date" name="date_to" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($date_to ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
         <div class="col-auto">
             <select name="team_id" class="form-select form-select-sm">
-                <option value="0">Team</option>
+                <option value="0"><?php echo htmlspecialchars(__('crm_team'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php foreach (($teams ?? []) as $t): ?>
                 <option value="<?php echo (int) $t['id']; ?>" <?php echo ((int) ($team_id ?? 0) === (int) $t['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($t['name'] ?? $t['id']), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
@@ -40,7 +40,7 @@ $dqEmpty = $dq === [] || isset($dq['error']);
         </div>
         <div class="col-auto">
             <select name="pipeline_id" class="form-select form-select-sm">
-                <option value="0">Pipeline</option>
+                <option value="0"><?php echo htmlspecialchars(__('crm_pipeline_select'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php foreach (($pipelines ?? []) as $p): ?>
                 <option value="<?php echo (int) $p['id']; ?>" <?php echo ((int) ($pipeline_id ?? 0) === (int) $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($p['name'] ?? $p['id']), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>

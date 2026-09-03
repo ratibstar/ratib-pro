@@ -37,7 +37,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rep_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Rep</th><th>Won</th><th>Win%</th><th>Amt</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_win_pct'), ENT_QUOTES, 'UTF-8'); ?></th><th>Amt</th></tr></thead><tbody>
             <?php foreach (($dash['extra']['team_performance'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['won_count']; ?></td><td><?php echo htmlspecialchars((string) round($row['win_rate'] * 100, 1), ENT_QUOTES, 'UTF-8'); ?>%</td><td><?php echo htmlspecialchars(number_format($row['won_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>

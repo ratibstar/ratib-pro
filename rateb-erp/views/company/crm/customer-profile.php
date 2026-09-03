@@ -40,7 +40,7 @@ $customer = $customer ?? [];
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/customers') . '/' . (int) ($customer_id ?? 0) . '/ownership'), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <h2 class="h6"><?php echo htmlspecialchars(__('crm_ownership'), ENT_QUOTES, 'UTF-8'); ?></h2>
-                <input class="form-control mb-2" name="owner_user_id" type="number" min="1" placeholder="owner_user_id" value="<?php echo (int) ($customer['crm_owner_user_id'] ?? 0) ?: ''; ?>">
+                <input class="form-control mb-2" name="owner_user_id" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_owner_user_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($customer['crm_owner_user_id'] ?? 0) ?: ''; ?>">
                 <select class="form-select mb-2" name="team_id">
                     <option value=""><?php echo htmlspecialchars(__('crm_sales_teams'), ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php foreach (($teams ?? []) as $t): ?>
@@ -87,7 +87,7 @@ $customer = $customer ?? [];
                 <?php foreach (($health_history ?? []) as $h): ?>
                 <li class="list-group-item small">
                     <?php echo (int) ($h['health_score'] ?? 0); ?> · <?php echo htmlspecialchars((string) ($h['health_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                    · risk <?php echo htmlspecialchars((string) ($h['renewal_risk'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_risk'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($h['renewal_risk'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                     <div class="text-muted"><?php echo htmlspecialchars((string) ($h['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
@@ -163,7 +163,7 @@ $customer = $customer ?? [];
                 <?php foreach (($opportunities ?? []) as $row): ?>
                 <li class="list-group-item">
                     <a href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id']), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($row['opportunity_no'] ?? $row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
-                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · ER <?php echo htmlspecialchars((string) ($row['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_enum_label((string) ($row['workflow_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars(__('crm_expected_rev_short'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($row['expected_revenue'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if (($opportunities ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

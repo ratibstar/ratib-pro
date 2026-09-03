@@ -16,19 +16,19 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
         <div class="col-auto"><input type="date" name="date_to" class="form-control form-control-sm" value="<?php echo htmlspecialchars((string) ($date_to ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
         <div class="col-auto">
             <select name="pipeline_id" class="form-select form-select-sm">
-                <option value="0">Pipeline</option>
+                <option value="0"><?php echo htmlspecialchars(__('crm_pipeline_select'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php foreach (($pipelines ?? []) as $p): ?>
                 <option value="<?php echo (int) $p['id']; ?>" <?php echo ((int) ($pipeline_id ?? 0) === (int) $p['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($p['name'] ?? $p['id']), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-auto"><input type="number" name="team_id" class="form-control form-control-sm" placeholder="team_id" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>"></div>
+        <div class="col-auto"><input type="number" name="team_id" class="form-control form-control-sm" placeholder="<?php echo htmlspecialchars(__('crm_team_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>"></div>
         <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('filter'), ENT_QUOTES, 'UTF-8'); ?></button></div>
     </form>
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Pipeline value</div><div class="fs-4"><?php echo number_format((float) ($data['pipeline_value'] ?? 0), 2); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_pipeline_value'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo number_format((float) ($data['pipeline_value'] ?? 0), 2); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_forecast_confidence'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo number_format((float) ($data['forecast_confidence'] ?? 0), 1); ?>%</div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Win rate</div><div class="fs-4"><?php echo number_format((float) ($data['win_rate'] ?? 0), 1); ?>%</div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_win_rate_label'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo number_format((float) ($data['win_rate'] ?? 0), 1); ?>%</div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_sales_velocity'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo number_format((float) ($data['sales_velocity'] ?? 0), 1); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_customer_risk'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo is_array($data['customer_risk']['at_risk'] ?? null) ? count($data['customer_risk']['at_risk']) : 0; ?></div></div></div>
     </div>
@@ -41,7 +41,7 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Period</th><th>Won</th><th>Lost</th></tr></thead>
+                            <thead><tr><th><?php echo htmlspecialchars(__('crm_period'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_lost'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
                             <tbody>
                             <?php foreach ($trendRows as $row): ?>
                                 <?php if (!is_array($row)) { continue; } ?>
@@ -64,9 +64,9 @@ $topLoss = is_array($winLoss['top_loss_reasons'] ?? null) ? $winLoss['top_loss_r
                     <?php require __DIR__ . '/../partials/empty.php'; ?>
                 <?php else: ?>
                     <dl class="row small mb-3">
-                        <dt class="col-6 text-muted">Won</dt><dd class="col-6"><?php echo (int) ($winLoss['won_count'] ?? 0); ?></dd>
-                        <dt class="col-6 text-muted">Lost</dt><dd class="col-6"><?php echo (int) ($winLoss['lost_count'] ?? 0); ?></dd>
-                        <dt class="col-6 text-muted">Win rate</dt><dd class="col-6"><?php echo htmlspecialchars((string) ($winLoss['win_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</dd>
+                        <dt class="col-6 text-muted"><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></dt><dd class="col-6"><?php echo (int) ($winLoss['won_count'] ?? 0); ?></dd>
+                        <dt class="col-6 text-muted"><?php echo htmlspecialchars(__('crm_lost'), ENT_QUOTES, 'UTF-8'); ?></dt><dd class="col-6"><?php echo (int) ($winLoss['lost_count'] ?? 0); ?></dd>
+                        <dt class="col-6 text-muted"><?php echo htmlspecialchars(__('crm_win_rate_label'), ENT_QUOTES, 'UTF-8'); ?></dt><dd class="col-6"><?php echo htmlspecialchars((string) ($winLoss['win_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</dd>
                     </dl>
                     <?php if ($topLoss === []): ?>
                         <?php require __DIR__ . '/../partials/empty.php'; ?>

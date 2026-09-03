@@ -29,7 +29,7 @@ declare(strict_types=1);
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="pipeline_id" value="<?php echo (int) ($pipeline_id ?? 0); ?>">
                 <div class="mb-2">
-                    <label class="form-label">Stage</label>
+                    <label class="form-label"><?php echo htmlspecialchars(__('crm_stage'), ENT_QUOTES, 'UTF-8'); ?></label>
                     <select name="stage_id" class="form-select form-select-sm" required>
                         <?php foreach (($stages ?? []) as $s): ?>
                         <option value="<?php echo (int) $s['id']; ?>"><?php echo htmlspecialchars((string) ($s['name'] ?? $s['id']), ENT_QUOTES, 'UTF-8'); ?></option>

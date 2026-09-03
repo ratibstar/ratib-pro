@@ -19,8 +19,8 @@ $forecast = $forecast ?? [];
     <form method="get" class="row g-2 mb-3">
         <div class="col-md-2">
             <select class="form-select" name="period_type">
-                <option value="month" <?php echo (($period_type ?? '') === 'month') ? 'selected' : ''; ?>>Monthly</option>
-                <option value="quarter" <?php echo (($period_type ?? '') === 'quarter') ? 'selected' : ''; ?>>Quarterly</option>
+                <option value="month" <?php echo (($period_type ?? '') === 'month') ? 'selected' : ''; ?>><?php echo htmlspecialchars(__('crm_monthly'), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="quarter" <?php echo (($period_type ?? '') === 'quarter') ? 'selected' : ''; ?>><?php echo htmlspecialchars(__('crm_quarterly'), ENT_QUOTES, 'UTF-8'); ?></option>
             </select>
         </div>
         <div class="col-md-3">
@@ -31,19 +31,19 @@ $forecast = $forecast ?? [];
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-md-2"><input class="form-control" type="number" name="team_id" placeholder="team_id" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>"></div>
+        <div class="col-md-2"><input class="form-control" type="number" name="team_id" placeholder="<?php echo htmlspecialchars(__('crm_team_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>"></div>
         <div class="col-md-2"><input class="form-control" type="number" name="user_id" placeholder="rep_id" value="<?php echo (int) ($user_id ?? 0) ?: ''; ?>"></div>
         <div class="col-md-2"><button class="btn btn-primary w-100" type="submit"><?php echo htmlspecialchars(__('apply'), ENT_QUOTES, 'UTF-8'); ?></button></div>
     </form>
     <div class="row g-3 mb-4">
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_weighted_pipeline'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($forecast['weighted_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_forecast_confidence'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($forecast['confidence_score'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted">Scope</div><div class="fs-5"><?php echo htmlspecialchars((string) ($forecast['forecast_scope'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($forecast['period_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_scope'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo htmlspecialchars((string) ($forecast['forecast_scope'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($forecast['period_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
     </div>
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_team_forecast'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Team</th><th>Weighted</th><th>Open</th><th>Members</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_team'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_weighted'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_open'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_members'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($forecast['team_rollup'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['team_id']; ?></td><td><?php echo htmlspecialchars(number_format($row['weighted_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo htmlspecialchars(number_format($row['open_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td><td><?php echo (int) $row['member_count']; ?></td></tr>
             <?php endforeach; ?>
