@@ -9,4 +9,6 @@ View::partial('billing/addon-lock-board', [
     'csrf' => $csrf ?? '',
     'action' => $action ?? rateb_url('admin/billing/addon-locks'),
     'returnTo' => $returnTo ?? 'locks',
+    'companies' => $companies ?? [],
+    'pickedCompanyId' => $pickedCompanyId ?? 0,
 ]);

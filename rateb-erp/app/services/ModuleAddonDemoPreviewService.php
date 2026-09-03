@@ -113,9 +113,9 @@ final class ModuleAddonDemoPreviewService
     /**
      * @return array{company_id:int,company_name:string,needs_company:bool}
      */
-    public function lockBoardContext(): array
+    public function lockBoardContext(int $forcedCompanyId = 0): array
     {
-        $companyId = $this->targetCompanyId();
+        $companyId = $forcedCompanyId > 0 ? $forcedCompanyId : $this->targetCompanyId();
         $companyName = '';
         if ($companyId > 0) {
             $row = (new Company())->find($companyId);
@@ -130,14 +130,43 @@ final class ModuleAddonDemoPreviewService
     }
 
     /**
-     * @return list<array{slug:string,name:string,locked:bool,entitled:bool,purchasable:bool}>
+     * @return list<array{id:int,name:string}>
      */
-    public function lockBoard(): array
+    public function listAllCompanies(): array
     {
         if (!self::sessionCanManageDemoLocks()) {
             return [];
         }
-        $companyId = $this->targetCompanyId();
+        try {
+            $db = Database::connection();
+            $stmt = $db->query(
+                "SELECT id, name FROM rateb_companies WHERE status = 'active' ORDER BY id ASC LIMIT 200"
+            );
+            $rows = $stmt ? $stmt->fetchAll() : [];
+            $out = [];
+            foreach ($rows as $r) {
+                $id = (int) ($r['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $out[] = ['id' => $id, 'name' => (string) ($r['name'] ?? '')];
+            }
+
+            return $out;
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @return list<array{slug:string,name:string,locked:bool,entitled:bool,purchasable:bool}>
+     */
+    public function lockBoard(int $forcedCompanyId = 0): array
+    {
+        if (!self::sessionCanManageDemoLocks()) {
+            return [];
+        }
+        $companyId = $forcedCompanyId > 0 ? $forcedCompanyId : $this->targetCompanyId();
         if ($companyId < 1) {
             return [];
         }
@@ -166,7 +195,7 @@ final class ModuleAddonDemoPreviewService
      *
      * @return array{ok:bool,code:string,company_id?:int,modules?:list<string>}
      */
-    public function setLocks(string $action, string $slug = ''): array
+    public function setLocks(string $action, string $slug = '', int $forcedCompanyId = 0): array
     {
         if (!self::sessionCanManageDemoLocks()) {
             return ['ok' => false, 'code' => 'forbidden'];
@@ -177,7 +206,7 @@ final class ModuleAddonDemoPreviewService
                 return ['ok' => false, 'code' => 'disabled'];
             }
         }
-        $companyId = $this->targetCompanyId();
+        $companyId = $forcedCompanyId > 0 ? $forcedCompanyId : $this->targetCompanyId();
         if ($companyId < 1) {
             return ['ok' => false, 'code' => 'no_company'];
         }

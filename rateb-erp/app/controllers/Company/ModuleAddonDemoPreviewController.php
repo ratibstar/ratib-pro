@@ -65,13 +65,17 @@ final class ModuleAddonDemoPreviewController extends Controller
         }
 
         $preview = new ModuleAddonDemoPreviewService();
+        $companies = $preview->listAllCompanies();
+        $pickedCompanyId = (int) ($_GET['company_id'] ?? 0);
 
         $this->view('billing/module-demo-locks', [
             'title' => __('module_addon_demo_locks'),
             'csrf' => Csrf::token(),
             'action' => rateb_url('admin/billing/addon-locks'),
-            'rows' => $preview->lockBoard(),
-            'context' => $preview->lockBoardContext(),
+            'rows' => $preview->lockBoard($pickedCompanyId),
+            'context' => $preview->lockBoardContext($pickedCompanyId),
+            'companies' => $companies,
+            'pickedCompanyId' => $pickedCompanyId,
             'returnTo' => 'locks',
         ], 'main');
     }
@@ -90,14 +94,19 @@ final class ModuleAddonDemoPreviewController extends Controller
 
         $action = strtolower(trim((string) ($_POST['lock_action'] ?? '')));
         $slug = strtolower(trim((string) ($_POST['slug'] ?? '')));
+        $pickedCompanyId = (int) ($_POST['picked_company_id'] ?? 0);
         unset($_POST['company_id'], $_POST['modules']);
-        $result = (new ModuleAddonDemoPreviewService())->setLocks($action, $slug);
+        $result = (new ModuleAddonDemoPreviewService())->setLocks($action, $slug, $pickedCompanyId);
         if (!empty($result['ok'])) {
             SessionManager::flash('success', __('module_addon_demo_locks_saved'));
         } else {
             SessionManager::flash('error', (string) ($result['code'] ?? 'error'));
         }
-        $this->redirect($this->locksReturnUrl());
+        $returnUrl = $this->locksReturnUrl();
+        if ($pickedCompanyId > 0 && str_contains($returnUrl, '/billing/addon-locks')) {
+            $returnUrl .= (str_contains($returnUrl, '?') ? '&' : '?') . 'company_id=' . $pickedCompanyId;
+        }
+        $this->redirect($returnUrl);
     }
 
     private function locksReturnUrl(): string
