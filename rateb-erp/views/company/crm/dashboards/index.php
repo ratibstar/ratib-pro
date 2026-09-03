@@ -13,8 +13,8 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
                 <option value="manager" <?php echo $role === 'manager' ? 'selected' : ''; ?>><?php echo htmlspecialchars(__('crm_dash_manager'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <option value="rep" <?php echo $role === 'rep' ? 'selected' : ''; ?>><?php echo htmlspecialchars(__('crm_dash_rep'), ENT_QUOTES, 'UTF-8'); ?></option>
             </select>
-            <input class="form-control" style="width:8rem" type="number" name="user_id" placeholder="user" value="<?php echo (int) ($user_id ?? 0) ?: ''; ?>">
-            <input class="form-control" style="width:8rem" type="number" name="team_id" placeholder="team" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>">
+            <input class="form-control" style="width:8rem" type="number" name="user_id" placeholder="<?php echo htmlspecialchars(__('crm_user_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($user_id ?? 0) ?: ''; ?>">
+            <input class="form-control" style="width:8rem" type="number" name="team_id" placeholder="<?php echo htmlspecialchars(__('crm_team_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>">
             <select class="form-select" name="pipeline_id">
                 <option value="0"><?php echo htmlspecialchars(__('crm_pipeline'), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php foreach (($pipelines ?? []) as $p): ?>
@@ -37,7 +37,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
     <div class="row g-3">
         <div class="col-lg-6">
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_rep_performance'), ENT_QUOTES, 'UTF-8'); ?></h2>
-            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_win_pct'), ENT_QUOTES, 'UTF-8'); ?></th><th>Amt</th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th><?php echo htmlspecialchars(__('crm_rep'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_won'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_win_pct'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('crm_amount'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead><tbody>
             <?php foreach (($dash['extra']['team_performance'] ?? []) as $row): ?>
                 <tr><td>#<?php echo (int) $row['owner_user_id']; ?></td><td><?php echo (int) $row['won_count']; ?></td><td><?php echo htmlspecialchars((string) round($row['win_rate'] * 100, 1), ENT_QUOTES, 'UTF-8'); ?>%</td><td><?php echo htmlspecialchars(number_format($row['won_amount'], 2), ENT_QUOTES, 'UTF-8'); ?></td></tr>
             <?php endforeach; ?>
@@ -53,8 +53,8 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
                     <dl class="row mb-0 small">
                         <?php foreach ($health as $hk => $hv): ?>
                             <?php if (!is_scalar($hv)) { continue; } ?>
-                            <dt class="col-6 text-muted"><?php echo htmlspecialchars((string) $hk, ENT_QUOTES, 'UTF-8'); ?></dt>
-                            <dd class="col-6"><?php echo htmlspecialchars((string) $hv, ENT_QUOTES, 'UTF-8'); ?></dd>
+                            <dt class="col-6 text-muted"><?php echo htmlspecialchars(rateb_ui((string) $hk), ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dd class="col-6"><?php echo htmlspecialchars(is_string($hv) && !is_numeric($hv) ? rateb_ui((string) $hv) : (string) $hv, ENT_QUOTES, 'UTF-8'); ?></dd>
                         <?php endforeach; ?>
                     </dl>
                 <?php endif; ?>
@@ -67,7 +67,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_bottlenecks'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <ul class="list-group">
                 <?php foreach (($dash['extra']['bottlenecks'] ?? []) as $b): ?>
-                <li class="list-group-item"><?php echo htmlspecialchars((string) ($b['stage'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> — <?php echo htmlspecialchars((string) ($b['avg_duration_days'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>d</li>
+                <li class="list-group-item"><?php echo htmlspecialchars(rateb_ui((string) ($b['stage'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> — <?php echo htmlspecialchars((string) ($b['avg_duration_days'] ?? 0), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(__('crm_days_short'), ENT_QUOTES, 'UTF-8'); ?></li>
                 <?php endforeach; ?>
                 <?php if (($dash['extra']['bottlenecks'] ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>
@@ -88,7 +88,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_daily_actions'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <ul class="list-group">
                 <?php foreach (($dash['extra']['workspace']['daily_sales_actions'] ?? []) as $a): ?>
-                <li class="list-group-item"><?php echo htmlspecialchars((string) (($a['type'] ?? '') . ': ' . ($a['label'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></li>
+                <li class="list-group-item"><?php echo htmlspecialchars(rateb_ui((string) (($a['type'] ?? '') . ': ' . ($a['label'] ?? ''))), ENT_QUOTES, 'UTF-8'); ?></li>
                 <?php endforeach; ?>
                 <?php if (($dash['extra']['workspace']['daily_sales_actions'] ?? []) === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>
             </ul>
@@ -107,7 +107,7 @@ $role = (string) ($role ?? $dash['role'] ?? 'rep');
                             'won_total', 'conversions', 'tasks_in_period',
                         ] as $ak): ?>
                             <?php if (!array_key_exists($ak, $act) || !is_scalar($act[$ak])) { continue; } ?>
-                            <dt class="col-7 text-muted"><?php echo htmlspecialchars($ak, ENT_QUOTES, 'UTF-8'); ?></dt>
+                            <dt class="col-7 text-muted"><?php echo htmlspecialchars(rateb_ui($ak), ENT_QUOTES, 'UTF-8'); ?></dt>
                             <dd class="col-5"><?php echo htmlspecialchars((string) $act[$ak], ENT_QUOTES, 'UTF-8'); ?></dd>
                         <?php endforeach; ?>
                     </dl>

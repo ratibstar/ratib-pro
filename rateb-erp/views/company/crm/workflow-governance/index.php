@@ -18,9 +18,11 @@ declare(strict_types=1);
             <?php foreach (($rules ?? []) as $rule): ?>
             <div class="border rounded p-3 mb-2 small">
                 <div class="fw-semibold"><?php echo htmlspecialchars((string) (($rule['stage_name'] ?? '') . ' #' . ($rule['stage_id'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div>fields: <?php echo htmlspecialchars((string) ($rule['required_fields_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div>actions: <?php echo htmlspecialchars((string) ($rule['required_actions_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div>SLA: <?php echo htmlspecialchars((string) ($rule['sla_hours'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>h · ownership: <?php echo !empty($rule['ownership_required']) ? 'yes' : 'no'; ?> · approval: <?php echo !empty($rule['approval_required']) ? 'yes' : 'no'; ?></div>
+                <div><?php echo htmlspecialchars(__('crm_fields'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['required_fields_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div><?php echo htmlspecialchars(__('crm_actions'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['required_actions_json'] ?? '[]'), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div><?php echo htmlspecialchars(__('crm_sla_hours'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars((string) ($rule['sla_hours'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_ownership_flag'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo !empty($rule['ownership_required']) ? htmlspecialchars(__('yes'), ENT_QUOTES, 'UTF-8') : htmlspecialchars(__('no'), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_approval_flag'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo !empty($rule['approval_required']) ? htmlspecialchars(__('yes'), ENT_QUOTES, 'UTF-8') : htmlspecialchars(__('no'), ENT_QUOTES, 'UTF-8'); ?></div>
             </div>
             <?php endforeach; ?>
             <?php if (($rules ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
@@ -36,11 +38,11 @@ declare(strict_types=1);
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="mb-2"><label class="form-label">Required fields (comma)</label><input class="form-control form-control-sm" name="required_fields" placeholder="name,amount,owner_user_id"></div>
-                <div class="mb-2"><label class="form-label">Required actions (comma)</label><input class="form-control form-control-sm" name="required_actions" placeholder="call,meeting"></div>
-                <div class="mb-2"><label class="form-label">SLA hours</label><input class="form-control form-control-sm" type="number" name="sla_hours" min="1"></div>
-                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="ownership_required" value="1" checked><label class="form-check-label">Ownership required</label></div>
-                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="approval_required" value="1"><label class="form-check-label">Approval required</label></div>
+                <div class="mb-2"><label class="form-label"><?php echo htmlspecialchars(__('crm_required_fields'), ENT_QUOTES, 'UTF-8'); ?></label><input class="form-control form-control-sm" name="required_fields" placeholder="<?php echo htmlspecialchars(__('crm_owner_user_id'), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                <div class="mb-2"><label class="form-label"><?php echo htmlspecialchars(__('crm_required_actions'), ENT_QUOTES, 'UTF-8'); ?></label><input class="form-control form-control-sm" name="required_actions" placeholder="<?php echo htmlspecialchars(__('crm_call') . ', ' . __('crm_meeting'), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                <div class="mb-2"><label class="form-label"><?php echo htmlspecialchars(__('crm_sla_hours'), ENT_QUOTES, 'UTF-8'); ?></label><input class="form-control form-control-sm" type="number" name="sla_hours" min="1"></div>
+                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="ownership_required" value="1" checked id="wg-own"><label class="form-check-label" for="wg-own"><?php echo htmlspecialchars(__('crm_ownership_required'), ENT_QUOTES, 'UTF-8'); ?></label></div>
+                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="approval_required" value="1" id="wg-appr"><label class="form-check-label" for="wg-appr"><?php echo htmlspecialchars(__('crm_approval_required'), ENT_QUOTES, 'UTF-8'); ?></label></div>
                 <button class="btn btn-sm btn-primary" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
             <?php endif; ?>
@@ -49,7 +51,9 @@ declare(strict_types=1);
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_sla_breaches'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php foreach (($sla_breaches ?? []) as $b): ?>
             <div class="border rounded p-2 mb-2 small">
-                <?php echo htmlspecialchars((string) (($b['name'] ?? '') . ' · ' . ($b['stage_name'] ?? '') . ' · SLA ' . ($b['sla_hours'] ?? '') . 'h'), ENT_QUOTES, 'UTF-8'); ?>
+                <?php echo htmlspecialchars((string) ($b['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                · <?php echo htmlspecialchars(rateb_ui((string) ($b['stage_name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                · <?php echo htmlspecialchars(__('crm_sla_hours'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($b['sla_hours'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
             </div>
             <?php endforeach; ?>
             <?php if (($sla_breaches ?? []) === []): ?><p class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>

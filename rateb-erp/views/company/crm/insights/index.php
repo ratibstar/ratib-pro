@@ -49,7 +49,7 @@ $cards = is_array($data['cards'] ?? null) ? $data['cards'] : [];
                         <?php foreach ($risks as $r): ?>
                         <li class="mb-2 pb-2 border-bottom">
                             <div class="fw-semibold">#<?php echo (int) ($r['id'] ?? 0); ?> · <?php echo htmlspecialchars((string) ($r['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                            <div class="text-muted"><?php echo htmlspecialchars(implode(', ', array_map('strval', $r['signals'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="text-muted"><?php echo htmlspecialchars(implode('، ', array_map(static fn ($s) => rateb_ui((string) $s), $r['signals'] ?? [])), ENT_QUOTES, 'UTF-8'); ?></div>
                         </li>
                         <?php endforeach; ?>
                     </ul>

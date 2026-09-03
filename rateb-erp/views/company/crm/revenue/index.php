@@ -22,7 +22,7 @@ $data = $data ?? [];
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_weighted_pipeline'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($pipe['weighted_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_revenue_tracked'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($pipe['tracked_revenue'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_win_rate'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($wl['win_rate'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_sales_cycle'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($cycle['avg_days'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>d</div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_sales_cycle'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($cycle['avg_days'] ?? 0), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(__('crm_days_short'), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
     </div>
     <div class="row g-3">
         <div class="col-lg-6">

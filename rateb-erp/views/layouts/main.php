@@ -1251,7 +1251,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 if ($topbarUserName !== '') { ?>
                 <span class="rateb-topbar-user small d-inline-flex align-items-center gap-1" title="<?php echo Rateb\App\Core\View::escape($topbarUserName); ?>">
                     <i class="fas fa-user-circle" aria-hidden="true"></i>
-                    <span class="rateb-topbar-user__name"><?php echo Rateb\App\Core\View::escape($topbarUserName); ?></span>
+                    <span class="rateb-topbar-user__name"><?php echo Rateb\App\Core\View::escape(rateb_ui($topbarUserName)); ?></span>
                 </span>
                 <?php } ?>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">

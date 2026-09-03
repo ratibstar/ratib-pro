@@ -86,8 +86,8 @@ $customer = $customer ?? [];
             <ul class="list-group mb-3">
                 <?php foreach (($health_history ?? []) as $h): ?>
                 <li class="list-group-item small">
-                    <?php echo (int) ($h['health_score'] ?? 0); ?> · <?php echo htmlspecialchars((string) ($h['health_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                    · <?php echo htmlspecialchars(__('crm_risk'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) ($h['renewal_risk'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                    <?php echo (int) ($h['health_score'] ?? 0); ?> · <?php echo htmlspecialchars(rateb_ui((string) ($h['health_status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(__('crm_risk'), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars(rateb_ui((string) ($h['renewal_risk'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                     <div class="text-muted"><?php echo htmlspecialchars((string) ($h['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>

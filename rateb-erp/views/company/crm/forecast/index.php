@@ -32,13 +32,13 @@ $forecast = $forecast ?? [];
             </select>
         </div>
         <div class="col-md-2"><input class="form-control" type="number" name="team_id" placeholder="<?php echo htmlspecialchars(__('crm_team_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($team_id ?? 0) ?: ''; ?>"></div>
-        <div class="col-md-2"><input class="form-control" type="number" name="user_id" placeholder="rep_id" value="<?php echo (int) ($user_id ?? 0) ?: ''; ?>"></div>
+        <div class="col-md-2"><input class="form-control" type="number" name="user_id" placeholder="<?php echo htmlspecialchars(__('crm_user_id'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo (int) ($user_id ?? 0) ?: ''; ?>"></div>
         <div class="col-md-2"><button class="btn btn-primary w-100" type="submit"><?php echo htmlspecialchars(__('apply'), ENT_QUOTES, 'UTF-8'); ?></button></div>
     </form>
     <div class="row g-3 mb-4">
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_weighted_pipeline'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars(number_format((float) ($forecast['weighted_amount'] ?? 0), 2), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
         <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_forecast_confidence'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-4"><?php echo htmlspecialchars((string) ($forecast['confidence_score'] ?? 0), ENT_QUOTES, 'UTF-8'); ?>%</div></div></div>
-        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_scope'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo htmlspecialchars((string) ($forecast['forecast_scope'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($forecast['period_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
+        <div class="col-6 col-md"><div class="border rounded p-3"><div class="small text-muted"><?php echo htmlspecialchars(__('crm_scope'), ENT_QUOTES, 'UTF-8'); ?></div><div class="fs-5"><?php echo htmlspecialchars(rateb_ui((string) ($forecast['forecast_scope'] ?? '')), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) ($forecast['period_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div></div></div>
     </div>
     <div class="row g-3">
         <div class="col-lg-6">

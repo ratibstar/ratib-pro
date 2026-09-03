@@ -93,7 +93,7 @@ $filters = $filters ?? [];
                     <div class="small text-muted">
                         <?php echo htmlspecialchars((string) ($row['amount'] ?? '0'), ENT_QUOTES, 'UTF-8'); ?>
                         · <?php echo htmlspecialchars(__('crm_score'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) ($row['intelligence_score'] ?? 0); ?>
-                        · <?php echo htmlspecialchars((string) ($row['risk_level'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                        · <?php echo htmlspecialchars(rateb_ui((string) ($row['risk_level'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                         <?php if (!empty($row['is_stale'])): ?> · <?php echo htmlspecialchars(__('crm_stale'), ENT_QUOTES, 'UTF-8'); ?><?php endif; ?>
                     </div>
                     <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/opportunities') . '/' . (int) $row['id'] . '/score'), ENT_QUOTES, 'UTF-8'); ?>" class="mt-1">

@@ -18,7 +18,7 @@ $members_by_team = $members_by_team ?? [];
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/teams')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="row g-2">
-                    <div class="col-md-4"><input class="form-control" name="code" placeholder="code"></div>
+                    <div class="col-md-4"><input class="form-control" name="code" placeholder="<?php echo htmlspecialchars(__('code'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="col-md-5"><input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
                     <div class="col-md-3"><button class="btn btn-primary w-100" type="submit"><?php echo htmlspecialchars(__('create'), ENT_QUOTES, 'UTF-8'); ?></button></div>
                 </div>
@@ -31,14 +31,14 @@ $members_by_team = $members_by_team ?? [];
                 </div>
                 <ul class="small mb-2">
                     <?php foreach (($members_by_team[(int) $team['id']] ?? []) as $m): ?>
-                    <li>user #<?php echo (int) ($m['user_id'] ?? 0); ?> — <?php echo htmlspecialchars((string) ($m['role_code'] ?? 'member'), ENT_QUOTES, 'UTF-8'); ?></li>
+                    <li><?php echo htmlspecialchars(__('user'), ENT_QUOTES, 'UTF-8'); ?> #<?php echo (int) ($m['user_id'] ?? 0); ?> — <?php echo htmlspecialchars(rateb_ui((string) ($m['role_code'] ?? 'member')), ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php endforeach; ?>
                 </ul>
                 <?php if (!empty($canManage)): ?>
                 <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/teams') . '/' . (int) $team['id'] . '/members'), ENT_QUOTES, 'UTF-8'); ?>" class="d-flex gap-2">
                     <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input class="form-control form-control-sm" name="user_id" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_user_id'), ENT_QUOTES, 'UTF-8'); ?>" required>
-                    <input class="form-control form-control-sm" name="role_code" placeholder="role" value="member">
+                    <input class="form-control form-control-sm" name="role_code" placeholder="<?php echo htmlspecialchars(__('role'), ENT_QUOTES, 'UTF-8'); ?>" value="member">
                     <button class="btn btn-sm btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('add'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </form>
                 <?php endif; ?>
@@ -53,9 +53,9 @@ $members_by_team = $members_by_team ?? [];
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/teams/territories')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="row g-2">
-                    <div class="col-md-3"><input class="form-control" name="code" placeholder="code"></div>
+                    <div class="col-md-3"><input class="form-control" name="code" placeholder="<?php echo htmlspecialchars(__('code'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="col-md-4"><input class="form-control" name="name" required placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="col-md-3"><input class="form-control" name="region" placeholder="region"></div>
+                    <div class="col-md-3"><input class="form-control" name="region" placeholder="<?php echo htmlspecialchars(__('region'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit"><?php echo htmlspecialchars(__('create'), ENT_QUOTES, 'UTF-8'); ?></button></div>
                 </div>
             </form>
@@ -75,9 +75,9 @@ $members_by_team = $members_by_team ?? [];
             <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/teams/ownership-rules')), ENT_QUOTES, 'UTF-8'); ?>" class="border rounded p-3 mb-3">
                 <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="row g-2">
-                    <div class="col-md-4"><input class="form-control" name="rule_key" placeholder="rule_key" required></div>
+                    <div class="col-md-4"><input class="form-control" name="rule_key" placeholder="<?php echo htmlspecialchars(__('rule_key'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
                     <div class="col-md-4"><input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?>" required></div>
-                    <div class="col-md-2"><input class="form-control" name="owner_user_id" type="number" min="1" placeholder="owner"></div>
+                    <div class="col-md-2"><input class="form-control" name="owner_user_id" type="number" min="1" placeholder="<?php echo htmlspecialchars(__('crm_owner_user_id'), ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button></div>
                 </div>
             </form>
@@ -86,7 +86,9 @@ $members_by_team = $members_by_team ?? [];
                 <?php foreach ($ownership_rules as $r): ?>
                 <li class="list-group-item">
                     <div class="fw-semibold"><?php echo htmlspecialchars((string) ($r['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div class="small text-muted"><?php echo htmlspecialchars((string) (($r['rule_key'] ?? '') . ' · ' . ($r['entity_type'] ?? '') . ' · ' . (!empty($r['is_enabled']) ? 'on' : 'off')), ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($r['rule_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                        · <?php echo htmlspecialchars(rateb_ui((string) ($r['entity_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                        · <?php echo htmlspecialchars(!empty($r['is_enabled']) ? __('on') : __('off'), ENT_QUOTES, 'UTF-8'); ?></div>
                 </li>
                 <?php endforeach; ?>
                 <?php if ($ownership_rules === []): ?><li class="list-group-item text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></li><?php endif; ?>

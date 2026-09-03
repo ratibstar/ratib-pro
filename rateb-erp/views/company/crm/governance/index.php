@@ -24,11 +24,14 @@ $health = $health ?? [];
             <?php foreach (($issues ?? []) as $issue): ?>
             <div class="border rounded p-3 mb-2">
                 <div class="fw-semibold"><?php echo htmlspecialchars((string) ($issue['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
-                <div class="small text-muted"><?php echo htmlspecialchars((string) (($issue['entity_type'] ?? '') . ' #' . ($issue['entity_id'] ?? '') . ' · ' . ($issue['severity'] ?? '') . ' · ' . ($issue['issue_code'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($issue['entity_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    #<?php echo (int) ($issue['entity_id'] ?? 0); ?>
+                    · <?php echo htmlspecialchars(rateb_ui((string) ($issue['severity'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
+                    · <?php echo htmlspecialchars(rateb_ui((string) ($issue['issue_code'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
                 <?php if (!empty($canManage)): ?>
                 <form method="post" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('crm/governance/issues') . '/' . (int) $issue['id'] . '/resolve'), ENT_QUOTES, 'UTF-8'); ?>" class="mt-2 d-flex gap-2">
                     <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars(\Rateb\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8'); ?>">
-                    <input class="form-control form-control-sm" name="note" placeholder="note">
+                    <input class="form-control form-control-sm" name="note" placeholder="<?php echo htmlspecialchars(__('note'), ENT_QUOTES, 'UTF-8'); ?>">
                     <button class="btn btn-sm btn-outline-success" type="submit"><?php echo htmlspecialchars(__('resolve'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </form>
                 <?php endif; ?>

@@ -47,7 +47,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
                         <?php foreach ($scoring as $ev): ?>
                         <li class="mb-2 pb-2 border-bottom">
                             #<?php echo (int) ($ev['opportunity_id'] ?? 0); ?>
-                            · <?php echo htmlspecialchars((string) ($ev['score_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                            · <?php echo htmlspecialchars(rateb_ui((string) ($ev['score_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                             · <?php echo htmlspecialchars((string) (($ev['from'] ?? '') . ' → ' . ($ev['to'] ?? '') . ' (' . ($ev['trend'] ?? '') . ')'), ENT_QUOTES, 'UTF-8'); ?>
                         </li>
                         <?php endforeach; ?>
@@ -65,7 +65,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
                         <?php foreach ($anomalies as $a): ?>
                         <li class="mb-2 pb-2 border-bottom">
                             #<?php echo (int) ($a['id'] ?? 0); ?>
-                            · <?php echo htmlspecialchars((string) ($a['anomaly'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                            · <?php echo htmlspecialchars(rateb_ui((string) ($a['anomaly'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                             · <?php echo htmlspecialchars((string) ($a['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                         </li>
                         <?php endforeach; ?>
@@ -84,7 +84,7 @@ $reps = is_array($activity['rep_effectiveness'] ?? null) ? array_slice($activity
                         <li class="mb-2 pb-2 border-bottom">
                             #<?php echo (int) ($r['id'] ?? 0); ?>
                             · <?php echo htmlspecialchars((string) ($r['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
-                            · <?php echo htmlspecialchars(implode(', ', array_map('strval', $r['signals'] ?? [])), ENT_QUOTES, 'UTF-8'); ?>
+                            · <?php echo htmlspecialchars(implode('، ', array_map(static fn ($s) => rateb_ui((string) $s), $r['signals'] ?? [])), ENT_QUOTES, 'UTF-8'); ?>
                         </li>
                         <?php endforeach; ?>
                     </ul>

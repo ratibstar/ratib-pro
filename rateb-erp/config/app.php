@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260903-ar-crm-full-v1');
+define('RATEB_ASSET_BUILD', '20260903-ar-crm-deep-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2250,6 +2250,17 @@ if (!function_exists('rateb_ui')) {
         if (function_exists('rateb_locale') && rateb_locale() === 'en') {
             return $text;
         }
+        // "at_risk_customer: pp" / "code: value"
+        if (preg_match('/^([a-z][a-z0-9_]*)\s*:\s*(.+)$/i', $text, $m)) {
+            $left = rateb_ui($m[1]);
+            $right = trim($m[2]);
+            // Don't recurse endlessly on plain names; translate code-like right sides only.
+            if (preg_match('/^[a-z][a-z0-9_]*$/i', $right)) {
+                $right = rateb_ui($right);
+            }
+
+            return $left . ': ' . $right;
+        }
         $direct = __($text);
         if ($direct !== $text) {
             return $direct;
@@ -2257,7 +2268,7 @@ if (!function_exists('rateb_ui')) {
         $snake = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '_', $text));
         $snake = trim($snake, '_');
         if ($snake !== '') {
-            foreach (['crm_rule_', 'crm_', 'status_', ''] as $prefix) {
+            foreach (['crm_metric_', 'crm_rule_', 'crm_', 'status_', ''] as $prefix) {
                 $key = $prefix . $snake;
                 $t = __($key);
                 if ($t !== $key) {

@@ -39,8 +39,8 @@ $errors = is_array($report['check_errors'] ?? null) ? $report['check_errors'] : 
             <tbody>
             <?php foreach ($findings as $f): ?>
                 <tr>
-                    <td class="small"><?php echo htmlspecialchars((string) ($f['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string) ($f['severity'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td class="small"><?php echo htmlspecialchars(rateb_ui((string) ($f['code'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(rateb_ui((string) ($f['severity'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td class="small">#<?php echo (int) ($f['entity_id'] ?? 0); ?></td>
                     <td class="small"><?php echo htmlspecialchars((string) ($f['message'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td class="small"><?php echo htmlspecialchars((string) ($f['remediation'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
