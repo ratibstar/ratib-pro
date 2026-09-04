@@ -12,6 +12,16 @@ final class DatabaseErrorService
         if ($e instanceof \RuntimeException && !($e->getPrevious() instanceof PDOException)) {
             $msg = trim($e->getMessage());
             if ($msg !== '' && !self::looksLikePdoMessage($msg)) {
+                if (function_exists('rateb_error_message')) {
+                    return rateb_error_message($msg, $msg);
+                }
+                if (function_exists('__')) {
+                    $translated = __($msg);
+                    if ($translated !== $msg) {
+                        return $translated;
+                    }
+                }
+
                 return $msg;
             }
         }

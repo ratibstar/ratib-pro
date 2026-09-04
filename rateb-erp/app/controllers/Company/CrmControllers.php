@@ -1177,56 +1177,88 @@ final class CrmForecastController extends Controller
 /** Phase 7 — Governance + data quality. */
 final class CrmGovernanceController extends Controller
 {
-    public function index(): void
+    private function governanceUrl(): string
+    {
+        $path = rateb_app_route('crm/governance');
+
+        return function_exists('rateb_url_with_ops_company')
+            ? rateb_url_with_ops_company($path)
+            : rateb_url($path);
+    }
+
+    private function ensureTenant(): void
     {
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        $svc = new CrmGovernanceService();
-        $this->view('company/crm/governance/index', [
-            'title' => __('crm_governance'),
-            'health' => $svc->healthDashboard(),
-            'issues' => $svc->listOpenIssues(50),
-            'automation_gov' => $svc->automationGovernanceCheck(),
-            'canManage' => rateb_can('crm.governance.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'),
-        ], 'main');
+    }
+
+    private function flashException(\Throwable $e): void
+    {
+        $raw = trim($e->getMessage());
+        $msg = function_exists('rateb_error_message')
+            ? rateb_error_message($raw, $raw)
+            : (function_exists('__') ? __($raw) : $raw);
+        SessionManager::flash('error', $msg !== '' ? $msg : $raw);
+    }
+
+    public function index(): void
+    {
+        $this->ensureTenant();
+        try {
+            $svc = new CrmGovernanceService();
+            $this->view('company/crm/governance/index', [
+                'title' => __('crm_governance'),
+                'health' => $svc->healthDashboard(),
+                'issues' => $svc->listOpenIssues(50),
+                'automation_gov' => $svc->automationGovernanceCheck(),
+                'canManage' => rateb_can('crm.governance.manage') || rateb_can('crm.manage') || rateb_can('crm.admin'),
+                'ops_company_id' => function_exists('rateb_resolve_ops_company_id') ? (int) rateb_resolve_ops_company_id() : 0,
+            ], 'main');
+        } catch (\Throwable $e) {
+            $this->flashException($e);
+            $this->redirect(rateb_url('admin'));
+        }
     }
 
     public function scan(): void
     {
+        $this->ensureTenant();
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+            $this->redirect($this->governanceUrl());
         }
         try {
             $r = (new CrmGovernanceService())->runDataQualityScan(true);
             SessionManager::flash('success', __('saved_ok') . ' — ' . __('crm_issues_created', ['n' => (int) ($r['created'] ?? 0)]));
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $this->flashException($e);
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        $this->redirect($this->governanceUrl());
     }
 
     public function resolve(array $params): void
     {
+        $this->ensureTenant();
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+            $this->redirect($this->governanceUrl());
         }
         try {
             (new CrmGovernanceService())->resolveIssue((int) ($params['id'] ?? 0), trim((string) ($_POST['note'] ?? '')) ?: null);
             SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $this->flashException($e);
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        $this->redirect($this->governanceUrl());
     }
 
     public function saveSetting(): void
     {
+        $this->ensureTenant();
         if (!Csrf::validate($_POST['_csrf'] ?? null)) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+            $this->redirect($this->governanceUrl());
         }
         try {
             $key = trim((string) ($_POST['setting_key'] ?? ''));
@@ -1234,9 +1266,9 @@ final class CrmGovernanceController extends Controller
             (new CrmGovernanceService())->saveSetting($key, $decoded);
             SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+            $this->flashException($e);
         }
-        $this->redirect(rateb_url(rateb_app_route('crm/governance')));
+        $this->redirect($this->governanceUrl());
     }
 }
 
