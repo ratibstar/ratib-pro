@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260904-crm-gov-forms-v1');
+define('RATEB_ASSET_BUILD', '20260904-crm-gov-ar-v2');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -2177,9 +2177,14 @@ if (!function_exists('rateb_log_title')) {
             'Contact created' => 'crm_log_contact_created',
             'Note added' => 'crm_log_note_added',
             'Task completed' => 'crm_log_task_completed',
+            'Lead has no owner' => 'Lead has no owner',
+            'Opportunity has no owner' => 'Opportunity has no owner',
         ];
         if (isset($exact[$title])) {
             return __($exact[$title]);
+        }
+        if (preg_match('/^Missing required field:\s*(.+)$/i', $title, $m)) {
+            return __('crm_missing_required_field', ['field' => rateb_ui(trim($m[1]))]);
         }
 
         if (preg_match('/^Lead status:\s*(.+)$/i', $title, $m)) {

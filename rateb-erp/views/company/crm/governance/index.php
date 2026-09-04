@@ -37,7 +37,23 @@ $decodeSetting = static function (array $s): array {
             <h2 class="h5"><?php echo htmlspecialchars(__('crm_data_quality_issues'), ENT_QUOTES, 'UTF-8'); ?></h2>
             <?php foreach (($issues ?? []) as $issue): ?>
             <div class="border rounded p-3 mb-2">
-                <div class="fw-semibold"><?php echo htmlspecialchars(rateb_ui((string) ($issue['message'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="fw-semibold"><?php
+                    $issueMsg = (string) ($issue['message'] ?? '');
+                    $issueMeta = [];
+                    if (!empty($issue['meta_json'])) {
+                        $decodedMeta = json_decode((string) $issue['meta_json'], true);
+                        if (is_array($decodedMeta)) {
+                            $issueMeta = $decodedMeta;
+                        }
+                    } elseif (is_array($issue['meta'] ?? null)) {
+                        $issueMeta = $issue['meta'];
+                    }
+                    if (($issue['issue_code'] ?? '') === 'missing_field' && !empty($issueMeta['field'])) {
+                        echo htmlspecialchars(__('crm_missing_required_field', ['field' => rateb_ui((string) $issueMeta['field'])]), ENT_QUOTES, 'UTF-8');
+                    } else {
+                        echo htmlspecialchars(rateb_ui($issueMsg), ENT_QUOTES, 'UTF-8');
+                    }
+                ?></div>
                 <div class="small text-muted"><?php echo htmlspecialchars(rateb_ui((string) ($issue['entity_type'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                     #<?php echo (int) ($issue['entity_id'] ?? 0); ?>
                     · <?php echo htmlspecialchars(rateb_ui((string) ($issue['severity'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
