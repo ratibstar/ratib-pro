@@ -153,25 +153,78 @@
     max-width: none;
 }
 
-/* Companies list — readable action labels (avoid icon-only crush) */
+/* Companies list — show data cells; keep actions compact (icon-only) */
 .rateb-companies-table {
     table-layout: auto !important;
+    width: max-content;
+    min-width: 100%;
+}
+.rateb-companies-table td:not(.rateb-actions-cell):not(.rateb-bulk-td),
+.rateb-companies-table th:not(.rateb-th-actions):not(.rateb-bulk-th) {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+    word-break: break-word;
+    vertical-align: middle;
+}
+.rateb-companies-table td.rateb-cell-clip,
+.rateb-companies-table td.rateb-ar-text,
+.rateb-companies-table td.rateb-ltr-num,
+.rateb-companies-table td.rateb-td-money {
+    max-width: 16rem !important;
+    min-width: 6.5rem;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+}
+.rateb-companies-table td[data-col-name="name"],
+.rateb-companies-table th[data-col-name="name"] {
+    min-width: 10rem;
+    max-width: 18rem !important;
+}
+.rateb-companies-table td[data-col-name="email"],
+.rateb-companies-table td[data-col-name="site_url"],
+.rateb-companies-table td[data-col-name="agency_login_url"] {
+    min-width: 11rem;
+    max-width: 20rem !important;
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: isolate;
+}
+.rateb-companies-table td[data-col-name="site_url"] a,
+.rateb-companies-table td[data-col-name="agency_login_url"] a,
+.rateb-companies-table td[data-col-name="email"] {
+    word-break: break-all;
 }
 .rateb-companies-table th.rateb-th-actions,
 .rateb-companies-table td.rateb-actions-cell {
-    min-width: 18rem;
-    width: 22%;
+    min-width: 7.25rem;
+    width: 1%;
 }
 .rateb-companies-table td.rateb-actions-cell > .rateb-actions {
-    flex-wrap: wrap;
-    max-width: 100%;
+    flex-wrap: nowrap;
+    gap: 0.2rem;
+    max-width: none;
 }
-.rateb-companies-table .rateb-btn-label {
-    display: inline;
-    margin-inline-start: 0.25rem;
+.rateb-companies-table .rateb-btn-label,
+.rateb-companies-table .rateb-actions .btn .rateb-btn-label {
+    display: none !important;
+}
+.rateb-companies-table .rateb-actions .btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+.rateb-companies-table .rateb-actions .dropdown-toggle {
+    padding-inline: 0.35rem;
 }
 .rateb-companies-table .dropdown-menu {
     z-index: 1080;
+}
+.rateb-card-header .btn.btn-sm {
+    padding: 0.25rem 0.55rem;
+    font-size: 0.8125rem;
 }
 
 .rateb-main table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table),

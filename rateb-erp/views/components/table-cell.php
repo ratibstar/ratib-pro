@@ -2,6 +2,14 @@
 /** @var mixed $value */
 /** @var array<string, mixed> $col */
 $meta = rateb_table_cell_meta($value ?? '', $col ?? []);
+$colNameAttr = (string) ($col['name'] ?? '');
+if ($colNameAttr === 'erp_status' && function_exists('rateb_ui')) {
+    $rawStatus = trim((string) ($value ?? ''));
+    if ($rawStatus !== '' && $rawStatus !== '—') {
+        $meta['display'] = rateb_ui($rawStatus);
+        $meta['title'] = $meta['display'];
+    }
+}
 $titleAttr = ($meta['title'] ?? '') !== '' && ($meta['title'] ?? '') !== '—'
     ? ' title="' . Rateb\App\Core\View::escape((string) $meta['title']) . '"'
     : '';
@@ -24,4 +32,10 @@ if (($meta['mode'] ?? '') === 'badge') {
     return;
 }
 ?>
-<td class="<?php echo Rateb\App\Core\View::escape(trim((string) ($meta['class'] ?? 'rateb-cell-clip'))); ?>"<?php echo $titleAttr . $dirAttr; ?>><?php echo Rateb\App\Core\View::escape((string) ($meta['display'] ?? '')); ?></td>
+<td class="<?php echo Rateb\App\Core\View::escape(trim((string) ($meta['class'] ?? 'rateb-cell-clip'))); ?>"<?php
+    echo $titleAttr . $dirAttr;
+    $colNameAttr = (string) ($col['name'] ?? '');
+    if ($colNameAttr !== '') {
+        echo ' data-col-name="' . Rateb\App\Core\View::escape($colNameAttr) . '"';
+    }
+?>><?php echo Rateb\App\Core\View::escape((string) ($meta['display'] ?? '')); ?></td>

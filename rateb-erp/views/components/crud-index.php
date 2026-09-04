@@ -95,7 +95,7 @@ $ratebRowRecordLabel = static function (array $row): string {
         <span><?php echo Rateb\App\Core\View::escape($title); ?></span>
         <div class="d-flex flex-wrap gap-2">
         <?php if ($isCompanies) { ?>
-        <a href="<?php echo rateb_url('admin/company-permissions'); ?>" class="btn btn-info btn-sm">
+        <a href="<?php echo rateb_url('admin/company-permissions'); ?>" class="btn btn-info btn-sm" title="<?php echo Rateb\App\Core\View::escape(__('company_permissions')); ?>">
             <i class="fas fa-toggle-on"></i> <?php echo __('company_permissions'); ?>
         </a>
         <?php } ?>
@@ -198,7 +198,10 @@ $ratebRowRecordLabel = static function (array $row): string {
                 <thead>
                 <tr>
                     <?php foreach ($columns as $col) { ?>
-                    <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
+                    <th<?php
+                        $thName = (string) ($col['name'] ?? '');
+                        echo $thName !== '' ? ' data-col-name="' . Rateb\App\Core\View::escape($thName) . '"' : '';
+                    ?>><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
                     <?php if ($showActionsCol) { ?>
                     <th class="rateb-th-actions">
@@ -293,7 +296,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                                 $href = '';
                             }
                             ?>
-                    <td class="rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>">
+                    <td class="rateb-cell-clip" data-col-name="<?php echo Rateb\App\Core\View::escape($colName); ?>" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>">
                         <?php if ($href !== '') { ?>
                         <a href="<?php echo Rateb\App\Core\View::escape($href); ?>" target="_blank" rel="noopener" class="text-break"><?php echo Rateb\App\Core\View::escape((string) $val); ?></a>
                         <?php } else { ?>
@@ -363,22 +366,19 @@ $ratebRowRecordLabel = static function (array $row): string {
                         <?php if ($canCompanyPerms) { ?>
                         <a href="<?php echo rateb_url('admin/company-permissions/' . $cid); ?>" class="btn btn-sm btn-info" title="<?php echo Rateb\App\Core\View::escape(__('company_permissions')); ?>">
                             <i class="fas fa-toggle-on"></i>
-                            <span class="rateb-btn-label"><?php echo __('company_permissions'); ?></span>
                         </a>
                         <?php } ?>
                         <?php if ($companyProOpenUrl !== '') { ?>
                         <a href="<?php echo Rateb\App\Core\View::escape($companyProOpenUrl); ?>" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" title="<?php echo Rateb\App\Core\View::escape(__('company_open_rateb_pro')); ?>">
                             <i class="fas fa-external-link-alt"></i>
-                            <span class="rateb-btn-label"><?php echo __('company_open_rateb_pro'); ?></span>
                         </a>
                         <?php } ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . $cid . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" data-rateb-full-nav="1" title="<?php echo __('edit'); ?>">
                             <i class="fas fa-edit"></i>
-                            <span class="rateb-btn-label"><?php echo __('edit'); ?></span>
                         </a>
                         <div class="dropdown d-inline-block">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<?php echo __('actions'); ?>">
-                                <?php echo __('more'); ?>
+                                <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <?php if ($documentEntityType !== '') {

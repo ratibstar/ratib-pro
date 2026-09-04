@@ -290,16 +290,16 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         ];
         $this->indexFields = [
             ['name' => 'id', 'label' => 'id', 'type' => 'id'],
-            ['name' => 'agency_id', 'label' => 'agency_id', 'type' => 'number'],
+            ['name' => 'agency_id', 'label' => 'agency_id', 'type' => 'id'],
             ['name' => 'name', 'label' => 'name', 'type' => 'clip'],
             ['name' => 'site_url', 'label' => 'company_agency_site', 'type' => 'url'],
             ['name' => 'agency_login_url', 'label' => 'company_agency_login', 'type' => 'url'],
             ['name' => 'erp_status', 'label' => 'company_agency_erp_status', 'type' => 'clip'],
             ['name' => 'email', 'label' => 'email', 'type' => 'clip'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
-            ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'number'],
-            ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'number'],
-            ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
+            ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'id'],
+            ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'id'],
+            ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'id'],
         ];
         // Platform: create agencies in Control Panel — not a second create here.
         $this->createEnabled = !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
@@ -352,8 +352,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 ? rateb_agency_erp_login_url($site)
                 : '';
             $erpStatus = trim((string) ($agency['erp_status'] ?? ''));
+            $erpStatusKey = $erpStatus !== '' ? strtolower($erpStatus) : 'none';
             if ($search !== '') {
-                $hay = strtolower($name . ' ' . $site . ' ' . $loginUrl . ' ' . $agencyId . ' ' . $erpStatus);
+                $hay = strtolower($name . ' ' . $site . ' ' . $loginUrl . ' ' . $agencyId . ' ' . $erpStatusKey);
                 if (!str_contains($hay, strtolower($search))) {
                     continue;
                 }
@@ -374,7 +375,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 'name' => $name !== '' ? $name : (string) ($company['name'] ?? ''),
                 'site_url' => $site,
                 'agency_login_url' => $loginUrl,
-                'erp_status' => $erpStatus !== '' ? $erpStatus : '—',
+                'erp_status' => $erpStatusKey,
+                'user_limit' => (int) ($company['user_limit'] ?? 0),
+                'storage_limit_mb' => (int) ($company['storage_limit_mb'] ?? 0),
+                'plan_id' => (int) ($company['plan_id'] ?? 0),
             ]);
         }
 
