@@ -22,4 +22,11 @@ if (!empty($companyCreateAgencyHint)) { ?>
     <?php } ?>
 </div>
 <?php } ?>
+<?php if (!empty($companyListIncompleteHint)) { ?>
+<div class="alert alert-secondary mb-3">
+    <?php echo Rateb\App\Core\View::escape(__('company_list_unlinked_hint', [
+        'count' => (int) ($companyListIncompleteCount ?? 0),
+    ])); ?>
+</div>
+<?php } ?>
 <?php Rateb\App\Core\View::partial('crud-index', get_defined_vars()); ?>

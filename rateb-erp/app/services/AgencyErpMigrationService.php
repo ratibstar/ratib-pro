@@ -69,6 +69,21 @@ final class AgencyErpMigrationService
             }
         }
 
+        $byAgency = $companies->findByControlAgencyId($agencyId);
+        if ($byAgency !== null) {
+            $foundId = (int) ($byAgency['id'] ?? 0);
+            if ($foundId > 0) {
+                try {
+                    $this->linkAgencyToCompany($agencyId, $foundId);
+                } catch (Throwable $e) {
+                    // Row exists in ERP; CP link may already be set or temporarily unavailable.
+                    error_log('linkAgencyToCompany reuse #' . $agencyId . ': ' . $e->getMessage());
+                }
+
+                return $foundId;
+            }
+        }
+
         $name = trim((string) ($agency['name'] ?? ''));
         if ($name === '') {
             $name = 'Agency #' . $agencyId;
@@ -95,32 +110,61 @@ final class AgencyErpMigrationService
         $site = trim((string) ($agency['site_url'] ?? ''));
         $emailLocal = 'agency' . $agencyId;
         $email = $emailLocal . '@rateb.sa';
+        $byEmail = $companies->findByEmail($email);
+        if ($byEmail !== null) {
+            $foundId = (int) ($byEmail['id'] ?? 0);
+            if ($foundId > 0) {
+                try {
+                    $this->linkAgencyToCompany($agencyId, $foundId);
+                } catch (Throwable $e) {
+                    error_log('linkAgencyToCompany email-reuse #' . $agencyId . ': ' . $e->getMessage());
+                }
+
+                return $foundId;
+            }
+        }
 
         $isActive = (int) ($agency['is_active'] ?? 1) === 1;
         $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
         $status = $isSuspended ? 'suspended' : ($isActive ? 'active' : 'pending');
 
-        $companyId = (int) $companies->create([
-            'name' => $name,
-            'slug' => $slug,
-            'email' => $email,
-            'phone' => '',
-            'status' => $status,
-            'modules' => json_encode(\Rateb\App\Services\PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE),
-            'user_limit' => 25,
-            'storage_limit_mb' => 2048,
-            'settings' => json_encode([
-                'control_agency_id' => $agencyId,
-                'site_url' => $site,
-            ], JSON_UNESCAPED_UNICODE),
-        ]);
+        try {
+            $companyId = (int) $companies->create([
+                'name' => $name,
+                'slug' => $slug,
+                'email' => $email,
+                'phone' => '',
+                'status' => $status,
+                'modules' => json_encode(\Rateb\App\Services\PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE),
+                'user_limit' => 25,
+                'storage_limit_mb' => 2048,
+                'settings' => json_encode([
+                    'control_agency_id' => $agencyId,
+                    'site_url' => $site,
+                ], JSON_UNESCAPED_UNICODE),
+            ]);
+        } catch (Throwable $e) {
+            $byEmail = $companies->findByEmail($email);
+            if ($byEmail !== null) {
+                $foundId = (int) ($byEmail['id'] ?? 0);
+                if ($foundId > 0) {
+                    return $foundId;
+                }
+            }
+            throw $e;
+        }
         if ($companyId < 1) {
             throw new RuntimeException(__('company_admin_create_failed'));
         }
 
         (new AuthorizationService())->ensureCompanyRoles($companyId);
         (new BranchService())->ensureMainBranch($companyId);
-        $this->linkAgencyToCompany($agencyId, $companyId);
+        try {
+            $this->linkAgencyToCompany($agencyId, $companyId);
+        } catch (Throwable $e) {
+            // Company row is usable even if CP erp_company_id write fails.
+            error_log('linkAgencyToCompany after create #' . $agencyId . ': ' . $e->getMessage());
+        }
 
         return $companyId;
     }

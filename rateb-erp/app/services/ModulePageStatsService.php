@@ -831,6 +831,42 @@ final class ModulePageStatsService
         $m = $acct->metrics(null);
 
         if (str_contains($route, 'companies')) {
+            if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+                try {
+                    $agencies = (new AgencyErpMigrationService())->listControlAgencies(false);
+                    $total = 0;
+                    $active = 0;
+                    $pending = 0;
+                    $suspended = 0;
+                    foreach ($agencies as $agency) {
+                        if (!is_array($agency)) {
+                            continue;
+                        }
+                        if ((int) ($agency['id'] ?? 0) < 1) {
+                            continue;
+                        }
+                        $total++;
+                        $isActive = (int) ($agency['is_active'] ?? 1) === 1;
+                        $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
+                        if ($isSuspended) {
+                            $suspended++;
+                        } elseif ($isActive) {
+                            $active++;
+                        } else {
+                            $pending++;
+                        }
+                    }
+
+                    return $this->cards([
+                        ['label' => __('total_companies'), 'value' => $this->intStr($total), 'tone' => 'blue'],
+                        ['label' => __('active_companies'), 'value' => $this->intStr($active), 'tone' => 'green'],
+                        ['label' => __('pending_companies'), 'value' => $this->intStr($pending), 'tone' => 'orange'],
+                        ['label' => __('suspended_companies'), 'value' => $this->intStr($suspended), 'tone' => 'red'],
+                    ]);
+                } catch (\Throwable $e) {
+                    // Fall through to ERP DB company stats.
+                }
+            }
             return $this->cards([
                 ['label' => __('total_companies'), 'value' => $this->intStr((int) ($dash['total_companies'] ?? 0)), 'tone' => 'blue'],
                 ['label' => __('active_companies'), 'value' => $this->intStr((int) ($dash['active_companies'] ?? 0)), 'tone' => 'green'],

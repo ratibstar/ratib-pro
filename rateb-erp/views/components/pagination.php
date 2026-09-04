@@ -35,6 +35,7 @@ $queryBase = $preserveQuery !== [] ? $preserveQuery : rateb_list_query_except([$
                 $href = $pageUrl(array_merge($queryBase, [$perPageKey => $opt, $pageKey => 1]));
                 ?>
             <a href="<?php echo Rateb\App\Core\View::escape($href); ?>"
+               data-rateb-full-nav="1"
                class="btn btn-sm <?php echo $active ? 'btn-primary' : 'btn-outline-secondary'; ?>"><?php echo $opt; ?></a>
             <?php } ?>
         </div>
@@ -43,7 +44,7 @@ $queryBase = $preserveQuery !== [] ? $preserveQuery : rateb_list_query_except([$
             <ul class="pagination pagination-sm mb-0">
                 <?php for ($i = 1; $i <= $pages; $i++) { ?>
                 <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
-                    <a class="page-link" href="<?php echo $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $i])); ?>"><?php echo $i; ?></a>
+                    <a class="page-link" data-rateb-full-nav="1" href="<?php echo $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $i])); ?>"><?php echo $i; ?></a>
                 </li>
                 <?php } ?>
             </ul>

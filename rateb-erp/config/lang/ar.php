@@ -1155,6 +1155,8 @@ return [
     'company_create_use_control_panel' => 'إنشاء شركة/وكالة يتم من لوحة التحكم → إدارة الوكالات. ستظهر هنا تلقائياً بعد الإضافة.',
     'company_open_control_agencies' => 'فتح إدارة الوكالات',
     'company_provision_erp_hint' => 'بعض الشركات لا تحتوي على قاعدة بيانات ERP. افتح إدارة الوكالات واضغط "Fix All Agencies" لتجهيزها.',
+    'company_list_unlinked_hint' => ':count وكالة ظهرت في الجدول لكن لم تُربط بعد بسجل شركة في ERP — راجع إدارة الوكالات أو أعد تحميل الصفحة.',
+    'company_row_unlinked' => 'غير مربوطة',
     'company_provision_erp_now' => 'تجهيز ERP الآن',
     'company_open_rateb_pro' => 'فتح RATEB Pro',
     'company_agency_site' => 'رابط الوكالة',

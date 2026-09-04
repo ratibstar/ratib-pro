@@ -1552,7 +1552,17 @@
         // Online: parallel key matches (eliminate sequential miss stacking).
         // Preference unchanged: v36 primary keys[0..1], then one older warm bucket.
         // Open fallback while primary matches — no network, no duplicate fetch.
+        // Querystring pages (per_page / page / q): NEVER hit bare-pathname cache —
+        // that made pagination look broken until a later network win / multi-click.
         var onlineKeys = keys.slice(0, 2);
+        try {
+            var uOnline = new URL(href, root.location.href);
+            if (uOnline.search && uOnline.search.length > 1) {
+                onlineKeys = [uOnline.href, href].filter(function (k, i, arr) {
+                    return !!k && arr.indexOf(k) === i;
+                });
+            }
+        } catch (eOnlineKeys) { /* keep pathname keys */ }
         var fallbackName = OPS_PAGE_CACHE_FALLBACKS[0];
         var fallbackOpen = fallbackName
             ? root.caches.open(fallbackName).catch(function () { return null; })
@@ -1735,7 +1745,22 @@
             networkPromise = fetchNetworkHtml(href);
         }
 
-        var cachePromise = matchCachedHtml(href).then(function (cached) {
+        // Online list filters (per_page / page / q): skip Cache API so soft-nav cannot
+        // paint a stale bare-path copy while the address bar shows the new query.
+        var skipCacheOnline = false;
+        try {
+            var uList = new URL(href, root.location.href);
+            if (uList.search
+                && /(?:^|[?&])(?:per_page|page|q)=/i.test(uList.search)
+                && !isBrowserOffline()
+                && !isUiOffline()) {
+                skipCacheOnline = true;
+            }
+        } catch (eList) { /* ignore */ }
+
+        var cachePromise = skipCacheOnline
+            ? Promise.resolve(null)
+            : matchCachedHtml(href).then(function (cached) {
             if (!cached) {
                 return null;
             }

@@ -722,6 +722,14 @@ body:not(.rateb-rtl) .hc-article-card__open .fa-arrow-left {
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
+/* Keep FAB above pagination row-count buttons (was covering 5/10/25). */
+body:has(.rateb-pagination-bar) .rateb-help-fab {
+  bottom: 4.35rem;
+}
+body:has(.rateb-pagination-bar) .rateb-help-panel {
+  bottom: 7.4rem;
+}
+
 .rateb-help-fab:hover,
 .rateb-help-fab:focus-visible {
   transform: scale(1.05);

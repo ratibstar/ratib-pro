@@ -332,9 +332,11 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
     private function platformAgenciesIndexData(int $limit, int $offset, int $page, string $search): array
     {
         $svc = new \Rateb\App\Services\AgencyErpMigrationService();
-        $agencies = $svc->listControlAgencies(true);
+        // Full CP mirror (active + inactive/suspended) so the table matches agency inventory.
+        $agencies = $svc->listControlAgencies(false);
         $search = trim($search);
         $items = [];
+        $skipped = 0;
         foreach ($agencies as $agency) {
             if (!is_array($agency)) {
                 continue;
@@ -359,14 +361,35 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                     continue;
                 }
             }
+            $companyId = 0;
+            $company = null;
+            $syncError = '';
             try {
                 $companyId = $svc->ensurePlatformCompanyForAgency($agency);
+                $company = $this->model->find($companyId);
             } catch (\Throwable $e) {
-                error_log('ensurePlatformCompanyForAgency #' . $agencyId . ': ' . $e->getMessage());
-                continue;
+                $syncError = $e->getMessage();
+                error_log('ensurePlatformCompanyForAgency #' . $agencyId . ': ' . $syncError);
             }
-            $company = $this->model->find($companyId);
             if ($company === null) {
+                $isActive = (int) ($agency['is_active'] ?? 1) === 1;
+                $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
+                $status = $isSuspended ? 'suspended' : ($isActive ? 'active' : 'pending');
+                $items[] = [
+                    'id' => 0,
+                    'agency_id' => $agencyId,
+                    'name' => $name !== '' ? $name : ('Agency #' . $agencyId),
+                    'site_url' => $site,
+                    'agency_login_url' => $loginUrl,
+                    'erp_status' => $erpStatusKey,
+                    'email' => 'agency' . $agencyId . '@rateb.sa',
+                    'status' => $status,
+                    'plan_id' => 0,
+                    'user_limit' => 0,
+                    'storage_limit_mb' => 0,
+                    'company_sync_error' => $syncError !== '' ? $syncError : 'missing',
+                ];
+                $skipped++;
                 continue;
             }
             $items[] = array_merge($company, [
@@ -385,11 +408,21 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         $total = count($items);
         $slice = array_slice($items, $offset, $limit);
         $needsErpProvisioning = false;
+        $listActive = 0;
+        $listPending = 0;
+        $listSuspended = 0;
         foreach ($items as $item) {
             $st = strtolower(trim((string) ($item['erp_status'] ?? 'none')));
             if ($st !== 'ready' && $st !== '—') {
                 $needsErpProvisioning = true;
-                break;
+            }
+            $coStatus = strtolower(trim((string) ($item['status'] ?? '')));
+            if ($coStatus === 'active') {
+                $listActive++;
+            } elseif ($coStatus === 'pending') {
+                $listPending++;
+            } elseif ($coStatus === 'suspended') {
+                $listSuspended++;
             }
         }
 
@@ -410,9 +443,17 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             'documentEntityType' => '',
             'companyCreateAgencyHint' => true,
             'companyProvisionErpHint' => $needsErpProvisioning,
+            'companyListIncompleteHint' => $skipped > 0,
+            'companyListIncompleteCount' => $skipped,
             'controlPanelAgenciesUrl' => function_exists('rateb_control_panel_agencies_url')
                 ? rateb_control_panel_agencies_url()
                 : '',
+            'platformCompanyListStats' => [
+                'total' => $total,
+                'active' => $listActive,
+                'pending' => $listPending,
+                'suspended' => $listSuspended,
+            ],
         ];
     }
 

@@ -363,7 +363,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                                 }
                             }
                             ?>
-                        <?php if ($canCompanyPerms) { ?>
+                        <?php if ($cid > 0 && $canCompanyPerms) { ?>
                         <a href="<?php echo rateb_url('admin/company-permissions/' . $cid); ?>" class="btn btn-sm btn-info" title="<?php echo Rateb\App\Core\View::escape(__('company_permissions')); ?>">
                             <i class="fas fa-toggle-on"></i>
                         </a>
@@ -373,6 +373,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                             <i class="fas fa-external-link-alt"></i>
                         </a>
                         <?php } ?>
+                        <?php if ($cid > 0) { ?>
                         <a href="<?php echo rateb_url($actionsRoutePrefix . '/' . $cid . '/edit'); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" data-rateb-full-nav="1" title="<?php echo __('edit'); ?>">
                             <i class="fas fa-edit"></i>
                         </a>
@@ -439,6 +440,9 @@ $ratebRowRecordLabel = static function (array $row): string {
                                 </li>
                             </ul>
                         </div>
+                        <?php } elseif (!empty($row['company_sync_error'])) { ?>
+                        <span class="badge bg-warning text-dark" title="<?php echo Rateb\App\Core\View::escape((string) $row['company_sync_error']); ?>"><?php echo Rateb\App\Core\View::escape(__('company_row_unlinked')); ?></span>
+                        <?php } ?>
                         <?php } else { ?>
                         <?php if ($isInventoryList && (float) ($row['quantity'] ?? 0) > 0) { ?>
                         <form method="post"
