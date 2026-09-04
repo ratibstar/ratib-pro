@@ -204,6 +204,50 @@ final class CrmGovernanceService
     }
 
     /**
+     * Build a governance setting payload from normal form fields (no raw JSON UI).
+     *
+     * @param array<string, mixed> $post
+     * @return array<string, mixed>
+     */
+    public function buildSettingFromRequest(string $key, array $post): array
+    {
+        $key = trim($key);
+        $flag = static function (array $post, string $name): bool {
+            return !empty($post[$name]);
+        };
+        $int = static function (array $post, string $name, int $default, int $min = 0, int $max = 100000): int {
+            $v = isset($post[$name]) ? (int) $post[$name] : $default;
+
+            return max($min, min($max, $v));
+        };
+
+        return match ($key) {
+            'automation_governance' => [
+                'require_condition_json' => $flag($post, 'require_condition_json'),
+                'max_always_rules' => $int($post, 'max_always_rules', 3, 0, 99),
+            ],
+            'automation_safety' => [
+                'notification_cooldown_hours' => $int($post, 'notification_cooldown_hours', 24, 1, 720),
+                'run_lock_minutes' => $int($post, 'run_lock_minutes', 10, 1, 1440),
+                'max_notifies_per_run' => $int($post, 'max_notifies_per_run', 100, 1, 10000),
+                'include_legacy_in_revops' => $flag($post, 'include_legacy_in_revops'),
+                'block_always_rules_over_max' => $flag($post, 'block_always_rules_over_max'),
+            ],
+            'duplicate_rules' => [
+                'match_email' => $flag($post, 'match_email'),
+                'match_phone' => $flag($post, 'match_phone'),
+                'match_company_name' => $flag($post, 'match_company_name'),
+            ],
+            'export_policy' => [
+                'allow_csv' => $flag($post, 'allow_csv'),
+                'audit_required' => $flag($post, 'audit_required'),
+                'require_permission' => substr(trim((string) ($post['require_permission'] ?? 'crm.export.manage')), 0, 80),
+            ],
+            default => throw new \InvalidArgumentException('unsupported_setting_key'),
+        };
+    }
+
+    /**
      * @param array<string, mixed>|string $value
      */
     public function saveSetting(string $key, $value): void

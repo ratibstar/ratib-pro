@@ -1200,7 +1200,7 @@ final class CrmGovernanceController extends Controller
         }
         try {
             $r = (new CrmGovernanceService())->runDataQualityScan(true);
-            SessionManager::flash('success', __('saved_ok') . ' — issues:' . $r['created']);
+            SessionManager::flash('success', __('saved_ok') . ' — ' . __('crm_issues_created', ['n' => (int) ($r['created'] ?? 0)]));
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
@@ -1230,11 +1230,7 @@ final class CrmGovernanceController extends Controller
         }
         try {
             $key = trim((string) ($_POST['setting_key'] ?? ''));
-            $json = trim((string) ($_POST['setting_json'] ?? ''));
-            $decoded = json_decode($json, true);
-            if (!is_array($decoded)) {
-                throw new \InvalidArgumentException('invalid_json');
-            }
+            $decoded = (new CrmGovernanceService())->buildSettingFromRequest($key, $_POST);
             (new CrmGovernanceService())->saveSetting($key, $decoded);
             SessionManager::flash('success', __('saved_ok'));
         } catch (\Throwable $e) {
