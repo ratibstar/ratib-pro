@@ -51,6 +51,7 @@ $lockedCore = ['dashboard', 'notifications'];
             <?php } ?>
         </div>
         <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_rbac'); ?></p>
+        <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_demo_locks'); ?></p>
 
         <form method="post"
               action="<?php echo rateb_url($routePrefix . '/' . $cid); ?>"
@@ -60,8 +61,14 @@ $lockedCore = ['dashboard', 'notifications'];
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
 
             <div class="d-flex flex-wrap gap-2 mb-3">
-                <button type="button" class="btn btn-sm btn-outline-primary" id="rateb-cp-select-all"><?php echo __('select_all'); ?></button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="rateb-cp-clear-all"><?php echo __('company_permissions_clear_optional'); ?></button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="rateb-cp-select-all"
+                    onclick="if(window.RatebCompanyPermissions){RatebCompanyPermissions.selectAll();}else{document.querySelectorAll('#rateb-company-permissions-form .rateb-cp-module:not([disabled])').forEach(function(el){el.checked=true;});} return false;">
+                    <?php echo __('select_all'); ?>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="rateb-cp-clear-all"
+                    onclick="if(window.RatebCompanyPermissions){RatebCompanyPermissions.clearOptional();}else{document.querySelectorAll('#rateb-company-permissions-form .rateb-cp-module:not([disabled])').forEach(function(el){el.checked=false;});} return false;">
+                    <?php echo __('company_permissions_clear_optional'); ?>
+                </button>
             </div>
 
             <div class="row g-2" id="rateb-company-permissions-modules">
@@ -103,24 +110,10 @@ $lockedCore = ['dashboard', 'notifications'];
         </form>
     </div>
 </div>
+<script src="<?php echo rateb_asset('js/company-permissions.js'); ?>" defer></script>
 <script>
 (function () {
     var form = document.getElementById('rateb-company-permissions-form');
-    var selectAll = document.getElementById('rateb-cp-select-all');
-    var clearAll = document.getElementById('rateb-cp-clear-all');
-    var boxes = function () {
-        return Array.prototype.slice.call(document.querySelectorAll('.rateb-cp-module:not([disabled])'));
-    };
-    if (selectAll) {
-        selectAll.addEventListener('click', function () {
-            boxes().forEach(function (el) { el.checked = true; });
-        });
-    }
-    if (clearAll) {
-        clearAll.addEventListener('click', function () {
-            boxes().forEach(function (el) { el.checked = false; });
-        });
-    }
     if (form) {
         form.addEventListener('submit', function () {
             var btn = document.getElementById('rateb-cp-save');
@@ -128,7 +121,6 @@ $lockedCore = ['dashboard', 'notifications'];
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo Rateb\App\Core\View::escape(__('save')); ?>…';
             }
-            // Drop any stale offline HTML of this page before navigation.
             try {
                 if (window.caches) {
                     ['rateb-erp-ops-pages-v36', 'rateb-erp-coexist-v34', 'rateb-erp-ops-pages-v34', 'rateb-erp-coexist-v32', 'rateb-erp-coexist-v33'].forEach(function (name) {
@@ -139,6 +131,9 @@ $lockedCore = ['dashboard', 'notifications'];
                 }
             } catch (eCache) { /* ignore */ }
         });
+    }
+    if (window.RatebCompanyPermissions && typeof window.RatebCompanyPermissions.bind === 'function') {
+        window.RatebCompanyPermissions.bind();
     }
 })();
 </script>

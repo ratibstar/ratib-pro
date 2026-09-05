@@ -41,6 +41,7 @@ mac5_assert(str_contains($nav, 'rateb_is_super_admin'), 'super admin does not ge
 mac5_assert(str_contains($nav, 'rateb_nav_tenant_company_id_for_gate'), 'session/tenant company is used, not request company_id');
 mac5_assert(str_contains($nav, 'rateb_can($permission)'), 'locked items require existing RBAC');
 mac5_assert(str_contains($nav, 'isPurchasable($slug)'), 'locked items require catalog isPurchasable');
+mac5_assert(str_contains($nav, 'moduleCatalog()'), 'company-permissions catalog modules never purchase-lock');
 mac5_assert(str_contains($nav, 'companyHasModule($ctx[\'company_id\'], $slug)'), 'locked items use existing PlanLimitService::companyHasModule');
 mac5_assert(str_contains($nav, "admin/billing/modules/' . \$module"), 'locked href is billing checkout, not ops runtime');
 mac5_assert(!str_contains($nav, 'admin/ops/{slug}') && !str_contains($nav, "admin/ops/' . \$module"), 'locked items do not use runtime ops URLs');
@@ -77,6 +78,7 @@ mac5_assert(
 );
 mac5_assert(str_contains($mw, 'final class CompanyModuleMiddleware'), 'CompanyModuleMiddleware remains in Middleware.php');
 mac5_assert(str_contains($mw, 'redirectToPurchasableAddonCheckout'), 'purchasable locked modules redirect to checkout');
+mac5_assert(str_contains($mw, 'moduleCatalog()'), 'entitlement catalog modules skip checkout bounce');
 mac5_assert(str_contains($mw, "admin/billing/modules/"), 'module deny checkout path is billing/modules');
 mac5_assert(str_contains($pls, 'function companyHasModule'), 'PlanLimitService companyHasModule unchanged as the access reader');
 

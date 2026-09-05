@@ -1,1 +1,1 @@
-20260905-pos-checkout-compact-v4
+20260905-cp-select-locks-v1
