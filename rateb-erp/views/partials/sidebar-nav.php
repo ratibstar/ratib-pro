@@ -233,10 +233,21 @@ $adminSection = static function (
     string $badgeTitleKey = 'approvals_oversight'
 ) use ($navActive, $renderNavGroup): void {
     $renderAdminLink = static function (array $link) use ($navActive, $linkBadges, $badgeClass, $linkBadgeClass, $badgeTitleKey): void {
-        $active = $navActive($link[0]) ? ' active' : '';
-        $badge = (int) ($linkBadges[$link[0]] ?? 0);
+        $path = (string) ($link[0] ?? '');
+        $isPlatformCatalog = $path === 'platform-catalog/sso' || str_starts_with($path, 'platform-catalog/');
+        $href = $isPlatformCatalog && function_exists('rateb_platform_catalog_entry_url')
+            ? rateb_platform_catalog_entry_url()
+            : rateb_url($path);
+        $active = $navActive($path) ? ' active' : '';
+        $badge = (int) ($linkBadges[$path] ?? 0);
         $linkClass = $linkBadgeClass !== '' ? $linkBadgeClass : $badgeClass;
-        echo '<a href="' . rateb_url($link[0]) . '" data-rateb-href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
+        $escHref = htmlspecialchars($href, ENT_QUOTES, 'UTF-8');
+        if ($isPlatformCatalog) {
+            echo '<a href="' . $escHref . '" data-rateb-href="' . $escHref . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '"';
+            echo ' onclick="event.preventDefault();event.stopPropagation();try{event.stopImmediatePropagation();}catch(e){}window.location.assign(this.getAttribute(\'href\'));return false;">';
+        } else {
+            echo '<a href="' . $escHref . '" data-rateb-href="' . $escHref . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
+        }
         echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span>';
         if ($badge > 0) {
             $cls = 'rateb-nav-badge';

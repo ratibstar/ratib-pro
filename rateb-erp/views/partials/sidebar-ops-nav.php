@@ -191,7 +191,8 @@ if (!rateb_is_super_admin()
 }
 $opsLink('notifications', 'notifications', 'fa-bell', 'notifications');
 $opsLink('profile', 'profile', 'fa-user-gear', 'profile');
-if (rateb_nav_can('platform_catalog.view', 'platform_catalog')) {
+// Company entitlement only — Super Admin uses the oversight link (always visible).
+if (!rateb_is_super_admin() && rateb_nav_can('platform_catalog.view', 'platform_catalog')) {
     // Full document nav — SSO handoff must not soft-navigate.
     $pcHref = rateb_url('platform-catalog/sso');
     if (function_exists('rateb_platform_catalog_entry_url')) {

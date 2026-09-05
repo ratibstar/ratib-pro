@@ -1081,6 +1081,7 @@ return [
     'company_permissions' => 'Company Permissions',
     'company_permissions_help' => 'Control which nav modules each shared company can see — separate from in-app user roles and permissions.',
     'company_permissions_edit_help' => 'Enabled modules appear in the company nav and are reachable. Disabled modules are hidden and blocked even via direct URL. For linked agencies, saving also updates the agency domain ERP database.',
+    'company_permissions_platform_catalog_hint' => 'Shows or hides for this company’s users only. The Super Admin link under Management oversight stays always visible.',
     'company_permissions_vs_rbac' => 'This is the company-wide ceiling. Role permissions under Access Control remain separate and decide who can act inside allowed modules.',
     'company_permissions_manage' => 'Manage permissions',
     'company_permissions_modules_count' => 'Modules',

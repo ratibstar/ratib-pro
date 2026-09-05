@@ -882,12 +882,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 <i class="fas fa-mobile-screen-button"></i><span><?php echo __('hr_mobile_nav'); ?></span>
             </a>
             <?php } ?>
-            <?php
-            $platformCatalogNavPartial = RATEB_ROOT . '/views/partials/platform-catalog-nav-link.php';
-            if (is_file($platformCatalogNavPartial)) {
-                require $platformCatalogNavPartial;
-            }
-            ?>
             <?php if (rateb_is_super_admin() && rateb_is_platform_oversight_host()) { ?>
             <?php
             $oversightCounts = rateb_oversight_menu_counts();
@@ -900,11 +894,16 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 'admin/oversight/inventory' => rateb_nav_can('inventory.manage') ? (int) ($oversightCounts['inventory'] ?? 0) : 0,
                 'admin/oversight/supplier-evaluations' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['supplier_evaluations'] ?? 0) : 0,
             ];
-            $oversightLinks = [
+            // Platform product catalog for Super Admin lives inside oversight (not company module packs).
+            $oversightLinks = [];
+            if (function_exists('rateb_platform_catalog_nav_enabled') && rateb_platform_catalog_nav_enabled()) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['platform-catalog/sso', 'platform_catalog_admin', 'fa-boxes-stacked', 'platform_catalog.manage']];
+            }
+            $oversightLinks = array_merge($oversightLinks, [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'company_permissions.manage']],
                 ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'module_addons.manage']],
-            ];
+            ]);
             if (rateb_is_super_admin()
                 && function_exists('rateb_is_platform_oversight_host')
                 && rateb_is_platform_oversight_host()) {
