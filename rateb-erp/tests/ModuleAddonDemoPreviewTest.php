@@ -63,7 +63,7 @@ macd_assert(str_contains($src, 'function setLocks'), 'demo lock board writes ent
 macd_assert(str_contains($src, 'canManagePlatformCatalog'), 'lock board allows platform Super Admin via catalog gate');
 macd_assert(str_contains($src, 'rateb_resolve_ops_company_id'), 'platform Super Admin uses ops company picker');
 macd_assert(str_contains($src, 'commercialLockSlugs'), 'platform host lists commercial catalog slugs');
-macd_assert(str_contains($src, 'sessionCanManageDemoLocks'), 'lock board is demo-host + preview user or Super Admin');
+macd_assert(str_contains($src, 'sessionCanManageDemoLocks'), 'lock board is Super Admin only via canManagePlatformCatalog');
 macd_assert(!str_contains($src, 'PaymentService') && !str_contains($ctrl, 'PaymentService'), 'no PaymentService');
 macd_assert(!str_contains($src, 'Moyasar') && !str_contains($ctrl, 'Moyasar'), 'no Moyasar');
 macd_assert(!str_contains($src, 'startCheckout') && !str_contains($ctrl, 'startCheckout'), 'does not start checkout');

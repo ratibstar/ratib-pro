@@ -905,8 +905,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'settings.manage']],
             ];
-            if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
-                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', 'settings.manage']];
+            if (rateb_is_super_admin()
+                && \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', '']];
             }
             $oversightLinks = array_merge($oversightLinks, [
                 ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
@@ -960,7 +961,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             </a>
             <?php } ?>
             <?php
-            $showStandaloneAddonLocks = \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()
+            $showStandaloneAddonLocks = rateb_is_super_admin()
+                && \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()
                 && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
             if ($showStandaloneAddonLocks) {
                 $locksHref = rateb_url('admin/billing/addon-locks');

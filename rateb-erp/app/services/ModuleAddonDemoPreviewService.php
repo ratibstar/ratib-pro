@@ -94,20 +94,12 @@ final class ModuleAddonDemoPreviewService
 
     public static function sessionCanManageDemoLocks(): bool
     {
+        // Nav + lock board: Super Admin only (platform catalog managers).
         try {
-            $addons = new ModuleAddonService();
-            if ($addons->canManagePlatformCatalog()) {
-                return true;
-            }
-            if (!$addons->isEnabled() || !$addons->previewDemoHostAllowed()) {
-                return false;
-            }
+            return (new ModuleAddonService())->canManagePlatformCatalog();
         } catch (Throwable $e) {
             return false;
         }
-        $email = strtolower(trim((string) SessionManager::get('rateb_user_email', '')));
-
-        return $email !== '' && $email === strtolower(self::DEMO_EMAIL);
     }
 
     /**
