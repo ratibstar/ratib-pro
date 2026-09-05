@@ -119,10 +119,15 @@ final class BarcodeLoginService
         return rateb_url('login/badge') . '?d=' . rawurlencode($this->badgePayload($barcode));
     }
 
-    /** Large high-contrast QR for phone camera scan (short payload = faster read). */
+    /** Phone-camera QR must be an https URL — iOS/Android reject plain RATEBERP: text. */
     public function badgeScanQrUrl(string $barcode, int $size = 420): string
     {
-        return $this->qrImageUrl($this->badgePayload($barcode), $size);
+        $loginUrl = $this->badgeLoginUrl($barcode);
+        $payload = preg_match('/^https?:\/\//i', $loginUrl)
+            ? $loginUrl
+            : $this->badgePayload($barcode);
+
+        return $this->qrImageUrl($payload, $size);
     }
 
     public function qrImageUrl(string $payload, int $size = 200): string
