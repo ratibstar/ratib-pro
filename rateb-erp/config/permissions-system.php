@@ -91,22 +91,6 @@ return [
     ],
 
     /**
-     * Platform oversight tools toggled per company on /admin/company-permissions.
-     * Stored in company.settings.platform_features — default on when unset.
-     * Keys => lang label keys.
-     *
-     * @var array<string, string>
-     */
-    'platform_company_features' => [
-        'module_addon_catalog' => 'platform_feature_module_addon_catalog',
-        'module_addon_demo_locks' => 'platform_feature_module_addon_demo_locks',
-        'agency_updates' => 'platform_feature_agency_updates',
-        'companies_approvals' => 'platform_feature_companies_approvals',
-        'platform_product_catalog' => 'platform_feature_platform_product_catalog',
-        'company_permissions' => 'platform_feature_company_permissions',
-    ],
-
-    /**
      * Parent slug grants child slugs at runtime (rateb_can). Children may be hidden from matrix UI.
      * @var array<string, list<string>>
      */

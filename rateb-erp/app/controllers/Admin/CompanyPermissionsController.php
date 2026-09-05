@@ -88,20 +88,12 @@ final class CompanyPermissionsController extends Controller
 
         $catalog = PlanLimitService::moduleCatalog();
         $selected = $this->enabledModulesForCompany($company, array_keys($catalog));
-        $featureCatalog = function_exists('rateb_platform_company_feature_catalog')
-            ? rateb_platform_company_feature_catalog()
-            : [];
-        $selectedFeatures = function_exists('rateb_company_platform_features')
-            ? rateb_company_platform_features($company)
-            : [];
         $limits = $this->limits->getLimits($id);
         $this->view('admin/company-permissions/edit', [
             'title' => __('company_permissions') . ' — ' . (string) ($company['name'] ?? ''),
             'company' => $company,
             'moduleCatalog' => $catalog,
             'selectedModules' => $selected,
-            'featureCatalog' => $featureCatalog,
-            'selectedFeatures' => $selectedFeatures,
             'limits' => $limits,
             'routePrefix' => 'admin/company-permissions',
             'csrf' => Csrf::token(),
@@ -139,26 +131,11 @@ final class CompanyPermissionsController extends Controller
         }
         $modules = array_values(array_unique($modules));
 
-        $featureCatalog = function_exists('rateb_platform_company_feature_catalog')
-            ? rateb_platform_company_feature_catalog()
-            : [];
-        $postedFeatures = $_POST['platform_features'] ?? [];
-        if (!is_array($postedFeatures)) {
-            $postedFeatures = [];
-        }
-        $features = [];
-        foreach (array_keys($featureCatalog) as $key) {
-            $features[$key] = !empty($postedFeatures[$key]);
-        }
-
         try {
             $ok = $this->companies->updateModules($id, $modules);
             if (!$ok) {
                 SessionManager::flash('error', __('company_permissions_save_failed'));
                 Response::redirect($back);
-            }
-            if ($featureCatalog !== []) {
-                $this->savePlatformFeatures($id, $company, $features);
             }
             PlanLimitService::forgetCompanyLimits($id);
 
@@ -177,7 +154,6 @@ final class CompanyPermissionsController extends Controller
 
             (new AuditService())->log('update', 'company_permissions', $id, [
                 'modules' => $modules,
-                'platform_features' => $features,
                 'company_name' => (string) ($company['name'] ?? ''),
                 'agency_synced' => !empty($agencyPush['synced']),
                 'agency_id' => (int) ($agencyPush['agency_id'] ?? 0),
@@ -255,27 +231,5 @@ final class CompanyPermissionsController extends Controller
             array_map('strval', $source),
             static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
         ));
-    }
-
-    /**
-     * @param array<string, mixed> $company
-     * @param array<string, bool> $features
-     */
-    private function savePlatformFeatures(int $id, array $company, array $features): void
-    {
-        $settings = $company['settings'] ?? null;
-        if (is_string($settings) && trim($settings) !== '') {
-            $decoded = json_decode($settings, true);
-            $settings = is_array($decoded) ? $decoded : [];
-        }
-        if (!is_array($settings)) {
-            $settings = [];
-        }
-        $settings['platform_features'] = $features;
-        $json = json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if (!is_string($json) || $json === '') {
-            return;
-        }
-        $this->companies->update($id, ['settings' => $json]);
     }
 }
