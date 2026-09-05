@@ -42,11 +42,21 @@ $queryBase = $preserveQuery !== [] ? $preserveQuery : rateb_list_query_except([$
         <?php if ($pages > 1) { ?>
         <nav class="rateb-pagination" aria-label="Pagination">
             <ul class="pagination pagination-sm mb-0">
-                <?php for ($i = 1; $i <= $pages; $i++) { ?>
-                <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
-                    <a class="page-link" data-rateb-full-nav="1" href="<?php echo $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $i])); ?>"><?php echo $i; ?></a>
+                <?php
+                $prevDisabled = $page <= 1;
+                $nextDisabled = $page >= $pages;
+                $prevHref = $prevDisabled ? '#' : $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $page - 1]));
+                $nextHref = $nextDisabled ? '#' : $pageUrl(array_merge($queryBase, [$perPageKey => $limit, $pageKey => $page + 1]));
+                ?>
+                <li class="page-item<?php echo $prevDisabled ? ' disabled' : ''; ?>">
+                    <a class="page-link" data-rateb-full-nav="1" href="<?php echo Rateb\App\Core\View::escape($prevHref); ?>"<?php echo $prevDisabled ? ' tabindex="-1" aria-disabled="true"' : ''; ?> aria-label="<?php echo Rateb\App\Core\View::escape(rateb_locale() === 'en' ? 'Previous' : 'السابق'); ?>">‹</a>
                 </li>
-                <?php } ?>
+                <li class="page-item disabled">
+                    <span class="page-link"><?php echo (int) $page; ?> / <?php echo (int) $pages; ?></span>
+                </li>
+                <li class="page-item<?php echo $nextDisabled ? ' disabled' : ''; ?>">
+                    <a class="page-link" data-rateb-full-nav="1" href="<?php echo Rateb\App\Core\View::escape($nextHref); ?>"<?php echo $nextDisabled ? ' tabindex="-1" aria-disabled="true"' : ''; ?> aria-label="<?php echo Rateb\App\Core\View::escape(__('next')); ?>">›</a>
+                </li>
             </ul>
         </nav>
         <?php } ?>
