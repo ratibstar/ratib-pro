@@ -847,7 +847,7 @@ final class AgencyErpMigrationService
                 'is_super_admin' => 0,
             ];
             if ($password !== '') {
-                $payload['password'] = password_hash($password, PASSWORD_DEFAULT);
+                $users->applyPassword($payload, $password);
             } elseif ($existing === null) {
                 throw new RuntimeException(__('company_admin_login_required'));
             }
@@ -856,13 +856,11 @@ final class AgencyErpMigrationService
                 $userId = (int) ($existing['id'] ?? 0);
                 $users->update($userId, $payload);
             } else {
-                $userId = (int) $users->create(array_merge($payload, [
-                    'password' => password_hash(
-                        $password !== '' ? $password : DedicatedCompanySeedService::DEFAULT_PASSWORD,
-                        PASSWORD_DEFAULT
-                    ),
-                    'locale' => 'ar',
-                ]));
+                $payload['locale'] = 'ar';
+                if ($password === '') {
+                    $users->applyPassword($payload, DedicatedCompanySeedService::DEFAULT_PASSWORD);
+                }
+                $userId = (int) $users->create($payload);
             }
             if ($userId < 1) {
                 throw new RuntimeException(__('company_admin_create_failed'));
@@ -885,6 +883,52 @@ final class AgencyErpMigrationService
                 'user_id' => $userId,
                 'company_id' => $companyId,
             ];
+        } finally {
+            Database::clearConnectionOverride();
+        }
+    }
+
+    /**
+     * Restore dedicated tenant login to admin / 123456 without wiping company data.
+     *
+     * @param array<string, mixed> $agency
+     * @return array<string, mixed>
+     */
+    public function restoreDedicatedAdminLogin(array $agency): array
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        if ($cfg['db'] === '') {
+            throw new RuntimeException(__('company_agency_admin_no_db'));
+        }
+
+        Database::useConnectionOverride([
+            'db' => $cfg['db'],
+            'host' => $cfg['host'],
+            'port' => $cfg['port'],
+            'user' => $cfg['user'],
+            'pass' => $cfg['pass'],
+        ]);
+        try {
+            $companyRow = (new \Rateb\App\Models\Company())->queryOne(
+                'SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1'
+            );
+            $companyId = (int) ($companyRow['id'] ?? 0);
+            if ($companyId < 1) {
+                throw new RuntimeException(__('company_agency_admin_no_company'));
+            }
+
+            $restored = (new DedicatedCompanySeedService())->restoreStandardAdminLogin($companyId);
+            $site = function_exists('rateb_normalize_agency_site_url')
+                ? rateb_normalize_agency_site_url((string) ($agency['site_url'] ?? ''))
+                : trim((string) ($agency['site_url'] ?? ''));
+            $loginUrl = ($site !== '' && function_exists('rateb_agency_erp_login_url'))
+                ? rateb_agency_erp_login_url($site)
+                : '';
+
+            return array_merge($restored, [
+                'erp_db_name' => $cfg['db'],
+                'login_url' => $loginUrl,
+            ]);
         } finally {
             Database::clearConnectionOverride();
         }

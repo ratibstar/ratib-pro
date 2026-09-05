@@ -898,6 +898,35 @@ function control_rateb_erp_reset_agency_data(int $agencyId, ?int $platformCompan
     return (new \Rateb\App\Services\AgencyErpMigrationService())->resetAgencyData($agency, $override);
 }
 
+/**
+ * Restore dedicated ERP admin login to admin / 123456 without wiping company data.
+ *
+ * @return array<string, mixed>
+ */
+function control_rateb_erp_restore_admin_login(int $agencyId): array
+{
+    control_rateb_erp_bootstrap_minimal();
+    $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+    if (is_file($lookup)) {
+        require_once $lookup;
+    }
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+
+    if ($agencyId < 1) {
+        throw new InvalidArgumentException('Invalid agency id');
+    }
+    $agency = function_exists('rateb_lookup_agency_by_id') ? rateb_lookup_agency_by_id($agencyId) : null;
+    if ($agency === null) {
+        throw new RuntimeException('Agency not found');
+    }
+    if (trim((string) ($agency['erp_db_name'] ?? '')) === '') {
+        throw new RuntimeException('No ERP database — run Provision ERP first');
+    }
+
+    return (new \Rateb\App\Services\AgencyErpMigrationService())->restoreDedicatedAdminLogin($agency);
+}
+
 function control_rateb_erp_assets_base_url(): string
 {
     $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');

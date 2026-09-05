@@ -14,6 +14,7 @@ final class DedicatedCompanySeedService
     /** Initial company admin for dedicated ERP (change after first login). */
     public const DEFAULT_LOGIN = 'admin';
     public const DEFAULT_EMAIL = 'admin@local';
+    public const DEFAULT_PASSWORD = '123456';
 
     /**
      * Seed exactly one company + admin user for a dedicated ERP database.
@@ -28,7 +29,7 @@ final class DedicatedCompanySeedService
     ): array {
         $email = self::DEFAULT_EMAIL;
         $contactName = self::DEFAULT_LOGIN;
-        $password = self::newInitialPassword();
+        $password = self::DEFAULT_PASSWORD;
 
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
@@ -52,7 +53,7 @@ final class DedicatedCompanySeedService
                 'company_id' => $companyId,
                 'user_id' => $userId,
                 'admin_username' => self::DEFAULT_LOGIN,
-                'admin_email' => self::DEFAULT_LOGIN,
+                'admin_email' => self::DEFAULT_EMAIL,
                 'admin_password' => $password,
             ];
         } catch (\Throwable $e) {
@@ -77,6 +78,97 @@ final class DedicatedCompanySeedService
         }
 
         $userModel = new User();
+        $candidate = $this->findStandardAdminCandidate($userModel, $companyId);
+        $keepId = (int) ($candidate['id'] ?? 0);
+        if ($keepId > 0) {
+            $userModel->query(
+                'DELETE ur FROM rateb_user_roles ur
+                 INNER JOIN rateb_users u ON u.id = ur.user_id
+                 WHERE u.company_id = :cid AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
+                ['cid' => $companyId, 'uid' => $keepId]
+            );
+            $userModel->query(
+                'DELETE FROM rateb_users
+                 WHERE company_id = :cid AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
+                ['cid' => $companyId, 'uid' => $keepId]
+            );
+        }
+
+        return $this->restoreStandardAdminLogin($companyId);
+    }
+
+    /**
+     * Reset the dedicated company admin to admin / 123456 without deleting other users.
+     *
+     * @return array{company_id:int,user_id:int,admin_username:string,admin_email:string,admin_password:string}
+     */
+    public function restoreStandardAdminLogin(int $companyId = 0): array
+    {
+        if ($companyId < 1) {
+            $row = (new Company())->queryOne('SELECT id FROM rateb_companies ORDER BY id ASC LIMIT 1');
+            $companyId = (int) ($row['id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            throw new \RuntimeException('No company found for standard admin.');
+        }
+
+        $userModel = new User();
+        $candidate = $this->findStandardAdminCandidate($userModel, $companyId);
+        $plain = self::DEFAULT_PASSWORD;
+
+        if ($candidate !== null) {
+            $userId = (int) ($candidate['id'] ?? 0);
+            $userModel->query(
+                'DELETE ur FROM rateb_user_roles ur
+                 INNER JOIN rateb_users u ON u.id = ur.user_id
+                 WHERE u.email = :email AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
+                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
+            );
+            $userModel->query(
+                'DELETE FROM rateb_users
+                 WHERE email = :email AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
+                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
+            );
+            $fields = [
+                'company_id' => $companyId,
+                'name' => self::DEFAULT_LOGIN,
+                'email' => self::DEFAULT_EMAIL,
+                'status' => 'active',
+                'is_super_admin' => 0,
+            ];
+            $userModel->applyPassword($fields, $plain);
+            $userModel->update($userId, $fields);
+        } else {
+            $userId = $this->ensureDedicatedAdminUser(
+                $companyId,
+                self::DEFAULT_EMAIL,
+                self::DEFAULT_LOGIN,
+                $plain
+            );
+        }
+
+        $this->assignCompanyFullAccessRole($userId, $companyId);
+        (new BarcodeLoginService())->ensureUserBarcode($userId);
+        try {
+            (new AccountLockoutService())->clearLock($userId);
+        } catch (\Throwable $e) {
+            // locked_until may be absent on older tenant schemas
+        }
+
+        return [
+            'company_id' => $companyId,
+            'user_id' => $userId,
+            'admin_username' => self::DEFAULT_LOGIN,
+            'admin_email' => self::DEFAULT_EMAIL,
+            'admin_password' => $plain,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findStandardAdminCandidate(User $userModel, int $companyId): ?array
+    {
         $candidate = $userModel->findByEmail(self::DEFAULT_EMAIL);
         if ($candidate === null) {
             $candidate = $userModel->queryOne(
@@ -102,65 +194,7 @@ final class DedicatedCompanySeedService
             );
         }
 
-        $initialPassword = self::newInitialPassword();
-        $hash = password_hash($initialPassword, PASSWORD_DEFAULT);
-        if ($candidate !== null) {
-            $userId = (int) ($candidate['id'] ?? 0);
-            $userModel->query(
-                'DELETE ur FROM rateb_user_roles ur
-                 INNER JOIN rateb_users u ON u.id = ur.user_id
-                 WHERE u.email = :email AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
-                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
-            );
-            $userModel->query(
-                'DELETE FROM rateb_users
-                 WHERE email = :email AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
-                ['email' => self::DEFAULT_EMAIL, 'uid' => $userId]
-            );
-            $userModel->query(
-                'DELETE ur FROM rateb_user_roles ur
-                 INNER JOIN rateb_users u ON u.id = ur.user_id
-                 WHERE u.company_id = :cid AND COALESCE(u.is_super_admin, 0) = 0 AND u.id <> :uid',
-                ['cid' => $companyId, 'uid' => $userId]
-            );
-            $userModel->query(
-                'DELETE FROM rateb_users
-                 WHERE company_id = :cid AND COALESCE(is_super_admin, 0) = 0 AND id <> :uid',
-                ['cid' => $companyId, 'uid' => $userId]
-            );
-            $userModel->update($userId, [
-                'company_id' => $companyId,
-                'name' => self::DEFAULT_LOGIN,
-                'email' => self::DEFAULT_EMAIL,
-                'password' => $hash,
-                'status' => 'active',
-                'is_super_admin' => 0,
-            ]);
-        } else {
-            $userId = $this->ensureDedicatedAdminUser(
-                $companyId,
-                self::DEFAULT_EMAIL,
-                self::DEFAULT_LOGIN,
-                $initialPassword
-            );
-        }
-
-        $this->assignCompanyFullAccessRole($userId, $companyId);
-
-        (new BarcodeLoginService())->ensureUserBarcode($userId);
-
-        return [
-            'company_id' => $companyId,
-            'user_id' => $userId,
-            'admin_username' => self::DEFAULT_LOGIN,
-            'admin_email' => self::DEFAULT_EMAIL,
-            'admin_password' => $initialPassword,
-        ];
-    }
-
-    private static function newInitialPassword(): string
-    {
-        return bin2hex(random_bytes(16));
+        return $candidate;
     }
 
     /**
@@ -370,16 +404,16 @@ final class DedicatedCompanySeedService
         string $password
     ): int {
         $userModel = new User();
-        $hash = password_hash($password, PASSWORD_DEFAULT);
         $existing = $userModel->findByEmail($email);
 
         if ($existing && (int) ($existing['company_id'] ?? 0) === $companyId) {
-            $userModel->update((int) $existing['id'], [
+            $fields = [
                 'name' => $contactName,
-                'password' => $hash,
                 'status' => 'active',
                 'is_super_admin' => 0,
-            ]);
+            ];
+            $userModel->applyPassword($fields, $password);
+            $userModel->update((int) $existing['id'], $fields);
 
             return (int) $existing['id'];
         }
@@ -395,16 +429,18 @@ final class DedicatedCompanySeedService
             ['cid' => $companyId, 'email' => $email]
         );
 
-        return (int) $userModel->create([
+        $payload = [
             'company_id' => $companyId,
             'name' => $contactName,
             'email' => $email,
-            'password' => $hash,
             'phone' => '',
             'is_super_admin' => 0,
             'status' => 'active',
             'locale' => 'ar',
-        ]);
+        ];
+        $userModel->applyPassword($payload, $password);
+
+        return (int) $userModel->create($payload);
     }
 
     private function removeCompanyTenant(int $companyId): void

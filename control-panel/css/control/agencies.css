@@ -199,7 +199,8 @@ body > .modal-backdrop,
 .ag-btn-provision-erp,
 .ag-btn-reset-erp,
 .ag-btn-open-erp,
-.ag-btn-access {
+.ag-btn-access,
+.ag-btn-restore-admin {
     width: 100%;
     min-height: 26px;
     padding: 3px 8px;
@@ -261,6 +262,20 @@ body > .modal-backdrop,
     border-color: #38bdf8 !important;
     color: #fff !important;
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.ag-btn-restore-admin {
+    background: rgba(251, 191, 36, 0.16);
+    border-color: rgba(251, 191, 36, 0.45);
+    color: #fde68a;
+}
+
+.ag-btn-restore-admin:hover,
+.ag-btn-restore-admin:focus-visible {
+    background: rgba(251, 191, 36, 0.38) !important;
+    border-color: #fbbf24 !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.3);
 }
 
 .ag-btn-provision-pro {

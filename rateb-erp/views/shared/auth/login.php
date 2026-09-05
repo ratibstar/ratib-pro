@@ -49,7 +49,7 @@
     </div>
     <div class="mb-3">
         <label class="form-label" for="password"><?php echo __('password'); ?></label>
-        <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+        <input type="password" class="form-control" id="password" name="password" required autocomplete="<?php echo !empty($agencyLoginHint) ? 'off' : 'current-password'; ?>"<?php echo !empty($agencyLoginHint) ? ' placeholder="123456"' : ''; ?>>
     </div>
     <?php require __DIR__ . '/_remember.php'; ?>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>

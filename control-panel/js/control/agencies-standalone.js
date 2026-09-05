@@ -26,6 +26,7 @@
         provisionProClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         provisionErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         resetErpClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
+        restoreAdminClick: function() { window.alert('Agencies page is still loading. Please wait and try again.'); return false; },
         wireProvisionButtons: function() {}
     };
 
@@ -286,6 +287,7 @@
         }
         if (verify) {
             html += '<p class="small text-muted mb-2">' + (ar ? 'ملاحظة: قد يظهر مستودع رئيسي فارغ واحد (WH-MAIN) بعد أول دخول — هذا هيكل افتراضي.' : 'Note: one empty main warehouse (WH-MAIN) may appear on first login — that is the default shell.') + '</p>';
+            html += '<p class="small mb-2">' + (ar ? 'مسح البيانات لا يغيّر كلمة المرور. إن لم يفتح admin / 123456 استخدم زر «استعادة admin / 123456».' : 'Reset data does not change passwords. If admin / 123456 fails, use Restore admin / 123456.') + '</p>';
             html += '<p class="small mb-0">' + (ar ? 'سجّل خروجاً ثم دخولاً من:' : 'Log out, then sign in again at:') + '<br><a class="agencies-alert-link" href="' + escapeHtml(verify) + '" dir="ltr" target="_blank" rel="noopener noreferrer">' + escapeHtml(verify) + '</a></p>';
         }
         showAlert(html, true);
@@ -692,7 +694,7 @@
         if (ev && ev.currentTarget) {
             el = ev.currentTarget;
         } else if (ev && ev.target && typeof ev.target.closest === 'function') {
-            var fromTarget = ev.target.closest('.btn-provision-pro, .btn-provision-erp, .btn-reset-erp');
+            var fromTarget = ev.target.closest('.btn-provision-pro, .btn-provision-erp, .btn-reset-erp, .btn-restore-admin');
             if (fromTarget) el = fromTarget;
         }
         if (!el) return 0;
@@ -904,6 +906,76 @@
         });
     }
 
+    function showRestoreAdminSuccessAlert(agencyName, rep, siteUrl) {
+        var ar = cpLocaleIsAr();
+        var loginUrl = (rep && rep.login_url) ? String(rep.login_url) : '';
+        if (!loginUrl && siteUrl) {
+            loginUrl = siteUrl.replace(/\/$/, '') + '/rateb-erp/public/login';
+        }
+        var title = ar
+            ? 'تم استعادة دخول ERP للوكالة «' + agencyName + '»'
+            : 'ERP admin login restored for "' + agencyName + '"';
+        var html = '<p class="agencies-alert-title text-success mb-2"><i class="fas fa-check-circle" aria-hidden="true"></i> ' + escapeHtml(title) + '</p>';
+        html += '<p class="small mb-2">' + (ar ? 'اسم المستخدم:' : 'Username:') + ' <code dir="ltr">admin</code><br>' + (ar ? 'كلمة المرور:' : 'Password:') + ' <code dir="ltr">123456</code></p>';
+        html += '<p class="small text-muted mb-2">' + (ar ? 'لا تضع مسافة بين الاسم وكلمة المرور، وامسح أي كلمة مرور يملأها المتصفح.' : 'Do not put a space between username and password, and clear any browser-filled password.') + '</p>';
+        if (loginUrl) {
+            html += '<p class="small mb-0">' + (ar ? 'سجّل الدخول من:' : 'Sign in at:') + '<br><a class="agencies-alert-link" href="' + escapeHtml(loginUrl) + '" dir="ltr" target="_blank" rel="noopener noreferrer">' + escapeHtml(loginUrl) + '</a></p>';
+        }
+        showAlert(html, true);
+    }
+
+    function runRestoreAdminLogin(restoreBtn, agencyId, agencyName, siteUrl) {
+        restoreBtn.disabled = true;
+        fetch(API_BASE + '/agencies-restore-admin-login.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agency_id: agencyId, confirm: 'RESTORE-ADMIN' })
+        }).then(function(res) {
+            var ct = (res.headers.get('content-type') || '').toLowerCase();
+            if (!ct.includes('application/json')) {
+                throw new Error(res.status === 404
+                    ? 'Restore API is missing on the server (404).'
+                    : 'Session expired or server error — please log in again and retry.');
+            }
+            return res.json();
+        }).then(function(data) {
+            restoreBtn.disabled = false;
+            if (!data || !data.success) {
+                showAlert((data && data.message) ? data.message : 'Restore admin login failed');
+                return;
+            }
+            showRestoreAdminSuccessAlert(agencyName, data.data || {}, siteUrl);
+        }).catch(function(err) {
+            restoreBtn.disabled = false;
+            showAlert('Restore admin login failed: ' + (err && err.message ? err.message : 'unknown'));
+        });
+    }
+
+    function restoreAdminClick(btn, ev) {
+        stopProvisionEvent(ev);
+        var restoreBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
+        if (!restoreBtn) return false;
+        if (restoreBtn.classList.contains('disabled') || restoreBtn.classList.contains('permission-denied')) {
+            showAlert('You do not have permission to restore admin login for this agency.');
+            return false;
+        }
+        var agencyId = resolveAgencyIdFromBtn(restoreBtn, ev);
+        if (!agencyId) { showAlert('Invalid agency ID'); return false; }
+        var agencyName = restoreBtn.getAttribute('data-agency-name') || ('#' + agencyId);
+        var siteUrl = restoreBtn.getAttribute('data-site-url') || '';
+        var ar = cpLocaleIsAr();
+        var msg = ar
+            ? 'استعادة دخول ERP للوكالة «' + agencyName + '» إلى admin / 123456؟\nلا تُمسح بيانات الشركة.'
+            : 'Restore ERP login for "' + agencyName + '" to admin / 123456?\nCompany data is not deleted.';
+        showConfirm(msg).then(function(ok) {
+            if (!ok) return;
+            closeAgencyActionDropdowns();
+            runRestoreAdminLogin(restoreBtn, agencyId, agencyName, siteUrl);
+        });
+        return false;
+    }
+
     function resetErpClick(btn, ev) {
         stopProvisionEvent(ev);
         var resetBtn = (ev && ev.currentTarget) ? ev.currentTarget : btn;
@@ -933,6 +1005,11 @@
             btn._agResetWired = true;
             btn.onclick = function(ev) { return resetErpClick(this, ev); };
         });
+        scope.querySelectorAll('.btn-restore-admin').forEach(function(btn) {
+            if (btn._agRestoreWired) return;
+            btn._agRestoreWired = true;
+            btn.onclick = function(ev) { return restoreAdminClick(this, ev); };
+        });
     }
 
     function handleAgencyMenuAction(item) {
@@ -944,6 +1021,10 @@
 
         if (item.classList.contains('btn-reset-erp')) {
             resetErpClick(item, { currentTarget: item, preventDefault: function () {}, stopPropagation: function () {} });
+            return true;
+        }
+        if (item.classList.contains('btn-restore-admin')) {
+            restoreAdminClick(item, { currentTarget: item, preventDefault: function () {}, stopPropagation: function () {} });
             return true;
         }
         if (item.classList.contains('ag-btn-erp-blocked')) {
@@ -1415,6 +1496,7 @@
     window.RatebCpAgencies.provisionProClick = provisionProClick;
     window.RatebCpAgencies.provisionErpClick = provisionErpClick;
     window.RatebCpAgencies.resetErpClick = resetErpClick;
+    window.RatebCpAgencies.restoreAdminClick = restoreAdminClick;
     window.RatebCpAgencies.wireProvisionButtons = wireProvisionButtons;
     wireProvisionButtons();
 

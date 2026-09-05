@@ -569,6 +569,7 @@ CRITICAL = [
     "control-panel/js/control/agencies-standalone.js",
     "control-panel/css/control/agencies.css",
     "control-panel/api/control/agencies-reset-erp-data.php",
+    "control-panel/api/control/agencies-restore-admin-login.php",
     "control-panel/includes/control/rateb-erp-bridge.php",
     "rateb-erp/app/services/AgencyErpMigrationService.php",
     "rateb-erp/app/services/DedicatedCompanySeedService.php",

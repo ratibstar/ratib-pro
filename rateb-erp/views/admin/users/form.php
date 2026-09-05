@@ -79,7 +79,7 @@ if (!$isPlatformAccountForm) {
                 </div>
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('password'); ?></label>
-                    <input class="form-control" type="password" name="password" autocomplete="new-password"<?php echo $isEdit ? '' : ' required'; ?>>
+                    <input class="form-control" type="password" name="password" value="" autocomplete="new-password" data-lpignore="true"<?php echo $isEdit ? '' : ' required'; ?>>
                     <?php if ($isEdit) { ?>
                     <div class="form-text"><?php echo __('password_leave_blank_keep'); ?></div>
                     <?php } ?>
