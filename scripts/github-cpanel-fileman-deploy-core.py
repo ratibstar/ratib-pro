@@ -251,7 +251,6 @@ SECURITY_REMOTE_DELETE_FILES = [
     "control-panel/api/control/rateb-erp-migrate-run.php",
     "control-panel/api/control/platform-catalog-migrate-run.php",
     "control-panel/api/control/rcc-realtime-hub-run.php",
-    "control-panel/api/control/agencies-reset-erp-data.php",
     "control-panel/api/control/agencies-erp-migrate.php",
     "control-panel/api/control/agencies-bootstrap-from-reference.php",
     "control-panel/pages/control/rateb-erp-migrate.php",
