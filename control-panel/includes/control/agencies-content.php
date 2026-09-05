@@ -157,7 +157,7 @@ if (!function_exists('agency_site_url_host_ready')) {
         if ($host === '') {
             return false;
         }
-        $ready = ['rateb.sa', 'www.rateb.sa', 'test.rateb.sa', 'dev.rateb.sa'];
+        $ready = ['rateb.sa', 'www.rateb.sa', 'test.rateb.sa', 'dev.rateb.sa', 'alarfaj.rateb.sa'];
         if (in_array($host, $ready, true)) {
             return true;
         }
