@@ -51,7 +51,6 @@ $lockedCore = ['dashboard', 'notifications'];
             <?php } ?>
         </div>
         <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_rbac'); ?></p>
-        <p class="text-muted small mb-3"><?php echo __('company_permissions_vs_demo_locks'); ?></p>
 
         <form method="post"
               action="<?php echo rateb_url($routePrefix . '/' . $cid); ?>"

@@ -48,14 +48,6 @@ $isLockedPurchasableModule = static function (string $slug, string $permission) 
     if ($slug === '' || $permission === '' || !rateb_can($permission)) {
         return false;
     }
-    // Company-permissions catalog modules: unchecked = hide (never purchase-lock).
-    // Demo/addon locks remain a separate board for commercial upsell of add-on-only slugs.
-    if (class_exists(\Rateb\App\Services\PlanLimitService::class)) {
-        $entitlementCatalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
-        if (is_array($entitlementCatalog) && array_key_exists($slug, $entitlementCatalog)) {
-            return false;
-        }
-    }
     if (!$ctx['addons']->isPurchasable($slug)) {
         return false;
     }

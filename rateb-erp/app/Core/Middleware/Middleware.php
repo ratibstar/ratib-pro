@@ -488,13 +488,6 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
             if (!$addons->isEnabled() || !$addons->isPurchasable($this->module)) {
                 return false;
             }
-            // SaaS entitlements (company permissions): deny quietly — do not bounce to checkout.
-            if (class_exists(\Rateb\App\Services\PlanLimitService::class)) {
-                $entitlementCatalog = \Rateb\App\Services\PlanLimitService::moduleCatalog();
-                if (is_array($entitlementCatalog) && array_key_exists($this->module, $entitlementCatalog)) {
-                    return false;
-                }
-            }
             $path = 'admin/billing/modules/' . rawurlencode($this->module);
             $url = function_exists('rateb_url') ? rateb_url($path) : (RATEB_BASE_URL . '/' . $path);
             Response::redirect($url);
