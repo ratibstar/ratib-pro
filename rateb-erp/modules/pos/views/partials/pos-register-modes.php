@@ -72,6 +72,16 @@ declare(strict_types=1);
                 <span class="rateb-pos__pay-due-label"><?php echo __('pos_total'); ?></span>
                 <span class="rateb-pos__pay-due-value" data-pos-pay-due>0.00</span>
             </div>
+            <div class="rateb-pos__pay-meters" data-pos-pay-meters>
+                <div class="rateb-pos__pay-meter">
+                    <span class="rateb-pos__pay-meter-label"><?php echo __('pos_paid_amount'); ?></span>
+                    <strong class="rateb-pos__pay-meter-value" data-pos-pay-paid>0.00</strong>
+                </div>
+                <div class="rateb-pos__pay-meter rateb-pos__pay-meter--remain">
+                    <span class="rateb-pos__pay-meter-label" data-pos-pay-remain-label><?php echo __('pos_remaining_due'); ?></span>
+                    <strong class="rateb-pos__pay-meter-value" data-pos-pay-remain>0.00</strong>
+                </div>
+            </div>
             <div class="rateb-pos__pay-tenders" data-pos-payment-methods role="group" aria-label="<?php echo __('pos_payment_method'); ?>">
                 <button type="button" class="rateb-pos__tender is-active" data-pos-tender-pick="cash"><?php echo __('pos_refund_cash'); ?></button>
                 <button type="button" class="rateb-pos__tender" data-pos-tender-pick="card"><?php echo __('pos_refund_card'); ?></button>
@@ -89,10 +99,7 @@ declare(strict_types=1);
                 <label class="rateb-pos__field-label" for="rateb-pos-pay-active-amt"><?php echo __('pos_payment_amount'); ?></label>
                 <input type="text" inputmode="decimal" class="rateb-pos__pay-amount-input" id="rateb-pos-pay-active-amt" data-pos-active-pay-amount value="0.00" readonly />
             </div>
-            <div class="rateb-pos__pay-change" data-pos-change-wrap hidden>
-                <span><?php echo rateb_is_rtl() ? 'الباقي' : 'Change'; ?></span>
-                <strong data-pos-change-due>0.00</strong>
-            </div>
+            <dl class="rateb-pos__checkout-summary" data-pos-checkout-summary></dl>
             <div class="rateb-pos__pay-split">
                 <button type="button" class="rateb-pos__split-btn" data-pos-add-payment><?php echo __('pos_add_payment'); ?></button>
             </div>
@@ -105,36 +112,38 @@ declare(strict_types=1);
                 </div>
                 <p class="rateb-pos__hint" data-pos-gift-card-balance hidden></p>
             </div>
-            <dl class="rateb-pos__checkout-summary" data-pos-checkout-summary></dl>
-            <div class="rateb-pos__pay-rewards" data-pos-rewards-panel>
-                <div class="rateb-pos__pay-rewards-row">
-                    <label class="rateb-pos__field-label" for="rateb-pos-invoice-disc-value"><?php echo __('pos_invoice_discount'); ?></label>
-                    <div class="rateb-pos__pay-disc-row">
-                        <select id="rateb-pos-invoice-disc-type" class="rateb-pos__input rateb-pos__input--sm" data-pos-invoice-discount-type>
-                            <option value="amount"><?php echo __('pos_discount_amount'); ?></option>
-                            <option value="percent"><?php echo __('pos_discount_percent'); ?></option>
-                        </select>
-                        <input type="number" id="rateb-pos-invoice-disc-value" class="rateb-pos__input rateb-pos__input--sm" data-pos-invoice-discount-value value="0" min="0" step="0.01" inputmode="decimal" />
+            <details class="rateb-pos__pay-more">
+                <summary class="rateb-pos__pay-more-summary"><?php echo __('pos_checkout_more'); ?></summary>
+                <div class="rateb-pos__pay-rewards" data-pos-rewards-panel>
+                    <div class="rateb-pos__pay-rewards-row">
+                        <label class="rateb-pos__field-label" for="rateb-pos-invoice-disc-value"><?php echo __('pos_invoice_discount'); ?></label>
+                        <div class="rateb-pos__pay-disc-row">
+                            <select id="rateb-pos-invoice-disc-type" class="rateb-pos__input rateb-pos__input--sm" data-pos-invoice-discount-type>
+                                <option value="amount"><?php echo __('pos_discount_amount'); ?></option>
+                                <option value="percent"><?php echo __('pos_discount_percent'); ?></option>
+                            </select>
+                            <input type="number" id="rateb-pos-invoice-disc-value" class="rateb-pos__input rateb-pos__input--sm" data-pos-invoice-discount-value value="0" min="0" step="0.01" inputmode="decimal" />
+                        </div>
                     </div>
-                </div>
-                <div class="rateb-pos__pay-rewards-row">
-                    <label class="rateb-pos__field-label" for="rateb-pos-coupon-code"><?php echo __('pos_coupon_code'); ?></label>
-                    <div class="rateb-pos__pay-disc-row">
-                        <input type="text" id="rateb-pos-coupon-code" class="rateb-pos__input" data-pos-coupon-code maxlength="40" placeholder="<?php echo __('pos_coupon_code'); ?>" />
-                        <button type="button" class="rateb-pos__split-btn" data-pos-apply-coupon><?php echo __('pos_apply_coupon'); ?></button>
+                    <div class="rateb-pos__pay-rewards-row">
+                        <label class="rateb-pos__field-label" for="rateb-pos-coupon-code"><?php echo __('pos_coupon_code'); ?></label>
+                        <div class="rateb-pos__pay-disc-row">
+                            <input type="text" id="rateb-pos-coupon-code" class="rateb-pos__input" data-pos-coupon-code maxlength="40" placeholder="<?php echo __('pos_coupon_code'); ?>" />
+                            <button type="button" class="rateb-pos__split-btn" data-pos-apply-coupon><?php echo __('pos_apply_coupon'); ?></button>
+                        </div>
+                        <p class="rateb-pos__hint" data-pos-coupon-msg hidden></p>
                     </div>
-                    <p class="rateb-pos__hint" data-pos-coupon-msg hidden></p>
+                    <div class="rateb-pos__pay-rewards-row">
+                        <label class="rateb-pos__field-label" for="rateb-pos-points-redeem"><?php echo __('pos_loyalty_points'); ?></label>
+                        <input type="number" id="rateb-pos-points-redeem" class="rateb-pos__input rateb-pos__input--block" data-pos-points-redeem value="0" min="0" step="1" inputmode="numeric" />
+                        <p class="rateb-pos__hint" data-pos-loyalty-balance><?php echo __('pos_loyalty_balance'); ?>: —</p>
+                    </div>
+                    <label class="rateb-pos__pay-gift-receipt">
+                        <input type="checkbox" data-pos-gift-receipt />
+                        <span><?php echo __('pos_gift_receipt'); ?></span>
+                    </label>
                 </div>
-                <div class="rateb-pos__pay-rewards-row">
-                    <label class="rateb-pos__field-label" for="rateb-pos-points-redeem"><?php echo __('pos_loyalty_points'); ?></label>
-                    <input type="number" id="rateb-pos-points-redeem" class="rateb-pos__input rateb-pos__input--block" data-pos-points-redeem value="0" min="0" step="1" inputmode="numeric" />
-                    <p class="rateb-pos__hint" data-pos-loyalty-balance><?php echo __('pos_loyalty_balance'); ?>: —</p>
-                </div>
-                <label class="rateb-pos__pay-gift-receipt">
-                    <input type="checkbox" data-pos-gift-receipt />
-                    <span><?php echo __('pos_gift_receipt'); ?></span>
-                </label>
-            </div>
+            </details>
         </div>
         <div class="rateb-pos__pay-side">
             <div class="rateb-pos__keypad" data-pos-keypad>

@@ -199,6 +199,7 @@ final class PosRegisterController extends PosBaseController
             'pos_serial_qty_one', 'pos_fefo_preview', 'pos_batch_no', 'pos_expiry_date', 'pos_select_serial',
             'pos_out_of_stock', 'pos_line_stock',
             'pos_checkout', 'pos_complete_sale', 'pos_receipt', 'pos_invoice_discount',
+            'pos_paid_amount', 'pos_remaining_due', 'pos_change_due', 'pos_checkout_more',
             'pos_discount_amount', 'pos_discount_percent', 'pos_discount_total',
             'pos_payment_method', 'pos_payment_amount', 'pos_payment_reference', 'pos_add_payment',
             'pos_payment_invalid_method', 'pos_payment_invalid_amount', 'pos_payment_mismatch', 'pos_checkout_failed',

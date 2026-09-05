@@ -34,6 +34,10 @@
     var activeAmountEl = root.querySelector('[data-pos-active-pay-amount]');
     var payDueEl = root.querySelector('[data-pos-pay-due]');
     var payHeadTotal = root.querySelector('[data-pos-pay-sheet-total]');
+    var payMeters = root.querySelector('[data-pos-pay-meters]');
+    var payPaidEl = root.querySelector('[data-pos-pay-paid]');
+    var payRemainEl = root.querySelector('[data-pos-pay-remain]');
+    var payRemainLabelEl = root.querySelector('[data-pos-pay-remain-label]');
     var changeWrap = root.querySelector('[data-pos-change-wrap]');
     var changeDueEl = root.querySelector('[data-pos-change-due]');
     var keypad = root.querySelector('[data-pos-keypad]');
@@ -209,17 +213,47 @@
     }
 
     function updateChangeDue() {
-        if (!changeWrap || !changeDueEl) {
-            return;
-        }
         var paid = splitPaidTotal() + Number(keypadBuffer || 0);
-        var change = paid - pricingTotal;
-        if (activeMethod === 'cash' && change > 0.009) {
-            changeWrap.hidden = false;
-            changeDueEl.textContent = money(change);
-        } else {
-            changeWrap.hidden = true;
-            changeDueEl.textContent = '0.00';
+        var remain = Math.round((pricingTotal - paid) * 100) / 100;
+        var change = Math.round((paid - pricingTotal) * 100) / 100;
+
+        if (payPaidEl) {
+            payPaidEl.textContent = money(paid);
+        }
+        if (payRemainEl && payRemainLabelEl) {
+            if (remain > 0.009) {
+                payRemainLabelEl.textContent = t('pos_remaining_due', 'Remaining');
+                payRemainEl.textContent = money(remain);
+                if (payMeters) {
+                    payMeters.classList.remove('is-change', 'is-settled');
+                    payMeters.classList.add('is-due');
+                }
+            } else if (change > 0.009 && activeMethod === 'cash') {
+                payRemainLabelEl.textContent = t('pos_change_due', 'Change');
+                payRemainEl.textContent = money(change);
+                if (payMeters) {
+                    payMeters.classList.remove('is-due', 'is-settled');
+                    payMeters.classList.add('is-change');
+                }
+            } else {
+                payRemainLabelEl.textContent = t('pos_remaining_due', 'Remaining');
+                payRemainEl.textContent = '0.00';
+                if (payMeters) {
+                    payMeters.classList.remove('is-due', 'is-change');
+                    payMeters.classList.add('is-settled');
+                }
+            }
+        }
+
+        // Legacy single change bar (kept if present in older markup).
+        if (changeWrap && changeDueEl) {
+            if (activeMethod === 'cash' && change > 0.009) {
+                changeWrap.hidden = false;
+                changeDueEl.textContent = money(change);
+            } else {
+                changeWrap.hidden = true;
+                changeDueEl.textContent = '0.00';
+            }
         }
     }
 
