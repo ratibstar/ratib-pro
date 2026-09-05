@@ -55,6 +55,34 @@ final class Company extends Model
         return $row ?: null;
     }
 
+    public function findByEmail(string $email): ?array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+        $stmt = $this->db->prepare('SELECT * FROM rateb_companies WHERE email = :email LIMIT 1');
+        $stmt->execute(['email' => $email]);
+        $row = $stmt->fetch();
+
+        return $row ?: null;
+    }
+
+    public function findByControlAgencyId(int $agencyId): ?array
+    {
+        if ($agencyId < 1) {
+            return null;
+        }
+        $row = $this->queryOne(
+            "SELECT * FROM rateb_companies
+             WHERE JSON_UNQUOTE(JSON_EXTRACT(COALESCE(settings, '{}'), '$.control_agency_id')) = :aid
+             LIMIT 1",
+            ['aid' => (string) $agencyId]
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
     public function suspend(int $id): bool
     {
         $stmt = $this->db->prepare("UPDATE rateb_companies SET status = 'suspended' WHERE id = :id");
