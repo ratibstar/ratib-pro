@@ -35,6 +35,8 @@ return [
     'agencies.erp_needs_site_url' => 'Add a valid Site URL (https://…) in Edit, then run Provision ERP.',
     'agencies.pro' => 'Pro',
     'agencies.erp' => 'ERP',
+    'agencies.access_control' => 'Access Control',
+    'agencies.access_control_hint' => 'Users, roles, and permission matrix',
     'agencies.manage_branches' => 'Manage branches',
     'agencies.manage_branches_short' => 'Branches',
     'agencies.manage_branches_hint' => 'Set branch limit and create branch login links',

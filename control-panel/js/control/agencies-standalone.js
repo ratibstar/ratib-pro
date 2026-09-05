@@ -862,7 +862,12 @@
         }).then(function(res) {
             var ct = (res.headers.get('content-type') || '').toLowerCase();
             if (!ct.includes('application/json')) {
-                throw new Error('Session expired or server error — please log in again and retry.');
+                var hint = res.status === 401 || res.status === 403
+                    ? 'Session expired — please log in again and retry.'
+                    : (res.status === 404
+                        ? 'Reset API is missing on the server (404).'
+                        : 'Session expired or server error — please log in again and retry.');
+                throw new Error(hint);
             }
             return res.json();
         }).then(function(data) {

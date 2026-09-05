@@ -32,6 +32,8 @@ return [
     'agencies.erp_needs_site_url' => 'أضف رابط موقع صالح (https://…) من تعديل، ثم نفّذ Provision ERP.',
     'agencies.pro' => 'Pro',
     'agencies.erp' => 'ERP',
+    'agencies.access_control' => 'التحكم بالوصول',
+    'agencies.access_control_hint' => 'المستخدمون والأدوار ومصفوفة الصلاحيات',
     'agencies.manage_branches' => 'إدارة الفروع',
     'agencies.manage_branches_short' => 'فروع',
     'agencies.manage_branches_hint' => 'حد الفروع وإنشاء روابط دخول الفروع',
