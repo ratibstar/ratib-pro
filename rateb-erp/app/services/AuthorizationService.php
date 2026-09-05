@@ -416,9 +416,14 @@ final class AuthorizationService
         }
 
         if (!$isSa) {
+            $cid = $opsId > 0 ? $opsId : self::resolveMatrixCompanyId();
+            if ($cid < 1) {
+                $cid = (int) ($_SESSION['rateb_company_id'] ?? 0);
+            }
+
             return [
                 'scope' => 'company',
-                'company_id' => $opsId > 0 ? $opsId : self::resolveMatrixCompanyId(),
+                'company_id' => $cid,
             ];
         }
 
@@ -556,11 +561,82 @@ final class AuthorizationService
     /** @param array<int|string, array<int|string>> $matrix roleId => permission ids */
     public function syncMatrixFromPost(array $matrix, ?int $companyId = null): void
     {
-        foreach ($this->allRoles($companyId) as $role) {
+        $scopeCid = $companyId === null ? self::resolveMatrixCompanyId() : (int) $companyId;
+        foreach ($this->allRoles($scopeCid) as $role) {
             $roleId = (int) $role['id'];
+            $roleCompanyId = (int) ($role['company_id'] ?? 0);
             $permIds = array_map('intval', (array) ($matrix[$roleId] ?? $matrix[(string) $roleId] ?? []));
+            $permIds = $this->filterAssignablePermissionIds($permIds, $roleCompanyId);
             $this->syncRolePermissions($roleId, $permIds);
         }
+    }
+
+    /**
+     * Drop permission IDs that must not be assigned in the given role company scope.
+     * Tenant roles (company_id > 0) never receive platform/oversight slugs via crafted POST.
+     *
+     * @param array<int|string> $permissionIds
+     * @return list<int>
+     */
+    public function filterAssignablePermissionIds(array $permissionIds, int $companyId): array
+    {
+        $want = [];
+        foreach ($permissionIds as $pid) {
+            $pid = (int) $pid;
+            if ($pid > 0) {
+                $want[$pid] = true;
+            }
+        }
+        if ($want === []) {
+            return [];
+        }
+        $allowed = $this->assignablePermissionIdSet($companyId);
+        $out = [];
+        foreach (array_keys($want) as $pid) {
+            if (isset($allowed[$pid])) {
+                $out[] = $pid;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<int, true>
+     */
+    public function assignablePermissionIdSet(int $companyId): array
+    {
+        $cfg = self::permissionsConfig();
+        $hidden = is_array($cfg['matrix_hidden_slugs'] ?? null) ? $cfg['matrix_hidden_slugs'] : [];
+        $platformMods = is_array($cfg['platform_modules'] ?? null) ? $cfg['platform_modules'] : [];
+        $excluded = is_array($cfg['company_role_excluded_slugs'] ?? null) ? $cfg['company_role_excluded_slugs'] : [];
+        $dedicatedExtra = is_array($cfg['dedicated_company_admin_slugs'] ?? null) ? $cfg['dedicated_company_admin_slugs'] : [];
+        $tenantScope = $companyId > 0;
+        $rows = (new Permission())->query('SELECT id, slug, module FROM rateb_permissions');
+        $set = [];
+        foreach ($rows as $row) {
+            $pid = (int) ($row['id'] ?? 0);
+            if ($pid < 1) {
+                continue;
+            }
+            $slug = (string) ($row['slug'] ?? '');
+            $mod = (string) ($row['module'] ?? 'general');
+            if ($slug !== '' && in_array($slug, $hidden, true)) {
+                continue;
+            }
+            if ($tenantScope) {
+                $allowExtra = $slug !== '' && in_array($slug, $dedicatedExtra, true);
+                if (in_array($mod, $platformMods, true) && !$allowExtra) {
+                    continue;
+                }
+                if ($slug !== '' && in_array($slug, $excluded, true) && !$allowExtra) {
+                    continue;
+                }
+            }
+            $set[$pid] = true;
+        }
+
+        return $set;
     }
 
     public function getUserRoleNames(int $userId): string

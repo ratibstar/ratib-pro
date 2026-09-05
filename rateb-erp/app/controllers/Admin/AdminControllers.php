@@ -130,12 +130,15 @@ final class DashboardController extends Controller
             if (!rateb_can($perm)) {
                 continue;
             }
-            // Platform accounting route is SA oversight — prefer ops accounting for staff.
-            if ($path === 'admin/accounting' && function_exists('rateb_app_route')) {
-                $path = rateb_app_route('accounting');
-            }
-            if ($path === 'admin/reports' && function_exists('rateb_app_route')) {
-                $path = rateb_app_route('reports');
+            // Prefer tenant/ops routes so staff are not sent to SA-only /admin/* paths.
+            if (function_exists('rateb_app_route')) {
+                if ($path === 'admin/accounting') {
+                    $path = rateb_app_route('accounting');
+                } elseif ($path === 'admin/reports') {
+                    $path = rateb_app_route('reports');
+                } elseif ($path === 'admin/access-control') {
+                    $path = rateb_app_route('access-control');
+                }
             }
             $quickLinks[] = [
                 'href' => rateb_url($path),
@@ -2244,10 +2247,10 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'selectedBranches' => $userId > 0 ? $branchSvc->getUserBranchIds($userId) : [],
             'branchesByCompany' => $branchSvc->optionsByCompany(),
             'isSuperAdmin' => $platformForm ? true : !empty($item['is_super_admin']),
-            // Platform SA must always see the super-admin checkbox (ops company must not hide it).
-            'hideSuperAdminFlag' => ($companyId > 0 || $staffForm)
-                && !$platformForm
-                && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin() && !$staffForm),
+            // Only platform Super Admin may see/edit the SA flag (never company admins or platform staff).
+            'hideSuperAdminFlag' => !(function_exists('rateb_is_super_admin') && rateb_is_super_admin())
+                || $staffForm
+                || ($companyId > 0 && !$platformForm),
             'defaultCompanyId' => ($platformForm || $staffForm || $companyId < 1) ? null : $companyId,
             'platformUserForm' => $platformForm,
             'platformStaffForm' => $staffForm,
@@ -2485,12 +2488,10 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $ids = array_values(array_filter(array_map('intval', (array) $this->input('ids', []))));
-        if ($this->scopedCompanyId() > 0) {
-            $ids = array_values(array_filter($ids, function (int $id): bool {
-                $row = $this->model->find($id);
-                return $row !== null && $this->userInScope($row);
-            }));
-        }
+        $ids = array_values(array_filter($ids, function (int $id): bool {
+            $row = $this->model->find($id);
+            return $row !== null && $this->userInScope($row);
+        }));
         if ($ids === []) {
             SessionManager::flash('error', __('bulk_none_selected'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -2511,12 +2512,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($password !== '') {
             $this->model->applyPassword($data, $password);
         }
-        $checkedSa = (bool) $this->input('is_super_admin');
-        $data['is_super_admin'] = $checkedSa ? 1 : 0;
         $scopedCompanyId = $this->scopedCompanyId();
         $platformForm = $this->wantsPlatformUserForm();
         $staffForm = $this->wantsPlatformStaffForm();
         $actorIsPlatformSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        // Non-SA actors can never set is_super_admin from POST (privilege escalation).
+        $checkedSa = $actorIsPlatformSa && (bool) $this->input('is_super_admin');
+        $data['is_super_admin'] = $checkedSa ? 1 : 0;
 
         if ($actorIsPlatformSa && ($platformForm || $checkedSa) && !$staffForm) {
             $data['is_super_admin'] = 1;
@@ -2533,8 +2535,19 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['company_id'] = $scopedCompanyId;
             SessionManager::forget('_rateb_users_form_platform');
             SessionManager::forget('_rateb_users_form_staff');
-        } elseif (!empty($data['is_super_admin'])) {
+        } elseif ($actorIsPlatformSa && !empty($data['is_super_admin'])) {
             $data['company_id'] = null;
+        } elseif (!$actorIsPlatformSa) {
+            $data['is_super_admin'] = 0;
+            if ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
+                // Platform staff may manage other platform staff only (no company).
+                $data['company_id'] = null;
+            } else {
+                $companyId = (int) $data['company_id'];
+                $sessionCid = (int) ($_SESSION['rateb_company_id'] ?? 0);
+                // Non-SA may only attach users to their own tenant company.
+                $data['company_id'] = ($sessionCid > 0 && $companyId === $sessionCid) ? $companyId : null;
+            }
         } elseif ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
             $data['company_id'] = null;
         } else {
@@ -2674,18 +2687,23 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($user === null) {
             return false;
         }
-        // Platform SA manages SA + staff + any company user regardless of ops picker.
-        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
-            if (!empty($user['is_super_admin']) || (int) ($user['company_id'] ?? 0) < 1) {
-                return true;
-            }
-        }
-        $companyId = $this->scopedCompanyId();
-        if ($companyId < 1) {
+        $actorIsSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        // Platform SA manages SA + staff regardless of ops picker.
+        if ($actorIsSa && (!empty($user['is_super_admin']) || (int) ($user['company_id'] ?? 0) < 1)) {
             return true;
         }
+        // Never allow non-SA to manage Super Admin accounts.
         if (!empty($user['is_super_admin'])) {
-            return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+            return false;
+        }
+        $companyId = $this->scopedCompanyId();
+        if ($actorIsSa) {
+            // Platform mode: any company user. Ops company selected: that tenant only.
+            return $companyId < 1 || (int) ($user['company_id'] ?? 0) === $companyId;
+        }
+        if ($companyId < 1) {
+            // Platform staff: only other non-SA platform users (no company).
+            return (int) ($user['company_id'] ?? 0) < 1;
         }
 
         return (int) ($user['company_id'] ?? 0) === $companyId;
@@ -2714,6 +2732,11 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $authz = new \Rateb\App\Services\AuthorizationService();
         $rbac = $this->rbacScope();
         $companyId = (int) $rbac['company_id'];
+        if ($companyId < 1 && !(function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url('admin'));
+            return;
+        }
         if ($companyId > 0) {
             $authz->ensureCompanyRoles($companyId);
         } else {
@@ -2759,8 +2782,8 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $displayFields,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => $this->bulkEnabled && $rbac['scope'] === 'company',
-            'createEnabled' => $this->createEnabled && $rbac['scope'] === 'company',
+            'bulkEnabled' => $this->bulkEnabled && $rbac['scope'] === 'company' && $companyId > 0,
+            'createEnabled' => $this->createEnabled && $rbac['scope'] === 'company' && $companyId > 0,
             'actionsEnabled' => $this->actionsEnabled,
             'rbacScope' => $rbac['scope'],
             'rbacOpsCompanyId' => $this->opsCompanyIdForRbac(),
@@ -2788,7 +2811,10 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             $this->redirect($this->rolesListUrl());
         }
         $permIds = array_map('intval', (array) $this->input('permission_ids', []));
-        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $scopeCid = (int) ($existing['company_id'] ?? 0);
+        $permIds = $authz->filterAssignablePermissionIds($permIds, $scopeCid);
+        $authz->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', 'role_permissions', $id, ['count' => count($permIds)]);
 
         $wantsJson = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
@@ -2820,6 +2846,9 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
 
     public function create(): void
     {
+        if (!$this->assertTenantRoleWrite()) {
+            return;
+        }
         $this->view($this->viewPrefix . '/form', $this->roleFormData(null), $this->layout());
     }
 
@@ -2891,12 +2920,19 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         }
         $data = $this->collectData();
         $companyId = $this->scopedCompanyId();
-        if ($companyId > 0) {
-            $data['company_id'] = $companyId;
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
         }
-        $permIds = array_map('intval', (array) $this->input('permission_ids', []));
+        $data['company_id'] = $companyId;
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $permIds = $authz->filterAssignablePermissionIds(
+            array_map('intval', (array) $this->input('permission_ids', [])),
+            $companyId
+        );
         $id = $this->model->create($data);
-        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        $authz->syncRolePermissions($id, $permIds);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect($this->rolesListUrl());
@@ -2929,8 +2965,10 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             unset($data['slug']);
         }
         $permIds = array_map('intval', (array) $this->input('permission_ids', []));
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $permIds = $authz->filterAssignablePermissionIds($permIds, (int) ($existing['company_id'] ?? 0));
         $this->model->update($id, $data);
-        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        $authz->syncRolePermissions($id, $permIds);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         // Full document load so soft-nav / sidebar cache cannot keep revoked menu links.
@@ -3004,6 +3042,11 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $ids = $this->parseBulkIds();
+        $ids = array_values(array_filter($ids, function (int $id): bool {
+            $row = $this->model->find($id);
+
+            return $row !== null && $this->roleInScope($row) && empty($row['is_system']);
+        }));
         if ($ids === []) {
             SessionManager::flash('error', __('bulk_none_selected'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -3024,6 +3067,19 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
     private function scopedCompanyId(): int
     {
         return (int) $this->rbacScope()['company_id'];
+    }
+
+    /** Tenant role create/write requires a real company scope (never platform company_id=0). */
+    private function assertTenantRoleWrite(): bool
+    {
+        $companyId = $this->scopedCompanyId();
+        if ($companyId > 0) {
+            return true;
+        }
+        SessionManager::flash('error', __('access_denied'));
+        $this->redirect(rateb_url($this->routePrefix));
+
+        return false;
     }
 
     /** @return array{scope:string,company_id:int} */

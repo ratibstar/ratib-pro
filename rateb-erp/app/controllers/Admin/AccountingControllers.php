@@ -17,8 +17,11 @@ final class AccessControlController extends Controller
 {
     public function index(): void
     {
-        $userModel = new \Rateb\App\Models\User();
         $rbac = $this->rbacScope();
+        if (!$this->assertRbacReadable($rbac)) {
+            return;
+        }
+        $userModel = new \Rateb\App\Models\User();
         $companyId = (int) $rbac['company_id'];
         $authz = new \Rateb\App\Services\AuthorizationService();
         if ($companyId > 0) {
@@ -50,8 +53,11 @@ final class AccessControlController extends Controller
 
     public function matrix(): void
     {
-        $authz = new \Rateb\App\Services\AuthorizationService();
         $rbac = $this->rbacScope();
+        if (!$this->assertRbacReadable($rbac)) {
+            return;
+        }
+        $authz = new \Rateb\App\Services\AuthorizationService();
         $companyId = (int) $rbac['company_id'];
         if ($companyId > 0 && !$authz->companyHasTenantRoleBootstrap($companyId)) {
             $authz->ensureCompanyRoles($companyId);
@@ -83,6 +89,9 @@ final class AccessControlController extends Controller
         $redirect = function_exists('rateb_url_query')
             ? rateb_url_query(rateb_app_url('access-control/matrix'), ['scope' => $rbac['scope']])
             : (rateb_app_url('access-control/matrix') . '?scope=' . rawurlencode($rbac['scope']));
+        if (!$this->assertRbacReadable($rbac)) {
+            return;
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect($redirect);
@@ -97,6 +106,25 @@ final class AccessControlController extends Controller
         ]);
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect($redirect);
+    }
+
+    /**
+     * Platform RBAC (company_id=0) is Super Admin only.
+     *
+     * @param array{scope:string,company_id:int} $rbac
+     */
+    private function assertRbacReadable(array $rbac): bool
+    {
+        if ((int) ($rbac['company_id'] ?? 0) > 0) {
+            return true;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+        SessionManager::flash('error', __('access_denied'));
+        Response::redirect(rateb_url('admin'));
+
+        return false;
     }
 
     /** @return array{scope:string,company_id:int} */

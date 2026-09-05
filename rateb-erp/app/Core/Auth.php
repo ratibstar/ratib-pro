@@ -221,6 +221,8 @@ final class Auth
         }
         SessionManager::forget('rateb_agency_access_perms_synced');
         SessionManager::forget('rateb_saas_tenant_access_perms_synced');
+        SessionManager::forget('rateb_agency_access_perms_synced_v3');
+        SessionManager::forget('rateb_saas_tenant_access_perms_synced_v3');
         if (function_exists('rateb_ensure_agency_access_permissions_once')) {
             rateb_ensure_agency_access_permissions_once();
         }

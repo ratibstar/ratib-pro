@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260905-pagination-prev-next-v1');
+define('RATEB_ASSET_BUILD', '20260905-access-control-harden-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3224,14 +3224,14 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
                     return $valid;
                 }
             }
-        }
+            // Non-SA may only adopt their own session company via ?company_id= — never arbitrary tenants.
+            if ($fromRequest > 0 && $sessionCompany > 0 && $fromRequest === $sessionCompany) {
+                $valid = rateb_adopt_ops_company_id($fromRequest);
+                if ($valid > 0) {
+                    \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $valid);
 
-        if (!$isSuper && $fromRequest > 0) {
-            $valid = rateb_adopt_ops_company_id($fromRequest);
-            if ($valid > 0) {
-                \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $valid);
-
-                return $valid;
+                    return $valid;
+                }
             }
         }
 
