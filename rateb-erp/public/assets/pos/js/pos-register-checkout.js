@@ -480,7 +480,7 @@
         }
         syncGiftCardPanel();
         root.querySelectorAll('[data-pos-tender-pick]').forEach(function (btn) {
-            btn.classList.toggle('is-active', btn.getAttribute('data-pos-tender-pick') === 'cash');
+            btn.classList.toggle('is-active', btn.getAttribute('data-pos-tender-pick') === activeMethod);
         });
         if (couponInput) {
             couponInput.value = '';
