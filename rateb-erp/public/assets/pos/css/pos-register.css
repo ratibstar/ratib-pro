@@ -2802,27 +2802,30 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__pay-body {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+    grid-template-columns: minmax(0, 1fr) 210px;
     min-height: 0;
     overflow: hidden;
+    align-items: stretch;
 }
 
 .rateb-pos__pay-main {
-    padding: 12px 14px;
+    padding: 10px 12px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .rateb-pos__pay-side {
-    padding: 12px;
+    padding: 10px;
     border-inline-start: 1px solid var(--pos-border);
     background: var(--pos-surface);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 8px;
     min-height: 0;
+    overflow: hidden;
 }
 
 .rateb-pos__pay-due {
@@ -2839,7 +2842,7 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__pay-due-value {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
@@ -2848,14 +2851,14 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__pay-meters {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
 }
 
 .rateb-pos__pay-meter {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     border: 1px solid var(--pos-border);
@@ -2867,7 +2870,7 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__pay-meter-value {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
@@ -2889,21 +2892,25 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__tender-grid,
 .rateb-pos__pay-tenders {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
 }
 
 .rateb-pos__tender {
-    min-height: 40px;
-    padding: 0 8px;
+    min-height: 34px;
+    height: 34px;
+    padding: 0 4px;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     color: var(--pos-text);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rateb-pos__tender.is-active {
@@ -2919,27 +2926,29 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__cash-key {
-    min-height: 36px;
+    min-height: 32px;
+    height: 32px;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     color: var(--pos-text);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .rateb-pos__pay-amount-input {
     width: 100%;
-    min-height: 44px;
-    padding: 0 12px;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 10px;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius);
     background: var(--pos-bg);
     color: var(--pos-text);
     font: inherit;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     text-align: end;
@@ -2949,26 +2958,27 @@ html[dir="rtl"] .rateb-pos__nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-radius: var(--pos-radius-sm);
     background: var(--pos-accent-soft);
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .rateb-pos__pay-change strong {
-    font-size: 18px;
+    font-size: 16px;
     font-variant-numeric: tabular-nums;
 }
 
 .rateb-pos__split-btn {
-    min-height: 36px;
-    padding: 0 12px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 10px;
     border: 1px dashed var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: transparent;
     color: var(--pos-text-muted);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
 }
 
@@ -2976,7 +2986,7 @@ html[dir="rtl"] .rateb-pos__nav {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
@@ -2985,13 +2995,13 @@ html[dir="rtl"] .rateb-pos__nav {
 .rateb-pos__pay-row-method {
     flex: 1;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .rateb-pos__pay-row-amt {
-    min-width: 72px;
+    min-width: 64px;
     text-align: end;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     border: none;
@@ -3000,49 +3010,58 @@ html[dir="rtl"] .rateb-pos__nav {
 }
 
 .rateb-pos__pay-row-remove {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border: none;
     border-radius: var(--pos-radius-sm);
     background: transparent;
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
     color: var(--pos-text-muted);
 }
 
+/* Fixed keypad — never stretch to fill viewport height */
 .rateb-pos__keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    flex: 1;
-    min-height: 0;
+    grid-template-rows: repeat(4, 40px);
+    gap: 5px;
+    flex: 0 0 auto;
+    height: auto;
+    width: 100%;
 }
 
 .rateb-pos__keypad button {
-    min-height: 42px;
-    height: 100%;
+    width: 100%;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
     border: 1px solid var(--pos-border);
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     color: var(--pos-text);
     font: inherit;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
+    padding: 0;
+    line-height: 1;
 }
 
 .rateb-pos__charge--complete {
-    min-height: 52px;
-    margin-top: auto;
-    flex-shrink: 0;
+    min-height: 44px !important;
+    height: 44px;
+    margin-top: 4px;
+    flex: 0 0 auto;
+    font-size: 14px;
 }
 
 .rateb-pos__checkout-summary {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 10px;
+    gap: 3px;
+    padding: 6px 8px;
     border-radius: var(--pos-radius-sm);
     background: var(--pos-surface-2);
     border: 1px solid var(--pos-border);
@@ -3053,7 +3072,7 @@ html[dir="rtl"] .rateb-pos__nav {
     justify-content: space-between;
     align-items: baseline;
     gap: 12px;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .rateb-pos__pay-summary-row dt,
@@ -3068,16 +3087,17 @@ html[dir="rtl"] .rateb-pos__nav {
 
 .rateb-pos__pay-more {
     border-top: 1px solid var(--pos-border);
-    padding-top: 6px;
+    padding-top: 4px;
+    margin-top: auto;
 }
 
 .rateb-pos__pay-more-summary {
     cursor: pointer;
     list-style: none;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--pos-text-muted);
-    padding: 6px 0;
+    padding: 4px 0;
     user-select: none;
 }
 
@@ -3095,14 +3115,30 @@ html[dir="rtl"] .rateb-pos__nav {
     border-top: none;
 }
 
+@media (max-width: 1100px) {
+    .rateb-pos__pay-tenders {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .rateb-pos__tender {
+        height: 36px;
+        min-height: 36px;
+    }
+}
+
 @media (max-height: 820px) {
-    .rateb-pos__pay-due-value { font-size: 22px; }
-    .rateb-pos__pay-amount-input { min-height: 40px; font-size: 20px; }
-    .rateb-pos__tender { min-height: 36px; font-size: 12px; }
-    .rateb-pos__cash-key { min-height: 32px; }
-    .rateb-pos__keypad button { min-height: 36px; font-size: 16px; }
-    .rateb-pos__charge--complete { min-height: 46px; }
-    .rateb-pos__pay-meter-value { font-size: 16px; }
+    .rateb-pos__pay-due-value { font-size: 20px; }
+    .rateb-pos__pay-amount-input { min-height: 36px; height: 36px; font-size: 18px; }
+    .rateb-pos__tender { height: 32px; min-height: 32px; font-size: 11px; }
+    .rateb-pos__cash-key { height: 28px; min-height: 28px; }
+    .rateb-pos__keypad { grid-template-rows: repeat(4, 34px); }
+    .rateb-pos__keypad button {
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        font-size: 14px;
+    }
+    .rateb-pos__charge--complete { min-height: 40px !important; height: 40px; }
+    .rateb-pos__pay-meter-value { font-size: 14px; }
 }
 
 /* Return sheet */
