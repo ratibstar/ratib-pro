@@ -107,7 +107,9 @@ $chk = (string) file_get_contents($root . '/app/services/ModuleAddonCheckoutServ
 $nav = (string) file_get_contents($root . '/views/layouts/main.php');
 $cp = (string) file_get_contents($root . '/app/controllers/Admin/CompanyPermissionsController.php');
 
-maca_assert(str_contains($ctrl, 'canManagePlatformCatalog'), 'catalog admin requires platform/preview Super Admin');
+maca_assert(str_contains($ctrl, 'catalogUiAllowedForCurrentTenant'), 'catalog admin requires tenant catalog entitlement gate');
+maca_assert(str_contains($svc = (string) file_get_contents($root . '/app/services/ModuleAddonService.php'), 'canManagePlatformCatalog'), 'SA catalog gate remains in ModuleAddonService');
+maca_assert(str_contains($svc, 'companyHasCatalogEntitlement'), 'company.modules gates dedicated catalog UI');
 maca_assert(!str_contains($ctrl, 'PaymentService') && !str_contains($ctrl, 'Moyasar'), 'catalog admin does not start payment');
 maca_assert(!str_contains($ctrl, 'activateFromPaidInvoice'), 'catalog admin does not activate modules');
 maca_assert(!str_contains($ctrl, 'companyHasModule'), 'catalog admin is not the runtime entitlement screen');
