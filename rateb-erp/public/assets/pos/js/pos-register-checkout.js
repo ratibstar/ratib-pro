@@ -864,6 +864,10 @@
         root.querySelectorAll('[data-pos-cash-amt]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 activeMethod = 'cash';
+                root.querySelectorAll('[data-pos-tender-pick]').forEach(function (b) {
+                    b.classList.toggle('is-active', b.getAttribute('data-pos-tender-pick') === 'cash');
+                });
+                syncGiftCardPanel();
                 setActiveAmount(Number(btn.getAttribute('data-pos-cash-amt') || 0));
             });
         });
