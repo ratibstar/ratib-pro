@@ -128,21 +128,43 @@ final class AgencyErpMigrationService
         $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
         $status = $isSuspended ? 'suspended' : ($isActive ? 'active' : 'pending');
 
+        $planSlug = strtolower(trim((string) ($agency['erp_plan_slug'] ?? 'professional')));
+        if ($planSlug === '') {
+            $planSlug = 'professional';
+        }
+        $moduleList = \Rateb\App\Services\PlanLimitService::modulesForSlug($planSlug);
+        foreach (['dashboard', 'notifications', 'profile'] as $implied) {
+            if (!in_array($implied, $moduleList, true)) {
+                $moduleList[] = $implied;
+            }
+        }
+        $planRow = (new \Rateb\App\Models\Plan())->queryOne(
+            'SELECT id, max_users, max_storage_mb FROM rateb_plans WHERE slug = :slug LIMIT 1',
+            ['slug' => $planSlug]
+        );
+        $planId = (int) ($planRow['id'] ?? 0);
+        $userLimit = max(1, (int) ($planRow['max_users'] ?? 25));
+        $storageLimit = max(128, (int) ($planRow['max_storage_mb'] ?? 2048));
+
         try {
-            $companyId = (int) $companies->create([
+            $payload = [
                 'name' => $name,
                 'slug' => $slug,
                 'email' => $email,
                 'phone' => '',
                 'status' => $status,
-                'modules' => json_encode(\Rateb\App\Services\PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE),
-                'user_limit' => 25,
-                'storage_limit_mb' => 2048,
+                'modules' => json_encode(array_values($moduleList), JSON_UNESCAPED_UNICODE),
+                'user_limit' => $userLimit,
+                'storage_limit_mb' => $storageLimit,
                 'settings' => json_encode([
                     'control_agency_id' => $agencyId,
                     'site_url' => $site,
                 ], JSON_UNESCAPED_UNICODE),
-            ]);
+            ];
+            if ($planId > 0) {
+                $payload['plan_id'] = $planId;
+            }
+            $companyId = (int) $companies->create($payload);
         } catch (Throwable $e) {
             $byEmail = $companies->findByEmail($email);
             if ($byEmail !== null) {
