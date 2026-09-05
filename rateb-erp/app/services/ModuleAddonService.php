@@ -106,6 +106,53 @@ final class ModuleAddonService
     }
 
     /**
+     * Company entitlement for كتالوج الوحدات (company.modules).
+     * Uses getLimits — does not apply Super Admin companyHasModule bypass.
+     */
+    public function companyHasCatalogEntitlement(int $companyId): bool
+    {
+        if ($companyId < 1) {
+            return false;
+        }
+        $limits = (new PlanLimitService())->getLimits($companyId);
+        $modules = $limits['modules'] ?? [];
+
+        return is_array($modules) && in_array('module_addons', $modules, true);
+    }
+
+    /** Resolve tenant company for dedicated/agency catalog nav + route gate. */
+    public function resolveCatalogTenantCompanyId(): int
+    {
+        if (function_exists('rateb_nav_tenant_company_id_for_gate')) {
+            $id = (int) rateb_nav_tenant_company_id_for_gate();
+            if ($id > 0) {
+                return $id;
+            }
+        }
+        if (class_exists(DedicatedTenantPolicy::class)) {
+            return (int) DedicatedTenantPolicy::primaryCompanyId();
+        }
+
+        return 0;
+    }
+
+    /**
+     * Dedicated/agency hosts: catalog UI only when company.modules includes module_addons.
+     * Platform oversight host: Super Admin catalog is not gated by a tenant pack.
+     */
+    public function catalogUiAllowedForCurrentTenant(): bool
+    {
+        if (!$this->canManagePlatformCatalog()) {
+            return false;
+        }
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            return true;
+        }
+
+        return $this->companyHasCatalogEntitlement($this->resolveCatalogTenantCompanyId());
+    }
+
+    /**
      * Persist platform commerce overrides for known catalog slugs only.
      *
      * @param array<string, mixed> $postedBySlug

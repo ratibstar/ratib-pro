@@ -94,9 +94,6 @@ $lockedCore = ['dashboard', 'notifications'];
                             <?php if ($isCore) { ?>
                             <span class="badge bg-secondary ms-1"><?php echo __('company_permissions_core'); ?></span>
                             <?php } ?>
-                            <?php if ($modKey === 'platform_catalog') { ?>
-                            <span class="d-block text-muted small mt-1"><?php echo __('company_permissions_platform_catalog_hint'); ?></span>
-                            <?php } ?>
                         </label>
                     </div>
                 </div>

@@ -45,9 +45,11 @@ if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_ove
     }
     $actions[] = ['href' => rateb_url('admin/module-addons'), 'label' => __('module_addon_catalog'), 'icon' => 'fa-store'];
 }
-if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()
-    && (new \Rateb\App\Services\ModuleAddonService())->previewDemoHostAllowed()) {
-    $actions[] = ['href' => rateb_url('admin/module-addons'), 'label' => __('module_addon_catalog'), 'icon' => 'fa-store'];
+if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+    $macSvc = new \Rateb\App\Services\ModuleAddonService();
+    if ($macSvc->catalogUiAllowedForCurrentTenant() && $macSvc->previewDemoHostAllowed()) {
+        $actions[] = ['href' => rateb_url('admin/module-addons'), 'label' => __('module_addon_catalog'), 'icon' => 'fa-store'];
+    }
 }
 if (rateb_nav_can('access.manage')) {
     $actions[] = ['href' => rateb_url('admin/users/create'), 'label' => __('add_user'), 'icon' => 'fa-user-plus'];

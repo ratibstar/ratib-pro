@@ -55,7 +55,7 @@ return [
         'website',
         'logistics',
         'marketplace',
-        'platform_catalog',
+        'module_addons',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -89,7 +89,7 @@ return [
         'website' => 'website',
         'logistics' => 'logistics_platform',
         'marketplace' => 'marketplace_platform',
-        'platform_catalog' => 'platform_catalog_admin',
+        'module_addons' => 'module_addon_catalog',
     ],
 
     /**
@@ -563,7 +563,7 @@ return [
         'settings.manage',
         'notifications.manage',
         'dashboard.view',
-        'platform_catalog.view',
+        'module_addons.manage',
     ],
 
     /**

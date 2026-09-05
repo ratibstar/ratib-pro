@@ -949,8 +949,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ?>
             <?php } ?>
             <?php
-            $showModuleAddonCatalogNav = rateb_is_super_admin()
-                && (new \Rateb\App\Services\ModuleAddonService())->canManagePlatformCatalog()
+            $showModuleAddonCatalogNav = (new \Rateb\App\Services\ModuleAddonService())->catalogUiAllowedForCurrentTenant()
                 && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
             if ($showModuleAddonCatalogNav) {
                 $macHref = rateb_url('admin/module-addons');

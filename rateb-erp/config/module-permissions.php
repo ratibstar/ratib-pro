@@ -25,5 +25,5 @@ return [
     'website' => 'website.view',
     'logistics' => 'logistics.manage',
     'marketplace' => 'marketplace.manage',
-    'platform_catalog' => 'platform_catalog.view',
+    'module_addons' => 'module_addons.manage',
 ];

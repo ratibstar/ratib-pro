@@ -19,7 +19,7 @@ final class ModuleAddonCatalogController extends Controller
     public function index(): void
     {
         $addons = new ModuleAddonService();
-        if (!$addons->canManagePlatformCatalog()) {
+        if (!$addons->catalogUiAllowedForCurrentTenant()) {
             $this->notFound();
             return;
         }
@@ -55,7 +55,7 @@ final class ModuleAddonCatalogController extends Controller
     public function save(): void
     {
         $addons = new ModuleAddonService();
-        if (!$addons->canManagePlatformCatalog()) {
+        if (!$addons->catalogUiAllowedForCurrentTenant()) {
             $this->notFound();
             return;
         }
@@ -99,7 +99,7 @@ final class ModuleAddonCatalogController extends Controller
     public function voidInvoice(): void
     {
         $addons = new ModuleAddonService();
-        if (!$addons->canManagePlatformCatalog() || !$addons->previewDemoHostAllowed()) {
+        if (!$addons->catalogUiAllowedForCurrentTenant() || !$addons->previewDemoHostAllowed()) {
             $this->notFound();
             return;
         }
