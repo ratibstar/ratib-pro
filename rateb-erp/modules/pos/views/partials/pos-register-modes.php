@@ -59,20 +59,21 @@ declare(strict_types=1);
 <?php endif; ?>
 
 <div class="rateb-pos__service-panel rateb-pos__pay-sheet" data-pos-checkout-panel hidden>
+    <div class="rateb-pos__pay-card">
     <header class="rateb-pos__pay-head">
         <button type="button" class="rateb-pos__service-back" data-pos-checkout-close aria-label="<?php echo __('close'); ?>">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <h2><?php echo __('pos_checkout'); ?></h2>
         <span class="rateb-pos__pay-head-total" data-pos-pay-sheet-total>0.00</span>
     </header>
     <div class="rateb-pos__pay-body">
         <div class="rateb-pos__pay-main">
-            <div class="rateb-pos__pay-due">
-                <span class="rateb-pos__pay-due-label"><?php echo __('pos_total'); ?></span>
-                <span class="rateb-pos__pay-due-value" data-pos-pay-due>0.00</span>
-            </div>
             <div class="rateb-pos__pay-meters" data-pos-pay-meters>
+                <div class="rateb-pos__pay-meter">
+                    <span class="rateb-pos__pay-meter-label"><?php echo __('pos_total'); ?></span>
+                    <strong class="rateb-pos__pay-meter-value" data-pos-pay-due>0.00</strong>
+                </div>
                 <div class="rateb-pos__pay-meter">
                     <span class="rateb-pos__pay-meter-label"><?php echo __('pos_paid_amount'); ?></span>
                     <strong class="rateb-pos__pay-meter-value" data-pos-pay-paid>0.00</strong>
@@ -162,6 +163,7 @@ declare(strict_types=1);
             </div>
             <button type="button" class="rateb-pos__charge rateb-pos__charge--complete" data-pos-checkout-complete><?php echo __('pos_complete_sale'); ?></button>
         </div>
+    </div>
     </div>
 </div>
 
