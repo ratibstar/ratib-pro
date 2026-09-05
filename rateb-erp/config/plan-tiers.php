@@ -28,6 +28,7 @@ return [
         'modules' => [
             'dashboard',
             'notifications',
+            'access_control',
             'profile',
             'reports',
         ],
@@ -43,6 +44,7 @@ return [
         'modules' => [
             'dashboard',
             'notifications',
+            'access_control',
             'profile',
             'reports',
             'procurement',
@@ -61,6 +63,7 @@ return [
         'modules' => [
             'dashboard',
             'notifications',
+            'access_control',
             'profile',
             'reports',
             'procurement',
@@ -83,6 +86,7 @@ return [
         'modules' => [
             'dashboard',
             'notifications',
+            'access_control',
             'profile',
             'reports',
             'procurement',
@@ -115,6 +119,7 @@ return [
         'modules' => [
             'dashboard',
             'notifications',
+            'access_control',
             'profile',
             'reports',
             'procurement',

@@ -35,8 +35,13 @@ sa_gate_assert(in_array('procurement', $starter, true), 'starter includes procur
 sa_gate_assert(in_array('logistics', $pro, true), 'professional includes logistics');
 sa_gate_assert(in_array('procurement', $pro, true), 'professional includes procurement');
 sa_gate_assert(in_array('logistics', $ent, true), 'enterprise includes logistics');
-sa_gate_assert(in_array('pos', $ent, true), 'enterprise includes pos');
-sa_gate_assert(in_array('crm', $ent, true), 'enterprise includes crm');
+sa_gate_assert(in_array('access_control', $starter, true), 'starter includes access_control core');
+sa_gate_assert(in_array('access_control', $pro, true), 'professional includes access_control core');
+sa_gate_assert(in_array('access_control', $ent, true), 'enterprise includes access_control core');
+sa_gate_assert(
+    PlanLimitService::impliedCoreModules() === ['dashboard', 'notifications', 'access_control'],
+    'implied cores include access_control'
+);
 
 $appPhp = (string) file_get_contents($root . '/config/app.php');
 sa_gate_assert(

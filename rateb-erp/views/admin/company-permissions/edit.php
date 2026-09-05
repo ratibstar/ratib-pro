@@ -8,7 +8,9 @@ $cid = (int) ($company['id'] ?? 0);
 $companyName = (string) ($company['name'] ?? '');
 $selectedModules = is_array($selectedModules ?? null) ? $selectedModules : [];
 $moduleCatalog = is_array($moduleCatalog ?? null) ? $moduleCatalog : [];
-$lockedCore = ['dashboard', 'notifications'];
+$lockedCore = class_exists(\Rateb\App\Services\PlanLimitService::class)
+    ? \Rateb\App\Services\PlanLimitService::impliedCoreModules()
+    : ['dashboard', 'notifications', 'access_control'];
 ?>
 <link rel="stylesheet" href="<?php echo rateb_asset('css/company-permissions.css'); ?>">
 <div class="rateb-card rateb-cp-edit">

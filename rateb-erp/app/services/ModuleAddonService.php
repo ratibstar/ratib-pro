@@ -1271,13 +1271,8 @@ final class ModuleAddonService
     private function normalizeSlugList(array $slugs): array
     {
         $known = PlanLimitService::filterKnownModules($this->uniquePreserveOrder($slugs));
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $known, true)) {
-                $known[] = $implied;
-            }
-        }
 
-        return array_values($known);
+        return PlanLimitService::withImpliedCoreModules($known);
     }
 
     /**

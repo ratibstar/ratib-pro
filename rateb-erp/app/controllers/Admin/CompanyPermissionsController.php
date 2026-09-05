@@ -124,12 +124,7 @@ final class CompanyPermissionsController extends Controller
             $raw = [];
         }
         $modules = PlanLimitService::filterKnownModules($raw);
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $modules, true)) {
-                $modules[] = $implied;
-            }
-        }
-        $modules = array_values(array_unique($modules));
+        $modules = PlanLimitService::withImpliedCoreModules($modules);
 
         try {
             $ok = $this->companies->updateModules($id, $modules);
@@ -227,9 +222,9 @@ final class CompanyPermissionsController extends Controller
             }
         }
 
-        return array_values(array_filter(
+        return PlanLimitService::withImpliedCoreModules(array_values(array_filter(
             array_map('strval', $source),
             static fn(string $key): bool => $key !== '' && in_array($key, $catalogKeys, true)
-        ));
+        )));
     }
 }

@@ -355,6 +355,7 @@ final class ErpProvisioningService
                 $verified = !empty($applied['verified']) && in_array('hr', $mods, true);
                 if ($mods === []
                     || (!in_array('hr', $mods, true) && in_array($planSlug, ['professional', 'enterprise'], true))
+                    || !in_array('access_control', $mods, true)
                 ) {
                     $errors[] = $ping['db'] . ': modules incomplete (' . implode(',', $mods) . ')';
                     continue;

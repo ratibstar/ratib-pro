@@ -1,1 +1,1 @@
-20260905-cp-module-addons-entitlement-v1
+20260905-access-control-core-provision-v1

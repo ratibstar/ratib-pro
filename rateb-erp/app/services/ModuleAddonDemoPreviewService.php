@@ -56,13 +56,7 @@ final class ModuleAddonDemoPreviewService
                 $kept[] = $mod;
             }
         }
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $kept, true)) {
-                $kept[] = $implied;
-            }
-        }
-
-        return $kept;
+        return PlanLimitService::withImpliedCoreModules($kept);
     }
 
     /**
@@ -83,7 +77,7 @@ final class ModuleAddonDemoPreviewService
         if ($slug !== '' && !in_array($slug, $kept, true)) {
             $kept[] = $slug;
         }
-        foreach (['dashboard', 'notifications'] as $implied) {
+        foreach (['dashboard', 'notifications', 'access_control'] as $implied) {
             if (!in_array($implied, $kept, true)) {
                 $kept[] = $implied;
             }

@@ -32,7 +32,7 @@ final class DedicatedCompanySeedService
 
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
-        $modules = $plan['modules'] ?? json_encode(PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE);
+        $modules = $this->modulesJsonForPlan($plan, $planSlug);
 
         $db = Database::connection();
         $db->beginTransaction();
@@ -176,7 +176,7 @@ final class DedicatedCompanySeedService
     ): array {
         $plan = $this->resolvePlan($planSlug);
         $planId = (int) $plan['id'];
-        $modules = $plan['modules'] ?? json_encode(PlanLimitService::defaultModules(), JSON_UNESCAPED_UNICODE);
+        $modules = $this->modulesJsonForPlan($plan, $planSlug);
 
         $db = Database::connection();
         $db->beginTransaction();
@@ -203,6 +203,9 @@ final class DedicatedCompanySeedService
             $auth->ensureCompanyRoles($companyId);
             $role = $auth->findRoleBySlug('company-full-access', $companyId);
             $roleId = $role ? (int) $role['id'] : 0;
+            if ($roleId > 0) {
+                $auth->grantDedicatedCompanyAdminSlugs($roleId);
+            }
             $barcode = new BarcodeLoginService();
 
             foreach ($tenantUsers as $user) {
@@ -498,12 +501,7 @@ final class DedicatedCompanySeedService
         if ($modules === []) {
             $modules = PlanLimitService::modulesForSlug($planSlug);
         }
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $modules, true)) {
-                $modules[] = $implied;
-            }
-        }
-        $modules = array_values(array_unique($modules));
+        $modules = PlanLimitService::withImpliedCoreModules($modules);
         $modulesJson = json_encode($modules, JSON_UNESCAPED_UNICODE);
         if ($modulesJson === false) {
             throw new \RuntimeException('Failed to encode company modules');
@@ -607,6 +605,19 @@ final class DedicatedCompanySeedService
         return $slug;
     }
 
+    /** @param array<string, mixed> $plan */
+    private function modulesJsonForPlan(array $plan, string $planSlug): string
+    {
+        $decoded = json_decode((string) ($plan['modules'] ?? ''), true);
+        $modules = PlanLimitService::filterKnownModules(is_array($decoded) ? $decoded : []);
+        if ($modules === []) {
+            $modules = PlanLimitService::modulesForSlug($planSlug);
+        }
+        $json = json_encode(PlanLimitService::withImpliedCoreModules($modules), JSON_UNESCAPED_UNICODE);
+
+        return $json !== false ? $json : '[]';
+    }
+
     private function assignCompanyFullAccessRole(int $userId, int $companyId): void
     {
         if ($userId < 1 || $companyId < 1) {
@@ -626,5 +637,6 @@ final class DedicatedCompanySeedService
         if (!$hasRole) {
             $authz->assignRole($userId, $roleId);
         }
+        $authz->grantDedicatedCompanyAdminSlugs($roleId);
     }
 }

@@ -182,7 +182,7 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
         if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             return;
         }
-        $sessionKey = $agency ? 'rateb_agency_access_perms_synced_v3' : 'rateb_saas_tenant_access_perms_synced_v3';
+        $sessionKey = $agency ? 'rateb_agency_access_perms_synced_v4' : 'rateb_saas_tenant_access_perms_synced_v4';
         if (\Rateb\App\Core\SessionManager::get($sessionKey) === 1) {
             return;
         }
@@ -193,6 +193,7 @@ if (!function_exists('rateb_ensure_agency_access_permissions_once')) {
             if ($companyId > 0) {
                 $authz->ensureCompanyRoles($companyId);
                 $authz->refreshTenantSelfServicePermissions($companyId);
+                (new \Rateb\App\Services\PlanLimitService())->persistMissingImpliedCoreModules($companyId);
             }
             if ($agency) {
                 $authz->ensureAgencyCompanyAdminRole((int) (\Rateb\App\Core\SessionManager::get('rateb_user_id') ?? 0));
@@ -3851,6 +3852,12 @@ if (!function_exists('rateb_nav_can')) {
             return false;
         }
         if ($module === '') {
+            return true;
+        }
+        // Tenant Access Control is a host capability, not a paid plan checkbox.
+        if ($module === 'access_control'
+            && function_exists('rateb_company_access_routes_enabled')
+            && rateb_company_access_routes_enabled()) {
             return true;
         }
         $companyId = rateb_nav_tenant_company_id_for_gate();

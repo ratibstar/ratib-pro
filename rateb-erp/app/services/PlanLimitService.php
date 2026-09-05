@@ -201,19 +201,49 @@ final class PlanLimitService
         return is_array($tier) ? $tier : null;
     }
 
+    /**
+     * Always-on tenant cores. Access Control is not an Ultimate upsell —
+     * every Control Panel / Provision ERP company must manage users, roles, and matrix.
+     *
+     * @return list<string>
+     */
+    public static function impliedCoreModules(): array
+    {
+        return ['dashboard', 'notifications', 'access_control'];
+    }
+
+    /**
+     * @param list<string> $modules
+     * @return list<string>
+     */
+    public static function withImpliedCoreModules(array $modules): array
+    {
+        $modules = array_values(array_filter(
+            array_map('strval', $modules),
+            static fn(string $module): bool => $module !== ''
+        ));
+        foreach (self::impliedCoreModules() as $implied) {
+            if (!in_array($implied, $modules, true)) {
+                $modules[] = $implied;
+            }
+        }
+
+        return array_values(array_unique($modules));
+    }
+
     /** @return list<string> */
     public static function modulesForSlug(string $slug): array
     {
         $tier = self::tierForSlug($slug);
         if ($tier === null) {
-            return self::defaultModules();
+            return self::withImpliedCoreModules(self::defaultModules());
         }
         $mods = $tier['modules'] ?? [];
         if (!is_array($mods) || $mods === []) {
-            return self::defaultModules();
+            return self::withImpliedCoreModules(self::defaultModules());
         }
 
-        return array_values(array_filter(array_map('strval', $mods)));
+        return self::withImpliedCoreModules(array_values(array_filter(array_map('strval', $mods))));
     }
 
     /** @return array<string, string> module key => lang label key */
@@ -458,21 +488,36 @@ final class PlanLimitService
     {
         $explicit = self::decodeModulesStatic($company['modules'] ?? null);
         if ($explicit !== []) {
-            foreach (['dashboard', 'notifications'] as $implied) {
-                if (!in_array($implied, $explicit, true)) {
-                    $explicit[] = $implied;
-                }
-            }
-
-            return array_values(array_unique($explicit));
-        }
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $modules, true)) {
-                $modules[] = $implied;
-            }
+            return self::withImpliedCoreModules($explicit);
         }
 
-        return $modules;
+        return self::withImpliedCoreModules($modules);
+    }
+
+    /** Persist missing cores into company.modules JSON (existing agency DBs). */
+    public function persistMissingImpliedCoreModules(int $companyId): bool
+    {
+        if ($companyId < 1) {
+            return false;
+        }
+        $company = $this->getCompanyRow($companyId);
+        if (!$company) {
+            return false;
+        }
+        $current = self::decodeModulesStatic($company['modules'] ?? null);
+        if ($current === []) {
+            return false;
+        }
+        $missing = array_values(array_diff(self::impliedCoreModules(), $current));
+        if ($missing === []) {
+            return false;
+        }
+        $ok = (new Company())->updateModules($companyId, self::withImpliedCoreModules($current));
+        if ($ok) {
+            self::forgetCompanyLimits($companyId);
+        }
+
+        return $ok;
     }
 
     /** @return list<string> */

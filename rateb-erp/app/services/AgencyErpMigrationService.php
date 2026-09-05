@@ -133,7 +133,8 @@ final class AgencyErpMigrationService
             $planSlug = 'professional';
         }
         $moduleList = \Rateb\App\Services\PlanLimitService::modulesForSlug($planSlug);
-        foreach (['dashboard', 'notifications', 'profile'] as $implied) {
+        $moduleList = \Rateb\App\Services\PlanLimitService::withImpliedCoreModules($moduleList);
+        foreach (['profile'] as $implied) {
             if (!in_array($implied, $moduleList, true)) {
                 $moduleList[] = $implied;
             }
@@ -501,12 +502,7 @@ final class AgencyErpMigrationService
             throw new RuntimeException(__('company_agency_admin_no_db'));
         }
         $modules = PlanLimitService::filterKnownModules($modules);
-        foreach (['dashboard', 'notifications'] as $implied) {
-            if (!in_array($implied, $modules, true)) {
-                $modules[] = $implied;
-            }
-        }
-        $modules = array_values(array_unique($modules));
+        $modules = PlanLimitService::withImpliedCoreModules($modules);
 
         Database::useConnectionOverride([
             'db' => $cfg['db'],
@@ -608,7 +604,7 @@ final class AgencyErpMigrationService
                 $decoded = json_decode((string) ($after['modules'] ?? ''), true);
                 $afterModules = is_array($decoded) ? array_values(array_map('strval', $decoded)) : [];
             }
-            if ($afterModules === [] || (in_array($planSlug, ['professional', 'enterprise'], true) && !in_array('hr', $afterModules, true))) {
+            if ($afterModules === [] || (in_array($planSlug, ['professional', 'enterprise'], true) && !in_array('hr', $afterModules, true)) || !in_array('access_control', $afterModules, true)) {
                 // Direct SQL fallback if ORM update did not stick.
                 $modulesJson = json_encode($applied['modules'] ?? [], JSON_UNESCAPED_UNICODE);
                 $pdo = Database::connection();
@@ -642,11 +638,12 @@ final class AgencyErpMigrationService
                 error_log('applyDedicatedCompanyPlan mobile salary features: ' . $e->getMessage());
             }
 
-            $verified = in_array('hr', $afterModules, true)
-                || !in_array($planSlug, ['professional', 'enterprise'], true);
+            $verified = (in_array('hr', $afterModules, true)
+                || !in_array($planSlug, ['professional', 'enterprise'], true))
+                && in_array('access_control', $afterModules, true);
             if (!$verified) {
                 throw new RuntimeException(
-                    'Verified modules still missing hr on ' . $cfg['db']
+                    'Verified modules still incomplete on ' . $cfg['db']
                     . ' company #' . $agencyCompanyId
                     . ' modules=' . implode(',', $afterModules)
                 );

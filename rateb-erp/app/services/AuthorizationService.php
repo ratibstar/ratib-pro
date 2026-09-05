@@ -1134,6 +1134,7 @@ final class AuthorizationService
         if ($existing === null) {
             $this->assignRole($userId, $roleId);
         }
+        $this->grantDedicatedCompanyAdminSlugs($roleId);
     }
 
     /**
@@ -1179,7 +1180,25 @@ final class AuthorizationService
         if (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
             return true;
         }
+        // Control Panel Provision ERP writes into the agency DB via connection override
+        // while HTTP_HOST is still rateb.sa — treat that as tenant matrix context.
+        if (class_exists(\Rateb\App\Core\Database::class) && \Rateb\App\Core\Database::hasConnectionOverride()) {
+            return true;
+        }
 
         return function_exists('rateb_tenant_permission_catalog_locked') && rateb_tenant_permission_catalog_locked();
+    }
+
+    /** Grant access.manage / settings.manage (and related) onto a tenant admin role. Additive. */
+    public function grantDedicatedCompanyAdminSlugs(int $roleId): void
+    {
+        if ($roleId < 1) {
+            return;
+        }
+        $this->ensureTenantSelfServicePermissionRows();
+        $extra = (array) (self::permissionsConfig()['dedicated_company_admin_slugs'] ?? []);
+        if ($extra !== []) {
+            $this->grantRolePermissionsBySlugs($roleId, $extra);
+        }
     }
 }
