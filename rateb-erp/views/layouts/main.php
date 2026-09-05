@@ -906,7 +906,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'settings.manage']],
             ];
             if (rateb_is_super_admin()
-                && \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) {
+                && function_exists('rateb_is_platform_oversight_host')
+                && rateb_is_platform_oversight_host()) {
                 $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', '']];
             }
             $oversightLinks = array_merge($oversightLinks, [
@@ -958,18 +959,6 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ?>
             <a href="<?php echo $macHref; ?>" data-rateb-href="<?php echo $macHref; ?>" data-rateb-full-nav="1" class="rateb-nav-link<?php echo $macActive; ?>">
                 <i class="fas fa-store"></i><span><?php echo __('module_addon_catalog'); ?></span>
-            </a>
-            <?php } ?>
-            <?php
-            $showStandaloneAddonLocks = rateb_is_super_admin()
-                && \Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()
-                && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
-            if ($showStandaloneAddonLocks) {
-                $locksHref = rateb_url('admin/billing/addon-locks');
-                $locksActive = $navActive('admin/billing/addon-locks') ? ' active' : '';
-                ?>
-            <a href="<?php echo $locksHref; ?>" data-rateb-href="<?php echo $locksHref; ?>" data-rateb-full-nav="1" class="rateb-nav-link<?php echo $locksActive; ?>">
-                <i class="fas fa-lock"></i><span><?php echo __('module_addon_demo_locks'); ?></span>
             </a>
             <?php } ?>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>

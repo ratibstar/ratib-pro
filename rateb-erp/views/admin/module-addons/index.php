@@ -18,7 +18,9 @@ $esc = static fn (mixed $v): string => Rateb\App\Core\View::escape((string) $v);
             <h1 id="rateb-mac-title" class="rateb-mac-title"><?php echo $esc($title ?? __('module_addon_catalog')); ?></h1>
             <p class="rateb-mac-lead"><?php echo $esc(__('module_addon_catalog_help')); ?></p>
             <p class="rateb-mac-note"><?php echo $esc(__('module_addon_catalog_vs_tenant')); ?></p>
-            <?php if (\Rateb\App\Services\ModuleAddonDemoPreviewService::sessionCanManageDemoLocks()) { ?>
+            <?php if (rateb_is_super_admin()
+                && function_exists('rateb_is_platform_oversight_host')
+                && rateb_is_platform_oversight_host()) { ?>
             <p class="rateb-mac-note"><a href="<?php echo $esc(rateb_url('admin/billing/addon-locks')); ?>"><?php echo $esc(__('module_addon_demo_locks')); ?></a></p>
             <?php } ?>
         </div>
