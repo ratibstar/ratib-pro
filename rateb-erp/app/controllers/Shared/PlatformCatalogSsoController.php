@@ -41,10 +41,22 @@ final class PlatformCatalogSsoController extends Controller
             return;
         }
 
-        if (!function_exists('rateb_is_super_admin') || !rateb_is_super_admin()) {
+        $isSa = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $companyAllowed = false;
+        if (!$isSa) {
+            $companyId = function_exists('rateb_nav_tenant_company_id_for_gate')
+                ? (int) rateb_nav_tenant_company_id_for_gate()
+                : (int) ($_SESSION['rateb_company_id'] ?? 0);
+            $hasModule = $companyId > 0
+                && class_exists(\Rateb\App\Services\PlanLimitService::class)
+                && (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, 'platform_catalog');
+            $canView = function_exists('rateb_can') && rateb_can('platform_catalog.view');
+            $companyAllowed = $hasModule && $canView;
+        }
+        if (!$isSa && !$companyAllowed) {
             http_response_code(403);
             header('Content-Type: text/plain; charset=utf-8');
-            echo 'Catalog access requires a platform super-admin ERP account.';
+            echo 'Catalog access requires platform super-admin or company platform_catalog entitlement.';
 
             return;
         }

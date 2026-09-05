@@ -8,7 +8,8 @@ INSERT INTO rateb_permissions (name, name_ar, slug, module, description, descrip
 ('Agency ERP Updates', 'رفع التحديثات للوكالات', 'agency_updates.manage', 'agency_updates', 'Push ERP updates to linked agencies', 'رفع تحديثات ERP إلى الوكالات المرتبطة'),
 ('Company Approvals Oversight', 'اعتماد الشركات', 'companies.approvals', 'companies', 'Approve pending companies from platform oversight', 'اعتماد الشركات المعلقة من إشراف المنصة'),
 ('Platform Product Catalog', 'كتالوج منتجات المنصة', 'platform_catalog.manage', 'platform_catalog', 'Open the platform product catalog admin', 'فتح إدارة كتالوج منتجات المنصة'),
-('Manage Company Permissions', 'صلاحيات الشركات', 'company_permissions.manage', 'companies', 'Edit per-company module entitlements and platform feature visibility', 'تعديل استحقاق وحدات الشركات وإظهار أدوات إشراف المنصة')
+('View Platform Product Catalog', 'عرض كتالوج منتجات المنصة', 'platform_catalog.view', 'platform_catalog', 'Browse the platform product catalog from the company ERP', 'تصفح كتالوج منتجات المنصة من نظام الشركة'),
+('Manage Company Permissions', 'صلاحيات الشركات', 'company_permissions.manage', 'companies', 'Edit per-company module entitlements', 'تعديل استحقاق وحدات الشركات')
 ON DUPLICATE KEY UPDATE name_ar = VALUES(name_ar), description_ar = VALUES(description_ar), module = VALUES(module);
 
 INSERT IGNORE INTO rateb_role_permissions (role_id, permission_id)
@@ -23,5 +24,6 @@ WHERE r.slug = 'super-admin'
     'agency_updates.manage',
     'companies.approvals',
     'platform_catalog.manage',
+    'platform_catalog.view',
     'company_permissions.manage'
   );

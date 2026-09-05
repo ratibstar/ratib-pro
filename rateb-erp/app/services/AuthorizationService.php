@@ -1056,6 +1056,14 @@ final class AuthorizationService
                 'description_ar' => 'فتح إدارة كتالوج منتجات المنصة',
             ],
             [
+                'slug' => 'platform_catalog.view',
+                'module' => 'platform_catalog',
+                'name' => 'View Platform Product Catalog',
+                'name_ar' => 'عرض كتالوج منتجات المنصة',
+                'description' => 'Browse the platform product catalog from the company ERP',
+                'description_ar' => 'تصفح كتالوج منتجات المنصة من نظام الشركة',
+            ],
+            [
                 'slug' => 'company_permissions.manage',
                 'module' => 'companies',
                 'name' => 'Manage Company Permissions',

@@ -191,6 +191,17 @@ if (!rateb_is_super_admin()
 }
 $opsLink('notifications', 'notifications', 'fa-bell', 'notifications');
 $opsLink('profile', 'profile', 'fa-user-gear', 'profile');
+if (rateb_nav_can('platform_catalog.view', 'platform_catalog')) {
+    // Full document nav — SSO handoff must not soft-navigate.
+    $pcHref = rateb_url('platform-catalog/sso');
+    if (function_exists('rateb_platform_catalog_entry_url')) {
+        $pcHref = rateb_platform_catalog_entry_url();
+    }
+    $pcHref = htmlspecialchars($pcHref, ENT_QUOTES, 'UTF-8');
+    echo '<a href="' . $pcHref . '" data-rateb-href="' . $pcHref . '" data-rateb-full-nav="1" class="rateb-nav-link">';
+    echo '<i class="fas fa-boxes-stacked"></i><span>' . htmlspecialchars(__('platform_catalog_admin'), ENT_QUOTES, 'UTF-8') . '</span>';
+    echo '</a>';
+}
 if (rateb_can('website.view') || rateb_can('website.manage') || rateb_is_super_admin()) {
     $opsSection(__('website') ?: 'Website', [
         ['website', 'website', 'fa-globe', 'website', 'website.view'],
