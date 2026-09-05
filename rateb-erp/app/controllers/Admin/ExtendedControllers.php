@@ -213,7 +213,7 @@ final class AdminApprovalsController extends Controller
         SessionManager::set('rateb_oversight_approvals_seen', (int) ($summary['total'] ?? 0));
         // Warm nav badges from this page's summary — avoid a second COUNT storm in the layout.
         try {
-            SessionManager::set('rateb_oversight_menu_counts_v2', [
+            SessionManager::set('rateb_oversight_menu_counts_v3', [
                 'exp' => time() + 300,
                 'data' => $svc->menuCountsFromSummary($summary),
             ]);
@@ -382,7 +382,7 @@ final class AdminApprovalsController extends Controller
         try {
             $payload['summary'] = $svc->summary($filterCompany, true);
             $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
-            SessionManager::set('rateb_oversight_menu_counts_v2', [
+            SessionManager::set('rateb_oversight_menu_counts_v3', [
                 'exp' => time() + 300,
                 'data' => $payload['menu_counts'],
             ]);
@@ -473,11 +473,14 @@ final class AdminApprovalsController extends Controller
     {
         try {
             SessionManager::forget('rateb_oversight_menu_counts');
+            SessionManager::forget('rateb_oversight_menu_counts_v3');
             SessionManager::forget('rateb_oversight_menu_counts_v2');
             SessionManager::forget('rateb_oversight_approvals_seen');
+            SessionManager::forget('rateb_approval_summary_v2_0');
             SessionManager::forget('rateb_approval_summary_v1_0');
             $cid = (int) $this->input('company_id', 0);
             if ($cid > 0) {
+                SessionManager::forget('rateb_approval_summary_v2_' . $cid);
                 SessionManager::forget('rateb_approval_summary_v1_' . $cid);
             }
         } catch (\Throwable $e) {
@@ -541,7 +544,7 @@ final class AdminApprovalsController extends Controller
                     $filterCompany = $companyId > 0 ? $companyId : null;
                     $payload['summary'] = $svc->summary($filterCompany, true);
                     $payload['menu_counts'] = $svc->menuCountsFromSummary($payload['summary']);
-                    SessionManager::set('rateb_oversight_menu_counts_v2', [
+                    SessionManager::set('rateb_oversight_menu_counts_v3', [
                         'exp' => time() + 300,
                         'data' => $payload['menu_counts'],
                     ]);

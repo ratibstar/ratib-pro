@@ -140,6 +140,7 @@ final class ErpProvisioningService
             $agency['db_port'] = $dbPort;
             $planApply = self::applyPlanToAgencyErp($agency, $planSlug);
             self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
+            self::activatePlatformCompanyAfterProvision($agency);
 
             return [
                 'agency_id' => $agencyId,
@@ -191,6 +192,7 @@ final class ErpProvisioningService
         }
         $planApply = self::applyPlanToAgencyErp($agency, $planSlug);
         self::markStatus($controlConn, $agencyId, 'ready', $erpDb, $dbHost, $dbUser, $dbPass, true);
+        self::activatePlatformCompanyAfterProvision($agency);
 
         return [
             'agency_id' => $agencyId,
@@ -1017,6 +1019,22 @@ final class ErpProvisioningService
         }
 
         return str_replace('\\', '/', $candidates[0]);
+    }
+
+    /** Platform company row is SaaS oversight; Provision ERP is the approval. */
+    private static function activatePlatformCompanyAfterProvision(array $agency): void
+    {
+        $agency['erp_status'] = 'ready';
+        try {
+            if (class_exists(\Rateb\App\Core\Database::class)) {
+                \Rateb\App\Core\Database::clearConnectionOverride();
+            }
+            $mig = new \Rateb\App\Services\AgencyErpMigrationService();
+            $mig->activateProvisionedPlatformCompanies();
+            $mig->ensurePlatformCompanyForAgency($agency);
+        } catch (Throwable $e) {
+            error_log('activatePlatformCompanyAfterProvision: ' . $e->getMessage());
+        }
     }
 
     private static function markStatus(

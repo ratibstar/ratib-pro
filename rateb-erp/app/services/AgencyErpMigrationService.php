@@ -65,7 +65,11 @@ final class AgencyErpMigrationService
         if ($linked > 0) {
             $existing = $companies->find($linked);
             if ($existing !== null) {
-                return $linked;
+                $settings = json_decode((string) ($existing['settings'] ?? ''), true);
+                $bound = (int) (is_array($settings) ? ($settings['control_agency_id'] ?? 0) : 0);
+                if ($bound < 1 || $bound === $agencyId) {
+                    return $this->finishPlatformCompanyForAgency($linked, $agency);
+                }
             }
         }
 
@@ -80,7 +84,7 @@ final class AgencyErpMigrationService
                     error_log('linkAgencyToCompany reuse #' . $agencyId . ': ' . $e->getMessage());
                 }
 
-                return $foundId;
+                return $this->finishPlatformCompanyForAgency($foundId, $agency);
             }
         }
 
@@ -120,13 +124,11 @@ final class AgencyErpMigrationService
                     error_log('linkAgencyToCompany email-reuse #' . $agencyId . ': ' . $e->getMessage());
                 }
 
-                return $foundId;
+                return $this->finishPlatformCompanyForAgency($foundId, $agency);
             }
         }
 
-        $isActive = (int) ($agency['is_active'] ?? 1) === 1;
-        $isSuspended = (int) ($agency['is_suspended'] ?? 0) === 1;
-        $status = $isSuspended ? 'suspended' : ($isActive ? 'active' : 'pending');
+        $status = $this->platformStatusForAgency($agency);
 
         $planSlug = strtolower(trim((string) ($agency['erp_plan_slug'] ?? 'professional')));
         if ($planSlug === '') {
@@ -171,7 +173,7 @@ final class AgencyErpMigrationService
             if ($byEmail !== null) {
                 $foundId = (int) ($byEmail['id'] ?? 0);
                 if ($foundId > 0) {
-                    return $foundId;
+                    return $this->finishPlatformCompanyForAgency($foundId, $agency);
                 }
             }
             throw $e;
@@ -188,6 +190,116 @@ final class AgencyErpMigrationService
             // Company row is usable even if CP erp_company_id write fails.
             error_log('linkAgencyToCompany after create #' . $agencyId . ': ' . $e->getMessage());
         }
+
+        return $this->finishPlatformCompanyForAgency($companyId, $agency);
+    }
+
+    /**
+     * Control Panel provision is the approval. Ready/active agencies must not sit in
+     * SaaS "اعتماد الشركات" as pending.
+     */
+    public function platformStatusForAgency(array $agency): string
+    {
+        if ((int) ($agency['is_suspended'] ?? 0) === 1) {
+            return 'suspended';
+        }
+        $erp = strtolower(trim((string) ($agency['erp_status'] ?? '')));
+        if ($erp === 'ready' || (int) ($agency['is_active'] ?? 1) === 1) {
+            return 'active';
+        }
+
+        return 'pending';
+    }
+
+    public function syncPlatformCompanyStatusFromAgency(int $companyId, array $agency): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $status = $this->platformStatusForAgency($agency);
+        $companies = new \Rateb\App\Models\Company();
+        $row = $companies->find($companyId);
+        if ($row === null) {
+            return;
+        }
+        $settings = json_decode((string) ($row['settings'] ?? ''), true);
+        $bound = (int) (is_array($settings) ? ($settings['control_agency_id'] ?? 0) : 0);
+        $agencyId = (int) ($agency['id'] ?? 0);
+        if ($bound > 0 && $agencyId > 0 && $bound !== $agencyId) {
+            return;
+        }
+        if ((string) ($row['status'] ?? '') === $status) {
+            return;
+        }
+        if ($status === 'active') {
+            $companies->activate($companyId);
+        } elseif ($status === 'suspended') {
+            $companies->suspend($companyId);
+        } else {
+            $companies->update($companyId, ['status' => 'pending']);
+        }
+        if (function_exists('rateb_ops_company_request_state')) {
+            $state = &rateb_ops_company_request_state();
+            unset($state['rows'][$companyId], $state['exists'][$companyId]);
+        }
+        PlanLimitService::forgetCompanyLimits($companyId);
+    }
+
+    /** Activate leftover pending platform rows that belong to Control Panel agencies. */
+    public function activateProvisionedPlatformCompanies(): int
+    {
+        $this->ensureAgencyLookup();
+        $companies = new \Rateb\App\Models\Company();
+        try {
+            $pending = $companies->query(
+                "SELECT id, settings, email FROM rateb_companies WHERE status = 'pending' ORDER BY id ASC LIMIT 100"
+            );
+        } catch (Throwable $e) {
+            error_log('activateProvisionedPlatformCompanies: ' . $e->getMessage());
+
+            return 0;
+        }
+        $activated = 0;
+        foreach ($pending as $row) {
+            $companyId = (int) ($row['id'] ?? 0);
+            if ($companyId < 1) {
+                continue;
+            }
+            $agency = null;
+            if (function_exists('rateb_lookup_agency_by_erp_company_id')) {
+                $agency = rateb_lookup_agency_by_erp_company_id($companyId);
+            }
+            if (!is_array($agency)) {
+                $settings = json_decode((string) ($row['settings'] ?? ''), true);
+                $agencyId = (int) (is_array($settings) ? ($settings['control_agency_id'] ?? 0) : 0);
+                if ($agencyId > 0 && function_exists('rateb_lookup_agency_by_id')) {
+                    $agency = rateb_lookup_agency_by_id($agencyId);
+                }
+            }
+            if (!is_array($agency)) {
+                $email = strtolower(trim((string) ($row['email'] ?? '')));
+                if (preg_match('/^agency(\d+)@rateb\.sa$/', $email, $m)
+                    && function_exists('rateb_lookup_agency_by_id')) {
+                    $agency = rateb_lookup_agency_by_id((int) $m[1]);
+                }
+            }
+            if (!is_array($agency)) {
+                continue;
+            }
+            $wanted = $this->platformStatusForAgency($agency);
+            if ($wanted !== 'active') {
+                continue;
+            }
+            $this->syncPlatformCompanyStatusFromAgency($companyId, $agency);
+            $activated++;
+        }
+
+        return $activated;
+    }
+
+    private function finishPlatformCompanyForAgency(int $companyId, array $agency): int
+    {
+        $this->syncPlatformCompanyStatusFromAgency($companyId, $agency);
 
         return $companyId;
     }

@@ -25,6 +25,25 @@ final class ApprovalOversightService
         return !in_array($sourceKey, ['workflow_instance', 'hr_payroll', 'company_registration'], true);
     }
 
+    /** Control Panel provision already approved the tenant — clear leftover SaaS pending rows. */
+    private function autoApproveControlPanelCompanies(): int
+    {
+        static $done = false;
+        static $activated = 0;
+        if ($done) {
+            return $activated;
+        }
+        $done = true;
+        try {
+            $activated = (new AgencyErpMigrationService())->activateProvisionedPlatformCompanies();
+        } catch (\Throwable $e) {
+            error_log('autoApproveControlPanelCompanies: ' . $e->getMessage());
+            $activated = 0;
+        }
+
+        return $activated;
+    }
+
     /** @return array<string, string> */
     public static function typeOptions(): array
     {
@@ -71,8 +90,11 @@ final class ApprovalOversightService
     public function summary(?int $companyFilter = null, bool $bypassCache = false): array
     {
         // Never ALTER schema on list/count GET — that blocked oversight pages for tens of seconds.
+        if ($this->autoApproveControlPanelCompanies() > 0) {
+            $bypassCache = true;
+        }
         $cid = ($companyFilter !== null && $companyFilter > 0) ? (int) $companyFilter : 0;
-        $sessionKey = 'rateb_approval_summary_v1_' . $cid;
+        $sessionKey = 'rateb_approval_summary_v2_' . $cid;
         if (!$bypassCache) {
             $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
             if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
@@ -138,6 +160,7 @@ final class ApprovalOversightService
     public function menuCounts(?int $companyFilter = null): array
     {
         // Never run schema ALTER from sidebar/nav — that blocked /admin for 30–60s.
+        $this->autoApproveControlPanelCompanies();
         $counts = [
             'approvals' => 0,
             'hr' => 0,
@@ -435,6 +458,7 @@ final class ApprovalOversightService
     public function listPending(?int $companyFilter = null, ?string $typeFilter = null, int $limit = 200, ?string $sourceKeyFilter = null): array
     {
         // Never ALTER schema on list GET — approve/reject paths ensure columns when needed.
+        $this->autoApproveControlPanelCompanies();
         $items = [];
         $sourceCount = $sourceKeyFilter !== null && $sourceKeyFilter !== '' ? 1 : count($this->sources());
         $perSource = max(10, (int) ceil($limit / max(1, $sourceCount)));

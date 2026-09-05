@@ -3580,7 +3580,7 @@ if (!function_exists('rateb_oversight_menu_counts')) {
             $cached = $empty;
             return $cached;
         }
-        $sessionKey = 'rateb_oversight_menu_counts_v2';
+        $sessionKey = 'rateb_oversight_menu_counts_v3';
         $raw = \Rateb\App\Core\SessionManager::get($sessionKey);
         if (is_array($raw) && is_array($raw['data'] ?? null) && (int) ($raw['exp'] ?? 0) > time()) {
             $cached = $raw['data'];
