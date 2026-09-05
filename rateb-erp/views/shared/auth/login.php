@@ -57,11 +57,28 @@
 </form>
 
 <div id="barcode-form" class="login-panel text-center d-none">
+    <div class="barcode-this-device barcode-login-panel mb-3">
+        <h3 class="h5 mb-2"><i class="fas fa-laptop" aria-hidden="true"></i> <?php echo __('barcode_this_device_title'); ?></h3>
+        <p class="text-muted small mb-3"><?php echo __('barcode_this_device_hint'); ?></p>
+        <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-login-form">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <label class="form-label visually-hidden" for="barcode-input"><?php echo __('login_barcode'); ?></label>
+            <input type="text" class="form-control text-center font-monospace mb-2" name="barcode" id="barcode-input"
+                placeholder="<?php echo Rateb\App\Core\View::escape(__('login_barcode_placeholder')); ?>"
+                autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text">
+            <button type="submit" class="btn btn-primary w-100"><?php echo __('login_with_barcode'); ?></button>
+        </form>
+        <button type="button" class="btn btn-outline-info btn-sm mt-2 w-100" id="barcode-webcam-start">
+            <i class="fas fa-camera" aria-hidden="true"></i> <?php echo __('barcode_start_camera'); ?>
+        </button>
+        <div id="barcode-webcam-viewport" class="barcode-webcam-viewport mt-2 d-none" aria-label="Camera scanner"></div>
+    </div>
+
     <div id="barcode-desktop-panel" class="barcode-login-panel">
         <div class="barcode-scan-panel mb-3">
             <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
-            <h3 class="h5 mb-2"><?php echo __('barcode_scan_with_phone'); ?></h3>
-            <p class="text-muted mb-0 small"><?php echo __('barcode_pair_short_hint'); ?></p>
+            <h3 class="h5 mb-2"><?php echo __('barcode_pair_computer_title'); ?></h3>
+            <p class="text-muted mb-0 small"><?php echo __('barcode_pair_hint'); ?></p>
         </div>
         <div class="barcode-open-phone-box mb-2" id="barcode-pair-phone-box">
             <p class="small text-muted mb-2"><?php echo __('barcode_scan_qr_phone'); ?></p>
@@ -74,14 +91,10 @@
 
     <div id="barcode-mobile-hint" class="barcode-login-panel d-none">
         <p class="text-muted small mb-2"><?php echo __('barcode_mobile_hint'); ?></p>
-        <a id="barcode-mobile-scan-link" class="btn btn-primary btn-sm mb-2" href="#"><?php echo __('barcode_open_scanner'); ?></a>
+        <a id="barcode-mobile-scan-link" class="btn btn-outline-primary btn-sm mb-2" href="#"><?php echo __('barcode_open_scanner'); ?></a>
         <p class="text-muted small mb-0 mt-2"><?php echo __('barcode_mobile_desktop_hint'); ?></p>
     </div>
 
-    <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-login-form" class="d-none" aria-hidden="true">
-        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <input type="hidden" name="barcode" id="barcode-input" value="">
-    </form>
     <div id="barcode-status" class="barcode-status d-none mt-2" role="status"></div>
 </div>
 
@@ -90,7 +103,9 @@ window.RATEB_LOGIN_BARCODE = {
     apiPair: <?php echo json_encode(rateb_url('api/login-barcode-pair'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
     scanPage: <?php echo json_encode(rateb_url('login/scan'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
     qrImageBase: <?php echo json_encode(rateb_url('scan/qr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
-    home: <?php echo json_encode(rateb_url('admin'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
+    home: <?php echo json_encode(rateb_url('admin'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
+    html5Qr: <?php echo json_encode(rateb_html5_qrcode_js(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
+    scannerJs: <?php echo json_encode(rateb_asset('js/erp-qr-scanner.js'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 };
 </script>
 <?php

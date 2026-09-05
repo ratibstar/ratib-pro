@@ -11,6 +11,9 @@
 <body class="qr-scan-page">
     <div class="badge-card qr-scan-shell text-center">
         <h1 class="qr-scan-title"><?php echo __('login_badge'); ?></h1>
+        <?php if (!empty($directLogin)) { ?>
+        <p class="qr-scan-sub"><?php echo __('barcode_direct_device_hint'); ?></p>
+        <?php } ?>
         <p id="badge-msg" class="qr-scan-status qr-scan-status--info"><?php echo __('barcode_validating'); ?></p>
     </div>
     <script>

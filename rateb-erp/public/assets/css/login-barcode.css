@@ -106,6 +106,14 @@
     margin: 0 auto;
 }
 
+.barcode-webcam-viewport {
+    width: 100%;
+    min-height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #020617;
+}
+
 @media (max-width: 820px) {
     #barcode-desktop-panel {
         display: none !important;

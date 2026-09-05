@@ -9,9 +9,15 @@
         var barcodeMobileHint = document.getElementById('barcode-mobile-hint');
         var barcodePairQr = document.getElementById('barcode-pair-qr');
         var barcodePairWaiting = document.getElementById('barcode-pair-waiting');
+        var barcodeInput = document.getElementById('barcode-input');
+        var barcodeLoginForm = document.getElementById('barcode-login-form');
+        var webcamStartBtn = document.getElementById('barcode-webcam-start');
+        var webcamViewport = document.getElementById('barcode-webcam-viewport');
         var statusEl = document.getElementById('barcode-status');
         var pairPollTimer = null;
         var pairToken = null;
+        var deviceScanner = null;
+        var scriptsLoading = null;
 
         var isPhoneDevice = (function () {
             var ua = navigator.userAgent || '';
@@ -48,12 +54,51 @@
                 }
             });
             clearPairSession();
+            stopDeviceScanner();
         }
 
         function showForm(form) {
             if (form) {
                 form.classList.remove('d-none');
                 form.classList.add('d-block');
+            }
+        }
+
+        function extractBadgeCode(raw) {
+            var v = String(raw || '').trim();
+            if (!v) return '';
+            if (/^https?:\/\//i.test(v)) {
+                try {
+                    var u = new URL(v);
+                    var d = u.searchParams.get('d') || u.searchParams.get('badge');
+                    if (d) {
+                        return extractBadgeCode(d);
+                    }
+                    if (/login[-\/]scan/i.test(u.pathname || '')) {
+                        return '';
+                    }
+                } catch (e) { /* fall through */ }
+            }
+            if (/login[-\/]scan/i.test(v)) {
+                return '';
+            }
+            if (/^RATEBERP:/i.test(v)) {
+                v = v.replace(/^RATEBERP:/i, '');
+            }
+            return (v.replace(/[^A-Za-z0-9]/g, '') || '').toUpperCase();
+        }
+
+        function submitThisDevice(raw) {
+            var code = extractBadgeCode(raw);
+            if (!code) {
+                showStatus('Enter the badge code or scan the user badge QR.', 'error');
+                return;
+            }
+            if (barcodeInput) {
+                barcodeInput.value = code;
+            }
+            if (barcodeLoginForm) {
+                barcodeLoginForm.submit();
             }
         }
 
@@ -118,7 +163,6 @@
                 scanBase = window.location.origin + (scanBase.indexOf('/') === 0 ? scanBase : '/' + scanBase);
             }
 
-            showStatus('Preparing phone scanner…', 'info');
             if (barcodePairWaiting) {
                 barcodePairWaiting.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Waiting for phone scan…';
                 barcodePairWaiting.classList.remove('d-none');
@@ -132,7 +176,6 @@
                 pairToken = json.token;
                 var scanUrl = scanBase + (scanBase.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(pairToken);
                 renderPairQr(scanUrl);
-                showStatus('Scan the QR with your phone, then scan your user badge.', 'info');
                 stopPairPolling();
                 var activeToken = pairToken;
                 pairPollTimer = setInterval(function () {
@@ -144,7 +187,98 @@
             });
         }
 
+        function loadScript(src) {
+            return new Promise(function (resolve, reject) {
+                if (!src) {
+                    resolve();
+                    return;
+                }
+                var existing = document.querySelector('script[src="' + src.replace(/"/g, '\\"') + '"]');
+                if (existing) {
+                    resolve();
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = src;
+                s.onload = function () { resolve(); };
+                s.onerror = function () { reject(new Error('script')); };
+                document.head.appendChild(s);
+            });
+        }
+
+        function ensureScannerLibs() {
+            if (typeof Html5Qrcode !== 'undefined' && typeof RATEBQrScanner !== 'undefined') {
+                return Promise.resolve();
+            }
+            if (scriptsLoading) {
+                return scriptsLoading;
+            }
+            scriptsLoading = loadScript(cfg.html5Qr).then(function () {
+                return loadScript(cfg.scannerJs);
+            });
+            return scriptsLoading;
+        }
+
+        function stopDeviceScanner() {
+            if (deviceScanner) {
+                deviceScanner.stop();
+                deviceScanner = null;
+            }
+            if (webcamViewport) {
+                webcamViewport.classList.add('d-none');
+                webcamViewport.innerHTML = '';
+            }
+        }
+
+        function startDeviceCamera() {
+            if (!webcamViewport) return;
+            webcamViewport.classList.remove('d-none');
+            showStatus('Allow camera access, then point it at the user badge.', 'info');
+            ensureScannerLibs().then(function () {
+                if (typeof RATEBQrScanner === 'undefined') {
+                    showStatus('Camera scanner failed to load. Type the badge code instead.', 'error');
+                    return;
+                }
+                stopDeviceScanner();
+                webcamViewport.classList.remove('d-none');
+                deviceScanner = new RATEBQrScanner({
+                    elementId: 'barcode-webcam-viewport',
+                    throttleMs: 1200,
+                    onScan: function (raw) {
+                        var code = extractBadgeCode(raw);
+                        if (!code) {
+                            showStatus('Wrong QR — scan the user badge, not the computer pairing code.', 'error');
+                            if (deviceScanner) deviceScanner.resetSubmit();
+                            return;
+                        }
+                        if (deviceScanner) deviceScanner.lock();
+                        stopDeviceScanner();
+                        submitThisDevice(code);
+                    },
+                    onStatus: showStatus
+                });
+                deviceScanner.start().catch(function () {
+                    showStatus('Could not start the camera. Type the badge code instead.', 'error');
+                });
+            }).catch(function () {
+                showStatus('Camera scanner failed to load. Type the badge code instead.', 'error');
+            });
+        }
+
+        function focusBadgeInput() {
+            if (!barcodeInput) return;
+            window.setTimeout(function () {
+                barcodeInput.focus();
+                barcodeInput.select();
+            }, 50);
+        }
+
         function showBarcodeLoginPanel() {
+            if (barcodeLoginForm) {
+                barcodeLoginForm.classList.remove('d-none');
+                barcodeLoginForm.removeAttribute('aria-hidden');
+            }
+            focusBadgeInput();
             if (isPhoneDevice) {
                 if (barcodeDesktopPanel) barcodeDesktopPanel.classList.add('d-none');
                 if (barcodeMobileHint) {
@@ -178,6 +312,22 @@
             } else {
                 showForm(passwordForm);
             }
+        }
+
+        if (barcodeLoginForm) {
+            barcodeLoginForm.addEventListener('submit', function () {
+                if (!barcodeInput) return;
+                var code = extractBadgeCode(barcodeInput.value);
+                if (code) {
+                    barcodeInput.value = code;
+                }
+            });
+        }
+        if (webcamStartBtn) {
+            webcamStartBtn.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                startDeviceCamera();
+            });
         }
 
         var loginMethodButtons = Array.prototype.slice.call(document.querySelectorAll('.login-method-btn'));
