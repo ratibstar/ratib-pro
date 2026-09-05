@@ -892,7 +892,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php
             $oversightCounts = rateb_oversight_menu_counts();
             $oversightLinkBadges = [
-                'admin/oversight/companies-approvals' => rateb_nav_can('companies.view') ? (int) (($oversightCounts['company_pending'] ?? 0)) : 0,
+                'admin/oversight/companies-approvals' => rateb_nav_can('companies.approvals') ? (int) (($oversightCounts['company_pending'] ?? 0)) : 0,
                 'admin/oversight/approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['approvals'] ?? 0) : 0,
                 'admin/oversight/hr-approvals' => rateb_nav_can('workflows.view') ? (int) ($oversightCounts['hr'] ?? 0) : 0,
                 'admin/oversight/procurement' => rateb_nav_can('procurement.manage') ? (int) ($oversightCounts['procurement'] ?? 0) : 0,
@@ -902,18 +902,30 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ];
             $oversightLinks = [
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
-                ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'companies.view']],
-                ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'settings.manage']],
             ];
+            if (!function_exists('rateb_company_platform_feature_enabled')
+                || rateb_company_platform_feature_enabled('company_permissions')) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'company_permissions.manage']];
+            }
+            if (!function_exists('rateb_company_platform_feature_enabled')
+                || rateb_company_platform_feature_enabled('module_addon_catalog')) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'module_addons.manage']];
+            }
             if (rateb_is_super_admin()
                 && function_exists('rateb_is_platform_oversight_host')
-                && rateb_is_platform_oversight_host()) {
-                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', '']];
+                && rateb_is_platform_oversight_host()
+                && (!function_exists('rateb_company_platform_feature_enabled')
+                    || rateb_company_platform_feature_enabled('module_addon_demo_locks'))) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/billing/addon-locks', 'module_addon_demo_locks', 'fa-lock', 'module_addons.demo_locks']];
             }
-            $oversightLinks = array_merge($oversightLinks, [
-                ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'companies.manage']],
-                ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.view']],
-            ]);
+            if (!function_exists('rateb_company_platform_feature_enabled')
+                || rateb_company_platform_feature_enabled('agency_updates')) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/agency-updates', 'agency_erp_push_title', 'fa-cloud-upload-alt', 'agency_updates.manage']];
+            }
+            if (!function_exists('rateb_company_platform_feature_enabled')
+                || rateb_company_platform_feature_enabled('companies_approvals')) {
+                $oversightLinks[] = ['type' => 'link', 'link' => ['admin/oversight/companies-approvals', 'companies_approvals_oversight', 'fa-building-circle-check', 'companies.approvals']];
+            }
             $adminSection(__('admin_oversight_section'), array_merge($oversightLinks, [
                 [
                     'type' => 'subgroup',
@@ -952,7 +964,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php
             $showModuleAddonCatalogNav = rateb_is_super_admin()
                 && (new \Rateb\App\Services\ModuleAddonService())->canManagePlatformCatalog()
-                && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host());
+                && !(function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())
+                && (!function_exists('rateb_company_platform_feature_enabled')
+                    || rateb_company_platform_feature_enabled('module_addon_catalog'));
             if ($showModuleAddonCatalogNav) {
                 $macHref = rateb_url('admin/module-addons');
                 $macActive = $navActive('admin/module-addons') ? ' active' : '';

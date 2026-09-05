@@ -1,1 +1,1 @@
-20260905-access-control-harden-v1
+20260905-platform-features-perms-v1

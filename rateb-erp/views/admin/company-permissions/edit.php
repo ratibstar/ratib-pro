@@ -100,6 +100,35 @@ $lockedCore = ['dashboard', 'notifications'];
                 <?php } ?>
             </div>
 
+            <?php
+            $featureCatalog = is_array($featureCatalog ?? null) ? $featureCatalog : [];
+            $selectedFeatures = is_array($selectedFeatures ?? null) ? $selectedFeatures : [];
+            if ($featureCatalog !== []) {
+                ?>
+            <hr class="my-4">
+            <h2 class="h5 mb-1"><?php echo __('company_permissions_platform_section'); ?></h2>
+            <p class="text-muted small mb-3"><?php echo __('company_permissions_platform_help'); ?></p>
+            <div class="row g-2" id="rateb-company-permissions-platform">
+                <?php foreach ($featureCatalog as $featKey => $featLabel) {
+                    $featChecked = !array_key_exists($featKey, $selectedFeatures) || !empty($selectedFeatures[$featKey]);
+                    ?>
+                <div class="col-md-4 col-lg-3">
+                    <div class="form-check border rounded px-3 py-2 h-100 border-primary-subtle">
+                        <input type="hidden" name="platform_features[<?php echo Rateb\App\Core\View::escape($featKey); ?>]" value="0">
+                        <input class="form-check-input rateb-cp-platform-feature" type="checkbox"
+                               name="platform_features[<?php echo Rateb\App\Core\View::escape($featKey); ?>]"
+                               value="1"
+                               id="cp_pf_<?php echo Rateb\App\Core\View::escape($featKey); ?>"
+                               <?php echo $featChecked ? ' checked' : ''; ?>>
+                        <label class="form-check-label" for="cp_pf_<?php echo Rateb\App\Core\View::escape($featKey); ?>">
+                            <?php echo __(is_string($featLabel) ? $featLabel : $featKey); ?>
+                        </label>
+                    </div>
+                </div>
+                <?php } ?>
+            </div>
+            <?php } ?>
+
             <div class="mt-4 d-flex gap-2 flex-wrap">
                 <button type="submit" class="btn btn-primary" id="rateb-cp-save">
                     <i class="fas fa-save"></i> <?php echo __('save'); ?>

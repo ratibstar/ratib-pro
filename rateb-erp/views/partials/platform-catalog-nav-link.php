@@ -4,6 +4,13 @@ declare(strict_types=1);
 if (!function_exists('rateb_platform_catalog_nav_enabled') || !rateb_platform_catalog_nav_enabled()) {
     return;
 }
+if (function_exists('rateb_company_platform_feature_enabled')
+    && !rateb_company_platform_feature_enabled('platform_product_catalog')) {
+    return;
+}
+if (function_exists('rateb_can') && !rateb_is_super_admin() && !rateb_can('platform_catalog.manage')) {
+    return;
+}
 $entryUrl = function_exists('rateb_platform_catalog_entry_url')
     ? rateb_platform_catalog_entry_url()
     : rateb_platform_catalog_admin_url();

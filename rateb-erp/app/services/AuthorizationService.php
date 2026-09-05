@@ -698,6 +698,7 @@ final class AuthorizationService
 
     public function ensureSuggestedRoles(): void
     {
+        $this->ensureTenantSelfServicePermissionRows();
         $roleModel = new Role();
         $platformSlugs = self::platformRoleSlugs();
         foreach (self::suggestedRoleDefinitions() as $def) {
@@ -1013,6 +1014,54 @@ final class AuthorizationService
                 'name_ar' => 'إدارة مركز المساعدة',
                 'description' => 'Manage Help Center content',
                 'description_ar' => 'إدارة محتوى مركز المساعدة',
+            ],
+            [
+                'slug' => 'module_addons.manage',
+                'module' => 'module_addons',
+                'name' => 'Manage Module Add-on Catalog',
+                'name_ar' => 'كتالوج الوحدات في المنصة',
+                'description' => 'Manage platform commercial module catalog',
+                'description_ar' => 'إدارة كتالوج الوحدات التجاري على المنصة وإظهاره في القائمة',
+            ],
+            [
+                'slug' => 'module_addons.demo_locks',
+                'module' => 'module_addons',
+                'name' => 'Demo Module Locks',
+                'name_ar' => 'أقفال الوحدات التجريبية',
+                'description' => 'Lock or unlock purchasable modules for demo companies',
+                'description_ar' => 'قفل أو فتح الوحدات القابلة للشراء للشركات التجريبية',
+            ],
+            [
+                'slug' => 'agency_updates.manage',
+                'module' => 'agency_updates',
+                'name' => 'Agency ERP Updates',
+                'name_ar' => 'رفع التحديثات للوكالات',
+                'description' => 'Push ERP updates to linked agencies',
+                'description_ar' => 'رفع تحديثات ERP إلى الوكالات المرتبطة',
+            ],
+            [
+                'slug' => 'companies.approvals',
+                'module' => 'companies',
+                'name' => 'Company Approvals Oversight',
+                'name_ar' => 'اعتماد الشركات',
+                'description' => 'Approve pending companies from platform oversight',
+                'description_ar' => 'اعتماد الشركات المعلقة من إشراف المنصة',
+            ],
+            [
+                'slug' => 'platform_catalog.manage',
+                'module' => 'platform_catalog',
+                'name' => 'Platform Product Catalog',
+                'name_ar' => 'كتالوج منتجات المنصة',
+                'description' => 'Open the platform product catalog admin',
+                'description_ar' => 'فتح إدارة كتالوج منتجات المنصة',
+            ],
+            [
+                'slug' => 'company_permissions.manage',
+                'module' => 'companies',
+                'name' => 'Manage Company Permissions',
+                'name_ar' => 'صلاحيات الشركات',
+                'description' => 'Edit per-company module entitlements and platform feature visibility',
+                'description_ar' => 'تعديل استحقاق وحدات الشركات وإظهار أدوات إشراف المنصة',
             ],
         ];
         $model = new Permission();

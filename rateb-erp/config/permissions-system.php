@@ -19,6 +19,9 @@ return [
         'permissions',
         'roles',
         'users',
+        'module_addons',
+        'agency_updates',
+        'platform_catalog',
     ],
 
     /** Plan modules enabled for tenant company operations. */
@@ -88,12 +91,32 @@ return [
     ],
 
     /**
+     * Platform oversight tools toggled per company on /admin/company-permissions.
+     * Stored in company.settings.platform_features — default on when unset.
+     * Keys => lang label keys.
+     *
+     * @var array<string, string>
+     */
+    'platform_company_features' => [
+        'module_addon_catalog' => 'platform_feature_module_addon_catalog',
+        'module_addon_demo_locks' => 'platform_feature_module_addon_demo_locks',
+        'agency_updates' => 'platform_feature_agency_updates',
+        'companies_approvals' => 'platform_feature_companies_approvals',
+        'platform_product_catalog' => 'platform_feature_platform_product_catalog',
+        'company_permissions' => 'platform_feature_company_permissions',
+    ],
+
+    /**
      * Parent slug grants child slugs at runtime (rateb_can). Children may be hidden from matrix UI.
      * @var array<string, list<string>>
      */
     'permission_implies' => [
         'subscriptions.manage' => ['subscriptions.view'],
         'access.manage' => ['users.manage', 'roles.manage', 'permissions.manage'],
+        'companies.manage' => ['companies.view', 'company_permissions.manage', 'company_plans.manage', 'companies.approvals'],
+        'companies.view' => ['company_permissions.manage', 'companies.approvals'],
+        'settings.manage' => ['module_addons.manage'],
+        'module_addons.manage' => ['module_addons.demo_locks'],
         'branch.financial.consolidated' => ['branch.financial.interbranch'],
         'workflows.manage' => ['oversight.approve'],
         'procurement.manage' => [
@@ -647,6 +670,7 @@ return [
         'companies.view',
         'companies.manage',
         'company_plans.manage',
+        'company_permissions.manage',
         'subscriptions.manage',
         'subscriptions.view',
         'plans.manage',
@@ -655,6 +679,12 @@ return [
         'users.manage',
         'roles.manage',
         'permissions.manage',
+        'module_addons.manage',
+        'module_addons.demo_locks',
+        'agency_updates.manage',
+        'companies.approvals',
+        'platform_catalog.manage',
+        'company_permissions.manage',
         'oversight.approve',
         'procurement.oversight',
         'inventory.oversight',
@@ -673,10 +703,10 @@ return [
     'platform_routes' => [
         'admin' => 'dashboard.view',
         'admin/executive-dashboard' => 'executive.dashboard.view',
-        'admin/agency-updates' => 'companies.manage',
-        'admin/agency-updates/link' => 'companies.manage',
-        'admin/agency-updates/sync-files' => 'companies.manage',
-        'admin/agency-updates/reset-data' => 'companies.manage',
+        'admin/agency-updates' => 'agency_updates.manage',
+        'admin/agency-updates/link' => 'agency_updates.manage',
+        'admin/agency-updates/sync-files' => 'agency_updates.manage',
+        'admin/agency-updates/reset-data' => 'agency_updates.manage',
         'admin/companies' => 'companies.view',
         'admin/companies/create' => 'companies.manage',
         'admin/access-control' => 'access.manage',
@@ -722,7 +752,10 @@ return [
         'admin/invoices/{id}/edit' => 'billing.manage',
         'admin/payments' => 'accounting.view',
         'admin/invoices' => 'accounting.view',
-        'admin/module-addons' => 'settings.manage',
+        'admin/module-addons' => 'module_addons.manage',
+        'admin/billing/addon-locks' => 'module_addons.demo_locks',
+        'admin/company-permissions' => 'company_permissions.manage',
+        'admin/company-permissions/{id}' => 'company_permissions.manage',
         'admin/payment-gateways' => 'billing.manage',
         'admin/payment-gateways/transactions' => 'billing.manage',
         'admin/payment-gateways/failed' => 'billing.manage',
@@ -732,7 +765,7 @@ return [
         'admin/automation-health' => 'settings.manage',
         'admin/settings' => 'settings.manage',
         'admin/reports' => 'reports.view',
-        'admin/oversight/companies-approvals' => 'companies.view',
+        'admin/oversight/companies-approvals' => 'companies.approvals',
         'admin/oversight/hr-approvals' => 'workflows.view',
         'admin/oversight/procurement' => 'procurement.oversight',
         'admin/oversight/rfq' => 'procurement.oversight',

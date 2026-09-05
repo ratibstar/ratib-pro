@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260905-access-control-harden-v1');
+define('RATEB_ASSET_BUILD', '20260905-platform-features-perms-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -100,6 +100,98 @@ if (!function_exists('rateb_tenant_permission_catalog_locked')) {
         }
 
         return \Rateb\App\Services\AuthorizationService::resolveMatrixCompanyId() > 0;
+    }
+}
+
+if (!function_exists('rateb_platform_company_feature_catalog')) {
+    /** @return array<string, string> feature key => lang label key */
+    function rateb_platform_company_feature_catalog(): array
+    {
+        static $catalog = null;
+        if ($catalog !== null) {
+            return $catalog;
+        }
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+        $cfg = is_file($file) ? require $file : [];
+        $raw = is_array($cfg['platform_company_features'] ?? null) ? $cfg['platform_company_features'] : [];
+        $catalog = [];
+        foreach ($raw as $key => $label) {
+            $k = trim((string) $key);
+            if ($k === '') {
+                continue;
+            }
+            $catalog[$k] = trim((string) $label) !== '' ? trim((string) $label) : $k;
+        }
+
+        return $catalog;
+    }
+}
+
+if (!function_exists('rateb_company_platform_features')) {
+    /**
+     * @param array<string, mixed>|null $company
+     * @return array<string, bool>
+     */
+    function rateb_company_platform_features(?array $company): array
+    {
+        $catalog = rateb_platform_company_feature_catalog();
+        $out = [];
+        foreach (array_keys($catalog) as $key) {
+            $out[$key] = true;
+        }
+        if ($company === null) {
+            return $out;
+        }
+        $settings = $company['settings'] ?? null;
+        if (is_string($settings) && trim($settings) !== '') {
+            $decoded = json_decode($settings, true);
+            $settings = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($settings)) {
+            return $out;
+        }
+        $features = $settings['platform_features'] ?? null;
+        if (!is_array($features)) {
+            return $out;
+        }
+        foreach ($out as $key => $_) {
+            if (array_key_exists($key, $features)) {
+                $out[$key] = !empty($features[$key]);
+            }
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('rateb_company_platform_feature_enabled')) {
+    /**
+     * When an ops company is selected, platform oversight nav can be filtered per company.
+     * Unset features default to enabled (backward compatible).
+     */
+    function rateb_company_platform_feature_enabled(string $featureKey, ?int $companyId = null): bool
+    {
+        $featureKey = trim($featureKey);
+        if ($featureKey === '' || !isset(rateb_platform_company_feature_catalog()[$featureKey])) {
+            return true;
+        }
+        if ($companyId === null && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+        $companyId = (int) ($companyId ?? 0);
+        if ($companyId < 1) {
+            return true;
+        }
+        static $cache = [];
+        if (array_key_exists($companyId, $cache)) {
+            $features = $cache[$companyId];
+        } else {
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            $features = rateb_company_platform_features(is_array($company) ? $company : null);
+            $cache[$companyId] = $features;
+        }
+
+        return !empty($features[$featureKey]);
     }
 }
 
