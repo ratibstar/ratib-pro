@@ -127,6 +127,16 @@ final class PlanLimitService
             $hasBranches = false;
         }
 
+        try {
+            $existing = (int) $pdo->query('SELECT COUNT(*) FROM rateb_plans')->fetchColumn();
+        } catch (\Throwable $e) {
+            $existing = 0;
+        }
+        // Index used to re-insert every missing canonical slug after delete, so rows came back.
+        if ($existing > 0) {
+            return $inserted;
+        }
+
         foreach (self::tierDefinitions() as $slug => $tier) {
             if (!is_array($tier)) {
                 continue;

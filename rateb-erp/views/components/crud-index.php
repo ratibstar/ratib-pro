@@ -210,7 +210,9 @@ $ratebRowRecordLabel = static function (array $row): string {
                     <th class="rateb-th-actions">
                         <span class="rateb-actions-head">
                             <?php if ($bulkEnabled && !empty($items)) { ?>
+                            <label class="rateb-select-all-wrap mb-0">
                             <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo Rateb\App\Core\View::escape(__('select_all')); ?>">
+                            </label>
                             <?php } ?>
                             <span><?php echo __('actions'); ?></span>
                         </span>

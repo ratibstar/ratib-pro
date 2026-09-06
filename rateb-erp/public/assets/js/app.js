@@ -1,87 +1,103 @@
 (function () {
     'use strict';
 
-    function initBulkTables() {
-        document.querySelectorAll('[data-rateb-bulk-table="1"]').forEach(function (table) {
-            if (table.getAttribute('data-rateb-bound') === '1') {
-                return;
-            }
-            table.setAttribute('data-rateb-bound', '1');
-            var card = table.closest('.rateb-card');
-            if (!card) {
-                return;
-            }
-            var bar = card.querySelector('[data-rateb-bulk-bar]');
-            var countEl = bar ? bar.querySelector('[data-rateb-bulk-count]') : null;
-            var selectAll = table.querySelector('[data-rateb-select-all]');
-            var rowChecks = table.querySelectorAll('[data-rateb-row-check]');
+    function bulkRowChecks(table) {
+        return table ? table.querySelectorAll('[data-rateb-row-check]') : [];
+    }
 
-            function selectedIds() {
+    function syncBulkBar(table) {
+        if (!table) {
+            return;
+        }
+        var card = table.closest('.rateb-card');
+        var bar = card ? card.querySelector('[data-rateb-bulk-bar]') : null;
+        var countEl = bar ? bar.querySelector('[data-rateb-bulk-count]') : null;
+        var selectAll = table.querySelector('[data-rateb-select-all]');
+        var rows = bulkRowChecks(table);
+        var ids = [];
+        rows.forEach(function (cb) {
+            if (cb.checked) {
+                ids.push(cb.value);
+            }
+        });
+        if (bar && countEl) {
+            if (ids.length > 0) {
+                bar.classList.remove('d-none');
+                countEl.textContent = ids.length + ' ' + (countEl.getAttribute('data-label') || 'selected');
+            } else {
+                bar.classList.add('d-none');
+            }
+        }
+        if (selectAll) {
+            selectAll.indeterminate = ids.length > 0 && ids.length < rows.length;
+            selectAll.checked = rows.length > 0 && ids.length === rows.length;
+        }
+    }
+
+    function bindBulkForms(table) {
+        var card = table.closest('.rateb-card');
+        var bar = card ? card.querySelector('[data-rateb-bulk-bar]') : null;
+        if (!bar) {
+            return;
+        }
+        bar.querySelectorAll('[data-rateb-bulk-form]').forEach(function (form) {
+            if (form.querySelector('[data-rateb-bulk-delete-btn]')) {
+                return;
+            }
+            if (form.getAttribute('data-rateb-ids-bound') === '1') {
+                return;
+            }
+            form.setAttribute('data-rateb-ids-bound', '1');
+            form.addEventListener('submit', function (e) {
                 var ids = [];
-                rowChecks.forEach(function (cb) {
+                bulkRowChecks(table).forEach(function (cb) {
                     if (cb.checked) {
                         ids.push(cb.value);
                     }
                 });
-                return ids;
-            }
-
-            function updateBar() {
-                var ids = selectedIds();
-                if (!bar || !countEl) {
+                if (ids.length === 0) {
+                    e.preventDefault();
                     return;
                 }
-                if (ids.length > 0) {
-                    bar.classList.remove('d-none');
-                    countEl.textContent = ids.length + ' ' + (countEl.getAttribute('data-label') || 'selected');
-                } else {
-                    bar.classList.add('d-none');
-                }
-                if (selectAll) {
-                    selectAll.indeterminate = ids.length > 0 && ids.length < rowChecks.length;
-                    selectAll.checked = rowChecks.length > 0 && ids.length === rowChecks.length;
-                }
-            }
-
-            rowChecks.forEach(function (cb) {
-                cb.addEventListener('change', updateBar);
+                form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
+                    el.remove();
+                });
+                ids.forEach(function (id) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids[]';
+                    input.value = id;
+                    form.appendChild(input);
+                });
             });
+        });
+    }
 
-            if (selectAll) {
-                selectAll.addEventListener('change', function () {
-                    rowChecks.forEach(function (cb) {
-                        cb.checked = selectAll.checked;
+    function initBulkTables() {
+        if (document.documentElement.getAttribute('data-rateb-bulk-delegate') !== '1') {
+            document.documentElement.setAttribute('data-rateb-bulk-delegate', '1');
+            document.addEventListener('change', function (e) {
+                var t = e.target;
+                if (!t || !t.closest) {
+                    return;
+                }
+                if (t.matches('[data-rateb-select-all]')) {
+                    var table = t.closest('table');
+                    var on = !!t.checked;
+                    bulkRowChecks(table).forEach(function (cb) {
+                        cb.checked = on;
                     });
-                    updateBar();
-                });
-            }
-
-            if (bar) {
-                bar.querySelectorAll('[data-rateb-bulk-form]').forEach(function (form) {
-                    if (form.querySelector('[data-rateb-bulk-delete-btn]')) {
-                        return;
-                    }
-                    form.addEventListener('submit', function (e) {
-                        var ids = selectedIds();
-                        if (ids.length === 0) {
-                            e.preventDefault();
-                            return;
-                        }
-                        form.querySelectorAll('input[name="ids[]"]').forEach(function (el) {
-                            el.remove();
-                        });
-                        ids.forEach(function (id) {
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'ids[]';
-                            input.value = id;
-                            form.appendChild(input);
-                        });
-                    });
-                });
-            }
-
-            updateBar();
+                    syncBulkBar(table);
+                    return;
+                }
+                if (t.matches('[data-rateb-row-check]')) {
+                    syncBulkBar(t.closest('table'));
+                }
+            }, true);
+        }
+        document.querySelectorAll('[data-rateb-bulk-table="1"]').forEach(function (table) {
+            bindBulkForms(table);
+            syncBulkBar(table);
         });
     }
 
