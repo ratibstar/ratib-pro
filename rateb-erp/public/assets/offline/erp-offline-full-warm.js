@@ -293,8 +293,7 @@
         try {
             var box = root.document.getElementById('rateb-offline-warm-progress');
             if (box) {
-                box.textContent = 'توقف التسخين — وصّل النت ليُكمل تلقائياً';
-                box.style.background = '#7f1d1d';
+                box.remove();
             }
         } catch (e) { /* ignore */ }
         return true;
@@ -610,12 +609,6 @@
             if (warmQueueList && warmQueueList.length > progress.total) {
                 progress.total = warmQueueList.length;
             }
-            var box = root.document.getElementById('rateb-offline-warm-progress');
-            if (!box) {
-                return;
-            }
-            box.textContent = 'تجهيز الأوفلاين… ' + progress.ok + '/' + progress.total
-                + ' (تمت ' + progress.finished + ')';
         } catch (e) { /* ignore */ }
     }
 
@@ -623,16 +616,9 @@
         progress = { finished: 0, ok: 0, total: total };
         try {
             var el = root.document.getElementById('rateb-offline-warm-progress');
-            if (!el) {
-                el = root.document.createElement('div');
-                el.id = 'rateb-offline-warm-progress';
-                el.setAttribute('role', 'status');
-                el.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:99999;padding:8px 12px;'
-                    + 'background:#1e3a5f;color:#e8eaed;font:12px/1.4 system-ui,sans-serif;border-radius:8px;'
-                    + 'opacity:.95;max-width:18rem';
-                root.document.body.appendChild(el);
+            if (el) {
+                el.remove();
             }
-            updateProgressUi();
         } catch (e) { /* ignore */ }
     }
 
@@ -1053,11 +1039,6 @@
         var assetUrls = criticalAssetUrls();
         ensureProgressUi(Math.max(assetUrls.length, 40));
         try {
-            var boxA = root.document.getElementById('rateb-offline-warm-progress');
-            if (boxA) {
-                boxA.textContent = 'حفظ التصميم أوفلاين…';
-                boxA.style.background = '#1e3a5f';
-            }
             console.info('[RATEB OFFLINE] asset warm start', assetUrls.length);
         } catch (eA) { /* ignore */ }
 
@@ -1154,16 +1135,7 @@
             try {
                 var box2 = root.document.getElementById('rateb-offline-warm-progress');
                 if (box2) {
-                    if (stats.aborted) {
-                        box2.textContent = 'توقف التسخين: ' + (stats.ok || 0) + '/' + (stats.total || 0) + ' — وصّل النت ليُكمل تلقائياً';
-                        box2.style.background = '#7f1d1d';
-                    } else {
-                        box2.textContent = 'أوفلاين جاهز: ' + (stats.pagesOk || stats.ok || 0) + ' صفحة محفوظة';
-                        box2.style.background = (stats.pagesOk || stats.ok || 0) >= MIN_OK ? '#14532d' : '#7f1d1d';
-                        setTimeout(function () {
-                            try { box2.remove(); } catch (eR) { /* ignore */ }
-                        }, 8000);
-                    }
+                    box2.remove();
                 }
                 console.info('[RATEB OFFLINE] full warm done', stats);
             } catch (e2) { /* ignore */ }
