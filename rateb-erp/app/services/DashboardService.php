@@ -359,18 +359,64 @@ final class DashboardService
              FROM rateb_inventory"
         ) ?: [];
 
+        $userSeries = array_fill(0, count($months), 0);
+        try {
+            $userSeries = $this->monthCountSeries(
+                (new User())->query(
+                    "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS total
+                     FROM rateb_users
+                     WHERE company_id = :cid
+                       AND COALESCE(is_super_admin, 0) = 0
+                       AND created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+                     GROUP BY DATE_FORMAT(created_at, '%Y-%m') ORDER BY month ASC",
+                    ['cid' => $companyId]
+                ),
+                $months
+            );
+        } catch (\Throwable $e) {
+        }
+
+        $prStatus = $this->statusCountRows([], ['draft', 'pending', 'approved', 'rejected']);
+        $poStatus = $this->statusCountRows([], ['draft', 'pending', 'approved', 'received']);
+        try {
+            $prStatus = $this->statusCountRows(
+                (new PurchaseRequest())->query(
+                    'SELECT status, COUNT(*) AS total FROM rateb_purchase_requests GROUP BY status'
+                ),
+                ['draft', 'pending', 'approved', 'rejected']
+            );
+        } catch (\Throwable $e) {
+        }
+        try {
+            $poStatus = $this->statusCountRows(
+                (new PurchaseOrder())->query(
+                    'SELECT status, COUNT(*) AS total FROM rateb_purchase_orders GROUP BY status'
+                ),
+                ['draft', 'pending', 'approved', 'received']
+            );
+        } catch (\Throwable $e) {
+        }
+
+        $warehouses = $this->warehouseDistribution();
+        $loginActivity = $this->companyLoginActivity($companyId, $months);
+
         return [
             'procurement_trend' => [
                 'labels' => $months,
                 'purchase_requests' => $prSeries,
                 'purchase_orders' => $poSeries,
             ],
+            'user_growth' => $userSeries,
             'inventory_health' => [
                 ['label' => __('inventory_health_ok'), 'value' => (int) ($health['healthy'] ?? 0)],
                 ['label' => __('inventory_health_low'), 'value' => (int) ($health['low_stock'] ?? 0)],
                 ['label' => __('inventory_health_out'), 'value' => (int) ($health['out_of_stock'] ?? 0)],
                 ['label' => __('inventory_health_expired'), 'value' => (int) ($health['expired'] ?? 0)],
             ],
+            'pr_status' => $prStatus,
+            'po_status' => $poStatus,
+            'warehouse_distribution' => $warehouses,
+            'login_activity' => $loginActivity,
         ];
     }
 
@@ -495,6 +541,128 @@ final class DashboardService
         );
 
         return (int) ($row['c'] ?? 0);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param list<string> $months
+     * @return list<int>
+     */
+    private function monthCountSeries(array $rows, array $months): array
+    {
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string) ($row['month'] ?? '')] = (int) ($row['total'] ?? 0);
+        }
+        $out = [];
+        foreach ($months as $month) {
+            $out[] = $map[$month] ?? 0;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @param list<string> $defaults
+     * @return list<array{label:string,value:int}>
+     */
+    private function statusCountRows(array $rows, array $defaults): array
+    {
+        $map = [];
+        foreach ($rows as $row) {
+            $key = strtolower(trim((string) ($row['status'] ?? '')));
+            if ($key === '') {
+                continue;
+            }
+            $map[$key] = (int) ($row['total'] ?? 0);
+        }
+        $out = [];
+        $seen = [];
+        foreach ($defaults as $status) {
+            $seen[$status] = true;
+            $out[] = ['label' => __($status), 'value' => $map[$status] ?? 0];
+        }
+        foreach ($map as $status => $total) {
+            if (isset($seen[$status])) {
+                continue;
+            }
+            $out[] = ['label' => __($status), 'value' => $total];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{label:string,value:int}> */
+    private function warehouseDistribution(): array
+    {
+        try {
+            $rows = (new Inventory())->query(
+                "SELECT COALESCE(NULLIF(w.name, ''), '—') AS label, COUNT(i.id) AS total
+                 FROM rateb_inventory i
+                 LEFT JOIN rateb_warehouses w ON w.id = i.warehouse_id
+                 GROUP BY i.warehouse_id
+                 ORDER BY total DESC
+                 LIMIT 6"
+            );
+        } catch (\Throwable $e) {
+            $rows = [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'label' => (string) ($row['label'] ?? '—'),
+                'value' => (int) ($row['total'] ?? 0),
+            ];
+        }
+        if ($out === []) {
+            $out[] = ['label' => __('inventory'), 'value' => 0];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string> $months
+     * @return list<array{month:string,success_total:int,failed_total:int}>
+     */
+    private function companyLoginActivity(int $companyId, array $months): array
+    {
+        $success = array_fill_keys($months, 0);
+        $failed = array_fill_keys($months, 0);
+        try {
+            $rows = (new User())->query(
+                "SELECT DATE_FORMAT(la.created_at, '%Y-%m') AS month,
+                        SUM(CASE WHEN la.success = 1 THEN 1 ELSE 0 END) AS success_total,
+                        SUM(CASE WHEN la.success = 0 THEN 1 ELSE 0 END) AS failed_total
+                 FROM rateb_login_activity la
+                 INNER JOIN rateb_users u ON u.id = la.user_id
+                 WHERE u.company_id = :cid
+                   AND la.created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+                 GROUP BY DATE_FORMAT(la.created_at, '%Y-%m')",
+                ['cid' => $companyId]
+            );
+            foreach ($rows as $row) {
+                $month = (string) ($row['month'] ?? '');
+                if (!isset($success[$month])) {
+                    continue;
+                }
+                $success[$month] = (int) ($row['success_total'] ?? 0);
+                $failed[$month] = (int) ($row['failed_total'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // Dedicated DBs may omit login_activity; keep a zeroed axis like Super.
+        }
+        $out = [];
+        foreach ($months as $month) {
+            $out[] = [
+                'month' => $month,
+                'success_total' => $success[$month] ?? 0,
+                'failed_total' => $failed[$month] ?? 0,
+            ];
+        }
+
+        return $out;
     }
 
     /** @param array<int, array<string, mixed>> $rows */

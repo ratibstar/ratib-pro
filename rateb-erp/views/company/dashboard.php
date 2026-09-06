@@ -35,6 +35,43 @@ $prValues = json_encode($prSeries, $jsonFlags);
 $poValues = json_encode($poSeries, $jsonFlags);
 $invHealthLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $healthRows), $jsonFlags);
 $invHealthValues = json_encode(array_map('intval', array_column($healthRows, 'value')), $jsonFlags);
+$userGrowth = array_map('intval', $c['user_growth'] ?? []);
+while (count($userGrowth) < count($trendLabels)) {
+    $userGrowth[] = 0;
+}
+$userValues = json_encode($userGrowth, $jsonFlags);
+$prStatusRows = $c['pr_status'] ?? [];
+$poStatusRows = $c['po_status'] ?? [];
+if ($prStatusRows === []) {
+    $prStatusRows = [
+        ['label' => __('draft'), 'value' => 0],
+        ['label' => __('pending'), 'value' => 0],
+        ['label' => __('approved'), 'value' => 0],
+        ['label' => __('rejected'), 'value' => 0],
+    ];
+}
+if ($poStatusRows === []) {
+    $poStatusRows = [
+        ['label' => __('draft'), 'value' => 0],
+        ['label' => __('pending'), 'value' => 0],
+        ['label' => __('approved'), 'value' => 0],
+        ['label' => __('received'), 'value' => 0],
+    ];
+}
+$whRows = $c['warehouse_distribution'] ?? [['label' => __('inventory'), 'value' => 0]];
+$prStatusLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $prStatusRows), $jsonFlags);
+$prStatusValues = json_encode(array_map('intval', array_column($prStatusRows, 'value')), $jsonFlags);
+$poStatusLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $poStatusRows), $jsonFlags);
+$poStatusValues = json_encode(array_map('intval', array_column($poStatusRows, 'value')), $jsonFlags);
+$whLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $whRows), $jsonFlags);
+$whValues = json_encode(array_map('intval', array_column($whRows, 'value')), $jsonFlags);
+$loginRows = $c['login_activity'] ?? [];
+$loginLabels = json_encode(array_column($loginRows, 'month'), $jsonFlags);
+if ($loginLabels === '[]' || $loginLabels === false) {
+    $loginLabels = $prLabels;
+}
+$loginSuccess = json_encode(array_map('intval', array_column($loginRows, 'success_total')), $jsonFlags);
+$loginFailed = json_encode(array_map('intval', array_column($loginRows, 'failed_total')), $jsonFlags);
 
 $metrics = [];
 foreach (
@@ -130,24 +167,83 @@ Rateb\App\Core\View::partial('dashboard/head');
     ?>
 
     <div class="cm-body">
+        <div class="cm-viz-grid cm-viz-grid--3">
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('purchase_requests'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('purchase_requests')); ?>"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($prLabels); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape($prValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('purchase_orders'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('purchase_orders')); ?>"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($prLabels); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape($poValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('user_growth'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-users" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('users')); ?>"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($prLabels); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape($userValues); ?>'></canvas>
+                </div>
+            </section>
+        </div>
+
         <div class="cm-viz-grid cm-viz-grid--2">
             <section class="cm-zone">
-                <header class="cm-zone__bar"><h2><?php echo __('company_procurement_trend'); ?></h2></header>
+                <header class="cm-zone__bar"><h2><?php echo __('company_ops_overview'); ?></h2></header>
                 <div class="cm-chart cm-chart--xl is-loading" data-chart-slot>
-                    <canvas id="chart-revenue-expenses"
+                    <canvas id="chart-platform-overview"
                         data-labels='<?php echo Rateb\App\Core\View::escape($prLabels); ?>'
-                        data-revenue='<?php echo Rateb\App\Core\View::escape($poValues); ?>'
-                        data-expenses='<?php echo Rateb\App\Core\View::escape($prValues); ?>'
-                        data-label-revenue="<?php echo Rateb\App\Core\View::escape(__('purchase_orders')); ?>"
-                        data-label-expenses="<?php echo Rateb\App\Core\View::escape(__('purchase_requests')); ?>"></canvas>
+                        data-dataset-1='<?php echo Rateb\App\Core\View::escape($prValues); ?>'
+                        data-dataset-2='<?php echo Rateb\App\Core\View::escape($poValues); ?>'
+                        data-dataset-3='<?php echo Rateb\App\Core\View::escape($userValues); ?>'
+                        data-label-1="<?php echo Rateb\App\Core\View::escape(__('purchase_requests')); ?>"
+                        data-label-2="<?php echo Rateb\App\Core\View::escape(__('purchase_orders')); ?>"
+                        data-label-3="<?php echo Rateb\App\Core\View::escape(__('users')); ?>"></canvas>
                 </div>
             </section>
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('company_inventory_health'); ?></h2></header>
                 <div class="cm-chart cm-chart--xl is-loading" data-chart-slot>
-                    <canvas id="chart-expense-breakdown"
+                    <canvas id="chart-company-status"
                         data-labels='<?php echo Rateb\App\Core\View::escape($invHealthLabels); ?>'
                         data-values='<?php echo Rateb\App\Core\View::escape($invHealthValues); ?>'></canvas>
+                </div>
+            </section>
+        </div>
+
+        <div class="cm-viz-grid cm-viz-grid--3">
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('company_warehouse_stock'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-plan-distribution" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('inventory')); ?>"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($whLabels); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape($whValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('company_pr_status'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-subscription-status"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($prStatusLabels); ?>'
+                        data-values='<?php echo Rateb\App\Core\View::escape($prStatusValues); ?>'></canvas>
+                </div>
+            </section>
+            <section class="cm-zone">
+                <header class="cm-zone__bar"><h2><?php echo __('login_activity'); ?></h2></header>
+                <div class="cm-chart cm-chart--lg is-loading" data-chart-slot>
+                    <canvas id="chart-login-activity"
+                        data-labels='<?php echo Rateb\App\Core\View::escape($loginLabels); ?>'
+                        data-success='<?php echo Rateb\App\Core\View::escape($loginSuccess); ?>'
+                        data-failed='<?php echo Rateb\App\Core\View::escape($loginFailed); ?>'
+                        data-label-success="<?php echo Rateb\App\Core\View::escape(__('login_success')); ?>"
+                        data-label-failed="<?php echo Rateb\App\Core\View::escape(__('failed')); ?>"></canvas>
                 </div>
             </section>
         </div>
