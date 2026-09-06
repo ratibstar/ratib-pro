@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex,nofollow">
-    <title><?php echo Rateb\App\Core\View::escape($title ?? __('barcode_scan_title')); ?> | <?php echo __('rateb_erp'); ?></title>
+    <title><?php echo Rateb\App\Core\View::escape($title ?? __('barcode_scan_title')); ?> | <?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></title>
     <link rel="stylesheet" href="<?php echo rateb_fontawesome_css(); ?>">
     <link href="<?php echo rateb_asset('css/qr-scan.css'); ?>" rel="stylesheet">
     <meta name="theme-color" content="#0b1220">
@@ -12,14 +12,14 @@
 <body class="qr-scan-page">
 <?php if (!$tokenValid) { ?>
     <div class="qr-scan-shell text-center">
-        <p class="qr-scan-brand"><?php echo __('rateb_erp'); ?></p>
+        <p class="qr-scan-brand"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></p>
         <h1 class="qr-scan-title"><?php echo __('barcode_scan_title'); ?></h1>
         <p class="qr-scan-status qr-scan-status--error"><?php echo __('barcode_pair_expired'); ?></p>
         <a href="<?php echo rateb_url('login'); ?>" class="qr-scan-btn qr-scan-btn-primary d-inline-block mt-3" style="text-decoration:none;line-height:3rem;"><?php echo __('back_to_login'); ?></a>
     </div>
 <?php } else { ?>
     <div class="qr-scan-shell">
-        <p class="qr-scan-brand"><?php echo __('rateb_erp'); ?></p>
+        <p class="qr-scan-brand"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></p>
         <h1 class="qr-scan-title"><?php echo __('barcode_scan_step2_title'); ?></h1>
         <div id="qr-scan-saved-banner" class="qr-scan-saved-panel d-none" role="status">
             <p class="qr-scan-saved-title"><i class="fas fa-id-badge"></i> <?php echo __('badge_saved_on_phone'); ?></p>

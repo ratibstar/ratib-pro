@@ -28,6 +28,11 @@ body.rateb-app{margin:0;font-family:var(--rateb-font);background:var(--rateb-bg)
 .rateb-sidebar nav{padding:.35rem 0 1.25rem}
 .rateb-sidebar-brand{padding:1.25rem;font-size:1.25rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
 .rateb-sidebar-brand i{color:var(--rateb-accent)}
+.rateb-sidebar-brand.has-logo{padding:.85rem 1rem}
+.rateb-brand-logo-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;padding:.45rem .6rem}
+.rateb-brand-logo{display:block;max-width:100%;height:auto}
+.rateb-brand-logo-wrap--sidebar{width:100%}
+.rateb-brand-logo-wrap--sidebar .rateb-brand-logo{max-height:52px;width:auto;margin:0 auto}
 .rateb-nav-group{margin:.12rem .4rem}
 .rateb-nav-group-toggle,.rateb-nav-subgroup-toggle{display:flex;align-items:center;gap:.55rem;width:100%;padding:.55rem .7rem;border:none;border-radius:8px;background:transparent;color:var(--rateb-sidebar-text);font-size:.82rem;font-weight:600;text-align:start;cursor:pointer}
 .rateb-nav-group-body,.rateb-nav-subgroup-body{display:none}

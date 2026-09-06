@@ -46,6 +46,7 @@ final class DedicatedCompanySeedService
 
             (new BarcodeLoginService())->ensureUserBarcode($userId);
             (new BranchService())->ensureMainBranch($companyId);
+            $this->applyPinnedTenantLogo($companyId, $companyName);
 
             $db->commit();
 
@@ -149,6 +150,7 @@ final class DedicatedCompanySeedService
 
         $this->assignCompanyFullAccessRole($userId, $companyId);
         (new BarcodeLoginService())->ensureUserBarcode($userId);
+        $this->applyPinnedTenantLogo($companyId);
         try {
             (new AccountLockoutService())->clearLock($userId);
         } catch (\Throwable $e) {
@@ -326,7 +328,7 @@ final class DedicatedCompanySeedService
     ): array {
         $planId = (int) $plan['id'];
 
-        return [
+        $payload = [
             'name' => $companyName,
             'slug' => $slug ?? $this->uniqueCompanySlug($companyName),
             'email' => $email,
@@ -337,6 +339,49 @@ final class DedicatedCompanySeedService
             'storage_limit_mb' => (int) ($plan['max_storage_mb'] ?? 2048),
             'modules' => $modules,
         ];
+        $brand = function_exists('rateb_erp_brand_for_context')
+            ? rateb_erp_brand_for_context(
+                null,
+                defined('RATEB_ERP_DB_NAME') ? (string) RATEB_ERP_DB_NAME : '',
+                $companyName
+            )
+            : null;
+        if (is_array($brand) && trim((string) ($brand['logo_path'] ?? '')) !== '') {
+            $payload['logo_path'] = (string) $brand['logo_path'];
+        }
+
+        return $payload;
+    }
+
+    /** Stamp a pinned host logo onto the dedicated company row (no data wipe). */
+    public function applyPinnedTenantLogo(int $companyId, string $companyName = ''): void
+    {
+        if ($companyId < 1 || !function_exists('rateb_erp_brand_for_context')) {
+            return;
+        }
+
+        $companyModel = new Company();
+        if ($companyName === '') {
+            $row = $companyModel->find($companyId);
+            $companyName = trim((string) ($row['name'] ?? ''));
+        }
+
+        $dbName = defined('RATEB_ERP_DB_NAME') ? (string) RATEB_ERP_DB_NAME : '';
+        try {
+            $current = (string) (Database::connection()->query('SELECT DATABASE()')->fetchColumn() ?: '');
+            if ($current !== '') {
+                $dbName = $current;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        $brand = rateb_erp_brand_for_context(null, $dbName, $companyName);
+        $path = is_array($brand) ? trim((string) ($brand['logo_path'] ?? '')) : '';
+        if ($path === '') {
+            return;
+        }
+
+        $companyModel->update($companyId, ['logo_path' => $path]);
     }
 
     /** @param array<string, mixed> $plan */

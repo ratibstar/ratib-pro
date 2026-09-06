@@ -19,9 +19,8 @@ $localeArUrl = function_exists('rateb_locale_switch_url') ? rateb_locale_switch_
 <header class="rateb-mkt-header rateb-mkt-header-<?php echo Rateb\App\Core\View::escape($headerContext); ?>">
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand rateb-mkt-brand" href="<?php echo $brandUrl; ?>">
-                <i class="fas fa-hospital"></i>
-                <span><?php echo __('rateb_erp'); ?></span>
+            <a class="navbar-brand rateb-mkt-brand<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-logo' : ''; ?>" href="<?php echo $brandUrl; ?>">
+                <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'header']); ?>
                 <?php if ($headerContext === 'portal') { ?>
                 <small class="rateb-mkt-brand-badge"><?php echo __('portal_customer_area'); ?></small>
                 <?php } ?>

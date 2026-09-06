@@ -10,7 +10,7 @@ $meta = $meta ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="<?php echo rateb_asset('js/marketing-head.js'); ?>"></script>
     <title><?php echo Rateb\App\Core\View::escape($meta['title'] ?? ($title ?? 'RATEB ERP')); ?></title>
-    <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
+    <link rel="icon" href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_favicon_url') ? rateb_erp_brand_favicon_url() : rateb_public_url('favicon.ico')); ?>" type="<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? 'image/png' : 'image/svg+xml'; ?>">
     <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
     <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">

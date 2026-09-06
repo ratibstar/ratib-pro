@@ -38,6 +38,10 @@
     gap: 0.5rem;
 }
 
+.rateb-mkt-brand.has-logo {
+    gap: 0.65rem;
+}
+
 .rateb-mkt-hero {
     padding: 4rem 0;
     background: linear-gradient(135deg, var(--cms-primary), var(--cms-secondary));

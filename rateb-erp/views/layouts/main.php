@@ -596,15 +596,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
       else window.addEventListener('load', schedule, { once: true });
     })();
     </script>
-    <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
-    <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
+    <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></title>
+    <link rel="icon" href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_favicon_url') ? rateb_erp_brand_favicon_url() : rateb_public_url('favicon.ico')); ?>" type="<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? 'image/png' : 'image/svg+xml'; ?>">
     <link rel="manifest" href="<?php echo rateb_public_url('manifest.webmanifest'); ?>">
     <meta name="theme-color" content="#0f1117">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RATEB ERP">
-    <link rel="apple-touch-icon" href="<?php echo rateb_public_url('assets/pwa/erp-icon-192.png'); ?>">
+    <meta name="apple-mobile-web-app-title" content="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : 'RATEB ERP'); ?>">
+    <link rel="apple-touch-icon" href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? rateb_erp_brand_logo_url() : rateb_public_url('assets/pwa/erp-icon-192.png')); ?>">
     <?php
     /* PERF-P3 / Fix5–7 / Fix11: one tiny blocking shell stylesheet; async CSS via preload→swap.
      * Tajawal 400 inlined (font-display:optional + preload) — no late text swap.
@@ -862,9 +862,8 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     data-rateb-date-hint-week="<?php echo Rateb\App\Core\View::escape(__('week_format_hint')); ?>">
 <div class="rateb-wrapper">
     <aside class="rateb-sidebar" id="rateb-sidebar">
-        <div class="rateb-sidebar-brand">
-            <i class="fas fa-hospital"></i>
-            <span><?php echo __('rateb_erp'); ?></span>
+        <div class="rateb-sidebar-brand<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-logo' : ''; ?>">
+            <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'sidebar']); ?>
         </div>
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>

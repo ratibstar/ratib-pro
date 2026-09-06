@@ -18,8 +18,8 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
         } catch (e) {}
     })();
     </script>
-    <title><?php echo Rateb\App\Core\View::escape($title ?? __('login')); ?> | <?php echo __('rateb_erp'); ?></title>
-    <link rel="icon" href="<?php echo rateb_public_url('favicon.ico'); ?>" type="image/svg+xml">
+    <title><?php echo Rateb\App\Core\View::escape($title ?? __('login')); ?> | <?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></title>
+    <link rel="icon" href="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_favicon_url') ? rateb_erp_brand_favicon_url() : rateb_public_url('favicon.ico')); ?>" type="<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? 'image/png' : 'image/svg+xml'; ?>">
     <link href="<?php echo rateb_tajawal_font_css(); ?>" rel="stylesheet">
     <?php if ($dir === 'rtl') { ?>
     <link href="<?php echo rateb_bootstrap_css(); ?>" rel="stylesheet">
@@ -46,8 +46,7 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
                        data-rateb-full-nav="1">عربي</a>
                 </div>
             </div>
-            <i class="fas fa-hospital fa-2x text-primary mb-2"></i>
-            <h2 class="h4"><?php echo __('rateb_erp'); ?></h2>
+            <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'auth']); ?>
         </div>
         <?php Rateb\App\Core\View::partial('flash'); ?>
         <?php echo $pageContent; ?>

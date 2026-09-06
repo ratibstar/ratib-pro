@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260905-cp-module-addons-entitlement-v1');
+define('RATEB_ASSET_BUILD', '20260906-alarfaj-logo-v1');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1166,6 +1166,11 @@ if (!function_exists('rateb_asset')) {
 
         return rateb_site_origin() . rateb_erp_assets_prefix() . '/assets/' . $path . $suffix;
     }
+}
+
+$ratebTenantBranding = RATEB_ROOT . '/config/tenant-branding.php';
+if (is_file($ratebTenantBranding)) {
+    require_once $ratebTenantBranding;
 }
 
 if (!function_exists('rateb_vendor_asset')) {
