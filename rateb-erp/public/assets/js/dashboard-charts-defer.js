@@ -116,6 +116,14 @@
             }
             var chartjs = rootEl.getAttribute('data-rateb-chartjs') || '';
             var charts = rootEl.getAttribute('data-rateb-charts') || '';
+            if (!chartjs) {
+                var existingChart = document.querySelector('script[src*="chart.umd"]');
+                chartjs = existingChart ? existingChart.getAttribute('src') || '' : '';
+            }
+            if (!charts) {
+                var existingCharts = document.querySelector('script[src*="js/charts.js"]');
+                charts = existingCharts ? existingCharts.getAttribute('src') || '' : '';
+            }
             if (!chartjs || !charts) {
                 resolve();
                 return;

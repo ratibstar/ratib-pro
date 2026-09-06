@@ -5,11 +5,36 @@ $userCount = (int) ($userCount ?? 0);
 $companyName = trim((string) ($companyName ?? ($dash['company_name'] ?? '')));
 $recentActivity = $recentActivity ?? ($dash['recent_activity'] ?? []);
 
-$prLabels = json_encode($c['procurement_trend']['labels'] ?? []);
-$prValues = json_encode(array_map('intval', $c['procurement_trend']['purchase_requests'] ?? []));
-$poValues = json_encode(array_map('intval', $c['procurement_trend']['purchase_orders'] ?? []));
-$invHealthLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $c['inventory_health'] ?? []));
-$invHealthValues = json_encode(array_map('intval', array_column($c['inventory_health'] ?? [], 'value')));
+$jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+$trendLabels = $c['procurement_trend']['labels'] ?? [];
+if (!is_array($trendLabels) || $trendLabels === []) {
+    $trendLabels = [];
+    for ($i = 5; $i >= 0; $i--) {
+        $trendLabels[] = date('Y-m', strtotime('-' . $i . ' months'));
+    }
+}
+$prSeries = array_map('intval', $c['procurement_trend']['purchase_requests'] ?? []);
+$poSeries = array_map('intval', $c['procurement_trend']['purchase_orders'] ?? []);
+while (count($prSeries) < count($trendLabels)) {
+    $prSeries[] = 0;
+}
+while (count($poSeries) < count($trendLabels)) {
+    $poSeries[] = 0;
+}
+$healthRows = $c['inventory_health'] ?? [];
+if (!is_array($healthRows) || $healthRows === []) {
+    $healthRows = [
+        ['label' => __('inventory_health_ok'), 'value' => 0],
+        ['label' => __('inventory_health_low'), 'value' => 0],
+        ['label' => __('inventory_health_out'), 'value' => 0],
+        ['label' => __('inventory_health_expired'), 'value' => 0],
+    ];
+}
+$prLabels = json_encode($trendLabels, $jsonFlags);
+$prValues = json_encode($prSeries, $jsonFlags);
+$poValues = json_encode($poSeries, $jsonFlags);
+$invHealthLabels = json_encode(array_map(static fn ($r) => (string) ($r['label'] ?? ''), $healthRows), $jsonFlags);
+$invHealthValues = json_encode(array_map('intval', array_column($healthRows, 'value')), $jsonFlags);
 
 $metrics = [];
 foreach (
@@ -90,7 +115,9 @@ $subtitle = $companyName !== ''
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
 <!-- rateb-company-dashboard-v2 -->
-<div class="cm cm--wide" data-cm-dash="v5c">
+<div class="cm cm--wide" data-cm-dash="v5c"
+     data-rateb-chartjs="<?php echo Rateb\App\Core\View::escape(rateb_chartjs('4.4.3')); ?>"
+     data-rateb-charts="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/charts.js')); ?>">
     <?php
     Rateb\App\Core\View::partial('dashboard/hero', [
         'tag' => __('approval_category_operations'),
@@ -106,7 +133,7 @@ Rateb\App\Core\View::partial('dashboard/head');
         <div class="cm-viz-grid cm-viz-grid--2">
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('company_procurement_trend'); ?></h2></header>
-                <div class="cm-chart cm-chart--xl">
+                <div class="cm-chart cm-chart--xl is-loading" data-chart-slot>
                     <canvas id="chart-revenue-expenses"
                         data-labels='<?php echo Rateb\App\Core\View::escape($prLabels); ?>'
                         data-revenue='<?php echo Rateb\App\Core\View::escape($poValues); ?>'
@@ -117,7 +144,7 @@ Rateb\App\Core\View::partial('dashboard/head');
             </section>
             <section class="cm-zone">
                 <header class="cm-zone__bar"><h2><?php echo __('company_inventory_health'); ?></h2></header>
-                <div class="cm-chart cm-chart--xl">
+                <div class="cm-chart cm-chart--xl is-loading" data-chart-slot>
                     <canvas id="chart-expense-breakdown"
                         data-labels='<?php echo Rateb\App\Core\View::escape($invHealthLabels); ?>'
                         data-values='<?php echo Rateb\App\Core\View::escape($invHealthValues); ?>'></canvas>

@@ -249,7 +249,7 @@
         };
     }
 
-    function doughnutOptions(colors, legend) {
+    function doughnutOptions(colors, legend, actualValues) {
         return {
             responsive: true,
             maintainAspectRatio: false,
@@ -269,10 +269,13 @@
                 tooltip: Object.assign({}, tooltipOptions(colors), {
                     callbacks: {
                         label: function (ctx) {
-                            var total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
-                            var val = ctx.parsed;
-                            var pct = total > 0 ? Math.round((val / total) * 100) : 0;
-                            return ctx.label + ': ' + formatTooltip(val) + ' (' + pct + '%)';
+                            var idx = ctx.dataIndex;
+                            var raw = Array.isArray(actualValues) ? (actualValues[idx] || 0) : ctx.parsed;
+                            var total = Array.isArray(actualValues)
+                                ? actualValues.reduce(function (a, b) { return a + b; }, 0)
+                                : ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                            var pct = total > 0 ? Math.round((raw / total) * 100) : 0;
+                            return ctx.label + ': ' + formatTooltip(raw) + ' (' + pct + '%)';
                         }
                     }
                 })
@@ -515,20 +518,29 @@
 
     function initDoughnut(el, colors, pal, valuesKey) {
         var values = parseNums(el.dataset[valuesKey || 'values']);
+        var labels = JSON.parse(el.dataset.labels || '[]');
+        var allZero = values.length > 0 && values.every(function (v) { return !v; });
+        var display = allZero ? values.map(function () { return 1; }) : values;
+        var bg = allZero
+            ? ['rgba(52,211,153,0.28)', 'rgba(251,191,36,0.28)', 'rgba(251,113,133,0.28)', 'rgba(148,163,184,0.28)']
+            : pal.series.slice(0, display.length);
+        var hover = allZero
+            ? ['#34d399', '#fbbf24', '#fb7185', '#94a3b8']
+            : pal.seriesHover.slice(0, display.length);
         mount(el.id, new Chart(el, {
             type: 'doughnut',
             data: {
-                labels: JSON.parse(el.dataset.labels),
+                labels: labels,
                 datasets: [{
-                    data: values,
-                    backgroundColor: pal.series.slice(0, values.length),
-                    hoverBackgroundColor: pal.seriesHover.slice(0, values.length),
+                    data: display,
+                    backgroundColor: bg,
+                    hoverBackgroundColor: hover,
                     borderWidth: 0,
                     hoverBorderWidth: 0,
-                    hoverOffset: 10
+                    hoverOffset: allZero ? 0 : 10
                 }]
             },
-            options: doughnutOptions(colors)
+            options: doughnutOptions(colors, null, values)
         }));
     }
 
