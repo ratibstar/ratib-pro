@@ -191,6 +191,9 @@ final class MarketingController extends Controller
         }
         $this->cms->trackPageView($slug);
         $defaultTitle = $page ? CmsService::pickLocale($page, 'title') : $this->defaultPageTitle($slug);
+        if ($defaultTitle === '' || strcasecmp($defaultTitle, 'label') === 0) {
+            $defaultTitle = $this->defaultPageTitle($slug);
+        }
         $meta = $this->cms->metaTags($slug, $defaultTitle);
         $data = [
             'page' => $page,

@@ -14,7 +14,7 @@ $headerContext = 'marketing';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="<?php echo rateb_asset('js/marketing-head.js'); ?>"></script>
-    <title><?php echo Rateb\App\Core\View::escape($meta['title'] ?? ($title ?? 'RATEB ERP')); ?></title>
+    <title><?php echo Rateb\App\Core\View::escape(function_exists('rateb_mkt_tenant_copy') ? rateb_mkt_tenant_copy((string) ($meta['title'] ?? ($title ?? (function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : 'RATEB ERP')))) : ($meta['title'] ?? ($title ?? 'RATEB ERP'))); ?></title>
     <?php if (!empty($meta['description'])) { ?>
     <meta name="description" content="<?php echo Rateb\App\Core\View::escape($meta['description']); ?>">
     <?php } ?>

@@ -159,6 +159,54 @@ if (!function_exists('rateb_erp_brand_display_name')) {
     }
 }
 
+if (!function_exists('rateb_mkt_tenant_copy')) {
+    function rateb_mkt_tenant_copy(string $text): string
+    {
+        $text = trim($text);
+        $brand = function_exists('rateb_erp_pinned_brand') ? rateb_erp_pinned_brand() : null;
+        if (!is_array($brand)) {
+            return $text;
+        }
+        $ar = trim((string) ($brand['name_ar'] ?? ''));
+        $en = trim((string) ($brand['name'] ?? ''));
+        if ($ar === '') {
+            $ar = $en;
+        }
+        if ($en === '') {
+            $en = $ar;
+        }
+        if ($text === '') {
+            return '';
+        }
+        if (strcasecmp($text, 'label') === 0) {
+            return function_exists('rateb_locale') && rateb_locale() === 'ar' ? $ar : $en;
+        }
+        $out = str_replace(
+            [
+                'نظام رتب ERP',
+                'رتب ERP',
+                'RATEB ERP',
+                'Rateb ERP',
+                'Rateb',
+                'RATEB',
+                'رتب',
+            ],
+            [
+                $ar,
+                $ar,
+                $en,
+                $en,
+                $en,
+                $en,
+                $ar,
+            ],
+            $text
+        );
+
+        return $out;
+    }
+}
+
 if (!function_exists('rateb_erp_brand_logo_url')) {
     function rateb_erp_brand_logo_url(): string
     {

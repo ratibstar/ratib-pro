@@ -195,6 +195,9 @@ if (empty($faqs)) {
                     <i class="fas fa-chart-line"></i>
                     <span><?php
                     $heroCardText = __('cms_erp_overview_short');
+                    if (function_exists('rateb_mkt_tenant_copy')) {
+                        $heroCardText = rateb_mkt_tenant_copy($heroCardText);
+                    }
                     if ($hero) {
                         $heroSettings = $hero['settings_json'] ?? null;
                         if (is_string($heroSettings) && $heroSettings !== '') {

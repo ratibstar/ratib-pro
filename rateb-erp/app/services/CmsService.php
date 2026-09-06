@@ -56,10 +56,14 @@ final class CmsService
         $field = self::localeField($base);
         $fallback = $base . '_en';
         $val = trim((string) ($row[$field] ?? ''));
-        if ($val !== '') {
-            return $val;
+        if ($val === '') {
+            $val = trim((string) ($row[$fallback] ?? ''));
         }
-        return (string) ($row[$fallback] ?? '');
+        if (function_exists('rateb_mkt_tenant_copy')) {
+            return rateb_mkt_tenant_copy($val);
+        }
+
+        return $val;
     }
 
     public static function sanitizeHtml(string $html): string

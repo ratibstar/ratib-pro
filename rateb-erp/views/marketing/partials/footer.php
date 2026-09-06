@@ -16,8 +16,8 @@ if ($columns === []) {
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-4">
-                <h3 class="rateb-mkt-footer-title"><?php echo __('rateb_erp'); ?></h3>
-                <p class="rateb-mkt-footer-text"><?php echo __('cms_footer_tagline'); ?></p>
+                <h3 class="rateb-mkt-footer-title"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></h3>
+                <p class="rateb-mkt-footer-text"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_mkt_tenant_copy') ? rateb_mkt_tenant_copy(__('cms_footer_tagline')) : __('cms_footer_tagline')); ?></p>
             </div>
             <?php
             $footerLinkItems = $footerMenu ?? ($menuItems ?? []);
@@ -94,7 +94,7 @@ if ($columns === []) {
             </div>
         </div>
         <div class="rateb-mkt-footer-bottom">
-            <span>&copy; <?php echo date('Y'); ?> <?php echo __('rateb_erp'); ?></span>
+            <span>&copy; <?php echo date('Y'); ?> <?php echo Rateb\App\Core\View::escape(function_exists('rateb_erp_brand_display_name') ? rateb_erp_brand_display_name() : __('rateb_erp')); ?></span>
             <div class="rateb-mkt-footer-legal">
                 <a href="<?php echo rateb_url('site/privacy'); ?>"><?php echo __('cms_privacy'); ?></a>
                 <a href="<?php echo rateb_url('site/terms'); ?>"><?php echo __('cms_terms'); ?></a>

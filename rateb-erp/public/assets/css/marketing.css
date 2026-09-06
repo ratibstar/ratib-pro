@@ -42,6 +42,13 @@
     gap: 0.65rem;
 }
 
+.rateb-mkt-brand-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: inherit;
+}
+
 .rateb-mkt-brand .rateb-brand-logo-wrap {
     max-width: 180px;
     max-height: 48px;
