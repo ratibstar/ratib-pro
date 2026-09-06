@@ -1415,6 +1415,9 @@ $ratebIdleScripts = [
     rateb_asset('js/rateb-modal.js'),
     rateb_asset('js/rateb-confirm.js'),
 ];
+if (!empty($layoutAssets['entityDocuments'])) {
+    $ratebIdleScripts[] = rateb_asset('js/entity-documents-modal.js');
+}
 if (!empty($layoutAssets['bulkDelete'])) {
     $ratebIdleScripts[] = rateb_asset('js/rateb-bulk-delete.js');
 }

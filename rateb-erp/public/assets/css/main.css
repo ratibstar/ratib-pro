@@ -190,12 +190,14 @@ body.has-tenant-logo .rateb-main {
     display: block;
 }
 
-/* PWA install: bottom corner of MAIN only — never cover sidebar or bottom toolbars. */
+/* PWA install: centered over the main pane — never cover RTL action columns or the sidebar. */
 .rateb-erp-pwa-install {
     position: fixed;
-    z-index: 900;
-    inset-inline-start: auto;
-    inset-inline-end: 1rem;
+    z-index: 40;
+    left: 50%;
+    right: auto;
+    inset-inline: auto;
+    transform: translateX(-50%);
     bottom: max(1rem, env(safe-area-inset-bottom, 0px));
     max-width: 18rem;
     width: auto;
@@ -204,7 +206,6 @@ body.has-tenant-logo .rateb-main {
 
 @media (max-width: 991px) {
     .rateb-erp-pwa-install {
-        inset-inline: auto 1rem auto auto;
         max-width: calc(100vw - 2rem);
         bottom: max(1rem, env(safe-area-inset-bottom, 0px));
     }

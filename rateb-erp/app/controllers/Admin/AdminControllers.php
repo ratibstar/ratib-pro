@@ -1643,6 +1643,7 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             ? 'admin/plans'
             : (function_exists('rateb_app_route') ? rateb_app_route('plans') : 'admin/ops/plans');
         $this->entityName = 'plans';
+        $this->filesEnabled = false;
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text'],
             ['name' => 'slug', 'label' => 'slug', 'type' => 'text'],
@@ -1740,6 +1741,12 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         foreach ($decoded as $mod) {
             $key = (string) $mod;
             $labels[] = __((string) ($catalog[$key] ?? $key));
+            if (count($labels) >= 4) {
+                break;
+            }
+        }
+        if (count($decoded) > 4) {
+            $labels[] = '…';
         }
 
         return implode(' · ', $labels);
@@ -1766,21 +1773,6 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             'title' => __('create') . ' ' . __('plans'),
             'item' => $item,
             'tierPresets' => array_keys(\Rateb\App\Services\PlanLimitService::tierDefinitions()),
-        ]), $this->layout());
-    }
-
-    public function edit(array $params): void
-    {
-        $id = (int) ($params['id'] ?? 0);
-        $item = $this->model->find($id);
-        if (!$item) {
-            http_response_code(404);
-            $this->view('errors/404', ['title' => '404']);
-            return;
-        }
-        $this->view($this->viewPrefix . '/form', $this->formViewData([
-            'title' => __('edit') . ' ' . __('plans'),
-            'item' => $item,
         ]), $this->layout());
     }
 

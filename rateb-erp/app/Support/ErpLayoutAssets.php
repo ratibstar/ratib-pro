@@ -62,9 +62,6 @@ final class ErpLayoutAssets
         $dateInputs = !$isLeanDashboard;
 
         $defer = [];
-        if ($entityDocuments) {
-            $defer[] = 'entity-documents-modal.js';
-        }
         if ($charts) {
             $defer[] = 'charts.js';
         }

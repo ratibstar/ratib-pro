@@ -151,6 +151,8 @@
 
 .rateb-table td.rateb-actions-cell {
     max-width: none;
+    position: relative;
+    z-index: 3;
 }
 
 /* Companies list — show data cells; keep actions compact (icon-only) */
