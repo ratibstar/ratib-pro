@@ -48,13 +48,9 @@ if (!empty($_GET['rateb_designed'])) {
 
 /**
  * Phase WEBSITE-02 — Agency domain root → Website Kernel (public site).
- * Dedicated Al Arfaj ERP skips marketing and goes to ERP login.
+ * ERP stays under /admin and /rateb-erp/public/admin (never force / → ERP).
  */
 if (($path === '/' || $path === '') && !$isMainSa) {
-    if ($host === 'alarfaj.rateb.sa') {
-        header('Location: /rateb-erp/public/login', true, 302);
-        exit;
-    }
     $isControlOpen = !empty($_GET['control']) && (string) $_GET['control'] === '1'
         && !empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id']);
     if ($isControlOpen) {
