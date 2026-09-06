@@ -2242,6 +2242,18 @@
         if (!a) {
             return;
         }
+        if (a.getAttribute('data-rateb-edit-link') === '1' || a.getAttribute('data-rateb-full-nav') === '1') {
+            if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) {
+                return;
+            }
+            ev.preventDefault();
+            try { ev.stopImmediatePropagation(); } catch (eSipEdit) { ev.stopPropagation(); }
+            var editHref = navHrefOf(a);
+            if (editHref) {
+                root.location.assign(editHref);
+            }
+            return;
+        }
         if (root.__ratebGoPosRegister && root.__ratebGoPosRegister(a, ev)) {
             return;
         }

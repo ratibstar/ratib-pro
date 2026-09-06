@@ -182,6 +182,7 @@
 
     function shouldSkipForm(form) {
         return form.hasAttribute('data-rateb-bulk-form')
+            || form.hasAttribute('data-rateb-native-confirm')
             || form.hasAttribute('data-entity-docs-delete')
             || form.hasAttribute('data-entity-docs-upload');
     }

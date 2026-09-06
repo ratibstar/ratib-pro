@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260906-plans-row-actions');
+define('RATEB_ASSET_BUILD', '20260906-plans-actions-native');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3504,7 +3504,16 @@ if (!function_exists('rateb_app_route')) {
         $path = ltrim(preg_replace('#^company/#', '', trim($path)), '/');
 
         // Phase AG: build conflict-root lookup once per process (never grow / re-merge).
-        static $conflictLookup = null;
+        static $conflictLookupByHost = [];
+        $lookupKey = 't';
+        if (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host()) {
+            $lookupKey = 'p';
+        } elseif (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment()) {
+            $lookupKey = 'd';
+        } elseif (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+            $lookupKey = 'a';
+        }
+        $conflictLookup = $conflictLookupByHost[$lookupKey] ?? null;
         if ($conflictLookup === null) {
             $conflictRoots = [
                 'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
@@ -3531,6 +3540,7 @@ if (!function_exists('rateb_app_route')) {
                 }
             }
             $conflictLookup = array_fill_keys($conflictRoots, true);
+            $conflictLookupByHost[$lookupKey] = $conflictLookup;
         }
 
         $root = explode('/', $path)[0];

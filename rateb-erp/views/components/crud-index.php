@@ -17,11 +17,14 @@ $actionsRoutePrefix = $actionsRoutePrefix ?? ($routePrefix ?? '');
 $editQuery = is_array($editQuery ?? null) ? $editQuery : [];
 $editHref = static function (int $id) use ($actionsRoutePrefix, $editQuery): string {
     $path = $actionsRoutePrefix . '/' . $id . '/edit';
-    if ($editQuery !== [] && function_exists('rateb_url_query')) {
-        return rateb_url_query(rateb_url($path), $editQuery);
+    $url = ($editQuery !== [] && function_exists('rateb_url_query'))
+        ? rateb_url_query(rateb_url($path), $editQuery)
+        : rateb_url($path);
+    if (function_exists('rateb_url_set_query_param')) {
+        $url = rateb_url_set_query_param($url, 'rateb_live', '1');
     }
 
-    return rateb_url($path);
+    return $url;
 };
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
@@ -494,8 +497,8 @@ $ratebRowRecordLabel = static function (array $row): string {
                             </button>
                         </form>
                         <?php } ?>
-                        <a href="<?php echo Rateb\App\Core\View::escape($editHref((int) $row['id'])); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" data-rateb-full-nav="1"><i class="fas fa-edit"></i></a>
-                        <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
+                        <a href="<?php echo Rateb\App\Core\View::escape($editHref((int) $row['id'])); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" data-rateb-full-nav="1" onclick="event.preventDefault();event.stopPropagation();window.location.assign(this.href);return false;"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>" data-rateb-native-confirm="1" onsubmit="return confirm(this.getAttribute('data-confirm-delete') || 'OK');">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>

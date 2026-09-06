@@ -5,9 +5,12 @@
   --ha-bg: color-mix(in srgb, var(--rateb-surface-elevated, #1c2940) 92%, transparent);
   --ha-border: color-mix(in srgb, var(--ha-accent) 35%, var(--rateb-border, #2a3a52));
   position: fixed;
-  left: 1rem;
+  left: auto;
+  right: auto;
+  inset-inline-start: 1rem;
+  inset-inline-end: auto;
   bottom: 1rem;
-  z-index: 1050;
+  z-index: 40;
   font-family: var(--rateb-font, system-ui, sans-serif);
   pointer-events: none;
 }
@@ -54,7 +57,9 @@
 .rateb-ha-panel {
   pointer-events: auto;
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
+  left: auto;
+  right: auto;
   bottom: calc(3.35rem + 0.65rem);
   width: min(24.5rem, calc(100vw - 1.5rem));
   max-height: min(34rem, calc(100vh - 5.5rem));

@@ -151,8 +151,27 @@
 
 .rateb-table td.rateb-actions-cell {
     max-width: none;
+    position: sticky;
+    inset-inline-end: 0;
+    z-index: 5;
+    background: var(--rateb-surface, var(--rateb-bg, #0f172a));
+    pointer-events: auto;
+}
+
+.rateb-table th.rateb-th-actions {
+    position: sticky;
+    inset-inline-end: 0;
+    z-index: 6;
+    background: var(--rateb-bg, #0f172a);
+}
+
+.rateb-actions,
+.rateb-actions a,
+.rateb-actions button,
+.rateb-actions form {
+    pointer-events: auto !important;
     position: relative;
-    z-index: 3;
+    z-index: 6;
 }
 
 /* Companies list — show data cells; keep actions compact (icon-only) */
