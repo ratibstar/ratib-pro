@@ -119,9 +119,13 @@ $crudRoutes = [
     'support-tickets' => [SupportTicketsController::class, 'settings.manage'],
 ];
 
+$plansCrudPerm = (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())
+    ? 'plans.manage'
+    : 'access.manage';
+$crudRoutes['plans'] = [PlansController::class, $plansCrudPerm];
+
 $platformCrudRoutes = [
     'subscriptions' => [SubscriptionsController::class, 'subscriptions.manage'],
-    'plans' => [PlansController::class, 'plans.manage'],
 ];
 
 foreach ($platformCrudRoutes as $path => [$class, $perm]) {

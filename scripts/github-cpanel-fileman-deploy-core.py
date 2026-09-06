@@ -489,6 +489,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/css/main.css",
     "rateb-erp/public/assets/css/marketing.css",
     "rateb-erp/config/tenant-branding.php",
+    "rateb-erp/config/permissions-system.php",
     "rateb-erp/app/services/CmsService.php",
     "rateb-erp/app/controllers/Marketing/MarketingController.php",
     "rateb-erp/views/layouts/marketing.php",

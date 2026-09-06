@@ -1003,6 +1003,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             ];
             if (rateb_is_platform_oversight_host()) {
                 $accessControlLinks[] = ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'];
+            } elseif (
+                (function_exists('rateb_erp_is_dedicated_deployment') && rateb_erp_is_dedicated_deployment())
+                || (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host())
+            ) {
+                $accessControlLinks[] = ['admin/plans', 'plans', 'fa-layer-group', 'access.manage'];
             }
             $adminSection(
                 __('access_control'),

@@ -179,6 +179,7 @@ if (!rateb_is_super_admin()
     if (!function_exists('rateb_tenant_permission_catalog_locked') || !rateb_tenant_permission_catalog_locked()) {
         $accessNavLinks[] = ['permissions', 'permissions', 'fa-key', 'access_control', 'access.manage'];
     }
+    $accessNavLinks[] = ['plans', 'plans', 'fa-layer-group', 'access_control', 'access.manage'];
     $opsSection(__('access_control'), $accessNavLinks, 'fa-key');
 
     $settingsNavLinks = [

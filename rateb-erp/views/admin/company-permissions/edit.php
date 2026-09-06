@@ -39,9 +39,12 @@ $lockedCore = class_exists(\Rateb\App\Services\PlanLimitService::class)
                 <strong><?php echo Rateb\App\Core\View::escape($companyName); ?></strong>
                 · #<?php echo $cid; ?>
                 · <?php echo __('status'); ?>: <?php echo __($companyStatus); ?>
-                <?php if (!empty($limits['plan_name'])) { ?>
-                · <?php echo __('current_plan'); ?>: <?php echo Rateb\App\Core\View::escape((string) $limits['plan_name']); ?>
-                <?php } ?>
+                <?php
+                $planName = trim((string) ($limits['plan_name'] ?? ''));
+                if ($planName !== '' && strcasecmp($planName, 'label') !== 0) {
+                    echo ' · ' . __('current_plan') . ': ' . Rateb\App\Core\View::escape($planName);
+                }
+                ?>
             </div>
             <?php if ($canActivateCompany) { ?>
             <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/activate'); ?>" class="mb-0">
