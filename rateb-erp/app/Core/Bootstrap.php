@@ -179,6 +179,8 @@ final class Bootstrap
             '/app/Core/SecurityHeaders.php',
             '/app/Core/Middleware/Middleware.php',
             '/app/models/Entities.php',
+            '/app/models/Plan.php',
+            '/app/services/PlanLimitService.php',
             '/app/models/CmsModels.php',
             '/app/services/AuditService.php',
             '/app/services/CmsService.php',

@@ -4,7 +4,9 @@
 use Rateb\App\Services\CmsService;
 
 $intro = $content['intro']['section'] ?? null;
+$plans = is_array($plans ?? null) ? $plans : [];
 ?>
+<!-- rateb-pricing-source=db count=<?php echo (int) count($plans); ?> db=<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Database::resolvedDatabaseName()); ?> -->
 <section class="rateb-mkt-page-hero">
     <div class="container text-center">
         <h1><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h1>

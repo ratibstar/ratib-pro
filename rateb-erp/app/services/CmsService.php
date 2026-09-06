@@ -339,6 +339,13 @@ final class CmsService
         try {
             return (new Plan())->getActive();
         } catch (\Throwable $e) {
+            error_log('publishedPlans: ' . $e->getMessage());
+            $dedicated = (function_exists('rateb_force_single_tenant_ops') && rateb_force_single_tenant_ops())
+                || (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host());
+            if ($dedicated) {
+                return [];
+            }
+
             return PlanLimitService::marketingPlanRows();
         }
     }

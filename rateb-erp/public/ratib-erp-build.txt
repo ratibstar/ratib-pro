@@ -1,1 +1,1 @@
-20260906-public-plans-from-db
+20260906-pricing-db-only

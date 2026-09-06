@@ -207,6 +207,11 @@ final class MigrationService
             $log[] = 'Plan existing lookup failed: ' . $e->getMessage();
         }
 
+        // Admin may delete packages. Never re-insert missing slugs while any row remains.
+        if ($existing !== [] && !$overwriteExisting) {
+            return;
+        }
+
         foreach ($tiers as $slug => $tier) {
             if (!is_array($tier)) {
                 continue;

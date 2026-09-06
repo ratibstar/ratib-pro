@@ -101,8 +101,13 @@ final class WebsiteKernel
         TenantContext::resolveFromRequest();
 
         if (!headers_sent()) {
-            // Public HTML may be cached at the edge later; avoid ERP no-store default.
-            header('Cache-Control: public, max-age=0, must-revalidate');
+            $path = self::peekRequestPath();
+            if ($path === '/site/pricing' || str_starts_with($path, '/site/pricing')) {
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
+                header('Pragma: no-cache');
+            } else {
+                header('Cache-Control: public, max-age=0, must-revalidate');
+            }
         }
 
         register_shutdown_function(static function (): void {
