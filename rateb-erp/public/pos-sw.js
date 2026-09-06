@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v47 — strip orphan access_denied flash on ops edit forms. */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v47';
+/* v48 — never paint cached /admin over a live 403 commercial lock. */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v48';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260830-kill-orphan-access-denied-v166';
+var SW_BUILD_ID = '20260906-agency-suspended-lock-v167';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -2493,106 +2493,28 @@ function navigateErpCloudWithCacheSafety(request, url, event) {
         });
     }
 
-    var networkMs = 4500;
-    var networkP = fetchNavigateNetwork(request, networkMs).then(storeLive).catch(function () {
-        return null;
-    });
-    var cacheP = matchSoftOnlineExactCache(request, url).catch(function () {
-        return null;
-    });
-
-    return new Promise(function (resolve) {
-        var settled = false;
-        function finish(res) {
-            if (!res) {
-                return false;
+    // Online: network-first. Cache-first hid Control Panel suspension (403) behind a stale dashboard.
+    return fetchNavigateNetworkPassthrough(request, 8000).then(function (response) {
+        if (response && (response.status === 403 || response.status === 401)) {
+            var drop = purgeErpOpsAuthPages().catch(function () { return null; });
+            if (event && typeof event.waitUntil === 'function') {
+                event.waitUntil(drop);
             }
-            Promise.resolve(res).then(function (real) {
-                if (settled || !real) {
-                    return;
-                }
-                settled = true;
-                resolve(real);
-            }).catch(function () { /* ignore */ });
-            return true;
+            return response;
         }
-
-        function afterCacheMiss() {
-            if (settled) {
-                return;
+        storeLive(response);
+        return response;
+    }).catch(function () {
+        return matchSoftOnlineExactCache(request, url).then(function (hit) {
+            if (hit) {
+                return serveCachedFast(hit, false) || hit;
             }
-            networkP.then(function (response) {
-                if (settled) {
-                    return;
-                }
-                if (response && finish(response)) {
-                    return;
-                }
-                Promise.race([
-                    neverFailNavigate(request, url),
-                    new Promise(function (res) {
-                        setTimeout(function () {
-                            try {
-                                res(erpInlineShellResponse());
-                            } catch (eShell) {
-                                res(uncachedAdminBrowseResponse(url));
-                            }
-                        }, 400);
-                    })
-                ]).then(function (fallback) {
-                    finish(fallback);
-                });
-            });
-        }
-
-        cacheP.then(function (hit) {
-            if (!hit) {
-                afterCacheMiss();
-                return;
+            try {
+                return erpInlineShellResponse();
+            } catch (eShell) {
+                return uncachedAdminBrowseResponse(url);
             }
-            Promise.resolve(serveCachedFast(hit, false)).then(function (served) {
-                if (served && finish(served)) {
-                    if (event && typeof event.waitUntil === 'function') {
-                        event.waitUntil(networkP.then(function () { return null; }));
-                    }
-                    return;
-                }
-                afterCacheMiss();
-            });
         });
-
-        setTimeout(function () {
-            if (settled) {
-                return;
-            }
-            cacheP.then(function (hit) {
-                if (settled) {
-                    return;
-                }
-                Promise.resolve(serveCachedFast(hit, false)).then(function (served) {
-                    if (settled) {
-                        return;
-                    }
-                    if (served) {
-                        finish(served);
-                        return;
-                    }
-                    networkP.then(function (response) {
-                        if (settled) {
-                            return;
-                        }
-                        if (response && finish(response)) {
-                            return;
-                        }
-                        try {
-                            finish(erpInlineShellResponse());
-                        } catch (eShell2) {
-                            finish(uncachedAdminBrowseResponse(url));
-                        }
-                    });
-                });
-            });
-        }, 1200);
     });
 }
 

@@ -773,6 +773,9 @@ if (!function_exists('rateb_apply_agency_erp_constants')) {
         if (!defined('RATEB_ERP_AGENCY_RESOLVED')) {
             define('RATEB_ERP_AGENCY_RESOLVED', true);
         }
+        if ((int) ($row['is_suspended'] ?? 0) === 1 && !defined('RATEB_ERP_COMMERCIAL_SUSPENDED')) {
+            define('RATEB_ERP_COMMERCIAL_SUSPENDED', true);
+        }
         if (!defined('SITE_URL')) {
             $site = rtrim(trim((string) ($row['site_url'] ?? '')), '/');
             $host = function_exists('rateb_normalize_http_host')

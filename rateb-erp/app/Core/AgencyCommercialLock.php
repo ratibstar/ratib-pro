@@ -33,21 +33,27 @@ final class AgencyCommercialLock
             return;
         }
 
+        $flagged = defined('RATEB_ERP_COMMERCIAL_SUSPENDED') && RATEB_ERP_COMMERCIAL_SUSPENDED;
         $agencyId = defined('RATEB_ERP_AGENCY_ID') ? (int) RATEB_ERP_AGENCY_ID : 0;
-        if ($agencyId < 1) {
-            return;
-        }
-        if (!function_exists('rateb_control_agency_is_commercially_suspended')) {
-            $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
-            if (is_file($lookup)) {
-                require_once $lookup;
+        if (!$flagged) {
+            if ($agencyId < 1) {
+                return;
+            }
+            if (!function_exists('rateb_control_agency_is_commercially_suspended')) {
+                $lookup = dirname(__DIR__, 3) . '/config/env/agency_lookup.php';
+                if (is_file($lookup)) {
+                    require_once $lookup;
+                }
+            }
+            if (!function_exists('rateb_control_agency_is_commercially_suspended')) {
+                return;
+            }
+            if (!rateb_control_agency_is_commercially_suspended($agencyId)) {
+                return;
             }
         }
-        if (!function_exists('rateb_control_agency_is_commercially_suspended')) {
-            return;
-        }
-        if (!rateb_control_agency_is_commercially_suspended($agencyId)) {
-            return;
+        if ($agencyId < 1) {
+            $agencyId = 0;
         }
 
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');

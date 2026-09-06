@@ -22,9 +22,9 @@
     var PLATFORM_CATALOG_RE = /\/rateb-platform-catalog\//i;
     /** ERP SSO handoff into platform catalog admin. */
     var PLATFORM_CATALOG_SSO_RE = /\/platform-catalog\/sso(?:\/|$|\?)/i;
-    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v42). Older names kept as read fallbacks. */
-    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v42';
-    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v41', 'rateb-erp-ops-pages-v40', 'rateb-erp-ops-pages-v39', 'rateb-erp-ops-pages-v36'];
+    /** Must match pos-sw.js ERP_OPS_PAGE_CACHE (v48). Older names kept as read fallbacks. */
+    var OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v48';
+    var OPS_PAGE_CACHE_FALLBACKS = ['rateb-erp-ops-pages-v47', 'rateb-erp-ops-pages-v42', 'rateb-erp-ops-pages-v41', 'rateb-erp-ops-pages-v36'];
     var OPS_COEXIST_CACHE = 'rateb-erp-coexist-v34';
     var loadedScripts = Object.create(null);
     var navigating = false;
@@ -1750,10 +1750,7 @@
         var skipCacheOnline = false;
         try {
             var uList = new URL(href, root.location.href);
-            if (uList.search
-                && /(?:^|[?&])(?:per_page|page|q)=/i.test(uList.search)
-                && !isBrowserOffline()
-                && !isUiOffline()) {
+            if (!isBrowserOffline() && !isUiOffline()) {
                 skipCacheOnline = true;
             }
         } catch (eList) { /* ignore */ }

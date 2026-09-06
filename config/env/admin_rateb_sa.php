@@ -13,6 +13,16 @@ $_ENV['RATIB_MODULE_ADDON_PREVIEW'] = '1';
 putenv('MODULE_ADDON_COMMERCE_ENABLED=1');
 $_ENV['MODULE_ADDON_COMMERCE_ENABLED'] = '1';
 
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'agency_lookup.php';
+if (!defined('RATEB_ERP_AGENCY_ID')) {
+    define('RATEB_ERP_AGENCY_ID', 34);
+}
+if (function_exists('rateb_control_agency_is_commercially_suspended')
+    && rateb_control_agency_is_commercially_suspended(34)
+    && !defined('RATEB_ERP_COMMERCIAL_SUSPENDED')) {
+    define('RATEB_ERP_COMMERCIAL_SUSPENDED', true);
+}
+
 if (defined('DB_NAME')) {
     return;
 }
