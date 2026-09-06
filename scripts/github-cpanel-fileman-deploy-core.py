@@ -487,6 +487,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/offline/erp-pwa-install.js",
     "rateb-erp/public/assets/css/variables.css",
     "rateb-erp/public/assets/css/main.css",
+    "rateb-erp/public/assets/css/marketing.css",
     "rateb-erp/public/assets/css/components.css",
     "rateb-erp/public/assets/css/dark.css",
     "rateb-erp/public/assets/css/rtl.css",
