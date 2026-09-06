@@ -56,6 +56,10 @@ if (!function_exists('rateb_agency_lookup_select_columns')) {
     function rateb_agency_lookup_select_columns(mysqli $conn): string
     {
         $base = 'id, name, slug, db_host, db_port, db_user, db_pass, db_name, site_url, is_active, tenant_id';
+        $susp = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($susp && $susp->num_rows > 0) {
+            $base .= ', is_suspended';
+        }
         if (!rateb_agency_lookup_has_erp_columns($conn)) {
             return $base;
         }
@@ -640,6 +644,32 @@ if (!function_exists('rateb_lookup_agency_by_id')) {
         $conn->close();
 
         return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('rateb_control_agency_is_commercially_suspended')) {
+    /**
+     * Control Panel commercial lock (non-payment). True only when the row is readable
+     * and is_suspended = 1. Lookup failure returns false (do not brick ERP).
+     */
+    function rateb_control_agency_is_commercially_suspended(int $agencyId): bool
+    {
+        static $cache = [];
+        if ($agencyId < 1) {
+            return false;
+        }
+        if (array_key_exists($agencyId, $cache)) {
+            return $cache[$agencyId];
+        }
+        $row = rateb_lookup_agency_by_id($agencyId);
+        if (!is_array($row)) {
+            $cache[$agencyId] = false;
+
+            return false;
+        }
+        $cache[$agencyId] = (int) ($row['is_suspended'] ?? 0) === 1;
+
+        return $cache[$agencyId];
     }
 }
 

@@ -68,6 +68,9 @@ final class Bootstrap
         if (function_exists('rateb_apply_agency_erp_request_binding')) {
             rateb_apply_agency_erp_request_binding();
         }
+        if (class_exists(AgencyCommercialLock::class)) {
+            AgencyCommercialLock::enforceHttp();
+        }
         self::bootstrapControlPanelSso();
         self::ensureStorage($basePath);
         if (is_file($basePath . '/app/Core/SecurityHeaders.php')) {

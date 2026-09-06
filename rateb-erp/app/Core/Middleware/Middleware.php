@@ -250,6 +250,9 @@ final class ApiAuthMiddleware implements MiddlewareInterface
             \Rateb\App\Subscription\SubscriptionBootstrap::bindForCompany($companyId);
         }
         // Phase 7B — feature-flagged suspension enforcement (default OFF).
+        if (class_exists(\Rateb\App\Core\AgencyCommercialLock::class)) {
+            \Rateb\App\Core\AgencyCommercialLock::enforceHttp();
+        }
         if (class_exists(\Rateb\App\Subscription\SubscriptionEnforcementMiddleware::class)) {
             $ok = (new \Rateb\App\Subscription\SubscriptionEnforcementMiddleware())->handle();
             if (!$ok) {
