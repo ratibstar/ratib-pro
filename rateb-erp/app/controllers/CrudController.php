@@ -560,6 +560,7 @@ abstract class CrudController extends Controller
             $this->loadRecordForWrite($id);
         }
         try {
+            $this->beforeDeleteIds([$id]);
             $this->model->delete($id);
             (new AuditService())->log('delete', $this->entityName, $id);
             SessionManager::flash('success', __('delete') . ' OK');
@@ -587,12 +588,22 @@ abstract class CrudController extends Controller
             $this->redirect(rateb_url($this->routePrefix));
         }
 
-        $deleted = $this->model->deleteMany($ids);
-        foreach ($ids as $id) {
-            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        try {
+            $this->beforeDeleteIds($ids);
+            $deleted = $this->model->deleteMany($ids);
+            foreach ($ids as $id) {
+                (new AuditService())->log('bulk_delete', $this->entityName, $id);
+            }
+            SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', \Rateb\App\Services\DatabaseErrorService::userMessage($e));
         }
-        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param list<int> $ids */
+    protected function beforeDeleteIds(array $ids): void
+    {
     }
 
     /** @return array<string, mixed>|null */

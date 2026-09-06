@@ -1671,11 +1671,9 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        // Insert missing tiers only — never rewrite prices/names after admin edits.
+        // Seed only when the table is empty — never re-insert after an admin delete.
         try {
             \Rateb\App\Services\PlanLimitService::ensureCanonicalPlansPersisted();
-            (new \Rateb\App\Services\MigrationService())
-                ->repairMarketingPlansCanonicalIfNeeded(\Rateb\App\Core\Database::connection());
         } catch (\Throwable $e) {
             error_log('PlansController ensure plans: ' . $e->getMessage());
         }
@@ -1750,6 +1748,12 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         }
 
         return implode(' · ', $labels);
+    }
+
+    /** @param list<int> $ids */
+    protected function beforeDeleteIds(array $ids): void
+    {
+        \Rateb\App\Services\PlanLimitService::releaseReferencesBeforeDelete($ids);
     }
 
     public function create(): void

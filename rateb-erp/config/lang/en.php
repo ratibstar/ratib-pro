@@ -2476,7 +2476,7 @@ return [
     'company_not_found_ops' => 'The selected company does not exist. Create one under Companies, then pick it from the selector above.',
     'db_error_title' => 'Could not complete this action',
     'db_schema_outdated' => 'The database needs an update. Run ERP migrations from Control Panel (database setup).',
-    'db_fk_violation' => 'Could not save because a linked record is invalid. Check the company and related fields.',
+    'db_fk_violation' => 'Could not delete because other records still reference this one (for example a company subscription).',
     'db_access_denied' => 'Could not connect to the database. Check MySQL permissions on the server.',
     'db_operation_failed' => 'The database operation failed. Try again or run migrations.',
     'db_duplicate_record' => 'This record already exists. Check the data you entered.',

@@ -199,6 +199,40 @@ final class PlanLimitService
         return $inserted;
     }
 
+    /**
+     * Subscriptions use ON DELETE RESTRICT on plan_id — detach before removing a package.
+     *
+     * @param list<int> $planIds
+     */
+    public static function releaseReferencesBeforeDelete(array $planIds): void
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $planIds),
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($ids === []) {
+            return;
+        }
+
+        try {
+            $pdo = Database::connection();
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        try {
+            $pdo->prepare('DELETE FROM rateb_subscriptions WHERE plan_id IN (' . $ph . ')')->execute($ids);
+        } catch (\Throwable $e) {
+            error_log('releaseReferencesBeforeDelete subscriptions: ' . $e->getMessage());
+        }
+        try {
+            $pdo->prepare('UPDATE rateb_companies SET plan_id = NULL WHERE plan_id IN (' . $ph . ')')->execute($ids);
+        } catch (\Throwable $e) {
+            error_log('releaseReferencesBeforeDelete companies: ' . $e->getMessage());
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public static function tierForSlug(string $slug): ?array
     {

@@ -143,7 +143,7 @@ final class DatabaseErrorService
         $homeUrl = function_exists('rateb_url') ? rateb_url('admin') : '/rateb-erp/public/admin';
         $migrateUrl = self::resolveMigrateUrl();
         $agencyMigrateHint = '';
-        if (function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
+        if ($schema && function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host()) {
             $agencyMigrateHint = self::t('agency_erp_migrate_from_platform');
         }
         $companiesUrl = function_exists('rateb_url') ? rateb_url('admin/companies') : '/rateb-erp/public/admin/companies';
@@ -187,8 +187,6 @@ final class DatabaseErrorService
         echo '<div class="actions">';
         echo '<a class="btn btn-primary btn-sm" href="' . htmlspecialchars($homeUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('dashboard'), ENT_QUOTES, 'UTF-8') . '</a>';
         if ($schema && $migrateUrl !== '') {
-            echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
-        } elseif (!$schema && $migrateUrl !== '' && ($e instanceof PDOException || $e->getPrevious() instanceof PDOException || self::looksLikePdoMessage(self::rawMessage($e)))) {
             echo '<a class="btn btn-outline-primary btn-sm" href="' . htmlspecialchars($migrateUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('run_erp_migrations'), ENT_QUOTES, 'UTF-8') . '</a>';
         }
         if ($company) {
