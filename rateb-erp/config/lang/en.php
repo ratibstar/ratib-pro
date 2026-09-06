@@ -4351,6 +4351,7 @@ return [
     'service_type_other' => 'Other',
 
     'help_center' => 'Help Center',
+    'pwa_install_erp' => 'Install RATEB ERP',
     'help_hero_title' => 'How can we help you?',
     'help_hero_subtitle' => 'Search anything in the RATEB system…',
     'help_search_label' => 'Search the Help Center',

@@ -4386,6 +4386,7 @@ return [
     'service_type_other' => 'أخرى',
 
     'help_center' => 'مركز المساعدة',
+    'pwa_install_erp' => 'تثبيت RATEB ERP',
     'help_hero_title' => 'كيف يمكننا مساعدتك؟',
     'help_hero_subtitle' => 'ابحث عن أي شيء في نظام رتب...',
     'help_search_label' => 'البحث في مركز المساعدة',

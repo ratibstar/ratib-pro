@@ -2195,3 +2195,9 @@ table.rateb-approvals-table td.rateb-actions-cell {
     }
 }
 
+.rateb-pwa-nav-btn {
+    border-color: rgba(59, 130, 246, 0.55);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.16));
+    animation: none;
+}
+

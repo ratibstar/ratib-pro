@@ -1,5 +1,5 @@
 /**
- * RATEB ERP PWA install prompt (does not touch POS PWA).
+ * RATEB ERP PWA install — topbar button (does not touch POS PWA).
  */
 (function (root) {
     'use strict';
@@ -7,62 +7,68 @@
         return;
     }
     var deferred = null;
-    var KEY = 'rateb_erp_pwa_install_dismissed';
 
-    function dismissed() {
-        try {
-            return root.localStorage.getItem(KEY) === '1';
-        } catch (e) {
-            return false;
-        }
+    function hostButton() {
+        return root.document.getElementById('rateb-erp-pwa-install');
     }
 
-    function dismiss() {
-        try {
-            root.localStorage.setItem(KEY, '1');
-        } catch (e) { /* ignore */ }
-        var el = root.document.getElementById('rateb-erp-pwa-install');
-        if (el && el.parentNode) {
-            el.parentNode.removeChild(el);
-        }
-    }
-
-    function showBanner() {
-        if (dismissed() || !deferred || root.document.getElementById('rateb-erp-pwa-install')) {
+    function setVisible(on) {
+        var el = hostButton();
+        if (!el) {
             return;
         }
-        var bar = root.document.createElement('div');
-        bar.id = 'rateb-erp-pwa-install';
-        bar.className = 'rateb-erp-pwa-install';
-        bar.setAttribute('role', 'dialog');
-        // Keep out of the fixed sidebar hit-zone (RTL sidebar is inline-start).
-        // Inline styles are a fallback; .rateb-erp-pwa-install in CSS owns layout.
-        bar.style.cssText = 'position:fixed;z-index:900;inset-inline-start:auto;inset-inline-end:1rem;'
-            + 'bottom:max(1rem,env(safe-area-inset-bottom,0px));max-width:18rem;width:auto;'
-            + 'padding:0.85rem 1rem;border-radius:0.75rem;background:#161b22;color:#e8eaed;'
-            + 'box-shadow:0 8px 28px rgba(0,0,0,.35);font:14px/1.4 system-ui,sans-serif;';
-        bar.innerHTML = '<div style="margin-bottom:.65rem">تثبيت RATEB ERP كتطبيق</div>'
-            + '<div style="display:flex;gap:.5rem;flex-wrap:wrap">'
-            + '<button type="button" id="rateb-erp-pwa-install-btn" style="border:0;border-radius:.5rem;padding:.45rem .9rem;background:#3b82f6;color:#fff;cursor:pointer">تثبيت</button>'
-            + '<button type="button" id="rateb-erp-pwa-dismiss-btn" style="border:0;border-radius:.5rem;padding:.45rem .9rem;background:#2a3038;color:#e8eaed;cursor:pointer">لاحقاً</button>'
-            + '</div>';
-        root.document.body.appendChild(bar);
-        root.document.getElementById('rateb-erp-pwa-install-btn').addEventListener('click', function () {
+        el.classList.toggle('d-none', !on);
+        if (on) {
+            el.removeAttribute('hidden');
+        } else {
+            el.setAttribute('hidden', 'hidden');
+        }
+    }
+
+    function bindClick() {
+        var el = hostButton();
+        if (!el || el.getAttribute('data-rateb-pwa-bound') === '1') {
+            return;
+        }
+        el.setAttribute('data-rateb-pwa-bound', '1');
+        el.addEventListener('click', function () {
             var promptEvent = deferred;
-            deferred = null;
-            dismiss();
             if (promptEvent && typeof promptEvent.prompt === 'function') {
                 promptEvent.prompt();
+                return;
+            }
+            if (root.RatebErpPwaInstall && typeof root.RatebErpPwaInstall.prompt === 'function') {
+                root.RatebErpPwaInstall.prompt();
             }
         });
-        root.document.getElementById('rateb-erp-pwa-dismiss-btn').addEventListener('click', dismiss);
+    }
+
+    function showInstall() {
+        bindClick();
+        if (!deferred) {
+            return;
+        }
+        setVisible(true);
+    }
+
+    function hideInstall() {
+        deferred = null;
+        try {
+            root.__RATEB_PWA_DEFERRED_PROMPT__ = null;
+        } catch (e) { /* ignore */ }
+        setVisible(false);
     }
 
     root.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferred = e;
-        showBanner();
+        try {
+            root.__RATEB_PWA_DEFERRED_PROMPT__ = e;
+        } catch (eStore) { /* ignore */ }
+        showInstall();
     });
+
+    root.addEventListener('appinstalled', hideInstall);
 
     root.RatebErpPwaInstall = {
         prompt: function () {
@@ -73,16 +79,16 @@
         },
         clearDismiss: function () {
             try {
-                root.localStorage.removeItem(KEY);
+                root.localStorage.removeItem('rateb_erp_pwa_install_dismissed');
             } catch (e) { /* ignore */ }
         }
     };
 
-    /* Fix9: layout may inject this script after beforeinstallprompt — adopt stored event. */
+    bindClick();
     try {
         if (root.__RATEB_PWA_DEFERRED_PROMPT__) {
             deferred = root.__RATEB_PWA_DEFERRED_PROMPT__;
-            showBanner();
+            showInstall();
         }
     } catch (eBoot) { /* ignore */ }
     try {
@@ -90,7 +96,7 @@
             try {
                 deferred = (ev && ev.detail) || root.__RATEB_PWA_DEFERRED_PROMPT__ || deferred;
                 if (deferred) {
-                    showBanner();
+                    showInstall();
                 }
             } catch (eEv) { /* ignore */ }
         });
