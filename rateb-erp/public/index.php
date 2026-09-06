@@ -82,6 +82,11 @@ try {
 
     Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
+    $agencyCommercialLock = __DIR__ . '/agency-commercial-lock.php';
+    if (is_file($agencyCommercialLock)) {
+        require $agencyCommercialLock;
+    }
+
     // ESS login registers devices after /api/mobile/config — create table if migrations lag.
     // Lives in public/index.php (PX-managed) because rateb-erp/app uploads were not always live.
     try {

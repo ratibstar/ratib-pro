@@ -10,6 +10,9 @@ header('Cache-Control: no-store');
 
 $targets = [
     __DIR__ . '/index.php',
+    __DIR__ . '/agency-commercial-lock.php',
+    dirname(__DIR__) . '/app/Core/Bootstrap.php',
+    dirname(__DIR__) . '/app/Core/AgencyCommercialLock.php',
     __DIR__ . '/erp-build-probe.php',
     __DIR__ . '/erp-sa-gate-probe.php',
     dirname(__DIR__) . '/app/Core/Middleware/Middleware.php',
