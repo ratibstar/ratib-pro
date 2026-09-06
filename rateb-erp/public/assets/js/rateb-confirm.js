@@ -292,10 +292,22 @@
         }, true);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    var interceptorsBound = false;
+
+    function bindInterceptors() {
+        if (interceptorsBound) {
+            return;
+        }
+        interceptorsBound = true;
         initModal();
         initFormInterceptor();
         initClickInterceptor();
         initConfirmClickButtons();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindInterceptors);
+    } else {
+        bindInterceptors();
+    }
 })();

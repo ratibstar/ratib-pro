@@ -500,7 +500,7 @@ $ratebRowRecordLabel = static function (array $row): string {
                         </form>
                         <?php } ?>
                         <a href="<?php echo Rateb\App\Core\View::escape($editHref((int) $row['id'])); ?>" class="btn btn-sm btn-outline-primary" data-rateb-edit-link="1" data-rateb-full-nav="1" onclick="event.preventDefault();event.stopPropagation();window.location.assign(this.href);return false;"><i class="fas fa-edit"></i></a>
-                        <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>" data-rateb-native-confirm="1" onsubmit="return confirm(this.getAttribute('data-confirm-delete') || 'OK');">
+                        <form method="post" action="<?php echo rateb_url($actionsRoutePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>
