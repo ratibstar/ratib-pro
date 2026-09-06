@@ -728,6 +728,7 @@ return [
         'admin/subscription-engine/{id}/extend' => 'subscriptions.manage',
         'admin/subscription-engine/{id}/push-agency' => 'subscriptions.manage',
         'admin/plans' => 'plans.manage',
+        'admin/ops/plans' => 'access.manage',
         'admin/users' => 'access.manage',
         'admin/roles' => 'access.manage',
         'admin/permissions' => 'access.manage',

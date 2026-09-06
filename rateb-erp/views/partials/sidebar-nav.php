@@ -113,6 +113,7 @@ $opsLink = static function (
         || str_starts_with($resourcePath, 'pos/register/')
         || $resourcePath === 'pos/biometric'
         || str_starts_with($resourcePath, 'pos/biometric/');
+    $isPlansFullNav = $resourcePath === 'plans';
     $href = $isPosFullNav
         ? rateb_url_with_ops_company('admin/ops/pos/register')
         : rateb_app_url($resourcePath);
@@ -121,6 +122,9 @@ $opsLink = static function (
     }
     if ($isPosFullNav) {
         echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-full-nav="1" data-pos-open-register="1" class="rateb-nav-link' . $active . '">';
+    } elseif ($isPlansFullNav) {
+        echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '"';
+        echo ' onclick="event.preventDefault();event.stopPropagation();try{event.stopImmediatePropagation();}catch(e){}window.location.assign(this.getAttribute(\'href\'));return false;">';
     } else {
         echo '<a href="' . $href . '" data-rateb-href="' . $href . '" class="rateb-nav-link' . $active . '" onclick="return false;">';
     }
@@ -235,6 +239,7 @@ $adminSection = static function (
     $renderAdminLink = static function (array $link) use ($navActive, $linkBadges, $badgeClass, $linkBadgeClass, $badgeTitleKey): void {
         $path = (string) ($link[0] ?? '');
         $isPlatformCatalog = $path === 'platform-catalog/sso' || str_starts_with($path, 'platform-catalog/');
+        $isAccessPlans = in_array($path, ['plans', 'admin/plans', 'admin/ops/plans'], true);
         $href = $isPlatformCatalog && function_exists('rateb_platform_catalog_entry_url')
             ? rateb_platform_catalog_entry_url()
             : rateb_url($path);
@@ -242,7 +247,7 @@ $adminSection = static function (
         $badge = (int) ($linkBadges[$path] ?? 0);
         $linkClass = $linkBadgeClass !== '' ? $linkBadgeClass : $badgeClass;
         $escHref = htmlspecialchars($href, ENT_QUOTES, 'UTF-8');
-        if ($isPlatformCatalog) {
+        if ($isPlatformCatalog || $isAccessPlans) {
             echo '<a href="' . $escHref . '" data-rateb-href="' . $escHref . '" data-rateb-full-nav="1" class="rateb-nav-link' . $active . '"';
             echo ' onclick="event.preventDefault();event.stopPropagation();try{event.stopImmediatePropagation();}catch(e){}window.location.assign(this.getAttribute(\'href\'));return false;">';
         } else {

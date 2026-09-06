@@ -8,6 +8,7 @@ use Rateb\App\Controllers\Admin\PermissionsController;
 use Rateb\App\Controllers\Admin\RolesController;
 use Rateb\App\Controllers\Admin\SmsTemplatesController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
+use Rateb\App\Controllers\Admin\PlansController;
 use Rateb\App\Controllers\Admin\UsersController;
 
 /** @var Rateb\App\Core\Router $router */
@@ -28,6 +29,7 @@ $accessCrud = [
     'users' => [UsersController::class, 'access.manage'],
     'roles' => [RolesController::class, 'access.manage'],
     'permissions' => [PermissionsController::class, 'access.manage'],
+    'plans' => [PlansController::class, 'access.manage'],
     'email-templates' => [EmailTemplatesController::class, 'settings.manage'],
     'sms-templates' => [SmsTemplatesController::class, 'settings.manage'],
     'support-tickets' => [SupportTicketsController::class, 'settings.manage'],

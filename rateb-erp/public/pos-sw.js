@@ -7,7 +7,7 @@ var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v48 — never paint cached /admin over a live 403 commercial lock. */
 var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v48';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260906-agency-suspended-lock-v167';
+var SW_BUILD_ID = '20260906-tenant-plans-ops-v168';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -3308,6 +3308,8 @@ function warmErpOfflineShell(opts) {
         'admin/ops/journal-entries',
         'admin/ops/access-control',
         'admin/ops/access-control/matrix',
+        'admin/ops/plans',
+        'admin/plans',
         'admin/ops/roles',
         'admin/ops/permissions',
         'admin/ops/audit-logs',

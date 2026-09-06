@@ -2261,6 +2261,7 @@
                     || (ADMIN_PATH_RE.test(fu.pathname) && POS_RUNTIME_RE.test(fu.pathname))
                     || /\/admin\/billing\/modules(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/company-permissions(?:\/|$)/i.test(fu.pathname)
+                    || /\/admin\/(?:ops\/)?plans(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/oversight\/approvals(?:\/|$)/i.test(fu.pathname)
                     || /\/admin\/(?:mfg|payroll|qms|bi|recruitment|crm|projects|approvals|eam|procurement|website)(?:\/|$)/i.test(fu.pathname)
                     || /\/(logout|login|password)(\/|$)/i.test(fu.pathname);

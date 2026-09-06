@@ -1639,7 +1639,9 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Plan();
         $this->viewPrefix = 'admin/plans';
-        $this->routePrefix = 'admin/plans';
+        $this->routePrefix = (function_exists('rateb_is_platform_oversight_host') && rateb_is_platform_oversight_host())
+            ? 'admin/plans'
+            : (function_exists('rateb_app_route') ? rateb_app_route('plans') : 'admin/ops/plans');
         $this->entityName = 'plans';
         $this->fields = [
             ['name' => 'name', 'label' => 'name', 'type' => 'text'],

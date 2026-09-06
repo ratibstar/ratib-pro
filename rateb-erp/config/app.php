@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260906-alarfaj-mkt-copy');
+define('RATEB_ASSET_BUILD', '20260906-tenant-plans-ops');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -3525,6 +3525,10 @@ if (!function_exists('rateb_app_route')) {
                     'access-control', 'users', 'roles', 'permissions',
                     'audit-logs', 'support-tickets', 'email-templates', 'sms-templates',
                 ]);
+                // Dedicated / agency: plans table lives under ops (erp_mw), not SuperAdmin /admin/plans.
+                if (!function_exists('rateb_is_platform_oversight_host') || !rateb_is_platform_oversight_host()) {
+                    $conflictRoots[] = 'plans';
+                }
             }
             $conflictLookup = array_fill_keys($conflictRoots, true);
         }
