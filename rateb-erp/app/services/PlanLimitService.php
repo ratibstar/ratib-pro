@@ -101,14 +101,57 @@ final class PlanLimitService
     }
 
     /**
-     * Insert any missing canonical tiers (e.g. launch / ultimate) into the live DB.
-     * Does not overwrite prices or modules for tiers that already exist.
+     * After an admin deletes any package, never auto-insert the six-pack catalog again.
+     */
+    public static function lockPlanCatalogAgainstReseed(): void
+    {
+        try {
+            $pdo = Database::connection();
+            self::ensurePlanCatalogStateTable($pdo);
+            $pdo->exec(
+                "INSERT INTO rateb_plan_catalog_state (k, v) VALUES ('locked', '1')
+                 ON DUPLICATE KEY UPDATE v = '1'"
+            );
+        } catch (\Throwable $e) {
+            error_log('lockPlanCatalogAgainstReseed: ' . $e->getMessage());
+        }
+    }
+
+    public static function planCatalogReseedLocked(): bool
+    {
+        try {
+            $pdo = Database::connection();
+            self::ensurePlanCatalogStateTable($pdo);
+            $stmt = $pdo->query("SELECT v FROM rateb_plan_catalog_state WHERE k = 'locked' LIMIT 1");
+            $v = $stmt ? $stmt->fetchColumn() : false;
+
+            return (string) $v === '1';
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private static function ensurePlanCatalogStateTable(\PDO $pdo): void
+    {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS rateb_plan_catalog_state (
+                k VARCHAR(32) NOT NULL PRIMARY KEY,
+                v VARCHAR(32) NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+    }
+
+    /**
+     * First-install seed only. Never runs after the admin has deleted a package.
      *
      * @return list<string> inserted slugs
      */
     public static function ensureCanonicalPlansPersisted(): array
     {
         $inserted = [];
+        if (self::planCatalogReseedLocked()) {
+            return $inserted;
+        }
         try {
             $pdo = Database::connection();
         } catch (\Throwable $e) {
@@ -212,6 +255,8 @@ final class PlanLimitService
         if ($ids === []) {
             return;
         }
+
+        self::lockPlanCatalogAgainstReseed();
 
         try {
             $pdo = Database::connection();

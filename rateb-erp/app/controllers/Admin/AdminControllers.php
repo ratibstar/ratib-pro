@@ -1671,12 +1671,6 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
         if (function_exists('rateb_bootstrap_ops_tenant')) {
             rateb_bootstrap_ops_tenant();
         }
-        // Seed only when the table is empty — never re-insert after an admin delete.
-        try {
-            \Rateb\App\Services\PlanLimitService::ensureCanonicalPlansPersisted();
-        } catch (\Throwable $e) {
-            error_log('PlansController ensure plans: ' . $e->getMessage());
-        }
 
         $page = max(1, (int) $this->input('page', 1));
         // Show all six packages on one page (default list size is only 5).

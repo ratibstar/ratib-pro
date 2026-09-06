@@ -134,6 +134,11 @@ final class MigrationService
             return $localLog;
         }
 
+        if (class_exists(PlanLimitService::class) && PlanLimitService::planCatalogReseedLocked()) {
+            $log[] = 'Plans catalog locked — not re-inserting deleted packages.';
+            return $localLog;
+        }
+
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
 
         // Routine: insert missing packages only — never overwrite admin edits.
@@ -209,6 +214,10 @@ final class MigrationService
 
         // Admin may delete packages. Never re-insert missing slugs while any row remains.
         if ($existing !== [] && !$overwriteExisting) {
+            return;
+        }
+        if (class_exists(PlanLimitService::class) && PlanLimitService::planCatalogReseedLocked()) {
+            $log[] = 'Plans catalog locked — skip insert.';
             return;
         }
 
