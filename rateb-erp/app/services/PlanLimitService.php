@@ -74,8 +74,7 @@ final class PlanLimitService
     }
 
     /**
-     * Marketing page rows — always from config so all 6 packages render
-     * even before DB migrations catch up.
+     * Config catalog used only when the plans table cannot be read.
      *
      * @return list<array<string, mixed>>
      */

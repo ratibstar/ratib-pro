@@ -336,26 +336,11 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function publishedPlans(): array
     {
-        // DB is editable source of truth; config only seeds missing packages.
-        static $synced = false;
-        if (!$synced) {
-            $synced = true;
-            try {
-                (new MigrationService())->repairMarketingPlansCanonicalIfNeeded(Database::connection());
-            } catch (\Throwable $e) {
-                // Best-effort ensure rows exist.
-            }
-        }
         try {
-            $dbPlans = (new Plan())->getActive();
-            if ($dbPlans !== []) {
-                return $dbPlans;
-            }
+            return (new Plan())->getActive();
         } catch (\Throwable $e) {
-            // Fall through to config.
+            return PlanLimitService::marketingPlanRows();
         }
-
-        return PlanLimitService::marketingPlanRows();
     }
 
     /** @return array<string, mixed>|null */

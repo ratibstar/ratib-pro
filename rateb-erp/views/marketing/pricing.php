@@ -4,26 +4,6 @@
 use Rateb\App\Services\CmsService;
 
 $intro = $content['intro']['section'] ?? null;
-
-if (empty($plans)) {
-    $fallback = [];
-    foreach (\Rateb\App\Services\PlanLimitService::tierDefinitions() as $slug => $tier) {
-        if (!is_array($tier)) {
-            continue;
-        }
-        $fallback[] = [
-            'slug' => (string) $slug,
-            'name' => (string) ($tier['name'] ?? $slug),
-            'description' => (string) ($tier['description'] ?? ''),
-            'price_monthly' => (float) ($tier['price_monthly'] ?? 0),
-            'price_yearly' => (float) ($tier['price_yearly'] ?? 0),
-            'max_users' => (int) ($tier['max_users'] ?? 0),
-            'max_branches' => (int) ($tier['max_branches'] ?? 0),
-            'modules' => json_encode($tier['modules'] ?? [], JSON_UNESCAPED_UNICODE),
-        ];
-    }
-    $plans = $fallback;
-}
 ?>
 <section class="rateb-mkt-page-hero">
     <div class="container text-center">
