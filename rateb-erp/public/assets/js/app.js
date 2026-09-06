@@ -406,13 +406,7 @@
         }
         document.documentElement.setAttribute('data-rateb-app-ui-booted', '1');
 
-        var toggle = document.getElementById('rateb-sidebar-toggle');
-        var sidebar = document.getElementById('rateb-sidebar');
-        if (toggle && sidebar) {
-            toggle.addEventListener('click', function () {
-                sidebar.classList.toggle('open');
-            });
-        }
+        /* Mobile sidebar open/close is owned by the inline drawer in main.php. */
 
         document.querySelectorAll('.rateb-flash .btn-close').forEach(function (btn) {
             btn.addEventListener('click', function () {

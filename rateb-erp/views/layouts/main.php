@@ -864,6 +864,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     <aside class="rateb-sidebar<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-tenant-logo' : ''; ?>" id="rateb-sidebar">
         <div class="rateb-sidebar-brand<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-logo' : ''; ?>">
             <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'sidebar']); ?>
+            <button type="button" class="rateb-sidebar-close" id="rateb-sidebar-close" aria-label="<?php echo Rateb\App\Core\View::escape(__('close')); ?>">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
         </div>
         <nav>
             <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
@@ -1040,6 +1043,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
             <?php } ?>
         </nav>
     </aside>
+    <div id="rateb-sidebar-backdrop" class="rateb-sidebar-backdrop" hidden></div>
 <script>
 /* Sidebar toggles: single delegated binder (stable vs double-bind / late app.js). */
 (function () {
@@ -1192,6 +1196,67 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
   document.addEventListener('rateb:nav:afterEnter', function () {
     try { ensure(); } catch (e) { /* ignore */ }
   });
+})();
+</script>
+<script>
+(function () {
+  if (window.__RATEB_SIDEBAR_DRAWER__) {
+    return;
+  }
+  window.__RATEB_SIDEBAR_DRAWER__ = 1;
+  var mq = window.matchMedia('(max-width: 991.98px)');
+  function sidebar() {
+    return document.getElementById('rateb-sidebar');
+  }
+  function setOpen(on) {
+    var el = sidebar();
+    if (!el) {
+      return;
+    }
+    el.classList.toggle('open', !!on);
+    el.classList.remove('show');
+    document.body.classList.toggle('rateb-sidebar-is-open', !!on);
+    var back = document.getElementById('rateb-sidebar-backdrop');
+    if (back) {
+      if (on) {
+        back.removeAttribute('hidden');
+      } else {
+        back.setAttribute('hidden', '');
+      }
+    }
+  }
+  function closeMobile() {
+    if (mq.matches) {
+      setOpen(false);
+    }
+  }
+  closeMobile();
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (!t || !t.closest) {
+      return;
+    }
+    if (t.closest('#rateb-sidebar-toggle')) {
+      if (!mq.matches) {
+        return;
+      }
+      ev.preventDefault();
+      var el = sidebar();
+      setOpen(el ? !el.classList.contains('open') : false);
+      return;
+    }
+    if (t.closest('#rateb-sidebar-close, #rateb-sidebar-backdrop')) {
+      setOpen(false);
+      return;
+    }
+    if (mq.matches && t.closest('#rateb-sidebar a[href], #rateb-sidebar [data-rateb-href]')) {
+      setOpen(false);
+    }
+  });
+  if (mq.addEventListener) {
+    mq.addEventListener('change', closeMobile);
+  }
+  document.addEventListener('rateb:nav:afterEnter', closeMobile);
 })();
 </script>
     <div class="rateb-main">

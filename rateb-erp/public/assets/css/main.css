@@ -589,20 +589,88 @@ body.has-tenant-logo .rateb-main {
     min-height: 320px;
 }
 
-@media (max-width: 991px) {
-    .rateb-sidebar {
-        transform: translateX(-100%);
+.rateb-sidebar-close {
+    display: none;
+}
+
+.rateb-sidebar-backdrop {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+    .rateb-wrapper {
+        overflow-x: visible;
     }
 
-    .rateb-sidebar.open {
-        transform: translateX(0);
+    .rateb-sidebar,
+    .rateb-sidebar.has-tenant-logo,
+    [dir="rtl"] .rateb-sidebar,
+    [dir="rtl"] .rateb-sidebar.has-tenant-logo {
+        left: auto !important;
+        right: auto !important;
+        transform: none !important;
+        inset-inline-start: -110% !important;
+        inset-inline-end: auto !important;
+        width: min(280px, 86vw);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .rateb-sidebar.open,
+    .rateb-sidebar.show,
+    [dir="rtl"] .rateb-sidebar.open,
+    [dir="rtl"] .rateb-sidebar.show {
+        inset-inline-start: 0 !important;
+        visibility: visible;
+        pointer-events: auto;
     }
 
     .rateb-main,
-    body.has-tenant-logo .rateb-main {
+    body.has-tenant-logo .rateb-main,
+    [dir="rtl"] .rateb-main,
+    [dir="rtl"] body.has-tenant-logo .rateb-main {
         margin-left: 0;
         margin-right: 0;
         width: 100%;
         max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .rateb-sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    body.rateb-sidebar-is-open .rateb-sidebar-backdrop {
+        display: block;
+    }
+
+    .rateb-sidebar-brand {
+        position: relative;
+    }
+
+    .rateb-sidebar-close {
+        display: inline-flex !important;
+        position: absolute;
+        top: 0.45rem;
+        inset-inline-end: 0.45rem;
+        z-index: 2;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+    }
+
+    #rateb-sidebar-toggle {
+        position: relative;
+        z-index: 1101;
     }
 }
