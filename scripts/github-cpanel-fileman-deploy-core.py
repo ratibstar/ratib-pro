@@ -463,6 +463,7 @@ FAST_FILES = [
     "rateb-erp/public/assets/css/marketing-agency-register.css",
     "rateb-erp/views/layouts/marketing.php",
     "rateb-erp/public/index.php",
+    "rateb-erp/app/Website/WebsiteKernel.php",
     "rateb-erp/public/agency-commercial-lock.php",
     "rateb-erp/public/assets/build-stamp.txt",
     "rateb-erp/public/erp-build-probe.php",

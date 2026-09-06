@@ -1,8 +1,14 @@
 RewriteEngine On
 
+# Dedicated Al Arfaj ERP: site root is ERP login, not RATEB marketing CMS.
+RewriteCond %{HTTP_HOST} ^(www\.)?alarfaj\.rateb\.sa$ [NC]
+RewriteCond %{REQUEST_URI} ^/?$ [NC]
+RewriteRule ^$ /rateb-erp/public/login [R=302,L]
+
 # ── Phase WEBSITE-02 — Agency hosts: / → Website Kernel (never force ERP) ──
 # Platform rateb.sa keeps its own marketing rules below.
 RewriteCond %{HTTP_HOST} !^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{HTTP_HOST} !^(www\.)?alarfaj\.rateb\.sa$ [NC]
 RewriteCond %{REQUEST_URI} ^/?$ [NC]
 RewriteCond %{QUERY_STRING} !(^|&)control=1(&|$) [NC]
 RewriteCond %{DOCUMENT_ROOT}/rateb-erp/public/index.php -f
@@ -21,6 +27,7 @@ RewriteRule ^admin/(.+)$ rateb-erp/public/index.php?route=admin/$1 [L,QSA]
 
 # Agency: public marketing /site + /locale via Website Kernel
 RewriteCond %{HTTP_HOST} !^(www\.)?rateb\.sa$ [NC]
+RewriteCond %{HTTP_HOST} !^(www\.)?alarfaj\.rateb\.sa$ [NC]
 RewriteCond %{REQUEST_URI} ^/(site(/.*)?|locale/) [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

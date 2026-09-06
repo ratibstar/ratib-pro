@@ -128,6 +128,19 @@ final class WebsiteKernel
                 \Rateb\App\Core\Auth::bootstrapFromSession();
             }
 
+            // Al Arfaj dedicated ERP: do not serve RATEB marketing CMS at domain root.
+            $host = strtolower(preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? '')));
+            if ($host === 'alarfaj.rateb.sa') {
+                $goAdmin = class_exists(\Rateb\App\Core\Auth::class) && \Rateb\App\Core\Auth::check();
+                $target = $goAdmin
+                    ? (function_exists('rateb_url') ? rateb_url('admin') : '/rateb-erp/public/admin')
+                    : (function_exists('rateb_url') ? rateb_url('login') : '/rateb-erp/public/login');
+                if (!headers_sent()) {
+                    header('Location: ' . $target, true, 302);
+                }
+                return;
+            }
+
             $path = Request::resolvePath();
             $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
