@@ -1204,7 +1204,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     return;
   }
   window.__RATEB_SIDEBAR_DRAWER__ = 1;
-  var mq = window.matchMedia('(max-width: 991.98px)');
+  var ignoreCloseUntil = 0;
   function sidebar() {
     return document.getElementById('rateb-sidebar');
   }
@@ -1220,43 +1220,53 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     if (back) {
       if (on) {
         back.removeAttribute('hidden');
+        ignoreCloseUntil = Date.now() + 450;
       } else {
         back.setAttribute('hidden', '');
       }
     }
   }
-  function closeMobile() {
-    if (mq.matches) {
-      setOpen(false);
-    }
+  function isToggle(ev) {
+    var t = ev.target;
+    return !!(t && t.closest && t.closest('#rateb-sidebar-toggle'));
   }
-  closeMobile();
+  function onToggle(ev) {
+    if (!isToggle(ev)) {
+      return;
+    }
+    ev.preventDefault();
+    try { ev.stopImmediatePropagation(); } catch (e1) { ev.stopPropagation(); }
+    var el = sidebar();
+    setOpen(el ? !el.classList.contains('open') : true);
+  }
+  document.addEventListener('click', onToggle, true);
   document.addEventListener('click', function (ev) {
     var t = ev.target;
     if (!t || !t.closest) {
       return;
     }
     if (t.closest('#rateb-sidebar-toggle')) {
-      if (!mq.matches) {
-        return;
-      }
-      ev.preventDefault();
-      var el = sidebar();
-      setOpen(el ? !el.classList.contains('open') : false);
+      return;
+    }
+    if (Date.now() < ignoreCloseUntil) {
       return;
     }
     if (t.closest('#rateb-sidebar-close, #rateb-sidebar-backdrop')) {
       setOpen(false);
       return;
     }
-    if (mq.matches && t.closest('#rateb-sidebar a[href], #rateb-sidebar [data-rateb-href]')) {
+    if (t.closest('#rateb-sidebar a[href], #rateb-sidebar [data-rateb-href]')) {
+      setOpen(false);
+    }
+  }, true);
+  document.addEventListener('rateb:nav:afterEnter', function () {
+    if (Date.now() < ignoreCloseUntil) {
+      return;
+    }
+    if (window.matchMedia('(max-width: 991.98px)').matches) {
       setOpen(false);
     }
   });
-  if (mq.addEventListener) {
-    mq.addEventListener('change', closeMobile);
-  }
-  document.addEventListener('rateb:nav:afterEnter', closeMobile);
 })();
 </script>
     <div class="rateb-main">

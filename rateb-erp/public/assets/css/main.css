@@ -619,10 +619,15 @@ body.has-tenant-logo .rateb-main {
     .rateb-sidebar.open,
     .rateb-sidebar.show,
     [dir="rtl"] .rateb-sidebar.open,
-    [dir="rtl"] .rateb-sidebar.show {
+    [dir="rtl"] .rateb-sidebar.show,
+    [dir="rtl"] .rateb-sidebar.has-tenant-logo.open,
+    body.rateb-sidebar-is-open .rateb-sidebar,
+    body.rateb-sidebar-is-open .rateb-sidebar.has-tenant-logo,
+    html[dir="rtl"] body.rateb-sidebar-is-open .rateb-sidebar,
+    html[dir="rtl"] body.rateb-sidebar-is-open .rateb-sidebar.has-tenant-logo {
         inset-inline-start: 0 !important;
-        visibility: visible;
-        pointer-events: auto;
+        visibility: visible !important;
+        pointer-events: auto !important;
     }
 
     .rateb-main,

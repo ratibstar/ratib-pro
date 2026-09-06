@@ -160,8 +160,13 @@
     }
 
     [dir="rtl"] .rateb-sidebar.open,
-    [dir="rtl"] .rateb-sidebar.show {
+    [dir="rtl"] .rateb-sidebar.show,
+    [dir="rtl"] .rateb-sidebar.has-tenant-logo.open,
+    html[dir="rtl"] body.rateb-sidebar-is-open .rateb-sidebar,
+    html[dir="rtl"] body.rateb-sidebar-is-open .rateb-sidebar.has-tenant-logo {
         inset-inline-start: 0 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
     }
 
     [dir="rtl"] .rateb-main,
