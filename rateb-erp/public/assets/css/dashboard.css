@@ -399,6 +399,7 @@
 .cm-chart--tall { height: 240px; }
 
 .cm-chart canvas {
+    display: block;
     width: 100% !important;
     height: 100% !important;
 }

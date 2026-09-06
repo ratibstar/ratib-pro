@@ -152,7 +152,7 @@ $subtitle = $companyName !== ''
 Rateb\App\Core\View::partial('dashboard/head');
 ?>
 <!-- rateb-company-dashboard-v2 -->
-<div class="cm cm--wide" data-cm-dash="v5c"
+<div class="cm cm--wide" data-cm-dash="v5c" data-charts-static="1"
      data-rateb-chartjs="<?php echo Rateb\App\Core\View::escape(rateb_chartjs('4.4.3')); ?>"
      data-rateb-charts="<?php echo Rateb\App\Core\View::escape(rateb_asset('js/charts.js')); ?>">
     <?php

@@ -182,17 +182,32 @@
         abortInflight();
         var myGen = ++bootGen;
         var url = root.getAttribute('data-charts-url');
-        markCharts('loading');
+        var isStatic = root.getAttribute('data-charts-static') === '1' || !url;
+        if (!isStatic) {
+            markCharts('loading');
+        }
 
         loadChartLibs(root).then(function () {
             if (myGen !== bootGen) {
                 return;
             }
             if (typeof window.Chart === 'undefined') {
-                markCharts('empty');
+                if (!isStatic) {
+                    markCharts('empty');
+                }
                 return;
             }
             paintCharts();
+            try {
+                if (typeof window.ratebChartResize === 'function') {
+                    window.ratebChartResize(root);
+                    setTimeout(function () {
+                        if (typeof window.ratebChartResize === 'function') {
+                            window.ratebChartResize(root);
+                        }
+                    }, 120);
+                }
+            } catch (eRs) { /* ignore */ }
             if (!url) {
                 markCharts('ready');
                 return;
@@ -244,7 +259,7 @@
                 }
             });
         }).catch(function () {
-            if (myGen === bootGen) {
+            if (myGen === bootGen && !isStatic) {
                 markCharts('empty');
             }
         });
@@ -286,6 +301,15 @@
         }, 1500);
         setTimeout(function () {
             try {
+                var root = document.querySelector('[data-cm-dash="v5c"]');
+                var isStatic = root && (root.getAttribute('data-charts-static') === '1' || !root.getAttribute('data-charts-url'));
+                if (isStatic) {
+                    markCharts('ready');
+                    if (typeof window.ratebChartsBoot === 'function') {
+                        window.ratebChartsBoot();
+                    }
+                    return;
+                }
                 if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
                     markCharts('empty');
                     boot();

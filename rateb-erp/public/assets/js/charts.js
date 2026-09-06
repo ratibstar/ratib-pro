@@ -256,13 +256,9 @@
             cutout: '74%',
             spacing: 2,
             animation: {
-                animateRotate: true,
-                animateScale: true,
-                duration: 900,
-                easing: 'easeOutQuart',
-                delay: function (ctx) {
-                    return ctx.dataIndex * 70;
-                }
+                animateRotate: false,
+                animateScale: false,
+                duration: 0
             },
             plugins: {
                 legend: legend || legendOptions('bottom'),
@@ -333,6 +329,9 @@
         var soft = pal[colorKey + 'Soft'] || pal.primarySoft;
         var data = parseNums(values);
         var sparse = data.length <= 14;
+        if (dataMax(data) <= 0) {
+            sparse = true;
+        }
         var ctx = el.getContext('2d');
         var h = el.parentElement ? el.parentElement.offsetHeight : 200;
         mount(el.id, new Chart(el, {
@@ -393,6 +392,7 @@
                 datasets: [{
                     label: label,
                     data: data,
+                    minBarLength: dataMax(data) <= 0 ? 6 : 0,
                     backgroundColor: data.map(function (_, i) {
                         return pal.series[i % pal.series.length];
                     }),
@@ -452,6 +452,7 @@
         var d2 = parseNums(el.dataset.dataset2);
         var d3 = parseNums(el.dataset.dataset3);
         var all = d1.concat(d2).concat(d3);
+        var zeroish = dataMax(all) <= 0;
         var series = [
             { data: d1, label: el.dataset.label1 || 'A', color: pal.primary, soft: pal.primarySoft },
             { data: d2, label: el.dataset.label2 || 'B', color: pal.accent, soft: pal.accentSoft },
@@ -462,7 +463,7 @@
             data: {
                 labels: JSON.parse(el.dataset.labels || '[]'),
                 datasets: series.map(function (s) {
-                    return lineDataset(s.label, s.data, s.color, areaGradient(ctx, h, s.soft), true);
+                    return lineDataset(s.label, s.data, s.color, areaGradient(ctx, h, s.soft), true || zeroish);
                 })
             },
             options: Object.assign({}, baseCartesian(colors, { values: all }), {
@@ -486,6 +487,7 @@
                     {
                         label: el.dataset.labelSuccess || 'Success',
                         data: success,
+                        minBarLength: dataMax(all) <= 0 ? 4 : 0,
                         backgroundColor: 'rgba(16,185,129,0.75)',
                         hoverBackgroundColor: '#10b981',
                         borderRadius: 4,
@@ -495,6 +497,7 @@
                     {
                         label: el.dataset.labelFailed || 'Failed',
                         data: failed,
+                        minBarLength: dataMax(all) <= 0 ? 4 : 0,
                         backgroundColor: 'rgba(251,113,133,0.75)',
                         hoverBackgroundColor: '#fb7185',
                         borderRadius: 4,
@@ -641,26 +644,18 @@
             initBarChart(el, colors, pal, chartLabel(el, 'Entries'));
         });
 
-        // One chart per animation frame — keeps accounting tabs clickable while charts paint.
-        var i = 0;
-        var pump = function () {
-            if (i >= queue.length) {
-                return;
-            }
-            queue[i++]();
-            if (i < queue.length) {
-                if (typeof requestAnimationFrame === 'function') {
-                    requestAnimationFrame(pump);
-                } else {
-                    setTimeout(pump, 0);
-                }
-            }
-        };
         if (queue.length) {
+            for (var q = 0; q < queue.length; q++) {
+                queue[q]();
+            }
             if (typeof requestAnimationFrame === 'function') {
-                requestAnimationFrame(pump);
+                requestAnimationFrame(function () {
+                    window.ratebChartResize(document);
+                });
             } else {
-                setTimeout(pump, 0);
+                setTimeout(function () {
+                    window.ratebChartResize(document);
+                }, 0);
             }
         }
     }

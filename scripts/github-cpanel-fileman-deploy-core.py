@@ -424,6 +424,7 @@ FAST_FILES = [
     "rateb-erp/views/components/dashboard/ranks.php",
     "rateb-erp/public/assets/css/dashboard.css",
     "rateb-erp/public/assets/js/charts.js",
+    "rateb-erp/public/assets/js/dashboard-charts-defer.js",
     "rateb-erp/public/assets/js/dashboard-tabs.js",
     "rateb-erp/config/lang/en.php",
     "rateb-erp/config/lang/ar.php",
