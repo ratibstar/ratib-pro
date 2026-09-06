@@ -848,7 +848,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 </head>
 <?php
 ?>
-<body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>"
+<body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?><?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-tenant-logo' : ''; ?>"
     data-rateb-media-json="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/json')); ?>"
     data-rateb-tinymce-upload="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/tinymce-upload')); ?>"
     data-rateb-cms-media="<?php echo Rateb\App\Core\View::escape(__('cms_media')); ?>"
@@ -861,7 +861,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     data-rateb-date-hint-month="<?php echo Rateb\App\Core\View::escape(__('month_format_hint')); ?>"
     data-rateb-date-hint-week="<?php echo Rateb\App\Core\View::escape(__('week_format_hint')); ?>">
 <div class="rateb-wrapper">
-    <aside class="rateb-sidebar" id="rateb-sidebar">
+    <aside class="rateb-sidebar<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-tenant-logo' : ''; ?>" id="rateb-sidebar">
         <div class="rateb-sidebar-brand<?php echo function_exists('rateb_erp_brand_logo_url') && rateb_erp_brand_logo_url() !== '' ? ' has-logo' : ''; ?>">
             <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'sidebar']); ?>
         </div>

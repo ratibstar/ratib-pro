@@ -28,11 +28,13 @@ body.rateb-app{margin:0;font-family:var(--rateb-font);background:var(--rateb-bg)
 .rateb-sidebar nav{padding:.35rem 0 1.25rem}
 .rateb-sidebar-brand{padding:1.25rem;font-size:1.25rem;font-weight:700;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:.75rem}
 .rateb-sidebar-brand i{color:var(--rateb-accent)}
-.rateb-sidebar-brand.has-logo{padding:.85rem 1rem}
-.rateb-brand-logo-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;padding:.45rem .6rem}
+.rateb-sidebar-brand.has-logo{padding:.45rem .5rem;justify-content:center}
+.rateb-brand-logo-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:8px;padding:.15rem .25rem}
 .rateb-brand-logo{display:block;max-width:100%;height:auto}
-.rateb-brand-logo-wrap--sidebar{width:100%}
-.rateb-brand-logo-wrap--sidebar .rateb-brand-logo{max-height:52px;width:auto;margin:0 auto}
+.rateb-brand-logo-wrap--sidebar{width:auto;max-width:100%}
+.rateb-brand-logo-wrap--sidebar .rateb-brand-logo{max-height:72px;width:auto;margin:0 auto}
+body.has-tenant-logo .rateb-sidebar,.rateb-sidebar.has-tenant-logo{width:232px}
+body.has-tenant-logo .rateb-main{margin-left:232px;width:calc(100% - 232px);max-width:calc(100% - 232px)}
 .rateb-nav-group{margin:.12rem .4rem}
 .rateb-nav-group-toggle,.rateb-nav-subgroup-toggle{display:flex;align-items:center;gap:.55rem;width:100%;padding:.55rem .7rem;border:none;border-radius:8px;background:transparent;color:var(--rateb-sidebar-text);font-size:.82rem;font-weight:600;text-align:start;cursor:pointer}
 .rateb-nav-group-body,.rateb-nav-subgroup-body{display:none}
@@ -51,13 +53,15 @@ button.rateb-nav-link{width:calc(100% - 1rem);background:transparent;border-top:
 .rateb-card-body{padding:1.25rem}
 [dir="rtl"] .rateb-sidebar{left:auto;right:0;border-right:none;border-left:1px solid rgba(255,255,255,.06)}
 [dir="rtl"] .rateb-main{margin-left:0;margin-right:268px}
+[dir="rtl"] body.has-tenant-logo .rateb-main{margin-left:0;margin-right:232px;width:calc(100% - 232px);max-width:calc(100% - 232px)}
+[dir="rtl"] .rateb-sidebar-brand.has-logo{justify-content:center;padding:.45rem .5rem}
 [dir="rtl"] .rateb-nav-link{border-left:none;border-right:3px solid transparent}
 [dir="rtl"] .rateb-nav-link.active{border-right-color:var(--rateb-accent)}
 @media (max-width:991.98px){
   .rateb-sidebar{transform:translateX(-100%)}
   [dir="rtl"] .rateb-sidebar{transform:translateX(100%)}
   .rateb-sidebar.show,.rateb-sidebar.open{transform:translateX(0)}
-  .rateb-main{margin-left:0;margin-right:0;width:100%;max-width:100%}
+  .rateb-main,body.has-tenant-logo .rateb-main{margin-left:0;margin-right:0;width:100%;max-width:100%}
 }
 /* Fix7 — first-paint bridges for Bootstrap classes in chrome (overridden by full BS). */
 .d-flex{display:flex!important}

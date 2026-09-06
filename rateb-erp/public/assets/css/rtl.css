@@ -29,12 +29,24 @@
     max-width: calc(100% - 268px);
 }
 
+[dir="rtl"] body.has-tenant-logo .rateb-main {
+    margin-left: 0;
+    margin-right: 232px;
+    width: calc(100% - 232px);
+    max-width: calc(100% - 232px);
+}
+
 [dir="rtl"] .rateb-sidebar-brand {
     flex-direction: row;
     justify-content: flex-start;
     text-align: right;
     gap: 0.65rem;
     padding: 1rem 1.15rem;
+}
+
+[dir="rtl"] .rateb-sidebar-brand.has-logo {
+    justify-content: center;
+    padding: 0.45rem 0.5rem;
 }
 
 [dir="rtl"] .rateb-nav-section {
@@ -146,7 +158,8 @@
         transform: translateX(0);
     }
 
-    [dir="rtl"] .rateb-main {
+    [dir="rtl"] .rateb-main,
+    [dir="rtl"] body.has-tenant-logo .rateb-main {
         margin-right: 0;
         width: 100%;
         max-width: 100%;

@@ -55,7 +55,8 @@ body.rateb-app {
 }
 
 .rateb-sidebar-brand.has-logo {
-    padding: 0.85rem 1rem;
+    padding: 0.45rem 0.5rem;
+    justify-content: center;
 }
 
 .rateb-brand-logo-wrap {
@@ -63,8 +64,8 @@ body.rateb-app {
     align-items: center;
     justify-content: center;
     background: #fff;
-    border-radius: 10px;
-    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    padding: 0.15rem 0.25rem;
 }
 
 .rateb-brand-logo {
@@ -74,13 +75,25 @@ body.rateb-app {
 }
 
 .rateb-brand-logo-wrap--sidebar {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
 }
 
 .rateb-brand-logo-wrap--sidebar .rateb-brand-logo {
-    max-height: 52px;
+    max-height: 72px;
     width: auto;
     margin: 0 auto;
+}
+
+body.has-tenant-logo .rateb-sidebar,
+.rateb-sidebar.has-tenant-logo {
+    width: 232px;
+}
+
+body.has-tenant-logo .rateb-main {
+    margin-left: 232px;
+    width: calc(100% - 232px);
+    max-width: calc(100% - 232px);
 }
 
 .rateb-brand-logo-wrap--auth {
@@ -603,7 +616,8 @@ body.rateb-app {
         transform: translateX(0);
     }
 
-    .rateb-main {
+    .rateb-main,
+    body.has-tenant-logo .rateb-main {
         margin-left: 0;
         margin-right: 0;
         width: 100%;
