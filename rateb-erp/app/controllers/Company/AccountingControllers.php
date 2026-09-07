@@ -326,7 +326,9 @@ final class AccountingDashboardController extends Controller
     public function zatcaOnboarding(): void
     {
         $companyId = rateb_resolve_ops_company_id();
-        if ($companyId < 1) {
+        // Platform Super Admin browses without an ops tenant: render the picker instead of
+        // bouncing back to the dashboard.
+        if ($companyId < 1 && !rateb_is_super_admin()) {
             SessionManager::flash('error', __('select_company_ops'));
             Response::redirect(rateb_app_url('accounting'));
         }
@@ -343,7 +345,8 @@ final class AccountingDashboardController extends Controller
             'environments' => \Rateb\App\Services\ZatcaOnboardingService::environments(),
             'serialTemplate' => $onboarding->serialTemplate(),
             'csrf' => Csrf::token(),
-            'canManage' => rateb_can_manage_entity('zatca-onboarding'),
+            'canManage' => $companyId > 0 && rateb_can_manage_entity('zatca-onboarding'),
+            'selectedCompanyId' => $companyId,
         ], 'main');
     }
 

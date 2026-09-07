@@ -2635,6 +2635,7 @@ return [
     'permission_denied' => 'You do not have permission for this action',
     'zatca_onboarding' => 'ZATCA integration (Zakat, Tax and Customs Authority)',
     'zatca_onboarding_nav' => 'ZATCA integration',
+    'zatca_onboarding_short' => 'ZATCA link',
     'zatca_onboarding_subtitle' => 'Connect the system to the Fatoora e-invoicing platform',
     'zatca_link_info' => 'Connection details',
     'zatca_link_status' => 'Connection status',

@@ -12,6 +12,7 @@ $prerequisites = $prerequisites ?? [];
 $environments = $environments ?? ['developer', 'simulation', 'production'];
 $canManage = $canManage ?? false;
 $serialTemplate = (string) ($serialTemplate ?? '');
+$selectedCompanyId = (int) ($selectedCompanyId ?? 0);
 
 $status = (string) ($connection['status'] ?? 'not_linked');
 $environment = (string) ($connection['environment'] ?? 'developer');
@@ -35,6 +36,10 @@ View::partial('accounting-nav', ['accountingActive' => 'company']);
         </div>
     </div>
 </div>
+
+<?php View::partial('ops-company-select', ['selectedCompanyId' => $selectedCompanyId]); ?>
+
+<?php if ($selectedCompanyId < 1) { return; } ?>
 
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('zatca_link_info'); ?></div>
@@ -61,7 +66,7 @@ View::partial('accounting-nav', ['accountingActive' => 'company']);
                 <div class="rateb-card h-100 mb-0">
                     <div class="rateb-card-header"><?php echo __('zatca_company_data'); ?></div>
                     <div class="rateb-card-body p-0">
-                        <table class="table rateb-table zatca-kv mb-0">
+                        <table class="zatca-kv">
                             <tbody>
                             <tr>
                                 <th><?php echo __('company_name'); ?></th>
@@ -203,7 +208,7 @@ View::partial('accounting-nav', ['accountingActive' => 'company']);
                         <span><?php echo View::escape($cert['label']); ?></span>
                     </div>
                     <div class="rateb-card-body p-0">
-                        <table class="table rateb-table zatca-kv mb-0">
+                        <table class="zatca-kv">
                             <tbody>
                             <tr>
                                 <th><?php echo __('status'); ?></th>

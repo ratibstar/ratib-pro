@@ -142,7 +142,7 @@ $opsSection(__('accounting_module'), [
     ['accounting/bank-reconciliation', 'bank_reconciliation', 'fa-scale-balanced', 'accounting', 'accounting.view'],
     ['accounting-control', 'accounting_control_center', 'fa-shield-halved', 'accounting', 'accounting.dashboard'],
     ['accounting/zatca-settings', 'zatca_settings', 'fa-file-invoice', 'accounting', 'accounting.view'],
-    ['accounting/zatca-onboarding', 'zatca_onboarding_nav', 'fa-link', 'accounting', 'accounting.view'],
+    ['accounting/zatca-onboarding', 'zatca_onboarding_short', 'fa-link', 'accounting', 'accounting.view'],
     ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],

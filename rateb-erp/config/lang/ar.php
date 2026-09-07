@@ -2632,6 +2632,7 @@ return [
     'permission_denied' => 'ليس لديك صلاحية لهذا الإجراء',
     'zatca_onboarding' => 'الربط مع هيئة الزكاة والضريبة والجمارك (ZATCA)',
     'zatca_onboarding_nav' => 'الربط مع هيئة الزكاة والضريبة',
+    'zatca_onboarding_short' => 'الربط مع الزاتكا',
     'zatca_onboarding_subtitle' => 'ربط النظام مع منصة فاتورة الإلكترونية',
     'zatca_link_info' => 'معلومات الربط',
     'zatca_link_status' => 'حالة الربط',

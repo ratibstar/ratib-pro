@@ -71,11 +71,30 @@
     color: #f87171;
 }
 
+/* Key/value list — intentionally not a .rateb-table so the search/export toolbar stays off. */
+.zatca-kv {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.zatca-kv th,
+.zatca-kv td {
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--rateb-border, #2a3a52);
+    vertical-align: middle;
+}
+
+.zatca-kv tr:last-child th,
+.zatca-kv tr:last-child td {
+    border-bottom: 0;
+}
+
 .zatca-kv th {
     width: 40%;
     white-space: nowrap;
     color: var(--rateb-text-muted, #93a4bf);
     font-weight: 600;
+    background: var(--rateb-surface-2, #16223a);
 }
 
 .zatca-kv td {
