@@ -1,8 +1,7 @@
 (function () {
   'use strict';
 
-  if (window.__RATEB_HELP_ASSISTANT__) return;
-  window.__RATEB_HELP_ASSISTANT__ = 1;
+  if (window.__RATEB_HELP_ASSISTANT__ && document.getElementById('rateb-help-assistant-root')) return;
 
   var cfgNode = document.getElementById('rateb-help-assistant-cfg');
   if (!cfgNode) return;
@@ -14,16 +13,16 @@
   }
   if (!cfg || !cfg.bootstrapUrl || !cfg.askUrl) return;
 
-  // Avoid duplicate if already mounted
   if (document.getElementById('rateb-help-assistant-root')) return;
 
-  // Do not load on POS shells
   if (document.body && (
     document.body.classList.contains('rateb-pos-shell')
     || document.body.getAttribute('data-rateb-hide-help-assistant') === '1'
   )) {
     return;
   }
+
+  window.__RATEB_HELP_ASSISTANT__ = 1;
 
   var STORAGE_KEY = 'rateb_help_assistant_v1';
   var locale = cfg.locale === 'en' ? 'en' : 'ar';

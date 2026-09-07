@@ -5,12 +5,12 @@
   --ha-bg: color-mix(in srgb, var(--rateb-surface-elevated, #1c2940) 92%, transparent);
   --ha-border: color-mix(in srgb, var(--ha-accent) 35%, var(--rateb-border, #2a3a52));
   position: fixed;
-  left: auto;
+  left: 1.15rem;
   right: auto;
-  inset-inline-start: 1rem;
+  inset-inline-start: auto;
   inset-inline-end: auto;
-  bottom: 1rem;
-  z-index: 40;
+  bottom: 1.15rem;
+  z-index: 12050;
   font-family: var(--rateb-font, system-ui, sans-serif);
   pointer-events: none;
 }

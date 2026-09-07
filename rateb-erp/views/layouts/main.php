@@ -640,6 +640,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
     if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) {
         $ratebAsyncStyles[] = rateb_asset('css/dashboard.css');
     }
+    $ratebAsyncStyles[] = rateb_asset('css/help-assistant.css');
     if ($dir === 'rtl') {
         $ratebAsyncStyles[] = rateb_asset('css/ar-typography.css');
     }
@@ -1527,7 +1528,7 @@ if ($navActive('admin/agency-updates')) {
     $ratebIdleScripts[] = rateb_asset('js/agency-updates.js');
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
-$ratebIdleScripts[] = rateb_asset('js/help-assistant.js');
+$ratebHelpAssistantSrc = rateb_asset('js/help-assistant.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */
@@ -1564,6 +1565,7 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
   var critical = <?php echo json_encode(array_values($ratebCriticalScripts), JSON_UNESCAPED_SLASHES); ?>;
   var idleQueue = <?php echo json_encode(array_values($ratebIdleScripts), JSON_UNESCAPED_SLASHES); ?>;
   var chartQueue = <?php echo json_encode(array_values($deferAssetScripts), JSON_UNESCAPED_SLASHES); ?>;
+  var helpAssistantSrc = <?php echo json_encode((string) ($ratebHelpAssistantSrc ?? ''), JSON_UNESCAPED_SLASHES); ?>;
   function inject(src, next) {
     var s = document.createElement('script');
     s.src = src;
@@ -1605,6 +1607,9 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
   /* Start NOW (script is after sidebar in body). Waiting for DCL delayed soft-nav
    * until other head defer scripts finished — clicks escaped to full black navigation. */
   loadCritical();
+  if (helpAssistantSrc) {
+    setTimeout(function () { inject(helpAssistantSrc); }, 0);
+  }
   function afterInteraction(fn) {
     var ran = false;
     var go = function () {
@@ -1648,21 +1653,22 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
     } catch (eBoot) { /* ignore */ }
   }
   if (chartQueue.length) {
-    var chartsCancelled = false;
     var chartsStarted = false;
     var startCharts = function () {
-      if (chartsCancelled || chartsStarted) return;
       if (!pageHasChartContainers()) return;
+      if (chartsStarted) {
+        bootChartsNow();
+        return;
+      }
       chartsStarted = true;
       chain(chartQueue, 0, bootChartsNow);
     };
     var scheduleCharts = function () {
       var go = function () {
-        if (chartsCancelled) return;
         if (window.requestIdleCallback) {
-          window.requestIdleCallback(startCharts, { timeout: 3000 });
+          window.requestIdleCallback(startCharts, { timeout: 800 });
         } else {
-          setTimeout(startCharts, 400);
+          setTimeout(startCharts, 120);
         }
       };
       if (window.requestAnimationFrame) {
@@ -1674,27 +1680,21 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
       }
     };
     try {
-      document.addEventListener('rateb:nav:beforeLeave', function () {
-        chartsCancelled = true;
-      });
       document.addEventListener('rateb:nav:afterEnter', function () {
-        chartsCancelled = false;
         if (!pageHasChartContainers()) {
           return;
         }
-        // Soft-nav into dashboard from a non-chart page never ran chartQueue — start now.
-        if (chartQueue.length && !chartsStarted) {
-          startCharts();
-        }
+        startCharts();
         if (typeof window.ratebDashboardChartsBoot === 'function') {
           try { window.ratebDashboardChartsBoot(); } catch (eRe) { /* ignore */ }
+        } else if (typeof window.ratebChartsBoot === 'function') {
+          try { window.ratebChartsBoot(); } catch (eBoot2) { /* ignore */ }
         }
       });
     } catch (eNav) { /* ignore */ }
-    if (document.readyState === 'complete') {
-      scheduleCharts();
-    } else {
-      window.addEventListener('load', scheduleCharts, { once: true });
+    scheduleCharts();
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', startCharts, { once: true });
     }
   }
   afterInteraction(function () {

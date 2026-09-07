@@ -301,20 +301,17 @@
         }, 1500);
         setTimeout(function () {
             try {
-                var root = document.querySelector('[data-cm-dash="v5c"]');
-                var isStatic = root && (root.getAttribute('data-charts-static') === '1' || !root.getAttribute('data-charts-url'));
-                if (isStatic) {
-                    markCharts('ready');
-                    if (typeof window.ratebChartsBoot === 'function') {
-                        window.ratebChartsBoot();
-                    }
+                var stillLoading = document.querySelectorAll('.cm-chart.is-loading, [data-chart-slot].is-loading');
+                if (!stillLoading.length) {
                     return;
                 }
-                if (document.querySelector('.cm-chart.is-loading, [data-chart-slot].is-loading')) {
-                    markCharts('empty');
-                    boot();
+                if (typeof window.ratebChartsBoot === 'function') {
+                    window.ratebChartsBoot();
                 }
+                stillLoading.forEach(function (el) {
+                    el.classList.remove('is-loading');
+                });
             } catch (eC) { /* ignore */ }
-        }, 6000);
+        }, 2500);
     }, { once: true });
 })();

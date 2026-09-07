@@ -560,7 +560,7 @@
             if (!el) {
                 return;
             }
-            if (!(el && hasLabels(el))) {
+            if (!(el && (hasLabels(el) || hasMultiDataset(el)))) {
                 return;
             }
             queue.push(function () {

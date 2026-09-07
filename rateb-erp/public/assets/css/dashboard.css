@@ -400,6 +400,8 @@
 
 .cm-chart canvas {
     display: block;
+    position: relative;
+    z-index: 1;
     width: 100% !important;
     height: 100% !important;
 }
