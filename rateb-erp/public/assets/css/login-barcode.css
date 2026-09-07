@@ -150,108 +150,177 @@
     contain: layout paint;
 }
 
-.rateb-auth-bg span {
+/* Outer node: long parallax drift. */
+.rateb-auth-tag {
     position: absolute;
     white-space: nowrap;
-    font-weight: 800;
-    font-size: clamp(1rem, 2.2vw, 2rem);
-    letter-spacing: 0.4px;
-    opacity: 0.16;
     will-change: transform;
-    animation: ratebAuthDrift 26s ease-in-out infinite alternate;
+    animation: ratebAuthDrift var(--drift, 28s) ease-in-out infinite alternate;
+    animation-delay: var(--drift-delay, 0s);
 }
 
-/* Only transform animates, so each phrase stays on the compositor. */
+/* Inner node: shorter float + breathing fade, so the two never fight over transform. */
+.rateb-auth-tag > b {
+    display: block;
+    font-weight: 800;
+    font-size: clamp(1.35rem, 2.9vw, 2.75rem);
+    letter-spacing: 0.3px;
+    background-image: linear-gradient(120deg, var(--c1), var(--c2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px var(--glow, rgba(56, 189, 248, 0.35)));
+    will-change: transform, opacity;
+    animation: ratebAuthFloat var(--float, 9s) ease-in-out infinite;
+    animation-delay: var(--float-delay, 0s);
+}
+
 @keyframes ratebAuthDrift {
     from {
-        transform: translate3d(0, 0, 0) scale(1);
+        transform: translate3d(0, 0, 0);
     }
     to {
-        transform: translate3d(var(--dx, 24px), var(--dy, -30px), 0) scale(1.04);
+        transform: translate3d(var(--dx, 40px), var(--dy, -46px), 0);
     }
 }
 
-.rateb-auth-bg span:nth-child(1) {
-    top: 9%;
-    inset-inline-start: 6%;
-    color: #38bdf8;
-    --dx: 26px;
-    --dy: 26px;
-    animation-duration: 24s;
+@keyframes ratebAuthFloat {
+    0% {
+        transform: translate3d(0, 0, 0) scale(0.97) rotate(var(--tilt, 0deg));
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate3d(0, -18px, 0) scale(1.05) rotate(0deg);
+        opacity: 0.85;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(0.97) rotate(var(--tilt, 0deg));
+        opacity: 0.3;
+    }
 }
 
-.rateb-auth-bg span:nth-child(2) {
-    top: 20%;
-    inset-inline-end: 7%;
-    color: #34d399;
-    --dx: -30px;
-    --dy: 22px;
-    animation-duration: 31s;
-    animation-delay: -6s;
-}
-
-.rateb-auth-bg span:nth-child(3) {
-    top: 38%;
+.rateb-auth-tag:nth-child(1) {
+    top: 8%;
     inset-inline-start: 3%;
-    color: #a78bfa;
-    --dx: 34px;
-    --dy: -18px;
-    animation-duration: 28s;
-    animation-delay: -12s;
+    --c1: #38bdf8;
+    --c2: #6366f1;
+    --glow: rgba(56, 189, 248, 0.4);
+    --dx: 46px;
+    --dy: 38px;
+    --tilt: -1.5deg;
+    --drift: 26s;
+    --float: 8s;
 }
 
-.rateb-auth-bg span:nth-child(4) {
-    top: 52%;
+.rateb-auth-tag:nth-child(2) {
+    top: 17%;
     inset-inline-end: 4%;
-    color: #f472b6;
-    --dx: -22px;
-    --dy: -28px;
-    animation-duration: 34s;
-    animation-delay: -3s;
+    --c1: #34d399;
+    --c2: #22d3ee;
+    --glow: rgba(52, 211, 153, 0.4);
+    --dx: -52px;
+    --dy: 34px;
+    --tilt: 1.5deg;
+    --drift: 33s;
+    --drift-delay: -8s;
+    --float: 10.5s;
+    --float-delay: -2s;
 }
 
-.rateb-auth-bg span:nth-child(5) {
-    top: 70%;
-    inset-inline-start: 8%;
-    color: #fbbf24;
-    --dx: 28px;
-    --dy: -24px;
-    animation-duration: 27s;
-    animation-delay: -15s;
+.rateb-auth-tag:nth-child(3) {
+    top: 36%;
+    inset-inline-start: 4%;
+    --c1: #a78bfa;
+    --c2: #f472b6;
+    --glow: rgba(167, 139, 250, 0.4);
+    --dx: 56px;
+    --dy: -30px;
+    --tilt: 1deg;
+    --drift: 29s;
+    --drift-delay: -14s;
+    --float: 9.5s;
+    --float-delay: -4s;
 }
 
-.rateb-auth-bg span:nth-child(6) {
-    top: 84%;
-    inset-inline-end: 9%;
-    color: #22d3ee;
-    --dx: -26px;
-    --dy: -20px;
-    animation-duration: 32s;
-    animation-delay: -9s;
+.rateb-auth-tag:nth-child(4) {
+    top: 48%;
+    inset-inline-end: 3%;
+    --c1: #fb7185;
+    --c2: #f59e0b;
+    --glow: rgba(251, 113, 133, 0.4);
+    --dx: -40px;
+    --dy: -48px;
+    --tilt: -1deg;
+    --drift: 36s;
+    --drift-delay: -5s;
+    --float: 11.5s;
+    --float-delay: -6s;
 }
 
-.rateb-auth-bg span:nth-child(7) {
-    top: 30%;
-    inset-inline-start: 26%;
-    color: #818cf8;
-    --dx: 18px;
-    --dy: 30px;
-    animation-duration: 36s;
-    animation-delay: -20s;
+.rateb-auth-tag:nth-child(5) {
+    top: 64%;
+    inset-inline-start: 5%;
+    --c1: #fbbf24;
+    --c2: #f472b6;
+    --glow: rgba(251, 191, 36, 0.38);
+    --dx: 48px;
+    --dy: -40px;
+    --tilt: 1.5deg;
+    --drift: 28s;
+    --drift-delay: -18s;
+    --float: 8.5s;
+    --float-delay: -1s;
 }
 
-.rateb-auth-bg span:nth-child(8) {
-    top: 62%;
-    inset-inline-end: 24%;
-    color: #4ade80;
-    --dx: -20px;
-    --dy: 26px;
-    animation-duration: 29s;
-    animation-delay: -17s;
+.rateb-auth-tag:nth-child(6) {
+    top: 78%;
+    inset-inline-end: 6%;
+    --c1: #22d3ee;
+    --c2: #818cf8;
+    --glow: rgba(34, 211, 238, 0.4);
+    --dx: -44px;
+    --dy: -34px;
+    --tilt: -1.5deg;
+    --drift: 31s;
+    --drift-delay: -11s;
+    --float: 10s;
+    --float-delay: -7s;
 }
 
-[data-theme="light"] .rateb-auth-bg span {
-    opacity: 0.2;
+/* 7 and 8 sit above and below the card so they never hide behind it. */
+.rateb-auth-tag:nth-child(7) {
+    top: 2%;
+    inset-inline-start: 33%;
+    --c1: #818cf8;
+    --c2: #38bdf8;
+    --glow: rgba(129, 140, 248, 0.38);
+    --dx: 30px;
+    --dy: 44px;
+    --tilt: 1deg;
+    --drift: 38s;
+    --drift-delay: -22s;
+    --float: 12s;
+    --float-delay: -3s;
+}
+
+.rateb-auth-tag:nth-child(8) {
+    top: 90%;
+    inset-inline-end: 31%;
+    --c1: #4ade80;
+    --c2: #a3e635;
+    --glow: rgba(74, 222, 128, 0.38);
+    --dx: -34px;
+    --dy: -42px;
+    --tilt: -1deg;
+    --drift: 34s;
+    --drift-delay: -16s;
+    --float: 9s;
+    --float-delay: -8s;
+}
+
+[data-theme="light"] .rateb-auth-tag > b {
+    filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.18));
 }
 
 /* The card must never compete with the decoration for legibility. */
@@ -260,15 +329,20 @@
     z-index: 1;
 }
 
-/* Keep the phrases clear of the card on narrow screens. */
+/* Fewer, smaller phrases once the viewport can no longer hold them apart. */
+@media (max-width: 1199.98px) {
+    .rateb-auth-tag:nth-child(n + 7) {
+        display: none;
+    }
+}
+
 @media (max-width: 991.98px) {
-    .rateb-auth-bg span:nth-child(n + 5) {
+    .rateb-auth-tag:nth-child(n + 5) {
         display: none;
     }
 
-    .rateb-auth-bg span {
-        opacity: 0.12;
-        font-size: 1rem;
+    .rateb-auth-tag > b {
+        font-size: 1.25rem;
     }
 }
 
@@ -279,8 +353,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .rateb-auth-bg span {
+    .rateb-auth-tag,
+    .rateb-auth-tag > b {
         animation: none;
+        opacity: 0.55;
     }
 }
 

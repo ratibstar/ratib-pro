@@ -37,7 +37,8 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
     <?php /* Decorative only: single-locale taglines, transform-driven drift, hidden from AT. */ ?>
     <div class="rateb-auth-bg" aria-hidden="true">
         <?php for ($i = 1; $i <= 8; $i++) { ?>
-        <span><?php echo Rateb\App\Core\View::escape(__('auth_tagline_' . $i)); ?></span>
+        <?php /* Outer node drifts (parallax), inner node floats and fades — two transforms, no conflict. */ ?>
+        <span class="rateb-auth-tag"><b><?php echo Rateb\App\Core\View::escape(__('auth_tagline_' . $i)); ?></b></span>
         <?php } ?>
     </div>
     <div class="rateb-auth-card">
