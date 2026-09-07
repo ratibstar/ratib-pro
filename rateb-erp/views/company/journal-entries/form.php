@@ -98,7 +98,7 @@ $ccOptions = $lookups['cost_centers'] ?? [];
                 <span><?php echo __('credit'); ?>: <strong data-journal-total-credit>0.00</strong></span>
                 <span><?php echo __('difference'); ?>: <strong data-journal-diff>0.00</strong></span>
             </div>
-            <div class="alert alert-warning mb-0 d-none" data-journal-unbalanced-alert role="alert">
+            <div class="alert alert-warning mb-0" data-journal-unbalanced-alert role="alert" hidden>
                 <?php echo __('journal_balance_hint'); ?>
             </div>
             <p class="text-muted small mb-0" data-journal-balance-ok><?php echo __('journal_balance_hint'); ?></p>

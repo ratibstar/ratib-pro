@@ -1527,6 +1527,7 @@ if ($navActive('admin/agency-updates')) {
 }
 $ratebIdleScripts[] = rateb_asset('js/connectivity-indicator.js');
 $ratebHelpAssistantSrc = rateb_asset('js/help-assistant.js');
+$ratebJournalLinesSrc = rateb_asset('js/journal-lines.js');
 $deferAssetScripts = [];
 /* Fix8: Chart.js only when route opts in; runtime also DOM-gates before inject.
  * dashboard-charts-defer boots API hydrate on admin dashboard (no content <script defer>). */
@@ -1564,6 +1565,7 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
   var idleQueue = <?php echo json_encode(array_values($ratebIdleScripts), JSON_UNESCAPED_SLASHES); ?>;
   var chartQueue = <?php echo json_encode(array_values($deferAssetScripts), JSON_UNESCAPED_SLASHES); ?>;
   var helpAssistantSrc = <?php echo json_encode((string) ($ratebHelpAssistantSrc ?? ''), JSON_UNESCAPED_SLASHES); ?>;
+  var journalLinesSrc = <?php echo json_encode((string) ($ratebJournalLinesSrc ?? ''), JSON_UNESCAPED_SLASHES); ?>;
   function inject(src, next) {
     var s = document.createElement('script');
     s.src = src;
@@ -1607,6 +1609,9 @@ foreach ($ratebCriticalScripts as $ratebCritSrc) {
   loadCritical();
   if (helpAssistantSrc) {
     setTimeout(function () { inject(helpAssistantSrc); }, 0);
+  }
+  if (journalLinesSrc) {
+    setTimeout(function () { inject(journalLinesSrc); }, 0);
   }
   function afterInteraction(fn) {
     var ran = false;
