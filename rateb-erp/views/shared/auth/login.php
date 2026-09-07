@@ -77,7 +77,8 @@
         <div id="barcode-webcam-viewport" class="barcode-webcam-viewport mt-2 d-none" aria-label="Camera scanner"></div>
     </div>
 
-    <details id="barcode-desktop-panel" class="barcode-login-panel login-hints login-hints-pair">
+    <?php /* Open by default: the pairing QR is the point of the barcode tab, not an extra. */ ?>
+    <details id="barcode-desktop-panel" class="barcode-login-panel login-hints login-hints-pair" open>
         <summary>
             <i class="fas fa-mobile-alt" aria-hidden="true"></i> <?php echo __('barcode_pair_computer_title'); ?>
         </summary>

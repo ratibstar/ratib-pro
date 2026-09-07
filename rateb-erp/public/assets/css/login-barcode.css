@@ -65,16 +65,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 150px;
+    min-height: 232px;
 }
 
 .barcode-login-url-qr-img,
 .rateb-login-qr-img {
     border-radius: 8px;
     background: #fff;
-    padding: 6px;
-    width: 190px;
-    height: 190px;
+    padding: 8px;
+    width: 232px;
+    height: 232px;
     max-width: 100%;
 }
 
@@ -95,8 +95,8 @@
 }
 
 .rateb-login-qr-wrap {
-    width: 200px;
-    min-height: 150px;
+    width: 248px;
+    min-height: 232px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,6 +130,157 @@
         flex: 1 1 0;
         padding: 0.5rem 0.4rem;
         font-size: 0.8rem;
+    }
+}
+
+/* --- Animated background taglines -------------------------------------- */
+
+/* No overflow clipping here — the card must stay scrollable when it is tall. */
+.rateb-auth-page {
+    position: relative;
+}
+
+.rateb-auth-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    contain: layout paint;
+}
+
+.rateb-auth-bg span {
+    position: absolute;
+    white-space: nowrap;
+    font-weight: 800;
+    font-size: clamp(1rem, 2.2vw, 2rem);
+    letter-spacing: 0.4px;
+    opacity: 0.16;
+    will-change: transform;
+    animation: ratebAuthDrift 26s ease-in-out infinite alternate;
+}
+
+/* Only transform animates, so each phrase stays on the compositor. */
+@keyframes ratebAuthDrift {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        transform: translate3d(var(--dx, 24px), var(--dy, -30px), 0) scale(1.04);
+    }
+}
+
+.rateb-auth-bg span:nth-child(1) {
+    top: 9%;
+    inset-inline-start: 6%;
+    color: #38bdf8;
+    --dx: 26px;
+    --dy: 26px;
+    animation-duration: 24s;
+}
+
+.rateb-auth-bg span:nth-child(2) {
+    top: 20%;
+    inset-inline-end: 7%;
+    color: #34d399;
+    --dx: -30px;
+    --dy: 22px;
+    animation-duration: 31s;
+    animation-delay: -6s;
+}
+
+.rateb-auth-bg span:nth-child(3) {
+    top: 38%;
+    inset-inline-start: 3%;
+    color: #a78bfa;
+    --dx: 34px;
+    --dy: -18px;
+    animation-duration: 28s;
+    animation-delay: -12s;
+}
+
+.rateb-auth-bg span:nth-child(4) {
+    top: 52%;
+    inset-inline-end: 4%;
+    color: #f472b6;
+    --dx: -22px;
+    --dy: -28px;
+    animation-duration: 34s;
+    animation-delay: -3s;
+}
+
+.rateb-auth-bg span:nth-child(5) {
+    top: 70%;
+    inset-inline-start: 8%;
+    color: #fbbf24;
+    --dx: 28px;
+    --dy: -24px;
+    animation-duration: 27s;
+    animation-delay: -15s;
+}
+
+.rateb-auth-bg span:nth-child(6) {
+    top: 84%;
+    inset-inline-end: 9%;
+    color: #22d3ee;
+    --dx: -26px;
+    --dy: -20px;
+    animation-duration: 32s;
+    animation-delay: -9s;
+}
+
+.rateb-auth-bg span:nth-child(7) {
+    top: 30%;
+    inset-inline-start: 26%;
+    color: #818cf8;
+    --dx: 18px;
+    --dy: 30px;
+    animation-duration: 36s;
+    animation-delay: -20s;
+}
+
+.rateb-auth-bg span:nth-child(8) {
+    top: 62%;
+    inset-inline-end: 24%;
+    color: #4ade80;
+    --dx: -20px;
+    --dy: 26px;
+    animation-duration: 29s;
+    animation-delay: -17s;
+}
+
+[data-theme="light"] .rateb-auth-bg span {
+    opacity: 0.2;
+}
+
+/* The card must never compete with the decoration for legibility. */
+.rateb-auth-card {
+    position: relative;
+    z-index: 1;
+}
+
+/* Keep the phrases clear of the card on narrow screens. */
+@media (max-width: 991.98px) {
+    .rateb-auth-bg span:nth-child(n + 5) {
+        display: none;
+    }
+
+    .rateb-auth-bg span {
+        opacity: 0.12;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .rateb-auth-bg {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rateb-auth-bg span {
+        animation: none;
     }
 }
 

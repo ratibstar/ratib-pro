@@ -34,6 +34,12 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
     <link href="<?php echo rateb_asset('css/login-barcode.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-auth-page">
+    <?php /* Decorative only: single-locale taglines, transform-driven drift, hidden from AT. */ ?>
+    <div class="rateb-auth-bg" aria-hidden="true">
+        <?php for ($i = 1; $i <= 8; $i++) { ?>
+        <span><?php echo Rateb\App\Core\View::escape(__('auth_tagline_' . $i)); ?></span>
+        <?php } ?>
+    </div>
     <div class="rateb-auth-card">
         <div class="rateb-auth-head">
             <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'auth']); ?>
