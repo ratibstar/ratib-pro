@@ -1,0 +1,136 @@
+/* ZATCA (Fatoora) onboarding page — ERP surface tokens only. */
+
+.zatca-hero-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--rateb-primary, #3b82f6), #10b981);
+    flex: 0 0 auto;
+}
+
+.zatca-status {
+    border: 1px solid var(--rateb-border, #2a3a52);
+    border-radius: var(--rateb-radius, 12px);
+    background: var(--rateb-surface-2, #16223a);
+    padding: 1rem 1.15rem;
+}
+
+.zatca-status.is-linked {
+    border-color: #34d399;
+}
+
+.zatca-status.is-failed {
+    border-color: #f87171;
+}
+
+.zatca-status-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--rateb-text-muted, #93a4bf);
+    margin-bottom: 0.35rem;
+}
+
+.zatca-status.is-linked .zatca-status-title {
+    color: #34d399;
+}
+
+.zatca-status.is-failed .zatca-status-title {
+    color: #f87171;
+}
+
+.zatca-status-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.zatca-status-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.875rem;
+    color: var(--rateb-text-muted, #93a4bf);
+}
+
+.zatca-env-badge {
+    background: var(--rateb-primary, #3b82f6);
+    color: #fff;
+}
+
+.zatca-status-error {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: #f87171;
+}
+
+.zatca-kv th {
+    width: 40%;
+    white-space: nowrap;
+    color: var(--rateb-text-muted, #93a4bf);
+    font-weight: 600;
+}
+
+.zatca-kv td {
+    word-break: break-word;
+}
+
+.zatca-ok {
+    color: #34d399;
+}
+
+.zatca-warn {
+    color: #fbbf24;
+}
+
+.zatca-token {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+}
+
+.zatca-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    border: 1px solid var(--rateb-border, #2a3a52);
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.875rem;
+}
+
+.zatca-note-info {
+    border-color: #38bdf8;
+    color: #7dd3fc;
+}
+
+.zatca-note-warning {
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.zatca-note-danger {
+    border-color: #f87171;
+    color: #fca5a5;
+}
+
+.zatca-steps {
+    margin: 0 0 1rem;
+    padding-inline-start: 1.25rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.zatca-steps li.is-done {
+    color: #34d399;
+}
+
+.zatca-certs .rateb-card-header i {
+    margin-inline-end: 0.4rem;
+}

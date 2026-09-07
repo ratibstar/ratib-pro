@@ -388,6 +388,11 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
     ],
+    'zatca-onboarding' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
     'bank-accounts' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

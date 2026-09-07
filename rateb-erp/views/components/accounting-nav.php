@@ -17,6 +17,7 @@ $tabs = [
     ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
     ['path' => rateb_app_route('cost-centers'), 'label' => __('cost_centers'), 'match' => [rateb_app_route('cost-centers')]],
     ['path' => rateb_app_route('accounting/zatca-settings'), 'label' => __('zatca_settings'), 'match' => [rateb_app_route('accounting/zatca-settings')]],
+    ['path' => rateb_app_route('accounting/zatca-onboarding'), 'label' => __('zatca_onboarding_nav'), 'match' => [rateb_app_route('accounting/zatca-onboarding')]],
     ['path' => rateb_app_route('bank-accounts'), 'label' => __('bank_accounts'), 'match' => [rateb_app_route('bank-accounts')]],
     ['path' => rateb_app_route('accounting/bank-reconciliation'), 'label' => __('bank_reconciliation'), 'match' => [rateb_app_route('accounting/bank-reconciliation')]],
     ['path' => rateb_app_route('reports/cost-analysis'), 'label' => __('cost_analysis'), 'match' => [rateb_app_route('reports/cost-analysis')]],

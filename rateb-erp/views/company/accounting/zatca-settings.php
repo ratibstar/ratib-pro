@@ -7,7 +7,25 @@ $invoices = $invoices ?? [];
 $formFields = FormLookupService::zatcaSettingsFormFields();
 $lookups = (new FormLookupService())->forFields($formFields);
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+$zatcaConnection = (new \Rateb\App\Services\ZatcaOnboardingService())
+    ->connection((int) rateb_resolve_ops_company_id());
+$zatcaLinkStatus = (string) ($zatcaConnection['status'] ?? 'not_linked');
 ?>
+<div class="rateb-card mb-4">
+    <div class="rateb-card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <strong><?php echo __('zatca_link_status'); ?>:</strong>
+            <span class="badge <?php echo $zatcaLinkStatus === 'linked' ? 'bg-success' : 'bg-secondary'; ?>">
+                <?php echo __('zatca_status_' . $zatcaLinkStatus); ?>
+            </span>
+            <span class="text-muted small ms-2"><?php echo __('zatca_env_' . (string) ($zatcaConnection['environment'] ?? 'developer')); ?></span>
+        </div>
+        <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_app_url('accounting/zatca-onboarding'); ?>">
+            <i class="fas fa-link" aria-hidden="true"></i>
+            <span><?php echo __('zatca_onboarding_nav'); ?></span>
+        </a>
+    </div>
+</div>
 <?php if ($canManage ?? false) { ?>
 <form method="post" action="<?php echo rateb_app_url('accounting/zatca-settings'); ?>" class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('zatca_settings'); ?></div>

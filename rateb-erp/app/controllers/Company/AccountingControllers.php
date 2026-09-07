@@ -323,6 +323,89 @@ final class AccountingDashboardController extends Controller
         Response::redirect(rateb_app_url('accounting/zatca-settings'));
     }
 
+    public function zatcaOnboarding(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            Response::redirect(rateb_app_url('accounting'));
+        }
+        $onboarding = new \Rateb\App\Services\ZatcaOnboardingService();
+        $connection = $onboarding->connection($companyId);
+        if (trim((string) $connection['egs_serial']) === '') {
+            $connection['egs_serial'] = $onboarding->generateEgsSerial();
+        }
+        $this->view('company/accounting/zatca-onboarding', [
+            'title' => __('zatca_onboarding'),
+            'connection' => $connection,
+            'company' => $onboarding->companySnapshot($companyId),
+            'prerequisites' => $onboarding->prerequisites($companyId),
+            'environments' => \Rateb\App\Services\ZatcaOnboardingService::environments(),
+            'serialTemplate' => $onboarding->serialTemplate(),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('zatca-onboarding'),
+        ], 'main');
+    }
+
+    public function zatcaOnboardingLink(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('zatca-onboarding') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/zatca-onboarding'));
+        }
+        $companyId = rateb_require_ops_company();
+        $result = (new \Rateb\App\Services\ZatcaOnboardingService())->link(
+            $companyId,
+            (string) ($_POST['otp'] ?? ''),
+            (string) ($_POST['environment'] ?? ''),
+            (string) ($_POST['egs_serial'] ?? '')
+        );
+        (new AuditService())->log($result['ok'] ? 'zatca_link' : 'zatca_link_failed', 'zatca_connection', $companyId, [
+            'environment' => $result['connection']['environment'] ?? '',
+        ]);
+        SessionManager::flash($result['ok'] ? 'success' : 'error', $result['message']);
+        Response::redirect(rateb_app_url('accounting/zatca-onboarding'));
+    }
+
+    public function zatcaOnboardingUnlink(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('zatca-onboarding') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/zatca-onboarding'));
+        }
+        $companyId = rateb_require_ops_company();
+        $result = (new \Rateb\App\Services\ZatcaOnboardingService())->unlink($companyId);
+        (new AuditService())->log('zatca_unlink', 'zatca_connection', $companyId, []);
+        SessionManager::flash('success', $result['message']);
+        Response::redirect(rateb_app_url('accounting/zatca-onboarding'));
+    }
+
+    /** Auto-save of the environment dropdown (XHR). */
+    public function zatcaOnboardingEnvironment(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('zatca-onboarding') || !$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => __('permission_denied')], 403);
+        }
+        $companyId = rateb_require_ops_company();
+        $environment = (new \Rateb\App\Services\ZatcaOnboardingService())
+            ->saveEnvironment($companyId, (string) ($_POST['environment'] ?? ''));
+        Response::json(['ok' => true, 'environment' => $environment, 'message' => __('saved')]);
+    }
+
+    /** Issues a fresh EGS serial number (XHR). */
+    public function zatcaOnboardingSerial(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('zatca-onboarding') || !$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => __('permission_denied')], 403);
+        }
+        $companyId = rateb_require_ops_company();
+        $service = new \Rateb\App\Services\ZatcaOnboardingService();
+        $serial = $service->saveEgsSerial($companyId, $service->generateEgsSerial());
+        Response::json(['ok' => true, 'egs_serial' => $serial]);
+    }
+
     public function budgetReport(): void
     {
         $companyId = rateb_resolve_ops_company_id();
