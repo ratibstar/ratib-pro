@@ -17,6 +17,9 @@ final class ZatcaOnboardingService
 {
     public const TABLE = 'rateb_zatca_connections';
 
+    /** Fatoora taxpayer portal — where the onboarding OTP is issued. */
+    public const PORTAL_URL = 'https://fatoora.zatca.gov.sa/';
+
     public const SOLUTION_NAME = 'RATIB_ERP';
     public const SOLUTION_VERSION = 'V1.0';
 

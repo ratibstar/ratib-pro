@@ -344,6 +344,7 @@ final class AccountingDashboardController extends Controller
             'prerequisites' => $onboarding->prerequisites($companyId),
             'environments' => \Rateb\App\Services\ZatcaOnboardingService::environments(),
             'serialTemplate' => $onboarding->serialTemplate(),
+            'portalUrl' => \Rateb\App\Services\ZatcaOnboardingService::PORTAL_URL,
             'csrf' => Csrf::token(),
             'canManage' => $companyId > 0 && rateb_can_manage_entity('zatca-onboarding'),
             'selectedCompanyId' => $companyId,

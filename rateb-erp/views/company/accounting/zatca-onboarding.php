@@ -13,6 +13,10 @@ $environments = $environments ?? ['developer', 'simulation', 'production'];
 $canManage = $canManage ?? false;
 $serialTemplate = (string) ($serialTemplate ?? '');
 $selectedCompanyId = (int) ($selectedCompanyId ?? 0);
+$portalUrl = (string) ($portalUrl ?? 'https://fatoora.zatca.gov.sa/');
+$portalLink = '<a class="zatca-portal-link" href="' . View::escape($portalUrl) . '" target="_blank" rel="noopener noreferrer">'
+    . __('zatca_fatoora_portal')
+    . ' <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a>';
 
 $status = (string) ($connection['status'] ?? 'not_linked');
 $environment = (string) ($connection['environment'] ?? 'developer');
@@ -163,9 +167,7 @@ View::partial('accounting-nav', ['accountingActive' => 'company']);
                             <input type="text" class="form-control" id="zatcaOtp" name="otp" dir="ltr"
                                    inputmode="numeric" autocomplete="one-time-code" maxlength="12"
                                    placeholder="123456" <?php echo $canManage ? '' : 'disabled'; ?>>
-                            <div class="form-text"><?php echo __('zatca_otp_hint'); ?>
-                                <a href="https://fatoora.zatca.gov.sa/" target="_blank" rel="noopener"><?php echo __('zatca_fatoora_portal'); ?></a>
-                            </div>
+                            <div class="form-text"><?php echo __('zatca_otp_hint') . ' ' . $portalLink; ?></div>
                         </div>
                     </div>
                     <div class="rateb-card-footer d-grid gap-2">
@@ -242,7 +244,7 @@ View::partial('accounting-nav', ['accountingActive' => 'company']);
                 <?php echo __('zatca_step_1'); ?>
             </li>
             <li class="<?php echo !empty($prerequisites['egs_serial']) ? 'is-done' : ''; ?>"><?php echo __('zatca_step_2'); ?></li>
-            <li><?php echo __('zatca_step_3'); ?></li>
+            <li><?php echo __('zatca_step_3') . ' ' . $portalLink; ?></li>
             <li><?php echo __('zatca_step_4'); ?></li>
             <li class="<?php echo $isLinked ? 'is-done' : ''; ?>"><?php echo __('zatca_step_5'); ?></li>
         </ol>

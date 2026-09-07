@@ -2669,7 +2669,7 @@ return [
     'zatca_link_steps' => 'Onboarding steps',
     'zatca_step_1' => 'Make sure all company data is filled in settings (VAT number, email, address)',
     'zatca_step_2' => 'Click "Generate" to issue the EGS serial number',
-    'zatca_step_3' => 'Get an OTP code from the Fatoora portal',
+    'zatca_step_3' => 'Get an OTP code from',
     'zatca_step_4' => 'Enter the OTP code in the field provided',
     'zatca_step_5' => 'Click "Start ZATCA onboarding"',
     'zatca_otp_warning' => 'Note: the OTP code expires quickly — use it immediately',
