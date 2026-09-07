@@ -45,7 +45,11 @@
     font-weight: 600;
     line-height: 1.25;
     text-align: center;
-    cursor: grab;
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    user-select: none;
 }
 
 .wb-palette-item i {
@@ -81,11 +85,27 @@
     display: grid;
     grid-template-columns: auto minmax(5rem, auto) 1fr auto auto;
     gap: 0.5rem;
-    align-items: center;
+    align-items: start;
     border: 1px solid var(--rateb-border, rgba(255, 255, 255, 0.12));
     border-radius: 10px;
     padding: 0.6rem;
     background: var(--rateb-surface-elevated, #1c2940);
+}
+
+.wb-block-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+
+@media (max-width: 767px) {
+    .wb-block-card {
+        grid-template-columns: auto 1fr auto;
+    }
+    .wb-block-fields {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr;
+    }
 }
 
 .wb-block-card.is-dragging,

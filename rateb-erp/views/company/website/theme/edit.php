@@ -27,7 +27,7 @@ $preview = $marketplace['preview'] ?? null;
      data-demo-url="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/theme/marketplace/demo')), ENT_QUOTES, 'UTF-8'); ?>"
      data-backup-url="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/theme/marketplace/backup')), ENT_QUOTES, 'UTF-8'); ?>"
      data-restore-url="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/theme/marketplace/restore')), ENT_QUOTES, 'UTF-8'); ?>">
-    <h1 class="h3 mb-2"><?php echo htmlspecialchars((string) ($title ?? 'Theme Marketplace'), ENT_QUOTES, 'UTF-8'); ?></h1>
+    <h1 class="h3 mb-2"><?php echo htmlspecialchars((string) ($title ?? __('website_theme')), ENT_QUOTES, 'UTF-8'); ?></h1>
     <p class="wb-admin-hint mb-4"><?php echo htmlspecialchars(__('website_theme_marketplace_hint'), ENT_QUOTES, 'UTF-8'); ?></p>
 
     <div class="row g-3 mb-4">

@@ -3,7 +3,8 @@
 
   function boot() {
     var root = document.getElementById('websiteThemeMarketplace');
-    if (!root) return;
+    if (!root || root.getAttribute('data-wb-bound') === '1') return;
+    root.setAttribute('data-wb-bound', '1');
     var csrf = root.getAttribute('data-csrf') || '';
 
     function post(url, data) {
@@ -15,7 +16,9 @@
         fd.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
       });
       return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) {
-        return r.json();
+        return r.text().then(function (text) {
+          try { return JSON.parse(text); } catch (e) { return { ok: false, message: 'Failed' }; }
+        });
       });
     }
 
@@ -93,5 +96,10 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', boot);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+  document.addEventListener('rateb:nav:afterEnter', boot);
 })();

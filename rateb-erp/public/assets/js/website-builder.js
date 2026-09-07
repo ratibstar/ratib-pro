@@ -4,6 +4,16 @@
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
+  function readJson(res) {
+    return res.text().then(function (text) {
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        return { ok: false, message: text ? 'bad_json' : 'empty' };
+      }
+    });
+  }
+
   function postForm(url, data) {
     var fd = new FormData();
     Object.keys(data).forEach(function (k) {
@@ -15,19 +25,25 @@
         fd.append(k, v);
       }
     });
-    return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' })
-      .then(function (r) { return r.json(); });
+    return fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' }).then(readJson);
   }
 
   function boot() {
     var root = qs('#websiteBuilderRoot');
-    if (!root) return;
+    if (!root || root.getAttribute('data-wb-bound') === '1') return;
+    root.setAttribute('data-wb-bound', '1');
     var csrf = root.getAttribute('data-csrf') || '';
     var pageId = root.getAttribute('data-page-id') || '';
     var pageSlug = root.getAttribute('data-page-slug') || '';
+    var failMsg = root.getAttribute('data-msg-fail') || '';
+    var sectionTitle = root.getAttribute('data-section-title') || 'Section';
     var selectedType = null;
     var dragBlock = null;
     var dragSection = null;
+
+    function fail(res) {
+      alert((res && res.message) ? res.message : failMsg);
+    }
 
     function collectOrder() {
       var sections = [];
@@ -49,20 +65,58 @@
         order.blocks[sid].forEach(function (bid) { fd.append('blocks[' + sid + '][]', bid); });
       });
       return fetch(root.getAttribute('data-reorder-url'), { method: 'POST', body: fd, credentials: 'same-origin' })
-        .then(function (r) { return r.json(); });
+        .then(readJson);
+    }
+
+    function addBlock(sectionId, type) {
+      return postForm(root.getAttribute('data-add-block-url'), {
+        _csrf: csrf,
+        section_id: sectionId,
+        block_type: type
+      }).then(function (res) {
+        if (!res || !res.ok) {
+          fail(res);
+          return;
+        }
+        location.reload();
+      });
+    }
+
+    function addBlockNow(type) {
+      if (!type) return;
+      var last = qsa('.wb-section-card').pop();
+      if (last) {
+        addBlock(last.getAttribute('data-section-id'), type);
+        return;
+      }
+      postForm(root.getAttribute('data-add-section-url'), {
+        _csrf: csrf,
+        page_slug: pageSlug,
+        section_key: 'section_' + Date.now(),
+        title_en: sectionTitle,
+        title_ar: sectionTitle
+      }).then(function (res) {
+        if (!res || !res.ok || !res.id) {
+          fail(res);
+          return;
+        }
+        return addBlock(res.id, type);
+      });
     }
 
     qsa('.wb-palette-item').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        try { ev.stopImmediatePropagation(); } catch (e1) { ev.stopPropagation(); }
         qsa('.wb-palette-item').forEach(function (b) { b.classList.remove('is-selected'); });
         btn.classList.add('is-selected');
         selectedType = btn.getAttribute('data-block-type');
+        addBlockNow(selectedType);
       });
       btn.addEventListener('dragstart', function (e) {
         selectedType = btn.getAttribute('data-block-type');
         e.dataTransfer.setData('text/plain', 'new:' + selectedType);
       });
-      btn.setAttribute('draggable', 'true');
     });
 
     qs('#wbAddSection') && qs('#wbAddSection').addEventListener('click', function () {
@@ -70,18 +124,25 @@
         _csrf: csrf,
         page_slug: pageSlug,
         section_key: 'section_' + Date.now(),
-        title_en: 'New section'
-      }).then(function () { location.reload(); });
+        title_en: sectionTitle,
+        title_ar: sectionTitle
+      }).then(function (res) {
+        if (!res || !res.ok) {
+          fail(res);
+          return;
+        }
+        location.reload();
+      });
     });
 
     qsa('.wb-drop-hint').forEach(function (btn) {
       btn.addEventListener('click', function () {
+        if (!selectedType) {
+          var first = qs('.wb-palette-item');
+          selectedType = first ? first.getAttribute('data-block-type') : null;
+        }
         if (!selectedType) return;
-        postForm(root.getAttribute('data-add-block-url'), {
-          _csrf: csrf,
-          section_id: btn.getAttribute('data-section-id'),
-          block_type: selectedType
-        }).then(function () { location.reload(); });
+        addBlock(btn.getAttribute('data-section-id'), selectedType);
       });
     });
 
@@ -98,11 +159,7 @@
         list.parentElement && list.parentElement.parentElement && list.parentElement.parentElement.classList.remove('is-drag-over');
         var raw = e.dataTransfer.getData('text/plain') || '';
         if (raw.indexOf('new:') === 0) {
-          postForm(root.getAttribute('data-add-block-url'), {
-            _csrf: csrf,
-            section_id: list.getAttribute('data-section-id'),
-            block_type: raw.slice(4)
-          }).then(function () { location.reload(); });
+          addBlock(list.getAttribute('data-section-id'), raw.slice(4));
           return;
         }
         if (dragBlock) {
@@ -153,11 +210,15 @@
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-block-id');
         var card = btn.closest('.wb-block-card');
-        var title = qs('.wb-block-title', card);
         postForm(root.getAttribute('data-update-block-url'), {
           _csrf: csrf,
           id: id,
-          title_en: title ? title.value : ''
+          title_ar: (qs('.wb-block-title-ar', card) || {}).value || '',
+          title_en: (qs('.wb-block-title-en', card) || {}).value || '',
+          content_ar: (qs('.wb-block-content-ar', card) || {}).value || '',
+          content_en: (qs('.wb-block-content-en', card) || {}).value || ''
+        }).then(function (res) {
+          if (!res || !res.ok) fail(res);
         });
       });
     });
@@ -165,14 +226,20 @@
     qsa('.wb-delete-block').forEach(function (btn) {
       btn.addEventListener('click', function () {
         postForm(root.getAttribute('data-delete-block-url'), { _csrf: csrf, id: btn.getAttribute('data-block-id') })
-          .then(function () { location.reload(); });
+          .then(function (res) {
+            if (!res || !res.ok) { fail(res); return; }
+            location.reload();
+          });
       });
     });
 
     qsa('.wb-delete-section').forEach(function (btn) {
       btn.addEventListener('click', function () {
         postForm(root.getAttribute('data-delete-section-url'), { _csrf: csrf, id: btn.getAttribute('data-section-id') })
-          .then(function () { location.reload(); });
+          .then(function (res) {
+            if (!res || !res.ok) { fail(res); return; }
+            location.reload();
+          });
       });
     });
 
@@ -182,27 +249,38 @@
     }
 
     qs('#wbBtnDraft') && qs('#wbBtnDraft').addEventListener('click', function () {
-      action(root.getAttribute('data-draft-url'), { label: 'Manual draft' }).then(function () { location.reload(); });
+      action(root.getAttribute('data-draft-url'), { label: sectionTitle }).then(function (res) {
+        if (!res || !res.ok) { fail(res); return; }
+        location.reload();
+      });
     });
     qs('#wbBtnPublish') && qs('#wbBtnPublish').addEventListener('click', function () {
-      action(root.getAttribute('data-publish-url')).then(function () {
-        alert(root.getAttribute('data-msg-published') || 'Published');
+      action(root.getAttribute('data-publish-url')).then(function (res) {
+        if (!res || !res.ok) { fail(res); return; }
+        alert(root.getAttribute('data-msg-published') || '');
         location.reload();
       });
     });
     qs('#wbBtnPreview') && qs('#wbBtnPreview').addEventListener('click', function () {
       action(root.getAttribute('data-preview-url')).then(function (res) {
         if (res && res.url) window.open(res.url, '_blank', 'noopener');
+        else fail(res);
       });
     });
     qs('#wbBtnSchedule') && qs('#wbBtnSchedule').addEventListener('click', function () {
       var at = qs('#wbScheduleAt');
-      action(root.getAttribute('data-schedule-url'), { scheduled_at: at ? at.value : '' }).then(function () { location.reload(); });
+      action(root.getAttribute('data-schedule-url'), { scheduled_at: at ? at.value : '' }).then(function (res) {
+        if (!res || !res.ok) { fail(res); return; }
+        location.reload();
+      });
     });
     qsa('.wb-rollback').forEach(function (btn) {
       btn.addEventListener('click', function () {
         action(root.getAttribute('data-rollback-url'), { version_id: btn.getAttribute('data-version-id') })
-          .then(function () { location.reload(); });
+          .then(function (res) {
+            if (!res || !res.ok) { fail(res); return; }
+            location.reload();
+          });
       });
     });
   }
@@ -212,4 +290,5 @@
   } else {
     boot();
   }
+  document.addEventListener('rateb:nav:afterEnter', boot);
 })();

@@ -209,9 +209,13 @@ final class WebsiteBuilderController extends Controller
             Response::json(['ok' => false], 403);
             return;
         }
-        $slug = (string) ($_POST['page_slug'] ?? '');
-        $id = (new WebsiteBuilderService())->addSection($slug, $_POST);
-        Response::json(['ok' => true, 'id' => $id]);
+        try {
+            $slug = (string) ($_POST['page_slug'] ?? '');
+            $id = (new WebsiteBuilderService())->addSection($slug, $_POST);
+            Response::json(['ok' => true, 'id' => $id]);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
     }
 
     public function deleteSection(): void
@@ -232,10 +236,14 @@ final class WebsiteBuilderController extends Controller
             Response::json(['ok' => false], 403);
             return;
         }
-        $sectionId = (int) ($_POST['section_id'] ?? 0);
-        $type = (string) ($_POST['block_type'] ?? 'text');
-        $id = (new WebsiteBuilderService())->addBlock($sectionId, $type, $_POST);
-        Response::json(['ok' => true, 'id' => $id]);
+        try {
+            $sectionId = (int) ($_POST['section_id'] ?? 0);
+            $type = (string) ($_POST['block_type'] ?? 'text');
+            $id = (new WebsiteBuilderService())->addBlock($sectionId, $type, $_POST);
+            Response::json(['ok' => true, 'id' => $id]);
+        } catch (\Throwable $e) {
+            Response::json(['ok' => false, 'message' => $e->getMessage()], 400);
+        }
     }
 
     public function updateBlock(): void

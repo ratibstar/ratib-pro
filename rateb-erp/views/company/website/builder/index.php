@@ -16,6 +16,9 @@ $wbAr = rateb_locale() === 'ar';
      data-page-slug="<?php echo htmlspecialchars($pageSlug, ENT_QUOTES, 'UTF-8'); ?>"
      data-csrf="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>"
      data-msg-published="<?php echo htmlspecialchars(__('website_published_ok'), ENT_QUOTES, 'UTF-8'); ?>"
+     data-msg-fail="<?php echo htmlspecialchars(__('website_add_block_failed'), ENT_QUOTES, 'UTF-8'); ?>"
+     data-section-title="<?php echo htmlspecialchars(__('website_section_new'), ENT_QUOTES, 'UTF-8'); ?>"
+     data-locale="<?php echo htmlspecialchars(rateb_locale(), ENT_QUOTES, 'UTF-8'); ?>"
      data-reorder-url="<?php echo htmlspecialchars($saveReorderUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-add-section-url="<?php echo htmlspecialchars($addSectionUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-add-block-url="<?php echo htmlspecialchars($addBlockUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
@@ -49,7 +52,7 @@ $wbAr = rateb_locale() === 'ar';
                 <div class="rateb-card-header"><strong><?php echo htmlspecialchars(__('website_blocks'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <div class="rateb-card-body wb-palette-list">
                     <?php foreach (($blockTypes ?? []) as $type => $meta) { ?>
-                    <button type="button" class="wb-palette-item" data-block-type="<?php echo htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?>">
+                    <button type="button" class="wb-palette-item" draggable="true" data-block-type="<?php echo htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?>">
                         <i class="fas <?php echo htmlspecialchars($meta['icon'] ?? 'fa-cube', ENT_QUOTES, 'UTF-8'); ?>"></i>
                         <span><?php echo htmlspecialchars($wbAr ? (string) ($meta['label_ar'] ?? $type) : (string) ($meta['label_en'] ?? $type), ENT_QUOTES, 'UTF-8'); ?></span>
                     </button>
@@ -80,7 +83,7 @@ $wbAr = rateb_locale() === 'ar';
                 <div class="wb-section-card rateb-card" data-section-id="<?php echo $sid; ?>" draggable="true">
                     <div class="rateb-card-header d-flex align-items-center gap-2">
                         <span class="wb-drag-handle"><i class="fas fa-grip-vertical"></i></span>
-                        <strong><?php echo htmlspecialchars((string) ($section['section_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong>
+                        <strong><?php echo htmlspecialchars(rateb_website_slug_label((string) ($section['section_key'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></strong>
                         <span class="text-muted small"><?php echo htmlspecialchars(rateb_website_pick($section, 'title_en', 'title_ar'), ENT_QUOTES, 'UTF-8'); ?></span>
                         <button type="button" class="btn btn-sm btn-outline-danger ms-auto wb-delete-section" data-section-id="<?php echo $sid; ?>"><?php echo htmlspecialchars(__('delete'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
@@ -96,7 +99,12 @@ $wbAr = rateb_locale() === 'ar';
                                     $bMeta = $blockTypes[$bType] ?? null;
                                     echo htmlspecialchars($bMeta ? ($wbAr ? (string) $bMeta['label_ar'] : (string) $bMeta['label_en']) : $bType, ENT_QUOTES, 'UTF-8');
                                 ?></span>
-                                <input class="form-control form-control-sm wb-block-title" name="title_en" value="<?php echo htmlspecialchars(rateb_website_pick($b, 'title_en', 'title_ar'), ENT_QUOTES, 'UTF-8'); ?>" data-block-id="<?php echo $bid; ?>">
+                                <div class="wb-block-fields">
+                                    <input class="form-control form-control-sm wb-block-title-ar" value="<?php echo htmlspecialchars((string) ($b['title_ar'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars(__('website_title_ar'), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input class="form-control form-control-sm wb-block-title-en" value="<?php echo htmlspecialchars((string) ($b['title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars(__('website_title_en'), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input class="form-control form-control-sm wb-block-content-ar" value="<?php echo htmlspecialchars((string) ($b['content_ar'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars(__('website_content_ar'), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input class="form-control form-control-sm wb-block-content-en" value="<?php echo htmlspecialchars((string) ($b['content_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars(__('website_content_en'), ENT_QUOTES, 'UTF-8'); ?>">
+                                </div>
                                 <button type="button" class="btn btn-sm btn-outline-primary wb-save-block" data-block-id="<?php echo $bid; ?>"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
                                 <button type="button" class="btn btn-sm btn-outline-danger wb-delete-block" data-block-id="<?php echo $bid; ?>" aria-label="<?php echo htmlspecialchars(__('delete'), ENT_QUOTES, 'UTF-8'); ?>">×</button>
                             </div>

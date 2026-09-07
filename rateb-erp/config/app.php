@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260907-website-ui');
+define('RATEB_ASSET_BUILD', '20260907-website-blocks');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1807,6 +1807,14 @@ if (!function_exists('rateb_website_pick')) {
     {
         $en = trim((string) ($row[$enKey] ?? ''));
         $ar = trim((string) ($row[$arKey] ?? ''));
+        if (function_exists('rateb_website_is_placeholder')) {
+            if (rateb_website_is_placeholder($en)) {
+                $en = '';
+            }
+            if (rateb_website_is_placeholder($ar)) {
+                $ar = '';
+            }
+        }
         if (rateb_locale() === 'ar') {
             return $ar !== '' ? $ar : $en;
         }
@@ -1828,10 +1836,70 @@ if (!function_exists('rateb_website_status_label')) {
 if (!function_exists('rateb_website_slug_label')) {
     function rateb_website_slug_label(string $slug): string
     {
-        $key = 'website_slug_' . preg_replace('/[^a-z0-9_]+/i', '_', $slug);
+        $slug = strtolower(trim($slug, "/ \t"));
+        $key = 'website_slug_' . preg_replace('/[^a-z0-9_]+/', '_', $slug);
         $text = __($key);
 
         return $text !== $key ? $text : $slug;
+    }
+}
+
+if (!function_exists('rateb_website_is_placeholder')) {
+    function rateb_website_is_placeholder(string $text): bool
+    {
+        $t = strtolower(trim($text));
+
+        return $t === '' || $t === 'label' || $t === 'name' || $t === 'title' || $t === 'untitled';
+    }
+}
+
+if (!function_exists('rateb_website_menu_name')) {
+    /** @param array<string,mixed> $menu */
+    function rateb_website_menu_name(array $menu): string
+    {
+        $pick = rateb_website_pick($menu, 'name_en', 'name_ar');
+        if (!rateb_website_is_placeholder($pick)) {
+            return $pick;
+        }
+        $loc = strtolower((string) ($menu['location'] ?? ''));
+        $slug = strtolower((string) ($menu['slug'] ?? ''));
+        if ($loc === 'header' || $slug === 'main' || $slug === 'header') {
+            return __('website_header_menu');
+        }
+        if ($loc === 'footer' || $slug === 'footer') {
+            return __('website_footer_menu');
+        }
+
+        return rateb_website_slug_label($slug !== '' ? $slug : 'menu');
+    }
+}
+
+if (!function_exists('rateb_website_nav_label')) {
+    /** @param array<string,mixed> $row */
+    function rateb_website_nav_label(array $row): string
+    {
+        $pick = rateb_website_pick($row, 'label_en', 'label_ar');
+        if (rateb_website_is_placeholder($pick) && isset($row['label'])) {
+            $pick = trim((string) $row['label']);
+        }
+        if (!rateb_website_is_placeholder($pick) && !preg_match('/^[a-z0-9_\-]+$/i', $pick)) {
+            return $pick;
+        }
+        $url = (string) ($row['url'] ?? '');
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: $url);
+        $slug = strtolower(trim(str_replace(['site/', '/site/'], '', trim($path, '/'))));
+        $slug = preg_replace('/^.*\//', '', $slug) ?: $slug;
+        if ($slug !== '' && $slug !== 'site') {
+            $named = rateb_website_slug_label($slug);
+            if ($named !== $slug) {
+                return $named;
+            }
+        }
+        if (!rateb_website_is_placeholder($pick)) {
+            return rateb_website_slug_label($pick);
+        }
+
+        return __('website_link');
     }
 }
 

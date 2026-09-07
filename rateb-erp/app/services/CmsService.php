@@ -59,6 +59,17 @@ final class CmsService
         if ($val === '') {
             $val = trim((string) ($row[$fallback] ?? ''));
         }
+        if ($val === '' && isset($row[$base])) {
+            $val = trim((string) $row[$base]);
+        }
+        if (function_exists('rateb_website_is_placeholder') && rateb_website_is_placeholder($val)) {
+            if (function_exists('rateb_website_nav_label') && ($base === 'label' || $base === 'title')) {
+                $named = rateb_website_nav_label($row);
+                if ($named !== '') {
+                    $val = $named;
+                }
+            }
+        }
         if (function_exists('rateb_mkt_tenant_copy')) {
             return rateb_mkt_tenant_copy($val);
         }
