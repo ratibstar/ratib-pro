@@ -2201,3 +2201,34 @@ table.rateb-approvals-table td.rateb-actions-cell {
     animation: none;
 }
 
+.cm-strip__lbl,
+.cm-strip__val {
+    display: block;
+}
+.cm-strip__lbl {
+    color: var(--rateb-text-muted, #94a3b8);
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+.cm-strip__val {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.journal-balance-bar {
+    border: 1px solid var(--rateb-border, #2a3a52);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    background: var(--rateb-surface-elevated, #1c2940);
+}
+.journal-balance-bar.is-unbalanced {
+    border-color: #f59e0b;
+}
+.journal-balance-bar.is-balanced {
+    border-color: #34d399;
+}
+.journal-balance-bar [data-journal-unbalanced-alert] {
+    margin-top: 0.35rem;
+}
+
+

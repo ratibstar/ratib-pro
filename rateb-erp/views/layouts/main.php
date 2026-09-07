@@ -637,9 +637,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
         $ratebThemeDarkCss,
         rateb_asset('css/rtl.css'),
     ];
-    if (!empty($loadModulePageStatsCss) || !empty($layoutAssets['charts'])) {
-        $ratebAsyncStyles[] = rateb_asset('css/dashboard.css');
-    }
+    $ratebAsyncStyles[] = rateb_asset('css/dashboard.css');
     $ratebAsyncStyles[] = rateb_asset('css/help-assistant.css');
     if ($dir === 'rtl') {
         $ratebAsyncStyles[] = rateb_asset('css/ar-typography.css');

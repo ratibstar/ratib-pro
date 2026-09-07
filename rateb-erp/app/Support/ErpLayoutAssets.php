@@ -65,6 +65,9 @@ final class ErpLayoutAssets
         if ($charts) {
             $defer[] = 'charts.js';
         }
+        if (str_contains($route, 'journal-entries')) {
+            $defer[] = 'journal-lines.js';
+        }
 
         return [
             'charts' => $charts,

@@ -29,7 +29,7 @@ $routePrefix = $routePrefix ?? rateb_app_route('chart-of-accounts');
                     <th><?php echo __('parent_account'); ?></th>
                     <th><?php echo __('account_type'); ?></th>
                     <th class="text-end"><?php echo __('balance'); ?></th>
-                    <th class="text-end"><?php echo __('actions'); ?></th>
+                    <th class="text-end rateb-accounting-actions-col rateb-th-actions"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -49,11 +49,17 @@ $routePrefix = $routePrefix ?? rateb_app_route('chart-of-accounts');
                     <td class="small text-muted"><?php echo Rateb\App\Core\View::escape($parentLabel); ?></td>
                     <td><span class="badge bg-secondary-subtle text-secondary"><?php echo __((string) ($row['account_type'] ?? '')); ?></span></td>
                     <td class="text-end"><?php echo number_format((float) ($row['balance'] ?? 0), 2); ?></td>
-                    <td class="text-end text-nowrap">
-                        <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
-                        <?php if ($canManage) { ?>
-                        <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
-                        <?php } ?>
+                    <td class="text-end text-nowrap rateb-accounting-actions-col rateb-actions-cell">
+                        <div class="rateb-actions">
+                            <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>">
+                                <i class="fas fa-eye" aria-hidden="true"></i><span class="rateb-btn-label"><?php echo __('view'); ?></span>
+                            </a>
+                            <?php if ($canManage) { ?>
+                            <a href="<?php echo rateb_app_url('chart-of-accounts/' . (int) $row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>">
+                                <i class="fas fa-edit" aria-hidden="true"></i><span class="rateb-btn-label"><?php echo __('edit'); ?></span>
+                            </a>
+                            <?php } ?>
+                        </div>
                     </td>
                 </tr>
                 <?php } } ?>

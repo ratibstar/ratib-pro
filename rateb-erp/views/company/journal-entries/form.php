@@ -48,7 +48,7 @@ $ccOptions = $lookups['cost_centers'] ?? [];
                     <th class="text-end" style="width:120px"><?php echo __('debit'); ?></th>
                     <th class="text-end" style="width:120px"><?php echo __('credit'); ?></th>
                     <th><?php echo __('memo'); ?></th>
-                    <th style="width:50px"></th>
+                    <th class="text-end rateb-accounting-actions-col"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -80,38 +80,33 @@ $ccOptions = $lookups['cost_centers'] ?? [];
                                value="<?php echo Rateb\App\Core\View::escape((string) ($line['credit'] ?? '')); ?>"></td>
                     <td><input type="text" name="line_memo[]" class="form-control form-control-sm"
                                value="<?php echo Rateb\App\Core\View::escape((string) ($line['memo'] ?? '')); ?>"></td>
-                    <td><button type="button" class="btn btn-sm btn-outline-danger" data-journal-lines-remove><i class="fas fa-times"></i></button></td>
+                    <td class="text-end rateb-actions-cell">
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-journal-lines-remove title="<?php echo __('delete'); ?>">
+                            <i class="fas fa-times" aria-hidden="true"></i><span class="rateb-btn-label"><?php echo __('delete'); ?></span>
+                        </button>
+                    </td>
                 </tr>
                 <?php } ?>
                 </tbody>
             </table>
         </div>
-        <p class="text-muted small mb-0"><?php echo __('journal_balance_hint'); ?></p>
+        <div class="journal-balance-bar mt-3" data-journal-balance
+             data-msg-unbalanced="<?php echo Rateb\App\Core\View::escape(__('journal_not_balanced')); ?>"
+             data-msg-hint="<?php echo Rateb\App\Core\View::escape(__('journal_balance_hint')); ?>">
+            <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+                <span><?php echo __('debit'); ?>: <strong data-journal-total-debit>0.00</strong></span>
+                <span><?php echo __('credit'); ?>: <strong data-journal-total-credit>0.00</strong></span>
+                <span><?php echo __('difference'); ?>: <strong data-journal-diff>0.00</strong></span>
+            </div>
+            <div class="alert alert-warning mb-0 d-none" data-journal-unbalanced-alert role="alert">
+                <?php echo __('journal_balance_hint'); ?>
+            </div>
+            <p class="text-muted small mb-0" data-journal-balance-ok><?php echo __('journal_balance_hint'); ?></p>
+        </div>
     </div>
     <div class="rateb-card-footer d-flex gap-2">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
         <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
     </div>
 </form>
-<script>
-(function () {
-    var table = document.querySelector('[data-journal-lines-table]');
-    if (!table) return;
-    var addBtn = document.querySelector('[data-journal-lines-add]');
-    var tbody = table.querySelector('tbody');
-    addBtn && addBtn.addEventListener('click', function () {
-        var row = tbody.querySelector('[data-journal-lines-row]');
-        if (!row) return;
-        tbody.appendChild(row.cloneNode(true));
-        var last = tbody.lastElementChild;
-        last.querySelectorAll('input').forEach(function (el) { el.value = ''; });
-        last.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
-    });
-    tbody.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-journal-lines-remove]');
-        if (!btn) return;
-        if (tbody.querySelectorAll('[data-journal-lines-row]').length <= 1) return;
-        btn.closest('tr').remove();
-    });
-})();
-</script>
+<script src="<?php echo htmlspecialchars(rateb_asset('js/journal-lines.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>

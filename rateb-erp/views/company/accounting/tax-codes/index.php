@@ -11,7 +11,7 @@ $canCreate = !empty($canCreate);
     </div>
     <div class="table-responsive">
         <table class="table table-sm table-striped">
-            <thead><tr><th><?php echo htmlspecialchars(__('code'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?></th><th>%</th><th><?php echo htmlspecialchars(__('type'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
+            <thead><tr><th><?php echo htmlspecialchars(__('code'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('name'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('rate_percent'), ENT_QUOTES, 'UTF-8'); ?></th><th><?php echo htmlspecialchars(__('type'), ENT_QUOTES, 'UTF-8'); ?></th></tr></thead>
             <tbody>
             <?php if ($rows === []): ?><tr><td colspan="4" class="text-muted"><?php echo htmlspecialchars(__('no_records'), ENT_QUOTES, 'UTF-8'); ?></td></tr><?php endif; ?>
             <?php foreach ($rows as $row): ?>
@@ -19,7 +19,7 @@ $canCreate = !empty($canCreate);
                     <td><?php echo htmlspecialchars((string) ($row['code'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?php echo htmlspecialchars((string) ($row['rate_percent'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td><?php echo htmlspecialchars((string) ($row['tax_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(__('tax_type_' . strtolower((string) ($row['tax_type'] ?? 'other'))), ENT_QUOTES, 'UTF-8'); ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
