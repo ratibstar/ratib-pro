@@ -35,18 +35,16 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 </head>
 <body class="rateb-auth-page">
     <div class="rateb-auth-card">
-        <div class="text-center mb-3">
-            <div class="d-flex justify-content-center gap-2 mb-3">
-                <div class="btn-group btn-group-sm">
-                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_erp_locale_base_url('en'), ENT_QUOTES, 'UTF-8'); ?>"
-                       class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>"
-                       data-rateb-full-nav="1">EN</a>
-                    <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_erp_locale_base_url('ar'), ENT_QUOTES, 'UTF-8'); ?>"
-                       class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>"
-                       data-rateb-full-nav="1">عربي</a>
-                </div>
-            </div>
+        <div class="rateb-auth-head">
             <?php Rateb\App\Core\View::partial('tenant-brand-mark', ['variant' => 'auth']); ?>
+            <div class="btn-group btn-group-sm rateb-auth-locale">
+                <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('en') : rateb_erp_locale_base_url('en'), ENT_QUOTES, 'UTF-8'); ?>"
+                   class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>"
+                   data-rateb-full-nav="1">EN</a>
+                <a href="<?php echo htmlspecialchars(function_exists('rateb_locale_switch_url') ? rateb_locale_switch_url('ar') : rateb_erp_locale_base_url('ar'), ENT_QUOTES, 'UTF-8'); ?>"
+                   class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>"
+                   data-rateb-full-nav="1">عربي</a>
+            </div>
         </div>
         <?php Rateb\App\Core\View::partial('flash'); ?>
         <?php echo $pageContent; ?>

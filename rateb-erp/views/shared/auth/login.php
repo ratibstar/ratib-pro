@@ -6,7 +6,6 @@
 <div class="alert alert-danger rateb-flash mb-3" role="alert"><?php echo Rateb\App\Core\View::escape($loginError); ?></div>
 <?php } ?>
 <div class="mb-3 text-center">
-    <p class="text-muted small mb-2"><?php echo __('login_method'); ?></p>
     <div class="login-method-toggle" role="group" aria-label="<?php echo __('login_method'); ?>">
         <button type="button" class="login-method-btn active" data-method="password" aria-pressed="true">
             <i class="fas fa-user-lock" aria-hidden="true"></i> <?php echo __('login_method_password'); ?>
@@ -36,13 +35,14 @@
     <?php if (!empty($next)) { ?>
     <input type="hidden" name="next" value="<?php echo Rateb\App\Core\View::escape((string) $next); ?>">
     <?php } ?>
-    <?php if (!empty($agencyLoginHint)) { ?>
-    <div class="alert alert-secondary py-2 small mb-3">
-        <i class="fas fa-info-circle me-1"></i>
-        <?php echo Rateb\App\Core\View::escape((string) $agencyLoginHint); ?>
-    </div>
-    <?php } ?>
-    <p class="text-center text-muted small mb-3"><?php echo __('unified_login_hint'); ?></p>
+    <?php /* Both hints are reference material — collapsed so the form stays above the fold. */ ?>
+    <details class="login-hints mb-3">
+        <summary><i class="fas fa-circle-info" aria-hidden="true"></i> <?php echo __('login_hints_toggle'); ?></summary>
+        <?php if (!empty($agencyLoginHint)) { ?>
+        <p class="mb-2"><?php echo Rateb\App\Core\View::escape((string) $agencyLoginHint); ?></p>
+        <?php } ?>
+        <p class="mb-0"><?php echo __('unified_login_hint'); ?></p>
+    </details>
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>
         <input type="text" class="form-control" id="email" name="email" required autocomplete="username" placeholder="admin">
@@ -57,9 +57,12 @@
 </form>
 
 <div id="barcode-form" class="login-panel text-center d-none">
-    <div class="barcode-this-device barcode-login-panel mb-3">
-        <h3 class="h5 mb-2"><i class="fas fa-laptop" aria-hidden="true"></i> <?php echo __('barcode_this_device_title'); ?></h3>
-        <p class="text-muted small mb-3"><?php echo __('barcode_this_device_hint'); ?></p>
+    <div class="barcode-this-device barcode-login-panel mb-2">
+        <h3 class="h6 mb-2"><i class="fas fa-laptop" aria-hidden="true"></i> <?php echo __('barcode_this_device_title'); ?></h3>
+        <details class="login-hints mb-2">
+            <summary><i class="fas fa-circle-info" aria-hidden="true"></i> <?php echo __('login_hints_toggle'); ?></summary>
+            <p class="mb-0"><?php echo __('barcode_this_device_hint'); ?></p>
+        </details>
         <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-login-form">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <label class="form-label visually-hidden" for="barcode-input"><?php echo __('login_barcode'); ?></label>
@@ -74,12 +77,11 @@
         <div id="barcode-webcam-viewport" class="barcode-webcam-viewport mt-2 d-none" aria-label="Camera scanner"></div>
     </div>
 
-    <div id="barcode-desktop-panel" class="barcode-login-panel">
-        <div class="barcode-scan-panel mb-3">
-            <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
-            <h3 class="h5 mb-2"><?php echo __('barcode_pair_computer_title'); ?></h3>
-            <p class="text-muted mb-0 small"><?php echo __('barcode_pair_hint'); ?></p>
-        </div>
+    <details id="barcode-desktop-panel" class="barcode-login-panel login-hints login-hints-pair">
+        <summary>
+            <i class="fas fa-mobile-alt" aria-hidden="true"></i> <?php echo __('barcode_pair_computer_title'); ?>
+        </summary>
+        <p class="text-muted small mb-2"><?php echo __('barcode_pair_hint'); ?></p>
         <div class="barcode-open-phone-box mb-2" id="barcode-pair-phone-box">
             <p class="small text-muted mb-2"><?php echo __('barcode_scan_qr_phone'); ?></p>
             <div id="barcode-pair-qr" class="barcode-login-url-qr" aria-label="QR code to open phone scanner"></div>
@@ -87,7 +89,7 @@
                 <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> <?php echo __('barcode_pair_waiting'); ?>
             </p>
         </div>
-    </div>
+    </details>
 
     <div id="barcode-mobile-hint" class="barcode-login-panel d-none">
         <p class="text-muted small mb-2"><?php echo __('barcode_mobile_hint'); ?></p>

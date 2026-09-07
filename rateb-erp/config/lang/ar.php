@@ -2633,6 +2633,7 @@ return [
     'zatca_onboarding' => 'الربط مع هيئة الزكاة والضريبة والجمارك (ZATCA)',
     'zatca_onboarding_nav' => 'الربط مع هيئة الزكاة والضريبة',
     'zatca_onboarding_short' => 'الربط مع الزاتكا',
+    'login_hints_toggle' => 'تعليمات الدخول',
     'zatca_onboarding_subtitle' => 'ربط النظام مع منصة فاتورة الإلكترونية',
     'zatca_link_info' => 'معلومات الربط',
     'zatca_link_status' => 'حالة الربط',
