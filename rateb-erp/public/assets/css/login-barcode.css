@@ -150,12 +150,16 @@
     contain: layout paint;
 }
 
-/* Outer node: long parallax drift. */
+/* Outer node: wandering parallax path (four routes, run forward or reversed). */
 .rateb-auth-tag {
     position: absolute;
     white-space: nowrap;
     will-change: transform;
-    animation: ratebAuthDrift var(--drift, 28s) ease-in-out infinite alternate;
+    animation-name: var(--path, ratebWanderA);
+    animation-duration: var(--drift, 18s);
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: var(--dir, normal);
     animation-delay: var(--drift-delay, 0s);
 }
 
@@ -163,26 +167,50 @@
 .rateb-auth-tag > b {
     display: block;
     font-weight: 800;
-    font-size: clamp(1.35rem, 2.9vw, 2.75rem);
+    font-size: clamp(1.6rem, 3.6vw, 3.3rem);
     letter-spacing: 0.3px;
     background-image: linear-gradient(120deg, var(--c1), var(--c2));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 18px var(--glow, rgba(56, 189, 248, 0.35)));
+    filter: drop-shadow(0 0 20px var(--glow, rgba(56, 189, 248, 0.35)));
     will-change: transform, opacity;
-    animation: ratebAuthFloat var(--float, 9s) ease-in-out infinite;
+    animation: ratebAuthFloat var(--float, 6s) ease-in-out infinite;
     animation-delay: var(--float-delay, 0s);
 }
 
-@keyframes ratebAuthDrift {
-    from {
-        transform: translate3d(0, 0, 0);
-    }
-    to {
-        transform: translate3d(var(--dx, 40px), var(--dy, -46px), 0);
-    }
+/* Each route closes back on itself, so the loop never snaps. */
+@keyframes ratebWanderA {
+    0% { transform: translate3d(0, 0, 0); }
+    25% { transform: translate3d(72px, -46px, 0); }
+    50% { transform: translate3d(-34px, -92px, 0); }
+    75% { transform: translate3d(-80px, 24px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ratebWanderB {
+    0% { transform: translate3d(0, 0, 0); }
+    20% { transform: translate3d(-58px, 58px, 0); }
+    45% { transform: translate3d(46px, 94px, 0); }
+    70% { transform: translate3d(92px, -34px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ratebWanderC {
+    0% { transform: translate3d(0, 0, 0); }
+    30% { transform: translate3d(80px, 68px, 0); }
+    55% { transform: translate3d(-24px, 102px, 0); }
+    80% { transform: translate3d(-68px, -46px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes ratebWanderD {
+    0% { transform: translate3d(0, 0, 0); }
+    22% { transform: translate3d(-80px, -58px, 0); }
+    48% { transform: translate3d(34px, -104px, 0); }
+    76% { transform: translate3d(70px, 46px, 0); }
+    100% { transform: translate3d(0, 0, 0); }
 }
 
 @keyframes ratebAuthFloat {
@@ -206,11 +234,10 @@
     --c1: #38bdf8;
     --c2: #6366f1;
     --glow: rgba(56, 189, 248, 0.4);
-    --dx: 46px;
-    --dy: 38px;
     --tilt: -1.5deg;
-    --drift: 26s;
-    --float: 8s;
+    --path: ratebWanderA;
+    --drift: 15s;
+    --float: 5.5s;
 }
 
 .rateb-auth-tag:nth-child(2) {
@@ -219,12 +246,11 @@
     --c1: #34d399;
     --c2: #22d3ee;
     --glow: rgba(52, 211, 153, 0.4);
-    --dx: -52px;
-    --dy: 34px;
     --tilt: 1.5deg;
-    --drift: 33s;
+    --path: ratebWanderB;
+    --drift: 19s;
     --drift-delay: -8s;
-    --float: 10.5s;
+    --float: 7s;
     --float-delay: -2s;
 }
 
@@ -234,12 +260,11 @@
     --c1: #a78bfa;
     --c2: #f472b6;
     --glow: rgba(167, 139, 250, 0.4);
-    --dx: 56px;
-    --dy: -30px;
     --tilt: 1deg;
-    --drift: 29s;
+    --path: ratebWanderC;
+    --drift: 17s;
     --drift-delay: -14s;
-    --float: 9.5s;
+    --float: 6.2s;
     --float-delay: -4s;
 }
 
@@ -249,12 +274,11 @@
     --c1: #fb7185;
     --c2: #f59e0b;
     --glow: rgba(251, 113, 133, 0.4);
-    --dx: -40px;
-    --dy: -48px;
     --tilt: -1deg;
-    --drift: 36s;
+    --path: ratebWanderD;
+    --drift: 21s;
     --drift-delay: -5s;
-    --float: 11.5s;
+    --float: 7.6s;
     --float-delay: -6s;
 }
 
@@ -264,12 +288,12 @@
     --c1: #fbbf24;
     --c2: #f472b6;
     --glow: rgba(251, 191, 36, 0.38);
-    --dx: 48px;
-    --dy: -40px;
     --tilt: 1.5deg;
-    --drift: 28s;
+    --path: ratebWanderB;
+    --dir: reverse;
+    --drift: 16s;
     --drift-delay: -18s;
-    --float: 8.5s;
+    --float: 5.8s;
     --float-delay: -1s;
 }
 
@@ -279,12 +303,12 @@
     --c1: #22d3ee;
     --c2: #818cf8;
     --glow: rgba(34, 211, 238, 0.4);
-    --dx: -44px;
-    --dy: -34px;
     --tilt: -1.5deg;
-    --drift: 31s;
+    --path: ratebWanderA;
+    --dir: reverse;
+    --drift: 20s;
     --drift-delay: -11s;
-    --float: 10s;
+    --float: 6.8s;
     --float-delay: -7s;
 }
 
@@ -295,12 +319,12 @@
     --c1: #818cf8;
     --c2: #38bdf8;
     --glow: rgba(129, 140, 248, 0.38);
-    --dx: 30px;
-    --dy: 44px;
     --tilt: 1deg;
-    --drift: 38s;
+    --path: ratebWanderD;
+    --dir: reverse;
+    --drift: 22s;
     --drift-delay: -22s;
-    --float: 12s;
+    --float: 7.2s;
     --float-delay: -3s;
 }
 
@@ -310,12 +334,12 @@
     --c1: #4ade80;
     --c2: #a3e635;
     --glow: rgba(74, 222, 128, 0.38);
-    --dx: -34px;
-    --dy: -42px;
     --tilt: -1deg;
-    --drift: 34s;
+    --path: ratebWanderC;
+    --dir: reverse;
+    --drift: 18s;
     --drift-delay: -16s;
-    --float: 9s;
+    --float: 6.5s;
     --float-delay: -8s;
 }
 
@@ -342,7 +366,7 @@
     }
 
     .rateb-auth-tag > b {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
     }
 }
 
