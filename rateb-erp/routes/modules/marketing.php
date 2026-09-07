@@ -8,6 +8,7 @@ use Rateb\App\Controllers\Marketing\MarketingAuthController;
 use Rateb\App\Controllers\Marketing\MarketingController;
 use Rateb\App\Controllers\Marketing\MarketingFormsController;
 use Rateb\App\Controllers\Marketing\MarketingMediaController;
+use Rateb\App\Controllers\Marketing\UnsubscribeController;
 use Rateb\App\Controllers\Marketing\WebsitePortalController;
 
 /** @var Rateb\App\Core\Router $router */
@@ -102,6 +103,10 @@ $router->post('/site/customer/services/payment/callback', [WebsitePortalControll
 if (is_file(RATEB_ROOT . '/modules/logistics/routes/logistics-portal.php')) {
     require RATEB_ROOT . '/modules/logistics/routes/logistics-portal.php';
 }
+
+// Bulk campaign unsubscribe (List-Unsubscribe target) — must precede /site/{slug}.
+$router->get('/site/unsubscribe', [UnsubscribeController::class, 'show']);
+$router->post('/site/unsubscribe', [UnsubscribeController::class, 'submit']);
 
 $router->get('/site', [MarketingController::class, 'home']);
 $router->get('/site/sitemap.xml', [MarketingController::class, 'sitemap']);

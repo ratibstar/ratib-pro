@@ -4,6 +4,7 @@ $featureKeys = ['hr_mobile_console_enabled'];
 Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'mailCfg' => $mailCfg ?? [],
     'mailPassSet' => !empty($mailPassSet),
+    'mailThrottle' => $mailThrottle ?? [],
     'mailReady' => !empty($mailReady),
     'mailLocalhost' => !empty($mailLocalhost),
     'mailRelay' => !empty($mailRelay),

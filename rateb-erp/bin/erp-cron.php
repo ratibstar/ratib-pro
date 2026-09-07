@@ -10,6 +10,7 @@ require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
 Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
 require_once RATEB_ROOT . '/app/services/CronService.php';
 require_once RATEB_ROOT . '/app/services/QueueWorkerService.php';
+require_once RATEB_ROOT . '/app/services/BulkCampaignService.php';
 require_once RATEB_ROOT . '/app/services/Logger.php';
 
 if (PHP_SAPI !== 'cli') {

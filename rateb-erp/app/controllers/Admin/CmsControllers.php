@@ -547,6 +547,8 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_campaign'),
             'item' => $item,
             'segments' => (new CmsNewsletterSegment())->all(50, 0),
+            'audiences' => \Rateb\App\Services\BulkCampaignService::AUDIENCES,
+            'campaignStats' => $id > 0 ? (new \Rateb\App\Services\BulkCampaignService())->stats($id) : null,
             'csrf' => Csrf::token(),
             'cmsWysiwyg' => true,
         ], $this->layout());
@@ -567,6 +569,8 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
             'body_html_en' => (string) $this->input('body_html_en', ''),
             'body_html_ar' => (string) $this->input('body_html_ar', ''),
             'segment_slug' => (string) $this->input('segment_slug', 'general'),
+            'audience' => (new \Rateb\App\Services\BulkCampaignService())
+                ->normalizeAudience((string) $this->input('audience', 'subscribers')),
             'status' => (string) $this->input('status', 'draft'),
             'scheduled_at' => (string) $this->input('scheduled_at', '') ?: null,
         ];
@@ -588,8 +592,10 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         }
         $id = (int) $this->input('id', 0);
         try {
-            $result = (new CmsNewsletterCampaignService())->dispatchCampaign($id);
-            SessionManager::flash('success', __('cms_campaign_sent') . ': ' . $result['sent']);
+            // Never sends over HTTP: this only builds the recipient list. Delivery is
+            // done by bin/erp-cron.php through rateb_notification_queue.
+            $result = (new \Rateb\App\Services\BulkCampaignService())->queueCampaign($id);
+            SessionManager::flash('success', __('cms_campaign_queued') . ': ' . $result['recipients']);
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }

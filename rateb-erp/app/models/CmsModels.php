@@ -232,8 +232,8 @@ final class CmsNewsletterCampaign extends Model
 {
     protected string $table = 'rateb_cms_newsletter_campaigns';
     protected array $fillable = [
-        'subject_en', 'subject_ar', 'body_html_en', 'body_html_ar', 'segment_slug',
-        'status', 'scheduled_at', 'sent_at', 'sent_count',
+        'subject_en', 'subject_ar', 'body_html_en', 'body_html_ar', 'segment_slug', 'audience',
+        'status', 'scheduled_at', 'sent_at', 'sent_count', 'recipient_count', 'failed_count', 'bounced_count',
     ];
 }
 

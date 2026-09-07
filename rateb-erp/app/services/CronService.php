@@ -13,8 +13,12 @@ final class CronService
     /** @return array<string, int> */
     public function runAll(): array
     {
+        // Campaign recipients are enqueued before the queue runs so a campaign
+        // starts moving on the same cron tick it was launched.
         $stats = [
+            'campaign_queued' => $this->processBulkCampaigns(),
             'queue' => (new QueueWorkerService())->processPending(100),
+            'campaign_synced' => $this->syncBulkCampaigns(),
             'mobile_push' => (new PushQueueWorker())->processPending(50),
             'inventory_alerts' => 0,
             'low_stock_alerts' => 0,
@@ -85,6 +89,29 @@ final class CronService
         (new AutomationHealthService())->checkLateJobs();
         Logger::info('Cron completed', $stats);
         return $stats;
+    }
+
+    /** Bulk campaigns are best-effort: a broken campaign must never abort the cron run. */
+    private function processBulkCampaigns(): int
+    {
+        try {
+            return (new BulkCampaignService())->processSending();
+        } catch (\Throwable $e) {
+            Logger::error('cron_campaign_dispatch_failed', ['error' => $e->getMessage()]);
+
+            return 0;
+        }
+    }
+
+    private function syncBulkCampaigns(): int
+    {
+        try {
+            return (new BulkCampaignService())->syncStatuses();
+        } catch (\Throwable $e) {
+            Logger::error('cron_campaign_sync_failed', ['error' => $e->getMessage()]);
+
+            return 0;
+        }
     }
 
     /**

@@ -14,35 +14,61 @@ final class QueueWorkerService
         $db = Database::connection();
         $this->requeueRetriableFailures();
 
+        // Throttle (Admin → Settings → Mail). Shared cPanel SMTP suspends accounts
+        // long before the queue's theoretical throughput, so cap batch and rate.
+        $batch = BulkCampaignService::readSettingInt('mail_queue_batch_size', max(1, min(200, $limit)), 1, 500);
+        $delayMs = BulkCampaignService::readSettingInt('mail_queue_delay_ms', 300, 0, 10000);
+        $hourlyLimit = BulkCampaignService::readSettingInt('mail_queue_hourly_limit', 400, 0, 100000);
+        $emailBudget = $hourlyLimit > 0 ? max(0, $hourlyLimit - $this->emailsSentLastHour()) : PHP_INT_MAX;
+
         $stmt = $db->prepare(
             'SELECT * FROM rateb_notification_queue
              WHERE status = :st AND (next_retry_at IS NULL OR next_retry_at <= NOW())
-             ORDER BY id ASC LIMIT ' . max(1, min(200, $limit))
+             ORDER BY id ASC LIMIT ' . $batch
         );
         $stmt->execute(['st' => 'pending']);
         $rows = $stmt->fetchAll();
         $mail = new MailService();
         $sms = new SmsGatewayService();
+        $hasErrorCode = $this->queueHasColumn('error_code');
         $processed = 0;
+        $emailsThisRun = 0;
         foreach ($rows as $row) {
             $ok = false;
+            $errorCode = null;
             $channel = (string) ($row['channel'] ?? 'email');
             if ($channel === 'email') {
+                if ($emailsThisRun >= $emailBudget) {
+                    continue;
+                }
+                if ($delayMs > 0 && $emailsThisRun > 0) {
+                    usleep($delayMs * 1000);
+                }
                 $ok = $mail->send(
                     (string) ($row['recipient'] ?? ''),
                     (string) ($row['subject'] ?? 'RTAB ERP'),
                     (string) ($row['body'] ?? ''),
                     null,
-                    false
+                    false,
+                    null,
+                    null,
+                    null,
+                    isset($row['unsubscribe_url']) ? (string) $row['unsubscribe_url'] : null
                 );
+                $errorCode = $ok ? null : $mail->lastErrorCode();
+                $emailsThisRun++;
             } elseif ($channel === 'sms') {
                 $ok = $sms->send((string) ($row['recipient'] ?? ''), (string) ($row['body'] ?? ''));
             }
             $attempts = (int) ($row['attempt_count'] ?? 0) + 1;
+            if ($hasErrorCode) {
+                $db->prepare('UPDATE rateb_notification_queue SET error_code = :ec WHERE id = :id')
+                    ->execute(['ec' => $errorCode, 'id' => (int) $row['id']]);
+            }
             if ($ok) {
                 $db->prepare('UPDATE rateb_notification_queue SET status = :st, sent_at = NOW(), attempt_count = :ac WHERE id = :id')
                     ->execute(['st' => 'sent', 'ac' => $attempts, 'id' => (int) $row['id']]);
-            } elseif ($attempts >= self::MAX_ATTEMPTS) {
+            } elseif ($errorCode === 'smtp_rcpt' || $attempts >= self::MAX_ATTEMPTS) {
                 $db->prepare(
                     'UPDATE rateb_notification_queue SET status = :st, attempt_count = :ac, dead_letter_at = NOW() WHERE id = :id'
                 )->execute(['st' => 'failed', 'ac' => $attempts, 'id' => (int) $row['id']]);
@@ -82,17 +108,40 @@ final class QueueWorkerService
 
     private function queueHasAttemptColumn(): bool
     {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
+        return $this->queueHasColumn('attempt_count');
+    }
+
+    private function queueHasColumn(string $column): bool
+    {
+        static $cache = [];
+        if (isset($cache[$column])) {
+            return $cache[$column];
         }
         $db = Database::connection();
-        $stmt = $db->query(
+        $stmt = $db->prepare(
             "SELECT COUNT(*) AS c FROM information_schema.columns
-             WHERE table_schema = DATABASE() AND table_name = 'rateb_notification_queue' AND column_name = 'attempt_count'"
+             WHERE table_schema = DATABASE() AND table_name = 'rateb_notification_queue' AND column_name = :col"
         );
-        $row = $stmt !== false ? $stmt->fetch() : false;
-        $cached = $row && (int) ($row['c'] ?? 0) > 0;
-        return $cached;
+        $stmt->execute(['col' => $column]);
+        $row = $stmt->fetch();
+        $cache[$column] = $row && (int) ($row['c'] ?? 0) > 0;
+
+        return $cache[$column];
+    }
+
+    /** Rolling send rate used by the hourly throttle. */
+    private function emailsSentLastHour(): int
+    {
+        try {
+            $stmt = Database::connection()->query(
+                "SELECT COUNT(*) AS c FROM rateb_notification_queue
+                 WHERE channel = 'email' AND status = 'sent' AND sent_at >= (NOW() - INTERVAL 1 HOUR)"
+            );
+            $row = $stmt !== false ? $stmt->fetch() : false;
+
+            return $row ? (int) ($row['c'] ?? 0) : 0;
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 }

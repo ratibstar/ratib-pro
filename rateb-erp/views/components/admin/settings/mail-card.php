@@ -9,6 +9,8 @@ $mailPassSet = !empty($mailPassSet);
 $mailLocalhost = !empty($mailLocalhost);
 /** @var bool $mailRelay */
 $mailRelay = !empty($mailRelay);
+/** @var array<string, string> $mailThrottle */
+$mailThrottle = is_array($mailThrottle ?? null) ? $mailThrottle : [];
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -56,6 +58,30 @@ $mailRelay = !empty($mailRelay);
             <div class="col-md-4">
                 <label class="form-label small"><?php echo __('mail_from_name'); ?></label>
                 <input class="form-control form-control-sm" name="smtp_from_name" value="<?php echo Rateb\App\Core\View::escape((string) ($mailCfg['from_name'] ?? 'Rateb ERP')); ?>">
+            </div>
+            <div class="col-12"><hr class="my-2"></div>
+            <div class="col-12">
+                <p class="text-muted small mb-1"><i class="fas fa-gauge-high"></i> <?php echo __('mail_throttle_hint'); ?></p>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small"><?php echo __('mail_queue_batch_size'); ?></label>
+                <input class="form-control form-control-sm" type="number" min="1" max="500" name="mail_queue_batch_size"
+                    value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['mail_queue_batch_size'] ?? '100')); ?>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small"><?php echo __('mail_queue_delay_ms'); ?></label>
+                <input class="form-control form-control-sm" type="number" min="0" max="10000" name="mail_queue_delay_ms"
+                    value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['mail_queue_delay_ms'] ?? '300')); ?>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small"><?php echo __('mail_queue_hourly_limit'); ?></label>
+                <input class="form-control form-control-sm" type="number" min="0" max="100000" name="mail_queue_hourly_limit"
+                    value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['mail_queue_hourly_limit'] ?? '400')); ?>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small"><?php echo __('campaign_batch_size'); ?></label>
+                <input class="form-control form-control-sm" type="number" min="1" max="5000" name="campaign_batch_size"
+                    value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['campaign_batch_size'] ?? '200')); ?>">
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('mail_save_settings'); ?></button>

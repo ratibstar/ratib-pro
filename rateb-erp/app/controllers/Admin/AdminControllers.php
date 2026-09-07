@@ -3935,6 +3935,12 @@ final class SettingsController extends Controller
             'csrf' => Csrf::token(),
             'mailCfg' => $mailCfg,
             'mailPassSet' => $mailCfg['pass'] !== '',
+            'mailThrottle' => [
+                'mail_queue_batch_size' => $model->get('mail_queue_batch_size', '100'),
+                'mail_queue_delay_ms' => $model->get('mail_queue_delay_ms', '300'),
+                'mail_queue_hourly_limit' => $model->get('mail_queue_hourly_limit', '400'),
+                'campaign_batch_size' => $model->get('campaign_batch_size', '200'),
+            ],
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
             'mailRelay' => $mailSvc->isSmtpRelayHost((string) ($mailCfg['host'] ?? '')),
@@ -4051,6 +4057,19 @@ final class SettingsController extends Controller
         $pass = trim((string) $this->input('smtp_pass', ''));
         if ($pass !== '') {
             $pairs['smtp_pass'] = $pass;
+        }
+        // Bulk/queue throttle — read by QueueWorkerService and BulkCampaignService.
+        foreach ([
+            'mail_queue_batch_size' => [1, 500, 100],
+            'mail_queue_delay_ms' => [0, 10000, 300],
+            'mail_queue_hourly_limit' => [0, 100000, 400],
+            'campaign_batch_size' => [1, 5000, 200],
+        ] as $key => [$min, $max, $fallback]) {
+            $raw = trim((string) $this->input($key, ''));
+            if ($raw === '') {
+                continue;
+            }
+            $pairs[$key] = (string) (ctype_digit($raw) ? max($min, min($max, (int) $raw)) : $fallback);
         }
         foreach ($pairs as $key => $val) {
             $row = $model->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k', ['k' => $key]);

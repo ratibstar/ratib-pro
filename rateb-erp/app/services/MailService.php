@@ -27,7 +27,7 @@ final class MailService
     }
 
     /** @return array{success:bool,error_code:?string,error:?string,smtp_host:?string} */
-    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true, ?string $listId = null): array
+    public function sendDetailed(string $to, string $subject, string $htmlBody, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, bool $brandSubject = true, ?string $listId = null, bool $recordQueue = true, ?string $unsubscribeUrl = null): array
     {
         $this->lastError = null;
         $this->lastErrorCode = null;
@@ -69,7 +69,8 @@ final class MailService
                 $replyTo,
                 $cc,
                 $bcc,
-                $listId
+                $listId,
+                $unsubscribeUrl
             );
             if ($ok) {
                 $sent = true;
@@ -93,7 +94,11 @@ final class MailService
         }
 
         try {
-            (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+            // Queue-worker sends pass false: the row being processed is already the log,
+            // and bulk campaigns would otherwise double every message in the queue table.
+            if ($recordQueue) {
+                (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+            }
         } catch (\Throwable $e) {
             Logger::warning('Email queue log failed after SMTP', [
                 'to' => $to,
@@ -120,9 +125,9 @@ final class MailService
         ];
     }
 
-    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null): bool
+    public function send(string $to, string $subject, string $htmlBody, ?string $textBody = null, bool $recordQueue = true, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, ?string $unsubscribeUrl = null): bool
     {
-        return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc, $bcc)['success'];
+        return $this->sendDetailed($to, $subject, $htmlBody, $replyTo, $cc, $bcc, true, null, $recordQueue, $unsubscribeUrl)['success'];
     }
 
     /**
@@ -389,7 +394,7 @@ final class MailService
         return $method;
     }
 
-    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, ?string $listId = null): bool
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body, ?string $replyTo = null, ?string $cc = null, ?string $bcc = null, ?string $listId = null, ?string $unsubscribeUrl = null): bool
     {
         $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
         $context = stream_context_create([
@@ -517,7 +522,7 @@ final class MailService
         // Breaks Gmail conversation grouping — deleted threads otherwise swallow later sends.
         $headers .= 'X-Entity-Ref-ID: ' . bin2hex(random_bytes(16)) . "\r\n";
         $headers .= 'Subject: ' . $this->encodeHeaderValue($subject) . "\r\n";
-        $headers .= $this->deliverabilityHeaders($listId);
+        $headers .= $this->deliverabilityHeaders($listId, $unsubscribeUrl);
         $headers .= 'MIME-Version: 1.0' . "\r\n";
 
         // multipart/alternative improves Gmail acceptance vs HTML-only payloads.
@@ -665,13 +670,20 @@ final class MailService
     }
 
     /** Headers that reduce spam scoring for transactional ERP mail. */
-    private function deliverabilityHeaders(?string $listId = null): string
+    private function deliverabilityHeaders(?string $listId = null, ?string $unsubscribeUrl = null): string
     {
         $out = '';
         if ($listId !== null && $listId !== '') {
             $safe = preg_replace('/[^a-zA-Z0-9._-]/', '', $listId) ?? '';
             if ($safe !== '') {
                 $out .= 'List-Id: <' . $safe . ">\r\n";
+            }
+        }
+        if ($unsubscribeUrl !== null && preg_match('#^https?://#i', trim($unsubscribeUrl)) === 1) {
+            $url = trim(preg_replace("/[\r\n<>]+/", '', $unsubscribeUrl) ?? '');
+            if ($url !== '') {
+                $out .= 'List-Unsubscribe: <' . $url . ">\r\n";
+                $out .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n";
             }
         }
         return $out;
