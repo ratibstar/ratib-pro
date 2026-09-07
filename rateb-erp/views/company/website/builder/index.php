@@ -8,12 +8,14 @@ declare(strict_types=1);
 /** @var string $csrf */
 $pageId = (int) ($page['id'] ?? 0);
 $pageSlug = (string) ($page['slug'] ?? '');
+$wbAr = rateb_locale() === 'ar';
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars(rateb_asset('css/website-builder.css'), ENT_QUOTES, 'UTF-8'); ?>">
 <div class="container-fluid py-3 wb-admin" id="websiteBuilderRoot"
      data-page-id="<?php echo $pageId; ?>"
      data-page-slug="<?php echo htmlspecialchars($pageSlug, ENT_QUOTES, 'UTF-8'); ?>"
      data-csrf="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>"
+     data-msg-published="<?php echo htmlspecialchars(__('website_published_ok'), ENT_QUOTES, 'UTF-8'); ?>"
      data-reorder-url="<?php echo htmlspecialchars($saveReorderUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-add-section-url="<?php echo htmlspecialchars($addSectionUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-add-block-url="<?php echo htmlspecialchars($addBlockUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
@@ -26,44 +28,44 @@ $pageSlug = (string) ($page['slug'] ?? '');
      data-rollback-url="<?php echo htmlspecialchars($rollbackUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-schedule-url="<?php echo htmlspecialchars($scheduleUrl ?? '', ENT_QUOTES, 'UTF-8'); ?>">
     <div class="wb-builder-toolbar d-flex flex-wrap gap-2 align-items-center mb-3">
-        <h1 class="h4 mb-0 me-auto"><?php echo htmlspecialchars(__('website_builder') ?: 'Website builder', ENT_QUOTES, 'UTF-8'); ?></h1>
+        <h1 class="h4 mb-0 me-auto"><?php echo htmlspecialchars(__('website_builder'), ENT_QUOTES, 'UTF-8'); ?></h1>
         <form method="get" action="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/builder')), ENT_QUOTES, 'UTF-8'); ?>" class="d-flex gap-2">
-            <select name="page_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <select name="page_id" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="<?php echo htmlspecialchars(__('website_pages'), ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach (($pages ?? []) as $p) { ?>
-                <option value="<?php echo (int) $p['id']; ?>"<?php echo ((int) $p['id'] === $pageId) ? ' selected' : ''; ?>><?php echo htmlspecialchars((string) ($p['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                <option value="<?php echo (int) $p['id']; ?>"<?php echo ((int) $p['id'] === $pageId) ? ' selected' : ''; ?>><?php echo htmlspecialchars(rateb_website_slug_label((string) ($p['slug'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php } ?>
             </select>
         </form>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="wbBtnDraft">Draft</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="wbBtnPreview">Preview</button>
-        <button type="button" class="btn btn-sm btn-success" id="wbBtnPublish">Publish</button>
-        <input type="datetime-local" class="form-control form-control-sm wb-schedule-input" id="wbScheduleAt" aria-label="Schedule">
-        <button type="button" class="btn btn-sm btn-outline-warning" id="wbBtnSchedule">Schedule</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="wbBtnDraft"><?php echo htmlspecialchars(__('draft'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="wbBtnPreview"><?php echo htmlspecialchars(__('website_preview'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <button type="button" class="btn btn-sm btn-success" id="wbBtnPublish"><?php echo htmlspecialchars(__('website_publish'), ENT_QUOTES, 'UTF-8'); ?></button>
+        <input type="datetime-local" class="form-control form-control-sm wb-schedule-input" id="wbScheduleAt" aria-label="<?php echo htmlspecialchars(__('website_schedule'), ENT_QUOTES, 'UTF-8'); ?>">
+        <button type="button" class="btn btn-sm btn-outline-warning" id="wbBtnSchedule"><?php echo htmlspecialchars(__('website_schedule'), ENT_QUOTES, 'UTF-8'); ?></button>
     </div>
 
     <div class="row g-3">
         <div class="col-lg-3">
             <div class="wb-palette rateb-card">
-                <div class="rateb-card-header"><strong>Blocks</strong></div>
+                <div class="rateb-card-header"><strong><?php echo htmlspecialchars(__('website_blocks'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <div class="rateb-card-body wb-palette-list">
                     <?php foreach (($blockTypes ?? []) as $type => $meta) { ?>
                     <button type="button" class="wb-palette-item" data-block-type="<?php echo htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?>">
                         <i class="fas <?php echo htmlspecialchars($meta['icon'] ?? 'fa-cube', ENT_QUOTES, 'UTF-8'); ?>"></i>
-                        <span><?php echo htmlspecialchars($meta['label_en'] ?? $type, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span><?php echo htmlspecialchars($wbAr ? (string) ($meta['label_ar'] ?? $type) : (string) ($meta['label_en'] ?? $type), ENT_QUOTES, 'UTF-8'); ?></span>
                     </button>
                     <?php } ?>
                 </div>
                 <div class="rateb-card-body border-top">
-                    <button type="button" class="btn btn-sm btn-primary w-100" id="wbAddSection">+ Section</button>
+                    <button type="button" class="btn btn-sm btn-primary w-100" id="wbAddSection"><?php echo htmlspecialchars(__('website_add_section'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </div>
             </div>
             <div class="wb-versions rateb-card mt-3">
-                <div class="rateb-card-header"><strong>Versions</strong></div>
+                <div class="rateb-card-header"><strong><?php echo htmlspecialchars(__('website_versions'), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <ul class="list-group list-group-flush" id="wbVersionList">
                     <?php foreach (($versions ?? []) as $v) { ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
-                        <span>v<?php echo (int) ($v['version_no'] ?? 0); ?> · <?php echo htmlspecialchars((string) ($v['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-                        <button type="button" class="btn btn-sm btn-outline-danger wb-rollback" data-version-id="<?php echo (int) ($v['id'] ?? 0); ?>">Rollback</button>
+                        <span>v<?php echo (int) ($v['version_no'] ?? 0); ?> · <?php echo htmlspecialchars(rateb_website_status_label((string) ($v['status'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger wb-rollback" data-version-id="<?php echo (int) ($v['id'] ?? 0); ?>"><?php echo htmlspecialchars(__('website_rollback'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </li>
                     <?php } ?>
                 </ul>
@@ -77,10 +79,10 @@ $pageSlug = (string) ($page['slug'] ?? '');
                     ?>
                 <div class="wb-section-card rateb-card" data-section-id="<?php echo $sid; ?>" draggable="true">
                     <div class="rateb-card-header d-flex align-items-center gap-2">
-                        <span class="wb-drag-handle" title="Drag"><i class="fas fa-grip-vertical"></i></span>
+                        <span class="wb-drag-handle"><i class="fas fa-grip-vertical"></i></span>
                         <strong><?php echo htmlspecialchars((string) ($section['section_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong>
-                        <span class="text-muted small"><?php echo htmlspecialchars((string) ($section['title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-                        <button type="button" class="btn btn-sm btn-outline-danger ms-auto wb-delete-section" data-section-id="<?php echo $sid; ?>">Delete</button>
+                        <span class="text-muted small"><?php echo htmlspecialchars(rateb_website_pick($section, 'title_en', 'title_ar'), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-auto wb-delete-section" data-section-id="<?php echo $sid; ?>"><?php echo htmlspecialchars(__('delete'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
                     <div class="rateb-card-body">
                         <div class="wb-block-list" data-section-id="<?php echo $sid; ?>">
@@ -89,14 +91,18 @@ $pageSlug = (string) ($page['slug'] ?? '');
                                 ?>
                             <div class="wb-block-card" data-block-id="<?php echo $bid; ?>" draggable="true">
                                 <span class="wb-drag-handle"><i class="fas fa-grip-lines"></i></span>
-                                <span class="wb-block-type"><?php echo htmlspecialchars((string) ($b['block_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-                                <input class="form-control form-control-sm wb-block-title" name="title_en" value="<?php echo htmlspecialchars((string) ($b['title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-block-id="<?php echo $bid; ?>">
-                                <button type="button" class="btn btn-sm btn-outline-primary wb-save-block" data-block-id="<?php echo $bid; ?>">Save</button>
-                                <button type="button" class="btn btn-sm btn-outline-danger wb-delete-block" data-block-id="<?php echo $bid; ?>">×</button>
+                                <span class="wb-block-type"><?php
+                                    $bType = (string) ($b['block_type'] ?? '');
+                                    $bMeta = $blockTypes[$bType] ?? null;
+                                    echo htmlspecialchars($bMeta ? ($wbAr ? (string) $bMeta['label_ar'] : (string) $bMeta['label_en']) : $bType, ENT_QUOTES, 'UTF-8');
+                                ?></span>
+                                <input class="form-control form-control-sm wb-block-title" name="title_en" value="<?php echo htmlspecialchars(rateb_website_pick($b, 'title_en', 'title_ar'), ENT_QUOTES, 'UTF-8'); ?>" data-block-id="<?php echo $bid; ?>">
+                                <button type="button" class="btn btn-sm btn-outline-primary wb-save-block" data-block-id="<?php echo $bid; ?>"><?php echo htmlspecialchars(__('save'), ENT_QUOTES, 'UTF-8'); ?></button>
+                                <button type="button" class="btn btn-sm btn-outline-danger wb-delete-block" data-block-id="<?php echo $bid; ?>" aria-label="<?php echo htmlspecialchars(__('delete'), ENT_QUOTES, 'UTF-8'); ?>">×</button>
                             </div>
                             <?php } ?>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2 wb-drop-hint" data-section-id="<?php echo $sid; ?>">Drop blocks here / click palette then this section</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2 wb-drop-hint" data-section-id="<?php echo $sid; ?>"><?php echo htmlspecialchars(__('website_drop_blocks'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
                 </div>
                 <?php } ?>

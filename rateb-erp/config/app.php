@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.1');
-define('RATEB_ASSET_BUILD', '20260906-mobile-nav-open');
+define('RATEB_ASSET_BUILD', '20260907-website-ui');
 
 if (!function_exists('rateb_erp_deployment_mode')) {
     /** @return 'dedicated'|'saas' */
@@ -1798,6 +1798,40 @@ if (!function_exists('rateb_is_rtl')) {
     function rateb_is_rtl(): bool
     {
         return rateb_locale() === 'ar';
+    }
+}
+
+if (!function_exists('rateb_website_pick')) {
+    /** @param array<string,mixed> $row */
+    function rateb_website_pick(array $row, string $enKey, string $arKey): string
+    {
+        $en = trim((string) ($row[$enKey] ?? ''));
+        $ar = trim((string) ($row[$arKey] ?? ''));
+        if (rateb_locale() === 'ar') {
+            return $ar !== '' ? $ar : $en;
+        }
+
+        return $en !== '' ? $en : $ar;
+    }
+}
+
+if (!function_exists('rateb_website_status_label')) {
+    function rateb_website_status_label(string $status): string
+    {
+        $key = 'website_status_' . strtolower(trim($status));
+        $text = __($key);
+
+        return $text !== $key ? $text : $status;
+    }
+}
+
+if (!function_exists('rateb_website_slug_label')) {
+    function rateb_website_slug_label(string $slug): string
+    {
+        $key = 'website_slug_' . preg_replace('/[^a-z0-9_]+/i', '_', $slug);
+        $text = __($key);
+
+        return $text !== $key ? $text : $slug;
     }
 }
 

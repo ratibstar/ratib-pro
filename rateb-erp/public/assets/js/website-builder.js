@@ -185,7 +185,10 @@
       action(root.getAttribute('data-draft-url'), { label: 'Manual draft' }).then(function () { location.reload(); });
     });
     qs('#wbBtnPublish') && qs('#wbBtnPublish').addEventListener('click', function () {
-      action(root.getAttribute('data-publish-url')).then(function () { alert('Published'); location.reload(); });
+      action(root.getAttribute('data-publish-url')).then(function () {
+        alert(root.getAttribute('data-msg-published') || 'Published');
+        location.reload();
+      });
     });
     qs('#wbBtnPreview') && qs('#wbBtnPreview').addEventListener('click', function () {
       action(root.getAttribute('data-preview-url')).then(function (res) {

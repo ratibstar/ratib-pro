@@ -14,7 +14,7 @@ final class WebsiteBlockRegistry
     public static function all(): array
     {
         return [
-            'hero' => ['label_en' => 'Hero', 'label_ar' => 'بطل', 'category' => 'layout', 'icon' => 'fa-panorama'],
+            'hero' => ['label_en' => 'Hero', 'label_ar' => 'القسم الرئيسي', 'category' => 'layout', 'icon' => 'fa-panorama'],
             'about' => ['label_en' => 'About', 'label_ar' => 'من نحن', 'category' => 'content', 'icon' => 'fa-circle-info'],
             'services' => ['label_en' => 'Services', 'label_ar' => 'خدمات', 'category' => 'content', 'icon' => 'fa-briefcase'],
             'features' => ['label_en' => 'Features', 'label_ar' => 'مميزات', 'category' => 'content', 'icon' => 'fa-stars'],

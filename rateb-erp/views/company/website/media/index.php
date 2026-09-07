@@ -9,23 +9,23 @@ declare(strict_types=1);
      data-csrf="<?php echo htmlspecialchars($csrf ?? '', ENT_QUOTES, 'UTF-8'); ?>"
      data-upload-url="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/media/upload')), ENT_QUOTES, 'UTF-8'); ?>"
      data-folder-url="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/media/folder')), ENT_QUOTES, 'UTF-8'); ?>">
-    <h1 class="h3 mb-3"><?php echo htmlspecialchars((string) ($title ?? 'Media'), ENT_QUOTES, 'UTF-8'); ?></h1>
+    <h1 class="h3 mb-3"><?php echo htmlspecialchars((string) ($title ?? __('website_media')), ENT_QUOTES, 'UTF-8'); ?></h1>
     <div class="row g-3 mb-3">
         <div class="col-md-6">
             <form class="d-flex gap-2" id="wbFolderForm">
-                <input class="form-control" name="name" placeholder="New folder" required>
-                <button class="btn btn-outline-primary" type="submit">Add folder</button>
+                <input class="form-control" name="name" placeholder="<?php echo htmlspecialchars(__('website_new_folder'), ENT_QUOTES, 'UTF-8'); ?>" required>
+                <button class="btn btn-outline-primary" type="submit"><?php echo htmlspecialchars(__('website_add_folder'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
         </div>
         <div class="col-md-6">
             <form class="d-flex gap-2" id="wbUploadForm" enctype="multipart/form-data">
                 <input type="file" class="form-control" name="file" accept="image/*,video/mp4,application/pdf" required>
-                <button class="btn btn-primary" type="submit">Upload</button>
+                <button class="btn btn-primary" type="submit"><?php echo htmlspecialchars(__('website_upload'), ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
         </div>
     </div>
     <div class="d-flex flex-wrap gap-2 mb-3">
-        <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/media')), ENT_QUOTES, 'UTF-8'); ?>">Root</a>
+        <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/media')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('website_media_root'), ENT_QUOTES, 'UTF-8'); ?></a>
         <?php foreach (($folders ?? []) as $f) { ?>
         <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars(rateb_url(rateb_app_route('website/media') . '?folder=' . (int) $f['id']), ENT_QUOTES, 'UTF-8'); ?>">
             <i class="fas fa-folder"></i> <?php echo htmlspecialchars((string) ($f['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
