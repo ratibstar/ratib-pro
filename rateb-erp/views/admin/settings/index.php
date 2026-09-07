@@ -1,5 +1,9 @@
 <?php
-$mailKeys = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name'];
+// Keys owned by the mail card (Arabic labels there) — hidden from the raw key/value list.
+$mailKeys = [
+    'smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name',
+    'mail_queue_batch_size', 'mail_queue_delay_ms', 'mail_queue_hourly_limit', 'campaign_batch_size',
+];
 $featureKeys = ['hr_mobile_console_enabled'];
 Rateb\App\Core\View::partial('admin/settings/mail-card', [
     'mailCfg' => $mailCfg ?? [],
