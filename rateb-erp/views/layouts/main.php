@@ -990,6 +990,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     ['admin/cms/about', 'cms_about', 'fa-building', 'cms.manage'],
                 ], 'fa-globe', $cmsNewLeads, $cmsLeadBadges, '', 'rateb-nav-badge--pending', 'cms_leads_new');
             }
+            if (rateb_is_platform_oversight_host() && rateb_nav_can('marketing.newsletter.view')) {
+                $adminSection(__('marketing_section'), [
+                    ['admin/marketing/newsletter', 'marketing_newsletter', 'fa-bullhorn', 'marketing.newsletter.view'],
+                ], 'fa-bullhorn');
+            }
             require RATEB_ROOT . '/views/partials/sidebar-agent-apps-nav.php';
             $supportTicketsRoute = function_exists('rateb_app_route') ? rateb_app_route('support-tickets') : 'admin/support-tickets';
             $supportTicketOpenBadge = 0;
