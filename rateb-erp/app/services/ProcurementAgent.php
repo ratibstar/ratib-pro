@@ -109,6 +109,23 @@ final class ProcurementAgent
                 ];
             }
 
+            // gpt-oss / Harmony requires the assistant tool_calls turn before any role=tool results.
+            $assistantTurn = ['role' => 'assistant', 'tool_calls' => $toolCallsFromLlm];
+            if (array_key_exists('content', $message) && $message['content'] !== null && $message['content'] !== '') {
+                $assistantTurn['content'] = $message['content'];
+            }
+            $messages[] = $assistantTurn;
+
+            $appendToolResult = static function (array &$messages, string $toolCallId, string $toolName, array $payload): void {
+                // Harmony (gpt-oss) requires name on role=tool messages.
+                $messages[] = [
+                    'role' => 'tool',
+                    'tool_call_id' => $toolCallId,
+                    'name' => $toolName,
+                    'content' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                ];
+            };
+
             // Process each tool call
             foreach ($toolCallsFromLlm as $toolCall) {
                 $function = $toolCall['function'] ?? [];
@@ -131,15 +148,17 @@ final class ProcurementAgent
                 try {
                     $arguments = ProcurementToolRegistry::validateArguments($toolName, $arguments);
                 } catch (\Throwable $e) {
+                    $errPayload = ['success' => false, 'error' => $e->getMessage()];
                     $toolCalls[] = [
                         'tool' => $toolName,
                         'arguments' => $arguments,
-                        'result' => ['success' => false, 'error' => $e->getMessage()],
+                        'result' => $errPayload,
                         'audit_status' => 'error',
                     ];
                     $auditEntries[] = $this->logAudit($ctx, $requestId, $toolName, $arguments, [
                         'error' => $e->getMessage(),
                     ], 'error');
+                    $appendToolResult($messages, $toolCallId, $toolName, $errPayload);
                     continue;
                 }
 
@@ -160,6 +179,10 @@ final class ProcurementAgent
                     $auditEntries[] = $this->logAudit($ctx, $requestId, $toolName, $arguments, [
                         'error_code' => 'write_confirmation_required',
                     ], 'denied');
+                    $appendToolResult($messages, $toolCallId, $toolName, [
+                        'success' => false,
+                        'error' => 'write_confirmation_required',
+                    ]);
                     continue;
                 }
 
@@ -173,16 +196,18 @@ final class ProcurementAgent
                 ], $ctx);
 
                 if (!$policyResult['allowed']) {
+                    $errPayload = ['success' => false, 'error' => $policyResult['error_code']];
                     $toolCalls[] = [
                         'tool' => $toolName,
                         'arguments' => $arguments,
-                        'result' => ['success' => false, 'error' => $policyResult['error_code']],
+                        'result' => $errPayload,
                         'audit_status' => 'denied',
                     ];
                     $auditEntries[] = $this->logAudit($ctx, $requestId, $toolName, $arguments, [
                         'error' => $policyResult['error_code'],
                         'policy_checks' => $policyResult['policy_checks'],
                     ], 'denied');
+                    $appendToolResult($messages, $toolCallId, $toolName, $errPayload);
                     continue;
                 }
 
@@ -204,12 +229,7 @@ final class ProcurementAgent
                     'duration_ms' => $durationMs,
                 ], $result['success'] ? 'success' : 'error');
 
-                // Add tool result to messages for next iteration
-                $messages[] = [
-                    'role' => 'tool',
-                    'tool_call_id' => $toolCallId,
-                    'content' => json_encode($result, JSON_UNESCAPED_UNICODE),
-                ];
+                $appendToolResult($messages, $toolCallId, $toolName, $result);
             }
 
             if ($pendingConfirmations !== []) {
