@@ -12,7 +12,12 @@
         </div>
         <div class="rateb-ai-status">
             <span class="rateb-ai-status-dot" id="aiStatusDot"></span>
-            <span class="rateb-ai-status-text" id="aiStatusText"><?php echo htmlspecialchars(__('ai_ready') ?? 'Ready', ENT_QUOTES, 'UTF-8'); ?></span>
+            <span
+                class="rateb-ai-status-text"
+                id="aiStatusText"
+                data-ready="<?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?>"
+                data-thinking="<?php echo htmlspecialchars(__('ai_thinking'), ENT_QUOTES, 'UTF-8'); ?>"
+            ><?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
     </div>
 
@@ -586,12 +591,13 @@
 
     function formatContent(text) {
         // Escape HTML
-        let html = text.replace(/&/g, '&')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '"')
+        let html = String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-        
+
         // Bold
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         // Italic
@@ -604,7 +610,7 @@
         html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
         // Newlines
         html = html.replace(/\n/g, '<br>');
-        
+
         return html;
     }
 
@@ -657,17 +663,17 @@
             if (content.trim()) {
                 history.push({ role, content });
             }
-        }
+        });
         return history.slice(-20); // Keep last 20 messages
     }
 
     function updateStatus(state) {
         if (state === 'thinking') {
             statusDot.style.animation = 'none';
-            statusText.textContent = 'Thinking...';
+            statusText.textContent = statusText.dataset.thinking || 'Thinking...';
         } else {
             statusDot.style.animation = 'pulse 2s infinite';
-            statusText.textContent = 'Ready';
+            statusText.textContent = statusText.dataset.ready || 'Ready';
         }
     }
 
