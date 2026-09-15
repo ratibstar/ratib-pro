@@ -35,6 +35,11 @@ final class AiController extends Controller
             return;
         }
 
+        // Never let SW / browser keep a stale AI document (buttons/scripts break when cached).
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
         $this->view('company/ai/index', [
             'title' => __('rateb_ai'),
             'locale' => SessionManager::get('rateb_locale', 'en'),

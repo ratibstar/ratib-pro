@@ -5,7 +5,7 @@ var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
 /* v48 — never paint cached /admin over a live 403 commercial lock. */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v48';
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v49';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
 var SW_BUILD_ID = '20260906-tenant-plans-ops-v168';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';

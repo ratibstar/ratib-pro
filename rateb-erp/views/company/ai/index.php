@@ -5,7 +5,155 @@
  */
 $chatEndpoint = $chatEndpoint ?? rateb_url(rateb_app_route('ai/chat'));
 $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
+$aiJs = rateb_asset('js/rateb-ai-page.js');
 ?>
+<script>
+/* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
+window.ratebAi = window.ratebAi || {
+    loading: false,
+    send: function (message) {
+        var root = document.getElementById('ratebAiRoot');
+        if (!root) return false;
+        var messages = document.getElementById('aiMessages');
+        var input = document.getElementById('aiInput');
+        var sendBtn = document.getElementById('aiSendBtn');
+        var welcome = document.getElementById('aiWelcome');
+        var statusDot = document.getElementById('aiStatusDot');
+        var statusText = document.getElementById('aiStatusText');
+        var endpoint = root.getAttribute('data-endpoint') || '';
+        var csrf = root.getAttribute('data-csrf') || '';
+        message = String(message || '').trim();
+        if (!message || !messages || !endpoint || this.loading) return false;
+
+        function setStatus(state) {
+            if (!statusText) return;
+            if (state === 'thinking') {
+                if (statusDot) statusDot.style.animation = 'none';
+                statusText.textContent = statusText.getAttribute('data-thinking') || 'Thinking...';
+            } else {
+                if (statusDot) statusDot.style.animation = 'pulse 2s infinite';
+                statusText.textContent = statusText.getAttribute('data-ready') || 'Ready';
+            }
+        }
+        function esc(text) {
+            return String(text)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+                .replace(/\n/g, '<br>');
+        }
+        function addMsg(role, content) {
+            var div = document.createElement('div');
+            div.className = 'rateb-ai-message ' + role;
+            div.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-' +
+                (role === 'user' ? 'user' : 'robot') + '"></i></div>' +
+                '<div class="rateb-ai-message-content">' + esc(content) + '</div>';
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        function typing() {
+            var div = document.createElement('div');
+            div.className = 'rateb-ai-message assistant rateb-ai-typing-container';
+            div.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
+                '<div class="rateb-ai-typing"><div class="rateb-ai-typing-dot"></div><div class="rateb-ai-typing-dot"></div><div class="rateb-ai-typing-dot"></div></div>';
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+            return div;
+        }
+
+        if (welcome) welcome.style.display = 'none';
+        addMsg('user', message);
+        if (input) {
+            input.value = '';
+            input.style.height = 'auto';
+        }
+        if (sendBtn) sendBtn.disabled = true;
+        this.loading = true;
+        setStatus('thinking');
+        var tip = typing();
+        var self = this;
+
+        fetch(endpoint, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrf,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ message: message, history: [] })
+        }).then(function (res) {
+            return res.json().catch(function () {
+                return { success: false, message: 'Request failed (' + res.status + ')' };
+            }).then(function (data) { return { ok: res.ok, data: data }; });
+        }).then(function (result) {
+            if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
+            var data = result.data || {};
+            if (!result.ok || !data.success) {
+                addMsg('assistant', 'Error: ' + (data.message || 'Request failed'));
+                return;
+            }
+            addMsg('assistant', (data.data && data.data.response) ? data.data.response : 'No response');
+        }).catch(function (err) {
+            if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
+            addMsg('assistant', 'Error: ' + (err && err.message ? err.message : 'Network error'));
+        }).then(function () {
+            self.loading = false;
+            setStatus('ready');
+            if (sendBtn && input) sendBtn.disabled = !input.value.trim();
+        });
+        return false;
+    },
+    clickSuggest: function (btn) {
+        var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
+        return this.send(prompt);
+    },
+    bind: function () {
+        var root = document.getElementById('ratebAiRoot');
+        if (!root || root.getAttribute('data-rateb-ai-bound') === '1') return;
+        var form = document.getElementById('aiInputForm');
+        var input = document.getElementById('aiInput');
+        var sendBtn = document.getElementById('aiSendBtn');
+        var self = this;
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                self.send(input ? input.value : '');
+            });
+        }
+        if (input && sendBtn) {
+            input.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+                sendBtn.disabled = !this.value.trim() || self.loading;
+            });
+        }
+        root.setAttribute('data-rateb-ai-bound', '1');
+        try { if (input) input.focus(); } catch (e) {}
+    }
+};
+document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
+    if (!btn || !document.getElementById('ratebAiRoot')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.ratebAi.clickSuggest(btn);
+}, true);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { window.ratebAi.bind(); });
+} else {
+    window.ratebAi.bind();
+}
+document.addEventListener('rateb:nav:afterEnter', function () {
+    var root = document.getElementById('ratebAiRoot');
+    if (root) root.removeAttribute('data-rateb-ai-bound');
+    window.ratebAi.bind();
+});
+document.addEventListener('rateb:soft-nav:afterEnter', function () {
+    var root = document.getElementById('ratebAiRoot');
+    if (root) root.removeAttribute('data-rateb-ai-bound');
+    window.ratebAi.bind();
+});
+</script>
 <div
     class="rateb-ai-container"
     id="ratebAiRoot"
@@ -37,9 +185,9 @@ $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
                 <h3><?php echo htmlspecialchars(__('rateb_ai'), ENT_QUOTES, 'UTF-8'); ?></h3>
                 <p><?php echo htmlspecialchars(__('ai_welcome_message'), ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="rateb-ai-suggestions">
-                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?></button>
-                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_search_suppliers'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('ai_suggest_search_suppliers'), ENT_QUOTES, 'UTF-8'); ?></button>
-                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_pending_approvals'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(__('ai_suggest_pending_approvals'), ENT_QUOTES, 'UTF-8'); ?></button>
+                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?></button>
+                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_search_suppliers'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars(__('ai_suggest_search_suppliers'), ENT_QUOTES, 'UTF-8'); ?></button>
+                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_pending_approvals'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars(__('ai_suggest_pending_approvals'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </div>
             </div>
         </div>
@@ -117,6 +265,8 @@ $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
     box-shadow: var(--ai-shadow);
     overflow: hidden;
     font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
+    position: relative;
+    z-index: 2;
 }
 
 .rateb-ai-header {
@@ -220,6 +370,8 @@ $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    position: relative;
+    z-index: 3;
 }
 
 .rateb-ai-suggestion-btn {
@@ -230,6 +382,7 @@ $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
     font-size: 13px;
     color: var(--ai-text);
     cursor: pointer;
+    pointer-events: auto;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
@@ -363,24 +516,23 @@ $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
     40% { opacity: 1; transform: translateY(-3px); }
 }
 
-.tool-call, .tool-result {
-    font-size: 12px;
-    margin-top: 6px;
-    opacity: 0.9;
-}
-
 @media (max-width: 768px) {
     .rateb-ai-container {
         height: calc(100vh - 120px);
         border-radius: 0;
     }
-    .rateb-ai-welcome {
-        padding: 16px;
-    }
-    .rateb-ai-messages {
-        padding: 16px;
-    }
+    .rateb-ai-welcome { padding: 16px; }
+    .rateb-ai-messages { padding: 16px; }
 }
 </style>
 
-<script src="<?php echo htmlspecialchars(rateb_asset('js/rateb-ai-page.js'), ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script>
+/* Re-bind after paint (root exists). Soft-nav strips earlier inline scripts from main. */
+try { window.ratebAi && window.ratebAi.bind(); } catch (eBind) {}
+try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'RATEB_HTML_CACHE_BUST' });
+    }
+} catch (eSw) {}
+</script>
+<script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
