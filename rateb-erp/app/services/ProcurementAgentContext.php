@@ -72,9 +72,9 @@ final class ProcurementAgentContext
         // Get session ID
         $sessionId = session_id() ?: 'no-session';
 
-        // Get user permissions (from RBAC)
+        // Get user permissions (from RBAC) — use existing AuthorizationService API.
         $authz = new AuthorizationService();
-        $permissions = $authz->getUserPermissions($userId, $companyId);
+        $permissions = $authz->userPermissionSlugs($userId);
 
         // Get enabled modules for this company
         $planLimits = new PlanLimitService();
