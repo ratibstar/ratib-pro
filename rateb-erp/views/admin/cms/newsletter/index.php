@@ -1,16 +1,17 @@
 ﻿<?php
 /** @var array<int, array<string, mixed>> $campaigns */
 /** @var array<int, array<string, mixed>> $items */
+$routePrefix = $routePrefix ?? 'admin/cms/newsletter';
 ?>
 <div class="d-flex flex-wrap gap-2 mb-3">
-    <a href="<?php echo rateb_url('admin/cms/newsletter/export'); ?>" class="btn btn-outline-primary btn-sm"><?php echo __('cms_export_csv'); ?></a>
-    <a href="<?php echo rateb_url('admin/cms/newsletter/campaign'); ?>" class="btn btn-primary btn-sm"><?php echo __('cms_new_campaign'); ?></a>
+    <a href="<?php echo rateb_url($routePrefix . '/export'); ?>" class="btn btn-outline-primary btn-sm"><?php echo __('cms_export_csv'); ?></a>
+    <a href="<?php echo rateb_url($routePrefix . '/campaign'); ?>" class="btn btn-primary btn-sm"><?php echo __('cms_new_campaign'); ?></a>
 </div>
 
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('cms_import_subscribers'); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('admin/cms/newsletter/import'); ?>" enctype="multipart/form-data">
+        <form method="post" action="<?php echo rateb_url($routePrefix . '/import'); ?>" enctype="multipart/form-data">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="mb-3">
                 <label class="form-label"><?php echo __('cms_csv_file'); ?></label>
@@ -39,9 +40,23 @@
                 <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($c['status'] ?? ''))); ?></td>
                 <td><?php echo (int) ($c['sent_count'] ?? 0); ?></td>
                 <td class="text-nowrap">
-                    <a href="<?php echo rateb_url('admin/cms/newsletter/campaign?id=' . (int) $c['id']); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('edit'); ?></a>
+                    <a href="<?php echo rateb_url($routePrefix . '/campaign?id=' . (int) $c['id']); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('edit'); ?></a>
+                    <?php if (($c['status'] ?? '') === 'paused') { ?>
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/resume'); ?>" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-success" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_resume')); ?>"><?php echo __('cms_campaign_resume'); ?></button>
+                    </form>
+                    <?php } ?>
+                    <?php if (in_array(($c['status'] ?? ''), ['draft', 'scheduled', 'sending'], true)) { ?>
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/pause'); ?>" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_pause')); ?>"><?php echo __('cms_campaign_pause'); ?></button>
+                    </form>
+                    <?php } ?>
                     <?php if (($c['status'] ?? '') !== 'sent') { ?>
-                    <form method="post" action="<?php echo rateb_url('admin/cms/newsletter/campaign/send'); ?>" class="d-inline">
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/send'); ?>" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
                         <button type="submit" class="btn btn-sm btn-primary" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_send')); ?>"><?php echo __('cms_send_campaign'); ?></button>

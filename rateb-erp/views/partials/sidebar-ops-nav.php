@@ -13,7 +13,7 @@ if (!rateb_is_super_admin() && rateb_company_branches_nav_enabled()) {
         ['branch-dashboard', 'branch_dashboard', 'fa-code-branch', 'branches', 'branch.dashboard.view'],
         ['branch-financial', 'branch_financial_reports', 'fa-file-invoice-dollar', 'accounting', 'branch.financial.pl'],
         ['branch-dashboard/compare', 'branch_comparison', 'fa-scale-balanced', 'branches', 'branch.dashboard.compare'],
-        ['branch-dashboard/reports', 'branch_reports', 'fa-chart-column', 'branches', 'branch.reports.view'],
+        ['branch-dashboard/reports', 'branch_reports', 'fa-chart-column', 'branches', 'branch.dashboard.compare'],
         ['branch-transfers', 'branch_transfers', 'fa-shuffle', 'branches', 'branch.transfers.view'],
     ], 'fa-code-branch');
 }
@@ -140,7 +140,6 @@ $opsSection(__('accounting_module'), [
     ['cost-centers', 'cost_centers', 'fa-diagram-project', 'accounting'],
     ['bank-accounts', 'bank_accounts', 'fa-building-columns', 'accounting'],
     ['accounting/bank-reconciliation', 'bank_reconciliation', 'fa-scale-balanced', 'accounting', 'accounting.view'],
-    ['accounting-control', 'accounting_control_center', 'fa-shield-halved', 'accounting', 'accounting.dashboard'],
     ['accounting/zatca-settings', 'zatca_settings', 'fa-file-invoice', 'accounting', 'accounting.view'],
     ['accounting/zatca-onboarding', 'zatca_onboarding_short', 'fa-link', 'accounting', 'accounting.view'],
     ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],

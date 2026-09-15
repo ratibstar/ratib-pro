@@ -22,6 +22,7 @@ return [
         'module_addons',
         'agency_updates',
         'platform_catalog',
+        'marketing',
     ],
 
     /** Plan modules enabled for tenant company operations. */
@@ -57,6 +58,7 @@ return [
         'marketplace',
         'module_addons',
         'plans',
+        'ai',
     ],
 
     /** Lang keys for company/plan module checkboxes (PlanLimitService::moduleCatalog). */
@@ -92,6 +94,7 @@ return [
         'marketplace' => 'marketplace_platform',
         'module_addons' => 'module_addon_catalog',
         'plans' => 'plans',
+        'ai' => 'rateb_ai',
     ],
 
     /**
@@ -107,6 +110,7 @@ return [
         'module_addons.manage' => ['module_addons.demo_locks'],
         'branch.financial.consolidated' => ['branch.financial.interbranch'],
         'workflows.manage' => ['oversight.approve'],
+        'marketing.newsletter.manage' => ['marketing.newsletter.view', 'marketing.newsletter.send', 'marketing.newsletter.import'],
         'procurement.manage' => [
             'procurement.oversight',
             'procurement.view',
@@ -118,6 +122,7 @@ return [
             'procurement.contract',
             'procurement.portal',
             'procurement.admin',
+            'ai.view',
         ],
         'procurement.admin' => [
             'procurement.view',
@@ -225,6 +230,7 @@ return [
             'bi.publish',
             'bi.export',
         ],
+        'ai.view' => [],
         'accounting.approve' => ['accounting.oversight'],
         'accounting.admin' => [
             'accounting.view',
@@ -566,6 +572,7 @@ return [
         'notifications.manage',
         'dashboard.view',
         'module_addons.manage',
+        'ai.view',
     ],
 
     /**

@@ -6,13 +6,15 @@
     'use strict';
 
     function ensureApi() {
-        if (root.ratebAi && root.ratebAi.send) {
+        if (root.ratebAi && typeof root.ratebAi.send === 'function' && root.ratebAi.__p0WriteConfirm) {
             return root.ratebAi;
         }
 
         root.ratebAi = {
             loading: false,
-            send: function (message) {
+            lastMessage: '',
+            __p0WriteConfirm: true,
+            send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
                 var messages = doc.getElementById('aiMessages');
@@ -25,6 +27,7 @@
                 var csrf = box.getAttribute('data-csrf') || '';
                 message = String(message || '').trim();
                 if (!message || !messages || !endpoint || this.loading) return false;
+                confirmedWrites = Array.isArray(confirmedWrites) ? confirmedWrites : [];
 
                 function setStatus(state) {
                     if (!statusText) return;
@@ -60,9 +63,45 @@
                     messages.scrollTop = messages.scrollHeight;
                     return div;
                 }
+                function showConfirm(pending, originalMessage) {
+                    var keys = [];
+                    var labels = [];
+                    (pending || []).forEach(function (p) {
+                        if (p && p.confirm_key) keys.push(p.confirm_key);
+                        if (p && p.tool) labels.push(p.tool);
+                    });
+                    if (!keys.length) return;
+                    var wrap = doc.createElement('div');
+                    wrap.className = 'rateb-ai-message assistant';
+                    wrap.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
+                        '<div class="rateb-ai-message-content">' +
+                        '<div>' + esc(labels.join(', ')) + '</div>' +
+                        '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-confirm="1">Confirm</button>' +
+                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-cancel="1">Cancel</button>' +
+                        '</div></div>';
+                    messages.appendChild(wrap);
+                    messages.scrollTop = messages.scrollHeight;
+                    var confirmBtn = wrap.querySelector('[data-rateb-ai-confirm]');
+                    var cancelBtn = wrap.querySelector('[data-rateb-ai-cancel]');
+                    if (confirmBtn) {
+                        confirmBtn.addEventListener('click', function () {
+                            if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+                            root.ratebAi.send(originalMessage, keys);
+                        });
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.addEventListener('click', function () {
+                            if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+                        });
+                    }
+                }
 
                 if (welcome) welcome.style.display = 'none';
-                addMsg('user', message);
+                if (!confirmedWrites.length) {
+                    addMsg('user', message);
+                    this.lastMessage = message;
+                }
                 if (input) {
                     input.value = '';
                     input.style.height = 'auto';
@@ -81,7 +120,11 @@
                         'X-CSRF-Token': csrf,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({ message: message, history: [] })
+                    body: JSON.stringify({
+                        message: message,
+                        history: [],
+                        confirmed_writes: confirmedWrites
+                    })
                 }).then(function (res) {
                     return res.json().catch(function () {
                         return { success: false, message: 'Request failed (' + res.status + ')' };
@@ -94,6 +137,10 @@
                         return;
                     }
                     addMsg('assistant', (data.data && data.data.response) ? data.data.response : 'No response');
+                    var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
+                    if (pending.length) {
+                        showConfirm(pending, message);
+                    }
                 }).catch(function (err) {
                     if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
                     addMsg('assistant', 'Error: ' + (err && err.message ? err.message : 'Network error'));
@@ -138,6 +185,7 @@
             doc.addEventListener('click', function (e) {
                 var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
                 if (!btn || !doc.getElementById('ratebAiRoot')) return;
+                if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
                 e.preventDefault();
                 e.stopPropagation();
                 root.ratebAi.clickSuggest(btn);

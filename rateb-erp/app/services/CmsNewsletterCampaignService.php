@@ -37,6 +37,11 @@ final class CmsNewsletterCampaignService
                 $skipped++;
                 continue;
             }
+            // Never re-import an address that asked to unsubscribe.
+            if ($this->isSuppressed($email)) {
+                $skipped++;
+                continue;
+            }
             $model->create([
                 'email' => $email,
                 'name' => $name,
@@ -46,5 +51,15 @@ final class CmsNewsletterCampaignService
             $imported++;
         }
         return ['imported' => $imported, 'skipped' => $skipped];
+    }
+
+    private function isSuppressed(string $email): bool
+    {
+        $stmt = \Rateb\App\Core\Database::connection()->prepare(
+            'SELECT 1 FROM rateb_email_unsubscribes WHERE email = :e LIMIT 1'
+        );
+        $stmt->execute(['e' => strtolower(trim($email))]);
+
+        return $stmt->fetch() !== false;
     }
 }

@@ -84,6 +84,13 @@ $mailThrottle = is_array($mailThrottle ?? null) ? $mailThrottle : [];
                     value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['campaign_batch_size'] ?? '200')); ?>">
             </div>
             <div class="col-12">
+                <label class="form-label small"><?php echo __('campaign_test_emails'); ?></label>
+                <input class="form-control form-control-sm" dir="ltr" name="campaign_test_emails"
+                    value="<?php echo Rateb\App\Core\View::escape((string) ($mailThrottle['campaign_test_emails'] ?? '')); ?>"
+                    placeholder="test1@example.com,test2@example.com">
+                <div class="form-text"><?php echo __('cms_campaign_test_mode_hint'); ?></div>
+            </div>
+            <div class="col-12">
                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> <?php echo __('mail_save_settings'); ?></button>
             </div>
         </form>

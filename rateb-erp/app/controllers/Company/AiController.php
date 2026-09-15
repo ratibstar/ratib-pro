@@ -20,6 +20,12 @@ final class AiController extends Controller
             return;
         }
 
+        if (!rateb_can('ai.view')) {
+            http_response_code(403);
+            $this->view('errors/403', ['title' => '403'], 'main');
+            return;
+        }
+
         $companyId = TenantContext::companyId();
         if (!$companyId) {
             $this->redirect(rateb_url('admin'));
@@ -27,9 +33,7 @@ final class AiController extends Controller
         }
 
         $planLimits = new \Rateb\App\Services\PlanLimitService();
-        $hasProcurement = $planLimits->companyHasModule($companyId, 'procurement');
-
-        if (!$hasProcurement) {
+        if (!$planLimits->companyHasModule($companyId, 'procurement')) {
             http_response_code(403);
             $this->view('errors/403', ['title' => '403'], 'main');
             return;
@@ -58,6 +62,15 @@ final class AiController extends Controller
                 'error' => 'unauthorized',
                 'message' => __('access_denied'),
             ], 401);
+            return;
+        }
+
+        if (!rateb_can('ai.view')) {
+            $this->json([
+                'success' => false,
+                'error' => 'forbidden',
+                'message' => __('access_denied'),
+            ], 403);
             return;
         }
 
@@ -109,60 +122,66 @@ final class AiController extends Controller
         }
 
         $requestId = (string) ($body['request_id'] ?? bin2hex(random_bytes(8)));
-
-        // Prefer the procurement agent when the stack is deployed; otherwise acknowledge.
-        if (class_exists(\Rateb\App\Services\ProcurementAgent::class)
-            && class_exists(\Rateb\App\Services\ProcurementAgentContext::class)
-            && is_file(RATEB_ROOT . '/config/agent.php')
-        ) {
-            try {
-                $config = require RATEB_ROOT . '/config/agent.php';
-                $ctx = \Rateb\App\Services\ProcurementAgentContext::fromSession();
-                if ($ctx) {
-                    $agent = new \Rateb\App\Services\ProcurementAgent(is_array($config) ? $config : []);
-                    $history = $body['history'] ?? [];
-                    if (!is_array($history)) {
-                        $history = [];
-                    }
-                    $result = $agent->process([
-                        'message' => $message,
-                        'history' => $history,
-                        'request_id' => $requestId,
-                    ], $ctx);
-
-                    $this->json([
-                        'success' => true,
-                        'request_id' => $requestId,
-                        'data' => [
-                            'response' => (string) ($result['response'] ?? $result['message'] ?? ''),
-                            'tool_calls' => $result['tool_calls'] ?? [],
-                        ],
-                    ]);
-                    return;
-                }
-            } catch (\Throwable $e) {
-                $this->json([
-                    'success' => false,
-                    'error' => 'agent_error',
-                    'message' => $e->getMessage() !== '' ? $e->getMessage() : 'AI agent failed',
-                    'request_id' => $requestId,
-                ], 500);
-                return;
-            }
+        $confirmedWrites = $body['confirmed_writes'] ?? [];
+        if (!is_array($confirmedWrites)) {
+            $confirmedWrites = [];
         }
 
-        $locale = (string) SessionManager::get('rateb_locale', 'en');
-        $reply = $locale === 'ar'
-            ? 'تم استلام رسالتك. واجهة RATEB AI تعمل الآن، وسيتم ربط وكيل المشتريات عند تفعيله على الخادم.'
-            : 'Message received. The RATEB AI UI is working; the procurement agent will reply here once enabled on the server.';
+        // Single MVP runtime path: ProcurementAgent via this endpoint.
+        if (!class_exists(\Rateb\App\Services\ProcurementAgent::class)
+            || !class_exists(\Rateb\App\Services\ProcurementAgentContext::class)
+            || !is_file(RATEB_ROOT . '/config/agent.php')
+        ) {
+            $this->json([
+                'success' => false,
+                'error' => 'agent_unavailable',
+                'message' => 'Procurement agent runtime is not available',
+                'request_id' => $requestId,
+            ], 503);
+            return;
+        }
 
-        $this->json([
-            'success' => true,
-            'request_id' => $requestId,
-            'data' => [
-                'response' => $reply,
-                'tool_calls' => [],
-            ],
-        ]);
+        try {
+            $config = require RATEB_ROOT . '/config/agent.php';
+            $ctx = \Rateb\App\Services\ProcurementAgentContext::fromSession();
+            if (!$ctx) {
+                $this->json([
+                    'success' => false,
+                    'error' => 'unauthorized',
+                    'message' => 'Valid authentication and company context required',
+                    'request_id' => $requestId,
+                ], 401);
+                return;
+            }
+
+            $agent = new \Rateb\App\Services\ProcurementAgent(is_array($config) ? $config : []);
+            $history = $body['history'] ?? [];
+            if (!is_array($history)) {
+                $history = [];
+            }
+            $result = $agent->process([
+                'message' => $message,
+                'history' => $history,
+                'request_id' => $requestId,
+                'confirmed_writes' => $confirmedWrites,
+            ], $ctx);
+
+            $this->json([
+                'success' => true,
+                'request_id' => $requestId,
+                'data' => [
+                    'response' => (string) ($result['response'] ?? ''),
+                    'tool_calls' => $result['tool_calls'] ?? [],
+                    'pending_confirmations' => $result['pending_confirmations'] ?? [],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            $this->json([
+                'success' => false,
+                'error' => 'agent_error',
+                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'AI agent failed',
+                'request_id' => $requestId,
+            ], 500);
+        }
     }
 }

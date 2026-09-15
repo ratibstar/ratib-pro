@@ -34,11 +34,16 @@ final class BulkCampaignService
         }
         $db = Database::connection();
         $audience = $this->normalizeAudience((string) ($campaign['audience'] ?? 'subscribers'));
+        $testMode = (int) ($campaign['test_mode'] ?? 0) === 1;
         $added = 0;
-        foreach ($this->audienceStatements($audience, (string) ($campaign['segment_slug'] ?? 'general')) as [$sql, $params]) {
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params + ['cid' => $campaignId, 'cid2' => $campaignId]);
-            $added += $stmt->rowCount();
+        if ($testMode) {
+            $added = $this->queueTestRecipients($campaignId);
+        } else {
+            foreach ($this->audienceStatements($audience, (string) ($campaign['segment_slug'] ?? 'general')) as [$sql, $params]) {
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params + ['cid' => $campaignId, 'cid2' => $campaignId]);
+                $added += $stmt->rowCount();
+            }
         }
 
         $total = $this->countRecipients($campaignId);
@@ -64,6 +69,14 @@ final class BulkCampaignService
     {
         $budget = $maxPerRun > 0 ? $maxPerRun : $this->settingInt('campaign_batch_size', 200, 1, 5000);
         $db = Database::connection();
+        // Release campaigns whose schedule has come due so the next cron run delivers them.
+        $db->exec(
+            "UPDATE " . self::CAMPAIGNS . "
+             SET status = 'sending'
+             WHERE status = 'scheduled'
+               AND scheduled_at IS NOT NULL
+               AND scheduled_at <= NOW()"
+        );
         $stmt = $db->query(
             "SELECT * FROM " . self::CAMPAIGNS . " WHERE status = 'sending' ORDER BY id ASC LIMIT 5"
         );
@@ -103,7 +116,7 @@ final class BulkCampaignService
         );
 
         $stmt = $db->query(
-            "SELECT id FROM " . self::CAMPAIGNS . " WHERE status = 'sending' ORDER BY id ASC LIMIT 20"
+            "SELECT id FROM " . self::CAMPAIGNS . " WHERE status IN ('sending','paused') ORDER BY id ASC LIMIT 20"
         );
         foreach ($stmt !== false ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
             $this->refreshCounters((int) ($row['id'] ?? 0));
@@ -183,6 +196,39 @@ final class BulkCampaignService
         return $base . (strpos($base, '?') === false ? '?' : '&') . 't=' . rawurlencode($token);
     }
 
+    /**
+     * Interrupt delivery: cron stops queueing this campaign until it resumes.
+     * Paused campaigns keep their counters synced and never auto-close.
+     */
+    public function pauseCampaign(int $campaignId): bool
+    {
+        if ($campaignId < 1) {
+            return false;
+        }
+        $stmt = Database::connection()->prepare(
+            'UPDATE ' . self::CAMPAIGNS . " SET status = 'paused' WHERE id = :id AND status IN ('draft','scheduled','sending')"
+        );
+        $stmt->execute(['id' => $campaignId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Restart a paused campaign: back to the schedule if never started, else resume sending. */
+    public function resumeCampaign(int $campaignId): bool
+    {
+        $campaign = $this->campaign($campaignId);
+        if ($campaign === null || (string) ($campaign['status'] ?? '') !== 'paused') {
+            return false;
+        }
+        $next = (int) ($campaign['recipient_count'] ?? 0) > 0 ? 'sending' : 'scheduled';
+        $stmt = Database::connection()->prepare(
+            'UPDATE ' . self::CAMPAIGNS . ' SET status = :st WHERE id = :id'
+        );
+        $stmt->execute(['st' => $next, 'id' => $campaignId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function normalizeAudience(string $audience): string
     {
         $audience = strtolower(trim($audience));
@@ -255,6 +301,42 @@ final class BulkCampaignService
         return $queued;
     }
 
+    /**
+     * Test mode — materialise only the configured test recipients (source 'test').
+     * Emails come from the campaign_test_emails setting (Settings -> Mail).
+     */
+    private function queueTestRecipients(int $campaignId): int
+    {
+        $emails = [];
+        foreach (explode(',', (string) self::readSetting('campaign_test_emails', '')) as $raw) {
+            $email = strtolower(trim($raw));
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false && !in_array($email, $emails, true)) {
+                $emails[] = $email;
+            }
+        }
+        if ($emails === []) {
+            Logger::info('Campaign test recipients empty — configure campaign_test_emails', ['campaign_id' => $campaignId]);
+            return 0;
+        }
+        $db = Database::connection();
+        $insert = $db->prepare(
+            'INSERT IGNORE INTO ' . self::RECIPIENTS . '
+                (campaign_id, email, name, source, source_id, unsubscribe_token, status)
+             VALUES (:cid, :e, NULL, ' . "'test'" . ', NULL, :t, ' . "'pending'" . ')'
+        );
+        $added = 0;
+        foreach ($emails as $email) {
+            $insert->execute([
+                'cid' => $campaignId,
+                'e' => $email,
+                't' => substr(hash('sha256', $campaignId . '|' . $email . '|' . bin2hex(random_bytes(8))), 0, 40),
+            ]);
+            $added += $insert->rowCount();
+        }
+
+        return $added;
+    }
+
     private function personalize(string $body, string $name, string $unsubscribeUrl): string
     {
         $name = trim($name);
@@ -281,6 +363,22 @@ final class BulkCampaignService
         $stats = $this->stats($campaignId);
         $open = $stats['pending'] + $stats['queued'];
         $db = Database::connection();
+        // A paused campaign never auto-closes — counters stay in sync until resumed or cancelled.
+        if (($this->campaignStatus($campaignId) ?? '') === 'paused') {
+            $db->prepare(
+                'UPDATE ' . self::CAMPAIGNS . '
+                 SET recipient_count = :n, sent_count = :s, failed_count = :f, bounced_count = :b
+                 WHERE id = :id'
+            )->execute([
+                'n' => $stats['total'],
+                's' => $stats['sent'],
+                'f' => $stats['failed'],
+                'b' => $stats['bounced'],
+                'id' => $campaignId,
+            ]);
+
+            return;
+        }
         if ($open > 0) {
             $db->prepare(
                 'UPDATE ' . self::CAMPAIGNS . '
@@ -333,6 +431,18 @@ final class BulkCampaignService
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    private function campaignStatus(int $id): string
+    {
+        if ($id < 1) {
+            return '';
+        }
+        $stmt = Database::connection()->prepare('SELECT status FROM ' . self::CAMPAIGNS . ' WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return (string) ($row['status'] ?? '');
     }
 
     /**
@@ -441,5 +551,16 @@ final class BulkCampaignService
         }
 
         return max($min, min($max, (int) trim($raw)));
+    }
+
+    private static function readSetting(string $key, string $default = ''): string
+    {
+        try {
+            $raw = (new \Rateb\App\Models\SystemSetting())->get($key);
+        } catch (\Throwable $e) {
+            return $default;
+        }
+
+        return $raw === null ? $default : (string) $raw;
     }
 }

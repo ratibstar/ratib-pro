@@ -3940,6 +3940,7 @@ final class SettingsController extends Controller
                 'mail_queue_delay_ms' => $model->get('mail_queue_delay_ms', '300'),
                 'mail_queue_hourly_limit' => $model->get('mail_queue_hourly_limit', '400'),
                 'campaign_batch_size' => $model->get('campaign_batch_size', '200'),
+                'campaign_test_emails' => $model->get('campaign_test_emails', ''),
             ],
             'mailReady' => $mailSvc->isReady(),
             'mailLocalhost' => $mailSvc->isLocalRelayHost((string) ($mailCfg['host'] ?? '')),
@@ -4071,6 +4072,8 @@ final class SettingsController extends Controller
             }
             $pairs[$key] = (string) (ctype_digit($raw) ? max($min, min($max, (int) $raw)) : $fallback);
         }
+        // Test recipient list for bulk newsletter campaigns (validated at use time).
+        $pairs['campaign_test_emails'] = trim((string) $this->input('campaign_test_emails', ''));
         foreach ($pairs as $key => $val) {
             $row = $model->queryOne('SELECT id FROM rateb_system_settings WHERE setting_key = :k', ['k' => $key]);
             if ($row) {

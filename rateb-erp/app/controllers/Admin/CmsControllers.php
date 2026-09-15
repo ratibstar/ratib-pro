@@ -472,7 +472,7 @@ final class CmsLeadsController extends Controller
     }
 }
 
-final class CmsNewsletterController extends \Rateb\App\Controllers\CrudController
+class CmsNewsletterController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct()
     {
@@ -492,7 +492,7 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         $page = max(1, (int) $this->input('page', 1));
         $limit = rateb_list_per_page();
         $this->view($this->viewPrefix . '/index', array_merge($this->applyPermissionFlags([
-            'title' => __('cms_newsletter'),
+            'title' => __($this->entityName),
             'items' => $this->model->all($limit, ($page - 1) * $limit),
             'total' => $this->model->count(),
             'page' => $page,
@@ -535,7 +535,7 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         }
         $result = (new CmsNewsletterCampaignService())->importCsv($csv);
         SessionManager::flash('success', __('cms_import_ok') . ': ' . $result['imported'] . ' / ' . $result['skipped']);
-        $this->redirect(rateb_url('admin/cms/newsletter'));
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     public function campaignForm(): void
@@ -543,9 +543,10 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         $this->guardManage();
         $id = (int) ($_GET['id'] ?? $this->input('id', 0));
         $item = $id > 0 ? (new CmsNewsletterCampaign())->find($id) : null;
-        $this->view('admin/cms/newsletter/campaign-form', [
+        $this->view($this->viewPrefix . '/campaign-form', [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_campaign'),
             'item' => $item,
+            'routePrefix' => $this->routePrefix,
             'segments' => (new CmsNewsletterSegment())->all(50, 0),
             'audiences' => \Rateb\App\Services\BulkCampaignService::AUDIENCES,
             'campaignStats' => $id > 0 ? (new \Rateb\App\Services\BulkCampaignService())->stats($id) : null,
@@ -558,7 +559,7 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
     {
         $this->guardManage();
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('admin/cms/newsletter'));
+            $this->redirect(rateb_url($this->routePrefix));
             return;
         }
         $model = new CmsNewsletterCampaign();
@@ -573,6 +574,7 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
                 ->normalizeAudience((string) $this->input('audience', 'subscribers')),
             'status' => (string) $this->input('status', 'draft'),
             'scheduled_at' => (string) $this->input('scheduled_at', '') ?: null,
+            'test_mode' => $this->input('test_mode') === '1' ? 1 : 0,
         ];
         if ($id > 0) {
             $model->update($id, $data);
@@ -580,14 +582,14 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
             $id = $model->create($data);
         }
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('admin/cms/newsletter/campaign?id=' . $id));
+        $this->redirect(rateb_url($this->routePrefix . '/campaign?id=' . $id));
     }
 
     public function campaignSend(): void
     {
         $this->guardManage();
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('admin/cms/newsletter'));
+            $this->redirect(rateb_url($this->routePrefix));
             return;
         }
         $id = (int) $this->input('id', 0);
@@ -599,7 +601,41 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
-        $this->redirect(rateb_url('admin/cms/newsletter'));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function campaignPause(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+        $id = (int) $this->input('id', 0);
+        try {
+            $paused = (new \Rateb\App\Services\BulkCampaignService())->pauseCampaign($id);
+            SessionManager::flash($paused ? 'success' : 'error', __('cms_campaign_paused'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function campaignResume(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+        $id = (int) $this->input('id', 0);
+        try {
+            $resumed = (new \Rateb\App\Services\BulkCampaignService())->resumeCampaign($id);
+            SessionManager::flash($resumed ? 'success' : 'error', __('cms_campaign_resume'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url($this->routePrefix));
     }
 }
 

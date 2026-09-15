@@ -14,6 +14,7 @@ return [
     ['id' => 'subscription', 'file' => 'routes/modules/subscription.php'],
     ['id' => 'platform', 'file' => 'routes/modules/platform.php'],
     ['id' => 'marketing', 'file' => 'routes/modules/marketing.php'],
+    ['id' => 'marketing_admin', 'file' => 'routes/modules/marketing-admin.php', 'optional' => true],
     ['id' => 'cms', 'file' => 'routes/modules/cms.php'],
     ['id' => 'ops', 'file' => 'routes/modules/ops.php'],
     ['id' => 'api', 'file' => 'routes/modules/api.php'],

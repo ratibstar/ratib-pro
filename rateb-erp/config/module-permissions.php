@@ -26,4 +26,5 @@ return [
     'logistics' => 'logistics.manage',
     'marketplace' => 'marketplace.manage',
     'module_addons' => 'module_addons.manage',
+    'ai' => 'ai.view',
 ];

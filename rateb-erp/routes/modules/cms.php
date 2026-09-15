@@ -118,6 +118,8 @@ $router->post('/admin/cms/newsletter/import', [CmsNewsletterController::class, '
 $router->get('/admin/cms/newsletter/campaign', [CmsNewsletterController::class, 'campaignForm'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/newsletter/campaign/save', [CmsNewsletterController::class, 'campaignSave'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/newsletter/campaign/send', [CmsNewsletterController::class, 'campaignSend'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/pause', [CmsNewsletterController::class, 'campaignPause'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/resume', [CmsNewsletterController::class, 'campaignResume'], rateb_platform_oversight_mw('cms.manage'));
 
 $router->get('/admin/cms/page-builder', [CmsPageBuilderController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/page-builder/reorder', [CmsPageBuilderController::class, 'reorder'], rateb_platform_oversight_mw('cms.manage'));

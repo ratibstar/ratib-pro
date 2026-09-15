@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Rateb\App\Controllers\Api\ApiController;
+use Rateb\App\Controllers\Api\ProcurementAgentController;
 use Rateb\App\Core\Middleware\ApiAuthMiddleware;
 use Rateb\App\Core\Middleware\ApiModuleMiddleware;
 
@@ -85,6 +86,10 @@ $router->get('/api/v1/purchase-requests', [ApiController::class, 'listPurchaseRe
 $router->post('/api/v1/purchase-requests', [ApiController::class, 'createPurchaseRequest'], rateb_api_mw('procurement'));
 $router->get('/api/v1/purchase-orders', [ApiController::class, 'listPurchaseOrders'], rateb_api_mw('procurement'));
 $router->post('/api/v1/purchase-orders', [ApiController::class, 'createPurchaseOrder'], rateb_api_mw('procurement'));
+
+/** Procurement Ops Agent MVP */
+$router->post('/api/v1/agent/procurement', [ProcurementAgentController::class, 'process'], rateb_api_mw('procurement'));
+
 $router->get('/api/v1/inventory', [ApiController::class, 'listInventory'], rateb_api_mw('inventory'));
 $router->post('/api/v1/inventory', [ApiController::class, 'createInventory'], rateb_api_mw('inventory'));
 

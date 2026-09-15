@@ -6,6 +6,7 @@
 $id = (int) ($item['id'] ?? 0);
 $audiences = $audiences ?? ['subscribers'];
 $campaignStats = $campaignStats ?? null;
+$routePrefix = $routePrefix ?? 'admin/cms/newsletter';
 ?>
 <?php if ($id > 0 && is_array($campaignStats) && ($campaignStats['total'] ?? 0) > 0) { ?>
 <div class="rateb-card mb-3">
@@ -23,7 +24,7 @@ $campaignStats = $campaignStats ?? null;
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('admin/cms/newsletter/campaign/save'); ?>">
+        <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/save'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <?php if ($id > 0) { ?><input type="hidden" name="id" value="<?php echo $id; ?>"><?php } ?>
             <div class="row g-3">
@@ -62,10 +63,22 @@ $campaignStats = $campaignStats ?? null;
                 <div class="col-md-6">
                     <label class="form-label"><?php echo __('status'); ?></label>
                     <select class="form-select" name="status">
-                        <?php foreach (['draft', 'scheduled', 'sending', 'sent', 'failed'] as $st) { ?>
+                        <?php foreach (['draft', 'scheduled', 'sending', 'paused', 'sent', 'failed'] as $st) { ?>
                         <option value="<?php echo $st; ?>"<?php echo ($item['status'] ?? 'draft') === $st ? ' selected' : ''; ?>><?php echo __($st); ?></option>
                         <?php } ?>
                     </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo __('cms_scheduled_publish'); ?></label>
+                    <input type="datetime-local" class="form-control" name="scheduled_at" value="<?php echo Rateb\App\Core\View::escape(str_replace(' ', 'T', (string) ($item['scheduled_at'] ?? ''))); ?>">
+                    <div class="form-text small"><?php echo __('cms_campaign_schedule_hint'); ?></div>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="test_mode" value="1" id="campaign_test_mode"<?php echo ((int) ($item['test_mode'] ?? 0) === 1) ? ' checked' : ''; ?>>
+                        <label class="form-check-label" for="campaign_test_mode"><?php echo __('cms_campaign_test_mode'); ?></label>
+                        <div class="form-text small"><?php echo __('cms_campaign_test_mode_hint'); ?></div>
+                    </div>
                 </div>
                 <div class="col-md-12">
                     <label class="form-label"><?php echo __('content_en'); ?></label>
@@ -78,7 +91,7 @@ $campaignStats = $campaignStats ?? null;
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
-                <a href="<?php echo rateb_url('admin/cms/newsletter'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
             </div>
         </form>
     </div>

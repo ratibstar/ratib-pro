@@ -3,6 +3,7 @@
 $mailKeys = [
     'smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name',
     'mail_queue_batch_size', 'mail_queue_delay_ms', 'mail_queue_hourly_limit', 'campaign_batch_size',
+    'campaign_test_emails',
 ];
 $featureKeys = ['hr_mobile_console_enabled'];
 Rateb\App\Core\View::partial('admin/settings/mail-card', [

@@ -607,8 +607,10 @@ $router->post($app('approvals/requests/{id}/transition'), [ApprovalRequestsContr
 $router->post($app('approvals/requests/{id}/comments'), [ApprovalRequestsController::class, 'storeComment'], rateb_erp_mw('approval', 'approval.view', 'approval'));
 $router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsController::class, 'storeDelegation'], rateb_erp_mw('approval', 'approval.delegate', 'approval'));
 
-/** Phase 21A — RATEB AI Assistant (general AI for ERP). */
-$aiMw = rateb_erp_mw('ai', 'ai.view', 'ai');
+/** Phase 21A — RATEB AI Assistant (general AI for ERP).
+ *  Module gate: procurement (plan entitlement). Permission: ai.view. */
+// Plan module: procurement; permission: ai.view (no entity resource — AI is not an entity CRUD surface).
+$aiMw = rateb_erp_mw('procurement', 'ai.view');
 $router->get($app('ai'), [Rateb\App\Controllers\Company\AiController::class, 'index'], $aiMw);
 $router->post($app('ai/chat'), [Rateb\App\Controllers\Company\AiController::class, 'chat'], $aiMw);
 
