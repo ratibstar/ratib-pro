@@ -1352,6 +1352,11 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <i class="fas fa-download" aria-hidden="true"></i>
                     <span class="rateb-help-nav-btn__label"><?php echo Rateb\App\Core\View::escape(__('pwa_install_erp')); ?></span>
                 </button>
+                <?php if (rateb_can('ai.view')): ?>
+                    <a href="<?php echo rateb_url('ai'); ?>" class="btn btn-outline-primary btn-sm rateb-topbar-ai" data-rateb-full-nav="1" title="<?php echo __('rateb_ai'); ?>">
+                        <i class="fas fa-robot"></i><span class="d-none d-md-inline ms-1"><?php echo __('rateb_ai'); ?></span>
+                    </a>
+                <?php endif; ?>
                 <a href="<?php echo rateb_url('admin/logout'); ?>" class="btn btn-outline-danger btn-sm rateb-topbar-logout" data-rateb-full-nav="1" title="<?php echo __('logout'); ?>">
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
                 </a>
