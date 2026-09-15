@@ -610,6 +610,7 @@ $router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsControl
 /** Phase 21A — RATEB AI Assistant (general AI for ERP). */
 $aiMw = rateb_erp_mw('ai', 'ai.view', 'ai');
 $router->get($app('ai'), [Rateb\App\Controllers\Company\AiController::class, 'index'], $aiMw);
+$router->post($app('ai/chat'), [Rateb\App\Controllers\Company\AiController::class, 'chat'], $aiMw);
 
 /** Phase 21A eproc — retired. Lean procurement only (PR/PO/RFQ/quotations). Set RATEB_EPROC_ENABLED=1 to re-enable. */
 if (filter_var(getenv('RATEB_EPROC_ENABLED') ?: ($_ENV['RATEB_EPROC_ENABLED'] ?? ''), FILTER_VALIDATE_BOOLEAN)) {
