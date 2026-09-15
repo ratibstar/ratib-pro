@@ -1353,7 +1353,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <span class="rateb-help-nav-btn__label"><?php echo Rateb\App\Core\View::escape(__('pwa_install_erp')); ?></span>
                 </button>
                 <?php if (rateb_can('ai.view')): ?>
-                    <a href="<?php echo rateb_url('ai'); ?>" class="btn btn-outline-primary btn-sm rateb-topbar-ai" data-rateb-full-nav="1" title="<?php echo __('rateb_ai'); ?>">
+                    <a href="<?php echo rateb_url(rateb_app_route('ai')); ?>" class="btn btn-outline-primary btn-sm rateb-topbar-ai" data-rateb-full-nav="1" title="<?php echo __('rateb_ai'); ?>">
                         <i class="fas fa-robot"></i><span class="d-none d-md-inline ms-1"><?php echo __('rateb_ai'); ?></span>
                     </a>
                 <?php endif; ?>
