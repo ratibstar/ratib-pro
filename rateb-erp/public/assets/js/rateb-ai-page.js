@@ -5,21 +5,17 @@
 (function (root, doc) {
     'use strict';
 
-    function ensureApi() {
-        if (root.ratebAi && typeof root.ratebAi.send === 'function' && root.ratebAi.__p0WriteConfirm) {
-            return root.ratebAi;
-        }
-
-        root.ratebAi = {
+    function buildApi() {
+        return {
             loading: false,
             lastMessage: '',
             __p0WriteConfirm: true,
+            __p0SendFix: true,
             send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
                 var messages = doc.getElementById('aiMessages');
                 var input = doc.getElementById('aiInput');
-                var sendBtn = doc.getElementById('aiSendBtn');
                 var welcome = doc.getElementById('aiWelcome');
                 var statusDot = doc.getElementById('aiStatusDot');
                 var statusText = doc.getElementById('aiStatusText');
@@ -106,8 +102,8 @@
                     input.value = '';
                     input.style.height = 'auto';
                 }
-                if (sendBtn) sendBtn.disabled = true;
                 this.loading = true;
+                this.syncSendBtn();
                 setStatus('thinking');
                 var tip = typing();
                 var self = this;
@@ -147,7 +143,7 @@
                 }).then(function () {
                     self.loading = false;
                     setStatus('ready');
-                    if (sendBtn && input) sendBtn.disabled = !input.value.trim();
+                    self.syncSendBtn();
                 });
                 return false;
             },
@@ -155,30 +151,72 @@
                 var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
                 return this.send(prompt);
             },
+            sendFromInput: function () {
+                var input = doc.getElementById('aiInput');
+                return this.send(input ? input.value : '');
+            },
+            syncSendBtn: function () {
+                var input = doc.getElementById('aiInput');
+                var sendBtn = doc.getElementById('aiSendBtn');
+                if (!sendBtn) return;
+                var empty = !(input && String(input.value || '').trim());
+                sendBtn.disabled = !!this.loading;
+                sendBtn.classList.toggle('is-empty', empty && !this.loading);
+                sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
+            },
             bind: function () {
                 var box = doc.getElementById('ratebAiRoot');
-                if (!box || box.getAttribute('data-rateb-ai-bound') === '1') return;
+                if (!box) return;
                 var form = doc.getElementById('aiInputForm');
                 var input = doc.getElementById('aiInput');
                 var sendBtn = doc.getElementById('aiSendBtn');
                 var self = this;
-                if (form) {
+                if (form && form.getAttribute('data-rateb-ai-submit') !== '1') {
+                    form.setAttribute('data-rateb-ai-submit', '1');
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        self.send(input ? input.value : '');
+                        self.sendFromInput();
                     });
                 }
-                if (input && sendBtn) {
-                    input.addEventListener('input', function () {
+                if (input && input.getAttribute('data-rateb-ai-input') !== '1') {
+                    input.setAttribute('data-rateb-ai-input', '1');
+                    var onType = function () {
                         this.style.height = 'auto';
                         this.style.height = Math.min(this.scrollHeight, 180) + 'px';
-                        sendBtn.disabled = !this.value.trim() || self.loading;
+                        self.syncSendBtn();
+                    };
+                    input.addEventListener('input', onType);
+                    input.addEventListener('keyup', onType);
+                    input.addEventListener('change', onType);
+                    input.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            self.sendFromInput();
+                        }
+                    });
+                }
+                if (sendBtn && sendBtn.getAttribute('data-rateb-ai-click') !== '1') {
+                    sendBtn.setAttribute('data-rateb-ai-click', '1');
+                    sendBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        self.sendFromInput();
                     });
                 }
                 box.setAttribute('data-rateb-ai-bound', '1');
+                self.syncSendBtn();
                 try { if (input) input.focus(); } catch (eFocus) {}
             }
         };
+    }
+
+    function ensureApi() {
+        if (root.ratebAi && root.ratebAi.__p0SendFix && typeof root.ratebAi.sendFromInput === 'function') {
+            return root.ratebAi;
+        }
+        var prev = root.ratebAi || {};
+        root.ratebAi = buildApi();
+        root.ratebAi.loading = !!prev.loading;
+        root.ratebAi.lastMessage = prev.lastMessage || '';
 
         if (!root.__ratebAiClickBound) {
             root.__ratebAiClickBound = true;
@@ -200,6 +238,12 @@
         var box = doc.getElementById('ratebAiRoot');
         if (box) {
             box.removeAttribute('data-rateb-ai-bound');
+            var form = doc.getElementById('aiInputForm');
+            var input = doc.getElementById('aiInput');
+            var sendBtn = doc.getElementById('aiSendBtn');
+            if (form) form.removeAttribute('data-rateb-ai-submit');
+            if (input) input.removeAttribute('data-rateb-ai-input');
+            if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
             api.bind();
         }
     }

@@ -9,10 +9,15 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
 ?>
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
-window.ratebAi = window.ratebAi || {
-    loading: false,
-    lastMessage: '',
+(function () {
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0SendFix && typeof window.ratebAi.sendFromInput === 'function');
+    if (needsUpgrade) {
+    var prev = window.ratebAi || {};
+    window.ratebAi = {
+    loading: !!prev.loading,
+    lastMessage: prev.lastMessage || '',
     __p0WriteConfirm: true,
+    __p0SendFix: true,
     send: function (message, confirmedWrites) {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return false;
@@ -106,8 +111,8 @@ window.ratebAi = window.ratebAi || {
             input.value = '';
             input.style.height = 'auto';
         }
-        if (sendBtn) sendBtn.disabled = true;
         this.loading = true;
+        this.syncSendBtn();
         setStatus('thinking');
         var tip = typing();
         var self = this;
@@ -147,7 +152,7 @@ window.ratebAi = window.ratebAi || {
         }).then(function () {
             self.loading = false;
             setStatus('ready');
-            if (sendBtn && input) sendBtn.disabled = !input.value.trim();
+            self.syncSendBtn();
         });
         return false;
     },
@@ -155,53 +160,109 @@ window.ratebAi = window.ratebAi || {
         var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
         return this.send(prompt);
     },
+    sendFromInput: function () {
+        var input = document.getElementById('aiInput');
+        return this.send(input ? input.value : '');
+    },
+    syncSendBtn: function () {
+        var input = document.getElementById('aiInput');
+        var sendBtn = document.getElementById('aiSendBtn');
+        if (!sendBtn) return;
+        var empty = !(input && String(input.value || '').trim());
+        /* Never leave the button HTML-disabled when idle — disabled swallows clicks
+           (including inline onclick), which made the paper-plane appear broken. */
+        sendBtn.disabled = !!this.loading;
+        sendBtn.classList.toggle('is-empty', empty && !this.loading);
+        sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
+    },
     bind: function () {
         var root = document.getElementById('ratebAiRoot');
-        if (!root || root.getAttribute('data-rateb-ai-bound') === '1') return;
+        if (!root) return;
         var form = document.getElementById('aiInputForm');
         var input = document.getElementById('aiInput');
         var sendBtn = document.getElementById('aiSendBtn');
         var self = this;
-        if (form) {
+        if (form && form.getAttribute('data-rateb-ai-submit') !== '1') {
+            form.setAttribute('data-rateb-ai-submit', '1');
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                self.send(input ? input.value : '');
+                self.sendFromInput();
             });
         }
-        if (input && sendBtn) {
-            input.addEventListener('input', function () {
+        if (input && input.getAttribute('data-rateb-ai-input') !== '1') {
+            input.setAttribute('data-rateb-ai-input', '1');
+            var onType = function () {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 180) + 'px';
-                sendBtn.disabled = !this.value.trim() || self.loading;
+                self.syncSendBtn();
+            };
+            input.addEventListener('input', onType);
+            input.addEventListener('keyup', onType);
+            input.addEventListener('change', onType);
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    self.sendFromInput();
+                }
+            });
+        }
+        if (sendBtn && sendBtn.getAttribute('data-rateb-ai-click') !== '1') {
+            sendBtn.setAttribute('data-rateb-ai-click', '1');
+            sendBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                self.sendFromInput();
             });
         }
         root.setAttribute('data-rateb-ai-bound', '1');
+        self.syncSendBtn();
         try { if (input) input.focus(); } catch (e) {}
     }
 };
-document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
-    if (!btn || !document.getElementById('ratebAiRoot')) return;
-    if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    window.ratebAi.clickSuggest(btn);
-}, true);
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { window.ratebAi.bind(); });
-} else {
-    window.ratebAi.bind();
-}
-document.addEventListener('rateb:nav:afterEnter', function () {
-    var root = document.getElementById('ratebAiRoot');
-    if (root) root.removeAttribute('data-rateb-ai-bound');
-    window.ratebAi.bind();
-});
-document.addEventListener('rateb:soft-nav:afterEnter', function () {
-    var root = document.getElementById('ratebAiRoot');
-    if (root) root.removeAttribute('data-rateb-ai-bound');
-    window.ratebAi.bind();
-});
+    } // end needsUpgrade
+    if (!window.__ratebAiSuggestBound) {
+        window.__ratebAiSuggestBound = true;
+        document.addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
+            if (!btn || !document.getElementById('ratebAiRoot')) return;
+            if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            window.ratebAi.clickSuggest(btn);
+        }, true);
+    }
+    if (!window.__ratebAiNavBound) {
+        window.__ratebAiNavBound = true;
+        document.addEventListener('rateb:nav:afterEnter', function () {
+            var root = document.getElementById('ratebAiRoot');
+            if (!root || !window.ratebAi) return;
+            root.removeAttribute('data-rateb-ai-bound');
+            var form = document.getElementById('aiInputForm');
+            var input = document.getElementById('aiInput');
+            var sendBtn = document.getElementById('aiSendBtn');
+            if (form) form.removeAttribute('data-rateb-ai-submit');
+            if (input) input.removeAttribute('data-rateb-ai-input');
+            if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
+            window.ratebAi.bind();
+        });
+        document.addEventListener('rateb:soft-nav:afterEnter', function () {
+            var root = document.getElementById('ratebAiRoot');
+            if (!root || !window.ratebAi) return;
+            root.removeAttribute('data-rateb-ai-bound');
+            var form = document.getElementById('aiInputForm');
+            var input = document.getElementById('aiInput');
+            var sendBtn = document.getElementById('aiSendBtn');
+            if (form) form.removeAttribute('data-rateb-ai-submit');
+            if (input) input.removeAttribute('data-rateb-ai-input');
+            if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
+            window.ratebAi.bind();
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { window.ratebAi && window.ratebAi.bind(); });
+    } else {
+        window.ratebAi && window.ratebAi.bind();
+    }
+})();
 </script>
 <div
     class="rateb-ai-container"
@@ -246,7 +307,7 @@ document.addEventListener('rateb:soft-nav:afterEnter', function () {
         </div>
     </div>
 
-    <form class="rateb-ai-input-form" id="aiInputForm" novalidate>
+    <form class="rateb-ai-input-form" id="aiInputForm" novalidate onsubmit="event.preventDefault(); return window.ratebAi && window.ratebAi.sendFromInput ? window.ratebAi.sendFromInput() : false;">
         <div class="rateb-ai-input-wrapper">
             <textarea
                 class="rateb-ai-input"
@@ -255,10 +316,12 @@ document.addEventListener('rateb:soft-nav:afterEnter', function () {
                 placeholder="<?php echo htmlspecialchars(__('ai_input_placeholder'), ENT_QUOTES, 'UTF-8'); ?>"
                 rows="1"
                 aria-label="<?php echo htmlspecialchars(__('ai_input_label'), ENT_QUOTES, 'UTF-8'); ?>"
+                oninput="window.ratebAi && window.ratebAi.syncSendBtn && window.ratebAi.syncSendBtn();"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.ratebAi&&window.ratebAi.sendFromInput&&window.ratebAi.sendFromInput();}"
                 required></textarea>
             <div class="rateb-ai-input-actions">
-                <button type="submit" class="rateb-ai-send-btn" id="aiSendBtn" disabled aria-label="<?php echo htmlspecialchars(__('ai_send'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <i class="fa-solid fa-paper-plane"></i>
+                <button type="button" class="rateb-ai-send-btn" id="aiSendBtn" aria-label="<?php echo htmlspecialchars(__('ai_send'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi && window.ratebAi.sendFromInput ? window.ratebAi.sendFromInput() : false;">
+                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -545,9 +608,14 @@ document.addEventListener('rateb:soft-nav:afterEnter', function () {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
 }
 
-.rateb-ai-send-btn:disabled {
+.rateb-ai-send-btn:disabled,
+.rateb-ai-send-btn.is-empty,
+.rateb-ai-send-btn[aria-disabled="true"] {
     opacity: 0.45;
     cursor: not-allowed;
 }
