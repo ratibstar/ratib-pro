@@ -66,11 +66,14 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($permissionGroups as $module => $perms) { ?>
-                    <tr class="rateb-matrix-module-row">
+                    <?php foreach ($permissionGroups as $module => $perms) {
+                        $moduleLabel = rateb_module_label($module);
+                        $moduleHaystack = Rateb\App\Core\View::escape(mb_strtolower($moduleLabel . ' ' . $module, 'UTF-8'));
+                        ?>
+                    <tr class="rateb-matrix-module-row" data-module="<?php echo Rateb\App\Core\View::escape($module); ?>" data-search-haystack="<?php echo $moduleHaystack; ?>">
                         <td colspan="<?php echo count($roles) + 1; ?>">
                             <div class="rateb-matrix-module-inner">
-                                <strong class="rateb-matrix-module-title"><?php echo Rateb\App\Core\View::escape(rateb_module_label($module)); ?></strong>
+                                <strong class="rateb-matrix-module-title"><?php echo Rateb\App\Core\View::escape($moduleLabel); ?></strong>
                                 <button type="button" class="btn btn-link btn-sm p-0 rateb-matrix-toggle-btn" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
                             </div>
                             <?php if ($module === 'accounting') { ?>
@@ -96,18 +99,24 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
                     <?php foreach ($perms as $perm) {
                         $permId = (int) $perm['id'];
                         $permLabel = rateb_permission_label($perm);
+                        $permSlug = (string) ($perm['slug'] ?? '');
+                        $permDesc = rateb_permission_description($perm);
                         $showPermSlug = !function_exists('rateb_locale') || rateb_locale() !== 'ar';
+                        $permHaystack = Rateb\App\Core\View::escape(mb_strtolower(
+                            $permLabel . ' ' . $permDesc . ' ' . $permSlug . ' ' . $module . ' ' . $moduleLabel,
+                            'UTF-8'
+                        ));
                         ?>
-                    <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
+                    <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>" data-perm-slug="<?php echo Rateb\App\Core\View::escape($permSlug); ?>" data-search-haystack="<?php echo $permHaystack; ?>"<?php echo $permSlug === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
                         <td class="rateb-matrix-sticky">
                             <div class="rateb-matrix-perm-label fw-semibold"><?php echo Rateb\App\Core\View::escape($permLabel); ?></div>
-                            <?php
-                            $permDesc = rateb_permission_description($perm);
-                            if ($permDesc !== '') { ?>
+                            <?php if ($permDesc !== '') { ?>
                             <div class="rateb-matrix-perm-desc text-muted small"><?php echo Rateb\App\Core\View::escape($permDesc); ?></div>
                             <?php } ?>
                             <?php if ($showPermSlug) { ?>
-                            <code class="rateb-matrix-perm-slug"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></code>
+                            <code class="rateb-matrix-perm-slug"><?php echo Rateb\App\Core\View::escape($permSlug); ?></code>
+                            <?php } else { ?>
+                            <span class="visually-hidden"><?php echo Rateb\App\Core\View::escape($permSlug); ?></span>
                             <?php } ?>
                         </td>
                         <?php foreach ($roles as $role) {

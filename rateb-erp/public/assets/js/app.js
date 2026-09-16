@@ -102,66 +102,57 @@
     }
 
     function initPermissionMatrix() {
-        if (!document.querySelector('[data-matrix-select-all], [data-matrix-select-none], [data-matrix-col], [data-matrix-module]')) {
+        /* Soft-nav safe: one document-level listener — toggle col/module survive DOM swaps. */
+        if (window.__ratebMatrixClickBound) {
             return;
         }
-        document.querySelectorAll('[data-matrix-select-all]').forEach(function (btn) {
-            if (btn.getAttribute('data-rateb-bound') === '1') {
+        window.__ratebMatrixClickBound = true;
+        document.addEventListener('click', function (e) {
+            var t = e.target && e.target.closest
+                ? e.target.closest('[data-matrix-select-all], [data-matrix-select-none], [data-matrix-col], [data-matrix-module]')
+                : null;
+            if (!t) {
                 return;
             }
-            btn.setAttribute('data-rateb-bound', '1');
-            btn.addEventListener('click', function () {
-                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
+            e.preventDefault();
+            try { e.stopPropagation(); } catch (eStop) { /* ignore */ }
+            var scope = t.closest('[data-role-lock-form]') || t.closest('form') || document;
+            if (t.hasAttribute('data-matrix-select-all')) {
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
                     cb.checked = true;
                 });
-            });
-        });
-
-        document.querySelectorAll('[data-matrix-select-none]').forEach(function (btn) {
-            if (btn.getAttribute('data-rateb-bound') === '1') {
                 return;
             }
-            btn.setAttribute('data-rateb-bound', '1');
-            btn.addEventListener('click', function () {
-                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
+            if (t.hasAttribute('data-matrix-select-none')) {
                 scope.querySelectorAll('.rateb-matrix-check').forEach(function (cb) {
                     cb.checked = false;
                 });
-            });
-        });
-
-        document.querySelectorAll('[data-matrix-col]').forEach(function (btn) {
-            if (btn.getAttribute('data-rateb-bound') === '1') {
                 return;
             }
-            btn.setAttribute('data-rateb-bound', '1');
-            btn.addEventListener('click', function () {
-                var scope = btn.closest('form') || document;
-                var roleId = btn.getAttribute('data-matrix-col');
-                var checks = scope.querySelectorAll('.rateb-matrix-check[data-role="' + roleId + '"]');
-                var allOn = Array.prototype.every.call(checks, function (cb) { return cb.checked; });
-                checks.forEach(function (cb) {
-                    cb.checked = !allOn;
+            if (t.hasAttribute('data-matrix-col')) {
+                var roleId = t.getAttribute('data-matrix-col');
+                var colChecks = scope.querySelectorAll('.rateb-matrix-check[data-role="' + roleId + '"]');
+                if (!colChecks.length) {
+                    return;
+                }
+                var colAllOn = Array.prototype.every.call(colChecks, function (cb) { return cb.checked; });
+                colChecks.forEach(function (cb) {
+                    cb.checked = !colAllOn;
                 });
-            });
-        });
-
-        document.querySelectorAll('[data-matrix-module]').forEach(function (btn) {
-            if (btn.getAttribute('data-rateb-bound') === '1') {
                 return;
             }
-            btn.setAttribute('data-rateb-bound', '1');
-            btn.addEventListener('click', function () {
-                var scope = btn.closest('[data-role-lock-form]') || btn.closest('form') || document;
-                var mod = btn.getAttribute('data-matrix-module');
-                var checks = scope.querySelectorAll('.rateb-matrix-check[data-module="' + mod + '"]');
-                var allOn = Array.prototype.every.call(checks, function (cb) { return cb.checked; });
-                checks.forEach(function (cb) {
-                    cb.checked = !allOn;
+            if (t.hasAttribute('data-matrix-module')) {
+                var mod = t.getAttribute('data-matrix-module');
+                var modChecks = scope.querySelectorAll('.rateb-matrix-check[data-module="' + mod + '"]');
+                if (!modChecks.length) {
+                    return;
+                }
+                var modAllOn = Array.prototype.every.call(modChecks, function (cb) { return cb.checked; });
+                modChecks.forEach(function (cb) {
+                    cb.checked = !modAllOn;
                 });
-            });
-        });
+            }
+        }, true);
     }
 
     function hydrateNavLazy(group) {
@@ -274,24 +265,36 @@
         var resultsLabel = isAr ? 'نتيجة' : 'results';
 
         function isEmptyStateRow(tr) {
-            /* Matrix module headers use a single colspan cell — not an empty-state row. */
             if (tr.classList && tr.classList.contains('rateb-matrix-module-row')) {
                 return false;
             }
             return tr.querySelectorAll('td').length === 1 && tr.querySelector('td[colspan]') !== null;
         }
 
-        function attachSearch(wrapEl, table) {
-            if (!wrapEl || !table || table.getAttribute('data-rateb-search-bound') === '1') {
-                return;
+        function rowSearchText(tr) {
+            var hay = tr.getAttribute('data-search-haystack');
+            if (hay) {
+                return String(hay).toLowerCase();
             }
-            table.setAttribute('data-rateb-search-bound', '1');
+            return (tr.textContent || '').toLowerCase();
+        }
 
-            var input = wrapEl.querySelector('[data-rateb-table-search-field], input[type="search"]');
+        function filterFromInput(input) {
             if (!input) {
                 return;
             }
-
+            var wrapEl = input.closest('[data-rateb-table-search-wrap]');
+            if (!wrapEl || wrapEl.getAttribute('data-rateb-server-search') === '1') {
+                return;
+            }
+            var host = wrapEl.nextElementSibling;
+            var table = host && host.querySelector ? host.querySelector('table.rateb-table') : null;
+            if (!table && wrapEl.parentElement) {
+                table = wrapEl.parentElement.querySelector('table.rateb-table');
+            }
+            if (!table) {
+                return;
+            }
             var clearBtn = wrapEl.querySelector('[data-rateb-table-search-clear]');
             var meta = wrapEl.querySelector('[data-rateb-search-meta]');
             var tbody = table.querySelector('tbody');
@@ -299,114 +302,130 @@
                 return;
             }
 
-            var emptyRow = null;
-            var isMatrix = table.classList.contains('rateb-matrix-table');
-
-            function filterRows() {
-                var q = input.value.trim().toLowerCase();
-                var visible = 0;
-                var dataRows = 0;
-
-                if (emptyRow) {
-                    emptyRow.remove();
-                    emptyRow = null;
-                }
-
-                if (isMatrix) {
-                    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
-                    var moduleRow = null;
-                    var moduleHasVisible = false;
-                    var moduleText = '';
-
-                    function flushModule() {
-                        if (!moduleRow) {
-                            return;
-                        }
-                        var modMatch = q === '' || moduleText.indexOf(q) !== -1;
-                        moduleRow.style.display = (q === '' || modMatch || moduleHasVisible) ? '' : 'none';
-                    }
-
-                    rows.forEach(function (tr) {
-                        if (tr.getAttribute('data-rateb-search-empty') === '1') {
-                            return;
-                        }
-                        if (tr.classList.contains('rateb-matrix-module-row')) {
-                            flushModule();
-                            moduleRow = tr;
-                            moduleHasVisible = false;
-                            moduleText = (tr.textContent || '').toLowerCase();
-                            return;
-                        }
-                        dataRows++;
-                        var text = (tr.textContent || '').toLowerCase();
-                        var show = q === '' || text.indexOf(q) !== -1
-                            || (moduleText !== '' && moduleText.indexOf(q) !== -1);
-                        tr.style.display = show ? '' : 'none';
-                        if (show) {
-                            visible++;
-                            moduleHasVisible = true;
-                        }
-                    });
-                    flushModule();
-                } else {
-                    tbody.querySelectorAll('tr').forEach(function (tr) {
-                        if (tr.getAttribute('data-rateb-search-empty') === '1') {
-                            return;
-                        }
-                        if (isEmptyStateRow(tr)) {
-                            tr.style.display = q === '' ? '' : 'none';
-                            return;
-                        }
-                        dataRows++;
-                        var text = (tr.textContent || '').toLowerCase();
-                        var show = q === '' || text.indexOf(q) !== -1;
-                        tr.style.display = show ? '' : 'none';
-                        if (show) {
-                            visible++;
-                        }
-                    });
-                }
-
-                if (clearBtn) {
-                    clearBtn.classList.toggle('d-none', q === '');
-                }
-
-                if (meta) {
-                    if (q === '') {
-                        meta.classList.add('d-none');
-                    } else {
-                        meta.classList.remove('d-none');
-                        meta.textContent = visible + ' ' + resultsLabel;
-                    }
-                }
-
-                if (q !== '' && visible === 0 && dataRows > 0) {
-                    var colCount = table.querySelectorAll('thead th').length || 1;
-                    emptyRow = document.createElement('tr');
-                    emptyRow.setAttribute('data-rateb-search-empty', '1');
-                    emptyRow.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-3">' + noResults + '</td>';
-                    tbody.appendChild(emptyRow);
-                }
+            var q = String(input.value || '').trim().toLowerCase();
+            var visible = 0;
+            var dataRows = 0;
+            var emptyRow = tbody.querySelector('tr[data-rateb-search-empty="1"]');
+            if (emptyRow) {
+                emptyRow.remove();
+                emptyRow = null;
             }
 
-            input.addEventListener('input', filterRows);
-            if (clearBtn) {
-                clearBtn.addEventListener('click', function () {
-                    input.value = '';
-                    filterRows();
-                    input.focus();
+            var isMatrix = table.classList.contains('rateb-matrix-table');
+            if (isMatrix) {
+                var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+                var moduleRow = null;
+                var moduleHasVisible = false;
+                var moduleText = '';
+
+                function flushModule() {
+                    if (!moduleRow) {
+                        return;
+                    }
+                    var modMatch = q === '' || moduleText.indexOf(q) !== -1;
+                    moduleRow.style.display = (q === '' || modMatch || moduleHasVisible) ? '' : 'none';
+                }
+
+                rows.forEach(function (tr) {
+                    if (tr.getAttribute('data-rateb-search-empty') === '1') {
+                        return;
+                    }
+                    if (tr.classList.contains('rateb-matrix-module-row')) {
+                        flushModule();
+                        moduleRow = tr;
+                        moduleHasVisible = false;
+                        moduleText = rowSearchText(tr);
+                        return;
+                    }
+                    dataRows++;
+                    var text = rowSearchText(tr);
+                    var show = q === '' || text.indexOf(q) !== -1
+                        || (moduleText !== '' && moduleText.indexOf(q) !== -1);
+                    tr.style.display = show ? '' : 'none';
+                    if (show) {
+                        visible++;
+                        moduleHasVisible = true;
+                    }
                 });
+                flushModule();
+            } else {
+                tbody.querySelectorAll('tr').forEach(function (tr) {
+                    if (tr.getAttribute('data-rateb-search-empty') === '1') {
+                        return;
+                    }
+                    if (isEmptyStateRow(tr)) {
+                        tr.style.display = q === '' ? '' : 'none';
+                        return;
+                    }
+                    dataRows++;
+                    var text = rowSearchText(tr);
+                    var show = q === '' || text.indexOf(q) !== -1;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) {
+                        visible++;
+                    }
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.classList.toggle('d-none', q === '');
+            }
+            if (meta) {
+                if (q === '') {
+                    meta.classList.add('d-none');
+                } else {
+                    meta.classList.remove('d-none');
+                    meta.textContent = visible + ' ' + resultsLabel;
+                }
+            }
+            if (q !== '' && visible === 0 && dataRows > 0) {
+                var colCount = table.querySelectorAll('thead th').length || 1;
+                emptyRow = document.createElement('tr');
+                emptyRow.setAttribute('data-rateb-search-empty', '1');
+                emptyRow.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-3">' + noResults + '</td>';
+                tbody.appendChild(emptyRow);
             }
         }
 
-        document.querySelectorAll('[data-rateb-table-search-wrap]:not([data-rateb-server-search="1"])').forEach(function (wrap) {
-            var host = wrap.nextElementSibling;
-            var table = host && host.querySelector ? host.querySelector('table.rateb-table') : null;
-            if (!table && wrap.parentElement) {
-                table = wrap.parentElement.querySelector('table.rateb-table');
-            }
-            attachSearch(wrap, table);
-        });
+        /* Soft-nav safe: filter while typing without re-binding each navigation. */
+        if (!window.__ratebTableSearchDelegated) {
+            window.__ratebTableSearchDelegated = true;
+            document.addEventListener('input', function (e) {
+                var input = e.target && e.target.closest
+                    ? e.target.closest('[data-rateb-table-search-field], [data-rateb-table-search-wrap] input[type="search"]')
+                    : null;
+                if (!input) {
+                    return;
+                }
+                filterFromInput(input);
+            }, true);
+            document.addEventListener('keyup', function (e) {
+                var input = e.target && e.target.closest
+                    ? e.target.closest('[data-rateb-table-search-field], [data-rateb-table-search-wrap] input[type="search"]')
+                    : null;
+                if (!input) {
+                    return;
+                }
+                filterFromInput(input);
+            }, true);
+            document.addEventListener('click', function (e) {
+                var clearBtn = e.target && e.target.closest
+                    ? e.target.closest('[data-rateb-table-search-clear]')
+                    : null;
+                if (!clearBtn) {
+                    return;
+                }
+                var wrap = clearBtn.closest('[data-rateb-table-search-wrap]');
+                var input = wrap ? wrap.querySelector('[data-rateb-table-search-field], input[type="search"]') : null;
+                if (!input) {
+                    return;
+                }
+                e.preventDefault();
+                input.value = '';
+                filterFromInput(input);
+                input.focus();
+            }, true);
+        }
 
         document.querySelectorAll('table.rateb-table').forEach(function (table) {
             if (table.getAttribute('data-rateb-search-skip') === '1') {
@@ -443,7 +462,6 @@
                 '<i class="fas fa-times" aria-hidden="true"></i></button></div>' +
                 '<span class="rateb-table-search-meta small text-muted d-none" data-rateb-search-meta="1"></span></div>';
             container.parentElement.insertBefore(wrap, container);
-            attachSearch(wrap, table);
         });
     }
 
