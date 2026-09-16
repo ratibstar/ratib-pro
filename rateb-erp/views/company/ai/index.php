@@ -10,7 +10,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
-    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0SendFix && typeof window.ratebAi.sendFromInput === 'function');
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0LangFix && typeof window.ratebAi.getHistory === 'function');
     if (needsUpgrade) {
     var prev = window.ratebAi || {};
     window.ratebAi = {
@@ -18,6 +18,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     lastMessage: prev.lastMessage || '',
     __p0WriteConfirm: true,
     __p0SendFix: true,
+    __p0LangFix: true,
     send: function (message, confirmedWrites) {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return false;
@@ -103,6 +104,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         }
 
         if (welcome) welcome.style.display = 'none';
+        var history = this.getHistory ? this.getHistory() : [];
         if (!confirmedWrites.length) {
             addMsg('user', message);
             this.lastMessage = message;
@@ -127,7 +129,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
             },
             body: JSON.stringify({
                 message: message,
-                history: [],
+                history: history,
                 confirmed_writes: confirmedWrites
             })
         }).then(function (res) {
@@ -159,6 +161,24 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     clickSuggest: function (btn) {
         var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
         return this.send(prompt);
+    },
+    getHistory: function () {
+        var messages = document.getElementById('aiMessages');
+        if (!messages) return [];
+        var out = [];
+        var nodes = messages.querySelectorAll('.rateb-ai-message');
+        for (var i = 0; i < nodes.length; i++) {
+            var el = nodes[i];
+            if (el.classList.contains('rateb-ai-typing-container')) continue;
+            var role = el.classList.contains('user') ? 'user' : (el.classList.contains('assistant') ? 'assistant' : '');
+            if (!role) continue;
+            var contentEl = el.querySelector('.rateb-ai-message-content');
+            var text = contentEl ? String(contentEl.innerText || contentEl.textContent || '').trim() : '';
+            if (!text) continue;
+            out.push({ role: role, content: text });
+        }
+        if (out.length > 16) out = out.slice(out.length - 16);
+        return out;
     },
     sendFromInput: function () {
         var input = document.getElementById('aiInput');

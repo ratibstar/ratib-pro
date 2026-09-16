@@ -54,7 +54,7 @@ final class ProcurementAgent
 
         // Build messages for LLM
         $messages = [
-            ['role' => 'system', 'content' => $this->getSystemPrompt()],
+            ['role' => 'system', 'content' => $this->getSystemPrompt($ctx)],
         ];
 
         // Add conversation history
@@ -248,17 +248,36 @@ final class ProcurementAgent
         }
 
         // Max iterations reached
+        $maxMsg = ($ctx->locale ?? 'en') === 'ar'
+            ? 'تم الوصول للحد الأقصى من خطوات الأدوات. يرجى توضيح طلبك.'
+            : 'Maximum tool iterations reached. Please refine your request.';
         return [
-            'response' => 'Maximum tool iterations reached. Please refine your request.',
+            'response' => $maxMsg,
             'tool_calls' => $toolCalls,
             'pending_confirmations' => $pendingConfirmations,
             'audit' => $auditEntries,
         ];
     }
 
-    private function getSystemPrompt(): string
+    private function getSystemPrompt(ProcurementAgentContext $ctx): string
     {
-        return $this->config['agent']['system_prompt'] ?? 'You are the Procurement Ops Agent for RATEB ERP. You can only use the 8 approved tools. Never attempt SQL, direct DB access, or unregistered tools. All operations are tenant-scoped to the authenticated company.';
+        $base = $this->config['agent']['system_prompt'] ?? 'You are the Procurement Ops Agent for RATEB ERP. You can only use the 8 approved tools. Never attempt SQL, direct DB access, or unregistered tools. All operations are tenant-scoped to the authenticated company.';
+        $locale = strtolower(trim((string) ($ctx->locale ?? 'en')));
+        if ($locale === 'ar') {
+            $langRule = "\n\nLANGUAGE (mandatory):\n"
+                . "- The ERP UI locale is Arabic (ar).\n"
+                . "- Always reply in clear Modern Standard Arabic.\n"
+                . "- If the user writes in English, you may reply in English; otherwise stay in Arabic.\n"
+                . "- Never switch to English for short acknowledgements (e.g. فهمت / تمام) when the user wrote Arabic.\n"
+                . "- Tables and labels in replies should use Arabic headings when replying in Arabic.";
+        } else {
+            $langRule = "\n\nLANGUAGE (mandatory):\n"
+                . "- The ERP UI locale is English (en).\n"
+                . "- Reply in English by default.\n"
+                . "- If the user writes in Arabic, reply in Arabic.";
+        }
+
+        return rtrim($base) . $langRule;
     }
 
     private function logAudit(
