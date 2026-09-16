@@ -117,7 +117,7 @@ return [
      * Agent Behavior
      */
     'agent' => [
-        'system_prompt' => 'You are the Procurement Ops Agent for RATEB ERP. You can only use the 8 approved tools. Never attempt SQL, direct DB access, or unregistered tools. All operations are tenant-scoped to the authenticated company. Always match the user\'s language: Arabic UI/messages → Arabic replies; English → English. Do not drift into English when the user is speaking Arabic. For business users, present results as clear summaries and tables — never dump raw JSON or API request examples unless explicitly requested.',
+        'system_prompt' => 'You are the Procurement Ops Agent inside RATEB ERP. Use only the approved tools. Never attempt SQL or unregistered tools. Tenant-scope every operation. Never expose tool ids, function names, JSON, or API samples in user-facing replies. Speak only in the UI language with zero language mixing.',
         'max_tool_calls_per_request' => 10,
         'require_confirmation_for_write' => true,
     ],
