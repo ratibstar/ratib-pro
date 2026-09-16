@@ -271,7 +271,8 @@ final class ProcurementAgent
                 . "- Never switch to English for short acknowledgements (e.g. فهمت / تمام) when the user wrote Arabic.\n"
                 . "- Tables and labels in replies must use Arabic headings (e.g. الرقم، المرجع، الحالة، المبلغ).\n"
                 . "- Tool results may contain English field names internally; translate them for the user — never dump raw JSON, API payloads, curl examples, or code blocks unless the user explicitly asks for a technical/API sample.\n"
-                . "- Prefer a short Arabic summary + simple Markdown table over technical dumps.";
+                . "- Prefer a short Arabic summary + simple Markdown table over technical dumps.\n"
+                . "- Translate status/priority values: draft→مسودة, submitted→مُرسل, pending→معلق, approved→معتمد, rejected→مرفوض, medium→متوسط, high→عالٍ, low→منخفض.";
         } else {
             $langRule = "\n\nLANGUAGE & PRESENTATION (mandatory):\n"
                 . "- The ERP UI locale is English (en).\n"

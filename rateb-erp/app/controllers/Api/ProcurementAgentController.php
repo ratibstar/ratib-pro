@@ -36,7 +36,7 @@ final class ProcurementAgentController extends Controller
             Response::json([
                 'success' => false,
                 'error' => 'unauthorized',
-                'message' => 'Valid authentication and company context required',
+                'message' => __('ai_auth_required'),
             ], 401);
             return;
         }
@@ -47,7 +47,7 @@ final class ProcurementAgentController extends Controller
             Response::json([
                 'success' => false,
                 'error' => 'csrf_invalid',
-                'message' => 'Invalid CSRF token',
+                'message' => __('ai_csrf_invalid'),
             ], 403);
             return;
         }
@@ -60,7 +60,7 @@ final class ProcurementAgentController extends Controller
             Response::json([
                 'success' => false,
                 'error' => 'invalid_request',
-                'message' => 'Message is required',
+                'message' => __('ai_message_required'),
             ], 400);
             return;
         }

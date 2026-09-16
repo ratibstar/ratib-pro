@@ -10,7 +10,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
-    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0I18nUi && typeof window.ratebAi.getHistory === 'function');
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0ToolLabels && typeof window.ratebAi.getHistory === 'function');
     if (needsUpgrade) {
     var prev = window.ratebAi || {};
     window.ratebAi = {
@@ -20,6 +20,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     __p0SendFix: true,
     __p0LangFix: true,
     __p0I18nUi: true,
+    __p0ToolLabels: true,
     send: function (message, confirmedWrites) {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return false;
@@ -33,6 +34,15 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         var csrf = root.getAttribute('data-csrf') || '';
         var t = function (key, fallback) {
             return root.getAttribute('data-i18n-' + key) || fallback;
+        };
+        var toolLabels = {};
+        try {
+            toolLabels = JSON.parse(root.getAttribute('data-tool-labels') || '{}') || {};
+        } catch (eLabels) {
+            toolLabels = {};
+        }
+        var toolLabel = function (name) {
+            return (toolLabels && toolLabels[name]) ? toolLabels[name] : name;
         };
         message = String(message || '').trim();
         if (!message || !messages || !endpoint || this.loading) return false;
@@ -78,11 +88,11 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
             var labels = [];
             (pending || []).forEach(function (p) {
                 if (p && p.confirm_key) keys.push(p.confirm_key);
-                if (p && p.tool) labels.push(p.tool);
+                if (p && p.tool) labels.push(toolLabel(p.tool));
             });
             if (!keys.length) return;
             var wrap = document.createElement('div');
-            wrap.className = 'rateb-ai-message assistant';
+            wrap.className = 'rateb-ai-message assistant rateb-ai-confirm-chrome';
             wrap.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
                 '<div class="rateb-ai-message-content">' +
                 '<div>' + esc(labels.join(', ')) + '</div>' +
@@ -174,6 +184,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
             if (el.classList.contains('rateb-ai-typing-container')) continue;
+            if (el.classList.contains('rateb-ai-confirm-chrome')) continue;
             var role = el.classList.contains('user') ? 'user' : (el.classList.contains('assistant') ? 'assistant' : '');
             if (!role) continue;
             var contentEl = el.querySelector('.rateb-ai-message-content');
@@ -299,6 +310,19 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     data-i18n-request-failed="<?php echo htmlspecialchars(__('ai_request_failed'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-no-response="<?php echo htmlspecialchars(__('ai_no_response'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-network-error="<?php echo htmlspecialchars(__('ai_network_error'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-tool-labels="<?php
+        $aiToolLabels = [
+            'list_purchase_requests' => __('ai_tool_list_purchase_requests'),
+            'get_purchase_request' => __('ai_tool_get_purchase_request'),
+            'list_purchase_orders' => __('ai_tool_list_purchase_orders'),
+            'search_suppliers' => __('ai_tool_search_suppliers'),
+            'list_pending_approvals' => __('ai_tool_list_pending_approvals'),
+            'get_approval_detail' => __('ai_tool_get_approval_detail'),
+            'create_draft_purchase_request' => __('ai_tool_create_draft_purchase_request'),
+            'submit_purchase_request' => __('ai_tool_submit_purchase_request'),
+        ];
+        echo htmlspecialchars((string) json_encode($aiToolLabels, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+    ?>"
 >
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">

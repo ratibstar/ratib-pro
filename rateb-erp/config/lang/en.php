@@ -4652,4 +4652,12 @@ return [
     'ai_auth_required' => 'Valid authentication and company context required',
     'ai_agent_failed' => 'AI agent failed',
     'ai_company_required' => 'Company context is required',
+    'ai_tool_list_purchase_requests' => 'List purchase requests',
+    'ai_tool_get_purchase_request' => 'Purchase request details',
+    'ai_tool_list_purchase_orders' => 'List purchase orders',
+    'ai_tool_search_suppliers' => 'Search suppliers',
+    'ai_tool_list_pending_approvals' => 'List pending approvals',
+    'ai_tool_get_approval_detail' => 'Approval details',
+    'ai_tool_create_draft_purchase_request' => 'Create draft purchase request',
+    'ai_tool_submit_purchase_request' => 'Submit purchase request',
 ];

@@ -4700,4 +4700,12 @@ return [
     'ai_auth_required' => 'يلزم تسجيل الدخول وسياق الشركة',
     'ai_agent_failed' => 'فشل مساعد RATEB AI',
     'ai_company_required' => 'سياق الشركة مطلوب',
+    'ai_tool_list_purchase_requests' => 'عرض طلبات الشراء',
+    'ai_tool_get_purchase_request' => 'تفاصيل طلب شراء',
+    'ai_tool_list_purchase_orders' => 'عرض أوامر الشراء',
+    'ai_tool_search_suppliers' => 'البحث عن موردين',
+    'ai_tool_list_pending_approvals' => 'عرض الموافقات المعلقة',
+    'ai_tool_get_approval_detail' => 'تفاصيل موافقة',
+    'ai_tool_create_draft_purchase_request' => 'إنشاء مسودة طلب شراء',
+    'ai_tool_submit_purchase_request' => 'إرسال طلب شراء',
 ];

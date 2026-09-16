@@ -13,6 +13,7 @@
             __p0SendFix: true,
             __p0LangFix: true,
             __p0I18nUi: true,
+            __p0ToolLabels: true,
             send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
@@ -25,6 +26,15 @@
                 var csrf = box.getAttribute('data-csrf') || '';
                 var t = function (key, fallback) {
                     return box.getAttribute('data-i18n-' + key) || fallback;
+                };
+                var toolLabels = {};
+                try {
+                    toolLabels = JSON.parse(box.getAttribute('data-tool-labels') || '{}') || {};
+                } catch (eLabels) {
+                    toolLabels = {};
+                }
+                var toolLabel = function (name) {
+                    return (toolLabels && toolLabels[name]) ? toolLabels[name] : name;
                 };
                 message = String(message || '').trim();
                 if (!message || !messages || !endpoint || this.loading) return false;
@@ -69,11 +79,11 @@
                     var labels = [];
                     (pending || []).forEach(function (p) {
                         if (p && p.confirm_key) keys.push(p.confirm_key);
-                        if (p && p.tool) labels.push(p.tool);
+                        if (p && p.tool) labels.push(toolLabel(p.tool));
                     });
                     if (!keys.length) return;
                     var wrap = doc.createElement('div');
-                    wrap.className = 'rateb-ai-message assistant';
+                    wrap.className = 'rateb-ai-message assistant rateb-ai-confirm-chrome';
                     wrap.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
                         '<div class="rateb-ai-message-content">' +
                         '<div>' + esc(labels.join(', ')) + '</div>' +
@@ -165,6 +175,7 @@
                 for (var i = 0; i < nodes.length; i++) {
                     var el = nodes[i];
                     if (el.classList.contains('rateb-ai-typing-container')) continue;
+                    if (el.classList.contains('rateb-ai-confirm-chrome')) continue;
                     var role = el.classList.contains('user') ? 'user' : (el.classList.contains('assistant') ? 'assistant' : '');
                     if (!role) continue;
                     var contentEl = el.querySelector('.rateb-ai-message-content');
@@ -234,7 +245,7 @@
     }
 
     function ensureApi() {
-        if (root.ratebAi && root.ratebAi.__p0I18nUi && typeof root.ratebAi.getHistory === 'function') {
+        if (root.ratebAi && root.ratebAi.__p0ToolLabels && typeof root.ratebAi.getHistory === 'function') {
             return root.ratebAi;
         }
         var prev = root.ratebAi || {};
