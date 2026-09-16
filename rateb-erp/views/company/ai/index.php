@@ -272,10 +272,13 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
 >
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">
-            <button type="button" class="btn btn-sm btn-outline-secondary rateb-ai-back-btn" title="<?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?>" onclick="(function(){try{var r=document.referrer||'';var o=location.origin;if(r&&r.indexOf(o)===0&&r.indexOf('/admin/ai')===-1){location.href=r;return;}if(window.history.length>1){history.back();return;}}catch(e){}location.href='<?php echo htmlspecialchars(rateb_url('admin/procurement'), ENT_QUOTES, 'UTF-8'); ?>';})();">
+            <?php
+            $aiBackUrl = rateb_url(rateb_app_route('purchase-requests'));
+            ?>
+            <a href="<?php echo htmlspecialchars($aiBackUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-secondary rateb-ai-back-btn" data-rateb-full-nav="1" title="<?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?>">
                 <i class="fas fa-arrow-right"></i>
                 <span><?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?></span>
-            </button>
+            </a>
             <i class="fa-solid fa-robot"></i>
             <span class="rateb-ai-title"><?php echo htmlspecialchars(__('rateb_ai'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
