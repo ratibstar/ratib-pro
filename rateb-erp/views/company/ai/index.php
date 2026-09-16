@@ -7,6 +7,13 @@ $chatEndpoint = $chatEndpoint ?? rateb_url(rateb_app_route('ai/chat'));
 $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
 $aiJs = rateb_asset('js/rateb-ai-page.js');
 $aiHistJs = rateb_asset('js/rateb-ai-history.js');
+/* Bust SW/browser cache for toolbar handlers (soft-nav + deferred scripts). */
+$aiHistFile = RATEB_ROOT . '/public/assets/js/rateb-ai-history.js';
+$aiPageFile = RATEB_ROOT . '/public/assets/js/rateb-ai-page.js';
+$aiHistVer = is_file($aiHistFile) ? (string) filemtime($aiHistFile) : '1';
+$aiPageVer = is_file($aiPageFile) ? (string) filemtime($aiPageFile) : '1';
+$aiHistJs .= (str_contains($aiHistJs, '?') ? '&' : '?') . 'aih=' . rawurlencode($aiHistVer);
+$aiJs .= (str_contains($aiJs, '?') ? '&' : '?') . 'aip=' . rawurlencode($aiPageVer);
 $aiCompanyId = (int) ($aiCompanyId ?? 0);
 $aiUserId = (int) ($aiUserId ?? 0);
 ?>
@@ -357,15 +364,15 @@ $aiUserId = (int) ($aiUserId ?? 0);
             <span class="rateb-ai-title"><?php echo htmlspecialchars(__('rateb_ai'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <div class="rateb-ai-toolbar">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistNew" title="<?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?>">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistNew" title="<?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?>" onclick="try{if(window.RatebAiHistory){if(!window.RatebAiHistory.root)window.RatebAiHistory.init();window.RatebAiHistory.newChat();}return false;}catch(e){return false;}">
                 <i class="fa-solid fa-plus"></i>
                 <span><?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?></span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistToggle" aria-expanded="false" title="<?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?>">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistToggle" aria-expanded="false" title="<?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?>" onclick="try{var p=document.getElementById('aiHistPanel');var b=document.getElementById('aiHistToggle');if(!p)return false;p.hidden=!p.hidden;if(b)b.setAttribute('aria-expanded',p.hidden?'false':'true');if(!p.hidden&&window.RatebAiHistory){if(!window.RatebAiHistory.root)window.RatebAiHistory.init();window.RatebAiHistory.renderSessionList();}return false;}catch(e){return false;}">
                 <i class="fa-solid fa-clock-rotate-left"></i>
                 <span><?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?></span>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistClear" title="<?php echo htmlspecialchars(__('ai_clear_chat'), ENT_QUOTES, 'UTF-8'); ?>">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistClear" title="<?php echo htmlspecialchars(__('ai_clear_chat'), ENT_QUOTES, 'UTF-8'); ?>" onclick="try{if(window.RatebAiHistory){if(!window.RatebAiHistory.root)window.RatebAiHistory.init();window.RatebAiHistory.clearCurrent();}return false;}catch(e){return false;}">
                 <i class="fa-solid fa-eraser"></i>
                 <span><?php echo htmlspecialchars(__('ai_clear_chat'), ENT_QUOTES, 'UTF-8'); ?></span>
             </button>
@@ -385,7 +392,7 @@ $aiUserId = (int) ($aiUserId ?? 0);
         <aside class="rateb-ai-hist-panel" id="aiHistPanel" hidden>
             <div class="rateb-ai-hist-head">
                 <strong><?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?></strong>
-                <button type="button" class="btn btn-sm btn-outline-danger" id="aiHistClearAll"><?php echo htmlspecialchars(__('ai_clear_all_history'), ENT_QUOTES, 'UTF-8'); ?></button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="aiHistClearAll" onclick="try{if(window.RatebAiHistory){if(!window.RatebAiHistory.root)window.RatebAiHistory.init();window.RatebAiHistory.clearAll();}return false;}catch(e){return false;}"><?php echo htmlspecialchars(__('ai_clear_all_history'), ENT_QUOTES, 'UTF-8'); ?></button>
             </div>
             <input type="search" class="rateb-ai-hist-search" id="aiHistSearch" placeholder="<?php echo htmlspecialchars(__('ai_history_search'), ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars(__('ai_history_search'), ENT_QUOTES, 'UTF-8'); ?>">
             <ul class="rateb-ai-hist-list" id="aiHistList"></ul>
@@ -928,5 +935,6 @@ try {
     }
 } catch (eSw) {}
 </script>
-<script src="<?php echo htmlspecialchars($aiHistJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<?php /* History toolbar must bind immediately (no defer) — soft-nav + SW often skip re-running deferred module scripts. */ ?>
+<script src="<?php echo htmlspecialchars($aiHistJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>

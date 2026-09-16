@@ -122,7 +122,7 @@ return [
             'procurement.contract',
             'procurement.portal',
             'procurement.admin',
-            'ai.view',
+            /* ai.view is independent — matrix on/off must control RATEB AI explicitly. */
         ],
         'procurement.admin' => [
             'procurement.view',

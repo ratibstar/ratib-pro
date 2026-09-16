@@ -64,19 +64,56 @@ final class ProcurementAgentContext
             return null;
         }
 
-        $isSuperAdmin = (bool) TenantContext::isSuperAdmin();
+        return self::build(
+            $userId,
+            (int) $companyId,
+            (string) SessionManager::get('rateb_locale', 'en'),
+            session_id() ?: 'no-session',
+            (bool) TenantContext::isSuperAdmin()
+        );
+    }
 
-        // Get locale from session or user preference
-        $locale = SessionManager::get('rateb_locale', 'en');
+    /**
+     * Create context from Bearer API auth (ApiAuthMiddleware already bound tenant + user id).
+     * Never accepts request-provided company/user — only TenantContext.
+     */
+    public static function fromApiUser(int $userId, int $companyId): ?self
+    {
+        if ($userId < 1 || $companyId < 1) {
+            return null;
+        }
+        if (TenantContext::companyId() !== $companyId) {
+            return null;
+        }
+        $apiUid = TenantContext::apiUserId();
+        if ($apiUid === null || $apiUid !== $userId) {
+            return null;
+        }
 
-        // Get session ID
-        $sessionId = session_id() ?: 'no-session';
+        $locale = (string) SessionManager::get('rateb_locale', 'en');
+        if ($locale === '') {
+            $locale = 'en';
+        }
 
-        // Get user permissions (from RBAC) — use existing AuthorizationService API.
+        return self::build(
+            $userId,
+            $companyId,
+            $locale,
+            'api:' . $userId,
+            (bool) TenantContext::isSuperAdmin()
+        );
+    }
+
+    private static function build(
+        int $userId,
+        int $companyId,
+        string $locale,
+        string $sessionId,
+        bool $isSuperAdmin
+    ): self {
         $authz = new AuthorizationService();
         $permissions = $authz->userPermissionSlugs($userId);
 
-        // Get enabled modules for this company
         $planLimits = new PlanLimitService();
         $enabledModules = [];
         $allModules = ['procurement', 'suppliers', 'inventory', 'hr', 'crm', 'accounting', 'manufacturing', 'assets', 'projects', 'quality', 'branches', 'contracts', 'tenders', 'recruitment', 'dashboard'];

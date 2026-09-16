@@ -246,29 +246,52 @@
             this.renderSessionList();
         },
 
+        ensureLive: function () {
+            var live = doc.getElementById('ratebAiRoot');
+            if (!live) return false;
+            if (this.root !== live || !this.state) this.init();
+            return !!(this.root && this.state);
+        },
+
         editMessage: function (index) {
+            if (this._acting) return;
+            if (!this.ensureLive()) return;
             var cur = ensureCurrent(this.root, this.state);
-            if (!cur.messages[index] || cur.messages[index].role !== 'user') return;
-            var text = cur.messages[index].content;
-            cur.messages = cur.messages.slice(0, index);
-            cur.updatedAt = new Date().toISOString();
-            saveState(this.root, this.state);
-            this.restoreCurrentIntoDom(true);
-            var input = doc.getElementById('aiInput');
-            if (input) {
-                input.value = text;
-                input.focus();
-                if (root.ratebAi && root.ratebAi.syncSendBtn) root.ratebAi.syncSendBtn();
+            index = parseInt(index, 10);
+            if (isNaN(index) || !cur.messages[index] || cur.messages[index].role !== 'user') return;
+            this._acting = true;
+            try {
+                var text = cur.messages[index].content;
+                cur.messages = cur.messages.slice(0, index);
+                cur.updatedAt = new Date().toISOString();
+                saveState(this.root, this.state);
+                this.restoreCurrentIntoDom(true);
+                var input = doc.getElementById('aiInput');
+                if (input) {
+                    input.value = text;
+                    input.focus();
+                    if (root.ratebAi && root.ratebAi.syncSendBtn) root.ratebAi.syncSendBtn();
+                }
+            } finally {
+                this._acting = false;
             }
         },
 
         deleteMessage: function (index) {
+            if (this._acting) return;
+            if (!this.ensureLive()) return;
             var cur = ensureCurrent(this.root, this.state);
-            if (!cur.messages[index]) return;
-            cur.messages.splice(index, 1);
-            cur.updatedAt = new Date().toISOString();
-            saveState(this.root, this.state);
-            this.restoreCurrentIntoDom(true);
+            index = parseInt(index, 10);
+            if (isNaN(index) || !cur.messages[index]) return;
+            this._acting = true;
+            try {
+                cur.messages.splice(index, 1);
+                cur.updatedAt = new Date().toISOString();
+                saveState(this.root, this.state);
+                this.restoreCurrentIntoDom(true);
+            } finally {
+                this._acting = false;
+            }
         },
 
         clearDom: function (showWelcome) {
@@ -313,12 +336,12 @@
             var actions = '';
             if (role === 'user') {
                 actions = '<div class="rateb-ai-msg-actions">' +
-                    '<button type="button" class="rateb-ai-msg-action" data-ai-edit="' + index + '" title="' + esc(t(this.root, 'edit', 'Edit')) + '"><i class="fa-solid fa-pen"></i></button>' +
-                    '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + index + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button type="button" class="rateb-ai-msg-action" data-ai-edit="' + index + '" title="' + esc(t(this.root, 'edit', 'Edit')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.editMessage(' + index + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + index + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.deleteMessage(' + index + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-trash"></i></button>' +
                     '</div>';
             } else {
                 actions = '<div class="rateb-ai-msg-actions">' +
-                    '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + index + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + index + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.deleteMessage(' + index + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-trash"></i></button>' +
                     '</div>';
             }
             div.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-' +
@@ -363,11 +386,11 @@
                 }
                 if (role === 'user') {
                     actions.innerHTML =
-                        '<button type="button" class="rateb-ai-msg-action" data-ai-edit="' + idx + '" title="' + esc(t(this.root, 'edit', 'Edit')) + '"><i class="fa-solid fa-pen"></i></button>' +
-                        '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + idx + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '"><i class="fa-solid fa-trash"></i></button>';
+                        '<button type="button" class="rateb-ai-msg-action" data-ai-edit="' + idx + '" title="' + esc(t(this.root, 'edit', 'Edit')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.editMessage(' + idx + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-pen"></i></button>' +
+                        '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + idx + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.deleteMessage(' + idx + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-trash"></i></button>';
                 } else {
                     actions.innerHTML =
-                        '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + idx + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '"><i class="fa-solid fa-trash"></i></button>';
+                        '<button type="button" class="rateb-ai-msg-action" data-ai-delete="' + idx + '" title="' + esc(t(this.root, 'delete', 'Delete')) + '" onclick="try{var H=window.RatebAiHistory;if(H){H.deleteMessage(' + idx + ');}return false;}catch(e){return false;}"><i class="fa-solid fa-trash"></i></button>';
                 }
             }
         },
@@ -425,8 +448,82 @@
 
     root.RatebAiHistory = api;
 
+    /* Soft-nav safe: one document-level listener — works even when deferred scripts
+     * are not re-executed and per-button data-bound flags go stale.
+     * V2 adds message edit/delete; bump key so sessions that already bound V1 re-bind. */
+    if (!root.__ratebAiHistClickV2) {
+        root.__ratebAiHistClickV2 = true;
+        doc.addEventListener('click', function (e) {
+            if (!doc.getElementById('ratebAiRoot')) return;
+
+            /* Message edit / delete (pen & trash on bubbles) */
+            var editBtn = e.target && e.target.closest ? e.target.closest('[data-ai-edit]') : null;
+            var delBtn = e.target && e.target.closest ? e.target.closest('[data-ai-delete]') : null;
+            if (editBtn || delBtn) {
+                e.preventDefault();
+                try { e.stopPropagation(); } catch (eStopMsg) {}
+                api.ensureLive();
+                if (editBtn) {
+                    var editIdx = parseInt(editBtn.getAttribute('data-ai-edit'), 10);
+                    if (isNaN(editIdx)) {
+                        var msgEl = editBtn.closest('.rateb-ai-message');
+                        editIdx = msgEl ? parseInt(msgEl.getAttribute('data-msg-index'), 10) : NaN;
+                    }
+                    if (!isNaN(editIdx)) api.editMessage(editIdx);
+                    return;
+                }
+                if (delBtn) {
+                    var delIdx = parseInt(delBtn.getAttribute('data-ai-delete'), 10);
+                    if (isNaN(delIdx)) {
+                        var msgElDel = delBtn.closest('.rateb-ai-message');
+                        delIdx = msgElDel ? parseInt(msgElDel.getAttribute('data-msg-index'), 10) : NaN;
+                    }
+                    if (!isNaN(delIdx)) api.deleteMessage(delIdx);
+                    return;
+                }
+            }
+
+            var t = e.target && e.target.closest ? e.target.closest(
+                '#aiHistNew, #aiHistToggle, #aiHistClear, #aiHistClearAll'
+            ) : null;
+            if (!t) return;
+            e.preventDefault();
+            try { e.stopPropagation(); } catch (eStop) {}
+            api.ensureLive();
+            if (t.id === 'aiHistNew') {
+                api.newChat();
+                return;
+            }
+            if (t.id === 'aiHistToggle') {
+                var panel = doc.getElementById('aiHistPanel');
+                var btnToggle = doc.getElementById('aiHistToggle');
+                if (!panel) return;
+                panel.hidden = !panel.hidden;
+                if (btnToggle) btnToggle.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+                if (!panel.hidden) api.renderSessionList();
+                return;
+            }
+            if (t.id === 'aiHistClear') {
+                api.clearCurrent();
+                return;
+            }
+            if (t.id === 'aiHistClearAll') {
+                api.clearAll();
+            }
+        }, true);
+    }
+
     function boot() {
         if (!doc.getElementById('ratebAiRoot')) return;
+        /* Soft-nav replaces DOM — always allow re-bind on the new buttons. */
+        ['aiHistNew', 'aiHistToggle', 'aiHistClear', 'aiHistClearAll', 'aiHistSearch'].forEach(function (id) {
+            var el = doc.getElementById(id);
+            if (el) el.removeAttribute('data-bound');
+        });
+        var list = doc.getElementById('aiHistList');
+        if (list) list.removeAttribute('data-bound');
+        var box = doc.getElementById('aiMessages');
+        if (box) box.removeAttribute('data-hist-click');
         api.init();
     }
 

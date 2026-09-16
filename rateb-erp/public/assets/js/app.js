@@ -274,6 +274,10 @@
         var resultsLabel = isAr ? 'نتيجة' : 'results';
 
         function isEmptyStateRow(tr) {
+            /* Matrix module headers use a single colspan cell — not an empty-state row. */
+            if (tr.classList && tr.classList.contains('rateb-matrix-module-row')) {
+                return false;
+            }
             return tr.querySelectorAll('td').length === 1 && tr.querySelector('td[colspan]') !== null;
         }
 
@@ -296,6 +300,7 @@
             }
 
             var emptyRow = null;
+            var isMatrix = table.classList.contains('rateb-matrix-table');
 
             function filterRows() {
                 var q = input.value.trim().toLowerCase();
@@ -307,22 +312,60 @@
                     emptyRow = null;
                 }
 
-                tbody.querySelectorAll('tr').forEach(function (tr) {
-                    if (tr.getAttribute('data-rateb-search-empty') === '1') {
-                        return;
+                if (isMatrix) {
+                    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+                    var moduleRow = null;
+                    var moduleHasVisible = false;
+                    var moduleText = '';
+
+                    function flushModule() {
+                        if (!moduleRow) {
+                            return;
+                        }
+                        var modMatch = q === '' || moduleText.indexOf(q) !== -1;
+                        moduleRow.style.display = (q === '' || modMatch || moduleHasVisible) ? '' : 'none';
                     }
-                    if (isEmptyStateRow(tr)) {
-                        tr.style.display = q === '' ? '' : 'none';
-                        return;
-                    }
-                    dataRows++;
-                    var text = (tr.textContent || '').toLowerCase();
-                    var show = q === '' || text.indexOf(q) !== -1;
-                    tr.style.display = show ? '' : 'none';
-                    if (show) {
-                        visible++;
-                    }
-                });
+
+                    rows.forEach(function (tr) {
+                        if (tr.getAttribute('data-rateb-search-empty') === '1') {
+                            return;
+                        }
+                        if (tr.classList.contains('rateb-matrix-module-row')) {
+                            flushModule();
+                            moduleRow = tr;
+                            moduleHasVisible = false;
+                            moduleText = (tr.textContent || '').toLowerCase();
+                            return;
+                        }
+                        dataRows++;
+                        var text = (tr.textContent || '').toLowerCase();
+                        var show = q === '' || text.indexOf(q) !== -1
+                            || (moduleText !== '' && moduleText.indexOf(q) !== -1);
+                        tr.style.display = show ? '' : 'none';
+                        if (show) {
+                            visible++;
+                            moduleHasVisible = true;
+                        }
+                    });
+                    flushModule();
+                } else {
+                    tbody.querySelectorAll('tr').forEach(function (tr) {
+                        if (tr.getAttribute('data-rateb-search-empty') === '1') {
+                            return;
+                        }
+                        if (isEmptyStateRow(tr)) {
+                            tr.style.display = q === '' ? '' : 'none';
+                            return;
+                        }
+                        dataRows++;
+                        var text = (tr.textContent || '').toLowerCase();
+                        var show = q === '' || text.indexOf(q) !== -1;
+                        tr.style.display = show ? '' : 'none';
+                        if (show) {
+                            visible++;
+                        }
+                    });
+                }
 
                 if (clearBtn) {
                     clearBtn.classList.toggle('d-none', q === '');
@@ -367,6 +410,10 @@
 
         document.querySelectorAll('table.rateb-table').forEach(function (table) {
             if (table.getAttribute('data-rateb-search-skip') === '1') {
+                return;
+            }
+            /* Matrix search is server-rendered — never late-inject (causes flicker on soft-nav). */
+            if (table.classList.contains('rateb-matrix-table')) {
                 return;
             }
             if (table.closest('[data-rateb-server-search]')) {
@@ -449,6 +496,10 @@
         initCoaFullTree();
     };
     document.addEventListener('rateb:nav:afterEnter', function () {
+        /* Bind search + matrix toggles immediately so platform↔company soft-nav
+         * does not leave a visible search box unbound (or reinject late). */
+        initTableSearch();
+        initPermissionMatrix();
         var run = function () {
             if (window.RatebApp && typeof window.RatebApp.reinit === 'function') {
                 window.RatebApp.reinit();

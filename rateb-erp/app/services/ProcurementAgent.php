@@ -120,13 +120,14 @@ final class ProcurementAgent
             }
             $messages[] = $assistantTurn;
 
-            $appendToolResult = static function (array &$messages, string $toolCallId, string $toolName, array $payload): void {
+            $appendToolResult = function (array &$messages, string $toolCallId, string $toolName, array $payload) use ($ctx): void {
+                $safe = $this->toolPayloadForLlm($payload, $ctx);
                 // Harmony (gpt-oss) requires name on role=tool messages.
                 $messages[] = [
                     'role' => 'tool',
                     'tool_call_id' => $toolCallId,
                     'name' => $toolName,
-                    'content' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+                    'content' => json_encode($safe, JSON_UNESCAPED_UNICODE),
                 ];
             };
 
@@ -152,7 +153,14 @@ final class ProcurementAgent
                 try {
                     $arguments = ProcurementToolRegistry::validateArguments($toolName, $arguments);
                 } catch (\Throwable $e) {
-                    $errPayload = ['success' => false, 'error' => $e->getMessage()];
+                    $errPayload = [
+                        'success' => false,
+                        'error' => 'invalid_arguments',
+                        'error_code' => 'invalid_arguments',
+                        'error_message' => __('ai_tool_err_invalid_arguments') !== 'ai_tool_err_invalid_arguments'
+                            ? __('ai_tool_err_invalid_arguments')
+                            : 'invalid_arguments',
+                    ];
                     $toolCalls[] = [
                         'tool' => $toolName,
                         'arguments' => $arguments,
@@ -160,7 +168,7 @@ final class ProcurementAgent
                         'audit_status' => 'error',
                     ];
                     $auditEntries[] = $this->logAudit($ctx, $requestId, $toolName, $arguments, [
-                        'error' => $e->getMessage(),
+                        'error_code' => 'invalid_arguments',
                     ], 'error');
                     $appendToolResult($messages, $toolCallId, $toolName, $errPayload);
                     continue;
@@ -186,6 +194,10 @@ final class ProcurementAgent
                     $appendToolResult($messages, $toolCallId, $toolName, [
                         'success' => false,
                         'error' => 'write_confirmation_required',
+                        'error_code' => 'write_confirmation_required',
+                        'error_message' => __('ai_tool_err_write_confirmation_required') !== 'ai_tool_err_write_confirmation_required'
+                            ? __('ai_tool_err_write_confirmation_required')
+                            : 'write_confirmation_required',
                     ]);
                     continue;
                 }
@@ -200,7 +212,11 @@ final class ProcurementAgent
                 ], $ctx);
 
                 if (!$policyResult['allowed']) {
-                    $errPayload = ['success' => false, 'error' => $policyResult['error_code']];
+                    $errPayload = [
+                        'success' => false,
+                        'error' => (string) ($policyResult['error_code'] ?? 'permission_denied'),
+                        'error_code' => (string) ($policyResult['error_code'] ?? 'permission_denied'),
+                    ];
                     $toolCalls[] = [
                         'tool' => $toolName,
                         'arguments' => $arguments,
@@ -283,6 +299,8 @@ final class ProcurementAgent
                 . "- high → عالية | medium → متوسطة | low → منخفضة\n"
                 . "Brand: say «رتب» or «نظام رتب» — do not insert English product slogans in the middle of Arabic sentences.\n"
                 . "Tools are internal only: call them silently; describe actions in Arabic (مثلاً: سأنشئ مسودة طلب شراء).\n"
+                . "Never mention English tool names, never add English in parentheses, never say Draft/Purchase Request/Order in Latin script.\n"
+                . "Allowed Latin exceptions only: RATEB AI, SAR, and numeric/document IDs.\n"
                 . "Present data as short Arabic prose and/or Markdown tables with Arabic column headers.";
         } else {
             $langRule = "\n\n=== LANGUAGE LOCK (English — non-negotiable) ===\n"
@@ -296,18 +314,60 @@ final class ProcurementAgent
     }
 
     /**
-     * Prefer UI locale; if the user wrote Arabic script, force Arabic reply lock.
+     * Honor the authenticated UI locale only (do not flip language mid-session).
      */
-    private function resolveReplyLocale(ProcurementAgentContext $ctx, string $userMessage): string
+    private function resolveReplyLocale(ProcurementAgentContext $ctx, string $userMessage = ''): string
     {
         $locale = strtolower(trim((string) ($ctx->locale ?? 'en')));
-        if ($locale === 'ar') {
-            return 'ar';
+        return $locale === 'ar' ? 'ar' : 'en';
+    }
+
+    /**
+     * Tool results for the LLM must never include raw English exception prose.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function toolPayloadForLlm(array $payload, ProcurementAgentContext $ctx): array
+    {
+        if (!empty($payload['success'])) {
+            return [
+                'success' => true,
+                'data' => $payload['data'] ?? null,
+            ];
         }
-        if ($userMessage !== '' && preg_match('/\p{Arabic}/u', $userMessage) === 1) {
-            return 'ar';
+
+        $code = (string) ($payload['error_code'] ?? $payload['error'] ?? 'tool_error');
+        // Collapse legacy English prose into stable codes.
+        $map = [
+            'Invalid purchase request ID' => 'invalid_pr_id',
+            'Purchase request not found' => 'pr_not_found',
+            'Invalid approval instance ID' => 'invalid_approval_id',
+            'Approval instance not found' => 'approval_not_found',
+            'Title is required' => 'title_required',
+            'Only draft purchase requests can be submitted' => 'pr_not_draft',
+            'write_confirmation_required' => 'write_confirmation_required',
+        ];
+        if (isset($map[$code])) {
+            $code = $map[$code];
+        } elseif (preg_match('/^[A-Za-z].*\s/', $code) === 1) {
+            $code = 'tool_error';
         }
-        return $locale === '' ? 'en' : $locale;
+
+        $message = (string) ($payload['error_message'] ?? '');
+        if ($message === '' || $message === $code) {
+            $key = 'ai_tool_err_' . $code;
+            $translated = __($key);
+            $message = (is_string($translated) && $translated !== '' && $translated !== $key)
+                ? $translated
+                : $code;
+        }
+
+        return [
+            'success' => false,
+            'error_code' => $code,
+            'error_message' => $message,
+        ];
     }
 
     /**
@@ -346,6 +406,8 @@ final class ProcurementAgent
         foreach ($labels as $tool => $label) {
             $text = preg_replace('/`?' . preg_quote($tool, '/') . '`?/i', $label, $text) ?? $text;
         }
+        // Any remaining snake_case tool-like tokens
+        $text = preg_replace('/\b[a-z]+(?:_[a-z0-9]+){2,}\b/', '', $text) ?? $text;
 
         if ($locale === 'ar') {
             // Remove English-only parenthetical glosses first: (Draft Purchase Request)
@@ -356,6 +418,10 @@ final class ProcurementAgent
                 '/\bPurchase\s+Requests?\b/i' => 'طلب شراء',
                 '/\bPurchase\s+Orders?\b/i' => 'أمر شراء',
                 '/\bPending\s+Approvals?\b/i' => 'الموافقات المعلقة',
+                '/\bI will use (the )?tool\b/i' => 'سأستخدم',
+                '/\bvia the\b/i' => 'عبر',
+                '/\bRATEB\s+ERP\b/i' => 'نظام رتب',
+                '/\btool\b/i' => 'أداة',
                 '/\bApprovals?\b/i' => 'موافقة',
                 '/\bSuppliers?\b/i' => 'مورد',
                 '/\bDepartment\b/i' => 'القسم',
@@ -365,31 +431,38 @@ final class ProcurementAgent
                 '/\bExpected\s+Date\b/i' => 'التاريخ المتوقع',
                 '/\bLine\s*Items?\b/i' => 'بنود',
                 '/\bCurrency\b/i' => 'العملة',
-                '/\bNotes?\b/i' => 'ملاحظات',
-                '/\bTitle\b/i' => 'العنوان',
                 '/\bStatus\b/i' => 'الحالة',
                 '/\bDraft\b/i' => 'مسودة',
                 '/\bSubmitted\b/i' => 'مُرسل',
                 '/\bPending\b/i' => 'معلق',
                 '/\bApproved\b/i' => 'معتمد',
                 '/\bRejected\b/i' => 'مرفوض',
-                '/\bHigh\b/i' => 'عالية',
-                '/\bMedium\b/i' => 'متوسطة',
-                '/\bLow\b/i' => 'منخفضة',
-                '/\bRATEB\s+ERP\b/' => 'رتب',
-                '/\bRATEB\s+AI\b/' => 'مساعد رتب',
-                '/\bRATEB\b/' => 'رتب',
+                '/\bGot it!?/i' => 'حسنًا.',
+                '/\bHow can I assist you next\b[^.?!]*/i' => 'كيف يمكنني مساعدتك بعد ذلك',
+                '/\banything\b\??/i' => '',
             ];
             foreach ($replacements as $pattern => $replacement) {
                 $text = preg_replace($pattern, $replacement, $text) ?? $text;
             }
-            // Collapse accidental «نظام نظام رتب»
+            // Protect allowed Latin tokens, then strip leftover long English runs (3+ words).
+            $placeholders = [
+                '⟦RAI⟧' => 'RATEB AI',
+                '⟦RB⟧' => 'RATEB',
+                '⟦SAR⟧' => 'SAR',
+            ];
+            $text = str_ireplace('RATEB AI', '⟦RAI⟧', $text);
+            $text = str_ireplace('RATEB', '⟦RB⟧', $text);
+            $text = str_ireplace('SAR', '⟦SAR⟧', $text);
+            $text = preg_replace('/\b(?:[A-Za-z]{3,}[\s,;:.!?-]*){3,}/u', '', $text) ?? $text;
+            foreach ($placeholders as $ph => $keep) {
+                $text = str_replace($ph, $keep, $text);
+            }
             $text = preg_replace('/نظام\s+نظام\s+رتب/u', 'نظام رتب', $text) ?? $text;
             $text = preg_replace('/\(\s*\)/u', '', $text) ?? $text;
             $text = preg_replace('/[ \t]{2,}/u', ' ', $text) ?? $text;
             $text = preg_replace('/\s+([،.])/u', '$1', $text) ?? $text;
         } else {
-            // Strip common Arabic leakage into English UI replies (keep numbers/IDs).
+            // Drop accidental Arabic script when UI locale is English (unless user wrote Arabic — then locale=ar).
             $text = preg_replace('/\p{Arabic}+/u', '', $text) ?? $text;
             $text = preg_replace('/[ \t]{2,}/u', ' ', $text) ?? $text;
         }

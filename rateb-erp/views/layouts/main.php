@@ -1352,7 +1352,27 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <i class="fas fa-download" aria-hidden="true"></i>
                     <span class="rateb-help-nav-btn__label"><?php echo Rateb\App\Core\View::escape(__('pwa_install_erp')); ?></span>
                 </button>
-                <?php if (rateb_can('ai.view')): ?>
+                <?php
+                /* Same gates as /admin/ai (AiController + rateb_erp_mw procurement/ai.view):
+                 * ai.view + company context (tenant or ops picker) + procurement module.
+                 * Super Admin still bypasses ai.view via rateb_can — test with a normal user. */
+                $ratebAiVisible = false;
+                if (rateb_can('ai.view')) {
+                    try {
+                        $aiCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
+                        if ($aiCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                            $aiCompanyId = (int) rateb_resolve_ops_company_id();
+                        }
+                        if ($aiCompanyId > 0) {
+                            $ratebAiVisible = (new \Rateb\App\Services\PlanLimitService())
+                                ->companyHasModule($aiCompanyId, 'procurement');
+                        }
+                    } catch (\Throwable $eAiNav) {
+                        $ratebAiVisible = false;
+                    }
+                }
+                ?>
+                <?php if ($ratebAiVisible): ?>
                     <a href="<?php echo rateb_url(rateb_app_route('ai')); ?>" class="btn btn-outline-primary btn-sm rateb-topbar-ai" data-rateb-full-nav="1" title="<?php echo __('rateb_ai'); ?>">
                         <i class="fas fa-robot"></i><span class="d-none d-md-inline ms-1"><?php echo __('rateb_ai'); ?></span>
                     </a>

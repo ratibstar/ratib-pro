@@ -27,6 +27,13 @@ final class AiController extends Controller
         }
 
         $companyId = TenantContext::companyId();
+        if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
+            $opsCompanyId = (int) rateb_resolve_ops_company_id();
+            if ($opsCompanyId > 0) {
+                TenantContext::setCompanyId($opsCompanyId);
+                $companyId = $opsCompanyId;
+            }
+        }
         if (!$companyId) {
             $this->redirect(rateb_url('admin'));
             return;
@@ -77,6 +84,13 @@ final class AiController extends Controller
         }
 
         $companyId = TenantContext::companyId();
+        if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
+            $opsCompanyId = (int) rateb_resolve_ops_company_id();
+            if ($opsCompanyId > 0) {
+                TenantContext::setCompanyId($opsCompanyId);
+                $companyId = $opsCompanyId;
+            }
+        }
         if (!$companyId) {
             $this->json([
                 'success' => false,

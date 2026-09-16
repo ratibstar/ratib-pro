@@ -40,7 +40,14 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
             <p class="text-muted small mb-0"><i class="fas fa-circle-info me-1"></i><?php echo __('permission_matrix_implies_note'); ?></p>
         </div>
         <div class="rateb-card-body p-0">
-            <div class="rateb-matrix-wrap table-responsive">
+            <?php
+            /* Server-rendered so soft-nav platform↔company does not flicker a late JS inject. */
+            Rateb\App\Core\View::partial('table-search', [
+                'mode' => 'client',
+                'placeholder' => __('search_table_placeholder'),
+            ]);
+            ?>
+            <div class="rateb-matrix-wrap table-responsive" data-rateb-table-search-host="1">
                 <table class="table rateb-table rateb-matrix-table mb-0">
                     <thead>
                     <tr>
@@ -78,6 +85,10 @@ if (!empty($rbacScope) && function_exists('rateb_is_super_admin') && rateb_is_su
                             <?php } elseif ($module === 'branches') { ?>
                             <div class="rateb-matrix-module-note text-muted small fw-normal mt-2">
                                 <?php echo __('branches_permissions_matrix_note'); ?>
+                            </div>
+                            <?php } elseif ($module === 'ai') { ?>
+                            <div class="rateb-matrix-module-note text-muted small fw-normal mt-2">
+                                <?php echo __('ai_permissions_matrix_note'); ?>
                             </div>
                             <?php } ?>
                         </td>

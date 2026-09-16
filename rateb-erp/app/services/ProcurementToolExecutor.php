@@ -44,11 +44,38 @@ final class ProcurementToolExecutor
                 case 'submit_purchase_request':
                     return self::submitPurchaseRequest($arguments, $companyId, $ctx->userId);
                 default:
-                    return ['success' => false, 'data' => null, 'error' => "Tool not implemented: {$toolName}"];
+                    return self::fail('tool_not_implemented');
             }
         } catch (\Throwable $e) {
-            return ['success' => false, 'data' => null, 'error' => $e->getMessage()];
+            return self::fail('tool_exception');
         }
+    }
+
+    /**
+     * Stable machine code for the LLM; localized text for humans (never raw English prose).
+     *
+     * @return array{success: false, data: null, error: string, error_code: string, error_message: string}
+     */
+    private static function fail(string $code): array
+    {
+        $message = self::errorMessage($code);
+        return [
+            'success' => false,
+            'data' => null,
+            'error' => $code,
+            'error_code' => $code,
+            'error_message' => $message,
+        ];
+    }
+
+    private static function errorMessage(string $code): string
+    {
+        $key = 'ai_tool_err_' . $code;
+        $translated = __($key);
+        if (is_string($translated) && $translated !== '' && $translated !== $key) {
+            return $translated;
+        }
+        return $code;
     }
 
     private static function listPurchaseRequests(array $args, int $companyId): array
@@ -71,18 +98,18 @@ final class ProcurementToolExecutor
     {
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
-            return ['success' => false, 'data' => null, 'error' => 'Invalid purchase request ID'];
+            return self::fail('invalid_pr_id');
         }
 
         $model = new PurchaseRequest();
         $pr = $model->find($id);
 
         if (!$pr) {
-            return ['success' => false, 'data' => null, 'error' => 'Purchase request not found'];
+            return self::fail('pr_not_found');
         }
 
         if ((int) ($pr['company_id'] ?? 0) !== $companyId) {
-            return ['success' => false, 'data' => null, 'error' => 'Purchase request not found'];
+            return self::fail('pr_not_found');
         }
 
         $lineItems = \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($id);
@@ -215,7 +242,7 @@ final class ProcurementToolExecutor
     {
         $instanceId = (int) ($args['instance_id'] ?? 0);
         if ($instanceId < 1) {
-            return ['success' => false, 'data' => null, 'error' => 'Invalid approval instance ID'];
+            return self::fail('invalid_approval_id');
         }
 
         $workflowService = new WorkflowService();
@@ -229,12 +256,12 @@ final class ProcurementToolExecutor
         $instance = $stmt->fetch();
 
         if (!$instance) {
-            return ['success' => false, 'data' => null, 'error' => 'Approval instance not found'];
+            return self::fail('approval_not_found');
         }
 
         $entityType = (string) ($instance['entity_type'] ?? '');
         if ($entityType !== 'purchase_request' && $entityType !== 'purchase_order') {
-            return ['success' => false, 'data' => null, 'error' => 'Approval instance not found'];
+            return self::fail('approval_not_found');
         }
 
         return [
@@ -274,7 +301,7 @@ final class ProcurementToolExecutor
         }
 
         if ($data['title'] === '') {
-            return ['success' => false, 'data' => null, 'error' => 'Title is required'];
+            return self::fail('title_required');
         }
 
         $prId = $model->create($data);
@@ -295,23 +322,23 @@ final class ProcurementToolExecutor
     {
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
-            return ['success' => false, 'data' => null, 'error' => 'Invalid purchase request ID'];
+            return self::fail('invalid_pr_id');
         }
 
         $model = new PurchaseRequest();
         $pr = $model->find($id);
 
         if (!$pr) {
-            return ['success' => false, 'data' => null, 'error' => 'Purchase request not found'];
+            return self::fail('pr_not_found');
         }
 
         if ((int) ($pr['company_id'] ?? 0) !== $companyId) {
-            return ['success' => false, 'data' => null, 'error' => 'Purchase request not found'];
+            return self::fail('pr_not_found');
         }
 
         $currentStatus = (string) ($pr['status'] ?? '');
         if ($currentStatus !== 'draft') {
-            return ['success' => false, 'data' => null, 'error' => 'Only draft purchase requests can be submitted'];
+            return self::fail('pr_not_draft');
         }
 
         $oldStatus = $currentStatus;
