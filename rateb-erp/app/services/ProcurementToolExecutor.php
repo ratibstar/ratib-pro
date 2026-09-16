@@ -111,7 +111,7 @@ final class ProcurementToolExecutor
     {
         $limit = max(1, min(100, (int) ($args['limit'] ?? 50)));
         $offset = max(0, (int) ($args['offset'] ?? 0));
-        $search = (string) ($args['search'] ?? '');
+        $search = trim((string) ($args['search'] ?? ''));
         $status = (string) ($args['status'] ?? '');
         $filters = [];
         if ($status !== '') {
@@ -119,8 +119,81 @@ final class ProcurementToolExecutor
         }
 
         $model = new Supplier();
-        $data = $model->all($limit, $offset, $filters, $search);
-        return ['success' => true, 'data' => $data, 'error' => null];
+        $terms = self::expandSupplierSearchTerms($search);
+        $byId = [];
+        foreach ($terms as $term) {
+            $rows = $model->all($limit, $offset, $filters, $term);
+            foreach ($rows as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id > 0) {
+                    $byId[$id] = $row;
+                }
+            }
+            if (count($byId) >= $limit) {
+                break;
+            }
+        }
+
+        // Fallback: bare list when a location synonym search still returns nothing.
+        if ($byId === [] && $search !== '') {
+            foreach ($model->all($limit, $offset, $filters, '') as $row) {
+                $hay = mb_strtolower(
+                    (string) ($row['name'] ?? '') . ' ' .
+                    (string) ($row['address'] ?? '') . ' ' .
+                    (string) ($row['notes'] ?? '') . ' ' .
+                    (string) ($row['code'] ?? ''),
+                    'UTF-8'
+                );
+                foreach ($terms as $term) {
+                    $t = mb_strtolower(trim($term), 'UTF-8');
+                    if ($t !== '' && $t !== ' ' && mb_strpos($hay, $t) !== false) {
+                        $id = (int) ($row['id'] ?? 0);
+                        if ($id > 0) {
+                            $byId[$id] = $row;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return ['success' => true, 'data' => array_values($byId), 'error' => null];
+    }
+
+    /**
+     * Expand location / bilingual search terms so "الرياض" finds "Riyadh" and vice versa.
+     *
+     * @return list<string>
+     */
+    private static function expandSupplierSearchTerms(string $search): array
+    {
+        $term = trim($search);
+        if ($term === '') {
+            return [''];
+        }
+
+        $aliases = [
+            'الرياض' => ['الرياض', 'رياض', 'Riyadh', 'riyadh'],
+            'رياض' => ['الرياض', 'رياض', 'Riyadh', 'riyadh'],
+            'riyadh' => ['الرياض', 'رياض', 'Riyadh', 'riyadh'],
+            'جدة' => ['جدة', 'جده', 'Jeddah', 'jeddah'],
+            'jeddah' => ['جدة', 'جده', 'Jeddah', 'jeddah'],
+            'الدمام' => ['الدمام', 'Dammam', 'dammam'],
+            'dammam' => ['الدمام', 'Dammam', 'dammam'],
+        ];
+
+        $out = [$term];
+        $lower = mb_strtolower($term, 'UTF-8');
+        foreach ($aliases as $needle => $alts) {
+            $n = mb_strtolower((string) $needle, 'UTF-8');
+            if ($n !== '' && (mb_strpos($lower, $n) !== false || mb_strpos($term, (string) $needle) !== false)) {
+                foreach ($alts as $alt) {
+                    $out[] = $alt;
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map('strval', $out), static fn(string $v): bool => $v !== '')));
     }
 
     private static function listPendingApprovals(array $args, int $companyId): array

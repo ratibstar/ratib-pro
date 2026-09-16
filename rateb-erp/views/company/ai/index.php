@@ -211,6 +211,10 @@ document.addEventListener('rateb:soft-nav:afterEnter', function () {
 >
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">
+            <a href="<?php echo htmlspecialchars(rateb_url('admin'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-secondary rateb-ai-back-btn" data-rateb-full-nav="1" title="<?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?>">
+                <i class="fas fa-arrow-right"></i>
+                <span><?php echo htmlspecialchars(__('back'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </a>
             <i class="fa-solid fa-robot"></i>
             <span class="rateb-ai-title"><?php echo htmlspecialchars(__('rateb_ai'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
@@ -332,6 +336,14 @@ document.addEventListener('rateb:soft-nav:afterEnter', function () {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.rateb-ai-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-end: 4px;
+    text-decoration: none;
 }
 
 .rateb-ai-brand i {
