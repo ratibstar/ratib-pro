@@ -6,11 +6,14 @@
 $chatEndpoint = $chatEndpoint ?? rateb_url(rateb_app_route('ai/chat'));
 $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
 $aiJs = rateb_asset('js/rateb-ai-page.js');
+$aiHistJs = rateb_asset('js/rateb-ai-history.js');
+$aiCompanyId = (int) ($aiCompanyId ?? 0);
+$aiUserId = (int) ($aiUserId ?? 0);
 ?>
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
-    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0ToolLabels && typeof window.ratebAi.getHistory === 'function');
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function');
     if (needsUpgrade) {
     var prev = window.ratebAi || {};
     window.ratebAi = {
@@ -21,6 +24,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     __p0LangFix: true,
     __p0I18nUi: true,
     __p0ToolLabels: true,
+    __p0ChatHistory: true,
     send: function (message, confirmedWrites) {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return false;
@@ -118,10 +122,13 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         }
 
         if (welcome) welcome.style.display = 'none';
-        var history = this.getHistory ? this.getHistory() : [];
+        var history = (window.RatebAiHistory && window.RatebAiHistory.getApiHistory)
+            ? window.RatebAiHistory.getApiHistory()
+            : (this.getHistory ? this.getHistory() : []);
         if (!confirmedWrites.length) {
             addMsg('user', message);
             this.lastMessage = message;
+            try { window.RatebAiHistory && window.RatebAiHistory.appendMessage('user', message); } catch (eHistU) {}
         }
         if (input) {
             input.value = '';
@@ -158,6 +165,11 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
                 return;
             }
             addMsg('assistant', (data.data && data.data.response) ? data.data.response : t('no-response', 'No response'));
+            try {
+                var replyText = (data.data && data.data.response) ? data.data.response : '';
+                if (replyText && window.RatebAiHistory) window.RatebAiHistory.appendMessage('assistant', replyText);
+                if (window.RatebAiHistory && window.RatebAiHistory.decorateDomActions) window.RatebAiHistory.decorateDomActions();
+            } catch (eHistA) {}
             var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
             if (pending.length) {
                 showConfirm(pending, message);
@@ -304,12 +316,20 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     id="ratebAiRoot"
     data-endpoint="<?php echo htmlspecialchars($chatEndpoint, ENT_QUOTES, 'UTF-8'); ?>"
     data-csrf="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>"
+    data-company-id="<?php echo (int) $aiCompanyId; ?>"
+    data-user-id="<?php echo (int) $aiUserId; ?>"
     data-i18n-confirm="<?php echo htmlspecialchars(__('ai_confirm'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-cancel="<?php echo htmlspecialchars(__('ai_cancel'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-error-prefix="<?php echo htmlspecialchars(__('ai_error_prefix'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-request-failed="<?php echo htmlspecialchars(__('ai_request_failed'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-no-response="<?php echo htmlspecialchars(__('ai_no_response'), ENT_QUOTES, 'UTF-8'); ?>"
     data-i18n-network-error="<?php echo htmlspecialchars(__('ai_network_error'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-new-chat="<?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-edit="<?php echo htmlspecialchars(__('ai_edit_message'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-delete="<?php echo htmlspecialchars(__('ai_delete'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-confirm-clear="<?php echo htmlspecialchars(__('ai_confirm_clear_chat'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-confirm-clear-all="<?php echo htmlspecialchars(__('ai_confirm_clear_all'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-hist-empty="<?php echo htmlspecialchars(__('ai_history_empty'), ENT_QUOTES, 'UTF-8'); ?>"
     data-tool-labels="<?php
         $aiToolLabels = [
             'list_purchase_requests' => __('ai_tool_list_purchase_requests'),
@@ -336,17 +356,42 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
             <i class="fa-solid fa-robot"></i>
             <span class="rateb-ai-title"><?php echo htmlspecialchars(__('rateb_ai'), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
-        <div class="rateb-ai-status">
-            <span class="rateb-ai-status-dot" id="aiStatusDot"></span>
-            <span
-                class="rateb-ai-status-text"
-                id="aiStatusText"
-                data-ready="<?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?>"
-                data-thinking="<?php echo htmlspecialchars(__('ai_thinking'), ENT_QUOTES, 'UTF-8'); ?>"
-            ><?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?></span>
+        <div class="rateb-ai-toolbar">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistNew" title="<?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?>">
+                <i class="fa-solid fa-plus"></i>
+                <span><?php echo htmlspecialchars(__('ai_new_chat'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistToggle" aria-expanded="false" title="<?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?>">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span><?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="aiHistClear" title="<?php echo htmlspecialchars(__('ai_clear_chat'), ENT_QUOTES, 'UTF-8'); ?>">
+                <i class="fa-solid fa-eraser"></i>
+                <span><?php echo htmlspecialchars(__('ai_clear_chat'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </button>
+            <div class="rateb-ai-status">
+                <span class="rateb-ai-status-dot" id="aiStatusDot"></span>
+                <span
+                    class="rateb-ai-status-text"
+                    id="aiStatusText"
+                    data-ready="<?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?>"
+                    data-thinking="<?php echo htmlspecialchars(__('ai_thinking'), ENT_QUOTES, 'UTF-8'); ?>"
+                ><?php echo htmlspecialchars(__('ai_ready'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
         </div>
     </div>
 
+    <div class="rateb-ai-main">
+        <aside class="rateb-ai-hist-panel" id="aiHistPanel" hidden>
+            <div class="rateb-ai-hist-head">
+                <strong><?php echo htmlspecialchars(__('ai_history'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="aiHistClearAll"><?php echo htmlspecialchars(__('ai_clear_all_history'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </div>
+            <input type="search" class="rateb-ai-hist-search" id="aiHistSearch" placeholder="<?php echo htmlspecialchars(__('ai_history_search'), ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars(__('ai_history_search'), ENT_QUOTES, 'UTF-8'); ?>">
+            <ul class="rateb-ai-hist-list" id="aiHistList"></ul>
+        </aside>
+
+        <div class="rateb-ai-chat-col">
     <div class="rateb-ai-messages" id="aiMessages" role="log" aria-live="polite">
         <div class="rateb-ai-welcome" id="aiWelcome">
             <div class="rateb-ai-avatar">
@@ -384,6 +429,8 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         </div>
         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
     </form>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -702,13 +749,173 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     40% { opacity: 1; transform: translateY(-3px); }
 }
 
-@media (max-width: 768px) {
-    .rateb-ai-container {
-        height: calc(100vh - 120px);
-        border-radius: 0;
+.rateb-ai-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ai-border);
+    flex-wrap: wrap;
+}
+
+.rateb-ai-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rateb-ai-toolbar .btn span {
+    margin-inline-start: 4px;
+}
+
+.rateb-ai-main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.rateb-ai-chat-col {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.rateb-ai-hist-panel {
+    width: 280px;
+    max-width: 40%;
+    border-inline-end: 1px solid var(--ai-border);
+    background: var(--ai-assistant-bg);
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.rateb-ai-hist-panel[hidden] {
+    display: none !important;
+}
+
+.rateb-ai-hist-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.rateb-ai-hist-search {
+    width: 100%;
+    border: 1px solid var(--ai-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: var(--ai-bg);
+    color: var(--ai-text);
+}
+
+.rateb-ai-hist-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    flex: 1;
+}
+
+.rateb-ai-hist-item {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.rateb-ai-hist-item.is-active .rateb-ai-hist-open {
+    border-color: var(--ai-primary);
+    background: rgba(26, 95, 180, 0.12);
+}
+
+.rateb-ai-hist-open {
+    flex: 1;
+    text-align: start;
+    border: 1px solid var(--ai-border);
+    border-radius: 8px;
+    background: var(--ai-bg);
+    color: var(--ai-text);
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.rateb-ai-hist-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rateb-ai-hist-meta {
+    display: block;
+    font-size: 11px;
+    color: var(--ai-text-muted);
+    margin-top: 2px;
+}
+
+.rateb-ai-hist-del {
+    border: 0;
+    background: transparent;
+    color: var(--ai-text-muted);
+    cursor: pointer;
+    padding: 0 6px;
+}
+
+.rateb-ai-hist-empty {
+    color: var(--ai-text-muted);
+    font-size: 13px;
+    padding: 12px 4px;
+}
+
+.rateb-ai-message-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rateb-ai-msg-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0.35;
+}
+
+.rateb-ai-message:hover .rateb-ai-msg-actions {
+    opacity: 1;
+}
+
+.rateb-ai-msg-action {
+    border: 0;
+    background: transparent;
+    color: var(--ai-text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+@media (max-width: 900px) {
+    .rateb-ai-hist-panel {
+        position: absolute;
+        inset-inline-start: 0;
+        top: 56px;
+        bottom: 0;
+        z-index: 5;
+        max-width: 85%;
+        box-shadow: 0 8px 24px rgba(0,0,0,.25);
     }
-    .rateb-ai-welcome { padding: 16px; }
-    .rateb-ai-messages { padding: 16px; }
+    .rateb-ai-toolbar .btn span { display: none; }
 }
 </style>
 
@@ -721,4 +928,5 @@ try {
     }
 } catch (eSw) {}
 </script>
+<script src="<?php echo htmlspecialchars($aiHistJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>

@@ -49,6 +49,8 @@ final class AiController extends Controller
             'locale' => SessionManager::get('rateb_locale', 'en'),
             'csrf' => \Rateb\App\Core\Csrf::token(),
             'chatEndpoint' => rateb_url(rateb_app_route('ai/chat')),
+            'aiCompanyId' => (int) $companyId,
+            'aiUserId' => (int) ($user['id'] ?? 0),
         ], 'main');
     }
 

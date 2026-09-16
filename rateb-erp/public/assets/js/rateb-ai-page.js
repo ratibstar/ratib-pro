@@ -14,6 +14,7 @@
             __p0LangFix: true,
             __p0I18nUi: true,
             __p0ToolLabels: true,
+            __p0ChatHistory: true,
             send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
@@ -109,10 +110,13 @@
                 }
 
                 if (welcome) welcome.style.display = 'none';
-                var history = this.getHistory ? this.getHistory() : [];
+                var history = (root.RatebAiHistory && root.RatebAiHistory.getApiHistory)
+                    ? root.RatebAiHistory.getApiHistory()
+                    : (this.getHistory ? this.getHistory() : []);
                 if (!confirmedWrites.length) {
                     addMsg('user', message);
                     this.lastMessage = message;
+                    try { root.RatebAiHistory && root.RatebAiHistory.appendMessage('user', message); } catch (eHistU) {}
                 }
                 if (input) {
                     input.value = '';
@@ -149,6 +153,11 @@
                         return;
                     }
                     addMsg('assistant', (data.data && data.data.response) ? data.data.response : t('no-response', 'No response'));
+                    try {
+                        var replyText = (data.data && data.data.response) ? data.data.response : '';
+                        if (replyText && root.RatebAiHistory) root.RatebAiHistory.appendMessage('assistant', replyText);
+                        if (root.RatebAiHistory && root.RatebAiHistory.decorateDomActions) root.RatebAiHistory.decorateDomActions();
+                    } catch (eHistA) {}
                     var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
                     if (pending.length) {
                         showConfirm(pending, message);
@@ -245,7 +254,7 @@
     }
 
     function ensureApi() {
-        if (root.ratebAi && root.ratebAi.__p0ToolLabels && typeof root.ratebAi.getHistory === 'function') {
+        if (root.ratebAi && root.ratebAi.__p0ChatHistory && typeof root.ratebAi.getHistory === 'function') {
             return root.ratebAi;
         }
         var prev = root.ratebAi || {};
