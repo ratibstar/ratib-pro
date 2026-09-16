@@ -348,6 +348,9 @@ final class ProcurementAgent
         }
 
         if ($locale === 'ar') {
+            // Remove English-only parenthetical glosses first: (Draft Purchase Request)
+            $text = preg_replace('/\(\s*[A-Za-z][A-Za-z0-9\s\-_\/.&]*\s*\)/u', '', $text) ?? $text;
+
             $replacements = [
                 '/\bDraft\s+Purchase\s+Requests?\b/i' => 'مسودة طلب شراء',
                 '/\bPurchase\s+Requests?\b/i' => 'طلب شراء',
@@ -373,19 +376,18 @@ final class ProcurementAgent
                 '/\bHigh\b/i' => 'عالية',
                 '/\bMedium\b/i' => 'متوسطة',
                 '/\bLow\b/i' => 'منخفضة',
-                '/\bRATEB\s+ERP\b/' => 'نظام رتب',
+                '/\bRATEB\s+ERP\b/' => 'رتب',
                 '/\bRATEB\s+AI\b/' => 'مساعد رتب',
                 '/\bRATEB\b/' => 'رتب',
-                '/\(\s*Draft\s+Purchase\s+Request\s*\)/i' => '',
-                '/\(\s*Purchase\s+Request\s*\)/i' => '',
-                '/\(\s*Purchase\s+Order\s*\)/i' => '',
             ];
             foreach ($replacements as $pattern => $replacement) {
                 $text = preg_replace($pattern, $replacement, $text) ?? $text;
             }
-            // Drop leftover empty parentheses from removed English glosses.
+            // Collapse accidental «نظام نظام رتب»
+            $text = preg_replace('/نظام\s+نظام\s+رتب/u', 'نظام رتب', $text) ?? $text;
             $text = preg_replace('/\(\s*\)/u', '', $text) ?? $text;
             $text = preg_replace('/[ \t]{2,}/u', ' ', $text) ?? $text;
+            $text = preg_replace('/\s+([،.])/u', '$1', $text) ?? $text;
         } else {
             // Strip common Arabic leakage into English UI replies (keep numbers/IDs).
             $text = preg_replace('/\p{Arabic}+/u', '', $text) ?? $text;
