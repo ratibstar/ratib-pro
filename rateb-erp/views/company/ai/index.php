@@ -10,7 +10,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
-    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0LangFix && typeof window.ratebAi.getHistory === 'function');
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0I18nUi && typeof window.ratebAi.getHistory === 'function');
     if (needsUpgrade) {
     var prev = window.ratebAi || {};
     window.ratebAi = {
@@ -19,6 +19,7 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     __p0WriteConfirm: true,
     __p0SendFix: true,
     __p0LangFix: true,
+    __p0I18nUi: true,
     send: function (message, confirmedWrites) {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return false;
@@ -30,6 +31,9 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
         var statusText = document.getElementById('aiStatusText');
         var endpoint = root.getAttribute('data-endpoint') || '';
         var csrf = root.getAttribute('data-csrf') || '';
+        var t = function (key, fallback) {
+            return root.getAttribute('data-i18n-' + key) || fallback;
+        };
         message = String(message || '').trim();
         if (!message || !messages || !endpoint || this.loading) return false;
         confirmedWrites = Array.isArray(confirmedWrites) ? confirmedWrites : [];
@@ -83,8 +87,8 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
                 '<div class="rateb-ai-message-content">' +
                 '<div>' + esc(labels.join(', ')) + '</div>' +
                 '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
-                '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-confirm="1">' + esc('Confirm') + '</button>' +
-                '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-cancel="1">' + esc('Cancel') + '</button>' +
+                '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-confirm="1">' + esc(t('confirm', 'Confirm')) + '</button>' +
+                '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-cancel="1">' + esc(t('cancel', 'Cancel')) + '</button>' +
                 '</div></div>';
             messages.appendChild(wrap);
             messages.scrollTop = messages.scrollHeight;
@@ -134,23 +138,23 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
             })
         }).then(function (res) {
             return res.json().catch(function () {
-                return { success: false, message: 'Request failed (' + res.status + ')' };
+                return { success: false, message: t('request-failed', 'Request failed') + ' (' + res.status + ')' };
             }).then(function (data) { return { ok: res.ok, data: data }; });
         }).then(function (result) {
             if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
             var data = result.data || {};
             if (!result.ok || !data.success) {
-                addMsg('assistant', 'Error: ' + (data.message || 'Request failed'));
+                addMsg('assistant', t('error-prefix', 'Error: ') + (data.message || t('request-failed', 'Request failed')));
                 return;
             }
-            addMsg('assistant', (data.data && data.data.response) ? data.data.response : 'No response');
+            addMsg('assistant', (data.data && data.data.response) ? data.data.response : t('no-response', 'No response'));
             var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
             if (pending.length) {
                 showConfirm(pending, message);
             }
         }).catch(function (err) {
             if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
-            addMsg('assistant', 'Error: ' + (err && err.message ? err.message : 'Network error'));
+            addMsg('assistant', t('error-prefix', 'Error: ') + (err && err.message ? err.message : t('network-error', 'Network error')));
         }).then(function () {
             self.loading = false;
             setStatus('ready');
@@ -289,6 +293,12 @@ $aiJs = rateb_asset('js/rateb-ai-page.js');
     id="ratebAiRoot"
     data-endpoint="<?php echo htmlspecialchars($chatEndpoint, ENT_QUOTES, 'UTF-8'); ?>"
     data-csrf="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-confirm="<?php echo htmlspecialchars(__('ai_confirm'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-cancel="<?php echo htmlspecialchars(__('ai_cancel'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-error-prefix="<?php echo htmlspecialchars(__('ai_error_prefix'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-request-failed="<?php echo htmlspecialchars(__('ai_request_failed'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-no-response="<?php echo htmlspecialchars(__('ai_no_response'), ENT_QUOTES, 'UTF-8'); ?>"
+    data-i18n-network-error="<?php echo htmlspecialchars(__('ai_network_error'), ENT_QUOTES, 'UTF-8'); ?>"
 >
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">

@@ -81,7 +81,7 @@ final class AiController extends Controller
                 'error' => 'company_required',
                 'message' => __('company_required') !== 'company_required'
                     ? __('company_required')
-                    : 'Company context is required',
+                    : __('ai_company_required'),
             ], 400);
             return;
         }
@@ -90,7 +90,7 @@ final class AiController extends Controller
             $this->json([
                 'success' => false,
                 'error' => 'csrf_invalid',
-                'message' => 'Invalid CSRF token',
+                'message' => __('ai_csrf_invalid'),
             ], 403);
             return;
         }
@@ -116,7 +116,7 @@ final class AiController extends Controller
             $this->json([
                 'success' => false,
                 'error' => 'invalid_request',
-                'message' => 'Message is required',
+                'message' => __('ai_message_required'),
             ], 400);
             return;
         }
@@ -135,7 +135,7 @@ final class AiController extends Controller
             $this->json([
                 'success' => false,
                 'error' => 'agent_unavailable',
-                'message' => 'Procurement agent runtime is not available',
+                'message' => __('ai_agent_unavailable'),
                 'request_id' => $requestId,
             ], 503);
             return;
@@ -148,7 +148,7 @@ final class AiController extends Controller
                 $this->json([
                     'success' => false,
                     'error' => 'unauthorized',
-                    'message' => 'Valid authentication and company context required',
+                    'message' => __('ai_auth_required'),
                     'request_id' => $requestId,
                 ], 401);
                 return;
@@ -179,7 +179,7 @@ final class AiController extends Controller
             $this->json([
                 'success' => false,
                 'error' => 'agent_error',
-                'message' => $e->getMessage() !== '' ? $e->getMessage() : 'AI agent failed',
+                'message' => __('ai_agent_failed'),
                 'request_id' => $requestId,
             ], 500);
         }

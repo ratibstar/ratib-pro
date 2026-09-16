@@ -264,17 +264,21 @@ final class ProcurementAgent
         $base = $this->config['agent']['system_prompt'] ?? 'You are the Procurement Ops Agent for RATEB ERP. You can only use the 8 approved tools. Never attempt SQL, direct DB access, or unregistered tools. All operations are tenant-scoped to the authenticated company.';
         $locale = strtolower(trim((string) ($ctx->locale ?? 'en')));
         if ($locale === 'ar') {
-            $langRule = "\n\nLANGUAGE (mandatory):\n"
+            $langRule = "\n\nLANGUAGE & PRESENTATION (mandatory):\n"
                 . "- The ERP UI locale is Arabic (ar).\n"
                 . "- Always reply in clear Modern Standard Arabic.\n"
                 . "- If the user writes in English, you may reply in English; otherwise stay in Arabic.\n"
                 . "- Never switch to English for short acknowledgements (e.g. فهمت / تمام) when the user wrote Arabic.\n"
-                . "- Tables and labels in replies should use Arabic headings when replying in Arabic.";
+                . "- Tables and labels in replies must use Arabic headings (e.g. الرقم، المرجع، الحالة، المبلغ).\n"
+                . "- Tool results may contain English field names internally; translate them for the user — never dump raw JSON, API payloads, curl examples, or code blocks unless the user explicitly asks for a technical/API sample.\n"
+                . "- Prefer a short Arabic summary + simple Markdown table over technical dumps.";
         } else {
-            $langRule = "\n\nLANGUAGE (mandatory):\n"
+            $langRule = "\n\nLANGUAGE & PRESENTATION (mandatory):\n"
                 . "- The ERP UI locale is English (en).\n"
                 . "- Reply in English by default.\n"
-                . "- If the user writes in Arabic, reply in Arabic.";
+                . "- If the user writes in Arabic, reply in Arabic.\n"
+                . "- Do not dump raw JSON/API examples unless the user explicitly asks for a technical sample.\n"
+                . "- Prefer a short summary + simple Markdown table.";
         }
 
         return rtrim($base) . $langRule;

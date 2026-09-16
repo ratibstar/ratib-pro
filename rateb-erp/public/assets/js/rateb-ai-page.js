@@ -12,6 +12,7 @@
             __p0WriteConfirm: true,
             __p0SendFix: true,
             __p0LangFix: true,
+            __p0I18nUi: true,
             send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
@@ -22,6 +23,9 @@
                 var statusText = doc.getElementById('aiStatusText');
                 var endpoint = box.getAttribute('data-endpoint') || '';
                 var csrf = box.getAttribute('data-csrf') || '';
+                var t = function (key, fallback) {
+                    return box.getAttribute('data-i18n-' + key) || fallback;
+                };
                 message = String(message || '').trim();
                 if (!message || !messages || !endpoint || this.loading) return false;
                 confirmedWrites = Array.isArray(confirmedWrites) ? confirmedWrites : [];
@@ -74,8 +78,8 @@
                         '<div class="rateb-ai-message-content">' +
                         '<div>' + esc(labels.join(', ')) + '</div>' +
                         '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
-                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-confirm="1">Confirm</button>' +
-                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-cancel="1">Cancel</button>' +
+                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-confirm="1">' + esc(t('confirm', 'Confirm')) + '</button>' +
+                        '<button type="button" class="rateb-ai-suggestion-btn" data-rateb-ai-cancel="1">' + esc(t('cancel', 'Cancel')) + '</button>' +
                         '</div></div>';
                     messages.appendChild(wrap);
                     messages.scrollTop = messages.scrollHeight;
@@ -125,23 +129,23 @@
                     })
                 }).then(function (res) {
                     return res.json().catch(function () {
-                        return { success: false, message: 'Request failed (' + res.status + ')' };
+                        return { success: false, message: t('request-failed', 'Request failed') + ' (' + res.status + ')' };
                     }).then(function (data) { return { ok: res.ok, data: data }; });
                 }).then(function (result) {
                     if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
                     var data = result.data || {};
                     if (!result.ok || !data.success) {
-                        addMsg('assistant', 'Error: ' + (data.message || 'Request failed'));
+                        addMsg('assistant', t('error-prefix', 'Error: ') + (data.message || t('request-failed', 'Request failed')));
                         return;
                     }
-                    addMsg('assistant', (data.data && data.data.response) ? data.data.response : 'No response');
+                    addMsg('assistant', (data.data && data.data.response) ? data.data.response : t('no-response', 'No response'));
                     var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
                     if (pending.length) {
                         showConfirm(pending, message);
                     }
                 }).catch(function (err) {
                     if (tip && tip.parentNode) tip.parentNode.removeChild(tip);
-                    addMsg('assistant', 'Error: ' + (err && err.message ? err.message : 'Network error'));
+                    addMsg('assistant', t('error-prefix', 'Error: ') + (err && err.message ? err.message : t('network-error', 'Network error')));
                 }).then(function () {
                     self.loading = false;
                     setStatus('ready');
@@ -230,7 +234,7 @@
     }
 
     function ensureApi() {
-        if (root.ratebAi && root.ratebAi.__p0LangFix && typeof root.ratebAi.getHistory === 'function') {
+        if (root.ratebAi && root.ratebAi.__p0I18nUi && typeof root.ratebAi.getHistory === 'function') {
             return root.ratebAi;
         }
         var prev = root.ratebAi || {};
