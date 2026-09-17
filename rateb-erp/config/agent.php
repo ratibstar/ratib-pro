@@ -60,24 +60,30 @@ return [
     ],
 
     /*
-     * Tool Allowlist — ONLY these 8 tools are executable
+     * Tool Allowlist — mirrored by ProcurementToolRegistry (authoritative at runtime)
      */
     'tools' => [
         'list_purchase_requests' => [
             'description' => 'List purchase requests for the current company',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.view',
             'module' => 'procurement',
             'write' => false,
         ],
         'get_purchase_request' => [
             'description' => 'Get a single purchase request by ID (tenant-scoped)',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.view',
             'module' => 'procurement',
             'write' => false,
         ],
         'list_purchase_orders' => [
             'description' => 'List purchase orders for the current company',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'get_purchase_order' => [
+            'description' => 'Get a single purchase order by ID (tenant-scoped)',
+            'permission' => 'procurement.view',
             'module' => 'procurement',
             'write' => false,
         ],
@@ -89,25 +95,67 @@ return [
         ],
         'list_pending_approvals' => [
             'description' => 'List pending approvals for purchase_request and purchase_order entities',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.view',
             'module' => 'procurement',
             'write' => false,
         ],
         'get_approval_detail' => [
             'description' => 'Get approval workflow detail by instance ID',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'summarize_procurement' => [
+            'description' => 'Procurement summary from live tenant data',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'analyze_procurement_intelligence' => [
+            'description' => 'Deep procurement intelligence: pending, overdue, abnormal, PR↔approval↔PO links',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'get_purchase_request_cycle' => [
+            'description' => 'One purchase request cycle with approvals, POs, and amounts',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'analyze_advanced_procurement_operations' => [
+            'description' => 'Advanced procurement operations: spend, frequency, bottlenecks, priorities, executive summary',
+            'permission' => 'procurement.view',
+            'module' => 'procurement',
+            'write' => false,
+        ],
+        'get_procurement_operational_guidance' => [
+            'description' => 'Operational guidance for what to do next (never auto-writes)',
+            'permission' => 'procurement.view',
             'module' => 'procurement',
             'write' => false,
         ],
         'create_draft_purchase_request' => [
             'description' => 'Create a draft purchase request',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.create',
+            'module' => 'procurement',
+            'write' => true,
+        ],
+        'update_purchase_request' => [
+            'description' => 'Update a purchase request',
+            'permission' => 'procurement.update',
+            'module' => 'procurement',
+            'write' => true,
+        ],
+        'cancel_purchase_request' => [
+            'description' => 'Cancel a purchase request',
+            'permission' => 'procurement.update',
             'module' => 'procurement',
             'write' => true,
         ],
         'submit_purchase_request' => [
             'description' => 'Submit a draft purchase request for approval workflow',
-            'permission' => 'procurement.manage',
+            'permission' => 'procurement.submit',
             'module' => 'procurement',
             'write' => true,
         ],
@@ -117,9 +165,26 @@ return [
      * Agent Behavior
      */
     'agent' => [
-        'system_prompt' => 'You are the Procurement Ops Agent inside RATEB ERP. Use only the approved tools. Never attempt SQL or unregistered tools. Tenant-scope every operation. Never expose tool ids, function names, JSON, or API samples in user-facing replies. Speak only in the UI language with zero language mixing.',
+        'executive_system_prompt' => 'You are the RATEB ERP Agent in Executive Intelligence mode. Use only approved executive tools. Never invent KPIs, trends, risks, or forecasts. Present evidence-backed summaries only. Never auto-execute writes — route recommended actions through confirmation and governance.',
+        'system_prompt' => 'You are the RATEB ERP Agent (single unified agent). Active domains: Procurement, Inventory, Suppliers, Sales (POS), CRM/Customers, Logistics, Accounting, and Executive Intelligence (KPIs/forecasts). Cross-domain and decision-support questions are orchestrated inside this same agent using existing approved tools only. Always be evidence-first: never invent numbers, statuses, relations, or entities. Recommendations are guidance only — never auto-execute writes. Write actions use the Action Layer only for registered tools, with Governance → Authorization → Policy → State validation → Confirmation → Execution → Verification → Audit. Controlled autonomy is disabled by default and never bypasses confirmation or approval. Tenant-scope every operation. Never expose tool ids, function names, JSON, or API samples in user-facing replies. Speak only in the UI language with zero language mixing. Never invent numbers; say when data is unavailable. Writes require confirmed_writes confirmation and sufficient parameters. Prefer one confirmed write at a time.',
         'max_tool_calls_per_request' => 10,
+        'max_orchestration_tools' => 10,
+        'max_writes_per_request' => 1,
         'require_confirmation_for_write' => true,
+        'default_domain' => 'procurement',
+        'agent_id' => 'rateb_erp_agent',
+    ],
+
+    /*
+     * Governance / Controlled Autonomy (application-owned; LLM cannot override)
+     */
+    'governance' => [
+        'controlled_autonomy_enabled' => false,
+        'autonomy_allowlist' => [],
+        'max_domains_per_request' => 6,
+        'max_tools_per_request' => 10,
+        'max_writes_per_request' => 1,
+        'max_action_chain' => 3,
     ],
 
     /*

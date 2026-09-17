@@ -50,6 +50,8 @@ final class CronService
             'invoice_due_reminders' => (new BillingAutomationService())->processDueReminders(),
             'cms_pages_published' => 0,
             'cms_articles_published' => 0,
+            'agent_early_warnings' => 0,
+            'agent_early_warning_created' => 0,
         ];
 
         $ops = (new HrOpsAutomationService())->runAll();
@@ -82,6 +84,9 @@ final class CronService
             $stats['batch_expiry_alerts'] += $invSvc->processBatchExpiryAlerts($cid);
             $stats['pos_sync_batches'] += $this->processPosSyncBatch($cid);
             $stats['pos_sync_reconcile'] += $this->processPosSyncReconcile($cid);
+            $ew = $this->processAgentEarlyWarnings($cid);
+            $stats['agent_early_warnings'] += (int) ($ew['scanned'] ?? 0);
+            $stats['agent_early_warning_created'] += (int) ($ew['created'] ?? 0);
         }
         TenantContext::setCompanyId(null);
 
@@ -89,6 +94,28 @@ final class CronService
         (new AutomationHealthService())->checkLateJobs();
         Logger::info('Cron completed', $stats);
         return $stats;
+    }
+
+    /**
+     * Proactive early-warning scan (tenant-isolated, idempotent, never auto-writes ERP records).
+     *
+     * @return array{scanned:int, created:int}
+     */
+    private function processAgentEarlyWarnings(int $companyId): array
+    {
+        try {
+            $result = ErpProactiveEarlyWarningLayer::runCronForCompany($companyId);
+            return [
+                'scanned' => isset($result['scan_id']) ? 1 : 0,
+                'created' => (int) ($result['warnings_created'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            Logger::error('cron_agent_early_warnings_failed', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['scanned' => 0, 'created' => 0];
+        }
     }
 
     /** Bulk campaigns are best-effort: a broken campaign must never abort the cron run. */

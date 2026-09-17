@@ -1,0 +1,226 @@
+/* RATEB AI Control Tower — uses theme tokens; dark via [data-bs-theme="dark"] */
+.rateb-ct {
+  --ct-bg: var(--ai-bg, #fff);
+  --ct-text: var(--ai-text, #212529);
+  --ct-muted: var(--ai-text-muted, #6c757d);
+  --ct-border: var(--ai-border, #dee2e6);
+  --ct-primary: var(--ai-primary, #1a5fb4);
+  --ct-card: var(--ai-assistant-bg, #f8f9fa);
+  --ct-danger: #dc3545;
+  --ct-warn: #fd7e14;
+  --ct-ok: #198754;
+  margin-bottom: 1rem;
+  color: var(--ct-text);
+  background: var(--ct-bg);
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  box-shadow: var(--ai-shadow, 0 2px 8px rgba(0,0,0,.08));
+  overflow: hidden;
+  font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
+}
+
+[data-bs-theme="dark"] .rateb-ct {
+  --ct-bg: var(--ai-bg, #1e1e2e);
+  --ct-text: var(--ai-text, #e4e4e7);
+  --ct-muted: var(--ai-text-muted, #a1a1aa);
+  --ct-border: var(--ai-border, #3f3f46);
+  --ct-primary: var(--ai-primary, #3b82f6);
+  --ct-card: var(--ai-assistant-bg, #27272a);
+}
+
+.rateb-ct-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--ct-border);
+}
+
+.rateb-ct-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.rateb-ct-meta {
+  font-size: .8rem;
+  color: var(--ct-muted);
+}
+
+.rateb-ct-actions {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+.rateb-ct-refresh {
+  border: 1px solid var(--ct-border);
+  background: var(--ct-card);
+  color: var(--ct-text);
+  border-radius: 8px;
+  padding: .35rem .7rem;
+  cursor: pointer;
+  font-size: .85rem;
+}
+
+.rateb-ct-refresh:hover {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+}
+
+.rateb-ct-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  padding: .5rem .75rem 0;
+  border-bottom: 1px solid var(--ct-border);
+}
+
+.rateb-ct-tab {
+  border: 0;
+  background: transparent;
+  color: var(--ct-muted);
+  padding: .5rem .75rem;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: .85rem;
+}
+
+.rateb-ct-tab.is-active {
+  color: var(--ct-primary);
+  background: var(--ct-card);
+  font-weight: 600;
+}
+
+.rateb-ct-body {
+  padding: .85rem 1rem 1rem;
+}
+
+.rateb-ct-panel {
+  display: none;
+}
+
+.rateb-ct-panel.is-active {
+  display: block;
+}
+
+.rateb-ct-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: .65rem;
+}
+
+.rateb-ct-stat {
+  background: var(--ct-card);
+  border: 1px solid var(--ct-border);
+  border-radius: 10px;
+  padding: .65rem .75rem;
+}
+
+.rateb-ct-stat-label {
+  font-size: .75rem;
+  color: var(--ct-muted);
+  margin-bottom: .2rem;
+}
+
+.rateb-ct-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.rateb-ct-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+
+.rateb-ct-item {
+  background: var(--ct-card);
+  border: 1px solid var(--ct-border);
+  border-radius: 10px;
+  padding: .7rem .8rem;
+}
+
+.rateb-ct-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem .75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .35rem;
+}
+
+.rateb-ct-item-title {
+  font-weight: 600;
+  font-size: .92rem;
+}
+
+.rateb-ct-badge {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .45rem;
+  border-radius: 999px;
+  border: 1px solid var(--ct-border);
+  color: var(--ct-muted);
+}
+
+.rateb-ct-badge.is-critical,
+.rateb-ct-badge.is-high {
+  color: var(--ct-danger);
+  border-color: var(--ct-danger);
+}
+
+.rateb-ct-badge.is-medium {
+  color: var(--ct-warn);
+  border-color: var(--ct-warn);
+}
+
+.rateb-ct-badge.is-ok {
+  color: var(--ct-ok);
+  border-color: var(--ct-ok);
+}
+
+.rateb-ct-evidence {
+  font-size: .78rem;
+  color: var(--ct-muted);
+  margin-top: .35rem;
+  line-height: 1.45;
+}
+
+.rateb-ct-empty {
+  color: var(--ct-muted);
+  font-size: .9rem;
+  padding: .5rem 0;
+}
+
+.rateb-ct-note {
+  font-size: .75rem;
+  color: var(--ct-muted);
+  margin-top: .75rem;
+}
+
+.rateb-ct-subtitle {
+  font-size: .85rem;
+  font-weight: 600;
+  margin: 1rem 0 .35rem;
+  color: var(--ct-fg, inherit);
+}
+
+@media (max-width: 768px) {
+  .rateb-ct-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rateb-ct-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}

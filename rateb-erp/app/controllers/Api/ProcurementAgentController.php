@@ -10,7 +10,8 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuthorizationService;
 use Rateb\App\Services\PlanLimitService;
-use Rateb\App\Services\ProcurementAgent;
+use Rateb\App\Services\ErpAgent;
+use Rateb\App\Services\ErpDomainRegistry;
 use Rateb\App\Services\ProcurementAgentContext;
 
 /**
@@ -141,13 +142,19 @@ final class ProcurementAgentController extends Controller
                 return;
             }
 
+            // Never forward unsanitized client history into the agent.
+            $history = $ctx->sanitizeHistory($history);
+
             $config = require RATEB_ROOT . '/config/agent.php';
-            $agent = new ProcurementAgent(is_array($config) ? $config : []);
+            $agent = new ErpAgent(is_array($config) ? $config : []);
+            $domain = strtolower(trim((string) ($body['domain'] ?? '')));
             $result = $agent->process([
                 'message' => $message,
                 'history' => $history,
                 'request_id' => $requestId,
                 'confirmed_writes' => $confirmedWrites,
+                'conversation_scope' => $ctx->conversationScopeKey(),
+                'domain' => $domain !== '' ? $domain : ErpDomainRegistry::DOMAIN_PROCUREMENT,
             ], $ctx);
 
             Response::json([
@@ -158,6 +165,8 @@ final class ProcurementAgentController extends Controller
                     'tool_calls' => $result['tool_calls'] ?? [],
                     'pending_confirmations' => $result['pending_confirmations'] ?? [],
                     'audit' => $result['audit'] ?? [],
+                    'domain' => (string) ($result['domain'] ?? ErpDomainRegistry::DOMAIN_PROCUREMENT),
+                    'agent' => (string) ($result['agent'] ?? ErpAgent::AGENT_ID),
                 ],
             ]);
         } catch (\Throwable $e) {

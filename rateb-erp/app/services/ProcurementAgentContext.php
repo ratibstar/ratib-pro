@@ -138,14 +138,38 @@ final class ProcurementAgentContext
     }
 
     /**
-     * Check if user has a specific permission
+     * Check if user has a specific permission (honors permission_implies like rateb_can).
      */
     public function can(string $permission): bool
     {
         if ($this->isSuperAdmin) {
             return true;
         }
-        return in_array($permission, $this->permissions, true);
+        if ($permission === '') {
+            return true;
+        }
+        if (in_array($permission, $this->permissions, true)) {
+            return true;
+        }
+
+        static $implies = null;
+        if ($implies === null) {
+            $cfgFile = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permissions-system.php';
+            $cfg = is_file($cfgFile) ? require $cfgFile : [];
+            $implies = is_array($cfg['permission_implies'] ?? null) ? $cfg['permission_implies'] : [];
+        }
+        foreach ($implies as $parent => $children) {
+            if (!in_array((string) $parent, $this->permissions, true)) {
+                continue;
+            }
+            foreach ((array) $children as $child) {
+                if ((string) $child === $permission) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -169,5 +193,85 @@ final class ProcurementAgentContext
             'is_super_admin' => $this->isSuperAdmin,
             'enabled_modules' => $this->enabledModules,
         ];
+    }
+
+    /**
+     * Stable conversation scope key — never reuse across tenants or users.
+     */
+    public function conversationScopeKey(): string
+    {
+        return 'procurement_agent:' . $this->companyId . ':' . $this->userId . ':' . $this->sessionId;
+    }
+
+    /**
+     * Sanitize chat history for LLM: roles/content only, tenant-safe, length-capped.
+     * Drops system/tool roles and any injected company/user metadata.
+     *
+     * @param mixed $history
+     * @return list<array{role: string, content: string}>
+     */
+    public function sanitizeHistory($history, int $maxMessages = 20, int $maxContentChars = 4000): array
+    {
+        if (!is_array($history)) {
+            return [];
+        }
+
+        $allowedRoles = ['user' => true, 'assistant' => true];
+        $clean = [];
+        foreach ($history as $msg) {
+            if (!is_array($msg)) {
+                continue;
+            }
+            $role = strtolower(trim((string) ($msg['role'] ?? '')));
+            if (!isset($allowedRoles[$role])) {
+                continue;
+            }
+            $content = (string) ($msg['content'] ?? '');
+            $content = trim($content);
+            if ($content === '') {
+                continue;
+            }
+            // Strip accidental cross-tenant / identity injection from client payloads.
+            if (preg_match('/^\s*\{.*"(company_id|user_id|tenant_id|session_id)"\s*:/s', $content) === 1) {
+                continue;
+            }
+            // Drop leaked credentials / API secrets from client history payloads.
+            if (preg_match('/"(api[_-]?key|access[_-]?token|secret|password|bearer)"\s*:/i', $content) === 1
+                || preg_match('/\b(api[_-]?key|access[_-]?token|bearer)\s*[:=]/i', $content) === 1
+            ) {
+                continue;
+            }
+            if (preg_match('/\b(company_id|user_id)\s*[:=]\s*\d+/i', $content) === 1
+                && preg_match('/\p{Arabic}|[A-Za-z]{3,}/u', preg_replace('/\b(company_id|user_id)\s*[:=]\s*\d+/i', '', $content) ?? '') !== 1
+            ) {
+                continue;
+            }
+            // Drop leaked tool/system dumps from prior turns.
+            if (str_starts_with($content, 'tool:') || str_starts_with($content, 'SYSTEM:')) {
+                continue;
+            }
+            if (mb_strlen($content) > $maxContentChars) {
+                $content = mb_substr($content, 0, $maxContentChars);
+            }
+            $clean[] = [
+                'role' => $role,
+                'content' => $content,
+            ];
+        }
+
+        if (count($clean) > $maxMessages) {
+            $clean = array_slice($clean, -$maxMessages);
+        }
+
+        return array_values($clean);
+    }
+
+    /**
+     * Normalize locale to ar|en from trusted session context only.
+     */
+    public function normalizedLocale(): string
+    {
+        $locale = strtolower(trim($this->locale));
+        return $locale === 'ar' ? 'ar' : 'en';
     }
 }

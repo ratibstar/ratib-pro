@@ -612,6 +612,7 @@ $router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsControl
 // Plan module: procurement; permission: ai.view (no entity resource — AI is not an entity CRUD surface).
 $aiMw = rateb_erp_mw('procurement', 'ai.view');
 $router->get($app('ai'), [Rateb\App\Controllers\Company\AiController::class, 'index'], $aiMw);
+$router->get($app('ai/tower'), [Rateb\App\Controllers\Company\AiController::class, 'tower'], $aiMw);
 $router->post($app('ai/chat'), [Rateb\App\Controllers\Company\AiController::class, 'chat'], $aiMw);
 
 /** Phase 21A eproc — retired. Lean procurement only (PR/PO/RFQ/quotations). Set RATEB_EPROC_ENABLED=1 to re-enable. */

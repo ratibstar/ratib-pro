@@ -6,7 +6,8 @@ namespace Rateb\App\Services\Agent;
 /**
  * OpenAI Compatible Client
  * Works with any OpenAI-compatible API (OpenAI, Azure, local models via vLLM/Ollama, etc.)
- * All configuration from config/agent.php which reads from environment
+ * All configuration from config/agent.php which reads from environment.
+ * Failures throw RuntimeException with stable codes (never leak secrets).
  */
 final class OpenAiCompatibleClient implements LlmClientInterface
 {
@@ -20,21 +21,22 @@ final class OpenAiCompatibleClient implements LlmClientInterface
 
     public function __construct(array $config = [])
     {
-        $this->model = $config['model'] ?? 'gpt-4o-mini';
-        $this->baseUrl = rtrim($config['base_url'] ?? 'https://api.openai.com/v1', '/');
-        $this->apiKey = $config['api_key'] ?? '';
-        $this->timeout = (int) ($config['timeout'] ?? 30);
-        $this->maxTokens = (int) ($config['max_tokens'] ?? 2000);
+        $this->model = (string) ($config['model'] ?? 'gpt-4o-mini');
+        $this->baseUrl = rtrim((string) ($config['base_url'] ?? 'https://api.openai.com/v1'), '/');
+        $this->apiKey = (string) ($config['api_key'] ?? '');
+        $this->timeout = max(1, (int) ($config['timeout'] ?? 30));
+        $this->maxTokens = max(1, (int) ($config['max_tokens'] ?? 2000));
         $this->temperature = (float) ($config['temperature'] ?? 0.1);
-        $this->provider = $config['provider'] ?? 'openai_compatible';
-
-        if ($this->apiKey === '') {
-            throw new \RuntimeException('LLM API key not configured. Set RATEB_AGENT_LLM_API_KEY in environment.');
-        }
+        $this->provider = (string) ($config['provider'] ?? 'openai_compatible');
+        // Phase 5: do not crash construction when key missing — fail at call time with stable code.
     }
 
     public function chatCompletion(array $messages, array $tools, ?string $toolChoice = 'auto'): array
     {
+        if ($this->apiKey === '') {
+            throw new \RuntimeException('llm_not_configured');
+        }
+
         $payload = [
             'model' => $this->model,
             'messages' => $messages,
@@ -48,6 +50,10 @@ final class OpenAiCompatibleClient implements LlmClientInterface
         }
 
         $ch = curl_init($this->baseUrl . '/chat/completions');
+        if ($ch === false) {
+            throw new \RuntimeException('llm_request_failed');
+        }
+
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -57,42 +63,48 @@ final class OpenAiCompatibleClient implements LlmClientInterface
                 'Authorization: Bearer ' . $this->apiKey,
             ],
             CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_CONNECTTIMEOUT => min(10, $this->timeout),
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
         $response = curl_exec($ch);
         $errNo = curl_errno($ch);
-        $errMsg = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        if ($errNo === 28) {
+            throw new \RuntimeException('llm_timeout');
+        }
         if ($errNo !== 0) {
-            throw new \RuntimeException("LLM request failed: {$errMsg} (errno: {$errNo})");
+            throw new \RuntimeException('llm_request_failed');
+        }
+        if (!is_string($response) || trim($response) === '') {
+            throw new \RuntimeException('llm_empty_response');
         }
 
         $data = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('LLM response JSON decode error: ' . json_last_error_msg());
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            throw new \RuntimeException('llm_invalid_response');
         }
 
         if ($httpCode !== 200) {
-            $error = $data['error']['message'] ?? 'Unknown LLM error';
-            throw new \RuntimeException("LLM API error ({$httpCode}): {$error}");
+            throw new \RuntimeException('llm_api_error');
         }
 
         $choice = $data['choices'][0] ?? null;
-        if (!$choice) {
-            throw new \RuntimeException('LLM response missing choices');
+        if (!is_array($choice)) {
+            throw new \RuntimeException('llm_empty_response');
         }
 
-        $message = $choice['message'] ?? [];
-        $usage = $data['usage'] ?? null;
+        $message = $choice['message'] ?? null;
+        if (!is_array($message)) {
+            throw new \RuntimeException('llm_invalid_response');
+        }
 
         return [
             'message' => $message,
-            'usage' => $usage,
-            'model' => $data['model'] ?? $this->model,
+            'usage' => is_array($data['usage'] ?? null) ? $data['usage'] : null,
+            'model' => (string) ($data['model'] ?? $this->model),
         ];
     }
 

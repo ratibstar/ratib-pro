@@ -4,19 +4,31 @@
  * Chat interface connected to backend agents
  */
 $chatEndpoint = $chatEndpoint ?? rateb_url(rateb_app_route('ai/chat'));
+$towerEndpoint = $towerEndpoint ?? rateb_url(rateb_app_route('ai/tower'));
+$controlTower = is_array($controlTower ?? null) ? $controlTower : [];
 $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
 $aiJs = rateb_asset('js/rateb-ai-page.js');
 $aiHistJs = rateb_asset('js/rateb-ai-history.js');
+$ctCss = rateb_asset('css/rateb-ai-control-tower.css');
+$ctJs = rateb_asset('js/rateb-ai-control-tower.js');
 /* Bust SW/browser cache for toolbar handlers (soft-nav + deferred scripts). */
 $aiHistFile = RATEB_ROOT . '/public/assets/js/rateb-ai-history.js';
 $aiPageFile = RATEB_ROOT . '/public/assets/js/rateb-ai-page.js';
+$ctCssFile = RATEB_ROOT . '/public/assets/css/rateb-ai-control-tower.css';
+$ctJsFile = RATEB_ROOT . '/public/assets/js/rateb-ai-control-tower.js';
 $aiHistVer = is_file($aiHistFile) ? (string) filemtime($aiHistFile) : '1';
 $aiPageVer = is_file($aiPageFile) ? (string) filemtime($aiPageFile) : '1';
+$ctCssVer = is_file($ctCssFile) ? (string) filemtime($ctCssFile) : '1';
+$ctJsVer = is_file($ctJsFile) ? (string) filemtime($ctJsFile) : '1';
 $aiHistJs .= (str_contains($aiHistJs, '?') ? '&' : '?') . 'aih=' . rawurlencode($aiHistVer);
 $aiJs .= (str_contains($aiJs, '?') ? '&' : '?') . 'aip=' . rawurlencode($aiPageVer);
+$ctCss .= (str_contains($ctCss, '?') ? '&' : '?') . 'ctc=' . rawurlencode($ctCssVer);
+$ctJs .= (str_contains($ctJs, '?') ? '&' : '?') . 'ctj=' . rawurlencode($ctJsVer);
 $aiCompanyId = (int) ($aiCompanyId ?? 0);
 $aiUserId = (int) ($aiUserId ?? 0);
 ?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars($ctCss, ENT_QUOTES, 'UTF-8'); ?>">
+<script src="<?php echo htmlspecialchars($ctJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
@@ -318,6 +330,11 @@ $aiUserId = (int) ($aiUserId ?? 0);
     }
 })();
 </script>
+<?php
+if ($controlTower !== []) {
+    require __DIR__ . '/control-tower.php';
+}
+?>
 <div
     class="rateb-ai-container"
     id="ratebAiRoot"
@@ -342,10 +359,104 @@ $aiUserId = (int) ($aiUserId ?? 0);
             'list_purchase_requests' => __('ai_tool_list_purchase_requests'),
             'get_purchase_request' => __('ai_tool_get_purchase_request'),
             'list_purchase_orders' => __('ai_tool_list_purchase_orders'),
+            'get_purchase_order' => __('ai_tool_get_purchase_order'),
             'search_suppliers' => __('ai_tool_search_suppliers'),
             'list_pending_approvals' => __('ai_tool_list_pending_approvals'),
             'get_approval_detail' => __('ai_tool_get_approval_detail'),
+            'summarize_procurement' => __('ai_tool_summarize_procurement'),
+            'analyze_procurement_intelligence' => __('ai_tool_analyze_procurement_intelligence'),
+            'get_purchase_request_cycle' => __('ai_tool_get_purchase_request_cycle'),
+            'analyze_advanced_procurement_operations' => __('ai_tool_analyze_advanced_procurement_operations'),
+            'get_procurement_operational_guidance' => __('ai_tool_get_procurement_operational_guidance'),
+            'list_inventory_items' => __('ai_tool_list_inventory_items'),
+            'get_inventory_item' => __('ai_tool_get_inventory_item'),
+            'list_warehouses' => __('ai_tool_list_warehouses'),
+            'list_stock_movements' => __('ai_tool_list_stock_movements'),
+            'analyze_inventory' => __('ai_tool_analyze_inventory'),
+            'get_inventory_procurement_links' => __('ai_tool_get_inventory_procurement_links'),
+            'list_suppliers' => __('ai_tool_list_suppliers'),
+            'get_supplier' => __('ai_tool_get_supplier'),
+            'analyze_suppliers' => __('ai_tool_analyze_suppliers'),
+            'get_supplier_procurement_links' => __('ai_tool_get_supplier_procurement_links'),
+            'get_supplier_inventory_links' => __('ai_tool_get_supplier_inventory_links'),
+            'analyze_supplier_cross_domain' => __('ai_tool_analyze_supplier_cross_domain'),
+            'list_sales_orders' => __('ai_tool_list_sales_orders'),
+            'get_sales_order' => __('ai_tool_get_sales_order'),
+            'list_sales_customers' => __('ai_tool_list_sales_customers'),
+            'analyze_sales' => __('ai_tool_analyze_sales'),
+            'get_sales_operational_guidance' => __('ai_tool_get_sales_operational_guidance'),
+            'get_sales_inventory_links' => __('ai_tool_get_sales_inventory_links'),
+            'get_sales_procurement_links' => __('ai_tool_get_sales_procurement_links'),
+            'get_sales_supplier_links' => __('ai_tool_get_sales_supplier_links'),
+            'analyze_sales_cross_domain' => __('ai_tool_analyze_sales_cross_domain'),
+            'list_crm_customers' => __('ai_tool_list_crm_customers'),
+            'get_crm_customer' => __('ai_tool_get_crm_customer'),
+            'list_crm_leads' => __('ai_tool_list_crm_leads'),
+            'list_crm_opportunities' => __('ai_tool_list_crm_opportunities'),
+            'list_crm_followups' => __('ai_tool_list_crm_followups'),
+            'analyze_crm' => __('ai_tool_analyze_crm'),
+            'get_crm_operational_guidance' => __('ai_tool_get_crm_operational_guidance'),
+            'get_crm_sales_links' => __('ai_tool_get_crm_sales_links'),
+            'get_crm_inventory_links' => __('ai_tool_get_crm_inventory_links'),
+            'get_crm_procurement_links' => __('ai_tool_get_crm_procurement_links'),
+            'get_crm_supplier_links' => __('ai_tool_get_crm_supplier_links'),
+            'analyze_crm_commercial_intelligence' => __('ai_tool_analyze_crm_commercial_intelligence'),
+            'list_logistics_shipments' => __('ai_tool_list_logistics_shipments'),
+            'get_logistics_shipment' => __('ai_tool_get_logistics_shipment'),
+            'list_logistics_delivery_orders' => __('ai_tool_list_logistics_delivery_orders'),
+            'list_logistics_trips' => __('ai_tool_list_logistics_trips'),
+            'analyze_logistics' => __('ai_tool_analyze_logistics'),
+            'get_logistics_operational_guidance' => __('ai_tool_get_logistics_operational_guidance'),
+            'get_logistics_crm_links' => __('ai_tool_get_logistics_crm_links'),
+            'get_logistics_sales_links' => __('ai_tool_get_logistics_sales_links'),
+            'get_logistics_inventory_links' => __('ai_tool_get_logistics_inventory_links'),
+            'get_logistics_procurement_links' => __('ai_tool_get_logistics_procurement_links'),
+            'get_logistics_supplier_links' => __('ai_tool_get_logistics_supplier_links'),
+            'analyze_logistics_end_to_end' => __('ai_tool_analyze_logistics_end_to_end'),
+            'list_chart_accounts' => __('ai_tool_list_chart_accounts'),
+            'get_account' => __('ai_tool_get_account'),
+            'list_journal_entries' => __('ai_tool_list_journal_entries'),
+            'get_journal_entry' => __('ai_tool_get_journal_entry'),
+            'list_accounts_receivable' => __('ai_tool_list_accounts_receivable'),
+            'list_accounts_payable' => __('ai_tool_list_accounts_payable'),
+            'list_supplier_payments' => __('ai_tool_list_supplier_payments'),
+            'get_financial_summary' => __('ai_tool_get_financial_summary'),
+            'get_vat_report' => __('ai_tool_get_vat_report'),
+            'analyze_accounting' => __('ai_tool_analyze_accounting'),
+            'get_accounting_operational_guidance' => __('ai_tool_get_accounting_operational_guidance'),
+            'get_accounting_sales_links' => __('ai_tool_get_accounting_sales_links'),
+            'get_accounting_procurement_links' => __('ai_tool_get_accounting_procurement_links'),
+            'get_accounting_supplier_links' => __('ai_tool_get_accounting_supplier_links'),
+            'get_accounting_inventory_links' => __('ai_tool_get_accounting_inventory_links'),
+            'get_accounting_logistics_links' => __('ai_tool_get_accounting_logistics_links'),
+            'analyze_financial_intelligence' => __('ai_tool_analyze_financial_intelligence'),
+            'submit_journal_for_approval' => __('ai_tool_submit_journal_for_approval'),
+            'analyze_executive_intelligence' => __('ai_tool_analyze_executive_intelligence'),
+            'get_executive_kpis' => __('ai_tool_get_executive_kpis'),
+            'get_executive_summary' => __('ai_tool_get_executive_summary'),
+            'get_executive_forecast' => __('ai_tool_get_executive_forecast'),
+            'get_executive_priorities' => __('ai_tool_get_executive_priorities'),
+            'get_executive_action_bridge' => __('ai_tool_get_executive_action_bridge'),
+            'scan_early_warnings' => __('ai_tool_scan_early_warnings'),
+            'get_early_warnings' => __('ai_tool_get_early_warnings'),
+            'get_early_warning_digest' => __('ai_tool_get_early_warning_digest'),
+            'update_early_warning_status' => __('ai_tool_update_early_warning_status'),
+            'revalidate_early_warning' => __('ai_tool_revalidate_early_warning'),
+            'get_early_warning_action_bridge' => __('ai_tool_get_early_warning_action_bridge'),
+            'analyze_operational_learning' => __('ai_tool_analyze_operational_learning'),
+            'get_action_outcomes' => __('ai_tool_get_action_outcomes'),
+            'get_learning_signals' => __('ai_tool_get_learning_signals'),
+            'get_recommendation_effectiveness' => __('ai_tool_get_recommendation_effectiveness'),
+            'get_warning_effectiveness' => __('ai_tool_get_warning_effectiveness'),
+            'get_forecast_feedback' => __('ai_tool_get_forecast_feedback'),
+            'get_optimization_insights' => __('ai_tool_get_optimization_insights'),
+            'record_recommendation_feedback' => __('ai_tool_record_recommendation_feedback'),
+            'measure_action_outcome' => __('ai_tool_measure_action_outcome'),
+            'record_forecast_feedback' => __('ai_tool_record_forecast_feedback'),
+            'get_control_tower_snapshot' => __('ai_tool_get_control_tower_snapshot'),
             'create_draft_purchase_request' => __('ai_tool_create_draft_purchase_request'),
+            'update_purchase_request' => __('ai_tool_update_purchase_request'),
+            'cancel_purchase_request' => __('ai_tool_cancel_purchase_request'),
             'submit_purchase_request' => __('ai_tool_submit_purchase_request'),
         ];
         echo htmlspecialchars((string) json_encode($aiToolLabels, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
