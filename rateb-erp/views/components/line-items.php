@@ -172,20 +172,25 @@ $req = static function (string $label): string {
                     </tbody>
                 </table>
             </div>
-            <?php if ($showTableTotals) { ?>
+            <?php if ($showTableTotals) {
+                $footerAgg = \Rateb\App\Helpers\LineItems::aggregateTotals(array_values(array_filter(
+                    $lineItems,
+                    static fn($l) => is_array($l) && trim((string) ($l['item_name'] ?? '')) !== ''
+                )));
+                ?>
             <div class="rateb-line-items-totals px-3 py-3">
                 <div class="row g-2 justify-content-end text-end">
                     <div class="col-sm-4 col-md-3">
                         <span class="text-muted"><?php echo __('subtotal'); ?></span>
-                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-subtotal>0.00</span></div>
+                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-subtotal><?php echo number_format($footerAgg['subtotal'], 2, '.', ''); ?></span></div>
                     </div>
                     <div class="col-sm-4 col-md-3">
                         <span class="text-muted"><?php echo __('tax_amount'); ?> (<?php echo __('vat_15'); ?>)</span>
-                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-tax>0.00</span></div>
+                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-tax><?php echo number_format($footerAgg['tax'], 2, '.', ''); ?></span></div>
                     </div>
                     <div class="col-sm-4 col-md-3">
                         <span class="text-muted"><?php echo __('total'); ?></span>
-                        <div class="fw-bold text-primary rateb-ltr-num"><span data-procurement-grand-total>0.00</span></div>
+                        <div class="fw-bold text-primary rateb-ltr-num"><span data-procurement-grand-total><?php echo number_format($footerAgg['total'], 2, '.', ''); ?></span></div>
                     </div>
                 </div>
             </div>

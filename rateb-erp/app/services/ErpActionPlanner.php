@@ -633,17 +633,45 @@ final class ErpActionPlanner
             }
         }
 
-        // Optional unit price / tax from the utterance
+        // Optional unit price / tax from the utterance (never invent)
         $unitPrice = null;
-        if (preg_match('/(?:سعر|price|unit[_\s-]?price)\s*[=:]?\s*(\d+(?:\.\d+)?)/ui', $message, $pm) === 1) {
+        if (preg_match(
+            '/(?:بسعر|بسعر\s*الوحدة|سعر\s*الوحدة|سعرها|سعره|سعر|price|unit[_\s-]?price)\s*[=:]?\s*(\d+(?:\.\d+)?)\s*(?:ريال|ر\.?\s*س\.?|sar|usd)?/ui',
+            $message,
+            $pm
+        ) === 1) {
             $unitPrice = (float) $pm[1];
         }
+
         $taxRate = null;
-        if (preg_match('/(?:ضريبة|tax|vat)\s*[=:]?\s*(\d+(?:\.\d+)?)\s*%?/ui', $message, $tm) === 1) {
-            $taxRate = (float) $tm[1];
-        } elseif (self::match($message, '/(?:بدون\s*ضريبة|no\s*tax|zero\s*tax|vat\s*0)/ui')) {
-            $taxRate = 0.0;
+        $taxNameHint = null;
+        $excludingTax = true;
+        if (self::match($message, '/(شامل\s*الضريبة|شامل\s*ل?ضريبة|tax\s*inclusive|inclusive\s*of\s*tax|including\s*tax)/ui')) {
+            $excludingTax = false;
+        } elseif (self::match($message, '/(غير\s*شامل|exclusive\s*of\s*tax|excluding\s*tax|بدون\s*شمول)/ui')) {
+            $excludingTax = true;
         }
+        if (self::match($message, '/(معفى|معفي|إعفاء|اعفاء|exempt)/ui')) {
+            $taxNameHint = 'Exempt';
+            $taxRate = 0.0;
+        } elseif (self::match($message, '/(مبيعات\s*محلية|local\s*sales|بدون\s*ضريبة|zero\s*tax|no\s*tax|vat\s*0)/ui')) {
+            $taxNameHint = 'Local Sales 0%';
+            $taxRate = 0.0;
+        } elseif (self::match($message, '/(ضريبة\s*القيمة\s*المضافة\s*5|vat\s*5\s*%?|ضريبة\s*5\s*%?)/ui')) {
+            $taxNameHint = 'VAT 5%';
+            $taxRate = 5.0;
+        } elseif (self::match($message, '/(ضريبة\s*القيمة\s*المضافة|قيمة\s*مضافة|vat\s*15\s*%?|ضريبة\s*15\s*%?)/ui')) {
+            $taxNameHint = 'VAT 15%';
+            $taxRate = 15.0;
+        } elseif (preg_match('/(?:ضريبة|tax|vat)\s*[=:]?\s*(\d+(?:\.\d+)?)\s*%?/ui', $message, $tm) === 1) {
+            $taxRate = (float) $tm[1];
+            $resolved = \Rateb\App\Helpers\LineItems::resolveTaxPreset(null, $taxRate);
+            $taxNameHint = $resolved['tax_name'];
+            $taxRate = (float) $resolved['tax_rate'];
+        }
+        $resolvedTax = \Rateb\App\Helpers\LineItems::resolveTaxPreset($taxNameHint, $taxRate);
+        $defaultTaxRate = (float) $resolvedTax['tax_rate'];
+        $defaultTaxName = (string) $resolvedTax['tax_name'];
 
         // Qty + unit + item(s) — "10 وحدات من بطاطس" / "بطاطس 66" / "بطاطس × 10 وأرز × 5"
         $item = null;
@@ -652,14 +680,36 @@ final class ErpActionPlanner
         $msgTrim = trim($message);
         $msgForItem = preg_replace('/\s*(?:قسم|department)\s*[^\n,]*/ui', '', $msgTrim) ?? $msgTrim;
         $msgForItem = preg_replace('/\s*(?:بأولوية|اولوية|أولوية|priority)\s*\S+/ui', '', $msgForItem) ?? $msgForItem;
-        $msgForItem = preg_replace('/\s*(?:سعر|price|unit[_\s-]?price)\s*[=:]?\s*\d+(?:\.\d+)?/ui', '', $msgForItem) ?? $msgForItem;
-        $msgForItem = preg_replace('/\s*(?:ضريبة|tax|vat)\s*[=:]?\s*\d+(?:\.\d+)?\s*%?/ui', '', $msgForItem) ?? $msgForItem;
+        $msgForItem = preg_replace(
+            '/\s*(?:بسعر|بسعر\s*الوحدة|سعر\s*الوحدة|سعرها|سعره|سعر|price|unit[_\s-]?price)\s*[=:]?\s*\d+(?:\.\d+)?\s*(?:ريال|ر\.?\s*س\.?|sar|usd)?/ui',
+            '',
+            $msgForItem
+        ) ?? $msgForItem;
+        $msgForItem = preg_replace('/\s*\d+(?:\.\d+)?\s*(?:ريال|ر\.?\s*س\.?|sar|usd)\b/ui', '', $msgForItem) ?? $msgForItem;
+        $msgForItem = preg_replace('/\s*(?:ضريبة|tax|vat|معفى|معفي|مبيعات\s*محلية|شامل\s*الضريبة|غير\s*شامل)[^\n,]*/ui', '', $msgForItem) ?? $msgForItem;
         $msgForItem = trim(preg_replace('/\s+/u', ' ', (string) $msgForItem) ?? '');
         $unitAlt = 'وحدات|وحدة|unit|units|pcs?|pieces?|قطعة|قطع|each|ea';
         $unitBlock = '/^(وحدات|وحدة|unit|units|pcs|piece|pieces|قطعة|قطع|each|ea|متوسط|متوسطة|متوسطه|عاجل|منخفض|طلب|شراء|مواد|department|قسم)$/ui';
+        $itemBlock = '/^(ريال|سار|sar|usd|ضريبة|أولوية|اولوية|priority|بدون|شامل|غير)$/ui';
 
         $extractedLines = [];
-        // Multi-item: "بطاطس × 10" / "بطاطس x 10" / "10 من بطاطس" repeated
+        // Per-line prices from original: "بطاطس × 10 بسعر 5"
+        $perLinePrices = [];
+        if (preg_match_all(
+            '/([\p{L}]{2,40})\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*(?:بسعر|سعر|price)\s*[=:]?\s*(\d+(?:\.\d+)?)/ui',
+            $message,
+            $pmLines,
+            PREG_SET_ORDER
+        ) >= 1) {
+            foreach ($pmLines as $pl) {
+                $pn = trim(preg_replace('/^و/u', '', (string) ($pl[1] ?? '')) ?? '');
+                if ($pn !== '' && !self::match($pn, $itemBlock)) {
+                    $perLinePrices[mb_strtolower($pn)] = (float) $pl[3];
+                }
+            }
+        }
+
+        // Multi-item from price-stripped text only (never treat "5 ريال" as an item)
         if (preg_match_all(
             '/([\p{L}]{2,40})\s*[×xX*]\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:' . $unitAlt . ')?\s*(?:من\s+)?([\p{L}]{2,40})\b/ui',
             $msgForItem,
@@ -676,8 +726,9 @@ final class ErpActionPlanner
                     $n = trim($m[4]);
                     $q = (float) $m[3];
                 }
-                if ($n === '' || $q <= 0 || self::match($n, $unitBlock)
-                    || self::match($n, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد|تجريبي)$/ui')
+                $n = trim(preg_replace('/^و/u', '', $n) ?? $n);
+                if ($n === '' || $q <= 0 || self::match($n, $unitBlock) || self::match($n, $itemBlock)
+                    || self::match($n, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد|تجريبي|شراء|طلب)$/ui')
                 ) {
                     continue;
                 }
@@ -688,23 +739,23 @@ final class ErpActionPlanner
                         ? 'each'
                         : mb_substr($unitRaw, 0, 30);
                 }
-                $line = [
+                $linePrice = $perLinePrices[mb_strtolower($n)] ?? $unitPrice;
+                $extractedLines[] = [
                     'item_name' => $n,
                     'description' => $n,
                     'quantity' => $q,
                     'unit' => $lineUnit,
-                    'unit_price' => $unitPrice !== null ? $unitPrice : 0,
-                    'tax_rate' => $taxRate !== null ? $taxRate : 15,
-                    'tax_name' => ($taxRate !== null && $taxRate <= 0) ? 'Local Sales 0%' : 'VAT 15%',
-                    'excluding_tax' => 1,
+                    'unit_price' => $linePrice !== null ? (float) $linePrice : 0.0,
+                    'tax_rate' => $defaultTaxRate,
+                    'tax_name' => $defaultTaxName,
+                    'excluding_tax' => $excludingTax ? 1 : 0,
                 ];
-                $extractedLines[] = $line;
             }
         }
 
         if ($extractedLines === []) {
             if (preg_match('/(\d+(?:\.\d+)?)\s*(?:' . $unitAlt . ')?\s*(?:من\s+)?([\p{L}]{2,40})\b/ui', $msgForItem, $m) === 1
-                && !self::match($m[2], $unitBlock)
+                && !self::match($m[2], $unitBlock) && !self::match($m[2], $itemBlock)
             ) {
                 $qty = (float) $m[1];
                 $item = trim($m[2]);
@@ -715,7 +766,7 @@ final class ErpActionPlanner
                         : mb_substr($unitRaw, 0, 30);
                 }
             } elseif (preg_match('/([\p{L}]{2,40})\s+(\d+(?:\.\d+)?)\s*$/u', $msgForItem, $m) === 1
-                && !self::match($m[1], $unitBlock)
+                && !self::match($m[1], $unitBlock) && !self::match($m[1], $itemBlock)
             ) {
                 $item = trim($m[1]);
                 $qty = (float) $m[2];
@@ -729,10 +780,10 @@ final class ErpActionPlanner
                     'description' => $item,
                     'quantity' => $qty,
                     'unit' => $unit !== '' && $unit !== 'unit' ? $unit : 'each',
-                    'unit_price' => $unitPrice !== null ? $unitPrice : 0,
-                    'tax_rate' => $taxRate !== null ? $taxRate : 15,
-                    'tax_name' => ($taxRate !== null && $taxRate <= 0) ? 'Local Sales 0%' : 'VAT 15%',
-                    'excluding_tax' => 1,
+                    'unit_price' => $unitPrice !== null ? $unitPrice : 0.0,
+                    'tax_rate' => $defaultTaxRate,
+                    'tax_name' => $defaultTaxName,
+                    'excluding_tax' => $excludingTax ? 1 : 0,
                 ];
             }
         }
@@ -1530,6 +1581,23 @@ final class ErpActionPlanner
             }
             $state = self::readStateSnapshot('update_purchase_request', ['id' => $id], $ctx);
             $ok = is_array($state) && !empty($state['exists']) && (string) ($state['status'] ?? '') === 'draft';
+            if ($ok) {
+                // Backend financials must match header after real write
+                $items = \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($id);
+                $agg = $items !== []
+                    ? \Rateb\App\Helpers\LineItems::aggregateTotals($items)
+                    : ['subtotal' => 0.0, 'tax' => 0.0, 'total' => 0.0];
+                $headerTotal = (float) ($state['total_estimated'] ?? $execResult['data']['total_estimated'] ?? 0);
+                if (abs($headerTotal - (float) $agg['total']) > 0.009) {
+                    return [
+                        'verified' => false,
+                        'incomplete' => true,
+                        'new_state' => array_merge($state, ['financials' => $agg]),
+                        'message' => 'verification_incomplete_totals_mismatch',
+                    ];
+                }
+                $state['financials'] = $agg;
+            }
             return [
                 'verified' => $ok,
                 'incomplete' => !$ok,
@@ -1725,16 +1793,20 @@ final class ErpActionPlanner
                     $reqNo = (string) ($data['request_no'] ?? '');
                     $id = (string) ($data['id'] ?? '');
                     $savedTitle = (string) ($data['title'] ?? '');
-                    $savedPrio = self::labelPriority((string) ($data['priority'] ?? 'medium'), $ar);
                     $savedItems = is_array($data['line_items'] ?? null) ? $data['line_items'] : [];
                     $snap = is_array($plan['parameter_snapshot'] ?? null) ? $plan['parameter_snapshot'] : [];
                     $args = is_array($plan['actions'][0]['arguments'] ?? null) ? $plan['actions'][0]['arguments'] : [];
                     $prio = self::labelPriority((string) ($data['priority'] ?? $snap['priority'] ?? $args['priority'] ?? 'medium'), $ar);
+                    $fin = is_array($data['financials'] ?? null)
+                        ? $data['financials']
+                        : ($savedItems !== [] ? \Rateb\App\Helpers\LineItems::aggregateTotals($savedItems) : null);
+                    $currency = (string) ($data['currency'] ?? 'SAR');
                     $line0 = is_array($savedItems[0] ?? null) ? $savedItems[0]
                         : (is_array($snap['line_items'][0] ?? null) ? $snap['line_items'][0]
                         : (is_array($args['line_items'][0] ?? null) ? $args['line_items'][0] : []));
                     $item = (string) ($line0['item_name'] ?? $line0['description'] ?? '');
                     $qty = (string) ($line0['quantity'] ?? '');
+                    $unitPrice = (string) ($line0['unit_price'] ?? '');
                     if ($ar) {
                         $lines[] = 'تم إنشاء مسودة طلب الشراء بنجاح.';
                         if ($reqNo !== '') {
@@ -1751,7 +1823,15 @@ final class ErpActionPlanner
                         if ($qty !== '') {
                             $lines[] = 'الكمية: ' . $qty;
                         }
+                        if ($unitPrice !== '' && (float) $unitPrice > 0) {
+                            $lines[] = 'سعر الوحدة: ' . number_format((float) $unitPrice, 2) . ' ' . $currency;
+                        }
                         $lines[] = 'الأولوية: ' . $prio;
+                        if (is_array($fin)) {
+                            $lines[] = 'المبلغ قبل الضريبة: ' . number_format((float) ($fin['subtotal'] ?? 0), 2) . ' ' . $currency;
+                            $lines[] = 'قيمة الضريبة: ' . number_format((float) ($fin['tax'] ?? 0), 2) . ' ' . $currency;
+                            $lines[] = 'الإجمالي: ' . number_format((float) ($fin['total'] ?? $data['total_estimated'] ?? 0), 2) . ' ' . $currency;
+                        }
                         $lines[] = !empty($ver['verified'])
                             ? 'التحقق: تم التحقق من الحالة بعد التنفيذ.'
                             : 'التحقق: قيد المراجعة.';
@@ -1771,7 +1851,15 @@ final class ErpActionPlanner
                         if ($qty !== '') {
                             $lines[] = 'Quantity: ' . $qty;
                         }
+                        if ($unitPrice !== '' && (float) $unitPrice > 0) {
+                            $lines[] = 'Unit price: ' . number_format((float) $unitPrice, 2) . ' ' . $currency;
+                        }
                         $lines[] = 'Priority: ' . $prio;
+                        if (is_array($fin)) {
+                            $lines[] = 'Amount before tax: ' . number_format((float) ($fin['subtotal'] ?? 0), 2) . ' ' . $currency;
+                            $lines[] = 'Tax amount: ' . number_format((float) ($fin['tax'] ?? 0), 2) . ' ' . $currency;
+                            $lines[] = 'Total: ' . number_format((float) ($fin['total'] ?? $data['total_estimated'] ?? 0), 2) . ' ' . $currency;
+                        }
                         $lines[] = !empty($ver['verified'])
                             ? 'Verification: post-action state verified.'
                             : 'Verification: pending review.';

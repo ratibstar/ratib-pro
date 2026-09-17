@@ -1430,6 +1430,8 @@ final class ProcurementToolExecutor
                     continue;
                 }
                 $name = trim((string) ($line['item_name'] ?? $line['description'] ?? $line['name'] ?? $line['product'] ?? ''));
+                // Strip leading conjunction noise from multi-item extraction (وأرز)
+                $name = trim(preg_replace('/^و/u', '', $name) ?? $name);
                 if ($name === '') {
                     continue;
                 }
@@ -1441,22 +1443,45 @@ final class ProcurementToolExecutor
                 if ($unit === '' || $unit === 'ea' || $unit === 'وحدات' || $unit === 'وحدة') {
                     $unit = 'each';
                 }
+                // Never invent price — only persist what the caller supplied
                 $price = (float) ($line['unit_price'] ?? $line['estimated_price'] ?? $line['price'] ?? 0);
-                $taxRate = array_key_exists('tax_rate', $line)
-                    ? (float) $line['tax_rate']
-                    : 15.0;
-                $taxName = trim((string) ($line['tax_name'] ?? ($taxRate > 0 ? 'VAT 15%' : 'Local Sales 0%')));
+                if ($price < 0) {
+                    $price = 0.0;
+                }
+
+                $taxHint = trim((string) ($line['tax_name'] ?? $line['tax_preset'] ?? ''));
+                $taxRateIn = array_key_exists('tax_rate', $line) ? (float) $line['tax_rate'] : null;
+                $tax = \Rateb\App\Helpers\LineItems::resolveTaxPreset(
+                    $taxHint !== '' ? $taxHint : null,
+                    $taxRateIn
+                );
+                // Explicit excluding/inclusive flag from caller or phrases
+                if (array_key_exists('excluding_tax', $line)) {
+                    $rawEx = $line['excluding_tax'];
+                    if (is_bool($rawEx)) {
+                        $excluding = $rawEx;
+                    } elseif (is_int($rawEx) || (is_string($rawEx) && is_numeric($rawEx))) {
+                        $excluding = (int) $rawEx === 1;
+                    } else {
+                        $excluding = true;
+                    }
+                } else {
+                    $excluding = true;
+                }
+
+                $lineTotals = \Rateb\App\Helpers\LineItems::lineTotals($qty, $price, (float) $tax['tax_rate'], $excluding);
                 $neededBy = trim((string) ($line['needed_by'] ?? $line['required_by'] ?? $expectedDate));
                 $row = [
                     'item_name' => mb_substr($name, 0, 255),
                     'description' => mb_substr(trim((string) ($line['description'] ?? $name)), 0, 500),
                     'quantity' => $qty,
                     'unit' => mb_substr($unit, 0, 30),
-                    'unit_price' => $price,
-                    'total_price' => round($qty * $price, 2),
-                    'tax_rate' => $taxRate,
-                    'tax_name' => mb_substr($taxName !== '' ? $taxName : 'VAT 15%', 0, 80),
-                    'excluding_tax' => isset($line['excluding_tax']) ? (int) ((bool) $line['excluding_tax']) : 1,
+                    'unit_price' => round($price, 2),
+                    // Same as PR form collectFromRequest: total_price = lineTotals['total']
+                    'total_price' => $lineTotals['total'],
+                    'tax_rate' => (float) $tax['tax_rate'],
+                    'tax_name' => mb_substr((string) $tax['tax_name'], 0, 80),
+                    'excluding_tax' => $excluding ? 1 : 0,
                 ];
                 $sku = trim((string) ($line['sku'] ?? ''));
                 if ($sku !== '') {
@@ -1480,6 +1505,7 @@ final class ProcurementToolExecutor
             $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($normalized);
             $model->update($prId, ['total_estimated' => $agg['total']]);
             $data['total_estimated'] = $agg['total'];
+            $data['financials'] = $agg;
         }
 
         (new AuditService())->log('create', 'purchase_requests', $prId, array_merge($data, [
@@ -1490,6 +1516,16 @@ final class ProcurementToolExecutor
 
         $saved = $model->find($prId) ?: $data;
         $savedItems = \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($prId);
+        // Backend is the source of truth — recompute from persisted lines
+        $readAgg = $savedItems !== []
+            ? \Rateb\App\Helpers\LineItems::aggregateTotals($savedItems)
+            : ['subtotal' => 0.0, 'tax' => 0.0, 'total' => 0.0];
+        $headerTotal = (float) ($saved['total_estimated'] ?? 0);
+        if ($savedItems !== [] && abs($headerTotal - (float) $readAgg['total']) > 0.009) {
+            $model->update($prId, ['total_estimated' => $readAgg['total']]);
+            $saved = $model->find($prId) ?: $saved;
+            $headerTotal = (float) ($saved['total_estimated'] ?? $readAgg['total']);
+        }
 
         return [
             'success' => true,
@@ -1502,10 +1538,15 @@ final class ProcurementToolExecutor
                 'notes' => (string) ($saved['notes'] ?? $notes),
                 'expected_date' => $saved['expected_date'] ?? ($data['expected_date'] ?? null),
                 'status' => 'draft',
-                'total_estimated' => (float) ($saved['total_estimated'] ?? $data['total_estimated'] ?? 0),
+                'total_estimated' => $headerTotal,
                 'currency' => (string) ($saved['currency'] ?? $currency),
+                'subtotal' => (float) $readAgg['subtotal'],
+                'tax_amount' => (float) $readAgg['tax'],
+                'total' => (float) $readAgg['total'],
+                'financials' => $readAgg,
                 'line_items' => $savedItems,
                 'impact' => 'created_draft_purchase_request',
+                'totals_verified' => abs($headerTotal - (float) $readAgg['total']) <= 0.009,
             ],
             'error' => null,
         ];

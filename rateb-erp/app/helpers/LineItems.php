@@ -143,6 +143,58 @@ final class LineItems
         return $label !== $key ? $label : $preset;
     }
 
+    /**
+     * Map free-text / rate hints onto the same tax presets the PR form uses.
+     * Never invent rates outside Local Sales 0% / VAT 5% / VAT 15% / Exempt.
+     *
+     * @return array{tax_name: string, tax_rate: float}
+     */
+    public static function resolveTaxPreset(?string $hint = null, ?float $rate = null): array
+    {
+        $h = mb_strtolower(trim((string) $hint));
+        if ($h !== '') {
+            if (str_contains($h, 'exempt') || str_contains($h, 'معفى') || str_contains($h, 'معفي') || str_contains($h, 'إعفاء') || str_contains($h, 'اعفاء')) {
+                return ['tax_name' => 'Exempt', 'tax_rate' => 0.0];
+            }
+            if (str_contains($h, 'local sales') || str_contains($h, 'مبيعات محلية') || str_contains($h, 'بدون ضريبة') || str_contains($h, 'zero tax') || str_contains($h, 'no tax')) {
+                return ['tax_name' => 'Local Sales 0%', 'tax_rate' => 0.0];
+            }
+            if (str_contains($h, '15%') || str_contains($h, 'vat 15') || str_contains($h, 'قيمة مضافة') || str_contains($h, 'ضريبة القيمة') || preg_match('/(?:vat|tax|ضريب\w*)\s*15\b/ui', $h) === 1) {
+                return ['tax_name' => 'VAT 15%', 'tax_rate' => 15.0];
+            }
+            if (str_contains($h, '5%') || str_contains($h, 'vat 5') || preg_match('/(?:vat|tax|ضريب\w*)\s*5\b/ui', $h) === 1) {
+                return ['tax_name' => 'VAT 5%', 'tax_rate' => 5.0];
+            }
+            foreach (self::taxPresets() as $preset) {
+                if (mb_strtolower($preset) === $h) {
+                    $presetRate = str_contains($preset, '15%') ? 15.0 : (str_contains($preset, '5%') ? 5.0 : 0.0);
+                    return ['tax_name' => $preset, 'tax_rate' => $presetRate];
+                }
+            }
+        }
+        if ($rate !== null) {
+            if ($rate <= 0) {
+                return ['tax_name' => 'Local Sales 0%', 'tax_rate' => 0.0];
+            }
+            if (abs($rate - 5.0) < 0.01) {
+                return ['tax_name' => 'VAT 5%', 'tax_rate' => 5.0];
+            }
+            if (abs($rate - 15.0) < 0.01) {
+                return ['tax_name' => 'VAT 15%', 'tax_rate' => 15.0];
+            }
+            // Unsupported custom rate — fall back to nearest form preset without inventing
+            if ($rate < 2.5) {
+                return ['tax_name' => 'Local Sales 0%', 'tax_rate' => 0.0];
+            }
+            if ($rate < 10.0) {
+                return ['tax_name' => 'VAT 5%', 'tax_rate' => 5.0];
+            }
+            return ['tax_name' => 'VAT 15%', 'tax_rate' => 15.0];
+        }
+        // PR form default (defaultVat15)
+        return ['tax_name' => 'VAT 15%', 'tax_rate' => 15.0];
+    }
+
     /** @return array{subtotal: float, tax: float, total: float} */
     public static function lineTotals(float $qty, float $unitPrice, float $taxRate, bool $excludingTax): array
     {
