@@ -459,8 +459,11 @@ final class ErpActionPlanner
                 'item_name' => $item,
                 'description' => $item,
                 'quantity' => $qty,
-                'unit' => $unit !== '' ? $unit : 'unit',
+                'unit' => $unit !== '' && $unit !== 'unit' ? $unit : 'each',
                 'unit_price' => 0,
+                'tax_rate' => 15,
+                'tax_name' => 'VAT 15%',
+                'excluding_tax' => 1,
             ]];
         }
 
@@ -1397,11 +1400,15 @@ final class ErpActionPlanner
                 if ($ok && $tool === 'create_draft_purchase_request') {
                     $reqNo = (string) ($data['request_no'] ?? '');
                     $id = (string) ($data['id'] ?? '');
+                    $savedTitle = (string) ($data['title'] ?? '');
+                    $savedPrio = self::labelPriority((string) ($data['priority'] ?? 'medium'), $ar);
+                    $savedItems = is_array($data['line_items'] ?? null) ? $data['line_items'] : [];
                     $snap = is_array($plan['parameter_snapshot'] ?? null) ? $plan['parameter_snapshot'] : [];
                     $args = is_array($plan['actions'][0]['arguments'] ?? null) ? $plan['actions'][0]['arguments'] : [];
-                    $prio = self::labelPriority((string) ($snap['priority'] ?? $args['priority'] ?? 'medium'), $ar);
-                    $line0 = is_array($snap['line_items'][0] ?? null) ? $snap['line_items'][0]
-                        : (is_array($args['line_items'][0] ?? null) ? $args['line_items'][0] : []);
+                    $prio = self::labelPriority((string) ($data['priority'] ?? $snap['priority'] ?? $args['priority'] ?? 'medium'), $ar);
+                    $line0 = is_array($savedItems[0] ?? null) ? $savedItems[0]
+                        : (is_array($snap['line_items'][0] ?? null) ? $snap['line_items'][0]
+                        : (is_array($args['line_items'][0] ?? null) ? $args['line_items'][0] : []));
                     $item = (string) ($line0['item_name'] ?? $line0['description'] ?? '');
                     $qty = (string) ($line0['quantity'] ?? '');
                     if ($ar) {
@@ -1410,6 +1417,9 @@ final class ErpActionPlanner
                             $lines[] = 'رقم الطلب: ' . $reqNo;
                         } elseif ($id !== '') {
                             $lines[] = 'المعرّف: ' . $id;
+                        }
+                        if ($savedTitle !== '') {
+                            $lines[] = 'العنوان: ' . $savedTitle;
                         }
                         if ($item !== '') {
                             $lines[] = 'الصنف: ' . $item;
@@ -1427,6 +1437,9 @@ final class ErpActionPlanner
                             $lines[] = 'Request number: ' . $reqNo;
                         } elseif ($id !== '') {
                             $lines[] = 'ID: ' . $id;
+                        }
+                        if ($savedTitle !== '') {
+                            $lines[] = 'Title: ' . $savedTitle;
                         }
                         if ($item !== '') {
                             $lines[] = 'Item: ' . $item;

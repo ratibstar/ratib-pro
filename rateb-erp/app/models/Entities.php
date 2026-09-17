@@ -298,7 +298,7 @@ final class PurchaseRequestItem extends Model
     protected string $table = 'rateb_purchase_request_items';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'purchase_request_id', 'inventory_id', 'item_name', 'description', 'needed_by',
+        'company_id', 'purchase_request_id', 'inventory_id', 'item_name', 'description', 'needed_by',
         'supplier_id', 'warehouse_id', 'account_id', 'attachment_path', 'attachment_name',
         'sku', 'quantity', 'unit',
         'unit_price', 'tax_name', 'tax_rate', 'excluding_tax', 'total_price',

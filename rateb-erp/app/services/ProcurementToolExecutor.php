@@ -1351,18 +1351,61 @@ final class ProcurementToolExecutor
     {
         $model = new PurchaseRequest();
 
+        $title = trim((string) ($args['title'] ?? ''));
+        $department = trim((string) ($args['department'] ?? ''));
+        $priority = strtolower(trim((string) ($args['priority'] ?? 'medium')));
+        if ($priority === '') {
+            $priority = 'medium';
+        }
+        // Persist values the PR edit form understands (priority_levels includes medium+normal).
+        if (!in_array($priority, ['low', 'normal', 'medium', 'high', 'urgent'], true)) {
+            $priority = 'medium';
+        }
+        $currency = trim((string) ($args['currency'] ?? 'SAR'));
+        if ($currency === '') {
+            $currency = 'SAR';
+        }
+        $notes = trim((string) ($args['notes'] ?? ''));
+
+        $lineItems = $args['line_items'] ?? ($args['items'] ?? []);
+        if (!is_array($lineItems)) {
+            $lineItems = [];
+        }
+
+        // If notes empty, keep a compact evidence note from the payload (never invent facts).
+        if ($notes === '' && ($title !== '' || $lineItems !== [])) {
+            $bits = [];
+            if ($title !== '') {
+                $bits[] = $title;
+            }
+            if ($lineItems !== [] && is_array($lineItems[0] ?? null)) {
+                $li = $lineItems[0];
+                $iname = trim((string) ($li['item_name'] ?? $li['description'] ?? $li['name'] ?? ''));
+                $iqty = (string) ($li['quantity'] ?? $li['qty'] ?? '');
+                if ($iname !== '') {
+                    $bits[] = $iname . ($iqty !== '' ? (' × ' . $iqty) : '');
+                }
+            }
+            if ($bits !== []) {
+                $notes = mb_substr('AI: ' . implode(' | ', $bits), 0, 500);
+            }
+        }
+
         $data = [
             'request_no' => $model->generateRequestNo(),
-            'title' => trim((string) ($args['title'] ?? '')),
-            'department' => trim((string) ($args['department'] ?? '')),
-            'priority' => (string) ($args['priority'] ?? 'medium'),
-            'currency' => (string) ($args['currency'] ?? 'SAR'),
+            'title' => $title,
+            'department' => $department,
+            'priority' => $priority,
+            'currency' => $currency,
             'total_estimated' => (float) ($args['total_estimated'] ?? 0),
-            'notes' => trim((string) ($args['notes'] ?? '')),
+            'notes' => $notes,
             'status' => 'draft',
             'company_id' => $companyId,
         ];
-        $expectedDate = trim((string) ($args['expected_date'] ?? ''));
+        if ($userId > 0) {
+            $data['requested_by'] = $userId;
+        }
+        $expectedDate = trim((string) ($args['expected_date'] ?? $args['needed_by'] ?? ''));
         if ($expectedDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $expectedDate)) {
             $data['expected_date'] = $expectedDate;
         }
@@ -1380,56 +1423,88 @@ final class ProcurementToolExecutor
 
         $prId = $model->create($data);
 
-        $lineItems = $args['line_items'] ?? [];
-        if (is_array($lineItems) && $lineItems !== []) {
+        if ($lineItems !== []) {
             $normalized = [];
             foreach ($lineItems as $line) {
                 if (!is_array($line)) {
                     continue;
                 }
-                $name = trim((string) ($line['item_name'] ?? $line['description'] ?? $line['name'] ?? ''));
+                $name = trim((string) ($line['item_name'] ?? $line['description'] ?? $line['name'] ?? $line['product'] ?? ''));
                 if ($name === '') {
                     continue;
                 }
-                $qty = (float) ($line['quantity'] ?? $line['qty'] ?? 1);
+                $qty = (float) ($line['quantity'] ?? $line['qty'] ?? 0);
                 if ($qty <= 0) {
-                    $qty = 1;
+                    continue; // never invent quantity
                 }
-                $unit = trim((string) ($line['unit'] ?? 'unit'));
-                if ($unit === '' || $unit === 'ea') {
-                    $unit = 'unit';
+                $unit = trim((string) ($line['unit'] ?? 'each'));
+                if ($unit === '' || $unit === 'ea' || $unit === 'وحدات' || $unit === 'وحدة') {
+                    $unit = 'each';
                 }
-                $price = (float) ($line['unit_price'] ?? 0);
-                $normalized[] = [
+                $price = (float) ($line['unit_price'] ?? $line['estimated_price'] ?? $line['price'] ?? 0);
+                $taxRate = array_key_exists('tax_rate', $line)
+                    ? (float) $line['tax_rate']
+                    : 15.0;
+                $taxName = trim((string) ($line['tax_name'] ?? ($taxRate > 0 ? 'VAT 15%' : 'Local Sales 0%')));
+                $neededBy = trim((string) ($line['needed_by'] ?? $line['required_by'] ?? $expectedDate));
+                $row = [
                     'item_name' => mb_substr($name, 0, 255),
                     'description' => mb_substr(trim((string) ($line['description'] ?? $name)), 0, 500),
                     'quantity' => $qty,
                     'unit' => mb_substr($unit, 0, 30),
                     'unit_price' => $price,
                     'total_price' => round($qty * $price, 2),
+                    'tax_rate' => $taxRate,
+                    'tax_name' => mb_substr($taxName !== '' ? $taxName : 'VAT 15%', 0, 80),
+                    'excluding_tax' => isset($line['excluding_tax']) ? (int) ((bool) $line['excluding_tax']) : 1,
                 ];
+                $sku = trim((string) ($line['sku'] ?? ''));
+                if ($sku !== '') {
+                    $row['sku'] = mb_substr($sku, 0, 80);
+                }
+                $invId = (int) ($line['inventory_id'] ?? $line['product_id'] ?? 0);
+                if ($invId > 0) {
+                    $row['inventory_id'] = $invId;
+                }
+                if ($neededBy !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $neededBy)) {
+                    $row['needed_by'] = $neededBy;
+                }
+                $normalized[] = $row;
             }
-            if ($normalized !== []) {
-                \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($prId, $normalized);
-                $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($normalized);
-                $model->update($prId, ['total_estimated' => $agg['total']]);
-                $data['total_estimated'] = $agg['total'];
+            if ($normalized === []) {
+                // Roll back empty-header-only drafts that claimed line items but none were valid
+                $model->delete($prId);
+                return self::fail('line_items_required');
             }
+            \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($prId, $normalized);
+            $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($normalized);
+            $model->update($prId, ['total_estimated' => $agg['total']]);
+            $data['total_estimated'] = $agg['total'];
         }
 
         (new AuditService())->log('create', 'purchase_requests', $prId, array_merge($data, [
             'via' => 'procurement_agent',
             'user_id' => $userId,
+            'line_items_count' => is_array($lineItems) ? count($lineItems) : 0,
         ]));
+
+        $saved = $model->find($prId) ?: $data;
+        $savedItems = \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($prId);
 
         return [
             'success' => true,
             'data' => [
                 'id' => $prId,
-                'request_no' => $data['request_no'],
+                'request_no' => (string) ($saved['request_no'] ?? $data['request_no']),
+                'title' => (string) ($saved['title'] ?? $title),
+                'department' => (string) ($saved['department'] ?? $department),
+                'priority' => (string) ($saved['priority'] ?? $priority),
+                'notes' => (string) ($saved['notes'] ?? $notes),
+                'expected_date' => $saved['expected_date'] ?? ($data['expected_date'] ?? null),
                 'status' => 'draft',
-                'total_estimated' => (float) $data['total_estimated'],
-                'currency' => $data['currency'],
+                'total_estimated' => (float) ($saved['total_estimated'] ?? $data['total_estimated'] ?? 0),
+                'currency' => (string) ($saved['currency'] ?? $currency),
+                'line_items' => $savedItems,
                 'impact' => 'created_draft_purchase_request',
             ],
             'error' => null,

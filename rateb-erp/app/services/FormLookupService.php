@@ -333,7 +333,8 @@ final class FormLookupService
                 ];
                 break;
             case 'priority_levels':
-                $options = $this->staticOptions(['low', 'normal', 'high', 'urgent'], true);
+                // Include both `normal` (classic form) and `medium` (agent / tool registry).
+                $options = $this->staticOptions(['low', 'normal', 'medium', 'high', 'urgent'], true);
                 break;
             case 'regulatory_statuses':
                 $options = $this->staticOptions(['compliant', 'pending', 'non_compliant'], true);

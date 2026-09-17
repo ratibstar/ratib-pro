@@ -4958,6 +4958,7 @@ return [
     'ai_tool_err_invalid_approval_id' => 'Invalid approval ID',
     'ai_tool_err_approval_not_found' => 'Approval not found',
     'ai_tool_err_title_required' => 'Title is required',
+    'ai_tool_err_line_items_required' => 'Valid line items are required',
     'ai_tool_err_pr_not_draft' => 'Only draft purchase requests can be submitted',
     'ai_tool_err_pr_not_editable' => 'Purchase request cannot be edited in its current status',
     'ai_tool_err_pr_not_cancelable' => 'Purchase request cannot be cancelled in its current status',

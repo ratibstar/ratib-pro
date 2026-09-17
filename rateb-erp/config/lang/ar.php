@@ -5006,6 +5006,7 @@ return [
     'ai_tool_err_invalid_approval_id' => 'معرّف الموافقة غير صالح',
     'ai_tool_err_approval_not_found' => 'الموافقة غير موجودة',
     'ai_tool_err_title_required' => 'العنوان مطلوب',
+    'ai_tool_err_line_items_required' => 'بنود الطلب مطلوبة وصحيحة',
     'ai_tool_err_pr_not_draft' => 'يمكن إرسال طلبات المسودة فقط',
     'ai_tool_err_pr_not_editable' => 'لا يمكن تعديل طلب الشراء في حالته الحالية',
     'ai_tool_err_pr_not_cancelable' => 'لا يمكن إلغاء طلب الشراء في حالته الحالية',
