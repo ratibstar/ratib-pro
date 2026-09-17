@@ -1382,10 +1382,39 @@ final class ProcurementToolExecutor
 
         $lineItems = $args['line_items'] ?? [];
         if (is_array($lineItems) && $lineItems !== []) {
-            \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($prId, $lineItems);
-            $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lineItems);
-            $model->update($prId, ['total_estimated' => $agg['total']]);
-            $data['total_estimated'] = $agg['total'];
+            $normalized = [];
+            foreach ($lineItems as $line) {
+                if (!is_array($line)) {
+                    continue;
+                }
+                $name = trim((string) ($line['item_name'] ?? $line['description'] ?? $line['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $qty = (float) ($line['quantity'] ?? $line['qty'] ?? 1);
+                if ($qty <= 0) {
+                    $qty = 1;
+                }
+                $unit = trim((string) ($line['unit'] ?? 'unit'));
+                if ($unit === '' || $unit === 'ea') {
+                    $unit = 'unit';
+                }
+                $price = (float) ($line['unit_price'] ?? 0);
+                $normalized[] = [
+                    'item_name' => mb_substr($name, 0, 255),
+                    'description' => mb_substr(trim((string) ($line['description'] ?? $name)), 0, 500),
+                    'quantity' => $qty,
+                    'unit' => mb_substr($unit, 0, 30),
+                    'unit_price' => $price,
+                    'total_price' => round($qty * $price, 2),
+                ];
+            }
+            if ($normalized !== []) {
+                \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($prId, $normalized);
+                $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($normalized);
+                $model->update($prId, ['total_estimated' => $agg['total']]);
+                $data['total_estimated'] = $agg['total'];
+            }
         }
 
         (new AuditService())->log('create', 'purchase_requests', $prId, array_merge($data, [

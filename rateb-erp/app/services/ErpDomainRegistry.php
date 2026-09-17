@@ -239,6 +239,120 @@ final class ErpDomainRegistry
     }
 
     /**
+     * User-facing capabilities from active domains/tools the user can actually access.
+     *
+     * @return list<array{id:string,label:string,prompt:string,domain:string}>
+     */
+    public static function userFacingCapabilities(ProcurementAgentContext $ctx): array
+    {
+        $out = [];
+        $labelMap = [
+            self::DOMAIN_PROCUREMENT => ['label' => 'ai_cap_procurement', 'prompt' => 'ai_suggest_list_pr'],
+            self::DOMAIN_INVENTORY => ['label' => 'ai_cap_inventory', 'prompt' => 'ai_suggest_inventory'],
+            self::DOMAIN_SUPPLIERS => ['label' => 'ai_cap_suppliers', 'prompt' => 'ai_suggest_search_suppliers'],
+            self::DOMAIN_SALES => ['label' => 'ai_cap_sales', 'prompt' => 'ai_suggest_sales'],
+            self::DOMAIN_CRM => ['label' => 'ai_cap_crm', 'prompt' => 'ai_suggest_crm'],
+            self::DOMAIN_LOGISTICS => ['label' => 'ai_cap_logistics', 'prompt' => 'ai_suggest_logistics'],
+            self::DOMAIN_ACCOUNTING => ['label' => 'ai_cap_accounting', 'prompt' => 'ai_suggest_accounting'],
+            self::DOMAIN_EXECUTIVE => ['label' => 'ai_cap_executive', 'prompt' => 'ai_suggest_executive'],
+        ];
+        foreach (self::getActiveDomains() as $id => $meta) {
+            if (empty($meta['active'])) {
+                continue;
+            }
+            $module = (string) ($meta['module'] ?? '');
+            if ($module !== '' && $module !== 'dashboard' && !$ctx->moduleEnabled($module)) {
+                continue;
+            }
+            if ($id === self::DOMAIN_EXECUTIVE && !$ctx->can('dashboard.view') && !$ctx->can('ai.view') && !$ctx->isSuperAdmin) {
+                continue;
+            }
+            $tools = self::toolsForDomain($id);
+            if ($tools === []) {
+                continue;
+            }
+            $map = $labelMap[$id] ?? ['label' => (string) ($meta['label'] ?? $id), 'prompt' => ''];
+            $labelKey = (string) ($map['label'] ?? $id);
+            $promptKey = (string) ($map['prompt'] ?? '');
+            $label = function_exists('__') ? __($labelKey) : $labelKey;
+            if ($label === $labelKey) {
+                $label = (string) ($meta['label'] ?? $id);
+            }
+            $prompt = $promptKey !== '' && function_exists('__') ? __($promptKey) : '';
+            if ($prompt === '' || $prompt === $promptKey) {
+                $prompt = $label;
+            }
+            $out[] = [
+                'id' => $id,
+                'domain' => $id,
+                'label' => $label,
+                'prompt' => $prompt,
+            ];
+        }
+        // Feature chips when executive tools exist
+        if (self::isActive(self::DOMAIN_EXECUTIVE) && ($ctx->can('ai.view') || $ctx->can('dashboard.view') || $ctx->isSuperAdmin)) {
+            $execTools = self::toolsForDomain(self::DOMAIN_EXECUTIVE);
+            $extra = [
+                'scan_early_warnings' => ['id' => 'early_warnings', 'label' => 'ai_cap_warnings', 'prompt' => 'ai_suggest_warnings'],
+                'analyze_operational_learning' => ['id' => 'learning', 'label' => 'ai_cap_learning', 'prompt' => 'ai_suggest_learning'],
+                'plan_multi_step_workflow' => ['id' => 'workflows', 'label' => 'ai_cap_workflows', 'prompt' => 'ai_suggest_workflow'],
+                'get_control_tower_snapshot' => ['id' => 'control_tower', 'label' => 'ai_cap_control_tower', 'prompt' => 'ai_suggest_control_tower'],
+                'get_relevant_operational_context' => ['id' => 'memory', 'label' => 'ai_cap_memory', 'prompt' => 'ai_suggest_memory'],
+            ];
+            $seen = array_column($out, 'id');
+            foreach ($extra as $tool => $chip) {
+                if (!isset($execTools[$tool]) || in_array($chip['id'], $seen, true)) {
+                    continue;
+                }
+                $lk = $chip['label'];
+                $pk = $chip['prompt'];
+                $label = function_exists('__') ? __($lk) : $lk;
+                $prompt = function_exists('__') ? __($pk) : $pk;
+                if ($label === $lk) {
+                    $label = $chip['id'];
+                }
+                if ($prompt === $pk) {
+                    $prompt = $label;
+                }
+                $out[] = [
+                    'id' => $chip['id'],
+                    'domain' => self::DOMAIN_EXECUTIVE,
+                    'label' => $label,
+                    'prompt' => $prompt,
+                ];
+                $seen[] = $chip['id'];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Dynamic tool labels for UI (active tools only).
+     *
+     * @return array<string, string>
+     */
+    public static function toolLabelsForUi(ProcurementAgentContext $ctx): array
+    {
+        $labels = [];
+        foreach (self::allActiveTools() as $name => $tool) {
+            $module = (string) ($tool['module'] ?? '');
+            $domain = (string) ($tool['domain'] ?? '');
+            if ($module !== '' && $module !== 'dashboard' && !$ctx->moduleEnabled($module)) {
+                continue;
+            }
+            if ($domain === self::DOMAIN_EXECUTIVE && !$ctx->can('dashboard.view') && !$ctx->can('ai.view') && !$ctx->isSuperAdmin) {
+                continue;
+            }
+            $key = 'ai_tool_' . $name;
+            $translated = function_exists('__') ? __($key) : $key;
+            $labels[$name] = ($translated !== $key && $translated !== '')
+                ? $translated
+                : (string) ($tool['description'] ?? $name);
+        }
+        return $labels;
+    }
+
+    /**
      * Future-readiness snapshot (no fake implementations).
      *
      * @return array{

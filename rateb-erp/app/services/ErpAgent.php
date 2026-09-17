@@ -58,7 +58,156 @@ final class ErpAgent
 
         $message = (string) ($input['message'] ?? '');
         $explicit = strtolower(trim((string) ($input['domain'] ?? '')));
-        $intent = ErpOrchestrationPlanner::detectIntent($message, $ctx, $explicit !== '' ? $explicit : null);
+        // Never force procurement: empty explicit → keyword/intent routing
+        $intent = ErpOrchestrationPlanner::detectIntent(
+            $message,
+            $ctx,
+            ($explicit !== '' && $explicit !== 'auto') ? $explicit : null
+        );
+
+        $scopeKey = (string) ($input['conversation_scope'] ?? $ctx->conversationScopeKey());
+        $history = is_array($input['history'] ?? null) ? $input['history'] : [];
+        $confirmedWrites = is_array($input['confirmed_writes'] ?? null) ? $input['confirmed_writes'] : [];
+        $pending = ErpActionPlanner::loadPendingState($scopeKey);
+        $turn = ErpActionPlanner::resolveConversationTurn($message, $ctx, $history, $pending, $confirmedWrites);
+
+        if (($turn['mode'] ?? '') === 'reject') {
+            ErpActionPlanner::clearPendingState($scopeKey);
+            $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, null, false);
+            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_READ_ONLY;
+            return $this->finalizeWithGovernance([
+                'response' => (string) ($turn['response'] ?? ''),
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'action',
+                'agent' => self::AGENT_ID,
+                'observability' => ['success' => true, 'duration_ms' => 0],
+                '_started_at' => microtime(true),
+            ], $gov, $ctx, $requestId);
+        }
+
+        if (($turn['mode'] ?? '') === 'confirm_dry_run') {
+            ErpActionPlanner::clearPendingState($scopeKey);
+            $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, null, true);
+            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_CONFIRMED_WRITE;
+            $gov['confirmation']['required'] = false;
+            $gov['policy']['confirmation_required'] = false;
+            return $this->finalizeWithGovernance([
+                'response' => (string) ($turn['response'] ?? ''),
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'action',
+                'agent' => self::AGENT_ID,
+                'action' => [
+                    'plan' => null,
+                    'results' => [[
+                        'tool' => 'controlled_test',
+                        'success' => true,
+                        'error_code' => null,
+                        'verification' => is_array($turn['verification'] ?? null) ? $turn['verification'] : [
+                            'verified' => true,
+                            'dry_run' => true,
+                            'wrote' => false,
+                        ],
+                    ]],
+                    'partial' => false,
+                ],
+                'observability' => [
+                    'success' => true,
+                    'duration_ms' => 0,
+                    'conversation_phase' => 'confirmed_dry_run',
+                ],
+                '_started_at' => microtime(true),
+            ], $gov, $ctx, $requestId);
+        }
+
+        if (($turn['mode'] ?? '') === 'collect') {
+            ErpActionPlanner::savePendingState($scopeKey, is_array($turn['pending'] ?? null) ? $turn['pending'] : []);
+            $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, [
+                'actions' => [['class' => ErpActionPlanner::CLASS_WRITE, 'tool' => 'create_draft_purchase_request', 'permission' => 'procurement.manage']],
+            ], false);
+            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_CONFIRMED_WRITE;
+            $gov['confirmation']['required'] = true;
+            $gov['policy']['confirmation_required'] = true;
+            return $this->finalizeWithGovernance([
+                'response' => (string) ($turn['response'] ?? ''),
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'procurement',
+                'agent' => self::AGENT_ID,
+                'observability' => ['success' => true, 'duration_ms' => 0, 'conversation_phase' => 'collecting'],
+                '_started_at' => microtime(true),
+            ], $gov, $ctx, $requestId);
+        }
+
+        if (($turn['mode'] ?? '') === 'propose') {
+            ErpActionPlanner::savePendingState($scopeKey, is_array($turn['pending'] ?? null) ? $turn['pending'] : []);
+            $plan = is_array($turn['action_plan'] ?? null) ? $turn['action_plan'] : [];
+            $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, $plan, false);
+            $pendingConf = [];
+            foreach (($plan['actions'] ?? []) as $a) {
+                if (!is_array($a)) {
+                    continue;
+                }
+                $pendingConf[] = [
+                    'tool' => (string) ($a['tool'] ?? ''),
+                    'arguments' => is_array($a['arguments'] ?? null) ? $a['arguments'] : [],
+                    'confirm_key' => (string) ($a['confirm_key'] ?? ''),
+                    'permission' => (string) ($a['permission'] ?? ''),
+                    'class' => (string) ($a['class'] ?? ''),
+                    'previous_state' => $a['previous_state'] ?? null,
+                    'impact_preview' => [
+                        'summary' => $this->actionImpactSummary((string) ($a['tool'] ?? ''), is_array($a['arguments'] ?? null) ? $a['arguments'] : [], $ctx),
+                    ],
+                ];
+            }
+            return $this->finalizeWithGovernance([
+                'response' => (string) ($turn['response'] ?? ''),
+                'tool_calls' => [],
+                'pending_confirmations' => $pendingConf,
+                'audit' => [],
+                'domain' => 'procurement',
+                'agent' => self::AGENT_ID,
+                'action' => ['plan' => $plan, 'results' => [], 'partial' => false],
+                'observability' => ['success' => true, 'duration_ms' => 0, 'conversation_phase' => 'awaiting_confirmation'],
+                '_started_at' => microtime(true),
+            ], $gov, $ctx, $requestId);
+        }
+
+        if (($turn['mode'] ?? '') === 'confirm' && is_array($turn['action_plan'] ?? null)) {
+            $input['confirmed_writes'] = is_array($turn['confirmed_writes'] ?? null) ? $turn['confirmed_writes'] : $confirmedWrites;
+            $input['_forced_action_plan'] = $turn['action_plan'];
+            $intent['write_intent'] = true;
+            $gov = ErpGovernanceLayer::evaluate(
+                (string) (($turn['action_plan']['intent'] ?? '') ?: $message),
+                $intent,
+                $ctx,
+                $this->config,
+                $turn['action_plan'],
+                true
+            );
+            $bound = ErpGovernanceLayer::checkBoundaries(
+                $gov,
+                $gov['domains'] ?? [],
+                $gov['tools'] ?? [],
+                0,
+                count($turn['action_plan']['actions'] ?? [])
+            );
+            if (!$bound['ok']) {
+                return $this->governanceStopResponse($ctx, $requestId, $gov, $bound, $intent);
+            }
+            $result = $this->processActions($input, $ctx, $intent, $requestId, $gov);
+            // Clear pending after successful confirmed execution attempt
+            if (empty($result['pending_confirmations'])) {
+                ErpActionPlanner::clearPendingState($scopeKey);
+            } else {
+                ErpActionPlanner::savePendingState($scopeKey, is_array($turn['pending'] ?? null) ? $turn['pending'] : []);
+            }
+            return $this->finalizeWithGovernance($result, $gov, $ctx, $requestId);
+        }
 
         // Action layer only when NL maps to registered actions / unsupported recommendations.
         // Otherwise keep existing domain/LLM write confirmation path (ProcurementAgent).
@@ -374,7 +523,9 @@ final class ErpAgent
             }
         }
 
-        $plan = ErpActionPlanner::buildActionPlan($message, $ctx, $intelligence);
+        $plan = is_array($input['_forced_action_plan'] ?? null)
+            ? $input['_forced_action_plan']
+            : ErpActionPlanner::buildActionPlan($message, $ctx, $intelligence);
 
         // Phase 22: multi-step workflow coordination (never bypasses ActionPlanner/Governance)
         $workflow = null;
@@ -737,6 +888,20 @@ final class ErpAgent
                     break;
                 }
             }
+        }
+
+        // Persist pending confirmations so text confirmations (انشئ / نعم) can resume
+        $scopeKey = (string) ($input['conversation_scope'] ?? $ctx->conversationScopeKey());
+        if ($pendingConfirmations !== [] && $scopeKey !== '') {
+            $prev = ErpActionPlanner::loadPendingState($scopeKey);
+            ErpActionPlanner::savePendingState($scopeKey, array_merge($prev, [
+                'phase' => 'awaiting_confirmation',
+                'confirmations' => $pendingConfirmations,
+                'action_plan' => $plan,
+                'intent' => (string) ($plan['intent'] ?? $message),
+            ]));
+        } elseif ($pendingConfirmations === [] && $executionResults !== [] && $scopeKey !== '') {
+            ErpActionPlanner::clearPendingState($scopeKey);
         }
 
         $response = ErpActionPlanner::formatActionResponse(

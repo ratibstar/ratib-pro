@@ -40,7 +40,17 @@ final class AiController extends Controller
         }
 
         $planLimits = new \Rateb\App\Services\PlanLimitService();
-        if (!$planLimits->companyHasModule($companyId, 'procurement')) {
+        $hasAnyDomain = false;
+        if (class_exists(\Rateb\App\Services\ErpDomainRegistry::class)) {
+            foreach (\Rateb\App\Services\ErpDomainRegistry::getActiveDomains() as $d) {
+                $mod = (string) ($d['module'] ?? '');
+                if ($mod === 'dashboard' || ($mod !== '' && $planLimits->companyHasModule($companyId, $mod))) {
+                    $hasAnyDomain = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasAnyDomain && !$planLimits->companyHasModule($companyId, 'procurement')) {
             http_response_code(403);
             $this->view('errors/403', ['title' => '403'], 'main');
             return;
@@ -52,12 +62,23 @@ final class AiController extends Controller
         header('Expires: 0');
 
         $tower = null;
+        $capabilities = [];
+        $toolLabels = [];
         $ctx = \Rateb\App\Services\ProcurementAgentContext::fromSession();
         if ($ctx !== null && class_exists(\Rateb\App\Services\ErpControlTowerLayer::class)) {
             try {
                 $tower = \Rateb\App\Services\ErpControlTowerLayer::snapshot($ctx, 12);
             } catch (\Throwable $e) {
                 $tower = null;
+            }
+        }
+        if ($ctx !== null && class_exists(\Rateb\App\Services\ErpDomainRegistry::class)) {
+            try {
+                $capabilities = \Rateb\App\Services\ErpDomainRegistry::userFacingCapabilities($ctx);
+                $toolLabels = \Rateb\App\Services\ErpDomainRegistry::toolLabelsForUi($ctx);
+            } catch (\Throwable $e) {
+                $capabilities = [];
+                $toolLabels = [];
             }
         }
 
@@ -70,6 +91,8 @@ final class AiController extends Controller
             'aiCompanyId' => (int) $companyId,
             'aiUserId' => (int) ($user['id'] ?? 0),
             'controlTower' => is_array($tower) ? $tower : [],
+            'aiCapabilities' => is_array($capabilities) ? $capabilities : [],
+            'aiToolLabels' => is_array($toolLabels) ? $toolLabels : [],
         ], 'main');
     }
 
@@ -103,7 +126,17 @@ final class AiController extends Controller
         }
 
         $planLimits = new \Rateb\App\Services\PlanLimitService();
-        if (!$planLimits->companyHasModule($companyId, 'procurement')) {
+        $hasAnyDomain = false;
+        if (class_exists(\Rateb\App\Services\ErpDomainRegistry::class)) {
+            foreach (\Rateb\App\Services\ErpDomainRegistry::getActiveDomains() as $d) {
+                $mod = (string) ($d['module'] ?? '');
+                if ($mod === 'dashboard' || ($mod !== '' && $planLimits->companyHasModule($companyId, $mod))) {
+                    $hasAnyDomain = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasAnyDomain && !$planLimits->companyHasModule($companyId, 'procurement')) {
             $this->json(['success' => false, 'error' => 'forbidden', 'message' => __('access_denied')], 403);
             return;
         }
@@ -176,21 +209,31 @@ final class AiController extends Controller
             return;
         }
 
+        $planLimits = new \Rateb\App\Services\PlanLimitService();
+        $hasAnyDomain = false;
+        if (class_exists(\Rateb\App\Services\ErpDomainRegistry::class)) {
+            foreach (\Rateb\App\Services\ErpDomainRegistry::getActiveDomains() as $d) {
+                $mod = (string) ($d['module'] ?? '');
+                if ($mod === 'dashboard' || ($mod !== '' && $planLimits->companyHasModule($companyId, $mod))) {
+                    $hasAnyDomain = true;
+                    break;
+                }
+            }
+        }
+        if (!$hasAnyDomain && !$planLimits->companyHasModule($companyId, 'procurement')) {
+            $this->json([
+                'success' => false,
+                'error' => 'forbidden',
+                'message' => __('access_denied'),
+            ], 403);
+            return;
+        }
+
         if (!$this->validateCsrf()) {
             $this->json([
                 'success' => false,
                 'error' => 'csrf_invalid',
                 'message' => __('ai_csrf_invalid'),
-            ], 403);
-            return;
-        }
-
-        $planLimits = new \Rateb\App\Services\PlanLimitService();
-        if (!$planLimits->companyHasModule($companyId, 'procurement')) {
-            $this->json([
-                'success' => false,
-                'error' => 'forbidden',
-                'message' => __('access_denied'),
             ], 403);
             return;
         }
@@ -217,7 +260,7 @@ final class AiController extends Controller
             $confirmedWrites = [];
         }
 
-        // Unified RATEB ERP Agent Core — Procurement is the first active domain.
+        // Unified RATEB ERP Agent Core
         if (!class_exists(\Rateb\App\Services\ErpAgent::class)
             || !class_exists(\Rateb\App\Services\ErpDomainRegistry::class)
             || !class_exists(\Rateb\App\Services\ProcurementAgent::class)
@@ -253,13 +296,16 @@ final class AiController extends Controller
             }
             $history = $ctx->sanitizeHistory($history);
             $domain = strtolower(trim((string) ($body['domain'] ?? '')));
+            // Empty/auto → intent routing (never hardcode procurement)
             $result = $agent->process([
                 'message' => $message,
                 'history' => $history,
                 'request_id' => $requestId,
                 'confirmed_writes' => $confirmedWrites,
                 'conversation_scope' => $ctx->conversationScopeKey(),
-                'domain' => $domain !== '' ? $domain : \Rateb\App\Services\ErpDomainRegistry::DOMAIN_PROCUREMENT,
+                'domain' => ($domain !== '' && $domain !== 'auto' && $domain !== 'procurement_default')
+                    ? $domain
+                    : '',
             ], $ctx);
 
             $this->json([
@@ -269,8 +315,10 @@ final class AiController extends Controller
                     'response' => (string) ($result['response'] ?? ''),
                     'tool_calls' => $result['tool_calls'] ?? [],
                     'pending_confirmations' => $result['pending_confirmations'] ?? [],
-                    'domain' => (string) ($result['domain'] ?? 'procurement'),
+                    'domain' => (string) ($result['domain'] ?? ''),
                     'agent' => (string) ($result['agent'] ?? 'rateb_erp_agent'),
+                    'execution_level' => (string) ($result['governance']['execution_level'] ?? ''),
+                    'conversation_phase' => (string) ($result['observability']['conversation_phase'] ?? ''),
                 ],
             ]);
         } catch (\Throwable $e) {

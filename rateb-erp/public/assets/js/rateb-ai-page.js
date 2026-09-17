@@ -9,12 +9,24 @@
         return {
             loading: false,
             lastMessage: '',
+            pendingConfirmKeys: [],
             __p0WriteConfirm: true,
             __p0SendFix: true,
             __p0LangFix: true,
             __p0I18nUi: true,
             __p0ToolLabels: true,
             __p0ChatHistory: true,
+            __unifiedConfirmFix: true,
+            isConfirmPhrase: function (message) {
+                var m = String(message || '').trim();
+                if (!m || m.length > 40) return false;
+                return /^(نعم|موافق|تأكيد|أكد|اكد|أكمل|اكمل|نفذ|نفّذ|انشئ|أنشئ|انشاء|إنشاء|تنفيذ|confirm|yes|ok|okay|go|proceed|do\s*it|create|execute)!*$/i.test(m);
+            },
+            isRejectPhrase: function (message) {
+                var m = String(message || '').trim();
+                if (!m || m.length > 40) return false;
+                return /^(لا|الغاء|إلغاء|توقف|ألغ|الغ|cancel|no|stop|abort|nevermind)!*$/i.test(m);
+            },
             send: function (message, confirmedWrites) {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return false;
@@ -40,6 +52,12 @@
                 message = String(message || '').trim();
                 if (!message || !messages || !endpoint || this.loading) return false;
                 confirmedWrites = Array.isArray(confirmedWrites) ? confirmedWrites : [];
+                if (!confirmedWrites.length && this.isConfirmPhrase(message) && this.pendingConfirmKeys && this.pendingConfirmKeys.length) {
+                    confirmedWrites = this.pendingConfirmKeys.slice();
+                }
+                if (this.isRejectPhrase(message)) {
+                    this.pendingConfirmKeys = [];
+                }
 
                 function setStatus(state) {
                     if (!statusText) return;
@@ -160,7 +178,12 @@
                     } catch (eHistA) {}
                     var pending = (data.data && data.data.pending_confirmations) ? data.data.pending_confirmations : [];
                     if (pending.length) {
+                        var keys = [];
+                        pending.forEach(function (p) { if (p && p.confirm_key) keys.push(p.confirm_key); });
+                        self.pendingConfirmKeys = keys;
                         showConfirm(pending, message);
+                    } else if (confirmedWrites.length) {
+                        self.pendingConfirmKeys = [];
                     }
                 }).catch(function (err) {
                     if (tip && tip.parentNode) tip.parentNode.removeChild(tip);

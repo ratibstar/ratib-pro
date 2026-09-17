@@ -270,7 +270,7 @@ final class ErpActionPlanner
      * @param array<string, mixed> $arguments
      * @return array<string, mixed>
      */
-    private static function makeAction(string $tool, array $arguments, ProcurementAgentContext $ctx, string $purpose): array
+        private static function makeAction(string $tool, array $arguments, ProcurementAgentContext $ctx, string $purpose): array
     {
         $class = self::classifyTool($tool);
         $meta = ErpToolRegistry::getTool($tool)
@@ -296,6 +296,425 @@ final class ErpActionPlanner
             'previous_state' => $state,
             'state_fingerprint' => self::fingerprint($state),
             'supported' => true,
+        ];
+    }
+
+    /**
+     * Build a write action from a conversational draft (public for continuation).
+     *
+     * @param array<string, mixed> $arguments
+     * @return array<string, mixed>
+     */
+    public static function actionFromDraft(string $tool, array $arguments, ProcurementAgentContext $ctx, string $purpose): array
+    {
+        return self::makeAction($tool, $arguments, $ctx, $purpose);
+    }
+
+    public static function isConfirmationPhrase(string $message): bool
+    {
+        $m = trim($message);
+        if ($m === '') {
+            return false;
+        }
+        // Short confirmations only — avoid matching long "أنشئ طلب شراء ..." as bare confirm
+        if (mb_strlen($m) > 40) {
+            return false;
+        }
+        return self::match(
+            $m,
+            '/^(نعم|موافق|تأكيد|أكد|اكد|أكمل|اكمل|نفذ|نفّذ|انشئ|أنشئ|انشاء|إنشاء|تنفيذ|confirm|yes|ok|okay|go|proceed|do\s*it|create|execute)$/ui'
+        ) || self::match($m, '/^(نعم[,.]?\s*)?(انشئ|أنشئ|نفذ|نفّذ|أكمل|اكمل|موافق|تأكيد)\s*!*$/ui');
+    }
+
+    public static function isRejectionPhrase(string $message): bool
+    {
+        $m = trim($message);
+        if ($m === '' || mb_strlen($m) > 40) {
+            return false;
+        }
+        return self::match($m, '/^(لا|الغاء|إلغاء|توقف|ألغ|الغ|cancel|no|stop|abort|nevermind|never\s*mind)$/ui');
+    }
+
+    public static function isCreatePurchaseRequestIntent(string $message): bool
+    {
+        return self::match(
+            $message,
+            '/(أنشئ|إنشاء|انشئ|اعمل|اعملوا|سو[يى]|create|make).{0,40}(طلب\s*شراء|purchase\s*request)|طلب\s*شراء|purchase\s*request/ui'
+        );
+    }
+
+    /**
+     * Session-backed pending action/confirmation state (tenant+user scoped key).
+     *
+     * @return array<string, mixed>
+     */
+    public static function loadPendingState(string $scopeKey): array
+    {
+        if ($scopeKey === '') {
+            return [];
+        }
+        $raw = \Rateb\App\Core\SessionManager::get('rateb_ai_pending_' . md5($scopeKey), null);
+        return is_array($raw) ? $raw : [];
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    public static function savePendingState(string $scopeKey, array $state): void
+    {
+        if ($scopeKey === '') {
+            return;
+        }
+        $state['updated_at'] = date('Y-m-d H:i:s');
+        \Rateb\App\Core\SessionManager::set('rateb_ai_pending_' . md5($scopeKey), $state);
+    }
+
+    public static function clearPendingState(string $scopeKey): void
+    {
+        if ($scopeKey === '') {
+            return;
+        }
+        \Rateb\App\Core\SessionManager::set('rateb_ai_pending_' . md5($scopeKey), null);
+    }
+
+    /**
+     * Extract / merge purchase-request draft fields from a user utterance.
+     *
+     * @param array<string, mixed> $draft
+     * @return array<string, mixed>
+     */
+    public static function mergePurchaseRequestDraft(string $message, array $draft = []): array
+    {
+        $args = is_array($draft['arguments'] ?? null) ? $draft['arguments'] : [];
+        $notes = (string) ($args['notes'] ?? '');
+        $dryRun = !empty($draft['dry_run'])
+            || self::match($message, '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|للتجربة|dry\s*run|test\s*only|not\s*real|example\s*only)/ui');
+
+        // Priority
+        if (self::match($message, '/(عاجل|high|urgent)/ui')) {
+            $args['priority'] = 'high';
+        } elseif (self::match($message, '/(متوسط|متوسطة|متوسطه|medium)/ui')) {
+            $args['priority'] = 'medium';
+        } elseif (self::match($message, '/(منخفض|منخفضة|منخفضه|low)/ui')) {
+            $args['priority'] = 'low';
+        }
+
+        // Title: "شراء مواد" or explicit title patterns
+        if (preg_match('/(?:عنوان|title)\s*[=:]?\s*(.+)$/ui', $message, $m) === 1) {
+            $args['title'] = trim($m[1]);
+        } elseif (preg_match('/(شراء\s+[^\d\n]{2,60})/ui', $message, $m) === 1) {
+            $args['title'] = trim($m[1]);
+        } elseif (empty($args['title']) && self::isCreatePurchaseRequestIntent($message)) {
+            $args['title'] = self::extractTitle($message);
+            if ($args['title'] === '') {
+                $args['title'] = null;
+            }
+        }
+
+        // Department / cost center (real field when present; never invent FK ids)
+        if (preg_match('/(?:قسم|department)\s*[=:]?\s*([^\n,]+)/ui', $message, $m) === 1) {
+            $dept = trim($m[1]);
+            $args['department'] = mb_substr($dept, 0, 120);
+            $notes = trim($notes . "\nDepartment: " . $dept);
+            $draft['department'] = $dept;
+        } elseif (preg_match('/\b(المشتريات|مشتريات)\b/ui', $message) === 1
+            && !self::isCreatePurchaseRequestIntent($message)
+        ) {
+            $args['department'] = 'المشتريات';
+            $notes = trim($notes . "\nDepartment: المشتريات");
+            $draft['department'] = 'المشتريات';
+        } elseif (preg_match('/قسم\s+(المشتريات|مشتريات)/ui', $message) === 1) {
+            $args['department'] = 'المشتريات';
+            $notes = trim($notes . "\nDepartment: المشتريات");
+            $draft['department'] = 'المشتريات';
+        }
+
+        // Qty + item: prefer last token before qty ("بطاطس 66"), strip department first
+        $item = null;
+        $qty = null;
+        $msgTrim = trim($message);
+        $msgForItem = preg_replace('/\s*(?:قسم|department)\s*[^\n,]*/ui', '', $msgTrim) ?? $msgTrim;
+        $msgForItem = preg_replace('/\b(المشتريات|مشتريات)\b/ui', '', $msgForItem) ?? $msgForItem;
+        $msgForItem = trim(preg_replace('/\s+/u', ' ', (string) $msgForItem) ?? '');
+        if (preg_match('/([\p{L}]{2,40})\s+(\d+(?:\.\d+)?)\s*$/u', $msgForItem, $m) === 1
+            && !self::match($m[1], '/^(متوسط|متوسطة|متوسطه|منخفض|منخفضة|منخفضه|عاجل|طلب|شراء|مواد|medium|high|low)$/ui')
+        ) {
+            $item = trim($m[1]);
+            $qty = (float) $m[2];
+        } elseif (preg_match('/(\d+(?:\.\d+)?)\s+([\p{L}]{2,40})\b/u', $msgForItem, $m) === 1
+            && !self::match($m[2], '/^(قسم|مشتريات|department|متوسط|عاجل)$/ui')
+        ) {
+            $qty = (float) $m[1];
+            $item = trim($m[2]);
+        }
+        if ($item !== null && $qty !== null && $qty > 0
+            && !self::match($item, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد)$/ui')
+        ) {
+            $args['line_items'] = [[
+                'item_name' => $item,
+                'description' => $item,
+                'quantity' => $qty,
+                'unit' => 'unit',
+                'unit_price' => 0,
+            ]];
+            if (empty($args['title'])) {
+                $args['title'] = 'شراء ' . $item;
+            }
+        }
+        // Clean title: keep "شراء مواد" when present
+        if (!empty($args['title']) && preg_match('/^(شراء\s+مواد)/ui', (string) $args['title'], $tm) === 1) {
+            $args['title'] = $tm[1];
+        }
+
+        // Supplier name as note only (never invent supplier_id)
+        if (preg_match('/(?:مورد|supplier)\s*[=:]?\s*(.+)$/ui', $message, $m) === 1) {
+            $notes = trim($notes . "\nSupplier hint: " . trim($m[1]));
+            $draft['supplier_hint'] = trim($m[1]);
+        } elseif (self::match($message, '/(روح\s*من\s*عندك|من\s*عندك|مثال)/ui') && $dryRun) {
+            $notes = trim($notes . "\nSupplier hint: test example (not real)");
+            $draft['supplier_hint'] = 'test_example';
+        }
+
+        // Free-form person names mid-collection → notes (not fake supplier IDs)
+        if (!empty($draft['collecting']) && preg_match('/^[\p{L}\s]{3,40}$/u', trim($message)) === 1
+            && !self::isConfirmationPhrase($message)
+            && !self::isRejectionPhrase($message)
+            && !self::isCreatePurchaseRequestIntent($message)
+            && empty($item)
+        ) {
+            $notes = trim($notes . "\nContact/name: " . trim($message));
+        }
+
+        if ($dryRun) {
+            $notes = trim($notes . "\n[controlled_test_dry_run]");
+        }
+        if ($notes !== '') {
+            $args['notes'] = mb_substr($notes, 0, 500);
+        }
+        if (empty($args['priority'])) {
+            $args['priority'] = 'medium';
+        }
+
+        $missing = [];
+        if (empty($args['title'])) {
+            $missing[] = 'title';
+        }
+
+        $draft['tool'] = 'create_draft_purchase_request';
+        $draft['arguments'] = $args;
+        $draft['dry_run'] = $dryRun;
+        $draft['missing'] = $missing;
+        $draft['collecting'] = true;
+        $draft['ready'] = $missing === [];
+
+        return $draft;
+    }
+
+    /**
+     * Resolve confirmation / rejection / draft continuation for a chat turn.
+     *
+     * @param list<array{role:string,content:string}> $history
+     * @param array<string, mixed> $pending
+     * @param list<string> $confirmedWrites
+     * @return array{
+     *     mode: string,
+     *     pending: array<string,mixed>,
+     *     confirmed_writes: list<string>,
+     *     action_plan: array<string,mixed>|null,
+     *     clear_pending: bool,
+     *     response: string|null
+     * }
+     */
+    public static function resolveConversationTurn(
+        string $message,
+        ProcurementAgentContext $ctx,
+        array $history,
+        array $pending,
+        array $confirmedWrites
+    ): array {
+        $ar = self::isAr($ctx);
+        $pending = is_array($pending) ? $pending : [];
+
+        // Rejection of pending proposal
+        if (self::isRejectionPhrase($message) && (
+            !empty($pending['confirmations']) || !empty($pending['draft'])
+        )) {
+            return [
+                'mode' => 'reject',
+                'pending' => [],
+                'confirmed_writes' => [],
+                'action_plan' => null,
+                'clear_pending' => true,
+                'response' => $ar
+                    ? 'تم إلغاء الإجراء المعلق. لم يتم تنفيذ أي كتابة.'
+                    : 'Pending action cancelled. No write was executed.',
+            ];
+        }
+
+        // Confirmation of pending proposal
+        if (self::isConfirmationPhrase($message) && !empty($pending['confirmations']) && is_array($pending['confirmations'])) {
+            // Controlled test / dry-run: confirm closes the proposal without a real write
+            if (!empty($pending['draft']['dry_run'])) {
+                $summary = (string) ($pending['draft']['arguments']['title'] ?? $pending['intent'] ?? 'draft');
+                return [
+                    'mode' => 'confirm_dry_run',
+                    'pending' => [],
+                    'confirmed_writes' => [],
+                    'action_plan' => null,
+                    'clear_pending' => true,
+                    'response' => $ar
+                        ? ("تم تأكيد التجربة المضبوطة لـ «{$summary}» بدون كتابة حقيقية في النظام. لم يُنشأ سجل.")
+                        : ("Controlled test confirmed for «{$summary}» with no real write. No record was created."),
+                    'verification' => [
+                        'verified' => true,
+                        'dry_run' => true,
+                        'wrote' => false,
+                        'message' => 'controlled_test_confirmed_no_write',
+                    ],
+                ];
+            }
+            $keys = [];
+            foreach ($pending['confirmations'] as $c) {
+                if (is_array($c) && (string) ($c['confirm_key'] ?? '') !== '') {
+                    $keys[] = (string) $c['confirm_key'];
+                } elseif (is_string($c) && $c !== '') {
+                    $keys[] = $c;
+                }
+            }
+            $plan = null;
+            if (!empty($pending['action_plan']) && is_array($pending['action_plan'])) {
+                $plan = $pending['action_plan'];
+            } elseif (!empty($pending['draft']['ready'])) {
+                $action = self::makeAction(
+                    'create_draft_purchase_request',
+                    is_array($pending['draft']['arguments'] ?? null) ? $pending['draft']['arguments'] : [],
+                    $ctx,
+                    'create_pr_from_conversation'
+                );
+                $plan = [
+                    'intent' => (string) ($pending['intent'] ?? 'create_draft_purchase_request'),
+                    'domains' => ['procurement'],
+                    'actions' => [$action],
+                    'unsupported' => [],
+                    'recommendations' => [],
+                    'requires_confirmation' => true,
+                    'evidence_first' => true,
+                    'auto_execute' => false,
+                    'from_conversation' => true,
+                ];
+            }
+            return [
+                'mode' => 'confirm',
+                'pending' => $pending,
+                'confirmed_writes' => array_values(array_unique(array_merge($confirmedWrites, $keys))),
+                'action_plan' => $plan,
+                'clear_pending' => false,
+                'response' => null,
+            ];
+        }
+
+        // Start / continue PR draft collection
+        $hasDraft = !empty($pending['draft']['collecting']);
+        if ($hasDraft || self::isCreatePurchaseRequestIntent($message)) {
+            $draft = self::mergePurchaseRequestDraft($message, is_array($pending['draft'] ?? null) ? $pending['draft'] : []);
+            // Also merge recent user history crumbs
+            foreach (array_reverse($history) as $msg) {
+                if (!is_array($msg) || ($msg['role'] ?? '') !== 'user') {
+                    continue;
+                }
+                $content = trim((string) ($msg['content'] ?? ''));
+                if ($content === '' || $content === $message) {
+                    continue;
+                }
+                if (self::isConfirmationPhrase($content) || self::isRejectionPhrase($content)) {
+                    continue;
+                }
+                $draft = self::mergePurchaseRequestDraft($content, $draft);
+            }
+            $pending['draft'] = $draft;
+            $pending['intent'] = 'create_draft_purchase_request';
+
+            if (empty($draft['ready'])) {
+                $ask = [];
+                if (in_array('title', $draft['missing'] ?? [], true)) {
+                    $ask[] = $ar ? 'عنوان طلب الشراء' : 'purchase request title';
+                }
+                $pending['phase'] = 'collecting';
+                return [
+                    'mode' => 'collect',
+                    'pending' => $pending,
+                    'confirmed_writes' => $confirmedWrites,
+                    'action_plan' => null,
+                    'clear_pending' => false,
+                    'response' => $ar
+                        ? ('أكمل بيانات طلب الشراء. المتبقي: ' . implode('، ', $ask)
+                            . (empty($draft['arguments']['line_items']) ? ' (اختياري: الصنف والكمية)' : '')
+                            . '.')
+                        : ('Continue the purchase request. Still needed: ' . implode(', ', $ask)
+                            . (empty($draft['arguments']['line_items']) ? ' (optional: item and quantity)' : '')
+                            . '.'),
+                ];
+            }
+
+            // Ready → propose (do not execute yet)
+            $action = self::makeAction(
+                'create_draft_purchase_request',
+                $draft['arguments'],
+                $ctx,
+                'create_pr_from_conversation'
+            );
+            $plan = [
+                'intent' => 'create_draft_purchase_request',
+                'domains' => ['procurement'],
+                'actions' => [$action],
+                'unsupported' => [],
+                'recommendations' => !empty($draft['dry_run'])
+                    ? [['message' => 'controlled_test_notes_only_no_fake_supplier_id', 'domain' => 'procurement']]
+                    : [],
+                'requires_confirmation' => true,
+                'evidence_first' => true,
+                'auto_execute' => false,
+                'from_conversation' => true,
+            ];
+            $pending['phase'] = 'awaiting_confirmation';
+            $pending['confirmations'] = [[
+                'tool' => $action['tool'],
+                'confirm_key' => $action['confirm_key'],
+                'arguments' => $action['arguments'],
+                'class' => $action['class'],
+            ]];
+            $pending['action_plan'] = $plan;
+            $summary = (string) ($action['arguments']['title'] ?? '');
+            $prio = (string) ($action['arguments']['priority'] ?? 'medium');
+            $lines = is_array($action['arguments']['line_items'] ?? null) ? $action['arguments']['line_items'] : [];
+            $lineTxt = '';
+            if ($lines !== [] && is_array($lines[0])) {
+                $lineTxt = ($ar ? ' — صنف: ' : ' — item: ')
+                    . (string) ($lines[0]['description'] ?? '')
+                    . ' × ' . (string) ($lines[0]['quantity'] ?? '');
+            }
+            $dry = !empty($draft['dry_run'])
+                ? ($ar ? ' (تجربة مضبوطة — بدون مورد وهمي)' : ' (controlled test — no fake supplier)')
+                : '';
+            return [
+                'mode' => 'propose',
+                'pending' => $pending,
+                'confirmed_writes' => $confirmedWrites,
+                'action_plan' => $plan,
+                'clear_pending' => false,
+                'response' => $ar
+                    ? ("سأقوم بإنشاء مسودة طلب شراء:\n- العنوان: {$summary}\n- الأولوية: {$prio}{$lineTxt}{$dry}\n\nللتأكيد اكتب: انشئ / نعم / موافق\nللإلغاء: لا")
+                    : ("I will create a draft purchase request:\n- Title: {$summary}\n- Priority: {$prio}{$lineTxt}{$dry}\n\nConfirm with: create / yes / ok\nCancel with: no"),
+            ];
+        }
+
+        return [
+            'mode' => 'passthrough',
+            'pending' => $pending,
+            'confirmed_writes' => $confirmedWrites,
+            'action_plan' => null,
+            'clear_pending' => false,
+            'response' => null,
         ];
     }
 
