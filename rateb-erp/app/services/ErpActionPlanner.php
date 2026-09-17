@@ -19,6 +19,22 @@ final class ErpActionPlanner
     public const CLASS_WRITE = 'WRITE';
     public const CLASS_SENSITIVE_WRITE = 'SENSITIVE_WRITE';
 
+    public const PHASE_COLLECTING = 'COLLECTING';
+    public const PHASE_PENDING_CONFIRMATION = 'PENDING_CONFIRMATION';
+    public const PHASE_CONFIRMED = 'CONFIRMED';
+    public const PHASE_AUTHORIZED = 'AUTHORIZED';
+    public const PHASE_EXECUTING = 'EXECUTING';
+    public const PHASE_EXECUTED = 'EXECUTED';
+    public const PHASE_VERIFIED = 'VERIFIED';
+    public const PHASE_CANCELLED = 'CANCELLED';
+    public const PHASE_FAILED = 'FAILED';
+    public const PHASE_STALE = 'STALE';
+
+    /** @deprecated keep reading legacy session values */
+    private const PHASE_LEGACY_AWAITING = 'awaiting_confirmation';
+    private const PHASE_LEGACY_EXECUTED = 'executed';
+    private const PHASE_LEGACY_COLLECTING = 'collecting';
+
     /** @var list<string> */
     private const WRITE_TOOLS = [
         'create_draft_purchase_request',
@@ -270,8 +286,13 @@ final class ErpActionPlanner
      * @param array<string, mixed> $arguments
      * @return array<string, mixed>
      */
-        private static function makeAction(string $tool, array $arguments, ProcurementAgentContext $ctx, string $purpose): array
-    {
+    private static function makeAction(
+        string $tool,
+        array $arguments,
+        ProcurementAgentContext $ctx,
+        string $purpose,
+        string $actionId = ''
+    ): array {
         $class = self::classifyTool($tool);
         $meta = ErpToolRegistry::getTool($tool)
             ?? AccountingToolRegistry::getTool($tool)
@@ -280,9 +301,9 @@ final class ErpActionPlanner
         $domain = ErpToolRegistry::domainForTool($tool)
             ?? (string) ($meta['domain'] ?? ($tool === 'submit_journal_for_approval' ? 'accounting' : 'procurement'));
         $state = self::readStateSnapshot($tool, $arguments, $ctx);
-        $confirmKey = self::confirmKey($tool, $arguments);
+        $confirmKey = self::confirmKey($tool, $arguments, $actionId);
 
-        return [
+        $row = [
             'tool' => $tool,
             'arguments' => $arguments,
             'domain' => $domain,
@@ -297,6 +318,10 @@ final class ErpActionPlanner
             'state_fingerprint' => self::fingerprint($state),
             'supported' => true,
         ];
+        if ($actionId !== '') {
+            $row['action_id'] = $actionId;
+        }
+        return $row;
     }
 
     /**
@@ -377,6 +402,192 @@ final class ErpActionPlanner
         \Rateb\App\Core\SessionManager::set('rateb_ai_pending_' . md5($scopeKey), null);
     }
 
+    public static function normalizePhase(string $phase): string
+    {
+        $p = strtoupper(trim($phase));
+        return match ($p) {
+            'AWAITING_CONFIRMATION', 'PENDING_CONFIRMATION' => self::PHASE_PENDING_CONFIRMATION,
+            'COLLECTING' => self::PHASE_COLLECTING,
+            'CONFIRMED' => self::PHASE_CONFIRMED,
+            'AUTHORIZED' => self::PHASE_AUTHORIZED,
+            'EXECUTING' => self::PHASE_EXECUTING,
+            'EXECUTED' => self::PHASE_EXECUTED,
+            'VERIFIED' => self::PHASE_VERIFIED,
+            'CANCELLED' => self::PHASE_CANCELLED,
+            'FAILED' => self::PHASE_FAILED,
+            'STALE' => self::PHASE_STALE,
+            default => $phase,
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $pending
+     * @return list<array{action_id:string,confirm_key:string,record_id:int}>
+     */
+    public static function verifiedActionsList(array $pending): array
+    {
+        $out = [];
+        $raw = is_array($pending['verified_actions'] ?? null) ? $pending['verified_actions'] : [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $aid = (string) ($row['action_id'] ?? '');
+            $ck = (string) ($row['confirm_key'] ?? '');
+            $rid = (int) ($row['record_id'] ?? 0);
+            if ($aid === '' || $ck === '' || $rid < 1) {
+                continue;
+            }
+            $out[] = ['action_id' => $aid, 'confirm_key' => $ck, 'record_id' => $rid];
+        }
+        return $out;
+    }
+
+    /**
+     * True only when THIS action_id was verified with a real record — not merely proposed/confirmed.
+     * PENDING_CONFIRMATION / CONFIRMED / AUTHORIZED / EXECUTING are never treated as executed.
+     *
+     * @param array<string, mixed> $pending
+     * @param list<string> $confirmedWrites
+     */
+    public static function isVerifiedDuplicateAttempt(array $pending, array $confirmedWrites, string $message): bool
+    {
+        $phase = self::normalizePhase((string) ($pending['phase'] ?? ''));
+        // Open proposal / in-flight confirm must always be allowed to execute
+        if (!empty($pending['confirmations']) && is_array($pending['confirmations'])) {
+            if (in_array($phase, [
+                self::PHASE_PENDING_CONFIRMATION,
+                self::PHASE_CONFIRMED,
+                self::PHASE_AUTHORIZED,
+                self::PHASE_EXECUTING,
+                self::PHASE_COLLECTING,
+                self::PHASE_LEGACY_AWAITING,
+                self::PHASE_LEGACY_COLLECTING,
+                self::PHASE_FAILED,
+                '',
+            ], true) || $phase === '') {
+                return false;
+            }
+        }
+        $verified = self::verifiedActionsList($pending);
+        // Without proof of a real record id, never claim "already executed"
+        if ($verified === []) {
+            return false;
+        }
+        if (!in_array($phase, [self::PHASE_VERIFIED, self::PHASE_EXECUTED, self::PHASE_LEGACY_EXECUTED], true)) {
+            return false;
+        }
+        $actionId = (string) ($pending['action_id'] ?? '');
+        foreach ($verified as $v) {
+            if ($actionId !== '' && $v['action_id'] !== $actionId) {
+                continue;
+            }
+            if ($v['record_id'] < 1) {
+                continue;
+            }
+            if ($confirmedWrites !== [] && in_array($v['confirm_key'], $confirmedWrites, true)) {
+                return true;
+            }
+            // Bare confirmation phrase against the same verified action_id
+            if ($confirmedWrites === [] && self::isConfirmationPhrase($message)
+                && ($actionId === '' || $v['action_id'] === $actionId)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Attach inventory_id when a catalog match exists. If catalog has rows and name unmatched → unknown_item.
+     *
+     * @param array<string, mixed> $draft
+     * @return array<string, mixed>
+     */
+    public static function attachInventoryToDraft(array $draft, ProcurementAgentContext $ctx, bool $ar): array
+    {
+        $args = is_array($draft['arguments'] ?? null) ? $draft['arguments'] : [];
+        $lines = is_array($args['line_items'] ?? null) ? $args['line_items'] : [];
+        if ($lines === []) {
+            return $draft;
+        }
+        $companyId = (int) $ctx->companyId;
+        if ($companyId < 1 || !$ctx->moduleEnabled('inventory')) {
+            return $draft;
+        }
+        try {
+            $db = Database::connection();
+            $count = (int) $db->query(
+                'SELECT COUNT(*) FROM rateb_inventory WHERE company_id = ' . (int) $companyId
+            )->fetchColumn();
+            if ($count < 1) {
+                // Empty catalog — allow free-text description lines (cannot validate)
+                return $draft;
+            }
+            $resolved = [];
+            foreach ($lines as $line) {
+                if (!is_array($line)) {
+                    continue;
+                }
+                $name = trim((string) ($line['item_name'] ?? $line['description'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                if (!empty($line['inventory_id'])) {
+                    $resolved[] = $line;
+                    continue;
+                }
+                $stmt = $db->prepare(
+                    'SELECT id, item_name, sku, unit, unit_cost
+                     FROM rateb_inventory
+                     WHERE company_id = :cid
+                       AND (item_name = :exact OR item_name LIKE :like OR sku = :sku)
+                     ORDER BY (item_name = :exact2) DESC, id ASC
+                     LIMIT 1'
+                );
+                $stmt->execute([
+                    'cid' => $companyId,
+                    'exact' => $name,
+                    'exact2' => $name,
+                    'sku' => $name,
+                    'like' => '%' . $name . '%',
+                ]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if (!$row) {
+                    $draft['unknown_item'] = true;
+                    $draft['unknown_item_message'] = $ar
+                        ? ('الصنف «' . $name . '» غير موجود في المخزون. اختر صنفاً صحيحاً من النظام.')
+                        : ('Item «' . $name . '» was not found in inventory. Choose a valid catalog item.');
+                    $draft['ready'] = false;
+                    return $draft;
+                }
+                $line['inventory_id'] = (int) $row['id'];
+                $line['item_name'] = (string) ($row['item_name'] ?? $name);
+                if (empty($line['description'])) {
+                    $line['description'] = (string) ($row['item_name'] ?? $name);
+                }
+                if (empty($line['sku']) && !empty($row['sku'])) {
+                    $line['sku'] = (string) $row['sku'];
+                }
+                if ((empty($line['unit']) || $line['unit'] === 'each') && !empty($row['unit'])) {
+                    $line['unit'] = (string) $row['unit'];
+                }
+                // Only fill price from catalog when user did not provide one
+                if (!isset($line['unit_price']) || (float) $line['unit_price'] <= 0) {
+                    // keep 0 unless user provided — do not invent price from cost unless explicit
+                }
+                $resolved[] = $line;
+            }
+            if ($resolved !== []) {
+                $args['line_items'] = $resolved;
+                $draft['arguments'] = $args;
+            }
+        } catch (\Throwable $e) {
+            // fail open for lookup errors — do not invent items
+        }
+        return $draft;
+    }
+
     /**
      * Extract / merge purchase-request draft fields from a user utterance.
      * Current message wins over any prior draft values when it supplies a field.
@@ -410,61 +621,131 @@ final class ErpActionPlanner
             $args['priority'] = 'low';
         }
 
-        // Department / cost center
+        // Department / cost center — only when the user explicitly provides it (never invent)
         if (preg_match('/(?:قسم|department)\s*[=:]?\s*([^\n,]+)/ui', $message, $m) === 1) {
             $dept = trim($m[1]);
-            $args['department'] = mb_substr($dept, 0, 120);
-            $notes = trim($notes . "\nDepartment: " . $dept);
-            $draft['department'] = $dept;
-        } elseif (preg_match('/قسم\s+(المشتريات|مشتريات)/ui', $message) === 1) {
-            $args['department'] = 'المشتريات';
-            $notes = trim($notes . "\nDepartment: المشتريات");
-            $draft['department'] = 'المشتريات';
+            // Strip trailing priority / qty noise from capture
+            $dept = trim(preg_replace('/\s*(?:بأولوية|اولوية|أولوية|priority).*$/ui', '', $dept) ?? $dept);
+            if ($dept !== '') {
+                $args['department'] = mb_substr($dept, 0, 120);
+                $notes = trim($notes . "\nDepartment: " . $dept);
+                $draft['department'] = $dept;
+            }
         }
 
-        // Qty + unit + item — "10 وحدات من بطاطس" / "بطاطس 66"
+        // Optional unit price / tax from the utterance
+        $unitPrice = null;
+        if (preg_match('/(?:سعر|price|unit[_\s-]?price)\s*[=:]?\s*(\d+(?:\.\d+)?)/ui', $message, $pm) === 1) {
+            $unitPrice = (float) $pm[1];
+        }
+        $taxRate = null;
+        if (preg_match('/(?:ضريبة|tax|vat)\s*[=:]?\s*(\d+(?:\.\d+)?)\s*%?/ui', $message, $tm) === 1) {
+            $taxRate = (float) $tm[1];
+        } elseif (self::match($message, '/(?:بدون\s*ضريبة|no\s*tax|zero\s*tax|vat\s*0)/ui')) {
+            $taxRate = 0.0;
+        }
+
+        // Qty + unit + item(s) — "10 وحدات من بطاطس" / "بطاطس 66" / "بطاطس × 10 وأرز × 5"
         $item = null;
         $qty = null;
         $unit = 'unit';
         $msgTrim = trim($message);
         $msgForItem = preg_replace('/\s*(?:قسم|department)\s*[^\n,]*/ui', '', $msgTrim) ?? $msgTrim;
         $msgForItem = preg_replace('/\s*(?:بأولوية|اولوية|أولوية|priority)\s*\S+/ui', '', $msgForItem) ?? $msgForItem;
-        $msgForItem = preg_replace('/\b(المشتريات|مشتريات)\b/ui', '', $msgForItem) ?? $msgForItem;
+        $msgForItem = preg_replace('/\s*(?:سعر|price|unit[_\s-]?price)\s*[=:]?\s*\d+(?:\.\d+)?/ui', '', $msgForItem) ?? $msgForItem;
+        $msgForItem = preg_replace('/\s*(?:ضريبة|tax|vat)\s*[=:]?\s*\d+(?:\.\d+)?\s*%?/ui', '', $msgForItem) ?? $msgForItem;
         $msgForItem = trim(preg_replace('/\s+/u', ' ', (string) $msgForItem) ?? '');
         $unitAlt = 'وحدات|وحدة|unit|units|pcs?|pieces?|قطعة|قطع|each|ea';
         $unitBlock = '/^(وحدات|وحدة|unit|units|pcs|piece|pieces|قطعة|قطع|each|ea|متوسط|متوسطة|متوسطه|عاجل|منخفض|طلب|شراء|مواد|department|قسم)$/ui';
 
-        if (preg_match('/(\d+(?:\.\d+)?)\s*(?:' . $unitAlt . ')?\s*(?:من\s+)?([\p{L}]{2,40})\b/ui', $msgForItem, $m) === 1
-            && !self::match($m[2], $unitBlock)
-        ) {
-            $qty = (float) $m[1];
-            $item = trim($m[2]);
-            if (preg_match('/\d+(?:\.\d+)?\s*(' . $unitAlt . ')/ui', $msgForItem, $um) === 1) {
-                $unitRaw = mb_strtolower(trim($um[1]));
-                $unit = in_array($unitRaw, ['وحدات', 'وحدة', 'قطعة', 'قطع', 'ea', 'each', 'pcs', 'piece', 'pieces'], true)
-                    ? 'unit'
-                    : mb_substr($unitRaw, 0, 30);
+        $extractedLines = [];
+        // Multi-item: "بطاطس × 10" / "بطاطس x 10" / "10 من بطاطس" repeated
+        if (preg_match_all(
+            '/([\p{L}]{2,40})\s*[×xX*]\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:' . $unitAlt . ')?\s*(?:من\s+)?([\p{L}]{2,40})\b/ui',
+            $msgForItem,
+            $mm,
+            PREG_SET_ORDER
+        ) >= 1) {
+            foreach ($mm as $m) {
+                $n = '';
+                $q = 0.0;
+                if (!empty($m[1]) && isset($m[2]) && $m[2] !== '') {
+                    $n = trim($m[1]);
+                    $q = (float) $m[2];
+                } elseif (!empty($m[4]) && isset($m[3]) && $m[3] !== '') {
+                    $n = trim($m[4]);
+                    $q = (float) $m[3];
+                }
+                if ($n === '' || $q <= 0 || self::match($n, $unitBlock)
+                    || self::match($n, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد|تجريبي)$/ui')
+                ) {
+                    continue;
+                }
+                $lineUnit = 'each';
+                if (preg_match('/\d+(?:\.\d+)?\s*(' . $unitAlt . ')/ui', $m[0] ?? '', $um) === 1) {
+                    $unitRaw = mb_strtolower(trim($um[1]));
+                    $lineUnit = in_array($unitRaw, ['وحدات', 'وحدة', 'قطعة', 'قطع', 'ea', 'each', 'pcs', 'piece', 'pieces'], true)
+                        ? 'each'
+                        : mb_substr($unitRaw, 0, 30);
+                }
+                $line = [
+                    'item_name' => $n,
+                    'description' => $n,
+                    'quantity' => $q,
+                    'unit' => $lineUnit,
+                    'unit_price' => $unitPrice !== null ? $unitPrice : 0,
+                    'tax_rate' => $taxRate !== null ? $taxRate : 15,
+                    'tax_name' => ($taxRate !== null && $taxRate <= 0) ? 'Local Sales 0%' : 'VAT 15%',
+                    'excluding_tax' => 1,
+                ];
+                $extractedLines[] = $line;
             }
-        } elseif (preg_match('/([\p{L}]{2,40})\s+(\d+(?:\.\d+)?)\s*$/u', $msgForItem, $m) === 1
-            && !self::match($m[1], $unitBlock)
-        ) {
-            $item = trim($m[1]);
-            $qty = (float) $m[2];
         }
 
-        if ($item !== null && $qty !== null && $qty > 0
-            && !self::match($item, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد|تجريبي)$/ui')
-        ) {
-            $args['line_items'] = [[
-                'item_name' => $item,
-                'description' => $item,
-                'quantity' => $qty,
-                'unit' => $unit !== '' && $unit !== 'unit' ? $unit : 'each',
-                'unit_price' => 0,
-                'tax_rate' => 15,
-                'tax_name' => 'VAT 15%',
-                'excluding_tax' => 1,
-            ]];
+        if ($extractedLines === []) {
+            if (preg_match('/(\d+(?:\.\d+)?)\s*(?:' . $unitAlt . ')?\s*(?:من\s+)?([\p{L}]{2,40})\b/ui', $msgForItem, $m) === 1
+                && !self::match($m[2], $unitBlock)
+            ) {
+                $qty = (float) $m[1];
+                $item = trim($m[2]);
+                if (preg_match('/\d+(?:\.\d+)?\s*(' . $unitAlt . ')/ui', $msgForItem, $um) === 1) {
+                    $unitRaw = mb_strtolower(trim($um[1]));
+                    $unit = in_array($unitRaw, ['وحدات', 'وحدة', 'قطعة', 'قطع', 'ea', 'each', 'pcs', 'piece', 'pieces'], true)
+                        ? 'unit'
+                        : mb_substr($unitRaw, 0, 30);
+                }
+            } elseif (preg_match('/([\p{L}]{2,40})\s+(\d+(?:\.\d+)?)\s*$/u', $msgForItem, $m) === 1
+                && !self::match($m[1], $unitBlock)
+            ) {
+                $item = trim($m[1]);
+                $qty = (float) $m[2];
+            }
+
+            if ($item !== null && $qty !== null && $qty > 0
+                && !self::match($item, '/^(نعم|لا|انشئ|أنشئ|موافق|تأكيد|تجريبي)$/ui')
+            ) {
+                $extractedLines[] = [
+                    'item_name' => $item,
+                    'description' => $item,
+                    'quantity' => $qty,
+                    'unit' => $unit !== '' && $unit !== 'unit' ? $unit : 'each',
+                    'unit_price' => $unitPrice !== null ? $unitPrice : 0,
+                    'tax_rate' => $taxRate !== null ? $taxRate : 15,
+                    'tax_name' => ($taxRate !== null && $taxRate <= 0) ? 'Local Sales 0%' : 'VAT 15%',
+                    'excluding_tax' => 1,
+                ];
+            }
+        }
+
+        if ($extractedLines !== []) {
+            // Deduplicate by item_name keeping last
+            $byName = [];
+            foreach ($extractedLines as $el) {
+                $byName[mb_strtolower((string) $el['item_name'])] = $el;
+            }
+            $args['line_items'] = array_values($byName);
+            $item = (string) ($args['line_items'][0]['item_name'] ?? $item);
+            $qty = (float) ($args['line_items'][0]['quantity'] ?? $qty);
         }
 
         // Title — prefer item-based; avoid "شراء تجريبي لشراء …"
@@ -585,26 +866,19 @@ final class ErpActionPlanner
             ];
         }
 
-        $executedPrior = is_array($pending['executed_keys'] ?? null) ? $pending['executed_keys'] : [];
-        if ($confirmedWrites !== [] && $executedPrior !== [] && array_intersect($confirmedWrites, $executedPrior) !== []) {
+        $phase = self::normalizePhase((string) ($pending['phase'] ?? ''));
+        $actionId = (string) ($pending['action_id'] ?? '');
+        $verifiedActions = self::verifiedActionsList($pending);
+
+        // Duplicate confirm ONLY when THIS action_id was actually verified (real write).
+        // confirmation_required / pending / authorized are NOT execution.
+        if (self::isVerifiedDuplicateAttempt($pending, $confirmedWrites, $message)) {
             return [
                 'mode' => 'already_executed',
-                'pending' => [],
+                'pending' => $pending,
                 'confirmed_writes' => [],
                 'action_plan' => null,
-                'clear_pending' => true,
-                'response' => $ar
-                    ? 'تم تنفيذ هذا الإجراء مسبقاً. لم يُنشأ سجل مكرر.'
-                    : 'This action was already executed. No duplicate record was created.',
-            ];
-        }
-        if (self::isConfirmationPhrase($message) && $executedPrior !== [] && empty($pending['confirmations'])) {
-            return [
-                'mode' => 'already_executed',
-                'pending' => [],
-                'confirmed_writes' => [],
-                'action_plan' => null,
-                'clear_pending' => true,
+                'clear_pending' => false,
                 'response' => $ar
                     ? 'تم تنفيذ هذا الإجراء مسبقاً. لم يُنشأ سجل مكرر.'
                     : 'This action was already executed. No duplicate record was created.',
@@ -623,7 +897,7 @@ final class ErpActionPlanner
             if ($matched === [] && $pendingKeys !== []) {
                 return [
                     'mode' => 'stale',
-                    'pending' => $pending,
+                    'pending' => array_merge($pending, ['phase' => self::PHASE_STALE]),
                     'confirmed_writes' => [],
                     'action_plan' => null,
                     'clear_pending' => false,
@@ -633,26 +907,20 @@ final class ErpActionPlanner
                 ];
             }
             if ($matched !== []) {
-                $executed = is_array($pending['executed_keys'] ?? null) ? $pending['executed_keys'] : [];
-                if (array_intersect($matched, $executed) !== []) {
-                    return [
-                        'mode' => 'already_executed',
-                        'pending' => [],
-                        'confirmed_writes' => [],
-                        'action_plan' => null,
-                        'clear_pending' => true,
-                        'response' => $ar
-                            ? 'تم تنفيذ هذا الإجراء مسبقاً. لم يُنشأ سجل مكرر.'
-                            : 'This action was already executed. No duplicate record was created.',
-                    ];
-                }
-                return self::buildConfirmTurn($pending, $matched, $ctx, $ar);
+                // Never block first confirm of a PENDING_CONFIRMATION action
+                return self::buildConfirmTurn(
+                    array_merge($pending, ['phase' => self::PHASE_CONFIRMED]),
+                    $matched,
+                    $ctx,
+                    $ar
+                );
             }
         }
 
         // Rejection of pending proposal
         if (self::isRejectionPhrase($message) && (
             !empty($pending['confirmations']) || !empty($pending['draft'])
+            || in_array($phase, [self::PHASE_PENDING_CONFIRMATION, self::PHASE_COLLECTING, self::PHASE_LEGACY_AWAITING, self::PHASE_LEGACY_COLLECTING], true)
         )) {
             return [
                 'mode' => 'reject',
@@ -668,30 +936,22 @@ final class ErpActionPlanner
 
         // Confirmation phrase of pending proposal
         if (self::isConfirmationPhrase($message) && !empty($pending['confirmations']) && is_array($pending['confirmations'])) {
-            $executed = is_array($pending['executed_keys'] ?? null) ? $pending['executed_keys'] : [];
             $keys = [];
             foreach ($pending['confirmations'] as $c) {
                 if (is_array($c) && (string) ($c['confirm_key'] ?? '') !== '') {
                     $keys[] = (string) $c['confirm_key'];
                 }
             }
-            if ($keys !== [] && array_intersect($keys, $executed) !== []) {
-                return [
-                    'mode' => 'already_executed',
-                    'pending' => [],
-                    'confirmed_writes' => [],
-                    'action_plan' => null,
-                    'clear_pending' => true,
-                    'response' => $ar
-                        ? 'تم تنفيذ هذا الإجراء مسبقاً. لم يُنشأ سجل مكرر.'
-                        : 'This action was already executed. No duplicate record was created.',
-                ];
-            }
-            return self::buildConfirmTurn($pending, array_values(array_unique(array_merge($confirmedWrites, $keys))), $ctx, $ar);
+            return self::buildConfirmTurn(
+                array_merge($pending, ['phase' => self::PHASE_CONFIRMED]),
+                array_values(array_unique(array_merge($confirmedWrites, $keys))),
+                $ctx,
+                $ar
+            );
         }
 
         // Re-surface existing proposal (prevent repeated replan on unrelated chatter)
-        if (($pending['phase'] ?? '') === 'awaiting_confirmation'
+        if (in_array($phase, [self::PHASE_PENDING_CONFIRMATION, self::PHASE_LEGACY_AWAITING], true)
             && !empty($pending['action_plan'])
             && !empty($pending['confirmations'])
             && !self::isCreatePurchaseRequestIntent($message)
@@ -699,12 +959,10 @@ final class ErpActionPlanner
             && !self::isRejectionPhrase($message)
             && $confirmedWrites === []
         ) {
-            // Allow marking controlled test while proposal is open
             if (self::match($message, '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|ليس\s*للتنفيذ|dry\s*run|test\s*only|not\s*real|example\s*only)/ui')) {
                 if (!is_array($pending['draft'] ?? null)) {
                     $pending['draft'] = [];
                 }
-                // Metadata only — confirm still executes real create_draft_purchase_request
                 $pending['draft']['dry_run_note'] = true;
                 $args = is_array($pending['draft']['arguments'] ?? null) ? $pending['draft']['arguments'] : [];
                 $notes = trim((string) ($args['notes'] ?? '') . "\n[test_draft_note]");
@@ -726,13 +984,18 @@ final class ErpActionPlanner
         if ($hasDraft || self::isCreatePurchaseRequestIntent($message)) {
             $prevKey = (string) ($pending['confirmations'][0]['confirm_key'] ?? '');
             $prevActionId = (string) ($pending['action_id'] ?? '');
-            $prevExecuted = is_array($pending['executed_keys'] ?? null) ? $pending['executed_keys'] : [];
 
             // New create intent with params (or replacing an awaiting proposal) → current request wins
             $freshStart = self::isCreatePurchaseRequestIntent($message)
                 && (
                     self::messageHasPurchaseParams($message)
-                    || ($pending['phase'] ?? '') === 'awaiting_confirmation'
+                    || in_array(self::normalizePhase((string) ($pending['phase'] ?? '')), [
+                        self::PHASE_PENDING_CONFIRMATION,
+                        self::PHASE_LEGACY_AWAITING,
+                        self::PHASE_VERIFIED,
+                        self::PHASE_EXECUTED,
+                        self::PHASE_LEGACY_EXECUTED,
+                    ], true)
                     || !empty($pending['confirmations'])
                 );
             if ($freshStart) {
@@ -763,15 +1026,39 @@ final class ErpActionPlanner
                 }
             }
 
+            $draft = self::attachInventoryToDraft($draft, $ctx, $ar);
+            if (!empty($draft['unknown_item'])) {
+                $pending = [
+                    'phase' => self::PHASE_COLLECTING,
+                    'intent' => 'create_draft_purchase_request',
+                    'draft' => $draft,
+                    'company_id' => (int) $ctx->companyId,
+                    'action_id' => 'act_' . bin2hex(random_bytes(6)),
+                    'verified_actions' => [],
+                    'executed_keys' => [],
+                ];
+                return [
+                    'mode' => 'collect',
+                    'pending' => $pending,
+                    'confirmed_writes' => $confirmedWrites,
+                    'action_plan' => null,
+                    'clear_pending' => false,
+                    'response' => (string) ($draft['unknown_item_message'] ?? (
+                        $ar ? 'الصنف غير موجود في المخزون. اختر صنفاً صحيحاً.' : 'Item not found in inventory. Choose a valid item.'
+                    )),
+                ];
+            }
+
             $pending = [
-                'phase' => 'collecting',
+                'phase' => self::PHASE_COLLECTING,
                 'intent' => 'create_draft_purchase_request',
                 'draft' => $draft,
                 'company_id' => (int) $ctx->companyId,
                 'action_id' => ($freshStart || $prevActionId === '')
                     ? ('act_' . bin2hex(random_bytes(6)))
                     : $prevActionId,
-                'executed_keys' => $freshStart ? [] : $prevExecuted,
+                'verified_actions' => [],
+                'executed_keys' => [],
             ];
 
             if (empty($draft['ready'])) {
@@ -796,13 +1083,14 @@ final class ErpActionPlanner
             }
 
             // Ready → propose snapshot (do not execute yet)
+            $actionId = (string) $pending['action_id'];
             $action = self::makeAction(
                 'create_draft_purchase_request',
                 $draft['arguments'],
                 $ctx,
-                'create_pr_from_conversation'
+                'create_pr_from_conversation',
+                $actionId
             );
-            $action['action_id'] = (string) $pending['action_id'];
             $plan = [
                 'intent' => 'create_draft_purchase_request',
                 'domains' => ['procurement'],
@@ -813,7 +1101,7 @@ final class ErpActionPlanner
                 'evidence_first' => true,
                 'auto_execute' => false,
                 'from_conversation' => true,
-                'action_id' => (string) $pending['action_id'],
+                'action_id' => $actionId,
                 'parameter_snapshot' => [
                     'title' => (string) ($action['arguments']['title'] ?? ''),
                     'priority' => (string) ($action['arguments']['priority'] ?? 'medium'),
@@ -821,16 +1109,18 @@ final class ErpActionPlanner
                 ],
             ];
 
-            $pending['phase'] = 'awaiting_confirmation';
+            $pending['phase'] = self::PHASE_PENDING_CONFIRMATION;
             $pending['confirmations'] = [[
                 'tool' => $action['tool'],
                 'confirm_key' => $action['confirm_key'],
                 'arguments' => $action['arguments'],
                 'class' => $action['class'],
-                'action_id' => (string) $pending['action_id'],
+                'action_id' => $actionId,
             ]];
             $pending['action_plan'] = $plan;
             $pending['parameter_snapshot'] = $plan['parameter_snapshot'];
+            $pending['verified_actions'] = [];
+            $pending['executed_keys'] = [];
 
             return [
                 'mode' => 'propose',
@@ -890,13 +1180,14 @@ final class ErpActionPlanner
                     'line_items' => is_array($snap['line_items'] ?? null) ? $snap['line_items'] : [],
                 ];
             }
+            $actionId = (string) ($pending['action_id'] ?? '');
             $action = self::makeAction(
                 'create_draft_purchase_request',
                 $args,
                 $ctx,
-                'create_pr_from_conversation'
+                'create_pr_from_conversation',
+                $actionId
             );
-            $action['action_id'] = (string) ($pending['action_id'] ?? '');
             $plan = [
                 'intent' => (string) ($pending['intent'] ?? 'create_draft_purchase_request'),
                 'domains' => ['procurement'],
@@ -907,12 +1198,15 @@ final class ErpActionPlanner
                 'evidence_first' => true,
                 'auto_execute' => false,
                 'from_conversation' => true,
-                'action_id' => (string) ($pending['action_id'] ?? ''),
+                'action_id' => $actionId,
                 'parameter_snapshot' => is_array($pending['parameter_snapshot'] ?? null)
                     ? $pending['parameter_snapshot']
                     : [],
             ];
         }
+
+        // Confirm path: CONFIRMED → AUTHORIZED (execution starts in ErpAgent)
+        $pending['phase'] = self::PHASE_AUTHORIZED;
 
         return [
             'mode' => 'confirm',
@@ -943,12 +1237,26 @@ final class ErpActionPlanner
         $lines = is_array($snap['line_items'] ?? null) ? $snap['line_items']
             : (is_array($args['line_items'] ?? null) ? $args['line_items'] : []);
         $lineTxt = '';
-        if ($lines !== [] && is_array($lines[0])) {
-            $name = (string) ($lines[0]['item_name'] ?? $lines[0]['description'] ?? '');
-            $qty = (string) ($lines[0]['quantity'] ?? '');
-            $lineTxt = $ar
-                ? ("\n- الصنف: {$name}\n- الكمية: {$qty}")
-                : ("\n- Item: {$name}\n- Quantity: {$qty}");
+        if ($lines !== []) {
+            $parts = [];
+            foreach ($lines as $li) {
+                if (!is_array($li)) {
+                    continue;
+                }
+                $name = (string) ($li['item_name'] ?? $li['description'] ?? '');
+                $qty = (string) ($li['quantity'] ?? '');
+                if ($name === '') {
+                    continue;
+                }
+                $parts[] = $ar
+                    ? ("{$name}" . ($qty !== '' ? " × {$qty}" : ''))
+                    : ("{$name}" . ($qty !== '' ? " × {$qty}" : ''));
+            }
+            if ($parts !== []) {
+                $lineTxt = $ar
+                    ? ("\n- الأصناف: " . implode('، ', $parts))
+                    : ("\n- Items: " . implode(', ', $parts));
+            }
         }
         return $ar
             ? ("سأقوم بإنشاء مسودة طلب شراء:\n- العنوان: {$summary}\n- الأولوية: {$prio}{$lineTxt}\n\nللتأكيد اضغط تأكيد أو اكتب: نعم / موافق\nللإلغاء: لا")
@@ -1035,9 +1343,14 @@ final class ErpActionPlanner
         return $mapEn[$key] ?? $mapEn[strtoupper($key)] ?? $mapEn[strtolower($key)] ?? $key;
     }
 
-    public static function confirmKey(string $tool, array $arguments): string
+    public static function confirmKey(string $tool, array $arguments, string $actionId = ''): string
     {
-        return $tool . ':' . md5((string) json_encode($arguments, JSON_UNESCAPED_UNICODE));
+        // Bind idempotency to action_id when present so a new proposal never collides with a prior one.
+        $payload = $arguments;
+        if ($actionId !== '') {
+            $payload = ['_action_id' => $actionId] + $arguments;
+        }
+        return $tool . ':' . md5((string) json_encode($payload, JSON_UNESCAPED_UNICODE));
     }
 
     /**
@@ -1258,7 +1571,7 @@ final class ErpActionPlanner
         try {
             $db = Database::connection();
             $stmt = $db->prepare(
-                "SELECT id, input_json FROM rateb_agent_audit_events
+                "SELECT id, input_json, output_json FROM rateb_agent_audit_events
                  WHERE company_id = :cid AND user_id = :uid AND request_id = :rid
                    AND status = 'success'
                    AND tool_name IN (
@@ -1274,9 +1587,20 @@ final class ErpActionPlanner
             ]);
             foreach ($stmt->fetchAll() as $row) {
                 $input = json_decode((string) ($row['input_json'] ?? ''), true);
-                if (is_array($input) && (string) ($input['_idempotency_key'] ?? '') === $confirmKey) {
-                    return true;
+                $output = json_decode((string) ($row['output_json'] ?? ''), true);
+                if (!is_array($input) || (string) ($input['_idempotency_key'] ?? '') !== $confirmKey) {
+                    continue;
                 }
+                // Only treat as executed when audit proves a successful write event
+                $eventType = is_array($output) ? (string) ($output['event_type'] ?? '') : '';
+                if ($eventType !== '' && $eventType !== 'action_success') {
+                    continue;
+                }
+                $verified = is_array($output['verification'] ?? null) ? $output['verification'] : [];
+                if ($verified !== [] && empty($verified['verified'])) {
+                    continue;
+                }
+                return true;
             }
         } catch (\Throwable $e) {
             return false;

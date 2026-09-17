@@ -88,7 +88,9 @@ final class ErpAgent
         }
 
         if (($turn['mode'] ?? '') === 'stale' || ($turn['mode'] ?? '') === 'already_executed') {
-            if (($turn['mode'] ?? '') === 'already_executed' || !empty($turn['clear_pending'])) {
+            // Keep VERIFIED pending on duplicate confirm so further clicks stay idempotent.
+            // Only clear when explicitly requested (e.g. stale tenant mismatch).
+            if (($turn['mode'] ?? '') !== 'already_executed' && !empty($turn['clear_pending'])) {
                 ErpActionPlanner::clearPendingState($scopeKey);
             }
             $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, null, false);
@@ -189,23 +191,62 @@ final class ErpAgent
                 return $this->governanceStopResponse($ctx, $requestId, $gov, $bound, $intent);
             }
             $result = $this->processActions($input, $ctx, $intent, $requestId, $gov);
-            // Clear pending after successful confirmed execution; remember executed keys to block duplicates
+            // Lifecycle: only VERIFIED (real record) blocks future confirms for this action_id
             if (empty($result['pending_confirmations'])) {
                 $executedKeys = is_array($turn['confirmed_writes'] ?? null) ? $turn['confirmed_writes'] : [];
-                $okWrite = false;
+                $verifiedRows = [];
+                $failed = false;
                 foreach (($result['action']['results'] ?? []) as $resRow) {
-                    if (is_array($resRow) && !empty($resRow['success'])) {
-                        $okWrite = true;
-                        break;
+                    if (!is_array($resRow)) {
+                        continue;
+                    }
+                    $ok = !empty($resRow['success']) && !empty($resRow['verification']['verified']);
+                    if ($ok) {
+                        $rid = (int) ($resRow['data']['id'] ?? $resRow['new_state']['id'] ?? 0);
+                        $ck = '';
+                        foreach (($turn['action_plan']['actions'] ?? []) as $a) {
+                            if (is_array($a) && (string) ($a['tool'] ?? '') === (string) ($resRow['tool'] ?? '')) {
+                                $ck = (string) ($a['confirm_key'] ?? '');
+                                break;
+                            }
+                        }
+                        if ($ck === '' && $executedKeys !== []) {
+                            $ck = (string) $executedKeys[0];
+                        }
+                        $aid = (string) (($turn['pending']['action_id'] ?? '')
+                            ?: ($turn['action_plan']['action_id'] ?? '')
+                            ?: '');
+                        if ($rid > 0 && $ck !== '' && $aid !== '') {
+                            $verifiedRows[] = [
+                                'action_id' => $aid,
+                                'confirm_key' => $ck,
+                                'record_id' => $rid,
+                            ];
+                        }
+                    } else {
+                        $failed = true;
                     }
                 }
-                if ($okWrite && $executedKeys !== []) {
+                if ($verifiedRows !== []) {
                     ErpActionPlanner::savePendingState($scopeKey, [
-                        'phase' => 'executed',
+                        'phase' => ErpActionPlanner::PHASE_VERIFIED,
                         'executed_keys' => $executedKeys,
-                        'action_id' => (string) (($turn['pending']['action_id'] ?? '') ?: ($turn['action_plan']['action_id'] ?? '')),
+                        'verified_actions' => $verifiedRows,
+                        'action_id' => (string) ($verifiedRows[0]['action_id'] ?? ''),
                         'company_id' => (int) $ctx->companyId,
+                        'confirmations' => [],
+                        'parameter_snapshot' => is_array($turn['pending']['parameter_snapshot'] ?? null)
+                            ? $turn['pending']['parameter_snapshot']
+                            : (is_array($turn['action_plan']['parameter_snapshot'] ?? null)
+                                ? $turn['action_plan']['parameter_snapshot']
+                                : []),
                     ]);
+                } elseif ($failed) {
+                    // Keep snapshot for safe retry — never mark EXECUTED/VERIFIED
+                    $failPending = is_array($turn['pending'] ?? null) ? $turn['pending'] : [];
+                    $failPending['phase'] = ErpActionPlanner::PHASE_FAILED;
+                    $failPending['company_id'] = (int) $ctx->companyId;
+                    ErpActionPlanner::savePendingState($scopeKey, $failPending);
                 } else {
                     ErpActionPlanner::clearPendingState($scopeKey);
                 }
@@ -898,16 +939,32 @@ final class ErpAgent
 
         // Persist pending confirmations so text confirmations (انشئ / نعم) can resume
         $scopeKey = (string) ($input['conversation_scope'] ?? $ctx->conversationScopeKey());
+        $forcedPlan = !empty($input['_forced_action_plan']);
         if ($pendingConfirmations !== [] && $scopeKey !== '') {
             $prev = ErpActionPlanner::loadPendingState($scopeKey);
             ErpActionPlanner::savePendingState($scopeKey, array_merge($prev, [
-                'phase' => 'awaiting_confirmation',
+                'phase' => ErpActionPlanner::PHASE_PENDING_CONFIRMATION,
                 'confirmations' => $pendingConfirmations,
                 'action_plan' => $plan,
                 'intent' => (string) ($plan['intent'] ?? $message),
+                'company_id' => (int) $ctx->companyId,
+                // Never inherit executed proof into a fresh confirmation_required proposal
+                'verified_actions' => [],
+                'executed_keys' => [],
             ]));
-        } elseif ($pendingConfirmations === [] && $executionResults !== [] && $scopeKey !== '') {
-            ErpActionPlanner::clearPendingState($scopeKey);
+        } elseif ($pendingConfirmations === [] && $executionResults !== [] && $scopeKey !== '' && !$forcedPlan) {
+            // Conversation confirm path owns lifecycle persistence (VERIFIED/FAILED)
+            $anyVerified = false;
+            foreach ($executionResults as $er) {
+                if (is_array($er) && !empty($er['success']) && !empty($er['verification']['verified'])) {
+                    $anyVerified = true;
+                    break;
+                }
+            }
+            if ($anyVerified) {
+                ErpActionPlanner::clearPendingState($scopeKey);
+            }
+            // On failure keep prior pending so the user can retry confirm safely
         }
 
         $response = ErpActionPlanner::formatActionResponse(

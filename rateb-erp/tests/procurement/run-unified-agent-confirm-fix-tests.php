@@ -114,8 +114,9 @@ $snapLine = is_array($snap['line_items'][0] ?? null) ? $snap['line_items'][0] : 
     ? $pass('PARAMETER SNAPSHOT') : $fail('PARAMETER SNAPSHOT', json_encode($snap, JSON_UNESCAPED_UNICODE));
 (!empty($propose['pending']['action_id']) && !empty($propose['pending']['confirmations'][0]['action_id']))
     ? $pass('ACTION IDENTITY') : $fail('ACTION IDENTITY');
-(($propose['pending']['phase'] ?? '') === 'awaiting_confirmation')
-    ? $pass('PENDING ACTION') : $fail('PENDING ACTION');
+(($propose['pending']['phase'] ?? '') === ErpActionPlanner::PHASE_PENDING_CONFIRMATION
+    || ($propose['pending']['phase'] ?? '') === 'awaiting_confirmation')
+    ? $pass('PENDING ACTION') : $fail('PENDING ACTION', (string) ($propose['pending']['phase'] ?? ''));
 
 ErpActionPlanner::savePendingState($scope, $propose['pending'] ?? []);
 
