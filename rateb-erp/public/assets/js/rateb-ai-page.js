@@ -96,13 +96,16 @@
                 function showConfirm(pending, originalMessage) {
                     var keys = [];
                     var labels = [];
+                    var actionId = '';
                     (pending || []).forEach(function (p) {
                         if (p && p.confirm_key) keys.push(p.confirm_key);
                         if (p && p.tool) labels.push(toolLabel(p.tool));
+                        if (p && p.action_id && !actionId) actionId = String(p.action_id);
                     });
                     if (!keys.length) return;
                     var wrap = doc.createElement('div');
                     wrap.className = 'rateb-ai-message assistant rateb-ai-confirm-chrome';
+                    wrap.setAttribute('data-action-id', actionId || '');
                     wrap.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
                         '<div class="rateb-ai-message-content">' +
                         '<div>' + esc(labels.join(', ')) + '</div>' +
@@ -116,13 +119,22 @@
                     var cancelBtn = wrap.querySelector('[data-rateb-ai-cancel]');
                     if (confirmBtn) {
                         confirmBtn.addEventListener('click', function () {
+                            if (confirmBtn.disabled || root.ratebAi.loading) return;
+                            confirmBtn.disabled = true;
+                            if (cancelBtn) cancelBtn.disabled = true;
                             if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
-                            root.ratebAi.send(originalMessage, keys);
+                            // Deterministic confirmation — never re-send the original create utterance
+                            root.ratebAi.send(t('confirm', 'تأكيد'), keys.slice());
                         });
                     }
                     if (cancelBtn) {
                         cancelBtn.addEventListener('click', function () {
+                            if (cancelBtn.disabled || root.ratebAi.loading) return;
+                            cancelBtn.disabled = true;
+                            if (confirmBtn) confirmBtn.disabled = true;
                             if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+                            root.ratebAi.pendingConfirmKeys = [];
+                            root.ratebAi.send(t('cancel', 'إلغاء'));
                         });
                     }
                 }
@@ -131,7 +143,7 @@
                 var history = (root.RatebAiHistory && root.RatebAiHistory.getApiHistory)
                     ? root.RatebAiHistory.getApiHistory()
                     : (this.getHistory ? this.getHistory() : []);
-                if (!confirmedWrites.length) {
+                if (!confirmedWrites.length || this.isConfirmPhrase(message) || this.isRejectPhrase(message)) {
                     addMsg('user', message);
                     this.lastMessage = message;
                     try { root.RatebAiHistory && root.RatebAiHistory.appendMessage('user', message); } catch (eHistU) {}

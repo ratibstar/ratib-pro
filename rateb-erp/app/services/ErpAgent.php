@@ -87,6 +87,30 @@ final class ErpAgent
             ], $gov, $ctx, $requestId);
         }
 
+        if (($turn['mode'] ?? '') === 'stale' || ($turn['mode'] ?? '') === 'already_executed') {
+            if (($turn['mode'] ?? '') === 'already_executed' || !empty($turn['clear_pending'])) {
+                ErpActionPlanner::clearPendingState($scopeKey);
+            }
+            $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, null, false);
+            $gov['execution_level'] = ($turn['mode'] ?? '') === 'already_executed'
+                ? ErpGovernanceLayer::LEVEL_CONFIRMED_WRITE
+                : ErpGovernanceLayer::LEVEL_READ_ONLY;
+            return $this->finalizeWithGovernance([
+                'response' => (string) ($turn['response'] ?? ''),
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'action',
+                'agent' => self::AGENT_ID,
+                'observability' => [
+                    'success' => true,
+                    'duration_ms' => 0,
+                    'conversation_phase' => (string) ($turn['mode'] ?? ''),
+                ],
+                '_started_at' => microtime(true),
+            ], $gov, $ctx, $requestId);
+        }
+
         if (($turn['mode'] ?? '') === 'confirm_dry_run') {
             ErpActionPlanner::clearPendingState($scopeKey);
             $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, null, true);
@@ -158,6 +182,7 @@ final class ErpAgent
                     'confirm_key' => (string) ($a['confirm_key'] ?? ''),
                     'permission' => (string) ($a['permission'] ?? ''),
                     'class' => (string) ($a['class'] ?? ''),
+                    'action_id' => (string) (($a['action_id'] ?? '') ?: ($plan['action_id'] ?? '') ?: (($turn['pending']['action_id'] ?? '') ?: '')),
                     'previous_state' => $a['previous_state'] ?? null,
                     'impact_preview' => [
                         'summary' => $this->actionImpactSummary((string) ($a['tool'] ?? ''), is_array($a['arguments'] ?? null) ? $a['arguments'] : [], $ctx),
@@ -200,9 +225,26 @@ final class ErpAgent
                 return $this->governanceStopResponse($ctx, $requestId, $gov, $bound, $intent);
             }
             $result = $this->processActions($input, $ctx, $intent, $requestId, $gov);
-            // Clear pending after successful confirmed execution attempt
+            // Clear pending after successful confirmed execution; remember executed keys to block duplicates
             if (empty($result['pending_confirmations'])) {
-                ErpActionPlanner::clearPendingState($scopeKey);
+                $executedKeys = is_array($turn['confirmed_writes'] ?? null) ? $turn['confirmed_writes'] : [];
+                $okWrite = false;
+                foreach (($result['action']['results'] ?? []) as $resRow) {
+                    if (is_array($resRow) && !empty($resRow['success'])) {
+                        $okWrite = true;
+                        break;
+                    }
+                }
+                if ($okWrite && $executedKeys !== []) {
+                    ErpActionPlanner::savePendingState($scopeKey, [
+                        'phase' => 'executed',
+                        'executed_keys' => $executedKeys,
+                        'action_id' => (string) (($turn['pending']['action_id'] ?? '') ?: ($turn['action_plan']['action_id'] ?? '')),
+                        'company_id' => (int) $ctx->companyId,
+                    ]);
+                } else {
+                    ErpActionPlanner::clearPendingState($scopeKey);
+                }
             } else {
                 ErpActionPlanner::savePendingState($scopeKey, is_array($turn['pending'] ?? null) ? $turn['pending'] : []);
             }

@@ -129,13 +129,16 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         function showConfirm(pending, originalMessage) {
             var keys = [];
             var labels = [];
+            var actionId = '';
             (pending || []).forEach(function (p) {
                 if (p && p.confirm_key) keys.push(p.confirm_key);
                 if (p && p.tool) labels.push(toolLabel(p.tool));
+                if (p && p.action_id && !actionId) actionId = String(p.action_id);
             });
             if (!keys.length) return;
             var wrap = document.createElement('div');
             wrap.className = 'rateb-ai-message assistant rateb-ai-confirm-chrome';
+            wrap.setAttribute('data-action-id', actionId || '');
             wrap.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-robot"></i></div>' +
                 '<div class="rateb-ai-message-content">' +
                 '<div>' + esc(labels.join(', ')) + '</div>' +
@@ -149,13 +152,22 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
             var cancelBtn = wrap.querySelector('[data-rateb-ai-cancel]');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', function () {
+                    if (confirmBtn.disabled || window.ratebAi.loading) return;
+                    confirmBtn.disabled = true;
+                    if (cancelBtn) cancelBtn.disabled = true;
                     wrap.parentNode && wrap.parentNode.removeChild(wrap);
-                    window.ratebAi.send(originalMessage, keys);
+                    // Deterministic confirmation — never re-send the original create utterance
+                    window.ratebAi.send(t('confirm', 'تأكيد'), keys.slice());
                 });
             }
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', function () {
+                    if (cancelBtn.disabled || window.ratebAi.loading) return;
+                    cancelBtn.disabled = true;
+                    if (confirmBtn) confirmBtn.disabled = true;
                     wrap.parentNode && wrap.parentNode.removeChild(wrap);
+                    window.ratebAi.pendingConfirmKeys = [];
+                    window.ratebAi.send(t('cancel', 'إلغاء'));
                 });
             }
         }
@@ -164,7 +176,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         var history = (window.RatebAiHistory && window.RatebAiHistory.getApiHistory)
             ? window.RatebAiHistory.getApiHistory()
             : (this.getHistory ? this.getHistory() : []);
-        if (!confirmedWrites.length) {
+        if (!confirmedWrites.length || this.isConfirmPhrase(message) || this.isRejectPhrase(message)) {
             addMsg('user', message);
             this.lastMessage = message;
             try { window.RatebAiHistory && window.RatebAiHistory.appendMessage('user', message); } catch (eHistU) {}
