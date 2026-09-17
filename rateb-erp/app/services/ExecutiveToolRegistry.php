@@ -383,6 +383,49 @@ final class ExecutiveToolRegistry
                     'required' => [],
                 ],
             ],
+            'plan_multi_step_workflow' => [
+                'name' => 'plan_multi_step_workflow',
+                'description' => 'Plan a multi-step operational workflow from intent using ActionPlanner. Never auto-executes writes. Returns steps, dependencies, confirmation scope.',
+                'permission' => 'dashboard.view',
+                'module' => 'dashboard',
+                'write' => false,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'message' => ['type' => 'string'],
+                        'persist' => ['type' => 'boolean', 'default' => true],
+                    ],
+                    'required' => ['message'],
+                ],
+            ],
+            'get_active_workflows' => [
+                'name' => 'get_active_workflows',
+                'description' => 'List active tenant-scoped multi-step workflows for Control Tower. Read-only.',
+                'permission' => 'dashboard.view',
+                'module' => 'dashboard',
+                'write' => false,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 30, 'default' => 12],
+                    ],
+                    'required' => [],
+                ],
+            ],
+            'get_workflow_status' => [
+                'name' => 'get_workflow_status',
+                'description' => 'Get one multi-step workflow by id (tenant-scoped). Read-only evidence.',
+                'permission' => 'dashboard.view',
+                'module' => 'dashboard',
+                'write' => false,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'workflow_id' => ['type' => 'string'],
+                    ],
+                    'required' => ['workflow_id'],
+                ],
+            ],
         ];
     }
 

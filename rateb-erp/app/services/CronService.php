@@ -52,6 +52,7 @@ final class CronService
             'cms_articles_published' => 0,
             'agent_early_warnings' => 0,
             'agent_early_warning_created' => 0,
+            'agent_stuck_workflows' => 0,
         ];
 
         $ops = (new HrOpsAutomationService())->runAll();
@@ -87,6 +88,8 @@ final class CronService
             $ew = $this->processAgentEarlyWarnings($cid);
             $stats['agent_early_warnings'] += (int) ($ew['scanned'] ?? 0);
             $stats['agent_early_warning_created'] += (int) ($ew['created'] ?? 0);
+            $wfStuck = $this->processAgentStuckWorkflows($cid);
+            $stats['agent_stuck_workflows'] += (int) ($wfStuck['stuck'] ?? 0);
         }
         TenantContext::setCompanyId(null);
 
@@ -115,6 +118,24 @@ final class CronService
                 'error' => $e->getMessage(),
             ]);
             return ['scanned' => 0, 'created' => 0];
+        }
+    }
+
+    /**
+     * Mark stuck agent multi-step workflows for recovery (never auto-executes writes).
+     *
+     * @return array{scanned:int, stuck:int}
+     */
+    private function processAgentStuckWorkflows(int $companyId): array
+    {
+        try {
+            return ErpMultiStepWorkflowLayer::processStuckForCompany($companyId);
+        } catch (\Throwable $e) {
+            Logger::error('cron_agent_stuck_workflows_failed', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['scanned' => 0, 'stuck' => 0];
         }
     }
 

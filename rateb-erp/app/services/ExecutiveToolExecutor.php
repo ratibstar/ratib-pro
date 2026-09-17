@@ -271,6 +271,43 @@ final class ExecutiveToolExecutor
                         max(5, min(20, (int) ($arguments['limit'] ?? 10)))
                     );
                     return ['success' => true, 'data' => $towerMem, 'error' => null];
+                case 'plan_multi_step_workflow':
+                    $msg = trim((string) ($arguments['message'] ?? ''));
+                    if ($msg === '') {
+                        return self::fail('insufficient_parameters');
+                    }
+                    $wf = ErpMultiStepWorkflowLayer::plan(
+                        $msg,
+                        $ctx,
+                        null,
+                        ['persist' => array_key_exists('persist', $arguments) ? (bool) $arguments['persist'] : true]
+                    );
+                    return ['success' => true, 'data' => $wf, 'error' => null];
+                case 'get_active_workflows':
+                    $list = ErpMultiStepWorkflowLayer::listActive(
+                        (int) $ctx->companyId,
+                        max(1, min(30, (int) ($arguments['limit'] ?? 12)))
+                    );
+                    return [
+                        'success' => true,
+                        'data' => [
+                            'data_source' => 'live_tenant',
+                            'company_id' => (int) $ctx->companyId,
+                            'items' => $list,
+                            'auto_execute' => false,
+                        ],
+                        'error' => null,
+                    ];
+                case 'get_workflow_status':
+                    $wid = trim((string) ($arguments['workflow_id'] ?? ''));
+                    if ($wid === '') {
+                        return self::fail('insufficient_parameters');
+                    }
+                    $one = ErpMultiStepWorkflowLayer::getWorkflow((int) $ctx->companyId, $wid);
+                    if ($one === null) {
+                        return self::fail('not_found');
+                    }
+                    return ['success' => true, 'data' => $one, 'error' => null];
                 default:
                     return self::fail('tool_not_implemented');
             }

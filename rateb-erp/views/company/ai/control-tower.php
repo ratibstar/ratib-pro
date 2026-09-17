@@ -75,6 +75,7 @@ $renderEvidence = static function (array $ev) use ($esc): string {
             'outcomes' => __('ai_ct_tab_outcomes'),
             'learning' => __('ai_ct_tab_learning'),
             'memory' => __('ai_ct_tab_memory'),
+            'workflows' => __('ai_ct_tab_workflows'),
             'activity' => __('ai_ct_tab_activity'),
         ];
         foreach ($tabs as $id => $label):
@@ -92,6 +93,7 @@ $renderEvidence = static function (array $ev) use ($esc): string {
                 <div class="rateb-ct-stat"><div class="rateb-ct-stat-label"><?php echo $esc(__('ai_ct_forecasts')); ?></div><div class="rateb-ct-stat-value"><?php echo (int) ($ov['forecasts_available'] ?? 0); ?></div></div>
                 <div class="rateb-ct-stat"><div class="rateb-ct-stat-label"><?php echo $esc(__('ai_ct_recommendations')); ?></div><div class="rateb-ct-stat-value"><?php echo (int) ($ov['recommendations'] ?? 0); ?></div></div>
                 <div class="rateb-ct-stat"><div class="rateb-ct-stat-label"><?php echo $esc(__('ai_ct_outcomes')); ?></div><div class="rateb-ct-stat-value"><?php echo (int) ($ov['outcomes'] ?? 0); ?></div></div>
+                <div class="rateb-ct-stat"><div class="rateb-ct-stat-label"><?php echo $esc(__('ai_ct_active_workflows')); ?></div><div class="rateb-ct-stat-value"><?php echo (int) ($ov['active_workflows'] ?? 0); ?></div></div>
             </div>
             <p class="rateb-ct-note"><?php echo $esc(__('ai_ct_no_direct_writes')); ?></p>
         </div>
@@ -266,6 +268,40 @@ $renderEvidence = static function (array $ev) use ($esc): string {
                     <?php endforeach; ?>
                 </ul>
             <?php endforeach; endif; ?>
+        </div>
+
+        <div class="rateb-ct-panel" data-ct-panel="workflows" role="tabpanel" hidden>
+            <?php
+            $aw = is_array($ct['active_workflows'] ?? null) ? $ct['active_workflows'] : [];
+            $awItems = is_array($aw['items'] ?? null) ? $aw['items'] : [];
+            ?>
+            <p class="rateb-ct-note"><?php echo $esc(__('ai_ct_wf_note')); ?></p>
+            <ul class="rateb-ct-list">
+                <?php if ($awItems === []): ?>
+                    <li class="rateb-ct-empty"><?php echo $esc(__('ai_ct_empty')); ?></li>
+                <?php else: foreach ($awItems as $w): if (!is_array($w)) continue; ?>
+                    <li class="rateb-ct-item">
+                        <div class="rateb-ct-item-head">
+                            <span class="rateb-ct-item-title"><?php echo $esc((string) ($w['intent'] ?? $w['workflow_id'] ?? '')); ?></span>
+                            <span class="rateb-ct-badge <?php echo $esc($badgeClass((string) ($w['status'] ?? ''))); ?>"><?php echo $esc((string) ($w['status'] ?? '')); ?></span>
+                        </div>
+                        <div><?php echo $esc(__('ai_ct_wf_progress')); ?>: <?php echo $esc((string) ($w['completed'] ?? 0)); ?>/<?php echo $esc((string) ($w['total'] ?? 0)); ?>
+                            (<?php echo $esc((string) ($w['progress'] ?? 0)); ?>%)
+                            · <?php echo $esc(__('ai_ct_wf_current')); ?>: <?php echo $esc((string) ($w['current_step'] ?? '—')); ?>
+                        </div>
+                        <?php if (!empty($w['blocked_reason'])): ?>
+                            <div><?php echo $esc(__('ai_ct_wf_blocked')); ?>: <?php echo $esc((string) $w['blocked_reason']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($w['next_action'])): ?>
+                            <div><?php echo $esc(__('ai_ct_wf_next')); ?>: <?php echo $esc((string) $w['next_action']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($w['recovery_status'])): ?>
+                            <div><?php echo $esc(__('ai_ct_wf_recovery')); ?>: <?php echo $esc((string) $w['recovery_status']); ?></div>
+                        <?php endif; ?>
+                        <?php echo $renderEvidence(is_array($w['evidence'] ?? null) ? $w['evidence'] : []); ?>
+                    </li>
+                <?php endforeach; endif; ?>
+            </ul>
         </div>
 
         <div class="rateb-ct-panel" data-ct-panel="activity" role="tabpanel" hidden>

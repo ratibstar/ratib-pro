@@ -44,6 +44,7 @@ final class ErpActionPlanner
         'analyze_executive_intelligence', 'scan_early_warnings', 'get_early_warning_digest',
         'analyze_operational_learning', 'get_optimization_insights', 'get_control_tower_snapshot',
         'get_relevant_operational_context', 'get_operational_memory',
+        'plan_multi_step_workflow', 'get_active_workflows', 'get_workflow_status',
     ];
 
     /** @var list<string> */

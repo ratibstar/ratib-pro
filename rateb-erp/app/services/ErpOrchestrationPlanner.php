@@ -590,6 +590,17 @@ final class ErpOrchestrationPlanner
         );
     }
 
+    public static function hasWorkflowIntent(string $message): bool
+    {
+        return self::match(
+            $message,
+            '/(سير\s*عمل|خطة\s*متعددة|خطوات\s*متعددة|نفّذ\s*خطة|workflow|multi[\s-]?step|step\s*by\s*step|execute\s+plan|create\s+and\s+submit|أنشئ\s*وأرسل|انشئ\s*وارسل)/ui'
+        ) || (
+            self::hasWriteIntent($message)
+            && self::match($message, '/(ثم|بعدها|بعد\s*ذلك|and\s+then|then\s+submit|ثم\s*أرسل|ثم\s*ارسل)/ui')
+        );
+    }
+
     public static function hasExecutiveIntent(string $message): bool
     {
         // Keep narrow — do not steal Accounting "financial position" / domain correlation queries.

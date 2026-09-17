@@ -238,6 +238,7 @@ final class ErpControlTowerLayer
             'forecasts_available' => (int) ($exec['forecasts']['available_count'] ?? 0),
             'recommendations' => count($recommendations),
             'outcomes' => count($outcomes),
+            'active_workflows' => count(ErpMultiStepWorkflowLayer::listActive($companyId, $limit)),
             'data_source' => 'live_tenant',
         ];
 
@@ -266,6 +267,7 @@ final class ErpControlTowerLayer
                 'governance_immutable' => true,
             ],
             'operational_memory' => ErpOperationalMemoryLayer::towerSection($ctx, $limit),
+            'active_workflows' => ErpMultiStepWorkflowLayer::towerSection($ctx, $limit),
             'agent_effectiveness' => $effectiveness,
             'executive_summary' => $exec['executive_summary'] ?? [],
             'explainability' => [

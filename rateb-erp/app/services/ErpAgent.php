@@ -376,6 +376,29 @@ final class ErpAgent
 
         $plan = ErpActionPlanner::buildActionPlan($message, $ctx, $intelligence);
 
+        // Phase 22: multi-step workflow coordination (never bypasses ActionPlanner/Governance)
+        $workflow = null;
+        $workflowIntent = ErpOrchestrationPlanner::hasWorkflowIntent($message)
+            || count($plan['actions'] ?? []) >= 2
+            || (!empty($plan['actions']) && preg_match('/(ناقص|نقص|shortfall|low\s*stock)/ui', $message) === 1);
+        if ($workflowIntent) {
+            $workflow = ErpMultiStepWorkflowLayer::plan($message, $ctx, $intelligence, ['persist' => true]);
+            $workflow['request_id'] = $requestId;
+            ErpMultiStepWorkflowLayer::saveWorkflow((int) $ctx->companyId, $workflow);
+            $workflow = ErpMultiStepWorkflowLayer::authorize($workflow, $ctx);
+            ErpMultiStepWorkflowLayer::saveWorkflow((int) $ctx->companyId, $workflow);
+            $auditEntries[] = $this->logAudit($ctx, $requestId, 'multi_step_workflow_plan', [
+                'workflow_id' => $workflow['workflow_id'] ?? null,
+                'status' => $workflow['status'] ?? null,
+                'step_count' => count($workflow['steps'] ?? []),
+                'requires_confirmation' => !empty($workflow['requires_confirmation']),
+            ], [
+                'event_type' => 'multi_step_workflow_plan',
+                'error_code' => null,
+                'action_layer' => true,
+            ], 'success');
+        }
+
         $auditEntries[] = $this->logAudit($ctx, $requestId, 'action_plan', [
             'intent' => $plan['intent'] ?? '',
             'domains' => $plan['domains'] ?? [],
@@ -619,6 +642,49 @@ final class ErpAgent
                     'previous_state' => $action['previous_state'] ?? null,
                     'new_state' => $verification['new_state'] ?? null,
                 ];
+
+                // Phase 22: record step into multi-step workflow (if active)
+                if (is_array($workflow) && !empty($workflow['workflow_id'])) {
+                    $stepNo = null;
+                    foreach (($workflow['steps'] ?? []) as $ws) {
+                        if (!is_array($ws)) {
+                            continue;
+                        }
+                        if ((string) ($ws['tool'] ?? '') === $toolName
+                            && (string) ($ws['confirm_key'] ?? '') === $confirmKey
+                        ) {
+                            $stepNo = (int) ($ws['step_no'] ?? 0);
+                            break;
+                        }
+                    }
+                    if ($stepNo === null) {
+                        foreach (($workflow['steps'] ?? []) as $ws) {
+                            if (is_array($ws) && (string) ($ws['tool'] ?? '') === $toolName
+                                && in_array(($ws['status'] ?? ''), ['READY', 'PENDING', 'RUNNING'], true)
+                            ) {
+                                $stepNo = (int) ($ws['step_no'] ?? 0);
+                                break;
+                            }
+                        }
+                    }
+                    if ($stepNo !== null && $stepNo > 0) {
+                        $workflow['request_id'] = $requestId;
+                        $workflow = ErpMultiStepWorkflowLayer::recordStepResult(
+                            $workflow,
+                            $stepNo,
+                            is_array($result) ? $result : ['success' => false],
+                            $verification,
+                            $ctx,
+                            []
+                        );
+                        $executionResults[array_key_last($executionResults)]['workflow'] = [
+                            'workflow_id' => $workflow['workflow_id'] ?? null,
+                            'status' => $workflow['status'] ?? null,
+                            'step_no' => $stepNo,
+                        ];
+                    }
+                }
+
                 try {
                     $learningMeta = [
                         'request_id' => $requestId,
@@ -681,11 +747,37 @@ final class ErpAgent
             $partial
         );
 
+        if (is_array($workflow) && !empty($workflow['workflow_id'])) {
+            if ($confirmedWrites !== [] && in_array(($workflow['status'] ?? ''), [
+                ErpMultiStepWorkflowLayer::ST_AUTHORIZED,
+                ErpMultiStepWorkflowLayer::ST_PLANNED,
+            ], true)) {
+                $keys = [];
+                foreach ($confirmedWrites as $cw) {
+                    if (is_array($cw) && (string) ($cw['confirm_key'] ?? '') !== '') {
+                        $keys[] = (string) $cw['confirm_key'];
+                    } elseif (is_string($cw) && $cw !== '') {
+                        $keys[] = $cw;
+                    }
+                }
+                foreach (($plan['actions'] ?? []) as $a) {
+                    if (is_array($a) && (string) ($a['confirm_key'] ?? '') !== '') {
+                        $keys[] = (string) $a['confirm_key'];
+                    }
+                }
+                $workflow = ErpMultiStepWorkflowLayer::confirm($workflow, array_values(array_unique($keys)));
+            }
+            ErpMultiStepWorkflowLayer::saveWorkflow((int) $ctx->companyId, $workflow);
+            $response .= "\n\n" . $this->formatWorkflowBrief($workflow, $ctx);
+        }
+
         $auditEntries[] = $this->logAudit($ctx, $requestId, 'action_summary', [
             'pending_count' => count($pendingConfirmations),
             'executed_count' => count($executionResults),
             'partial' => $partial,
             'writes_done' => $writesDone,
+            'workflow_id' => is_array($workflow) ? ($workflow['workflow_id'] ?? null) : null,
+            'workflow_status' => is_array($workflow) ? ($workflow['status'] ?? null) : null,
         ], [
             'event_type' => 'action_summary',
             'action_layer' => true,
@@ -704,7 +796,9 @@ final class ErpAgent
                 'results' => $executionResults,
                 'partial' => $partial,
                 'intelligence_used' => $intelligence !== null,
+                'workflow' => $workflow,
             ],
+            'workflow' => $workflow,
             'domain_selection' => [
                 'resolved' => 'action',
                 'source' => 'action_layer',
@@ -719,6 +813,7 @@ final class ErpAgent
                 'success' => !$partial || $executionResults !== [] || $pendingConfirmations !== [],
                 'domain' => 'action',
                 'action_layer' => true,
+                'workflow_id' => is_array($workflow) ? ($workflow['workflow_id'] ?? null) : null,
                 'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
                 'pending_confirmations' => count($pendingConfirmations),
                 'writes_executed' => $writesDone,
@@ -875,6 +970,40 @@ final class ErpAgent
             'governance_stopped' => $bound,
         ];
         return $this->finalizeWithGovernance($result, $governance, $ctx, $requestId);
+    }
+
+    /**
+     * @param array<string, mixed> $wf
+     */
+    private function formatWorkflowBrief(array $wf, ProcurementAgentContext $ctx): string
+    {
+        $ar = str_starts_with(strtolower((string) $ctx->locale), 'ar');
+        $id = (string) ($wf['workflow_id'] ?? '');
+        $status = (string) ($wf['status'] ?? '');
+        $steps = is_array($wf['steps'] ?? null) ? $wf['steps'] : [];
+        $done = 0;
+        $total = count($steps);
+        foreach ($steps as $s) {
+            if (is_array($s) && in_array(($s['status'] ?? ''), ['VERIFIED', 'COMPLETED', 'SKIPPED'], true)) {
+                $done++;
+            }
+        }
+        $lines = [];
+        $lines[] = $ar
+            ? "سير العمل متعدد الخطوات: {$id} — الحالة: {$status} — التقدم: {$done}/{$total}"
+            : "Multi-step workflow: {$id} — status: {$status} — progress: {$done}/{$total}";
+        if (!empty($wf['requires_confirmation']) && in_array($status, ['PLANNED', 'AUTHORIZED', 'BLOCKED'], true)) {
+            $lines[] = $ar
+                ? 'يتطلب تأكيداً لكل خطوات الكتابة قبل التنفيذ. لا تنفيذ تلقائي.'
+                : 'Requires confirmation for all write steps before execution. No auto-execute.';
+        }
+        if (($wf['recovery']['required'] ?? false) === true) {
+            $opt = (string) ($wf['recovery']['option'] ?? '');
+            $lines[] = $ar
+                ? "مطلوب استرداد: {$opt}"
+                : "Recovery required: {$opt}";
+        }
+        return implode("\n", $lines);
     }
 
     private function actionImpactSummary(string $toolName, array $arguments, ProcurementAgentContext $ctx): string
